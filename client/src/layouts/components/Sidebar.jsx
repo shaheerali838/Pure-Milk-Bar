@@ -12,6 +12,8 @@ export default function Sidebar() {
       iconBg: 'bg-[#f0f4f9]',
       iconColor: 'text-[#486581]',
       iconBorder: 'border border-[#e2e8f0]',
+      activeBg: 'bg-black text-white shadow-md shadow-black/20',
+      activeBadgeBg: 'bg-neutral-800 text-white',
     },
     {
       id: 'Farm',
@@ -21,6 +23,8 @@ export default function Sidebar() {
       iconBg: 'bg-[#eafaf1]',
       iconColor: 'text-[#10b981]',
       iconBorder: 'border border-[#c6f6d5]',
+      activeBg: 'bg-[#009966] text-white shadow-md shadow-emerald-500/20',
+      activeBadgeBg: 'bg-[#007a52] text-white',
     },
     {
       id: 'Supplier',
@@ -30,11 +34,13 @@ export default function Sidebar() {
       iconBg: 'bg-[#eef4ff]',
       iconColor: 'text-[#2563eb]',
       iconBorder: 'border border-[#dbeafe]',
+      activeBg: 'bg-[#1864f7] text-white shadow-md shadow-blue-500/25',
+      activeBadgeBg: 'bg-[#0f4ec4] text-white',
     },
   ];
 
   return (
-    <div className="w-72 bg-white min-h-screen flex flex-col border-r border-slate-200/80 shadow-xs">
+    <div className="w-65 bg-white min-h-screen flex flex-col border-r border-slate-200/80 shadow-xs">
       {/* Brand Header */}
       <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-sm shadow-blue-200">
@@ -58,12 +64,12 @@ export default function Sidebar() {
             const Icon = link.icon;
             return (
               <NavLink
-                key={link.id}
+                key={link.id} 
                 to={link.path}
                 className={({ isActive }) =>
-                  `w-full flex items-center gap-3 px-3.5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${
+                  `w-full flex items-center gap-3 px-3.5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
                     isActive
-                      ? 'bg-[#1864f7] text-white shadow-md shadow-blue-500/25'
+                      ? link.activeBg
                       : 'text-[#2e3e50] hover:bg-slate-100/70 hover:text-slate-900'
                   }`
                 }
@@ -71,13 +77,13 @@ export default function Sidebar() {
                 {({ isActive }) => (
                   <>
                     <div
-                      className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                      className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                         isActive
-                          ? 'bg-[#0f4ec4] text-white'
+                          ? link.activeBadgeBg
                           : `${link.iconBg} ${link.iconColor} ${link.iconBorder}`
                       }`}
                     >
-                      <Icon className="w-4 h-4" />
+                      <Icon className="w-3.5 h-3.5" />
                     </div>
                     <span className="truncate">{link.name}</span>
                   </>
