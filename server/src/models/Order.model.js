@@ -12,12 +12,6 @@ const orderSchema = new Schema(
       uppercase: true,
       index: true,
     },
-    clientTransactionUuid: {
-      type: String,
-      unique: true,
-      sparse: true,
-      index: true,
-    },
     date: {
       type: Date,
       required: [true, 'Order date is required'],
@@ -88,15 +82,6 @@ const orderSchema = new Schema(
     },
     onlineTransferMeta: {
       type: Schema.Types.Mixed,
-      default: null,
-    },
-    isOfflineSynced: {
-      type: Boolean,
-      default: false,
-      index: true,
-    },
-    syncedAt: {
-      type: Date,
       default: null,
     },
   },
