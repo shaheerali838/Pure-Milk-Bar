@@ -54,15 +54,6 @@ export default function Navbar() {
       {/* Right: Actions, Notifications, Profile */}
       <div className="flex items-center gap-2.5 shrink-0">
         {/* Delivery Button */}
-        <button
-          type="button"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 text-xs font-semibold transition-colors cursor-pointer"
-          title="View Deliveries"
-        >
-          <Truck className="w-3.5 h-3.5 text-blue-600" />
-          <span>Deliveries</span>
-        </button>
-
         {/* Export CSV Button */}
         <button
           type="button"
@@ -72,6 +63,14 @@ export default function Navbar() {
         >
           <Download className="w-3.5 h-3.5" />
           <span>Export CSV</span>
+        </button>
+        <button
+          type="button"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+          title="View Deliveries"
+        >
+          <Truck className="w-3.5 h-3.5 text-blue-600" />
+          <span>Deliveries</span>
         </button>
         <div className="flex-1 max-w-sm mx-2">
         <div className="relative">
