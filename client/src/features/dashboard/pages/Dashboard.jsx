@@ -2,137 +2,138 @@ import React from 'react';
 import { 
   Download
 } from 'lucide-react';
+import { ExecationOperation } from '../components/businesOperation/ExecationOperation';
 
 export default function Dashboard() {
-  const stats = [
-    {
-      title: 'Total Milk Today',
-      value: '3,840 L',
-      change: '+6.2% vs yesterday',
-      isPositive: true,
-      iconColor: 'text-emerald-600',
-      iconBg: 'bg-emerald-100',
-      borderColor: 'border-emerald-200',
-    },
-    {
-      title: 'Morning Shift',
-      value: '2,150 L',
-      change: '56% of total',
-      isPositive: true,
-      iconColor: 'text-amber-600',
-      iconBg: 'bg-amber-100',
-      borderColor: 'border-amber-200',
-    },
-    {
-      title: 'Evening Shift',
-      value: '1,690 L',
-      change: '44% of total',
-      isPositive: true,
-      iconColor: 'text-indigo-600',
-      iconBg: 'bg-indigo-100',
-      borderColor: 'border-indigo-200',
-    },
-    {
-      title: 'Average Fat %',
-      value: '4.25%',
-      change: '+0.15% quality score',
-      isPositive: true,
-      iconColor: 'text-blue-600',
-      iconBg: 'bg-blue-100',
-      borderColor: 'border-blue-200',
-    },
-    {
-      title: 'Average SNF %',
-      value: '8.62%',
-      change: 'Optimal standard',
-      isPositive: true,
-      iconColor: 'text-purple-600',
-      iconBg: 'bg-purple-100',
-      borderColor: 'border-purple-200',
-    },
-    {
-      title: 'Active Suppliers',
-      value: '2 worker',
-      change: '4 new this week',
-      isPositive: true,
-      iconColor: 'text-teal-600',
-      iconBg: 'bg-teal-100',
-      borderColor: 'border-teal-200',
-    },
-  ];
+  // const stats = [
+  //   {
+  //     title: 'Total Milk Today',
+  //     value: '3,840 L',
+  //     change: '+6.2% vs yesterday',
+  //     isPositive: true,
+  //     iconColor: 'text-emerald-600',
+  //     iconBg: 'bg-emerald-100',
+  //     borderColor: 'border-emerald-200',
+  //   },
+  //   {
+  //     title: 'Morning Shift',
+  //     value: '2,150 L',
+  //     change: '56% of total',
+  //     isPositive: true,
+  //     iconColor: 'text-amber-600',
+  //     iconBg: 'bg-amber-100',
+  //     borderColor: 'border-amber-200',
+  //   },
+  //   {
+  //     title: 'Evening Shift',
+  //     value: '1,690 L',
+  //     change: '44% of total',
+  //     isPositive: true,
+  //     iconColor: 'text-indigo-600',
+  //     iconBg: 'bg-indigo-100',
+  //     borderColor: 'border-indigo-200',
+  //   },
+  //   {
+  //     title: 'Average Fat %',
+  //     value: '4.25%',
+  //     change: '+0.15% quality score',
+  //     isPositive: true,
+  //     iconColor: 'text-blue-600',
+  //     iconBg: 'bg-blue-100',
+  //     borderColor: 'border-blue-200',
+  //   },
+  //   {
+  //     title: 'Average SNF %',
+  //     value: '8.62%',
+  //     change: 'Optimal standard',
+  //     isPositive: true,
+  //     iconColor: 'text-purple-600',
+  //     iconBg: 'bg-purple-100',
+  //     borderColor: 'border-purple-200',
+  //   },
+  //   {
+  //     title: 'Active Suppliers',
+  //     value: '2 worker',
+  //     change: '4 new this week',
+  //     isPositive: true,
+  //     iconColor: 'text-teal-600',
+  //     iconBg: 'bg-teal-100',
+  //     borderColor: 'border-teal-200',
+  //   },
+  // ];
 
-  const recentCollections = [
-    {
-      id: 'COL-8921',
-      farmer: 'Rahim Ullah',
-      contact: '+92 300 1234567',
-      milkType: 'Cow Milk',
-      quantity: '45.0 L',
-      fat: '4.3%',
-      snf: '8.7%',
-      rate: 'Rs. 185 / L',
-      totalAmount: 'Rs. 8,325',
-      shift: 'Morning',
-      status: 'Verified',
-      time: '07:45 AM',
-    },
-    {
-      id: 'COL-8922',
-      farmer: 'Gulzar Agro Farms',
-      contact: '+92 312 9876543',
-      milkType: 'Buffalo Milk',
-      quantity: '65.0 L',
-      fat: '6.8%',
-      snf: '9.1%',
-      rate: 'Rs. 220 / L',
-      totalAmount: 'Rs. 14,300',
-      shift: 'Morning',
-      status: 'Verified',
-      time: '08:10 AM',
-    },
-    {
-      id: 'COL-8923',
-      farmer: 'Highland Pure Milk',
-      contact: '+92 333 4567890',
-      milkType: 'Cow Milk',
-      quantity: '80.0 L',
-      fat: '4.5%',
-      snf: '8.6%',
-      rate: 'Rs. 190 / L',
-      totalAmount: 'Rs. 15,200',
-      shift: 'Morning',
-      status: 'Verified',
-      time: '08:35 AM',
-    },
-    {
-      id: 'COL-8924',
-      farmer: 'Bismillah Dairy Farm',
-      contact: '+92 301 6543210',
-      milkType: 'Buffalo Milk',
-      quantity: '52.5 L',
-      fat: '6.5%',
-      snf: '9.0%',
-      rate: 'Rs. 215 / L',
-      totalAmount: 'Rs. 11,287',
-      shift: 'Evening',
-      status: 'Verified',
-      time: '04:20 PM',
-    },
-    {
-      id: 'COL-8925',
-      farmer: 'Tariq Mehmood',
-      contact: '+92 345 7891234',
-      milkType: 'Cow Milk',
-      quantity: '38.0 L',
-      fat: '4.1%',
-      snf: '8.5%',
-      rate: 'Rs. 180 / L',
-      totalAmount: 'Rs. 6,840',
-      shift: 'Evening',
-      status: 'Pending Test',
-      time: '05:05 PM',
-    },
-  ];
+  // const recentCollections = [
+  //   {
+  //     id: 'COL-8921',
+  //     farmer: 'Rahim Ullah',
+  //     contact: '+92 300 1234567',
+  //     milkType: 'Cow Milk',
+  //     quantity: '45.0 L',
+  //     fat: '4.3%',
+  //     snf: '8.7%',
+  //     rate: 'Rs. 185 / L',
+  //     totalAmount: 'Rs. 8,325',
+  //     shift: 'Morning',
+  //     status: 'Verified',
+  //     time: '07:45 AM',
+  //   },
+  //   {
+  //     id: 'COL-8922',
+  //     farmer: 'Gulzar Agro Farms',
+  //     contact: '+92 312 9876543',
+  //     milkType: 'Buffalo Milk',
+  //     quantity: '65.0 L',
+  //     fat: '6.8%',
+  //     snf: '9.1%',
+  //     rate: 'Rs. 220 / L',
+  //     totalAmount: 'Rs. 14,300',
+  //     shift: 'Morning',
+  //     status: 'Verified',
+  //     time: '08:10 AM',
+  //   },
+  //   {
+  //     id: 'COL-8923',
+  //     farmer: 'Highland Pure Milk',
+  //     contact: '+92 333 4567890',
+  //     milkType: 'Cow Milk',
+  //     quantity: '80.0 L',
+  //     fat: '4.5%',
+  //     snf: '8.6%',
+  //     rate: 'Rs. 190 / L',
+  //     totalAmount: 'Rs. 15,200',
+  //     shift: 'Morning',
+  //     status: 'Verified',
+  //     time: '08:35 AM',
+  //   },
+  //   {
+  //     id: 'COL-8924',
+  //     farmer: 'Bismillah Dairy Farm',
+  //     contact: '+92 301 6543210',
+  //     milkType: 'Buffalo Milk',
+  //     quantity: '52.5 L',
+  //     fat: '6.5%',
+  //     snf: '9.0%',
+  //     rate: 'Rs. 215 / L',
+  //     totalAmount: 'Rs. 11,287',
+  //     shift: 'Evening',
+  //     status: 'Verified',
+  //     time: '04:20 PM',
+  //   },
+  //   {
+  //     id: 'COL-8925',
+  //     farmer: 'Tariq Mehmood',
+  //     contact: '+92 345 7891234',
+  //     milkType: 'Cow Milk',
+  //     quantity: '38.0 L',
+  //     fat: '4.1%',
+  //     snf: '8.5%',
+  //     rate: 'Rs. 180 / L',
+  //     totalAmount: 'Rs. 6,840',
+  //     shift: 'Evening',
+  //     status: 'Pending Test',
+  //     time: '05:05 PM',
+  //   },
+  // ];
 
   return (
     <div className="space-y-4">
@@ -142,7 +143,7 @@ export default function Dashboard() {
           <h2 className="text-xl md:text-2xl font-semibold text-slate-800 tracking-tight">
             Dashboard Overview
           </h2>
-          <p className="text-base text-slate-500 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Real-time dairy collection, livestock metrics, and daily distribution records
           </p>
         </div>
@@ -157,9 +158,9 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
-
+      <ExecationOperation/>
       {/* Summary Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 text-center">
+      {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 text-center">
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
           return (
@@ -180,10 +181,10 @@ export default function Dashboard() {
             </div>
           );
         })}
-      </div>
+      </div> */}
 
       {/* Collections Overview Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between">
           <div>
             <h3 className="text-lg md:text-xl font-bold text-slate-800">
@@ -260,7 +261,7 @@ export default function Dashboard() {
             </tbody>
           </table>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
