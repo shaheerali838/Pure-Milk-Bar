@@ -39,10 +39,9 @@ export const seedAdmin = async () => {
             }
         );
 
-        console.log(` [OK] Admin user created/ready (Username: ${result.username} | Role: ${result.role})`);
         return result;
     } catch (error) {
-        console.error(' [ERROR] Admin seed failed:', error.message);
+        throw error;
     }
 };
 
@@ -51,7 +50,8 @@ if (process.argv[1] && (process.argv[1].includes('admin.seed.js'))) {
     connectDB().then(async () => {
         await seedAdmin();
         await mongoose.disconnect();
-        console.log(' [OK] Database connection closed');
         process.exit(0);
+    }).catch(() => {
+        process.exit(1);
     });
 }

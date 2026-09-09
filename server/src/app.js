@@ -8,6 +8,7 @@ import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 
 // Route Imports
 import authRoutes from './modules/auth/routes/auth.routes.js';
+import adminRoutes from './modules/admin/routes/admin.routes.js';
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.get('/api/v1/health', (req, res) => {
 
 // API v1 Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // Root route
 app.get('/', (req, res) => {

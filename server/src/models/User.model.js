@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import './DeliveryRun.model.js';
 
 const { Schema, model } = mongoose;
 
