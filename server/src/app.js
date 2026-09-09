@@ -4,6 +4,9 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 
+// Module Routes
+import farmRoutes from './modules/farm/routes/farm.routes.js';
+
 const app = express();
 
 // Security and utility middleware
@@ -40,7 +43,10 @@ app.get('/', (req, res) => {
   });
 });
 
-// 404 Handler for undefined routes
+// ═══════════════════════════════════════════════════════════════════════════
+//  MODULE ROUTES
+// ═══════════════════════════════════════════════════════════════════════════
+app.use('/api/farm', farmRoutes);
 app.use(notFoundHandler);
 
 // Centralized Error Handler

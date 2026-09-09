@@ -67,8 +67,17 @@ const animalSchema = new Schema(
   },
   {
     timestamps: true,
+    toJSON: {
+      transform: (doc, ret) => {
+        delete ret.__v;
+        return ret;
+      },
+    },
   }
 );
+
+// Compound index per architecture spec: operational query path for tag + active status
+animalSchema.index({ tagNumber: 1, isActive: 1 });
 
 export const Animal = model('Animal', animalSchema);
 export default Animal;
