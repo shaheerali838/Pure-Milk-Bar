@@ -10,7 +10,7 @@ export default function Layout() {
 
       <div className="flex-1 flex flex-col min-w-0">
         <Navbar />
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-3">
           <Outlet />
         </main>
       </div>
