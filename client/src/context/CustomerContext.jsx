@@ -1,11 +1,30 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const CustomerContext = createContext();
 
+const STORAGE_KEY = 'pure_milk_bar_customers';
+
 export function CustomerProvider({ children }) {
-  const [customers, setCustomers] = useState([]);
+  const [customers, setCustomers] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch (err) {
+      console.error('Failed to load customers from localStorage:', err);
+      return [];
+    }
+  });
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+    } catch (err) {
+      console.error('Failed to save customers to localStorage:', err);
+    }
+  }, [customers]);
 
   const addCustomer = (newCust) => {
     const customerToAdd = {

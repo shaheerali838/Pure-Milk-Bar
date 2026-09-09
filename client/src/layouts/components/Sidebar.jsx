@@ -77,37 +77,11 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Navigation Groups */}
+      {/* Main Navigation Container (Single unified scroll direction) */}
       <div className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
-        {/* Section 1: Accounts & Khata Ledger (Shown First) */}
-        <div>
-          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-            ACCOUNTS &amp; KHATA LEDGER
-          </div>
-          <nav className="space-y-0.5">
-            {accountKhataLinks.map((link) => {
-              const Icon = getLinkIcon(link.id);
-              return (
-                <NavLink
-                  key={link.id}
-                  to={link.path}
-                  className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                      isActive
-                        ? 'bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                    }`
-                  }
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{link.name}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
-        </div>
+        
 
-        {/* Section 2: Operations Command */}
+        {/* Section 1: Operations Command */}
         <div>
           <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
             OPERATIONS COMMAND
@@ -120,10 +94,9 @@ export default function Sidebar() {
                   key={link.id}
                   to={link.path}
                   className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                      isActive
-                        ? 'bg-[#00a86b] text-white shadow-xs'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${isActive
+                      ? 'bg-[#00a86b] text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`
                   }
                 >
@@ -135,7 +108,7 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        {/* Section 3: Sales & Production */}
+        {/* Section 2: Sales & Production */}
         <div>
           <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
             SALES &amp; PRODUCTION
@@ -148,15 +121,40 @@ export default function Sidebar() {
                   key={sale.id}
                   to={sale.path}
                   className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                      isActive
-                        ? 'bg-[#00a86b] text-white shadow-xs'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${isActive
+                      ? 'bg-[#00a86b] text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`
                   }
                 >
                   <Icon className="w-4 h-4 shrink-0" />
                   <span className="truncate">{sale.name}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
+        </div>
+         {/* Section 3: Accounts & Khata Ledger (Shown First) */}
+        <div>
+          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+            ACCOUNTS &amp; KHATA LEDGER
+          </div>
+          <nav className="space-y-0.5">
+            {accountKhataLinks.map((link) => {
+              const Icon = getLinkIcon(link.id);
+              return (
+                <NavLink
+                  key={link.id}
+                  to={link.path}
+                  className={({ isActive }) =>
+                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${isActive
+                      ? 'bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`
+                  }
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{link.name}</span>
                 </NavLink>
               );
             })}
