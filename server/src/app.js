@@ -5,6 +5,9 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
+import authRoutes from './modules/auth/routes/auth.routes.js';
+import adminRoutes from './modules/admin/routes/admin.routes.js';
+import farmRoutes from './modules/farm/routes/farm.routes.js';
 
 const app = express();
 
