@@ -1,25 +1,22 @@
-import "dotenv/config";
-import app from "./app.js";
-import { connectDB } from "./config/db.js";
+import 'dotenv/config';
+import app from './app.js';
+import connectDB from './config/db.js';
+import { seedAdmin } from './seeds/admin.seed.js';
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8443;
 
 const startServer = async () => {
-  // Start Express Server
-  const server = app.listen(PORT, () => {
-    console.log(
-      `🚀 Server running in ${process.env.NODE_ENV || "development"} mode on http://localhost:${PORT}`,
-    );
-  });
+    try {
+        await connectDB();
+        await seedAdmin();
 
-  // Connect to Database asynchronously
-  connectDB();
-
-  // Handle Unhandled Promise Rejections
-  process.on("unhandledRejection", (err) => {
-    console.error(`❌ Unhandled Rejection: ${err.message}`);
-    server.close(() => process.exit(1));
-  });
+        app.listen(PORT, () => {
+            console.log(`🚀 Pure Milk Bar API running on port ${PORT}`);
+        });
+    } catch (error) {
+        console.error('Server startup failed:', error);
+        process.exit(1);
+    }
 };
 
 startServer();
