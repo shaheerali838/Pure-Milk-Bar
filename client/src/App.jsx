@@ -8,6 +8,10 @@ import CustomerManagement from './features/customers/pages/CustomerManagement';
 import CustomerKhataLedger from './features/customers/pages/CustomerKhataLedger';
 import CollectionPayment from './features/customers/pages/CollectionPayment';
 import ReceivablesAging from './features/customers/pages/ReceivablesAging';
+import Proccessing from './features/inventory/pages/Processing';
+import Pos from './features/pos/pages/Pos';
+import Delivery from './features/deliveries/pages/Delivery';
+import Products from './features/inventory/pages/Products';
 import { LoginPage } from './features/auth';
 import { CustomerProvider } from './context/CustomerContext';
 
@@ -34,6 +38,10 @@ export default function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="farm" element={<Farm />} />
             <Route path="supplier" element={<Supplier />} />
+            <Route path="proccessing" element={<Proccessing />} />
+            <Route path="pos" element={<Pos />} />
+            <Route path="delivery" element={<Delivery />} />
+            <Route path="products" element={<Products />} />
 
             {/* Accounts & Khata Ledger Routes */}
             <Route path="customer" element={<CustomerManagement />} />
