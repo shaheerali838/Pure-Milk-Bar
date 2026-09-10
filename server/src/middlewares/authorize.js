@@ -1,4 +1,4 @@
-// ─── Authorize Middleware ──────────────────────────────────────────────────
+
 // Restricts access to routes based on user role attached to req.user
 export const authorize = (...allowedRoles) => {
   return (req, res, next) => {

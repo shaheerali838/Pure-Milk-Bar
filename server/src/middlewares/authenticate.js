@@ -1,12 +1,8 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.model.js';
 
-// ─── Authenticate Middleware ──────────────────────────────────────────────────
-// Verifies JWT access token from Authorization: Bearer <token> header
-// Attaches req.user = { id, role } for downstream controllers
 export const authenticate = async (req, res, next) => {
   try {
-    // 1. Extract token
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
