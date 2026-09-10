@@ -8,6 +8,7 @@ import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import authRoutes from './modules/auth/routes/auth.routes.js';
 import adminRoutes from './modules/admin/routes/admin.routes.js';
 import farmRoutes from './modules/farm/routes/farm.routes.js';
+import supplierRoutes from './modules/suppliers/routes/supplier.routes.js';
 
 const app = express();
 
@@ -71,6 +72,7 @@ app.get('/', (req, res) => {
 //  MODULE ROUTES
 // ═══════════════════════════════════════════════════════════════════════════
 app.use('/api/farm', farmRoutes);
+app.use('/api/v1/suppliers', supplierRoutes);
 app.use(notFoundHandler);
 
 // Centralized Error Handler
