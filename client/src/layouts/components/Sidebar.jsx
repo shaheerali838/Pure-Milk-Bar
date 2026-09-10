@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutGrid, Tractor, Truck, Milk } from 'lucide-react';
+import { Milk, Users, BookOpen, CreditCard, Clock, LayoutGrid, Tractor, Truck } from 'lucide-react';
+import accountKhataLinks from '../../components/common/Accounts_& _Khata_ledge';
 import { saleInformation } from '../../components/common/SaleAndProducation/saleInformation';
 
 export default function Sidebar() {
@@ -40,101 +41,120 @@ export default function Sidebar() {
     },
   ];
 
+  const getLinkIcon = (id) => {
+    switch (id) {
+      case 'customer':
+        return Users;
+      case 'customer khata ledger':
+        return BookOpen;
+      case 'collection & payout ':
+        return CreditCard;
+      case 'Receivables aging':
+        return Clock;
+      default:
+        return Users;
+    }
+  };
+
   return (
-    <aside className="w-64 bg-white min-h-screen flex flex-col border-r border-slate-200/80 shadow-xs shrink-0">
+    <aside className="w-64 bg-white min-h-screen flex flex-col border-r border-slate-200/80 shadow-xs shrink-0 select-none">
       {/* Brand Header */}
-      <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
-          <Milk className="w-4 h-4" />
+      <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-[#00a86b] text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+          <Milk className="w-5 h-5" />
         </div>
         <div>
-          <h1 className="text-sm font-bold text-slate-800 leading-tight">
-            Pur Milk Bar
-          </h1>
-          <p className="text-[11px] text-slate-400 font-medium">
-            Dairy & Farm Management
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-sm font-bold text-slate-900 leading-tight">Pure Milk Bar</h1>
+            <span className="px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+              ERP
+            </span>
+          </div>
+          <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+            Dairy Operations Engine
           </p>
         </div>
       </div>
 
-      {/* Navigation Groups */}
-      <div className="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
-        {/* Operations Section */}
+      {/* Main Navigation Container (Single unified scroll direction) */}
+      <div className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
+        
+
+        {/* Section 1: Operations Command */}
         <div>
-          <div className="px-2.5 mb-1.5 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
             OPERATIONS COMMAND
           </div>
-
-          <nav className="space-y-1">
+          <nav className="space-y-0.5">
             {links.map((link) => {
               const Icon = link.icon;
               return (
                 <NavLink
-                  key={link.id} 
+                  key={link.id}
                   to={link.path}
                   className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
-                      isActive
-                        ? link.activeBg
-                        : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
+                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${isActive
+                      ? 'bg-[#00a86b] text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`
                   }
                 >
-                  {({ isActive }) => (
-                    <>
-                      <div
-                        className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
-                          isActive
-                            ? link.activeBadgeBg
-                            : `${link.iconBg} ${link.iconColor} ${link.iconBorder}`
-                        }`}
-                      >
-                        <Icon className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="truncate">{link.name}</span>
-                    </>
-                  )}
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{link.name}</span>
                 </NavLink>
               );
             })}
           </nav>
         </div>
 
-        {/* Sales & Production Section */}
+        {/* Section 2: Sales & Production */}
         <div>
-          <div className="px-2.5 mb-1.5 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-            SALES & PRODUCTION
+          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+            SALES &amp; PRODUCTION
           </div>
-
-          <nav className="space-y-1">
+          <nav className="space-y-0.5">
             {saleInformation.map((sale) => {
               const Icon = sale.icon;
               return (
                 <NavLink
-                  key={sale.id} 
+                  key={sale.id}
                   to={sale.path}
                   className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
-                      isActive
-                        ? sale.activeBg
-                        : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
+                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${isActive
+                      ? 'bg-[#00a86b] text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`
                   }
                 >
-                  {({ isActive }) => (
-                    <>
-                      <div
-                        className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
-                          isActive
-                            ? sale.activeBadgeBg
-                            : `${sale.iconBg} ${sale.iconColor} ${sale.iconBorder}`
-                        }`}
-                      >
-                        <Icon className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="truncate">{sale.name}</span>
-                    </>
-                  )}
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{sale.name}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
+        </div>
+         {/* Section 3: Accounts & Khata Ledger (Shown First) */}
+        <div>
+          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+            ACCOUNTS &amp; KHATA LEDGER
+          </div>
+          <nav className="space-y-0.5">
+            {accountKhataLinks.map((link) => {
+              const Icon = getLinkIcon(link.id);
+              return (
+                <NavLink
+                  key={link.id}
+                  to={link.path}
+                  className={({ isActive }) =>
+                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${isActive
+                      ? 'bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`
+                  }
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{link.name}</span>
                 </NavLink>
               );
             })}
