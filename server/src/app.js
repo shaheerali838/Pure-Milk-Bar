@@ -62,8 +62,6 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/customers', customerRoutes);
 app.use('/api/v1/deliveries', deliveryRoutes);
-app.use('/api/v1/delivery-runs', deliveryRoutes);
-app.use('/api/v1/vehicle-fuel-logs', deliveryRoutes);
 
 // Root route
 app.get('/', (req, res) => {
