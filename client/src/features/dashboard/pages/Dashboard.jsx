@@ -1,7 +1,5 @@
 import React from 'react';
-import { 
-  Download
-} from 'lucide-react';
+import { Download} from 'lucide-react';
 import { ExecationOperation } from '../components/businesOperation/ExecationOperation';
 
 export default function Dashboard() {
@@ -137,27 +135,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl md:text-2xl font-semibold text-slate-800 tracking-tight">
-            Dashboard Overview
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Real-time dairy collection, livestock metrics, and daily distribution records
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button 
-            type="button" 
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-sm shadow-emerald-600/20 transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            <span>Export Report</span>
-          </button>
-        </div>
-      </div>
       <ExecationOperation/>
       {/* Summary Stat Cards */}
       {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 text-center">
