@@ -1,122 +1,62 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import React, { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Layout from './layouts/Layout';
+import Dashboard from './features/dashboard/pages/Dashboard';
+import Farm from './features/farm/pages/Farm';
+import Supplier from './features/suppliers/pages/Supplier';
+import CustomerManagement from './features/customers/pages/CustomerManagement';
+import CustomerKhataLedger from './features/customers/pages/CustomerKhataLedger';
+import CollectionPayment from './features/customers/pages/CollectionPayment';
+import ReceivablesAging from './features/customers/pages/ReceivablesAging';
+import Proccessing from './features/inventory/pages/Processing';
+import Pos from './features/pos/pages/Pos';
+import Delivery from './features/deliveries/pages/Delivery';
+import Products from './features/inventory/pages/Products';
+import { LoginPage } from './features/auth';
+import { CustomerProvider } from './context/CustomerContext';
+import { LedgerProvider } from './context/LedgerContext';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <CustomerProvider>
+      <LedgerProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                <LoginPage
+                  onLogin={(email, password) => {
+                    console.log('Logging in user:', email);
+                    setIsAuthenticated(true);
+                  }}
+                />
+              }
+            />
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Navigate to="/customer" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="farm" element={<Farm />} />
+              <Route path="supplier" element={<Supplier />} />
+              <Route path="proccessing" element={<Proccessing />} />
+              <Route path="pos" element={<Pos />} />
+              <Route path="delivery" element={<Delivery />} />
+              <Route path="products" element={<Products />} />
 
-      <div className="ticks"></div>
+              {/* Accounts & Khata Ledger Routes */}
+              <Route path="customer" element={<CustomerManagement />} />
+              <Route path="customer-khata-ledger" element={<CustomerKhataLedger />} />
+              <Route path="collection-payment" element={<CollectionPayment />} />
+              <Route path="receivables" element={<ReceivablesAging />} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+              {/* Catch-all redirect */}
+              <Route path="*" element={<Navigate to="/customer" replace />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </LedgerProvider>
+    </CustomerProvider>
+  );
 }
-
-export default App
