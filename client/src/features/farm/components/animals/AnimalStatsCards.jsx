@@ -71,7 +71,7 @@ export default function AnimalStatsCards() {
             </div>
 
             <div className="mt-3">
-              <div className="text-2xl sm:text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
+              <div className="text-2xl sm:text-2xl font-semibold text-slate-800 tracking-tight leading-none">
                 {s.value}
               </div>
               <p className="text-xs text-slate-400 font-medium mt-2">
