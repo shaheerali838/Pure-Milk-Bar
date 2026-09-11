@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Beef, Plus, Edit3, Trash2, Eye, X } from "lucide-react";
+import { Beef, Edit3, Trash2, Eye, X, Users, UserCheck } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import AnimalStatsCards from "./AnimalStatsCards";
 import RegisterAnimalModal from "./RegisterAnimalModal";
+import AnimalFilterHeader from "./AnimalFilterHeader";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 
 const statusStyle = {
@@ -18,6 +19,14 @@ const statusStyle = {
   "Dry/Gestating": "bg-amber-100 text-amber-700",
   "Calf": "bg-blue-100 text-blue-700",
 };
+
+// Default Farm Workers list for the Workers Tab
+const mockWorkers = [
+  { id: 1, name: "Muhammad Ali", role: "Head Herdsman", shift: "Morning & Evening", phone: "+92 300 1234567" },
+  { id: 2, name: "Tariq Mahmood", role: "Senior Milker", shift: "Morning", phone: "+92 301 7654321" },
+  { id: 3, name: "Rashid Khan", role: "Milker & Feed Care", shift: "Evening", phone: "+92 302 9876543" },
+  { id: 4, name: "Usman Ghani", role: "Veterinary Technician", shift: "Full-Time", phone: "+92 303 4567890" },
+];
 
 export default function AnimalCardOverflow() {
   const {
@@ -29,6 +38,11 @@ export default function AnimalCardOverflow() {
     openModal,
     closeModal,
   } = useAnimalContext();
+
+  const [activeTab, setActiveTab] = useState("registry"); // 'registry' or 'workers'
+  const [searchTerm, setSearchTerm] = useState("");
+  const [speciesFilter, setSpeciesFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const [detailAnimal, setDetailAnimal] = useState(null);
   const [editAnimal, setEditAnimal] = useState(null);
@@ -65,6 +79,29 @@ export default function AnimalCardOverflow() {
     setEditAnimal(null);
   };
 
+  // Filter animals list based on search term, species, and status
+  const filteredAnimals = animals.filter((a) => {
+    const matchesSearch =
+      searchTerm.trim() === "" ||
+      (a.tag && a.tag.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (a.name && a.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const matchesSpecies =
+      speciesFilter === "all" ||
+      (speciesFilter === "cow" && a.species && a.species.toLowerCase().includes("cow")) ||
+      (speciesFilter === "buffalo" && a.species && a.species.toLowerCase().includes("buffalo"));
+
+    const matchesStatus =
+      statusFilter === "all" || a.lactationStatus === statusStatusFilter(a.lactationStatus, statusFilter);
+
+    return matchesSearch && matchesSpecies && matchesStatus;
+  });
+
+  function statusStatusFilter(animalStatus, filterValue) {
+    if (filterValue === "all") return animalStatus;
+    return filterValue;
+  }
+
   const headers = [
     "Tag #",
     "Species",
@@ -81,141 +118,183 @@ export default function AnimalCardOverflow() {
       {/* Top Stat Cards */}
       <AnimalStatsCards />
 
-      {/* Header & Add Button */}
-      <div className="flex flex-wrap items-start justify-between gap-3 mt-1">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={openModal}
-            className="flex items-center gap-1.5 px-4 h-[34px] rounded-full text-white text-[13px] font-semibold cursor-pointer hover:brightness-105 active:scale-95 transition-all"
-            style={{ background: "#009966" }}
-          >
-            <Plus className="w-3.5 h-3.5" /> Add Animal
-          </button>
-        </div>
-      </div>
+      {/* Separate Filter & Search Header Component */}
+      <AnimalFilterHeader
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        animalsCount={animals.length}
+        workersCount={mockWorkers.length}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        speciesFilter={speciesFilter}
+        setSpeciesFilter={setSpeciesFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        onOpenAddModal={openModal}
+      />
 
-      {/* Animals Table */}
-      <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-2xs">
-        <table className="w-full border-collapse text-[13px]">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              {headers.map((h) => (
-                <th
-                  key={h}
-                  className="px-3.5 py-2.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap"
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {animals.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={headers.length}
-                  className="px-4 py-12 text-center text-slate-400 text-sm"
-                >
-                  No animals registered yet. Click{" "}
-                  <strong className="text-emerald-700 font-semibold">
-                    "Add Animal"
-                  </strong>{" "}
-                  to register your first livestock.
-                </td>
+      {/* Main Content Depending on Active Tab */}
+      {activeTab === "registry" ? (
+        /* Animals Table */
+        <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-2xs">
+          <table className="w-full border-collapse text-[13px]">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                {headers.map((h) => (
+                  <th
+                    key={h}
+                    className="px-3.5 py-2.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap"
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
-            ) : (
-              animals.map((a) => (
-                <tr
-                  key={a.id}
-                  onClick={() => setDetailAnimal(a)}
-                  className="border-b border-slate-100 last:border-b-0 hover:bg-emerald-50/30 transition-colors cursor-pointer group"
-                >
-                  {/* Tag # */}
-                  <td className="px-3.5 py-2.5">
-                    <span className="flex items-center gap-1.5 font-mono text-[12px] font-bold text-slate-800 group-hover:text-emerald-700">
-                      <Beef className="w-3.5 h-3.5 text-emerald-600" />
-                      {a.tag}
-                    </span>
-                  </td>
-
-                  {/* Species */}
-                  <td className="px-3.5 py-2.5 text-slate-700 font-medium">
-                    {a.species}
-                  </td>
-
-                  {/* Lactation Status */}
-                  <td className="px-3.5 py-2.5">
-                    <span
-                      className={
-                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-semibold " +
-                        (statusStyle[a.lactationStatus] ||
-                          "bg-slate-100 text-slate-600")
-                      }
-                    >
-                      {a.lactationStatus}
-                    </span>
-                  </td>
-
-                  {/* Acquisition Date */}
-                  <td className="px-3.5 py-2.5 text-slate-600 font-mono text-[12px]">
-                    {a.acquisitionDate}
-                  </td>
-
-                  {/* Morning (L) */}
-                  <td className="px-3.5 py-2.5 text-slate-700 font-semibold">
-                    {a.morningYield}
-                  </td>
-
-                  {/* Evening (L) */}
-                  <td className="px-3.5 py-2.5 text-slate-700 font-semibold">
-                    {a.eveningYield}
-                  </td>
-
-                  {/* Total Daily Yield */}
-                  <td className="px-3.5 py-2.5 font-bold text-emerald-700 text-sm">
-                    {a.totalDailyYield}
-                  </td>
-
-                  {/* Actions */}
-                  <td className="px-3.5 py-2.5">
-                    <div
-                      className="flex items-center gap-1"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {/* View Detail Button */}
-                      <button
-                        onClick={() => setDetailAnimal(a)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all cursor-pointer"
-                        title="View Profile & Chart"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-
-                      {/* Edit Button */}
-                      <button
-                        onClick={() => setEditAnimal(a)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
-                        title="Edit Animal"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-
-                      {/* Delete Button */}
-                      <button
-                        onClick={() => setDeleteTargetAnimal(a)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
-                        title="Delete Animal"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+            </thead>
+            <tbody>
+              {filteredAnimals.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={headers.length}
+                    className="px-4 py-12 text-center text-slate-400 text-sm"
+                  >
+                    No matching animals found. Click{" "}
+                    <strong className="text-emerald-700 font-semibold">
+                      "Add Animal"
+                    </strong>{" "}
+                    to register a new livestock record.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : (
+                filteredAnimals.map((a) => (
+                  <tr
+                    key={a.id}
+                    onClick={() => setDetailAnimal(a)}
+                    className="border-b border-slate-100 last:border-b-0 hover:bg-emerald-50/30 transition-colors cursor-pointer group"
+                  >
+                    {/* Tag # */}
+                    <td className="px-3.5 py-2.5">
+                      <span className="flex items-center gap-1.5 font-mono text-[12px] font-bold text-slate-800 group-hover:text-emerald-700">
+                        <Beef className="w-3.5 h-3.5 text-emerald-600" />
+                        {a.tag}
+                      </span>
+                    </td>
+
+                    {/* Species */}
+                    <td className="px-3.5 py-2.5 text-slate-700 font-medium">
+                      {a.species}
+                    </td>
+
+                    {/* Lactation Status */}
+                    <td className="px-3.5 py-2.5">
+                      <span
+                        className={
+                          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-semibold " +
+                          (statusStyle[a.lactationStatus] ||
+                            "bg-slate-100 text-slate-600")
+                        }
+                      >
+                        {a.lactationStatus}
+                      </span>
+                    </td>
+
+                    {/* Acquisition Date */}
+                    <td className="px-3.5 py-2.5 text-slate-600 font-mono text-[12px]">
+                      {a.acquisitionDate}
+                    </td>
+
+                    {/* Morning (L) */}
+                    <td className="px-3.5 py-2.5 text-slate-700 font-semibold">
+                      {a.morningYield}
+                    </td>
+
+                    {/* Evening (L) */}
+                    <td className="px-3.5 py-2.5 text-slate-700 font-semibold">
+                      {a.eveningYield}
+                    </td>
+
+                    {/* Total Daily Yield */}
+                    <td className="px-3.5 py-2.5 font-bold text-emerald-700 text-sm">
+                      {a.totalDailyYield}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-3.5 py-2.5">
+                      <div
+                        className="flex items-center gap-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* View Detail Button */}
+                        <button
+                          onClick={() => setDetailAnimal(a)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all cursor-pointer"
+                          title="View Profile & Chart"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+
+                        {/* Edit Button */}
+                        <button
+                          onClick={() => setEditAnimal(a)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
+                          title="Edit Animal"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={() => setDeleteTargetAnimal(a)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+                          title="Delete Animal"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        /* Workers & Milkers View */
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-emerald-600" />
+              <h3 className="text-base font-bold text-slate-800">Farm Workers & Milking Staff</h3>
+            </div>
+          </div>
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase">
+              <tr>
+                <th className="px-6 py-3">Staff Name</th>
+                <th className="px-6 py-3">Role</th>
+                <th className="px-6 py-3">Assigned Shift</th>
+                <th className="px-6 py-3">Phone</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {mockWorkers.map((w) => (
+                <tr key={w.id} className="hover:bg-slate-50/60 transition-colors">
+                  <td className="px-6 py-4 font-bold text-slate-800 flex items-center gap-2">
+                    <UserCheck className="w-4 h-4 text-emerald-600" />
+                    {w.name}
+                  </td>
+                  <td className="px-6 py-4 font-semibold text-slate-600">{w.role}</td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                      {w.shift}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-slate-600 font-mono text-xs">{w.phone}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Register Animal Modal */}
       <RegisterAnimalModal
@@ -490,7 +569,6 @@ export default function AnimalCardOverflow() {
                   </span>
                 </div>
               </div>
-
 
               <div>
                 <h3 className="text-sm font-bold text-slate-900 mb-2">
