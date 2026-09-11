@@ -77,7 +77,12 @@ export default function LedgerTable({
               </tr>
             ) : (
               ledgerEntries.map((entry, idx) => (
-                <tr key={entry.id || idx} className="hover:bg-slate-50/60 transition-colors">
+                <tr
+                  key={entry.id || idx}
+                  onClick={() => onViewTransaction && onViewTransaction(entry)}
+                  title="Click to view transaction details"
+                  className="hover:bg-slate-50/60 transition-colors cursor-pointer"
+                >
                   {/* Date */}
                   <td className="px-3.5 py-2 font-mono text-[11px] text-slate-500 whitespace-nowrap">
                     {entry.date}
@@ -111,7 +116,11 @@ export default function LedgerTable({
                   {/* Action */}
                   <td className="px-3.5 py-2 text-center whitespace-nowrap">
                     <button
-                      onClick={() => onViewTransaction && onViewTransaction(entry)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onViewTransaction) onViewTransaction(entry);
+                      }}
                       className="inline-flex items-center gap-1 text-slate-400 hover:text-slate-800 hover:bg-slate-100 px-2 py-0.5 rounded transition text-[11px] font-semibold cursor-pointer"
                     >
                       <Eye className="w-3 h-3" />

@@ -37,9 +37,14 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                 );
 
                 return (
-                  <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
+                  <tr
+                    key={c.id}
+                    onClick={() => onViewCustomer && onViewCustomer(c)}
+                    title={`Click to view details of ${c.name}`}
+                    className="hover:bg-slate-50/70 transition-colors cursor-pointer"
+                  >
                     {/* Customer */}
-                    <td className="px-3 py-2">
+                    <td className="px-3.5 py-2">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs shrink-0">
                           {initial}
@@ -52,7 +57,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                     </td>
 
                     {/* Phone & Online Account */}
-                    <td className="px-3 py-2">
+                    <td className="px-3.5 py-2">
                       <div className="font-semibold text-slate-800 leading-tight">{c.phone}</div>
                       {c.onlineAccount && (
                         <div className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200/60">
@@ -63,7 +68,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                     </td>
 
                     {/* Daily Subscription */}
-                    <td className="px-3 py-2">
+                    <td className="px-3.5 py-2">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium text-[11px] border border-slate-200/60">
                         <Milk className="w-2.5 h-2.5 text-slate-500" />
                         {c.subscription || '2 L Cow Milk'}
@@ -71,12 +76,12 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                     </td>
 
                     {/* Credit Limit */}
-                    <td className="px-3 py-2 font-bold text-slate-800">
+                    <td className="px-3.5 py-2 font-bold text-slate-800">
                       Rs. {(c.creditLimit || 0).toLocaleString()}
                     </td>
 
                     {/* Khata Balance */}
-                    <td className="px-3 py-2">
+                    <td className="px-3.5 py-2">
                       <div className="font-bold text-slate-900 leading-tight">
                         Rs. {(c.khataBalance || 0).toLocaleString()}
                       </div>
@@ -89,7 +94,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                     </td>
 
                     {/* Payment Mode */}
-                    <td className="px-3 py-2">
+                    <td className="px-3.5 py-2">
                       {c.paymentMode === 'Online Payment' ? (
                         <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-semibold border border-emerald-200/60">
                           Online Payment
@@ -102,7 +107,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                     </td>
 
                     {/* Status */}
-                    <td className="px-3 py-2">
+                    <td className="px-3.5 py-2">
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                           c.status === 'Active'
@@ -115,17 +120,25 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                     </td>
 
                     {/* Actions */}
-                    <td className="px-3 py-2 text-right">
+                    <td className="px-3.5 py-2 text-right">
                       <div className="flex items-center justify-end gap-1 text-slate-400">
                         <button
-                          onClick={() => onViewCustomer && onViewCustomer(c)}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onViewCustomer) onViewCustomer(c);
+                          }}
                           title="View Details"
                           className="p-1 hover:text-blue-600 hover:bg-blue-50 rounded transition cursor-pointer"
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => onEditCustomer && onEditCustomer(c)}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onEditCustomer) onEditCustomer(c);
+                          }}
                           title="Edit Customer"
                           className="p-1 hover:text-emerald-600 hover:bg-emerald-50 rounded transition cursor-pointer"
                         >

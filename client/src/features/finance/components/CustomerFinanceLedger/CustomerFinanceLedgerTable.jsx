@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Eye, Search } from 'lucide-react';
+import { Eye, Search, CreditCard, Pencil } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 
-export default function CustomerFinanceLedgerTable({ onViewDetail }) {
+export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayment, onEditCustomer }) {
   const { rawCustomers } = useCustomerContext();
   const { getLedgerForCustomer } = useLedgerContext();
 
@@ -119,15 +119,22 @@ export default function CustomerFinanceLedgerTable({ onViewDetail }) {
                   const initial = customer.name ? customer.name.charAt(0).toUpperCase() : 'C';
 
                   return (
-                    <tr key={customer.id} className="hover:bg-slate-50/70 transition-colors">
+                    <tr
+                      key={customer.id}
+                      onClick={() => onViewDetail && onViewDetail(customer)}
+                      title={`Click to view financial details of ${customer.name}`}
+                      className="hover:bg-emerald-50/40 transition-colors cursor-pointer group select-none"
+                    >
                       {/* Customer */}
                       <td className="px-3.5 py-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs shrink-0">
+                          <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 group-hover:bg-emerald-100 group-hover:text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 transition-colors">
                             {initial}
                           </div>
                           <div>
-                            <div className="font-bold text-slate-800 leading-tight">{customer.name}</div>
+                            <div className="font-bold text-slate-800 group-hover:text-emerald-950 leading-tight transition-colors">
+                              {customer.name}
+                            </div>
                             <div className="text-[10px] font-mono text-slate-400 leading-tight">{custCode}</div>
                           </div>
                         </div>
@@ -181,15 +188,46 @@ export default function CustomerFinanceLedgerTable({ onViewDetail }) {
                         </span>
                       </td>
 
-                      {/* Action */}
+                      {/* Action Buttons: Eye (Details), CreditCard (Payment), Pencil (Edit Profile) */}
                       <td className="px-3.5 py-2 text-right whitespace-nowrap">
-                        <button
-                          onClick={() => onViewDetail(customer)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-[11px] font-semibold transition cursor-pointer border border-slate-200"
-                        >
-                          <Eye className="w-3 h-3 text-slate-500" />
-                          <span>View Detail</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onViewDetail) onViewDetail(customer);
+                            }}
+                            title="View Financial Ledger Details"
+                            className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs group/btn"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onRecordPayment) onRecordPayment(customer);
+                              else if (onViewDetail) onViewDetail(customer);
+                            }}
+                            title="Record Khata Payment (PKR)"
+                            className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-200/80 transition-all cursor-pointer shadow-2xs group/btn"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onEditCustomer) onEditCustomer(customer);
+                            }}
+                            title="Edit Customer Profile"
+                            className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-600 text-amber-600 hover:text-white border border-amber-200/80 transition-all cursor-pointer shadow-2xs group/btn"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

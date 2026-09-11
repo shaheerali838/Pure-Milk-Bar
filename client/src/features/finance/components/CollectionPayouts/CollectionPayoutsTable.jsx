@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, Search } from 'lucide-react';
+import { Eye, Search, CreditCard, Pencil } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 
@@ -16,7 +16,7 @@ function getAllCollections(rawCustomers, ledgers) {
   return rows.sort((a, b) => (a.entry.date < b.entry.date ? 1 : -1));
 }
 
-export default function CollectionPayoutsTable({ onViewReceipt }) {
+export default function CollectionPayoutsTable({ onViewReceipt, onRecordPayment, onEditCustomer }) {
   const { rawCustomers } = useCustomerContext();
   const { ledgers } = useLedgerContext();
 
@@ -101,7 +101,12 @@ export default function CollectionPayoutsTable({ onViewReceipt }) {
                   const paymentType = Number(entry.credit) >= 5000 ? 'Full Payment' : 'Partial Payment';
 
                   return (
-                    <tr key={entry.id || idx} className="hover:bg-slate-50/70 transition-colors">
+                    <tr
+                      key={entry.id || idx}
+                      onClick={() => onViewReceipt && onViewReceipt(customer, entry)}
+                      title={`Click to view payment receipt for ${customer.name}`}
+                      className="hover:bg-blue-50/40 transition-colors cursor-pointer group select-none"
+                    >
                       {/* Date & Ref */}
                       <td className="px-3.5 py-2 whitespace-nowrap">
                         <div className="font-mono text-[11px] text-slate-700 font-semibold">{entry.date}</div>
@@ -110,7 +115,9 @@ export default function CollectionPayoutsTable({ onViewReceipt }) {
 
                       {/* Customer Account */}
                       <td className="px-3.5 py-2 whitespace-nowrap">
-                        <div className="font-bold text-slate-800 leading-tight">{customer.name}</div>
+                        <div className="font-bold text-slate-800 group-hover:text-blue-950 leading-tight transition-colors">
+                          {customer.name}
+                        </div>
                         <div className="text-[10px] text-slate-400 leading-tight">{customer.phone} · {customer.area || 'Model Town'}</div>
                       </td>
 
@@ -149,15 +156,45 @@ export default function CollectionPayoutsTable({ onViewReceipt }) {
                         {entry.notes || entry.description || 'Payment cleared'}
                       </td>
 
-                      {/* Action */}
+                      {/* Action Buttons: Eye (Receipt), CreditCard (Payment), Pencil (Edit Profile) */}
                       <td className="px-3.5 py-2 text-right whitespace-nowrap">
-                        <button
-                          onClick={() => onViewReceipt(customer, entry)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-[11px] font-semibold transition cursor-pointer border border-slate-200"
-                        >
-                          <Eye className="w-3 h-3 text-slate-500" />
-                          <span>View</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onViewReceipt) onViewReceipt(customer, entry);
+                            }}
+                            title="View Payment Receipt"
+                            className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs group/btn"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onRecordPayment) onRecordPayment(customer);
+                            }}
+                            title="Record Khata Payment (PKR)"
+                            className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-200/80 transition-all cursor-pointer shadow-2xs group/btn"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onEditCustomer) onEditCustomer(customer);
+                            }}
+                            title="Edit Customer Profile"
+                            className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-600 text-amber-600 hover:text-white border border-amber-200/80 transition-all cursor-pointer shadow-2xs group/btn"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
