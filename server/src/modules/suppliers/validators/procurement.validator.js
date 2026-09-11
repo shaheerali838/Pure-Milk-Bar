@@ -1,8 +1,3 @@
-/**
- * Layer 5: Joi Validation Schemas for MilkProcurement domain.
- * Defines strict schemas for body, query, and params.
- * Uses .options({ stripUnknown: true }) to prevent mass assignment.
- */
 import Joi from 'joi';
 
 // ─── Shared Constants ───────────────────────────────────────────────────────
