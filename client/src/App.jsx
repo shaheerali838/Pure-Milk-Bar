@@ -1,28 +1,27 @@
-import React, { useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Layout from "./layouts/Layout";
-import Dashboard from "./features/dashboard/pages/Dashboard";
-import Farm from "./features/farm/pages/Farm";
-import FarmDashboard from "./features/farm/pages/FarmDashboard";
-import AnimalsHerd from "./features/farm/pages/AnimalsHerd";
-import MilkingRegister from "./features/farm/pages/MilkingRegister";
-import DahiProcessing from "./features/farm/pages/DahiProcessing";
-import FarmExpenses from "./features/farm/pages/FarmExpenses";
-import FarmPL from "./features/farm/pages/FarmPL";
-import DailySheet from "./features/farm/pages/DailySheet";
-import Supplier from "./features/suppliers/pages/Supplier";
-import CustomerManagement from "./features/customers/pages/CustomerManagement";
-import CustomerKhataLedger from "./features/customers/pages/CustomerKhataLedger";
-import CollectionPayment from "./features/customers/pages/CollectionPayment";
-import ReceivablesAging from "./features/customers/pages/ReceivablesAging";
-import Proccessing from "./features/inventory/pages/Processing";
-import Pos from "./features/pos/pages/Pos";
-import Delivery from "./features/deliveries/pages/Delivery";
-import Products from "./features/inventory/pages/Products";
-import { LoginPage } from "./features/auth";
-import { CustomerProvider } from "./context/CustomerContext";
-import { LedgerProvider } from "./context/LedgerContext";
-import { AnimalProvider } from "./context/AnimalContext";
+import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Layout from './layouts/Layout';
+import Dashboard from './features/dashboard/pages/Dashboard';
+import Farm from './features/farm/pages/Farm';
+import FarmDashboard from './features/farm/pages/FarmDashboard';
+import AnimalsHerd from './features/farm/pages/AnimalsHerd';
+import MilkingRegister from './features/farm/pages/MilkingRegister';
+import DahiProcessing from './features/farm/pages/DahiProcessing';
+import FarmExpenses from './features/farm/pages/FarmExpenses';
+import FarmPL from './features/farm/pages/FarmPL';
+import DailySheet from './features/farm/pages/DailySheet';
+import Supplier from './features/suppliers/pages/Supplier';
+import CustomerManagement from './features/customers/pages/CustomerManagement';
+import CustomerKhataLedger from './features/customers/pages/CustomerKhataLedger';
+import CustomerFinance from './features/finance/pages/CustomerFinance';
+import Proccessing from './features/inventory/pages/Processing';
+import Pos from './features/pos/pages/Pos';
+import Delivery from './features/deliveries/pages/Delivery';
+import Products from './features/inventory/pages/Products';
+import { LoginPage } from './features/auth';
+import { CustomerProvider } from './context/CustomerContext';
+import { LedgerProvider } from './context/LedgerContext';
+import { AnimalProvider } from './context/AnimalContext';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -38,7 +37,7 @@ export default function App() {
                 element={
                   <LoginPage
                     onLogin={(email, password) => {
-                      console.log("Logging in user:", email);
+                      console.log('Logging in user:', email);
                       setIsAuthenticated(true);
                     }}
                   />
@@ -71,11 +70,9 @@ export default function App() {
                   path="customer-khata-ledger"
                   element={<CustomerKhataLedger />}
                 />
-                <Route
-                  path="collection-payment"
-                  element={<CollectionPayment />}
-                />
-                <Route path="receivables" element={<ReceivablesAging />} />
+
+                {/* Finance Routes */}
+                <Route path="finance/customer" element={<CustomerFinance />} />
 
                 {/* Catch-all redirect */}
                 <Route

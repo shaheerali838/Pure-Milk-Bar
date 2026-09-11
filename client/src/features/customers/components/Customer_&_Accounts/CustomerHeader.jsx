@@ -2,14 +2,14 @@ import React from 'react';
 import { Plus } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 
-export default function CustomerHeader({ onOpenAddModal }) {
+export default function CustomerHeader({ onOpenAddModal, title = "Customers & Accounts Management" }) {
   const { allCustomersCount, totalKhataReceivable } = useCustomerContext();
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
       <div>
         <h2 className="text-lg font-bold text-slate-900 tracking-tight leading-tight">
-          Customers &amp; Accounts Management
+          {title}
         </h2>
         <p className="text-[11px] text-slate-500">
           {allCustomersCount} registered customers · Total Khata receivable Rs.{' '}
