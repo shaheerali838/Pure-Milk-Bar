@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, ShieldCheck } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 
-export default function AddCustomerModal({ isOpen, onClose }) {
-  const { addCustomer } = useCustomerContext();
+export default function EditCustomerModal({ customer, isOpen, onClose }) {
+  const { updateCustomer } = useCustomerContext();
   const [formData, setFormData] = useState({
+    id: '',
     name: '',
     area: '',
     phone: '',
@@ -15,52 +16,61 @@ export default function AddCustomerModal({ isOpen, onClose }) {
     address: '',
     secondaryPhone: '',
     referenceName: '',
-    subscription: '2 L Cow Milk',
-    creditLimit: '10000',
-    khataBalance: '0',
+    subscription: '',
+    creditLimit: '',
+    khataBalance: '',
     paymentMode: 'Khata',
+    status: 'Active',
   });
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (customer) {
+      setFormData({
+        id: customer.id,
+        name: customer.name || '',
+        area: customer.area || '',
+        phone: customer.phone || '',
+        onlineAccount: customer.onlineAccount || customer.phone || '',
+        cnicNumber: customer.cnicNumber || '',
+        idType: customer.idType || 'CNIC',
+        verificationStatus: customer.verificationStatus || 'Verified',
+        address: customer.address || '',
+        secondaryPhone: customer.secondaryPhone || '',
+        referenceName: customer.referenceName || '',
+        subscription: customer.subscription || '2 L Cow Milk',
+        creditLimit: customer.creditLimit !== undefined ? String(customer.creditLimit) : '10000',
+        khataBalance: customer.khataBalance !== undefined ? String(customer.khataBalance) : '0',
+        paymentMode: customer.paymentMode || 'Khata',
+        status: customer.status || 'Active',
+      });
+    }
+  }, [customer]);
+
+  if (!isOpen || !customer) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name || !formData.phone) return;
 
-    addCustomer({
+    updateCustomer({
+      ...customer,
       name: formData.name,
-      area: formData.area || 'Model Town',
+      area: formData.area,
       phone: formData.phone,
-      onlineAccount: formData.onlineAccount || formData.phone,
-      cnicNumber: formData.cnicNumber || '',
+      onlineAccount: formData.onlineAccount,
+      cnicNumber: formData.cnicNumber,
       idType: formData.idType,
       verificationStatus: formData.verificationStatus,
-      address: formData.address || '',
-      secondaryPhone: formData.secondaryPhone || '',
-      referenceName: formData.referenceName || '',
+      address: formData.address,
+      secondaryPhone: formData.secondaryPhone,
+      referenceName: formData.referenceName,
       subscription: formData.subscription,
-      creditLimit: Number(formData.creditLimit) || 10000,
+      creditLimit: Number(formData.creditLimit) || 0,
       khataBalance: Number(formData.khataBalance) || 0,
       paymentMode: formData.paymentMode,
-      status: 'Active',
+      status: formData.status,
     });
 
-    setFormData({
-      name: '',
-      area: '',
-      phone: '',
-      onlineAccount: '',
-      cnicNumber: '',
-      idType: 'CNIC',
-      verificationStatus: 'Verified',
-      address: '',
-      secondaryPhone: '',
-      referenceName: '',
-      subscription: '2 L Cow Milk',
-      creditLimit: '10000',
-      khataBalance: '0',
-      paymentMode: 'Khata',
-    });
     onClose();
   };
 
@@ -69,12 +79,12 @@ export default function AddCustomerModal({ isOpen, onClose }) {
       <div className="bg-white w-full max-w-lg rounded-xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-4">
         <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-2">
-            <div className="p-1 rounded-md bg-emerald-100 text-emerald-700">
+            <div className="p-1 rounded-md bg-blue-100 text-blue-700">
               <ShieldCheck className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-slate-800">Add New Customer</h3>
-              <p className="text-[10px] text-slate-400 leading-tight">Customer profile &amp; verification</p>
+              <h3 className="text-xs font-bold text-slate-800">Edit Customer Details</h3>
+              <p className="text-[10px] text-slate-400 leading-tight">Update profile &amp; parameters for {customer.name}</p>
             </div>
           </div>
           <button
@@ -86,7 +96,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-3.5 space-y-2.5 text-xs max-h-[82vh] overflow-y-auto">
-          {/* Section 1: Customer Info */}
+          {/* Basic Details */}
           <div className="space-y-2">
             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Basic Details
@@ -99,7 +109,6 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Ali Hassan"
                   className="w-full px-2.5 py-1 border border-slate-200 rounded-md focus:outline-none focus:border-emerald-500 text-slate-800 text-xs"
                 />
               </div>
@@ -110,7 +119,6 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                   required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="0300-1111111"
                   className="w-full px-2.5 py-1 border border-slate-200 rounded-md focus:outline-none focus:border-emerald-500 text-slate-800 text-xs"
                 />
               </div>
@@ -119,25 +127,23 @@ export default function AddCustomerModal({ isOpen, onClose }) {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">
-                  Online Payment Account <span className="text-slate-400 font-normal">(Opt)</span>
+                  Online Account <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <input
                   type="text"
                   value={formData.onlineAccount}
                   onChange={(e) => setFormData({ ...formData, onlineAccount: e.target.value })}
-                  placeholder="e.g. 0300-1111111"
                   className="w-full px-2.5 py-1 border border-slate-200 rounded-md focus:outline-none focus:border-emerald-500 text-slate-800 text-xs"
                 />
               </div>
               <div>
                 <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">
-                  Secondary / Emergency Phone <span className="text-slate-400 font-normal">(Opt)</span>
+                  Secondary Phone <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <input
                   type="text"
                   value={formData.secondaryPhone}
                   onChange={(e) => setFormData({ ...formData, secondaryPhone: e.target.value })}
-                  placeholder="0321-7654321"
                   className="w-full px-2.5 py-1 border border-slate-200 rounded-md focus:outline-none focus:border-emerald-500 text-slate-800 text-xs"
                 />
               </div>
@@ -146,21 +152,20 @@ export default function AddCustomerModal({ isOpen, onClose }) {
 
           <hr className="border-slate-100" />
 
-          {/* Section 2: Verification Details */}
+          {/* Verification Details */}
           <div className="space-y-2">
-            <h4 className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3" /> Verification Details
+            <h4 className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3" /> Verification Parameters
             </h4>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">
-                  CNIC No. <span className="text-slate-400 font-normal">(Optional)</span>
+                  CNIC / ID Number <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <input
                   type="text"
                   value={formData.cnicNumber}
                   onChange={(e) => setFormData({ ...formData, cnicNumber: e.target.value })}
-                  placeholder="35202-1234567-1"
                   className="w-full px-2.5 py-1 border border-slate-200 rounded-md focus:outline-none focus:border-emerald-500 text-slate-800 text-xs"
                 />
               </div>
@@ -194,13 +199,12 @@ export default function AddCustomerModal({ isOpen, onClose }) {
               </div>
               <div>
                 <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">
-                  Guarantor / Reference <span className="text-slate-400 font-normal">(Opt)</span>
+                  Guarantor / Reference <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <input
                   type="text"
                   value={formData.referenceName}
                   onChange={(e) => setFormData({ ...formData, referenceName: e.target.value })}
-                  placeholder="Reference person name"
                   className="w-full px-2.5 py-1 border border-slate-200 rounded-md focus:outline-none focus:border-emerald-500 text-slate-800 text-xs"
                 />
               </div>
@@ -209,7 +213,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
 
           <hr className="border-slate-100" />
 
-          {/* Section 3: Address & Subscription */}
+          {/* Address & Subscription */}
           <div className="space-y-2">
             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Address &amp; Subscription
@@ -221,7 +225,6 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                   type="text"
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  placeholder="e.g. Model Town"
                   className="w-full px-2.5 py-1 border border-slate-200 rounded-md focus:outline-none focus:border-emerald-500 text-slate-800 text-xs"
                 />
               </div>
@@ -231,7 +234,6 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                   type="text"
                   value={formData.subscription}
                   onChange={(e) => setFormData({ ...formData, subscription: e.target.value })}
-                  placeholder="e.g. 2 L Cow Milk"
                   className="w-full px-2.5 py-1 border border-slate-200 rounded-md focus:outline-none focus:border-emerald-500 text-slate-800 text-xs"
                 />
               </div>
@@ -243,7 +245,6 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                 type="text"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="e.g. House #45, Block C"
                 className="w-full px-2.5 py-1 border border-slate-200 rounded-md focus:outline-none focus:border-emerald-500 text-slate-800 text-xs"
               />
             </div>
@@ -251,12 +252,12 @@ export default function AddCustomerModal({ isOpen, onClose }) {
 
           <hr className="border-slate-100" />
 
-          {/* Section 4: Finance & Limits */}
+          {/* Finance & Status */}
           <div className="space-y-2">
             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Finance &amp; Khata Limits
+              Finance &amp; Status
             </h4>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Credit Limit (Rs.)</label>
                 <input
@@ -267,7 +268,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Initial Khata (Rs.)</label>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Khata Balance (Rs.)</label>
                 <input
                   type="number"
                   value={formData.khataBalance}
@@ -275,6 +276,9 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                   className="w-full px-2 py-1 border border-slate-200 rounded-md focus:outline-none focus:border-emerald-500 text-slate-800 text-xs"
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Payment Mode</label>
                 <select
@@ -284,6 +288,18 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                 >
                   <option value="Khata">Khata</option>
                   <option value="Online Payment">Online Payment</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Account Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="w-full px-2 py-1 border border-slate-200 rounded-md focus:outline-none focus:border-emerald-500 text-slate-800 text-xs"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
                 </select>
               </div>
             </div>
@@ -299,9 +315,9 @@ export default function AddCustomerModal({ isOpen, onClose }) {
             </button>
             <button
               type="submit"
-              className="px-4 py-1 bg-[#00a86b] hover:bg-[#00925d] text-white rounded-md font-bold transition shadow-2xs cursor-pointer text-xs"
+              className="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-bold transition shadow-2xs cursor-pointer text-xs"
             >
-              Save Customer
+              Update Profile
             </button>
           </div>
         </form>

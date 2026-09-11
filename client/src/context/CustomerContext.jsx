@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const CustomerContext = createContext();
-
 const STORAGE_KEY = 'pure_milk_bar_customers';
 
 export function CustomerProvider({ children }) {
@@ -27,15 +26,28 @@ export function CustomerProvider({ children }) {
   }, [customers]);
 
   const addCustomer = (newCust) => {
+    const customerId = Date.now();
+    const initialBalance = Number(newCust.khataBalance) || 0;
+    const today = new Date().toISOString().split('T')[0];
+
     const customerToAdd = {
-      id: Date.now(),
+      id: customerId,
       status: 'Active',
-      paymentMode: 'Khata',
+      paymentMode: newCust.paymentMode === 'EasyPaisa' || newCust.paymentMode === 'JazzCash' ? 'Online Payment' : newCust.paymentMode || 'Khata',
       creditLimit: 10000,
-      khataBalance: 0,
+      khataBalance: initialBalance,
+      openingBalance: initialBalance,
+      createdAt: today,
       ...newCust,
     };
+
     setCustomers((prev) => [customerToAdd, ...prev]);
+  };
+
+  const updateCustomer = (updatedCust) => {
+    setCustomers((prev) =>
+      prev.map((c) => (c.id === updatedCust.id ? { ...c, ...updatedCust } : c))
+    );
   };
 
   const totalKhataReceivable = customers.reduce((acc, c) => acc + (Number(c.khataBalance) || 0), 0);
@@ -59,6 +71,7 @@ export function CustomerProvider({ children }) {
     <CustomerContext.Provider
       value={{
         customers: filteredCustomers,
+        rawCustomers: customers,
         allCustomersCount: customers.length,
         activeAccountsCount,
         withKhataBalCount,
@@ -68,6 +81,7 @@ export function CustomerProvider({ children }) {
         statusFilter,
         setStatusFilter,
         addCustomer,
+        updateCustomer,
       }}
     >
       {children}
