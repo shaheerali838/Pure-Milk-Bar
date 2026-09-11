@@ -126,6 +126,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
                 }
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
               >
+                <option value="Milking">Milking</option>
                 <option value="Dry/Gestating">Dry/Gestating</option>
                 <option value="Calf">Calf</option>
               </select>
