@@ -1,16 +1,3 @@
-/**
- * Layer 4: Farm Routes — Express Router with Middleware Binding
- *
- * Declares RESTful endpoints for the Farm module:
- *   - /api/farm/animals      → Animal CRUD + stats
- *   - /api/farm/milking-logs → MilkingYieldLog CRUD + daily summary
- *
- * Middleware binding order (per architecture spec):
- *   authenticate → authorize([...roles]) → validate(schema) → controllerMethod
- *
- * NOTE: authenticate & authorize middlewares are commented out for initial
- * Thunder Client testing. Uncomment when the auth module is wired up.
- */
 import { Router } from 'express';
 import validate from '../../../middlewares/validate.js';
 

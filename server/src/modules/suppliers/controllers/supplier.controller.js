@@ -1,15 +1,3 @@
-/**
- * Layer 1: Supplier Controller — HTTP Handling & Payload Mapping
- *
- * RULES:
- * - MUST only accept HTTP requests, delegate to service, return standardized JSON.
- * - MUST NEVER execute direct database queries (Model.find(), Model.create()).
- * - MUST NEVER contain business math or domain algorithms.
- * - MUST catch unhandled errors by calling next(error).
- *
- * NOTE: Express v5 makes req.query/req.params read-only. After Zod validation,
- * parsed query/params live in req._validated.query / req._validated.params.
- */
 import supplierService from '../services/supplier.service.js';
 import { sendSuccess } from '../../../utils/apiResponse.js';
 

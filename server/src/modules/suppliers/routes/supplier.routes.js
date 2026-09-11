@@ -1,16 +1,3 @@
-/**
- * Layer 4: Supplier Routes — Express Router with Middleware Binding
- *
- * Declares RESTful endpoints for the Suppliers module:
- *   - /api/v1/suppliers             → Supplier CRUD + stats
- *   - /api/v1/suppliers/procurements → MilkProcurement CRUD + daily summary
- *
- * Middleware binding order (per architecture spec):
- *   authenticate → authorize([...roles]) → validate(schema) → controllerMethod
- *
- * NOTE: authenticate & authorize middlewares are commented out for initial
- * Thunder Client testing. Uncomment when the auth module is wired up.
- */
 import { Router } from 'express';
 import validate from '../../../middlewares/validate.js';
 
