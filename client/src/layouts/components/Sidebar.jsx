@@ -1,8 +1,9 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Milk, Users, BookOpen, CreditCard, Clock, LayoutGrid, Tractor, Truck } from 'lucide-react';
+import { Milk, Users, BookOpen, LayoutGrid, Tractor, Truck } from 'lucide-react';
 import accountKhataLinks from '../../components/common/Accounts_& _Khata_ledge';
 import { saleInformation } from '../../components/common/SaleAndProducation/saleInformation';
+import financeLinks from '../../components/common/Finance_links';
 
 export default function Sidebar() {
   const links = [
@@ -47,10 +48,6 @@ export default function Sidebar() {
         return Users;
       case 'customer khata ledger':
         return BookOpen;
-      case 'collection & payout ':
-        return CreditCard;
-      case 'Receivables aging':
-        return Clock;
       default:
         return Users;
     }
@@ -134,7 +131,8 @@ export default function Sidebar() {
             })}
           </nav>
         </div>
-         {/* Section 3: Accounts & Khata Ledger (Shown First) */}
+
+        {/* Section 3: Accounts & Khata Ledger */}
         <div>
           <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
             ACCOUNTS &amp; KHATA LEDGER
@@ -142,6 +140,33 @@ export default function Sidebar() {
           <nav className="space-y-0.5">
             {accountKhataLinks.map((link) => {
               const Icon = getLinkIcon(link.id);
+              return (
+                <NavLink
+                  key={link.id}
+                  to={link.path}
+                  className={({ isActive }) =>
+                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${isActive
+                      ? 'bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`
+                  }
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{link.name}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Section 4: Finance */}
+        <div>
+          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+            FINANCE
+          </div>
+          <nav className="space-y-0.5">
+            {financeLinks.map((link) => {
+              const Icon = link.icon;
               return (
                 <NavLink
                   key={link.id}

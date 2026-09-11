@@ -1,0 +1,243 @@
+import { useState } from 'react';
+import { Eye, Search } from 'lucide-react';
+import { useCustomerContext } from '../../../../context/CustomerContext';
+import { useLedgerContext } from '../../../../context/LedgerContext';
+
+function getAgingBuckets(entries, customerKhataBalance) {
+  const charges = (entries || [])
+    .filter((e) => Number(e.debit) > 0 || e.type === 'OPENING')
+    .map((e) => ({
+      date: e.date,
+      remaining: Number(e.debit) || Number(e.runningBalance) || 0,
+    }));
+
+  let payments = (entries || []).reduce((sum, e) => sum + (Number(e.credit) || 0), 0);
+
+  for (const charge of charges) {
+    if (payments <= 0) break;
+    const applied = Math.min(charge.remaining, payments);
+    charge.remaining -= applied;
+    payments -= applied;
+  }
+
+  const buckets = { d0_30: 0, d31_60: 0, d61_90: 0, d90plus: 0 };
+  const today = new Date();
+
+  charges.forEach((charge) => {
+    if (charge.remaining <= 0) return;
+    const ageDays = Math.floor((today - new Date(charge.date)) / (1000 * 60 * 60 * 24));
+    if (ageDays <= 30) buckets.d0_30 += charge.remaining;
+    else if (ageDays <= 60) buckets.d31_60 += charge.remaining;
+    else if (ageDays <= 90) buckets.d61_90 += charge.remaining;
+    else buckets.d90plus += charge.remaining;
+  });
+
+  const totalInBuckets = buckets.d0_30 + buckets.d31_60 + buckets.d61_90 + buckets.d90plus;
+  const balance = Number(customerKhataBalance || 0);
+  if (totalInBuckets !== balance && balance > 0) {
+    if (totalInBuckets === 0) {
+      buckets.d0_30 = balance;
+    } else {
+      const diff = balance - totalInBuckets;
+      buckets.d0_30 = Math.max(0, buckets.d0_30 + diff);
+    }
+  }
+
+  return buckets;
+}
+
+export default function ReceivablesAgingTable({ onViewDetail }) {
+  const { rawCustomers } = useCustomerContext();
+  const { getLedgerForCustomer } = useLedgerContext();
+
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Only customers with outstanding balance > 0
+  const customersWithDues = (rawCustomers || [])
+    .filter((c) => Number(c.khataBalance || 0) > 0)
+    .map((customer) => {
+      const entries = getLedgerForCustomer(customer.id) || [];
+      const buckets = getAgingBuckets(entries, customer.khataBalance);
+      const total = Number(customer.khataBalance || 0);
+
+      let risk = 'Low';
+      if (buckets.d90plus > 0) risk = 'High';
+      else if (buckets.d61_90 > 0) risk = 'Medium';
+
+      return {
+        customer,
+        buckets,
+        total,
+        risk,
+      };
+    });
+
+  const filteredRows = customersWithDues.filter(({ customer }) => {
+    const term = searchQuery.toLowerCase();
+    return (
+      (customer.name && customer.name.toLowerCase().includes(term)) ||
+      (customer.phone && customer.phone.includes(term)) ||
+      (customer.area && customer.area.toLowerCase().includes(term))
+    );
+  });
+
+  // Totals for the table footer
+  const sum0_30 = filteredRows.reduce((acc, r) => acc + r.buckets.d0_30, 0);
+  const sum31_60 = filteredRows.reduce((acc, r) => acc + r.buckets.d31_60, 0);
+  const sum61_90 = filteredRows.reduce((acc, r) => acc + r.buckets.d61_90, 0);
+  const sum90plus = filteredRows.reduce((acc, r) => acc + r.buckets.d90plus, 0);
+  const sumTotal = filteredRows.reduce((acc, r) => acc + r.total, 0);
+
+  return (
+    <div className="space-y-2.5">
+      {/* Search Bar & Header */}
+      <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-2">
+        <div className="text-xs font-bold text-slate-700">
+          <span>{customersWithDues.length} customers with outstanding balance</span>
+        </div>
+
+        <div className="relative w-72">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search by name, phone, area..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-md text-xs focus:outline-none focus:border-emerald-500 placeholder:text-slate-400"
+          />
+        </div>
+      </div>
+
+      {/* Main Aging Table */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+        <div className="overflow-x-auto max-h-[calc(100vh-320px)]">
+          <table className="w-full text-left border-collapse min-w-[920px]">
+            <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-100">
+              <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <th className="px-3.5 py-2">CUSTOMER</th>
+                <th className="px-3.5 py-2 text-right">0–30D</th>
+                <th className="px-3.5 py-2 text-right">31–60D</th>
+                <th className="px-3.5 py-2 text-right">61–90D</th>
+                <th className="px-3.5 py-2 text-right">90+D</th>
+                <th className="px-3.5 py-2 text-right">TOTAL</th>
+                <th className="px-3.5 py-2 text-center w-36">DISTRIBUTION</th>
+                <th className="px-3.5 py-2 text-center">RISK</th>
+                <th className="px-3.5 py-2 text-right">ACTION</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+              {filteredRows.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-3.5 py-8 text-center text-slate-400 font-medium">
+                    No customers with outstanding balances found.
+                  </td>
+                </tr>
+              ) : (
+                filteredRows.map(({ customer, buckets, total, risk }) => {
+                  const initial = customer.name ? customer.name.charAt(0).toUpperCase() : 'C';
+
+                  const p0_30 = total > 0 ? (buckets.d0_30 / total) * 100 : 0;
+                  const p31_60 = total > 0 ? (buckets.d31_60 / total) * 100 : 0;
+                  const p61_90 = total > 0 ? (buckets.d61_90 / total) * 100 : 0;
+                  const p90plus = total > 0 ? (buckets.d90plus / total) * 100 : 0;
+
+                  return (
+                    <tr key={customer.id} className="hover:bg-slate-50/70 transition-colors">
+                      {/* Customer */}
+                      <td className="px-3.5 py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs shrink-0">
+                            {initial}
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-800 leading-tight">{customer.name}</div>
+                            <div className="text-[10px] text-slate-400 leading-tight">{customer.phone} · {customer.area || 'Model Town'}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* 0-30D */}
+                      <td className="px-3.5 py-2 text-right font-medium text-slate-700 whitespace-nowrap">
+                        {buckets.d0_30 > 0 ? `Rs. ${buckets.d0_30.toLocaleString()}` : '—'}
+                      </td>
+
+                      {/* 31-60D */}
+                      <td className="px-3.5 py-2 text-right font-medium text-slate-700 whitespace-nowrap">
+                        {buckets.d31_60 > 0 ? `Rs. ${buckets.d31_60.toLocaleString()}` : '—'}
+                      </td>
+
+                      {/* 61-90D */}
+                      <td className="px-3.5 py-2 text-right font-medium text-slate-700 whitespace-nowrap">
+                        {buckets.d61_90 > 0 ? `Rs. ${buckets.d61_90.toLocaleString()}` : '—'}
+                      </td>
+
+                      {/* 90+D */}
+                      <td className="px-3.5 py-2 text-right font-bold text-rose-600 whitespace-nowrap">
+                        {buckets.d90plus > 0 ? `Rs. ${buckets.d90plus.toLocaleString()}` : '—'}
+                      </td>
+
+                      {/* Total */}
+                      <td className="px-3.5 py-2 text-right font-black text-slate-900 whitespace-nowrap">
+                        Rs. {total.toLocaleString()}
+                      </td>
+
+                      {/* Distribution Stacked Bar */}
+                      <td className="px-3.5 py-2">
+                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden flex">
+                          {p0_30 > 0 && <div style={{ width: `${p0_30}%` }} className="bg-blue-500 h-full" />}
+                          {p31_60 > 0 && <div style={{ width: `${p31_60}%` }} className="bg-amber-500 h-full" />}
+                          {p61_90 > 0 && <div style={{ width: `${p61_90}%` }} className="bg-orange-500 h-full" />}
+                          {p90plus > 0 && <div style={{ width: `${p90plus}%` }} className="bg-rose-500 h-full" />}
+                        </div>
+                      </td>
+
+                      {/* Risk Badge */}
+                      <td className="px-3.5 py-2 text-center whitespace-nowrap">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                            risk === 'High'
+                              ? 'bg-rose-50 text-rose-700 border-rose-200/60'
+                              : risk === 'Medium'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200/60'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
+                          }`}
+                        >
+                          {risk}
+                        </span>
+                      </td>
+
+                      {/* Action */}
+                      <td className="px-3.5 py-2 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => onViewDetail(customer, buckets)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-[11px] font-semibold transition cursor-pointer border border-slate-200"
+                        >
+                          <Eye className="w-3 h-3 text-slate-500" />
+                          <span>View</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+            {/* Totals Row */}
+            {filteredRows.length > 0 && (
+              <tfoot className="border-t-2 border-slate-200 bg-slate-50/90 font-bold text-xs text-slate-900">
+                <tr>
+                  <td className="px-3.5 py-2 uppercase font-black text-slate-800">Totals</td>
+                  <td className="px-3.5 py-2 text-right">Rs. {sum0_30.toLocaleString()}</td>
+                  <td className="px-3.5 py-2 text-right">Rs. {sum31_60.toLocaleString()}</td>
+                  <td className="px-3.5 py-2 text-right">Rs. {sum61_90.toLocaleString()}</td>
+                  <td className="px-3.5 py-2 text-right text-rose-600">Rs. {sum90plus.toLocaleString()}</td>
+                  <td className="px-3.5 py-2 text-right font-black">Rs. {sumTotal.toLocaleString()}</td>
+                  <td colSpan={3}></td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
