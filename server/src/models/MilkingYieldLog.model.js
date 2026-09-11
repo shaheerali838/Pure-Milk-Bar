@@ -52,6 +52,12 @@ const milkingYieldLogSchema = new Schema(
   },
   {
     timestamps: { createdAt: true, updatedAt: false },
+    toJSON: {
+      transform: (doc, ret) => {
+        delete ret.__v;
+        return ret;
+      },
+    },
   }
 );
 

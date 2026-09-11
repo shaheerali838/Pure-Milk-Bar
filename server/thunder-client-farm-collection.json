@@ -1,0 +1,264 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "Dairy Milk Farm — Farm Module",
+  "dateExported": "2026-09-09T09:51:00.000Z",
+  "version": "1.1",
+  "folders": [
+    {
+      "_id": "folder-animals",
+      "name": "🐄 Animals",
+      "containerId": "",
+      "created": "2026-09-09T09:51:00.000Z",
+      "sortNum": 10000
+    },
+    {
+      "_id": "folder-milking-logs",
+      "name": "🥛 Milking Yield Logs",
+      "containerId": "",
+      "created": "2026-09-09T09:51:00.000Z",
+      "sortNum": 20000
+    }
+  ],
+  "requests": [
+    {
+      "_id": "req-create-animal",
+      "colId": "",
+      "containerId": "folder-animals",
+      "name": "1. Create Animal (Buffalo)",
+      "url": "http://localhost:5000/api/farm/animals",
+      "method": "POST",
+      "sortNum": 10000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"tagNumber\": \"BUF-001\",\n  \"type\": \"BUFFALO\",\n  \"breed\": \"Nili-Ravi\",\n  \"name\": \"Kali\",\n  \"dob\": \"2022-03-15T00:00:00.000Z\",\n  \"lactationStage\": \"EARLY\",\n  \"lactationCycle\": 2,\n  \"dailyAvgYield\": 0,\n  \"healthStatus\": \"HEALTHY\",\n  \"notes\": \"High yield buffalo, purchased from Sahiwal mandi\"\n}"
+      }
+    },
+    {
+      "_id": "req-create-animal-cow",
+      "colId": "",
+      "containerId": "folder-animals",
+      "name": "2. Create Animal (Cow)",
+      "url": "http://localhost:5000/api/farm/animals",
+      "method": "POST",
+      "sortNum": 11000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"tagNumber\": \"COW-001\",\n  \"type\": \"COW\",\n  \"breed\": \"Sahiwal\",\n  \"name\": \"Gulabi\",\n  \"dob\": \"2023-01-10T00:00:00.000Z\",\n  \"lactationStage\": \"MID\",\n  \"lactationCycle\": 1,\n  \"healthStatus\": \"HEALTHY\",\n  \"notes\": \"First lactation Sahiwal cow\"\n}"
+      }
+    },
+    {
+      "_id": "req-get-all-animals",
+      "colId": "",
+      "containerId": "folder-animals",
+      "name": "3. Get All Animals",
+      "url": "http://localhost:5000/api/farm/animals?page=1&limit=20",
+      "method": "GET",
+      "sortNum": 12000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z"
+    },
+    {
+      "_id": "req-get-animals-filtered",
+      "colId": "",
+      "containerId": "folder-animals",
+      "name": "4. Get Animals (Filtered)",
+      "url": "http://localhost:5000/api/farm/animals?page=1&limit=10&type=BUFFALO&healthStatus=HEALTHY&isActive=true",
+      "method": "GET",
+      "sortNum": 13000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z"
+    },
+    {
+      "_id": "req-search-animals",
+      "colId": "",
+      "containerId": "folder-animals",
+      "name": "5. Search Animals",
+      "url": "http://localhost:5000/api/farm/animals?search=BUF&page=1&limit=10",
+      "method": "GET",
+      "sortNum": 14000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z"
+    },
+    {
+      "_id": "req-get-animal-stats",
+      "colId": "",
+      "containerId": "folder-animals",
+      "name": "6. Get Animal Stats",
+      "url": "http://localhost:5000/api/farm/animals/stats",
+      "method": "GET",
+      "sortNum": 15000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z"
+    },
+    {
+      "_id": "req-get-animal-by-id",
+      "colId": "",
+      "containerId": "folder-animals",
+      "name": "7. Get Animal By ID",
+      "url": "http://localhost:5000/api/farm/animals/PASTE_ANIMAL_ID_HERE",
+      "method": "GET",
+      "sortNum": 16000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z"
+    },
+    {
+      "_id": "req-update-animal",
+      "colId": "",
+      "containerId": "folder-animals",
+      "name": "8. Update Animal",
+      "url": "http://localhost:5000/api/farm/animals/PASTE_ANIMAL_ID_HERE",
+      "method": "PATCH",
+      "sortNum": 17000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Kali Rani\",\n  \"healthStatus\": \"UNDER_TREATMENT\",\n  \"lactationStage\": \"MID\",\n  \"notes\": \"Mild fever observed, vet consulted\"\n}"
+      }
+    },
+    {
+      "_id": "req-delete-animal",
+      "colId": "",
+      "containerId": "folder-animals",
+      "name": "9. Delete Animal (Soft)",
+      "url": "http://localhost:5000/api/farm/animals/PASTE_ANIMAL_ID_HERE",
+      "method": "DELETE",
+      "sortNum": 18000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z"
+    },
+    {
+      "_id": "req-create-milking-log",
+      "colId": "",
+      "containerId": "folder-milking-logs",
+      "name": "1. Create Milking Log (Morning)",
+      "url": "http://localhost:5000/api/farm/milking-logs",
+      "method": "POST",
+      "sortNum": 20000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"animalId\": \"PASTE_ANIMAL_ID_HERE\",\n  \"date\": \"2026-09-09T05:30:00.000Z\",\n  \"shift\": \"MORNING\",\n  \"yieldLiters\": 8.5,\n  \"fatPercentage\": 6.2,\n  \"snfPercentage\": 8.9,\n  \"operatorId\": \"000000000000000000000001\",\n  \"notes\": \"Normal morning milking\"\n}"
+      }
+    },
+    {
+      "_id": "req-create-milking-log-evening",
+      "colId": "",
+      "containerId": "folder-milking-logs",
+      "name": "2. Create Milking Log (Evening)",
+      "url": "http://localhost:5000/api/farm/milking-logs",
+      "method": "POST",
+      "sortNum": 21000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"animalId\": \"PASTE_ANIMAL_ID_HERE\",\n  \"date\": \"2026-09-09T17:00:00.000Z\",\n  \"shift\": \"EVENING\",\n  \"yieldLiters\": 7.2,\n  \"fatPercentage\": 6.5,\n  \"snfPercentage\": 9.1,\n  \"operatorId\": \"000000000000000000000001\",\n  \"notes\": \"Evening shift milking\"\n}"
+      }
+    },
+    {
+      "_id": "req-get-all-milking-logs",
+      "colId": "",
+      "containerId": "folder-milking-logs",
+      "name": "3. Get All Milking Logs",
+      "url": "http://localhost:5000/api/farm/milking-logs?page=1&limit=20",
+      "method": "GET",
+      "sortNum": 22000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z"
+    },
+    {
+      "_id": "req-get-milking-logs-filtered",
+      "colId": "",
+      "containerId": "folder-milking-logs",
+      "name": "4. Get Milking Logs (Filtered by Date & Shift)",
+      "url": "http://localhost:5000/api/farm/milking-logs?page=1&limit=10&shift=MORNING&startDate=2026-09-01T00:00:00.000Z&endDate=2026-09-09T23:59:59.000Z",
+      "method": "GET",
+      "sortNum": 23000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z"
+    },
+    {
+      "_id": "req-get-milking-logs-by-animal",
+      "colId": "",
+      "containerId": "folder-milking-logs",
+      "name": "5. Get Milking Logs (By Animal)",
+      "url": "http://localhost:5000/api/farm/milking-logs?animalId=PASTE_ANIMAL_ID_HERE&page=1&limit=20",
+      "method": "GET",
+      "sortNum": 24000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z"
+    },
+    {
+      "_id": "req-daily-yield-summary",
+      "colId": "",
+      "containerId": "folder-milking-logs",
+      "name": "6. Daily Yield Summary",
+      "url": "http://localhost:5000/api/farm/milking-logs/daily-summary?date=2026-09-09",
+      "method": "GET",
+      "sortNum": 25000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z"
+    },
+    {
+      "_id": "req-get-milking-log-by-id",
+      "colId": "",
+      "containerId": "folder-milking-logs",
+      "name": "7. Get Milking Log By ID",
+      "url": "http://localhost:5000/api/farm/milking-logs/PASTE_MILKING_LOG_ID_HERE",
+      "method": "GET",
+      "sortNum": 26000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z"
+    },
+    {
+      "_id": "req-update-milking-log",
+      "colId": "",
+      "containerId": "folder-milking-logs",
+      "name": "8. Update Milking Log",
+      "url": "http://localhost:5000/api/farm/milking-logs/PASTE_MILKING_LOG_ID_HERE",
+      "method": "PATCH",
+      "sortNum": 27000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"yieldLiters\": 9.0,\n  \"fatPercentage\": 6.4,\n  \"snfPercentage\": 9.0,\n  \"notes\": \"Updated: higher yield after feed change\"\n}"
+      }
+    },
+    {
+      "_id": "req-delete-milking-log",
+      "colId": "",
+      "containerId": "folder-milking-logs",
+      "name": "9. Delete Milking Log",
+      "url": "http://localhost:5000/api/farm/milking-logs/PASTE_MILKING_LOG_ID_HERE",
+      "method": "DELETE",
+      "sortNum": 28000,
+      "created": "2026-09-09T09:51:00.000Z",
+      "modified": "2026-09-09T09:51:00.000Z"
+    }
+  ]
+}

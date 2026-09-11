@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ChevronRight, Milk, Search, Download, Truck, Bell } from 'lucide-react';
+import { ChevronRight, Milk, Search, Download, Truck, Bell, User } from 'lucide-react';
 
 export default function Navbar() {
   const location = useLocation();
@@ -8,19 +8,37 @@ export default function Navbar() {
 
   const getNavInfo = (pathname) => {
     if (pathname.startsWith('/farm')) {
-      return { operation: 'Farm Operations', page: 'Herd & Cattle' };
+      if (pathname.includes('/animals')) return { operation: 'Farm Operation', page: 'Animals & Herd' };
+      if (pathname.includes('/milking')) return { operation: 'Farm Operation', page: 'Milking Register' };
+      if (pathname.includes('/processing')) return { operation: 'Farm Operation', page: 'Dahi & Processing' };
+      if (pathname.includes('/expenses')) return { operation: 'Farm Operation', page: 'Farm Expenses' };
+      if (pathname.includes('/pl')) return { operation: 'Farm Operation', page: 'Farm P&L' };
+      if (pathname.includes('/dailysheet')) return { operation: 'Farm Operation', page: 'Daily Sheet' };
+      return { operation: 'Farm Operation', page: 'Dashboard' };
     }
     if (pathname.startsWith('/supplier')) {
-      return { operation: 'Supplier Operations', page: 'Farmer Ledger' };
+      return { operation: 'Supplier Sourcing', page: 'Supplier' };
     }
     if (pathname.startsWith('/proccessing')) {
-      return { operation: 'Processing', page: 'Dahi & Milk' };
+      return { operation: 'Dahi Processing', page: 'Processing' };
     }
     if (pathname.startsWith('/pos')) {
-      return { operation: 'Sales Counter', page: 'POS' };
+      return { operation: 'Counting POS', page: 'POS' };
     }
     if (pathname.startsWith('/delivery')) {
-      return { operation: 'Logistics', page: 'Deliveries' };
+      return { operation: 'DoorStep Delivery', page: 'Deliveries' };
+    }
+    if (pathname.startsWith('/customer-khata-ledger')) {
+      return { operation: 'Khata', page: 'Khata Ledger' };
+    }
+    if (pathname.startsWith('/customer')) {
+      return { operation: 'Customer Management', page: 'Customers' };
+    }
+    if (pathname.startsWith('/collection-payment')) {
+      return { operation: 'Collection Payment', page: 'Collections' };
+    }
+    if (pathname.startsWith('/receivables')) {
+      return { operation: 'Receivables Aging', page: 'Receivables' };
     }
     if (pathname.startsWith('/products')) {
       return { operation: 'Catalog', page: 'Products' };
@@ -43,7 +61,6 @@ export default function Navbar() {
 
   return (
     <header className="bg-white border-b border-slate-200/80 px-4 py-2 flex items-center justify-between gap-3 shadow-2xs sticky top-0 z-20">
-      {/* Left: Breadcrumbs */}
       <div className="shrink-0">
         <div className="flex items-center gap-1.5 text-xs">
           <span className="inline-flex items-center gap-1 text-emerald-800 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
@@ -61,23 +78,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Right: Actions, Search, Notifications */}
       <div className="flex items-center gap-2 shrink-0">
-        {/* Search Bar */}
-        <div className="w-52">
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search..."
-              className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-800 rounded-lg pl-7 pr-2.5 py-1 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-100 transition-all placeholder:text-slate-400"
-            />
-          </div>
-        </div>
-
-        {/* Export CSV Button */}
         <button
           type="button"
           onClick={handleExportCSV}
@@ -88,7 +89,6 @@ export default function Navbar() {
           <span>Export</span>
         </button>
 
-        {/* Deliveries Button */}
         <button
           type="button"
           className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-all cursor-pointer"
@@ -98,7 +98,19 @@ export default function Navbar() {
           <span>Deliveries</span>
         </button>
 
-        {/* Notification Bell */}
+        <div className="w-48 sm:w-56">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search..."
+              className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-800 rounded-lg pl-7 pr-2.5 py-1 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-100 transition-all placeholder:text-slate-400"
+            />
+          </div>
+        </div>  
+
         <button
           type="button"
           className="relative p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all cursor-pointer"
@@ -107,6 +119,9 @@ export default function Navbar() {
           <Bell className="w-4 h-4" />
           <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
         </button>
+
+        {/* User Profile Badge */}
+        
       </div>
     </header>
   );
