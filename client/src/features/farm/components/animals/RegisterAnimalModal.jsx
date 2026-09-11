@@ -1,47 +1,41 @@
 import React, { useState } from "react";
 import { X, Beef } from "lucide-react";
 
+const initialFormState = {
+  tag: "",
+  name: "",
+  species: "Cow (Sahiwal)",
+  lactationStatus: "Milking",
+  acquisitionDate: new Date().toISOString().split("T")[0],
+  purchasePrice: "",
+  expectedYield: "",
+  morningYield: "",
+  eveningYield: "",
+};
+
 export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
-  const [formData, setFormData] = useState({
-    tag: "",
-    name: "",
-    species: "Cow (Sahiwal)",
-    lactationStatus: "Milking",
-    acquisitionDate: new Date().toISOString().split("T")[0],
-    purchasePrice: "",
-    expectedYield: "",
-    morningYield: "",
-    eveningYield: "",
-    healthStatus: "Healthy & Vaccinated",
-  });
+  const [formData, setFormData] = useState(initialFormState);
 
   if (!isOpen) return null;
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (onRegister) {
       onRegister(formData);
     }
-    // Reset form fields
-    setFormData({
-      tag: "",
-      name: "",
-      species: "Cow (Sahiwal)",
-      lactationStatus: "Milking",
-      acquisitionDate: new Date().toISOString().split("T")[0],
-      purchasePrice: "",
-      expectedYield: "",
-      morningYield: "",
-      eveningYield: "",
-      healthStatus: "Healthy & Vaccinated",
-    });
+    setFormData(initialFormState);
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
+        {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
@@ -60,9 +54,9 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
           </button>
         </div>
 
-        {/* Form */}
+        {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-          {/* Row 1: Tag # (Optional) & Animal Name (Optional) */}
+          {/* Tag & Name */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -70,12 +64,11 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               </label>
               <input
                 type="text"
-                placeholder="Auto-generated if blank (e.g. COW-1050)"
+                name="tag"
+                placeholder="Auto-generated if blank"
                 value={formData.tag}
-                onChange={(e) =>
-                  setFormData({ ...formData, tag: e.target.value })
-                }
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                onChange={handleChange}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
               />
             </div>
 
@@ -85,28 +78,26 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               </label>
               <input
                 type="text"
-                placeholder="e.g. Sahiwal Queen / Bella"
+                name="name"
+                placeholder="e.g. Sahiwal Queen"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                onChange={handleChange}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
               />
             </div>
           </div>
 
-          {/* Row 2: Species & Lactation Status */}
+          {/* Species & Lactation Status */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Species
               </label>
               <select
+                name="species"
                 value={formData.species}
-                onChange={(e) =>
-                  setFormData({ ...formData, species: e.target.value })
-                }
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                onChange={handleChange}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
               >
                 <option value="Cow (Sahiwal)">Cow (Sahiwal)</option>
                 <option value="Cow (Cholistani)">Cow (Cholistani)</option>
@@ -120,11 +111,10 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
                 Lactation Status
               </label>
               <select
+                name="lactationStatus"
                 value={formData.lactationStatus}
-                onChange={(e) =>
-                  setFormData({ ...formData, lactationStatus: e.target.value })
-                }
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                onChange={handleChange}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
               >
                 <option value="Milking">Milking</option>
                 <option value="Dry/Gestating">Dry/Gestating</option>
@@ -133,7 +123,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
             </div>
           </div>
 
-          {/* Row 3: Acquisition Date & Purchase Price */}
+          {/* Date & Purchase Price */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -141,12 +131,11 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               </label>
               <input
                 type="date"
+                name="acquisitionDate"
                 required
                 value={formData.acquisitionDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, acquisitionDate: e.target.value })
-                }
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                onChange={handleChange}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
               />
             </div>
 
@@ -156,74 +145,69 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               </label>
               <input
                 type="number"
+                name="purchasePrice"
                 min="0"
                 placeholder="e.g. 250000"
                 value={formData.purchasePrice}
-                onChange={(e) =>
-                  setFormData({ ...formData, purchasePrice: e.target.value })
-                }
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                onChange={handleChange}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
               />
             </div>
           </div>
 
-          {/* Row 4: Expected Daily Yield & Health Status */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                Expected Daily Yield (Kg/L)
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                placeholder="e.g. 15.5"
-                value={formData.expectedYield}
-                onChange={(e) =>
-                  setFormData({ ...formData, expectedYield: e.target.value })
-                }
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
-              />
-            </div>
+          {/* Expected Yield */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+              Expected Daily Yield (Kg/L)
+            </label>
+            <input
+              type="number"
+              name="expectedYield"
+              step="0.1"
+              min="0"
+              placeholder="e.g. 15.5"
+              value={formData.expectedYield}
+              onChange={handleChange}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+            />
           </div>
 
-          {/* Row 5: Morning (L) & Evening (L) */}
+          {/* Baseline Morning & Evening Yields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                Current Morning (L)
+                Avg Morning Yield (L)
               </label>
               <input
                 type="number"
+                name="morningYield"
                 step="0.1"
                 min="0"
                 placeholder="0.0"
                 value={formData.morningYield}
-                onChange={(e) =>
-                  setFormData({ ...formData, morningYield: e.target.value })
-                }
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                onChange={handleChange}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                Current Evening (L)
+                Avg Evening Yield (L)
               </label>
               <input
                 type="number"
+                name="eveningYield"
                 step="0.1"
                 min="0"
                 placeholder="0.0"
                 value={formData.eveningYield}
-                onChange={(e) =>
-                  setFormData({ ...formData, eveningYield: e.target.value })
-                }
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                onChange={handleChange}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
               />
             </div>
           </div>
 
+          {/* Actions */}
           <div className="pt-3 flex items-center justify-end gap-2">
             <button
               type="button"
