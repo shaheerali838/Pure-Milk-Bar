@@ -26,6 +26,11 @@ export default function MilkingRegisterTable() {
     const isBuff = a.species && a.species.toLowerCase().includes("buffalo");
     const mVal = parseFloat(a.morningYield || 0);
     const eVal = parseFloat(a.eveningYield || 0);
+    const expVal = parseFloat(a.expectedYield || a.totalDailyYield || 0);
+
+    const expectedDaily = expVal > 0 ? expVal : (mVal + eVal > 0 ? mVal + eVal : 15.0);
+    const avgMorning = mVal > 0 ? mVal : parseFloat((expectedDaily / 2).toFixed(1));
+    const avgEvening = eVal > 0 ? eVal : parseFloat((expectedDaily / 2).toFixed(1));
 
     let displayName = a.tag;
     if (a.tag.startsWith("COW-")) {
@@ -39,8 +44,9 @@ export default function MilkingRegisterTable() {
       tag: a.tag,
       name: displayName,
       type: isBuff ? "Buffalo" : "Cow",
-      avgMorning: isNaN(mVal) ? 0 : mVal,
-      avgEvening: isNaN(eVal) ? 0 : eVal,
+      expectedDaily,
+      avgMorning,
+      avgEvening,
     };
   });
 
@@ -48,21 +54,29 @@ export default function MilkingRegisterTable() {
   const activeSaved = savedEntries[shift] || {};
 
   // Calculate Expected total for current shift
-  const totalExpected = cattleList.reduce((sum, item) => {
+  const shiftExpected = cattleList.reduce((sum, item) => {
     const avg = shift === "Morning" ? item.avgMorning : item.avgEvening;
     return sum + avg;
   }, 0);
 
-  // Calculate Entered total ONLY from saved entries (starts at 0.0 kg)
-  const totalEntered = cattleList.reduce((sum, item) => {
+  // Calculate Entered total ONLY from saved entries for current shift
+  const shiftEntered = cattleList.reduce((sum, item) => {
     const val = parseFloat(activeSaved[item.tag]) || 0;
     return sum + val;
   }, 0);
 
-  // Calculate Variance based on SAVED entered total
-  const variance = totalEntered === 0 ? 0.0 : totalEntered - totalExpected;
+  // --- TOTAL DAILY VARIANCE COMPUTATION ---
+  const totalDailyExpected = cattleList.reduce((sum, item) => sum + item.expectedDaily, 0);
+  const totalDailyEntered = cattleList.reduce((sum, item) => {
+    const mSaved = parseFloat(savedEntries.Morning?.[item.tag] || 0);
+    const eSaved = parseFloat(savedEntries.Evening?.[item.tag] || 0);
+    return sum + mSaved + eSaved;
+  }, 0);
 
-  // Calculate progress logged count ONLY from saved entries
+  // Total Variance: Always displays Total Daily Variance
+  const totalVariance = totalDailyEntered === 0 ? 0.0 : totalDailyEntered - totalDailyExpected;
+
+  // Calculate progress logged count ONLY from saved entries for active shift
   const loggedCount = cattleList.filter((item) => {
     const val = activeSaved[item.tag];
     return val !== undefined && val !== "" && !isNaN(parseFloat(val)) && parseFloat(val) > 0;
@@ -89,7 +103,6 @@ export default function MilkingRegisterTable() {
   };
 
   const handleSave = () => {
-    // Check if user typed any yields
     const hasTypedValues = cattleList.some((item) => {
       const val = activeInputs[item.tag];
       return val !== undefined && val !== "" && !isNaN(parseFloat(val)) && parseFloat(val) > 0;
@@ -106,12 +119,11 @@ export default function MilkingRegisterTable() {
       [shift]: { ...activeInputs },
     }));
 
-    // Persist to AnimalContext
+    // Persist to AnimalContext history log
     if (saveMilkingShift) {
       saveMilkingShift(shift, selectedDate, activeInputs);
     }
 
-    // Compute saved total for toast
     const newlySavedTotal = cattleList.reduce((sum, item) => {
       const val = parseFloat(activeInputs[item.tag]) || 0;
       return sum + val;
@@ -124,7 +136,7 @@ export default function MilkingRegisterTable() {
     <div className="flex flex-col gap-4 w-full">
       {/* Top Header Card */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs flex flex-wrap items-center justify-between gap-6">
-        {/* Left Side: Date & Shift */}
+        {/* Left Side: Date & Shift Switches (Morning & Evening) */}
         <div className="flex flex-wrap items-center gap-6">
           {/* Date Picker */}
           <div className="flex flex-col">
@@ -147,6 +159,7 @@ export default function MilkingRegisterTable() {
               SHIFT
             </span>
             <div className="bg-slate-100/80 border border-slate-200/60 rounded-full p-1 flex items-center gap-1">
+              {/* Morning Button */}
               <button
                 type="button"
                 onClick={() => setShift("Morning")}
@@ -159,6 +172,8 @@ export default function MilkingRegisterTable() {
                 <Sun className="w-3.5 h-3.5 text-amber-500" />
                 Morning
               </button>
+
+              {/* Evening Button */}
               <button
                 type="button"
                 onClick={() => setShift("Evening")}
@@ -177,41 +192,41 @@ export default function MilkingRegisterTable() {
 
         {/* Right Side: Metrics */}
         <div className="flex items-center gap-6 sm:gap-8">
-          {/* Entered - Only updates when saved */}
+          {/* Shift Entered */}
           <div className="flex flex-col items-center sm:items-end">
             <div className="text-2xl font-black text-indigo-600 tracking-tight">
-              {totalEntered.toFixed(1)} <span className="text-lg font-bold">kg</span>
+              {shiftEntered.toFixed(1)} <span className="text-lg font-bold">kg</span>
             </div>
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mt-0.5">
               ENTERED
             </span>
           </div>
 
-          {/* Expected */}
+          {/* Shift Expected */}
           <div className="flex flex-col items-center sm:items-end">
             <div className="text-2xl font-black text-slate-500 tracking-tight">
-              {totalExpected.toFixed(1)} <span className="text-lg font-bold">kg</span>
+              {shiftExpected.toFixed(1)} <span className="text-lg font-bold">kg</span>
             </div>
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mt-0.5">
               EXPECTED
             </span>
           </div>
 
-          {/* Variance - Only updates when saved */}
+          {/* Total Variance Metric */}
           <div className="flex flex-col items-center sm:items-end">
             <div
               className={`px-4 py-1.5 rounded-full border text-lg font-extrabold flex items-center justify-center transition-all ${
-                variance === 0
+                totalVariance === 0
                   ? "bg-slate-100 border-slate-200 text-slate-700"
-                  : variance > 0
+                  : totalVariance > 0
                   ? "bg-emerald-50 border-emerald-200 text-emerald-600"
                   : "bg-rose-50 border-rose-200 text-rose-600"
               }`}
             >
-              {variance > 0 ? `+${variance.toFixed(1)}` : variance.toFixed(1)} kg
+              {totalVariance > 0 ? `+${totalVariance.toFixed(1)}` : totalVariance.toFixed(1)} kg
             </div>
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mt-1">
-              VARIANCE
+              TOTAL VARIANCE
             </span>
           </div>
         </div>
@@ -245,8 +260,7 @@ export default function MilkingRegisterTable() {
                   const avgYield = shift === "Morning" ? item.avgMorning : item.avgEvening;
                   const currentInputValue = activeInputs[item.tag] ?? "";
                   const savedValue = activeSaved[item.tag];
-                  
-                  // Check if item has been confirmed & saved
+
                   const isSavedLogged =
                     savedValue !== undefined &&
                     savedValue !== "" &&
@@ -349,7 +363,7 @@ export default function MilkingRegisterTable() {
             <div className="text-sm font-bold text-slate-700">
               {shift} Total:{" "}
               <span className="text-indigo-600 font-black text-base">
-                {totalEntered.toFixed(1)} kg
+                {shiftEntered.toFixed(1)} kg
               </span>
             </div>
 

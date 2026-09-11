@@ -227,23 +227,13 @@ export function AnimalProvider({ children }) {
   };
 
 
-  // Save milking shift entries to update animal yields
+  // Save milking shift entries to record shift log history without mutating registered baseline averages
   const saveMilkingShift = (shiftName, shiftDate, shiftEntries) => {
     setAnimals((prev) =>
       prev.map((animal) => {
         const enteredVal = shiftEntries[animal.tag];
         if (enteredVal !== undefined && enteredVal !== "" && !isNaN(parseFloat(enteredVal))) {
           const numVal = parseFloat(enteredVal);
-          let currentMorning = parseFloat(animal.morningYield || 0);
-          let currentEvening = parseFloat(animal.eveningYield || 0);
-
-          if (shiftName === "Morning") {
-            currentMorning = numVal;
-          } else {
-            currentEvening = numVal;
-          }
-
-          const total = (currentMorning + currentEvening).toFixed(1);
 
           const updatedHistory = (animal.history || []).map((h) => {
             if (h.date === '24 Aug') {
@@ -258,9 +248,7 @@ export function AnimalProvider({ children }) {
 
           return {
             ...animal,
-            morningYield: currentMorning.toFixed(1) + ' L',
-            eveningYield: currentEvening.toFixed(1) + ' L',
-            totalDailyYield: total + ' L',
+            // Preserve registered morningYield and eveningYield baselines!
             history: updatedHistory,
           };
         }
@@ -268,6 +256,7 @@ export function AnimalProvider({ children }) {
       })
     );
   };
+
 
   // Delete animal by ID
   const deleteAnimal = (id) => {
