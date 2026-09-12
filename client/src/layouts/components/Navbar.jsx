@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ChevronRight, Milk, Search, Download, Truck, Bell, User } from 'lucide-react';
+import { ChevronRight, Milk, Search, Download, Truck, Bell } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function Navbar() {
   const location = useLocation();
@@ -79,24 +80,27 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        <button
+        <Button
           type="button"
+          size="sm"
           onClick={handleExportCSV}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+          className="flex items-center gap-1 text-xs font-semibold shadow-2xs"
           title="Export CSV"
         >
           <Download className="w-3.5 h-3.5" />
           <span>Export</span>
-        </button>
+        </Button>
 
-        <button
+        <Button
           type="button"
-          className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-all cursor-pointer"
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-1 text-xs font-semibold"
           title="View Deliveries"
         >
           <Truck className="w-3.5 h-3.5 text-blue-600" />
           <span>Deliveries</span>
-        </button>
+        </Button>
 
         <div className="w-48 sm:w-56">
           <div className="relative">
@@ -111,17 +115,16 @@ export default function Navbar() {
           </div>
         </div>  
 
-        <button
+        <Button
           type="button"
-          className="relative p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all cursor-pointer"
+          variant="ghost"
+          size="icon"
+          className="relative h-8 w-8 text-slate-500 hover:text-slate-800 hover:bg-slate-100"
           title="Notifications"
         >
           <Bell className="w-4 h-4" />
           <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
-        </button>
-
-        {/* User Profile Badge */}
-        
+        </Button>
       </div>
     </header>
   );

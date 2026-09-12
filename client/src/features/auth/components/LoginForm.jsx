@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import AuthInput from './AuthInput';
 import PasswordInput from './PasswordInput';
 
@@ -133,10 +134,10 @@ const LoginForm = ({
       </div>
 
       {/* Primary Submit Button */}
-      <button
+      <Button
         type="submit"
         disabled={isLoading}
-        className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 active:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+        className="w-full h-11 text-sm font-semibold shadow-md shadow-emerald-600/20"
       >
         {isLoading ? (
           <>
@@ -149,7 +150,7 @@ const LoginForm = ({
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </>
         )}
-      </button>
+      </Button>
     </form>
   );
 };

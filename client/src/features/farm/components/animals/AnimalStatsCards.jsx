@@ -1,6 +1,7 @@
 import React from "react";
 import { Beef, Activity, Droplets, Users } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
+import { Card } from "@/components/ui/card";
 
 export default function AnimalStatsCards() {
   const { animals = [] } = useAnimalContext();
@@ -55,7 +56,7 @@ export default function AnimalStatsCards() {
       {stats.map((s, idx) => {
         const Icon = s.icon;
         return (
-          <div
+          <Card
             key={idx}
             className="bg-white border border-slate-200/80 rounded-[20px] p-3 flex flex-col justify-center shadow-2xs hover:shadow-xs transition-all"
           >
@@ -71,16 +72,17 @@ export default function AnimalStatsCards() {
             </div>
 
             <div className="mt-3">
-              <div className="text-2xl sm:text-[28px] font-extrabold text-slate-800 tracking-tight leading-none">
+              <div className="text-2xl sm:text-[28px] font-extrabold text-slate-800 tracking-tight leading-none tabular">
                 {s.value}
               </div>
               <p className="text-xs text-slate-400 font-medium mt-2">
                 {s.sub}
               </p>
             </div>
-          </div>
+          </Card>
         );
       })}
     </div>
   );
 }
+

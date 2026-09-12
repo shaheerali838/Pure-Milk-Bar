@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import { X, DollarSign, CheckCircle2, ArrowRight, Wallet } from 'lucide-react';
 import { useLedgerContext } from '../../../../context/LedgerContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function RecordPaymentModal({ customer, isOpen, onClose }) {
   const { addLedgerEntry } = useLedgerContext();
@@ -123,21 +132,24 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
               <Wallet className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white leading-tight">
+              <h2 className="text-base font-bold text-white leading-tight font-display">
                 Record Payment — {customer.name}
               </h2>
               <p className="text-xs text-emerald-100 mt-0.5">
-                Account ID: <span className="font-mono font-semibold">{custCode}</span> · Khata Due: <strong className="font-mono text-white">Rs. {outstanding.toLocaleString()}</strong>
+                Account ID: <span className="font-mono font-semibold tabular">{custCode}</span> · Khata Due: <strong className="font-mono text-white tabular">Rs. {outstanding.toLocaleString()}</strong>
               </p>
             </div>
           </div>
 
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-emerald-100 hover:text-white hover:bg-white/10 transition cursor-pointer"
+            className="h-8 w-8 rounded-lg text-emerald-100 hover:text-white hover:bg-white/10 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Modal Body */}
@@ -198,7 +210,7 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
                       key={pct}
                       type="button"
                       onClick={() => handlePresetPercentage(pct)}
-                      className="px-2.5 py-0.5 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-700 border border-slate-200 rounded-md text-[10px] font-bold text-slate-700 transition cursor-pointer"
+                      className="px-2.5 py-0.5 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-400 hover:text-emerald-700 border border-slate-200 rounded-md text-[10px] font-bold text-slate-700 transition cursor-pointer tabular"
                     >
                       {pct === 50 ? '50% (Half)' : pct === 100 ? '100% (Full)' : `${pct}%`} (Rs. {Math.round((outstanding * pct) / 100).toLocaleString()})
                     </button>
@@ -212,17 +224,17 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs flex items-center justify-between">
                 <div>
                   <span className="text-slate-400 block text-[10px] font-semibold">Total Due</span>
-                  <span className="font-bold text-slate-700 font-mono">Rs. {outstanding.toLocaleString()}</span>
+                  <span className="font-bold text-slate-700 font-mono tabular">Rs. {outstanding.toLocaleString()}</span>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-slate-300" />
                 <div>
                   <span className="text-emerald-600 block text-[10px] font-semibold">Paying Now</span>
-                  <span className="font-black text-emerald-700 font-mono">Rs. {enteredAmount.toLocaleString()}</span>
+                  <span className="font-black text-emerald-700 font-mono tabular">Rs. {enteredAmount.toLocaleString()}</span>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-slate-300" />
                 <div>
                   <span className="text-slate-400 block text-[10px] font-semibold">Remaining Khata</span>
-                  <span className={`font-black font-mono ${remainingBalance === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  <span className={`font-black font-mono tabular ${remainingBalance === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                     Rs. {remainingBalance.toLocaleString()}
                   </span>
                 </div>
@@ -233,7 +245,7 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Payment Amount (PKR / Rs.) *</label>
-                <input
+                <Input
                   type="number"
                   required
                   min="1"
@@ -246,84 +258,91 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
                     else setPaymentType('partial');
                   }}
                   placeholder={`e.g. ${outstanding > 0 ? Math.round(outstanding / 2) : 500}`}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold bg-white focus:outline-none focus:border-emerald-500 font-mono"
+                  className="w-full h-9 px-3 border border-slate-200 rounded-lg text-xs font-bold bg-white focus-visible:border-emerald-500 focus-visible:ring-0 font-mono tabular"
                 />
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Payment Method *</label>
-                <select
+                <Select
                   value={formData.method}
-                  onChange={(e) => setFormData({ ...formData, method: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:border-emerald-500 font-medium cursor-pointer"
+                  onValueChange={(val) => setFormData({ ...formData, method: val })}
                 >
-                  <option value="Cash">Cash (PKR)</option>
-                  <option value="Online Payment">Online Payment (EasyPaisa / JazzCash)</option>
-                  <option value="Bank Transfer">Bank Transfer (1Link / Raast)</option>
-                  <option value="Cheque">Cheque</option>
-                </select>
+                  <SelectTrigger className="w-full h-9 px-3 border border-slate-200 rounded-lg text-xs bg-white focus:ring-1 focus:ring-emerald-500 font-medium cursor-pointer">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Cash" className="text-xs">Cash (PKR)</SelectItem>
+                    <SelectItem value="Online Payment" className="text-xs">Online Payment (EasyPaisa / JazzCash)</SelectItem>
+                    <SelectItem value="Bank Transfer" className="text-xs">Bank Transfer (1Link / Raast)</SelectItem>
+                    <SelectItem value="Cheque" className="text-xs">Cheque</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Payment Date *</label>
-                <input
+                <Input
                   type="date"
                   required
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:border-emerald-500"
+                  className="w-full h-9 px-3 border border-slate-200 rounded-lg text-xs bg-white focus-visible:border-emerald-500 focus-visible:ring-0"
                 />
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Trx / Ref ID (Optional)</label>
-                <input
+                <Input
                   type="text"
                   value={formData.reference}
                   onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
                   placeholder="e.g. EP-998812"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:border-emerald-500"
+                  className="w-full h-9 px-3 border border-slate-200 rounded-lg text-xs bg-white focus-visible:border-emerald-500 focus-visible:ring-0"
                 />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Description</label>
-                <input
+                <Input
                   type="text"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="e.g. Half Payment Received"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:border-emerald-500"
+                  className="w-full h-9 px-3 border border-slate-200 rounded-lg text-xs bg-white focus-visible:border-emerald-500 focus-visible:ring-0"
                 />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Remarks &amp; Notes (Optional)</label>
-                <input
+                <Input
                   type="text"
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="e.g. Remaining balance will be cleared next week"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:border-emerald-500"
+                  className="w-full h-9 px-3 border border-slate-200 rounded-lg text-xs bg-white focus-visible:border-emerald-500 focus-visible:ring-0"
                 />
               </div>
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={onClose}
-                className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg font-semibold transition text-xs cursor-pointer"
+                className="px-4 py-2 h-9 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg font-semibold transition text-xs cursor-pointer"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className="px-5 py-2 bg-[#00a86b] hover:bg-[#00925d] text-white rounded-lg font-bold text-xs shadow-sm transition cursor-pointer flex items-center gap-1.5"
+                size="sm"
+                className="px-5 py-2 h-9 bg-[#00a86b] hover:bg-[#00925d] text-white rounded-lg font-bold text-xs shadow-sm transition cursor-pointer flex items-center gap-1.5"
               >
                 <DollarSign className="w-3.5 h-3.5" />
                 Record Payment (PKR {enteredAmount > 0 ? enteredAmount.toLocaleString() : '0'})
-              </button>
+              </Button>
             </div>
           </form>
         </div>
@@ -331,3 +350,4 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
     </div>
   );
 }
+

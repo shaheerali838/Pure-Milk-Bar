@@ -1,5 +1,14 @@
 import { X, Phone, MapPin } from 'lucide-react';
 import { useLedgerContext } from '../../../../context/LedgerContext';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 export default function CustomerFinanceDetailModal({ customer, isOpen, onClose }) {
   const { getLedgerForCustomer } = useLedgerContext();
@@ -21,20 +30,23 @@ export default function CustomerFinanceDetailModal({ customer, isOpen, onClose }
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
           <div>
-            <h2 className="text-base font-bold text-slate-900 leading-tight">
+            <h2 className="text-base font-bold text-slate-900 leading-tight font-display">
               Customer Financial Ledger — {customer.name}
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Account ID: <span className="font-mono">{custCode}</span> · Area: {customer.area || 'Model Town'}
+              Account ID: <span className="font-mono tabular">{custCode}</span> · Area: {customer.area || 'Model Town'}
             </p>
           </div>
 
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+            className="h-8 w-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Modal Body */}
@@ -43,18 +55,18 @@ export default function CustomerFinanceDetailModal({ customer, isOpen, onClose }
           <div className="bg-[#0b1b1a] p-4 sm:p-5 rounded-2xl text-white flex flex-wrap items-center justify-between gap-4 shadow-sm">
             {/* Left: Avatar & Info */}
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-full bg-[#0d3b36] text-[#2dd4bf] font-extrabold flex items-center justify-center text-xl shrink-0 border border-[#134e48]">
+              <div className="w-12 h-12 rounded-full bg-[#0d3b36] text-[#2dd4bf] font-extrabold flex items-center justify-center text-xl shrink-0 border border-[#134e48] font-display">
                 {initial}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-bold text-white leading-tight">{customer.name}</span>
+                  <span className="text-base font-bold text-white leading-tight font-display">{customer.name}</span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#134e48] text-emerald-300 border border-[#0d3b36]">
                     {customer.status || 'Active'}
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300 mt-1">
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1 tabular">
                     <Phone className="w-3 h-3 text-slate-400" />
                     {customer.phone}
                   </span>
@@ -72,7 +84,7 @@ export default function CustomerFinanceDetailModal({ customer, isOpen, onClose }
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                 KHATA BALANCE DUE (PKR)
               </span>
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#ff6b81] tracking-tight mt-0.5 font-mono">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#ff6b81] tracking-tight mt-0.5 font-mono tabular">
                 Rs. {outstanding.toLocaleString()}
               </div>
             </div>
@@ -85,7 +97,7 @@ export default function CustomerFinanceDetailModal({ customer, isOpen, onClose }
               <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
                 TOTAL PAID TO DATE (PKR)
               </span>
-              <div className="text-lg font-black text-emerald-950 mt-1 font-mono">
+              <div className="text-lg font-black text-emerald-950 mt-1 font-mono tabular">
                 Rs. {totalPaid.toLocaleString()}
               </div>
             </div>
@@ -95,7 +107,7 @@ export default function CustomerFinanceDetailModal({ customer, isOpen, onClose }
               <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider block">
                 OUTSTANDING CREDIT (PKR)
               </span>
-              <div className="text-lg font-black text-rose-900 mt-1 font-mono">
+              <div className="text-lg font-black text-rose-900 mt-1 font-mono tabular">
                 Rs. {outstanding.toLocaleString()}
               </div>
             </div>
@@ -105,7 +117,7 @@ export default function CustomerFinanceDetailModal({ customer, isOpen, onClose }
               <span className="text-[10px] font-bold text-indigo-800 uppercase tracking-wider block">
                 LAST TRANSACTION DATE
               </span>
-              <div className="text-lg font-black text-indigo-950 mt-1 font-mono">
+              <div className="text-lg font-black text-indigo-950 mt-1 font-mono tabular">
                 {lastTxnDate}
               </div>
             </div>
@@ -113,7 +125,7 @@ export default function CustomerFinanceDetailModal({ customer, isOpen, onClose }
 
           {/* 3. Transaction History Table Header */}
           <div className="flex items-center justify-between pt-1">
-            <h3 className="text-xs font-extrabold text-slate-800 tracking-tight uppercase">
+            <h3 className="text-xs font-extrabold text-slate-800 tracking-tight uppercase font-display">
               Financial Transaction History &amp; Ledgers
             </h3>
             <span className="text-[11px] font-semibold text-slate-500">
@@ -124,25 +136,25 @@ export default function CustomerFinanceDetailModal({ customer, isOpen, onClose }
           {/* 4. Ledger Table */}
           <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
             <div className="overflow-x-auto max-h-72">
-              <table className="w-full text-left border-collapse min-w-[650px] text-xs">
-                <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  <tr>
-                    <th className="px-3.5 py-2.5">DATE &amp; REF</th>
-                    <th className="px-3.5 py-2.5">TYPE</th>
-                    <th className="px-3.5 py-2.5 text-right">TOTAL DUE</th>
-                    <th className="px-3.5 py-2.5 text-right">AMOUNT PAID</th>
-                    <th className="px-3.5 py-2.5 text-right">REMAINING</th>
-                    <th className="px-3.5 py-2.5 text-center">STATUS</th>
-                    <th className="px-3.5 py-2.5">METHOD</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+              <Table className="w-full text-left border-collapse min-w-[650px] text-xs">
+                <TableHeader className="sticky top-0 bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <TableRow className="hover:bg-slate-50">
+                    <TableHead className="px-3.5 py-2.5 h-auto text-slate-400 font-bold">DATE &amp; REF</TableHead>
+                    <TableHead className="px-3.5 py-2.5 h-auto text-slate-400 font-bold">TYPE</TableHead>
+                    <TableHead className="px-3.5 py-2.5 h-auto text-right text-slate-400 font-bold">TOTAL DUE</TableHead>
+                    <TableHead className="px-3.5 py-2.5 h-auto text-right text-slate-400 font-bold">AMOUNT PAID</TableHead>
+                    <TableHead className="px-3.5 py-2.5 h-auto text-right text-slate-400 font-bold">REMAINING</TableHead>
+                    <TableHead className="px-3.5 py-2.5 h-auto text-center text-slate-400 font-bold">STATUS</TableHead>
+                    <TableHead className="px-3.5 py-2.5 h-auto text-slate-400 font-bold">METHOD</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-slate-100 text-slate-700">
                   {entries.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-3.5 py-8 text-center text-slate-400">
+                    <TableRow>
+                      <TableCell colSpan={7} className="px-3.5 py-8 text-center text-slate-400">
                         No transaction records found for this customer.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     entries.map((entry, idx) => {
                       const refCode = entry.ref || (entry.id ? `TXN-${String(entry.id).slice(-4)}` : `TXN-${1000 + idx}`);
@@ -162,37 +174,37 @@ export default function CustomerFinanceDetailModal({ customer, isOpen, onClose }
                       const isPartial = credit > 0 && runningBal > 0;
 
                       return (
-                        <tr key={entry.id || idx} className="hover:bg-slate-50/70 transition-colors">
+                        <TableRow key={entry.id || idx} className="hover:bg-slate-50/70 transition-colors">
                           {/* Date & Ref */}
-                          <td className="px-3.5 py-2.5 whitespace-nowrap">
-                            <div className="font-mono text-slate-800 font-semibold text-[11px]">{entry.date}</div>
-                            <div className="text-[10px] font-mono text-blue-600 font-bold">{refCode}</div>
-                          </td>
+                          <TableCell className="px-3.5 py-2.5 whitespace-nowrap">
+                            <div className="font-mono text-slate-800 font-semibold text-[11px] tabular">{entry.date}</div>
+                            <div className="text-[10px] font-mono text-blue-600 font-bold tabular">{refCode}</div>
+                          </TableCell>
 
                           {/* Type Badge */}
-                          <td className="px-3.5 py-2.5 whitespace-nowrap">
+                          <TableCell className="px-3.5 py-2.5 whitespace-nowrap">
                             <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-semibold">
                               {typeLabel}
                             </span>
-                          </td>
+                          </TableCell>
 
                           {/* Total Due */}
-                          <td className="px-3.5 py-2.5 text-right font-medium text-slate-800 whitespace-nowrap font-mono">
+                          <TableCell className="px-3.5 py-2.5 text-right font-medium text-slate-800 whitespace-nowrap font-mono tabular">
                             Rs. {totalDueBefore > 0 ? totalDueBefore.toLocaleString() : (debit > 0 ? debit.toLocaleString() : '—')}
-                          </td>
+                          </TableCell>
 
                           {/* Amount Paid */}
-                          <td className="px-3.5 py-2.5 text-right font-bold text-slate-900 whitespace-nowrap font-mono">
+                          <TableCell className="px-3.5 py-2.5 text-right font-bold text-slate-900 whitespace-nowrap font-mono tabular">
                             {credit > 0 ? `Rs. ${credit.toLocaleString()}` : '—'}
-                          </td>
+                          </TableCell>
 
                           {/* Remaining */}
-                          <td className="px-3.5 py-2.5 text-right font-bold text-[#ff4d6d] whitespace-nowrap font-mono">
+                          <TableCell className="px-3.5 py-2.5 text-right font-bold text-[#ff4d6d] whitespace-nowrap font-mono tabular">
                             Rs. {runningBal.toLocaleString()}
-                          </td>
+                          </TableCell>
 
                           {/* Status */}
-                          <td className="px-3.5 py-2.5 text-center whitespace-nowrap">
+                          <TableCell className="px-3.5 py-2.5 text-center whitespace-nowrap">
                             <span
                               className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
                                 isPaid
@@ -204,32 +216,36 @@ export default function CustomerFinanceDetailModal({ customer, isOpen, onClose }
                             >
                               {isPaid ? 'Paid' : isPartial ? 'Partial' : 'Pending'}
                             </span>
-                          </td>
+                          </TableCell>
 
                           {/* Method */}
-                          <td className="px-3.5 py-2.5 font-medium text-slate-700 whitespace-nowrap">
+                          <TableCell className="px-3.5 py-2.5 font-medium text-slate-700 whitespace-nowrap">
                             {entry.method || 'Cash'}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       );
                     })
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
         </div>
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-slate-100 flex justify-end bg-slate-50/70 shrink-0">
-          <button
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={onClose}
-            className="px-5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-semibold transition text-xs cursor-pointer shadow-2xs"
+            className="px-5 py-1.5 h-8 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-semibold transition text-xs cursor-pointer shadow-2xs"
           >
             Close
-          </button>
+          </Button>
         </div>
       </div>
     </div>
   );
 }
+

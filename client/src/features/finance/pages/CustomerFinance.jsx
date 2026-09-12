@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Users, Receipt, Clock, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import EditCustomerModal from '../../customers/components/Customer_&_Accounts/EditCustomerModal';
 import CustomerFinanceStats from '../components/CustomerFinanceLedger/CustomerFinanceStats';
 import CustomerFinanceLedgerTable from '../components/CustomerFinanceLedger/CustomerFinanceLedgerTable';
@@ -25,7 +26,7 @@ export default function CustomerFinance() {
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
         <div>
-          <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-tight">
+          <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-tight font-display">
             Customer Financial Ledgers &amp; Recoveries
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -37,12 +38,12 @@ export default function CustomerFinance() {
       {/* Top 3 Standalone Colored Buttons (All Colored by Default) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {/* Button 1: Customer Accounts (Always Green) */}
-        <button
+        <Button
           type="button"
           onClick={() => setActiveTab('accounts')}
-          className={`flex items-center justify-between py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white transition-all cursor-pointer border ${
+          className={`flex items-center justify-between h-auto py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white transition-all cursor-pointer border ${
             activeTab === 'accounts'
-              ? 'bg-[#008f5b] border-[#006e46] shadow-lg shadow-emerald-700/25 ring-4 ring-emerald-300/60 ring-offset-2 scale-[1.01]'
+              ? 'bg-[#008f5b] hover:bg-[#008f5b] border-[#006e46] shadow-lg shadow-emerald-700/25 ring-4 ring-emerald-300/60 ring-offset-2 scale-[1.01]'
               : 'bg-[#00a86b] hover:bg-[#009660] border-[#00925d] shadow-sm opacity-95 hover:opacity-100'
           }`}
         >
@@ -57,15 +58,15 @@ export default function CustomerFinance() {
               <Check className="w-3.5 h-3.5 stroke-[3]" />
             </span>
           )}
-        </button>
+        </Button>
 
         {/* Button 2: Invoices & Collections (Always Blue) */}
-        <button
+        <Button
           type="button"
           onClick={() => setActiveTab('collections')}
-          className={`flex items-center justify-between py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white transition-all cursor-pointer border ${
+          className={`flex items-center justify-between h-auto py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white transition-all cursor-pointer border ${
             activeTab === 'collections'
-              ? 'bg-[#1d4ed8] border-[#1e40af] shadow-lg shadow-blue-700/25 ring-4 ring-blue-300/60 ring-offset-2 scale-[1.01]'
+              ? 'bg-[#1d4ed8] hover:bg-[#1d4ed8] border-[#1e40af] shadow-lg shadow-blue-700/25 ring-4 ring-blue-300/60 ring-offset-2 scale-[1.01]'
               : 'bg-[#2563eb] hover:bg-[#1d4ed8] border-[#1d4ed8] shadow-sm opacity-95 hover:opacity-100'
           }`}
         >
@@ -80,15 +81,15 @@ export default function CustomerFinance() {
               <Check className="w-3.5 h-3.5 stroke-[3]" />
             </span>
           )}
-        </button>
+        </Button>
 
         {/* Button 3: Receivables Aging (Always Amber/Gold) */}
-        <button
+        <Button
           type="button"
           onClick={() => setActiveTab('aging')}
-          className={`flex items-center justify-between py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white transition-all cursor-pointer border ${
+          className={`flex items-center justify-between h-auto py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white transition-all cursor-pointer border ${
             activeTab === 'aging'
-              ? 'bg-[#b45309] border-[#92400e] shadow-lg shadow-amber-700/25 ring-4 ring-amber-300/60 ring-offset-2 scale-[1.01]'
+              ? 'bg-[#b45309] hover:bg-[#b45309] border-[#92400e] shadow-lg shadow-amber-700/25 ring-4 ring-amber-300/60 ring-offset-2 scale-[1.01]'
               : 'bg-[#d97706] hover:bg-[#b45309] border-[#b45309] shadow-sm opacity-95 hover:opacity-100'
           }`}
         >
@@ -103,7 +104,7 @@ export default function CustomerFinance() {
               <Check className="w-3.5 h-3.5 stroke-[3]" />
             </span>
           )}
-        </button>
+        </Button>
       </div>
 
       {/* Tab 1: Customer Accounts */}
@@ -182,3 +183,4 @@ export default function CustomerFinance() {
     </div>
   );
 }
+

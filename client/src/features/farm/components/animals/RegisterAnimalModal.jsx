@@ -1,5 +1,14 @@
 import React, { useState } from "react";
 import { X, Beef } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
   const [formData, setFormData] = useState({
@@ -39,17 +48,19 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
             <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
               <Beef className="w-4 h-4" />
             </div>
-            <h2 className="text-lg font-bold text-slate-800">
+            <h2 className="font-display text-lg font-bold text-slate-800">
               Register New Livestock Animal
             </h2>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-600 h-8 w-8 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Form */}
@@ -59,7 +70,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
               Tag #
             </label>
-            <input
+            <Input
               type="text"
               required
               placeholder="e.g. COW-1050"
@@ -77,18 +88,22 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Species
               </label>
-              <select
+              <Select
                 value={formData.species}
-                onChange={(e) =>
-                  setFormData({ ...formData, species: e.target.value })
+                onValueChange={(val) =>
+                  setFormData({ ...formData, species: val })
                 }
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
               >
-                <option value="Cow (Sahiwal)">Cow (Sahiwal)</option>
-                <option value="Cow (Cholistani)">Cow (Cholistani)</option>
-                <option value="Buffalo (Nili Ravi)">Buffalo (Nili Ravi)</option>
-                <option value="Buffalo (Kundi)">Buffalo (Kundi)</option>
-              </select>
+                <SelectTrigger className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all">
+                  <SelectValue placeholder="Select species" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Cow (Sahiwal)">Cow (Sahiwal)</SelectItem>
+                  <SelectItem value="Cow (Cholistani)">Cow (Cholistani)</SelectItem>
+                  <SelectItem value="Buffalo (Nili Ravi)">Buffalo (Nili Ravi)</SelectItem>
+                  <SelectItem value="Buffalo (Kundi)">Buffalo (Kundi)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Lactation Status */}
@@ -96,17 +111,21 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Lactation Status
               </label>
-              <select
+              <Select
                 value={formData.lactationStatus}
-                onChange={(e) =>
-                  setFormData({ ...formData, lactationStatus: e.target.value })
+                onValueChange={(val) =>
+                  setFormData({ ...formData, lactationStatus: val })
                 }
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
               >
-                <option value="Milking">Milking</option>
-                <option value="Dry/Gestating">Dry/Gestating</option>
-                <option value="Calf">Calf</option>
-              </select>
+                <SelectTrigger className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Milking">Milking</SelectItem>
+                  <SelectItem value="Dry/Gestating">Dry/Gestating</SelectItem>
+                  <SelectItem value="Calf">Calf</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -115,14 +134,14 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
               Acquisition Date
             </label>
-            <input
+            <Input
               type="date"
               required
               value={formData.acquisitionDate}
               onChange={(e) =>
                 setFormData({ ...formData, acquisitionDate: e.target.value })
               }
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all tabular"
             />
           </div>
 
@@ -132,7 +151,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Morning (L)
               </label>
-              <input
+              <Input
                 type="number"
                 step="0.1"
                 min="0"
@@ -141,7 +160,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
                 onChange={(e) =>
                   setFormData({ ...formData, morningYield: e.target.value })
                 }
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all tabular"
               />
             </div>
 
@@ -150,7 +169,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Evening (L)
               </label>
-              <input
+              <Input
                 type="number"
                 step="0.1"
                 min="0"
@@ -159,25 +178,26 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
                 onChange={(e) =>
                   setFormData({ ...formData, eveningYield: e.target.value })
                 }
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all tabular"
               />
             </div>
           </div>
 
           <div className="pt-3 flex items-center justify-end gap-2">
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
               className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-all cursor-pointer"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
             >
               Register Animal
-            </button>
+            </Button>
           </div>
         </form>
       </div>

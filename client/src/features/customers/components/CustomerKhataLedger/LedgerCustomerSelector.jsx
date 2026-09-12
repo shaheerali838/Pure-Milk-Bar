@@ -1,6 +1,15 @@
 import React from 'react';
 import { Eye, Plus, CheckCircle2, Calendar } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function LedgerCustomerSelector({
   selectedCustomerId,
@@ -22,21 +31,21 @@ export default function LedgerCustomerSelector({
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
             Select Customer Khata
           </label>
-          <select
-            value={selectedCustomerId || ''}
-            onChange={(e) => onSelectCustomer(e.target.value)}
-            className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200/90 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500 cursor-pointer"
+          <Select
+            value={selectedCustomerId ? String(selectedCustomerId) : ''}
+            onValueChange={(val) => onSelectCustomer(val)}
           >
-            {customers.length === 0 ? (
-              <option value="">No customers available - Add a customer first</option>
-            ) : (
-              customers.map((c) => (
-                <option key={c.id} value={c.id}>
+            <SelectTrigger className="w-full h-8.5 px-3 bg-slate-50 border border-slate-200/90 rounded-lg text-xs font-bold text-slate-800 focus:ring-1 focus:ring-emerald-500 cursor-pointer">
+              <SelectValue placeholder={customers.length === 0 ? "No customers available - Add a customer first" : "Select Customer..."} />
+            </SelectTrigger>
+            <SelectContent>
+              {customers.map((c) => (
+                <SelectItem key={c.id} value={String(c.id)} className="text-xs font-medium">
                   {c.name} — Balance: Rs. {(c.khataBalance || 0).toLocaleString()} (Due)
-                </option>
-              ))
-            )}
-          </select>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Month Selector */}
@@ -44,53 +53,65 @@ export default function LedgerCustomerSelector({
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
             <Calendar className="w-2.5 h-2.5 text-slate-400" /> Month
           </label>
-          <input
+          <Input
             type="month"
             value={selectedMonth}
             onChange={(e) => onChangeMonth(e.target.value)}
-            className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200/90 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer"
+            className="w-full h-8.5 px-3 bg-slate-50 border border-slate-200/90 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer"
           />
         </div>
       </div>
 
       {/* Action Buttons Row */}
       <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1.5 border-t border-slate-100">
-        <button
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
           onClick={onViewCustomerDetails}
           disabled={!selectedCustomerId}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-[11px] font-semibold shadow-2xs transition disabled:opacity-50 cursor-pointer"
+          className="flex items-center gap-1 px-2.5 py-1 h-7 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-[11px] font-semibold shadow-2xs transition disabled:opacity-50 cursor-pointer"
         >
           <Eye className="w-3 h-3 text-slate-500" />
           Customer Details
-        </button>
+        </Button>
 
-        <button
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
           onClick={onOpenAddDebit}
           disabled={!selectedCustomerId}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold transition disabled:opacity-50 cursor-pointer"
+          className="flex items-center gap-1 px-2.5 py-1 h-7 rounded-full border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold transition disabled:opacity-50 cursor-pointer"
         >
           <Plus className="w-3 h-3" />
           Add Manual Debit
-        </button>
+        </Button>
 
-        <button
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
           onClick={onOpenRecordPayment}
           disabled={!selectedCustomerId}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-bold transition disabled:opacity-50 cursor-pointer"
+          className="flex items-center gap-1 px-2.5 py-1 h-7 rounded-full border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-bold transition disabled:opacity-50 cursor-pointer"
         >
           <Plus className="w-3 h-3" />
           Record Payment
-        </button>
+        </Button>
 
-        <button
+        <Button
+          type="button"
+          size="sm"
           onClick={onSettleKhata}
           disabled={!selectedCustomerId}
-          className="flex items-center gap-1 px-3 py-1 rounded-full bg-[#00a86b] hover:bg-[#00925d] text-white text-[11px] font-bold shadow-xs transition disabled:opacity-50 cursor-pointer"
+          className="flex items-center gap-1 px-3 py-1 h-7 rounded-full bg-[#00a86b] hover:bg-[#00925d] text-white text-[11px] font-bold shadow-xs transition disabled:opacity-50 cursor-pointer"
         >
           <CheckCircle2 className="w-3 h-3" />
           Settle &amp; Clear Full Khata
-        </button>
+        </Button>
       </div>
     </div>
   );
 }
+

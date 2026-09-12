@@ -1,4 +1,5 @@
 import { X, CheckCircle2, Printer, Calendar, User, CreditCard, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function CollectionPayoutsReceiptModal({ customer, entry, isOpen, onClose }) {
   if (!isOpen || !customer || !entry) return null;
@@ -17,16 +18,19 @@ export default function CollectionPayoutsReceiptModal({ customer, entry, isOpen,
         {/* Header */}
         <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
           <div>
-            <h3 className="text-xs font-bold text-slate-800 leading-tight">Khata Payment Receipt</h3>
+            <h3 className="text-xs font-bold text-slate-800 leading-tight font-display">Khata Payment Receipt</h3>
             <p className="text-[10px] text-slate-400">Customer Recovery Inflow · {entry.date}</p>
           </div>
 
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+            className="h-7 w-7 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </div>
 
         {/* Modal Body */}
@@ -47,7 +51,7 @@ export default function CollectionPayoutsReceiptModal({ customer, entry, isOpen,
                 {isPending ? 'Pending Clearance' : 'Confirmed Payment'}
               </span>
             </div>
-            <div className="text-2xl font-black text-white">
+            <div className="text-2xl font-black text-white tabular">
               Rs. {Number(entry.credit || 0).toLocaleString()}
             </div>
             <div className="flex items-center gap-1 text-[11px] text-emerald-300 font-medium pt-0.5">
@@ -62,21 +66,21 @@ export default function CollectionPayoutsReceiptModal({ customer, entry, isOpen,
               <span className="text-slate-500 flex items-center gap-1">
                 <User className="w-3 h-3 text-slate-400" /> Customer Account
               </span>
-              <span className="font-bold text-slate-800">{customer.name}</span>
+              <span className="font-bold text-slate-800 font-display">{customer.name}</span>
             </div>
 
             <div className="flex justify-between items-center py-1">
               <span className="text-slate-500 flex items-center gap-1">
                 <Calendar className="w-3 h-3 text-slate-400" /> Transaction Date
               </span>
-              <span className="font-mono text-slate-800 font-semibold">{entry.date}</span>
+              <span className="font-mono text-slate-800 font-semibold tabular">{entry.date}</span>
             </div>
 
             <div className="flex justify-between items-center py-1">
               <span className="text-slate-500 flex items-center gap-1">
                 <FileText className="w-3 h-3 text-slate-400" /> Receipt Voucher #
               </span>
-              <span className="font-mono text-slate-800 font-bold">{refCode}</span>
+              <span className="font-mono text-slate-800 font-bold tabular">{refCode}</span>
             </div>
 
             <div className="flex justify-between items-center py-1">
@@ -102,21 +106,27 @@ export default function CollectionPayoutsReceiptModal({ customer, entry, isOpen,
 
         {/* Footer */}
         <div className="px-4 py-2.5 border-t border-slate-100 flex justify-end gap-2 bg-slate-50/70">
-          <button
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={handlePrint}
-            className="flex items-center gap-1 px-3 py-1 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-md font-semibold transition text-xs cursor-pointer"
+            className="flex items-center gap-1 px-3 py-1 h-7 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-md font-semibold transition text-xs cursor-pointer shadow-none"
           >
             <Printer className="w-3 h-3 text-slate-500" />
             Print Inflow Slip
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            size="sm"
             onClick={onClose}
-            className="px-4 py-1 bg-[#00a86b] hover:bg-[#00925d] text-white rounded-md font-bold transition text-xs cursor-pointer shadow-2xs"
+            className="px-4 py-1 h-7 bg-[#00a86b] hover:bg-[#00925d] text-white rounded-md font-bold transition text-xs cursor-pointer shadow-2xs"
           >
             Done
-          </button>
+          </Button>
         </div>
       </div>
     </div>
   );
 }
+
