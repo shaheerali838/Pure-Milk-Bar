@@ -1,16 +1,3 @@
-/**
- * Layer 2: MilkProcurement Service — Business Logic & Transaction Orchestration
- *
- * Encapsulates 100% of business logic for the MilkProcurement domain.
- * - Accepts plain JavaScript objects, returns clean data objects.
- * - No HTTP protocol awareness (no req/res objects).
- * - Throws descriptive operational errors using AppError.
- *
- * Key Business Rules:
- *   1. Batch numbers must be globally unique.
- *   2. On create: supplier's currentPayableBalance is incremented by balanceAddedToKhata.
- *   3. On reject: balance adjustment is reversed.
- */
 import mongoose from 'mongoose';
 import MilkProcurement from '../../../models/MilkProcurement.model.js';
 import Supplier from '../../../models/Supplier.model.js';
