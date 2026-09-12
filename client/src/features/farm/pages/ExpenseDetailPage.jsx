@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useExpense } from '../components/expense/ExpenseContext';
+import { useExpense } from '../../../context/ExpenseContext';
 import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 
 export default function ExpenseDetailPage() {
@@ -34,7 +34,7 @@ export default function ExpenseDetailPage() {
   return (
     <div className="p-6 bg-slate-50 min-h-screen">
       <div className="max-w-3xl mx-auto space-y-6">
-        
+
         <div className="flex items-center space-x-4 mb-8">
           <Button variant="ghost" onClick={() => navigate('/farm/expenses')} className="p-2 h-auto rounded-full hover:bg-slate-200">
             <ArrowLeft className="w-5 h-5 text-slate-600" />
@@ -54,7 +54,7 @@ export default function ExpenseDetailPage() {
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Date</p>
                 <p className="text-lg font-medium text-slate-900">{new Date(expense.date).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
               </div>
-              
+
               <div>
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Category</p>
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-800">
@@ -89,9 +89,9 @@ export default function ExpenseDetailPage() {
           </div>
 
           <div className="flex justify-end space-x-4 pt-8 border-t border-slate-100 mt-8">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/farm/expenses')} 
+            <Button
+              variant="outline"
+              onClick={() => navigate('/farm/expenses')}
               className="flex items-center space-x-2 border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm"
             >
               Cancel

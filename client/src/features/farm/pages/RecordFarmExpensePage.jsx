@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft } from 'lucide-react';
-import { useExpense } from '../components/expense/ExpenseContext';
+import { useExpense } from '../../../context/ExpenseContext';
 
 const EXPENSE_CATEGORIES = [
   "Feed & Fodder (Silage, Wanda, Vanda)",
@@ -64,7 +64,7 @@ export default function RecordFarmExpensePage() {
   };
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen">
+    <div className="bg-slate-50 min-h-screen">
       <div className="max-w-2xl mx-auto">
         <div className="mb-6 flex items-center">
           <Button variant="ghost" onClick={() => navigate('/farm/expenses')} className="mr-2 h-8 w-8 p-0 rounded-full hover:bg-slate-200">
@@ -78,17 +78,17 @@ export default function RecordFarmExpensePage() {
         <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
+
               <div className="space-y-2 md:col-span-2">
                 <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Expense Category <span className="text-rose-500">*</span></label>
                 <div className="relative z-[100]">
-                  <Select value={formData.category} onValueChange={(val) => setFormData({...formData, category: val})} required>
+                  <Select value={formData.category} onValueChange={(val) => setFormData({ ...formData, category: val })} required>
                     <SelectTrigger className="h-11 bg-white border-slate-300 focus:ring-emerald-500 rounded-xl text-slate-900 font-medium">
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                     <SelectContent className="z-[110] border-slate-200 shadow-lg bg-white">
                       {EXPENSE_CATEGORIES.map(cat => (
-                         <SelectItem key={cat} value={cat} className="cursor-pointer focus:bg-emerald-50 focus:text-emerald-700 py-2.5 text-slate-900 font-medium">
+                        <SelectItem key={cat} value={cat} className="cursor-pointer focus:bg-emerald-50 focus:text-emerald-700 py-2.5 text-slate-900 font-medium">
                           {cat}
                         </SelectItem>
                       ))}
@@ -101,43 +101,43 @@ export default function RecordFarmExpensePage() {
                 <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Amount (PKR) <span className="text-rose-500">*</span></label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">Rs.</span>
-                  <Input 
-                    type="number" 
-                    required 
+                  <Input
+                    type="number"
+                    required
                     min="1"
                     className="h-11 pl-12 bg-white border-slate-300 focus-visible:ring-emerald-500 rounded-xl text-lg font-bold text-slate-900"
                     value={formData.amount}
-                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Date <span className="text-rose-500">*</span></label>
-                <Input 
-                  type="date" 
-                  required 
+                <Input
+                  type="date"
+                  required
                   className="h-11 bg-white border-slate-300 focus-visible:ring-emerald-500 rounded-xl text-slate-900 font-medium"
                   value={formData.date}
-                  onChange={(e) => setFormData({...formData, date: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 />
               </div>
 
               <div className="space-y-2 md:col-span-2">
                 <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Description <span className="text-rose-500">*</span></label>
-                <Input 
+                <Input
                   placeholder="E.g., Bought 20 bags of wanda..."
                   required
                   className="h-11 bg-white border-slate-300 focus-visible:ring-emerald-500 rounded-xl text-slate-900 font-medium"
                   value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Payment Method</label>
                 <div className="relative z-[50]">
-                  <Select value={formData.paymentMethod} onValueChange={(val) => setFormData({...formData, paymentMethod: val})}>
+                  <Select value={formData.paymentMethod} onValueChange={(val) => setFormData({ ...formData, paymentMethod: val })}>
                     <SelectTrigger className="h-11 bg-white border-slate-300 focus:ring-emerald-500 rounded-xl text-slate-900 font-medium">
                       <SelectValue placeholder="Method" />
                     </SelectTrigger>
@@ -152,21 +152,21 @@ export default function RecordFarmExpensePage() {
 
               <div className="space-y-2">
                 <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Receipt / Voucher Ref # <span className="text-slate-400 font-medium lowercase">(optional)</span></label>
-                <Input 
+                <Input
                   placeholder="Optional reference"
                   className="h-11 bg-white border-slate-300 focus-visible:ring-emerald-500 rounded-xl text-slate-900 font-medium"
                   value={formData.receiptRef}
-                  onChange={(e) => setFormData({...formData, receiptRef: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, receiptRef: e.target.value })}
                 />
               </div>
 
               <div className="space-y-2 md:col-span-2">
                 <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Authorized / Recorded By <span className="text-slate-400 font-medium lowercase">(optional)</span></label>
-                <Input 
+                <Input
                   placeholder="e.g. Allah Ditta"
                   className="h-11 bg-white border-slate-300 focus-visible:ring-emerald-500 rounded-xl text-slate-900 font-medium"
                   value={formData.authorizedBy}
-                  onChange={(e) => setFormData({...formData, authorizedBy: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, authorizedBy: e.target.value })}
                 />
               </div>
             </div>

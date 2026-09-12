@@ -27,6 +27,7 @@ import { LoginPage } from "./features/auth";
 import { CustomerProvider } from "./context/CustomerContext";
 import { LedgerProvider } from "./context/LedgerContext";
 import { AnimalProvider } from "./context/AnimalContext";
+import { ExpenseProvider } from "./context/ExpenseContext";
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -35,7 +36,8 @@ export default function App() {
     <CustomerProvider>
       <LedgerProvider>
         <AnimalProvider>
-          <BrowserRouter>
+          <ExpenseProvider>
+            <BrowserRouter>
             <Routes>
               <Route
                 path="/login"
@@ -94,7 +96,8 @@ export default function App() {
                 />
               </Route>
             </Routes>
-          </BrowserRouter>
+            </BrowserRouter>
+          </ExpenseProvider>
         </AnimalProvider>
       </LedgerProvider>
     </CustomerProvider>
