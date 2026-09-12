@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Sun, Moon, Zap, RotateCcw, Check, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useAnimalContext } from "../../../../context/AnimalContext";
@@ -13,7 +13,23 @@ export default function MilkingRegisterTable() {
   const [inputValues, setInputValues] = useState({ Morning: {}, Evening: {} });
 
   // Confirmed saved entries (updated ONLY on Save click)
-  const [savedEntries, setSavedEntries] = useState({ Morning: {}, Evening: {} });
+  const [savedEntries, setSavedEntries] = useState(() => {
+    try {
+      const saved = localStorage.getItem("pure_milk_bar_milking_saved_entries");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    return { Morning: {}, Evening: {} };
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("pure_milk_bar_milking_saved_entries", JSON.stringify(savedEntries));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [savedEntries]);
 
   // Process registered animals from context
   const cattleList = animals.map((a, idx) => {

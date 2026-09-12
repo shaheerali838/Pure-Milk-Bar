@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  Beef,
-  Droplets,
-  Activity,
-  TrendingUp,
-  DollarSign,
-  PieChart as PieChartIcon
-} from "lucide-react";
+import { TrendingUp, PieChart as PieChartIcon } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import {
   ResponsiveContainer,
@@ -17,9 +10,9 @@ import {
   Tooltip,
   CartesianGrid
 } from "recharts";
+import FarmCardOverflow from "./FarmCardOverflow";
 import AnimalYieldBreakdown from "./AnimalYieldBreakdown";
 
-// Helper to extract numeric yield value
 const parseYield = (val) => {
   if (typeof val === "number") return val;
   if (!val) return 0;
@@ -27,7 +20,7 @@ const parseYield = (val) => {
   return match ? parseFloat(match[0]) : 0;
 };
 
-export default function FarmDashoard() {
+export default function FarmDashboardContent() {
   const { animals = [] } = useAnimalContext();
 
   // Metrics
@@ -52,42 +45,6 @@ export default function FarmDashoard() {
   const dailyNetProfit = Math.max(0, dailyRevenue - dailyExpenses);
   const monthlyNetProfit = dailyNetProfit * 30;
 
-  // Stat Cards Data
-  const statCards = [
-    {
-      label: "Total Animals",
-      value: `${totalAnimals}`,
-      sub: `${cowsCount} Cows • ${buffCount} Buffaloes`,
-      icon: Beef,
-      color: "#009966",
-      badge: "Active Herd"
-    },
-    {
-      label: "Total Farm Yield",
-      value: `${totalFarmYield.toFixed(1)} L`,
-      sub: "Daily total production",
-      icon: Droplets,
-      color: "#155dfc",
-      badge: "Today's Milk"
-    },
-    {
-      label: "Average Animal Yield",
-      value: `${avgAnimalYield.toFixed(1)} L`,
-      sub: "Avg output per animal",
-      icon: Activity,
-      color: "#009689",
-      badge: "Yield / Head"
-    },
-    {
-      label: "Farm Net Profit",
-      value: `Rs. ${dailyNetProfit.toLocaleString()}`,
-      sub: `~ Rs. ${(monthlyNetProfit / 100000).toFixed(2)}M / month net`,
-      icon: DollarSign,
-      color: "#10b981",
-      badge: "Net Profit / Day"
-    }
-  ];
-
   // 7-Day Trend Data
   const chartDates = ["18 Aug", "19 Aug", "20 Aug", "21 Aug", "22 Aug", "23 Aug", "24 Aug"];
   const trendData = chartDates.map((date) => {
@@ -110,35 +67,16 @@ export default function FarmDashoard() {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* 4 Main Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-        {statCards.map(({ label, value, sub, icon: Icon, color, badge }) => (
-          <div
-            key={label}
-            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2 shadow-sm hover:shadow-md transition-all duration-200"
-            style={{ borderTop: `4px solid ${color}` }}
-          >
-            <div className="flex items-start justify-between mb-1">
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
-                style={{ background: `${color}15` }}
-              >
-                <Icon style={{ width: 16, height: 16, color }} />
-              </div>
-              <span className="text-[10px] font-bold px-6 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
-                {badge}
-              </span>
-            </div>
-            <div>
-              <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5">
-                {value}
-              </p>
-              <p className="text-xs font-bold text-slate-700">{label}</p>
-              <p className="text-[11px] font-medium text-slate-400">{sub}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Extracted Stats Cards */}
+      <FarmCardOverflow 
+        totalAnimals={totalAnimals}
+        cowsCount={cowsCount}
+        buffCount={buffCount}
+        totalFarmYield={totalFarmYield}
+        avgAnimalYield={avgAnimalYield}
+        dailyNetProfit={dailyNetProfit}
+        monthlyNetProfit={monthlyNetProfit}
+      />
 
       {/* Visual Chart & Financial Highlights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -250,7 +188,6 @@ export default function FarmDashoard() {
         </div>
       </div>
 
-      {/* Animal Herd Yield Breakdown */}
       <AnimalYieldBreakdown />
     </div>
   );

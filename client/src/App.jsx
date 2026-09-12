@@ -5,9 +5,13 @@ import Dashboard from "./features/dashboard/pages/Dashboard";
 import Farm from "./features/farm/pages/Farm";
 import FarmDashboard from "./features/farm/pages/FarmDashboard";
 import AnimalsHerd from "./features/farm/pages/AnimalsHerd";
+import AnimalDetailPage from "./features/farm/pages/AnimalDetailPage";
 import MilkingRegister from "./features/farm/pages/MilkingRegister";
 import DahiProcessing from "./features/farm/pages/DahiProcessing";
 import FarmExpenses from "./features/farm/pages/FarmExpenses";
+import ExpenseLayout from "./features/farm/pages/ExpenseLayout";
+import RecordFarmExpensePage from "./features/farm/pages/RecordFarmExpensePage";
+import ExpenseDetailPage from "./features/farm/pages/ExpenseDetailPage";
 import FarmPL from "./features/farm/pages/FarmPL";
 import DailySheet from "./features/farm/pages/DailySheet";
 import Supplier from "./features/suppliers/pages/Supplier";
@@ -52,9 +56,15 @@ export default function App() {
                 <Route path="farm" element={<Farm />}>
                   <Route index element={<FarmDashboard />} />
                   <Route path="animals" element={<AnimalsHerd />} />
+                  <Route path="animals/detail/:id" element={<AnimalDetailPage />} />
                   <Route path="milking" element={<MilkingRegister />} />
                   <Route path="processing" element={<DahiProcessing />} />
-                  <Route path="expenses" element={<FarmExpenses />} />
+                  <Route path="expenses" element={<ExpenseLayout />}>
+                    <Route index element={<FarmExpenses />} />
+                    <Route path="new" element={<RecordFarmExpensePage />} />
+                    <Route path="edit/:id" element={<RecordFarmExpensePage />} />
+                    <Route path="detail/:id" element={<ExpenseDetailPage />} />
+                  </Route>
                   <Route path="pl" element={<FarmPL />} />
                   <Route path="dailysheet" element={<DailySheet />} />
                 </Route>
@@ -90,5 +100,3 @@ export default function App() {
     </CustomerProvider>
   );
 }
-
-
