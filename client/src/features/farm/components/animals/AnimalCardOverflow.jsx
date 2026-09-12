@@ -1,14 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Beef, Edit3, Trash2, Eye, X, Users, UserCheck } from "lucide-react";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from "recharts";
 import AnimalStatsCards from "./AnimalStatsCards";
 import RegisterAnimalModal from "./RegisterAnimalModal";
 import AnimalFilterHeader from "./AnimalFilterHeader";
@@ -49,12 +41,12 @@ export default function AnimalCardOverflow() {
     closeModal,
   } = useAnimalContext();
 
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("registry"); // 'registry' or 'workers'
   const [searchTerm, setSearchTerm] = useState("");
   const [speciesFilter, setSpeciesFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const [detailAnimal, setDetailAnimal] = useState(null);
   const [editAnimal, setEditAnimal] = useState(null);
   const [deleteTargetAnimal, setDeleteTargetAnimal] = useState(null);
 
@@ -178,7 +170,7 @@ export default function AnimalCardOverflow() {
                 filteredAnimals.map((a) => (
                   <TableRow
                     key={a.id}
-                    onClick={() => setDetailAnimal(a)}
+                    onClick={() => navigate(`/farm/animals/detail/${a.id}`)}
                     className="border-b border-slate-100 last:border-b-0 hover:bg-emerald-50/30 transition-colors cursor-pointer group"
                   >
                     {/* Tag # */}
@@ -238,9 +230,9 @@ export default function AnimalCardOverflow() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setDetailAnimal(a)}
+                          onClick={() => navigate(`/farm/animals/detail/${a.id}`)}
                           className="p-1.5 h-8 w-8 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all cursor-pointer"
-                          title="View Profile & Chart"
+                          title="View Animal Details"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -357,7 +349,7 @@ export default function AnimalCardOverflow() {
                   onChange={(e) =>
                     setEditFormData({ ...editFormData, tag: e.target.value })
                   }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all tabular"
                 />
               </div>
 
@@ -512,178 +504,6 @@ export default function AnimalCardOverflow() {
                   className="px-6 py-2.5 rounded-full bg-[#E11D48] hover:bg-[#D91B42] text-white text-sm font-bold shadow-xs transition-all cursor-pointer"
                 >
                   Delete Animal
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Inline Detail & Recharts Profile Modal */}
-      {detailAnimal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h2 className="font-display text-xl font-bold text-[#0F172A] tracking-tight">
-                Livestock Profile: {detailAnimal.tag}
-              </h2>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setDetailAnimal(null)}
-                className="text-slate-400 hover:text-slate-600 h-8 w-8 rounded-lg transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
-
-            <div className="p-6 space-y-5">
-              <div className="bg-[#F8FAFC] border border-slate-200/60 rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-4">
-                <div>
-                  <span className="block text-xs font-semibold text-slate-500">
-                    Animal Tag / Name:
-                  </span>
-                  <span className="text-sm font-bold text-slate-900 tabular">
-                    {detailAnimal.tag} {detailAnimal.name && detailAnimal.name !== detailAnimal.tag ? `(${detailAnimal.name})` : ''}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="block text-xs font-semibold text-slate-500">
-                    Species:
-                  </span>
-                  <span className="text-sm font-bold text-slate-900">
-                    {detailAnimal.species || "Cow"}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="block text-xs font-semibold text-slate-500">
-                    Purchase Price:
-                  </span>
-                  <span className="text-sm font-bold text-purple-700 tabular">
-                    {detailAnimal.purchasePrice || "Rs 200,000"}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="block text-xs font-semibold text-slate-500">
-                    Expected Daily Yield:
-                  </span>
-                  <span className="text-sm font-bold text-indigo-600 tabular">
-                    {detailAnimal.expectedYield || "15.0 L"}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="block text-xs font-semibold text-slate-500">
-                    Morning Yield:
-                  </span>
-                  <span className="text-sm font-bold text-[#009966] tabular">
-                    {detailAnimal.morningYield || "0.0 L"}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="block text-xs font-semibold text-slate-500">
-                    Evening Yield:
-                  </span>
-                  <span className="text-sm font-bold text-[#009966] tabular">
-                    {detailAnimal.eveningYield || "0.0 L"}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-display text-sm font-bold text-slate-900 mb-2">
-                  7-Day Milking Performance
-                </h3>
-
-                <div className="border border-slate-200/70 rounded-2xl p-4 bg-white h-60">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={
-                        detailAnimal.history || [
-                          { date: "18 Aug", morning: 8.2, evening: 7.0 },
-                          { date: "19 Aug", morning: 8.8, evening: 7.3 },
-                          { date: "20 Aug", morning: 8.0, evening: 6.8 },
-                          { date: "21 Aug", morning: 9.1, evening: 7.5 },
-                          { date: "22 Aug", morning: 8.5, evening: 7.2 },
-                          { date: "23 Aug", morning: 8.9, evening: 7.4 },
-                          { date: "24 Aug", morning: 8.5, evening: 7.2 },
-                        ]
-                      }
-                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                    >
-                      <defs>
-                        <linearGradient id="morningGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#009966" stopOpacity={0.25} />
-                          <stop offset="95%" stopColor="#009966" stopOpacity={0.02} />
-                        </linearGradient>
-                        <linearGradient id="eveningGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.15} />
-                          <stop offset="95%" stopColor="#10B981" stopOpacity={0.01} />
-                        </linearGradient>
-                      </defs>
-
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                      <XAxis
-                        dataKey="date"
-                        tickLine={false}
-                        axisLine={{ stroke: "#E2E8F0" }}
-                        tick={{ fill: "#64748B", fontSize: 11 }}
-                      />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(val) => `${val} L`}
-                        domain={[0, 12]}
-                        ticks={[0, 3, 6, 9, 12]}
-                        tick={{ fill: "#64748B", fontSize: 11 }}
-                      />
-                      <Tooltip
-                        formatter={(val, name) => [
-                          `${val} L`,
-                          name === "morning" ? "Morning" : "Evening",
-                        ]}
-                        contentStyle={{
-                          backgroundColor: "#FFF",
-                          borderRadius: "12px",
-                          borderColor: "#E2E8F0",
-                          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
-                          fontSize: "12px",
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="morning"
-                        stroke="#009966"
-                        strokeWidth={2}
-                        fillOpacity={1}
-                        fill="url(#morningGrad)"
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="evening"
-                        stroke="#10B981"
-                        strokeWidth={2}
-                        fillOpacity={1}
-                        fill="url(#eveningGrad)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end pt-1">
-                <Button
-                  type="button"
-                  onClick={() => setDetailAnimal(null)}
-                  className="px-6 py-2 rounded-full text-white font-bold text-sm cursor-pointer hover:brightness-105 transition-all shadow-xs"
-                  style={{ background: "#009966" }}
-                >
-                  Close
                 </Button>
               </div>
             </div>
