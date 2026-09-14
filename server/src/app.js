@@ -13,6 +13,7 @@ import customerRoutes from './modules/customers/routes/customer.routes.js';
 import deliveryRoutes from './modules/deliveries/routes/delivery.routes.js';
 import financeRoutes from './modules/finance/routes/finance.routes.js';
 import dailyClosingRoutes from './modules/dailyClosing/routes/dailyClosing.routes.js';
+import auditLogRoutes from './modules/auditLog/routes/auditLog.routes.js';
 
 const app = express();
 
@@ -66,6 +67,7 @@ app.use('/api/v1/customers', customerRoutes);
 app.use('/api/v1/deliveries', deliveryRoutes);
 app.use('/api/v1/finance', financeRoutes);
 app.use('/api/v1/daily-closings', dailyClosingRoutes);
+app.use('/api/v1/audit-logs', auditLogRoutes);
 
 // Root route
 app.get('/', (req, res) => {
