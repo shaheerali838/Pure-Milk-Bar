@@ -5,11 +5,21 @@ import AnimalStatsCards from "./AnimalStatsCards";
 import RegisterAnimalModal from "./RegisterAnimalModal";
 import AnimalFilterHeader from "./AnimalFilterHeader";
 import { useAnimalContext } from "../../../../context/AnimalContext";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 const statusStyle = {
-  "Milking": "bg-emerald-100 text-emerald-700",
-  "Dry/Gestating": "bg-amber-100 text-amber-700",
-  "Calf": "bg-blue-100 text-blue-700",
+  "Milking": "bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
+  "Dry/Gestating": "bg-amber-100 text-amber-700 hover:bg-amber-100",
+  "Calf": "bg-blue-100 text-blue-700 hover:bg-blue-100",
 };
 
 // Default Farm Workers list for the Workers Tab

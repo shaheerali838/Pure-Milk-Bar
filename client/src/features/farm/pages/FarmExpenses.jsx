@@ -1,12 +1,9 @@
-﻿import React from "react";
+import React from "react";
 import ExpenseDashboard from "../components/expense/ExpenseDashoard";
 
-
 export default function FarmExpenses() {
-  
-
   return (
-    <div className="">
+    <div>
       <ExpenseDashboard />
     </div>
   );

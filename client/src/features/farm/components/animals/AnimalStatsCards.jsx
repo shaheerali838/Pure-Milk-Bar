@@ -1,6 +1,7 @@
 import React from "react";
 import { Beef, Activity, Droplets, Users } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
+import { Card } from "@/components/ui/card";
 
 export default function AnimalStatsCards() {
   const { animals = [] } = useAnimalContext();
@@ -85,3 +86,4 @@ export default function AnimalStatsCards() {
     </div>
   );
 }
+

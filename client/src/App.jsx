@@ -17,8 +17,7 @@ import DailySheet from "./features/farm/pages/DailySheet";
 import Supplier from "./features/suppliers/pages/Supplier";
 import CustomerManagement from "./features/customers/pages/CustomerManagement";
 import CustomerKhataLedger from "./features/customers/pages/CustomerKhataLedger";
-import CollectionPayment from "./features/customers/pages/CollectionPayment";
-import ReceivablesAging from "./features/customers/pages/ReceivablesAging";
+import CustomerFinance from "./features/finance/pages/CustomerFinance";
 import Proccessing from "./features/inventory/pages/Processing";
 import Pos from "./features/pos/pages/Pos";
 import Delivery from "./features/deliveries/pages/Delivery";
@@ -44,7 +43,7 @@ export default function App() {
                 element={
                   <LoginPage
                     onLogin={(email, password) => {
-                      console.log("Logging in user:", email);
+                      console.log('Logging in user:', email);
                       setIsAuthenticated(true);
                     }}
                   />
@@ -83,11 +82,9 @@ export default function App() {
                   path="customer-khata-ledger"
                   element={<CustomerKhataLedger />}
                 />
-                <Route
-                  path="collection-payment"
-                  element={<CollectionPayment />}
-                />
-                <Route path="receivables" element={<ReceivablesAging />} />
+
+                {/* Finance Routes */}
+                <Route path="finance/customer" element={<CustomerFinance />} />
 
                 {/* Catch-all redirect */}
                 <Route

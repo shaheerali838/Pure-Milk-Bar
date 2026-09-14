@@ -1,5 +1,8 @@
-﻿import React from "react";
+import React from "react";
 import { FileText, Droplets, Receipt, Layers, Beef } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableRow, TableCell } from "@/components/ui/table";
 
 const today = new Date().toLocaleDateString("en-PK", {
   weekday: "long", year: "numeric", month: "long", day: "numeric",
@@ -33,43 +36,43 @@ export default function DailySheet() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="flex items-center gap-2 text-base font-bold text-slate-800 mb-0.5">
+          <h3 className="font-display flex items-center gap-2 text-base font-bold text-slate-800 mb-0.5">
             <FileText className="w-[18px] h-[18px] text-amber-500" /> Daily Sheet
           </h3>
           <p className="text-sm text-slate-500">{today}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 text-[12px] font-medium">
+          <Badge variant="outline" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 text-[12px] font-medium border-0 tabular">
             <Droplets className="w-3.5 h-3.5" /> Total Milk: <strong>64.7 L</strong>
-          </span>
-          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-[12px] font-medium">
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-[12px] font-medium border-0 tabular">
             <Beef className="w-3.5 h-3.5" /> Animals: <strong>6</strong>
-          </span>
-          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-[12px] font-medium">
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-[12px] font-medium border-0 tabular">
             <Receipt className="w-3.5 h-3.5" /> Expenses: <strong>Rs. 20,500</strong>
-          </span>
+          </Badge>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {sections.map(({ title, icon: Icon, color, rows, footer }) => (
-          <div key={title} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <Card key={title} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-none">
             <div className="flex items-center gap-2 px-3.5 py-3 border-b border-slate-100 text-[13px] font-bold" style={{ color }}>
               <Icon className="w-[14px] h-[14px]" style={{ color }} /> {title}
             </div>
-            <table className="w-full text-[13px]">
-              <tbody>
+            <Table className="w-full text-[13px]">
+              <TableBody>
                 {rows.map((row, i) => (
-                  <tr key={i} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/60">
+                  <TableRow key={i} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/60">
                     {row.map((cell, j) => (
-                      <td key={j} className={"px-3.5 py-2 text-slate-700" + (j === 0 ? " font-mono text-[12px] font-bold text-slate-900" : "")}>{cell}</td>
+                      <TableCell key={j} className={"px-3.5 py-2 text-slate-700 tabular" + (j === 0 ? " font-mono text-[12px] font-bold text-slate-900" : "")}>{cell}</TableCell>
                     ))}
-                  </tr>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-            <div className="px-3.5 py-2 border-t border-slate-100 bg-slate-50 text-[12px] font-bold" style={{ color }}>{footer}</div>
-          </div>
+              </TableBody>
+            </Table>
+            <div className="px-3.5 py-2 border-t border-slate-100 bg-slate-50 text-[12px] font-bold tabular" style={{ color }}>{footer}</div>
+          </Card>
         ))}
       </div>
     </div>

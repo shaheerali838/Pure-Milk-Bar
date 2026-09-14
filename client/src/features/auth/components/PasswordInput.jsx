@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 /**
  * Password input component with eye toggle button and emerald green focus styling.
@@ -60,19 +61,21 @@ const PasswordInput = ({
           {...props}
         />
 
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={togglePasswordVisibility}
           disabled={disabled}
           aria-label={showPassword ? 'Hide password' : 'Show password'}
-          className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 focus:text-emerald-600 focus:outline-none transition-colors"
+          className="absolute inset-y-0 right-0 h-full w-9 p-0 text-slate-400 hover:text-slate-600 hover:bg-transparent focus:text-emerald-600 focus:outline-none transition-colors"
         >
           {showPassword ? (
             <EyeOff className="h-4 w-4" aria-hidden="true" />
           ) : (
             <Eye className="h-4 w-4" aria-hidden="true" />
           )}
-        </button>
+        </Button>
       </div>
 
       {error && (
