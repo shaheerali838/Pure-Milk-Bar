@@ -1,6 +1,7 @@
 import React from 'react';
 import { Eye, Edit2, Smartphone, Milk } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
+import { useLedgerContext } from '../../../../context/LedgerContext';
 import {
   Table,
   TableHeader,
@@ -14,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 
 export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
   const { customers } = useCustomerContext();
+  const { addLedgerEntry } = useLedgerContext();
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
@@ -110,9 +112,39 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                           Online Payment
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 text-[10px] font-semibold border border-purple-200/60">
-                          Khata
-                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const balance = Number(c.khataBalance) || 0;
+                            if (balance <= 0) {
+                              alert(`${c.name} has no outstanding khata balance.`);
+                              return;
+                            }
+                            if (
+                              window.confirm(
+                                `Clear and finish full Khata debt of Rs. ${balance.toLocaleString()} for ${c.name}?`
+                              )
+                            ) {
+                              addLedgerEntry(c.id, {
+                                description: 'Khata Full Settlement / Received',
+                                credit: balance,
+                                debit: 0,
+                                method: 'Cash',
+                                notes: 'Full Khata finished and cleared directly',
+                              });
+                              alert(`Khata for ${c.name} has been finished.`);
+                            }
+                          }}
+                          title={
+                            (Number(c.khataBalance) || 0) > 0
+                              ? 'Click to direct finish & clear Khata'
+                              : 'Khata account (No outstanding debt)'
+                          }
+                          className="px-2 py-0.5 rounded bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-semibold border border-purple-200/60 transition cursor-pointer"
+                        >
+                          Khata · Finish
+                        </button>
                       )}
                     </TableCell>
 
