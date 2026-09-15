@@ -52,20 +52,32 @@ export default function POSReceiptModal() {
             <div className="flex justify-between">
               <span>Customer:</span>
               <strong className="text-slate-800">
-                {completedSaleReceipt.customer ? completedSaleReceipt.customer.name : 'Walk-in Customer'}
+                {completedSaleReceipt.customer
+                  ? completedSaleReceipt.customer.name
+                  : completedSaleReceipt.walkinCustomer?.name || 'Walk-in Customer'}
               </strong>
             </div>
+            {completedSaleReceipt.walkinCustomer?.phone && completedSaleReceipt.walkinCustomer.phone !== 'N/A' && (
+              <div className="flex justify-between">
+                <span>Phone:</span>
+                <span className="font-semibold text-slate-700">{completedSaleReceipt.walkinCustomer.phone}</span>
+              </div>
+            )}
             <div className="flex justify-between">
-              <span>Fulfillment:</span>
-              <span className="font-semibold text-purple-700 capitalize">
-                {completedSaleReceipt.fulfillmentMode === 'doorstep' ? 'Doorstep Delivery' : 'Counter Pickup'}
+              <span>Order Type:</span>
+              <span className="font-semibold text-emerald-700 capitalize">
+                {completedSaleReceipt.saleCategory === 'walkin'
+                  ? 'Walk-in Counter'
+                  : completedSaleReceipt.saleCategory === 'delivery'
+                  ? `Delivery (${completedSaleReceipt.deliverySubType === 'monthly' ? 'Monthly' : 'On-Time'})`
+                  : 'Monthly Subscribed (Khata Buy)'}
               </span>
             </div>
             {completedSaleReceipt.rider && (
               <div className="flex justify-between">
-                <span>Rider:</span>
+                <span>Rider / Delivery:</span>
                 <span className="font-semibold text-slate-800">
-                  {completedSaleReceipt.rider.name} ({completedSaleReceipt.rider.vehicleName})
+                  {completedSaleReceipt.rider.customName || completedSaleReceipt.rider.name}
                 </span>
               </div>
             )}

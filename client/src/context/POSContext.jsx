@@ -186,6 +186,22 @@ export function POSProvider({ children }) {
   const [discount, setDiscount] = useState(0);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [fulfillmentMode, setFulfillmentMode] = useState('counter'); // 'counter' | 'doorstep'
+  
+  // 3 Primary Sale Categories: 'walkin' | 'delivery' | 'customer'
+  const [saleCategory, setSaleCategory] = useState('walkin');
+
+  // Walk-in Customer Info (Optional)
+  const [walkinName, setWalkinName] = useState('');
+  const [walkinPhone, setWalkinPhone] = useState('');
+
+  // Delivery Sub-Types: 'ontime' | 'monthly'
+  const [deliverySubType, setDeliverySubType] = useState('ontime');
+
+  // Customer Mode Khata Options: 'khata' | 'cash' | 'partial'
+  const [khataPaymentOption, setKhataPaymentOption] = useState('khata');
+  const [partialPaidAmount, setPartialPaidAmount] = useState('');
+  const [orderNotes, setOrderNotes] = useState('');
+
   const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'khata' | 'online' | 'cod'
   const [cashTendered, setCashTendered] = useState('');
 
@@ -252,6 +268,10 @@ export function POSProvider({ children }) {
     setDiscount(0);
     setDeliveryCharge(0);
     setCashTendered('');
+    setWalkinName('');
+    setWalkinPhone('');
+    setOrderNotes('');
+    setPartialPaidAmount('');
     setOnlineDetails({ provider: 'JazzCash', senderAccount: '', trxId: '' });
   };
 
@@ -260,7 +280,7 @@ export function POSProvider({ children }) {
     (sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0),
     0
   );
-  const effectiveDeliveryCharge = fulfillmentMode === 'doorstep' ? Number(deliveryCharge) || 0 : 0;
+  const effectiveDeliveryCharge = saleCategory === 'delivery' ? Number(deliveryCharge) || 0 : 0;
   const effectiveDiscount = Math.min(cartSubtotal, Math.max(0, Number(discount) || 0));
   const netPayable = Math.max(0, cartSubtotal + effectiveDeliveryCharge - effectiveDiscount);
 
@@ -305,6 +325,11 @@ export function POSProvider({ children }) {
     if (cart.length === 0) return null;
 
     const invoiceId = `INV-${1000 + salesHistory.length + 25}`;
+    const todayDate = new Date().toISOString().split('T')[0];
+    const itemSummary = cart
+      .map((i) => `${i.quantity} ${i.unit || 'unit'} ${i.name} (@Rs. ${i.price})`)
+      .join(' + ');
+
     const saleRecord = {
       invoiceId,
       timestamp: new Date().toISOString(),
@@ -316,13 +341,22 @@ export function POSProvider({ children }) {
       deliveryCharge: effectiveDeliveryCharge,
       discount: effectiveDiscount,
       netPayable,
-      fulfillmentMode,
-      paymentMethod,
+      saleCategory,
+      deliverySubType: saleCategory === 'delivery' ? deliverySubType : null,
+      fulfillmentMode: saleCategory === 'delivery' ? 'doorstep' : 'counter',
+      paymentMethod: saleCategory === 'customer' ? khataPaymentOption : paymentMethod,
       cashTendered: paymentMethod === 'cash' ? Number(cashTendered) || netPayable : null,
       changeDue: paymentMethod === 'cash' ? Math.max(0, (Number(cashTendered) || netPayable) - netPayable) : 0,
       onlineDetails: paymentMethod === 'online' ? { ...onlineDetails } : null,
+      walkinCustomer:
+        saleCategory === 'walkin'
+          ? {
+              name: walkinName.trim() || 'Walk-in Customer',
+              phone: walkinPhone.trim() || 'N/A',
+            }
+          : null,
       rider:
-        fulfillmentMode === 'doorstep'
+        saleCategory === 'delivery'
           ? {
               ...activeRider,
               customName: customRiderName || activeRider.name,
@@ -332,22 +366,87 @@ export function POSProvider({ children }) {
               collectEmptyBottles,
             }
           : null,
-      customer: activeCustomer
-        ? {
-            id: activeCustomer.id,
-            name: activeCustomer.name,
-            phone: activeCustomer.phone,
-            area: activeCustomer.area,
-          }
-        : null,
+      customer:
+        (saleCategory === 'customer' || (saleCategory === 'delivery' && deliverySubType === 'monthly')) && activeCustomer
+          ? {
+              id: activeCustomer.id,
+              name: activeCustomer.name,
+              phone: activeCustomer.phone,
+              area: activeCustomer.area,
+            }
+          : null,
+      notes: orderNotes || '',
     };
 
-    // If Khata Pay: add transaction to customer ledger
-    if (paymentMethod === 'khata' && activeCustomer) {
+    // Customer / Monthly Subscribed Mode: Execute exact Customer Khata Ledger Buy logic
+    if (saleCategory === 'customer' && activeCustomer) {
+      const description = `POS Buy: ${itemSummary}`;
+
+      if (khataPaymentOption === 'cash') {
+        addLedgerEntry(activeCustomer.id, {
+          description,
+          debit: netPayable,
+          credit: 0,
+          date: todayDate,
+          method: 'Cash',
+          notes: orderNotes ? `Instant POS Cash Purchase. ${orderNotes}` : 'Instant POS Cash Purchase',
+        });
+        addLedgerEntry(activeCustomer.id, {
+          description: `Payment Received (Against POS Buy Order)`,
+          debit: 0,
+          credit: netPayable,
+          date: todayDate,
+          method: 'Cash',
+          notes: 'Full immediate cash settlement',
+        });
+      } else if (khataPaymentOption === 'partial') {
+        const paid = parseFloat(partialPaidAmount) || 0;
+        addLedgerEntry(activeCustomer.id, {
+          description,
+          debit: netPayable,
+          credit: 0,
+          date: todayDate,
+          method: 'Khata Credit',
+          notes: orderNotes ? `Partial Cash: Rs. ${paid}. ${orderNotes}` : `Partial Cash: Rs. ${paid}`,
+        });
+        if (paid > 0) {
+          addLedgerEntry(activeCustomer.id, {
+            description: `Partial Payment (Against POS Buy Order)`,
+            debit: 0,
+            credit: paid,
+            date: todayDate,
+            method: 'Cash',
+            notes: 'Partial on-the-spot payment',
+          });
+        }
+      } else {
+        // Full Khata Charge
+        addLedgerEntry(activeCustomer.id, {
+          description,
+          debit: netPayable,
+          credit: 0,
+          date: todayDate,
+          method: 'Khata Credit',
+          notes: orderNotes ? `POS Monthly Subscribed Buy. ${orderNotes}` : 'POS Monthly Subscribed Buy',
+        });
+      }
+    } else if (saleCategory === 'delivery' && deliverySubType === 'monthly' && activeCustomer && paymentMethod === 'khata') {
+      // Monthly Delivery charged to Khata
+      addLedgerEntry(activeCustomer.id, {
+        description: `POS Monthly Delivery: ${itemSummary} [${customRiderName || activeRider.name}]`,
+        debit: netPayable,
+        credit: 0,
+        date: todayDate,
+        method: 'Khata Credit',
+        notes: orderNotes ? `Doorstep Delivery. ${orderNotes}` : 'Doorstep Delivery',
+      });
+    } else if (paymentMethod === 'khata' && activeCustomer) {
+      // Fallback Khata payment
       addLedgerEntry(activeCustomer.id, {
         description: `POS Counter Sale (${invoiceId})`,
         debit: netPayable,
         credit: 0,
+        date: todayDate,
         method: 'Khata',
         notes: `Items: ${cart.map((i) => `${i.name} x${i.quantity}`).join(', ')}`,
       });
@@ -444,7 +543,21 @@ export function POSProvider({ children }) {
         handleClearCart,
         clearCart: handleClearCart,
 
-        // Fulfillment
+        // Fulfillment & Sale Modes
+        saleCategory,
+        setSaleCategory,
+        walkinName,
+        setWalkinName,
+        walkinPhone,
+        setWalkinPhone,
+        deliverySubType,
+        setDeliverySubType,
+        khataPaymentOption,
+        setKhataPaymentOption,
+        partialPaidAmount,
+        setPartialPaidAmount,
+        orderNotes,
+        setOrderNotes,
         fulfillmentMode,
         setFulfillmentMode,
         riders: deliveryRidersList,
