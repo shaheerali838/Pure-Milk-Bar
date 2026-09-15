@@ -1,6 +1,5 @@
 import React from 'react';
 import { ExecationOperation } from '../components/businesOperation/ExecationOperation';
-import CommandCenterBanner from '../components/CommandCenterBanner';
 import ReceivablesRecoveriesStats from '../components/ReceivablesRecoveriesStats';
 import QuickStatsRow from '../components/QuickStatsRow';
 import TopReceivablesCard from '../components/TopReceivablesCard';
@@ -9,10 +8,7 @@ import RecentRecoveriesTable from '../components/RecentRecoveriesTable';
 export default function Dashboard() {
   return (
     <div className="space-y-4">
-      {/* 1. Command Center Header Banner */}
-      <CommandCenterBanner />
-
-      {/* 2. Execution Module Switcher Bar */}
+      {/* 1. Execution Module Switcher Bar */}
       <ExecationOperation />
 
       {/* 3. Real KPIs Row (Receivables, Today's Recoveries, Milk Deliveries) */}
