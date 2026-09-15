@@ -1,5 +1,5 @@
 import React from 'react';
-import { useExpense } from './ExpenseContext';
+import { useExpense } from '../../../../context/ExpenseContext';
 import { IndianRupee, Tractor, Wrench, Utensils } from 'lucide-react';
 
 export default function ExpenseFarmCardOverFlow() {
@@ -41,7 +41,7 @@ export default function ExpenseFarmCardOverFlow() {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
       {statCards.map(({ label, value, sub, icon: Icon, color, badge }) => (
         <div
           key={label}

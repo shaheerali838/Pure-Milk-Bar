@@ -1,5 +1,7 @@
 import React from 'react';
-import { Beef, Droplets, Activity, DollarSign } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Beef, Droplets, Activity, DollarSign, IndianRupee } from 'lucide-react';
+import { useExpense } from '../../../../context/ExpenseContext';
 
 export default function FarmCardOverflow({ 
   totalAnimals = 0, 
@@ -10,6 +12,10 @@ export default function FarmCardOverflow({
   dailyNetProfit = 0, 
   monthlyNetProfit = 0 
 }) {
+  const navigate = useNavigate();
+  const { totals, expenses = [] } = useExpense();
+  const totalFarmExpense = totals?.totalFarmExpense ?? 0;
+
   const statCards = [
     {
       label: "Total Animals",
@@ -17,7 +23,8 @@ export default function FarmCardOverflow({
       sub: `${cowsCount} Cows • ${buffCount} Buffaloes`,
       icon: Beef,
       color: "#009966",
-      badge: "Active Herd"
+      badge: "Active Herd",
+      path: "/farm/animals"
     },
     {
       label: "Total Farm Yield",
@@ -25,7 +32,8 @@ export default function FarmCardOverflow({
       sub: "Daily total production",
       icon: Droplets,
       color: "#155dfc",
-      badge: "Today's Milk"
+      badge: "Today's Milk",
+      path: "/farm/milking"
     },
     {
       label: "Average Animal Yield",
@@ -36,21 +44,34 @@ export default function FarmCardOverflow({
       badge: "Yield / Head"
     },
     {
+      label: "Total Farm Expenses",
+      value: `PKR ${totalFarmExpense.toLocaleString()}`,
+      sub: `${expenses.length} recorded expense${expenses.length === 1 ? '' : 's'}`,
+      icon: IndianRupee,
+      color: "#e11d48",
+      badge: "Expenses",
+      path: "/farm/expenses"
+    },
+    {
       label: "Farm Net Profit",
       value: `Rs. ${dailyNetProfit.toLocaleString()}`,
       sub: `~ Rs. ${(monthlyNetProfit / 100000).toFixed(2)}M / month net`,
       icon: DollarSign,
       color: "#10b981",
-      badge: "Net Profit / Day"
+      badge: "Net Profit / Day",
+      path: "/farm/pl"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
-      {statCards.map(({ label, value, sub, icon: Icon, color, badge }) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-2">
+      {statCards.map(({ label, value, sub, icon: Icon, color, badge, path }) => (
         <div
           key={label}
-          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2 shadow-sm hover:shadow-md transition-all duration-200"
+          onClick={() => path && navigate(path)}
+          className={`flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2 shadow-sm hover:shadow-md transition-all duration-200 ${
+            path ? 'cursor-pointer' : ''
+          }`}
           style={{ borderTop: `4px solid ${color}` }}
         >
           <div className="flex items-start justify-between mb-1">
