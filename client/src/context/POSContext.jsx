@@ -226,12 +226,13 @@ export function POSProvider({ children }) {
   const [linkedCustomerId, setLinkedCustomerId] = useState('');
 
   // Cart operations
-  const handleAddToCart = (product) => {
+  const handleAddToCart = (product, initialQty = 1) => {
+    const addQty = typeof initialQty === 'number' && initialQty > 0 ? initialQty : 1;
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {
         return prev.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.id === product.id ? { ...item, quantity: Number((item.quantity + addQty).toFixed(3)) } : item
         );
       }
       return [
@@ -242,19 +243,68 @@ export function POSProvider({ children }) {
           price: Number(product.price) || 0,
           unit: product.unit || 'per kg',
           category: product.category || 'Milk',
-          quantity: 1,
+          quantity: addQty,
+        },
+      ];
+    });
+  };
+
+  // Add or set item by rupee amount (e.g. Rs 50, 100, 500)
+  const handleAddToCartByRupees = (product, rupees) => {
+    const numRupees = parseFloat(rupees);
+    if (isNaN(numRupees) || numRupees <= 0) return;
+    const rate = Number(product.price) || 200;
+    const calcQty = rate > 0 ? Number((numRupees / rate).toFixed(3)) : 1;
+
+    setCart((prev) => {
+      const existing = prev.find((item) => item.id === product.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.id === product.id ? { ...item, quantity: calcQty } : item
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: product.id,
+          name: product.name,
+          price: Number(product.price) || 0,
+          unit: product.unit || 'per kg',
+          category: product.category || 'Milk',
+          quantity: calcQty,
         },
       ];
     });
   };
 
   const handleUpdateQuantity = (productId, newQuantity) => {
-    if (newQuantity <= 0) {
+    const parsed = parseFloat(newQuantity);
+    if (isNaN(parsed) || parsed <= 0) {
       handleRemoveFromCart(productId);
       return;
     }
     setCart((prev) =>
-      prev.map((item) => (item.id === productId ? { ...item, quantity: newQuantity } : item))
+      prev.map((item) => (item.id === productId ? { ...item, quantity: Number(parsed.toFixed(3)) } : item))
+    );
+  };
+
+  // Update item quantity in cart when rupee amount is typed/selected (e.g. 100 -> 0.5L)
+  const handleUpdateByRupees = (productId, rupees) => {
+    const parsed = parseFloat(rupees);
+    if (isNaN(parsed) || parsed <= 0) {
+      handleRemoveFromCart(productId);
+      return;
+    }
+    setCart((prev) =>
+      prev.map((item) => {
+        if (item.id !== productId) return item;
+        const rate = Number(item.price) || 1;
+        const calculatedQty = rate > 0 ? Number((parsed / rate).toFixed(3)) : 0;
+        return {
+          ...item,
+          quantity: calculatedQty,
+        };
+      })
     );
   };
 
@@ -348,8 +398,17 @@ export function POSProvider({ children }) {
       timestamp: new Date().toISOString(),
       formattedTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       formattedDate: new Date().toLocaleDateString(),
-      items: [...cart],
-      itemCount: cart.reduce((c, i) => c + i.quantity, 0),
+      items: cart.map((i) => {
+        const qty = Number(i.quantity) || 0;
+        const rate = Number(i.price) || 0;
+        return {
+          ...i,
+          quantity: qty,
+          price: rate,
+          subtotal: Math.round(qty * rate),
+        };
+      }),
+      itemCount: cart.reduce((c, i) => c + (Number(i.quantity) || 0), 0),
       subtotal: cartSubtotal,
       deliveryCharge: effectiveDeliveryCharge,
       discount: effectiveDiscount,
@@ -551,21 +610,29 @@ export function POSProvider({ children }) {
 
   let totalMilkSold = 0;
   let totalDahiSold = 0;
+  let totalMilkPrice = 0;
+  let totalDahiPrice = 0;
 
   salesHistory.forEach((sale) => {
     (sale.items || []).forEach((item) => {
       const name = item.name ? item.name.toLowerCase() : '';
       const cat = item.category ? item.category.toLowerCase() : '';
       const qty = Number(item.quantity) || 0;
+      const unitPrice = Number(item.price) || 0;
+      const lineTotal = Number(item.subtotal) || (qty * unitPrice);
 
       if (cat.includes('milk') || name.includes('milk')) {
         totalMilkSold += qty;
+        totalMilkPrice += lineTotal > 0 ? lineTotal : (qty * (unitPrice || activeMilkPrice));
       }
       if (cat.includes('dahi') || name.includes('dahi')) {
         totalDahiSold += qty;
+        totalDahiPrice += lineTotal > 0 ? lineTotal : (qty * (unitPrice || activeDahiPrice));
       }
     });
   });
+
+  const remainingFarmMilk = Math.max(0, totalFarmMilk - totalMilkSold);
 
   return (
     <POSContext.Provider
@@ -581,7 +648,7 @@ export function POSProvider({ children }) {
 
         // Cart
         cart,
-        cartCount: cart.reduce((count, i) => count + i.quantity, 0),
+        cartCount: cart.reduce((count, i) => count + (Number(i.quantity) || 0), 0),
         cartSubtotal,
         discount,
         setDiscount,
@@ -592,8 +659,12 @@ export function POSProvider({ children }) {
         netPayable,
         handleAddToCart,
         addToCart: handleAddToCart,
+        handleAddToCartByRupees,
+        addToCartByRupees: handleAddToCartByRupees,
         handleUpdateQuantity,
         updateQuantity: handleUpdateQuantity,
+        handleUpdateByRupees,
+        updateByRupees: handleUpdateByRupees,
         handleUpdatePrice,
         updateItemPrice: handleUpdatePrice,
         handleRemoveFromCart,
@@ -663,10 +734,13 @@ export function POSProvider({ children }) {
 
         // 6 Inventory metrics
         inventoryMetrics: {
-          totalMilk: (totalFarmMilk > 0 ? totalFarmMilk : 0).toFixed(1),
-          totalDahi: products.filter((p) => p.category.toLowerCase().includes('dahi')).length > 0 ? 110 : 0,
-          milkSold: totalMilkSold.toFixed(1),
-          dahiSold: totalDahiSold.toFixed(1),
+          totalFarmYield: totalFarmMilk,
+          totalMilk: (remainingFarmMilk % 1 === 0 ? remainingFarmMilk.toFixed(0) : remainingFarmMilk.toFixed(2)),
+          totalDahi: products.filter((p) => p.category && p.category.toLowerCase().includes('dahi')).length > 0 ? Math.max(0, 110 - totalDahiSold).toFixed(1) : 0,
+          milkSold: (totalMilkSold % 1 === 0 ? totalMilkSold.toFixed(0) : totalMilkSold.toFixed(2)),
+          dahiSold: (totalDahiSold % 1 === 0 ? totalDahiSold.toFixed(0) : totalDahiSold.toFixed(2)),
+          totalMilkPrice,
+          totalDahiPrice,
           milkPrice: activeMilkPrice,
           dahiPrice: activeDahiPrice,
         },

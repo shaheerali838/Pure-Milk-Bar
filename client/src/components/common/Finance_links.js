@@ -1,4 +1,4 @@
-import { Wallet, Bike } from 'lucide-react';
+import { Wallet, Bike, Users } from 'lucide-react';
 
 export const financeLinks = [
   {
@@ -22,6 +22,17 @@ export const financeLinks = [
     iconBorder: 'border border-[#f3e8ff]',
     activeBg: 'bg-[#7e22ce] text-white shadow-md shadow-purple-500/25',
     activeBadgeBg: 'bg-[#6b21a8] text-white',
+  },
+  {
+    id: 'staff-management-finance',
+    name: 'Staff Management',
+    icon: Users,
+    path: '/staff',
+    iconBg: 'bg-[#ecfdf5]',
+    iconColor: 'text-[#059669]',
+    iconBorder: 'border border-[#a7f3d0]',
+    activeBg: 'bg-[#059669] text-white shadow-md shadow-emerald-500/25',
+    activeBadgeBg: 'bg-[#047857] text-white',
   },
 ];
 

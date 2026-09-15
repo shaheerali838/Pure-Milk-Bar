@@ -21,6 +21,7 @@ export default function POSDashboard() {
     cart = [],
     deleteProduct,
     handleAddToCart,
+    handleAddToCartByRupees,
     handleClearCart,
     inventoryMetrics,
   } = usePOSContext();
@@ -230,12 +231,12 @@ export default function POSDashboard() {
                           <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition line-clamp-1">
                             {product.name}
                           </h4>
-                          <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">
-                            SKU: {product.sku || product.id} · {product.unit}
-                          </p>
+                          
                         </div>
                       </div>
 
+                      {/* Quick Rupee Buy Chips for Dairy Products (Milk / Dahi) */}
+                     
                       {/* Bottom Row: Price & In-Cart Badge / Add Button */}
                       <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
                         <div>
