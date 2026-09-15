@@ -1,11 +1,15 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Beef, Activity, Droplets, Users } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
+import { useStaffContext } from "../../../../context/StaffContext";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default function AnimalStatsCards() {
+  const navigate = useNavigate();
   const { animals = [] } = useAnimalContext();
+  const { staffList = [] } = useStaffContext();
 
   const totalAnimals = animals.length;
   const cowsCount = animals.filter((a) => a.species && a.species.includes("Cow")).length;
@@ -20,6 +24,13 @@ export default function AnimalStatsCards() {
       return sum + val;
     }, 0)
     .toFixed(1);
+
+  // Dynamic Staff Stats from StaffContext
+  const totalStaff = staffList.length;
+  const farmWorkers = staffList.filter((s) => {
+    const role = (s.role || '').toLowerCase();
+    return role.includes('farm') || role.includes('milker') || role.includes('herdsman') || role.includes('worker');
+  }).length;
 
   const stats = [
     {
@@ -47,21 +58,27 @@ export default function AnimalStatsCards() {
       badge: "Yield",
     },
     {
-      title: "Farm Milking Staff",
-      amount: "4 Staff",
-      sub: "Herdsmen & Milkers",
+      title: "Total Farm Staff",
+      amount: `${totalStaff} Staff`,
+      sub: totalStaff > 0
+        ? `${farmWorkers} Farm Workers · ${totalStaff} Active`
+        : "No Staff Registered",
       icon: Users,
       color: "#10b981",
-      badge: "Staff",
+      badge: "Total Staff",
+      path: "/staff",
     },
   ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
-      {stats.map(({ title, amount, sub, icon: Icon, color, badge }) => (
+      {stats.map(({ title, amount, sub, icon: Icon, color, badge, path }) => (
         <Card
           key={title}
-          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3 shadow-xs hover:shadow-md transition-all duration-200"
+          onClick={() => path && navigate(path)}
+          className={`flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3 shadow-xs hover:shadow-md transition-all duration-200 ${
+            path ? "cursor-pointer" : ""
+          }`}
           style={{ borderTop: `4px solid ${color}` }}
         >
           <div className="flex items-start justify-between mb-1">
@@ -71,7 +88,10 @@ export default function AnimalStatsCards() {
             >
               <Icon style={{ width: 16, height: 16, color }} />
             </div>
-            <Badge variant="outline" className="text-[10px] font-bold px-3 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
+            <Badge
+              variant="outline"
+              className="text-[10px] font-bold px-3 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200"
+            >
               {badge}
             </Badge>
           </div>

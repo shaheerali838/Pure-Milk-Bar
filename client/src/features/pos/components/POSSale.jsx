@@ -30,6 +30,7 @@ export default function POSSale() {
     setDeliveryCharge,
     netPayable = 0,
     handleUpdateQuantity,
+    handleUpdateByRupees,
     handleUpdatePrice,
     handleRemoveFromCart,
     handleClearCart,
@@ -146,79 +147,186 @@ export default function POSSale() {
       ) : (
         <div className="space-y-2.5">
           {/* Item rows */}
-          <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-            {cart.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-2 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-sm shadow-2xs shrink-0">
-                    {item.category && item.category.toLowerCase().includes('dahi')
-                      ? '🥣'
-                      : item.category && item.category.toLowerCase().includes('lassi')
-                      ? '🧃'
-                      : '🥛'}
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 leading-tight">
-                      {item.name}
-                    </div>
-                    <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
-                      <span>Rate:</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={item.price}
-                        onChange={(e) => handleUpdatePrice(item.id, e.target.value)}
-                        className="w-12 text-center bg-white border border-slate-200 rounded px-1 py-0.2 text-[11px] font-bold text-slate-700"
-                      />
-                      <span>/ {item.unit ? item.unit.replace('per ', '') : 'kg'}</span>
-                    </div>
-                  </div>
-                </div>
+          <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
+            {cart.map((item) => {
+              const qty = Number(item.quantity) || 0;
+              const rate = Number(item.price) || 0;
+              const lineTotal = Math.round(qty * rate);
+              const unitLabel = item.unit ? item.unit.replace('per ', '') : (item.category?.toLowerCase().includes('milk') ? 'L' : 'kg');
 
-                <div className="flex items-center gap-3">
-                  {/* Stepper */}
-                  <div className="flex items-center border border-slate-200 bg-white rounded-lg shadow-2xs">
+              // Friendly quantity description
+              const getFriendlyLabel = (q) => {
+                if (Math.abs(q - 0.25) < 0.01) return '¼ (Pao)';
+                if (Math.abs(q - 0.5) < 0.01) return '½ (Half)';
+                if (Math.abs(q - 0.75) < 0.01) return '¾ (Paun)';
+                if (Math.abs(q - 1.0) < 0.01) return '1 Liter';
+                if (Math.abs(q - 1.5) < 0.01) return '1½ (Dedh)';
+                if (Math.abs(q - 2.0) < 0.01) return '2 Liters';
+                if (Math.abs(q - 2.5) < 0.01) return '2½ (Dhai)';
+                return `${q} ${unitLabel}`;
+              };
+
+              return (
+                <div
+                  key={item.id}
+                  className="p-2.5 rounded-xl border border-slate-200/90 bg-slate-50/70 hover:bg-slate-50 transition space-y-2"
+                >
+                  {/* Top Row: Icon + Name + Rate + Total & Remove */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-sm shadow-2xs shrink-0">
+                        {item.category && item.category.toLowerCase().includes('dahi')
+                          ? ''
+                          : item.category && item.category.toLowerCase().includes('lassi')
+                          ? ''
+                          : ''}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-800 leading-tight truncate">
+                          {item.name}
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
+                          <span>Rate: Rs.</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={item.price}
+                            onChange={(e) => handleUpdatePrice(item.id, e.target.value)}
+                            className="w-12 text-center bg-white border border-slate-200 rounded px-1 py-0.2 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-indigo-400"
+                          />
+                          <span>/{unitLabel}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="text-right">
+                        <div className="text-xs font-black text-slate-900 tabular">
+                          Rs. {lineTotal.toLocaleString()}
+                        </div>
+                        <div className="text-[10px] font-bold text-emerald-600 tabular">
+                          {getFriendlyLabel(qty)}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFromCart(item.id)}
+                        className="text-slate-300 hover:text-rose-500 transition p-1 cursor-pointer"
+                        title="Remove item"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Inputs: Quantity Stepper & Direct Rupee Amount */}
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/60 text-xs">
+                    {/* Quantity Stepper with manual typing */}
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">{unitLabel}:</span>
+                      <div className="flex items-center border border-slate-200 bg-white rounded-lg shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const step = qty <= 1 ? 0.25 : 0.5;
+                            handleUpdateQuantity(item.id, Math.max(0.1, Number((qty - step).toFixed(2))));
+                          }}
+                          className="px-1.5 py-0.5 text-slate-500 hover:text-slate-800 transition text-xs font-bold cursor-pointer"
+                          title="Reduce quantity"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <input
+                          type="number"
+                          step="0.05"
+                          min="0.05"
+                          value={qty}
+                          onChange={(e) => handleUpdateQuantity(item.id, e.target.value)}
+                          className="w-12 text-center text-xs font-bold text-slate-800 outline-none tabular"
+                          title="Type quantity in liters/kg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const step = qty < 1 ? 0.25 : 0.5;
+                            handleUpdateQuantity(item.id, Number((qty + step).toFixed(2)));
+                          }}
+                          className="px-1.5 py-0.5 text-slate-500 hover:text-slate-800 transition text-xs font-bold cursor-pointer"
+                          title="Increase quantity"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Direct Rupee (Rs) Input */}
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-indigo-500 uppercase">Rs:</span>
+                      <div className="flex items-center border border-indigo-200 bg-white rounded-lg shadow-2xs px-1.5 py-0.5">
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={lineTotal || ''}
+                          onChange={(e) => handleUpdateByRupees(item.id, e.target.value)}
+                          placeholder="e.g. 100"
+                          className="w-14 text-right text-xs font-bold text-indigo-700 outline-none tabular"
+                          title="Type amount in rupees (e.g. 100) to auto-calculate liters"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Rupee & Liter Preset Chips */}
+                  <div className="flex flex-wrap items-center gap-1 pt-1">
+                    <span className="text-[9px] font-semibold text-slate-400 mr-0.5">Quick:</span>
+                    {[50, 100, 200, 500].map((rs) => {
+                      const calcL = rate > 0 ? Number((rs / rate).toFixed(2)) : 0;
+                      const isSelected = Math.abs(lineTotal - rs) < 2;
+                      return (
+                        <button
+                          key={rs}
+                          type="button"
+                          onClick={() => handleUpdateByRupees(item.id, rs)}
+                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                          }`}
+                          title={`Rs. ${rs} = ${calcL} ${unitLabel}`}
+                        >
+                          Rs.{rs} <span className="opacity-75 font-normal text-[9px]">({calcL}L)</span>
+                        </button>
+                      );
+                    })}
                     <button
                       type="button"
-                      onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                      className="px-2 py-0.5 text-slate-500 hover:text-slate-800 transition text-xs font-bold cursor-pointer"
+                      onClick={() => handleUpdateQuantity(item.id, 0.5)}
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border transition cursor-pointer ${
+                        Math.abs(qty - 0.5) < 0.01
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                          : 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50'
+                      }`}
+                      title="Half Liter (0.5 L)"
                     >
-                      <Minus className="w-3 h-3" />
+                      ½ L
                     </button>
-                    <span className="px-2 text-xs font-bold text-slate-800 tabular">
-                      {item.quantity}
-                    </span>
                     <button
                       type="button"
-                      onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                      className="px-2 py-0.5 text-slate-500 hover:text-slate-800 transition text-xs font-bold cursor-pointer"
+                      onClick={() => handleUpdateQuantity(item.id, 1)}
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border transition cursor-pointer ${
+                        Math.abs(qty - 1) < 0.01
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                          : 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50'
+                      }`}
+                      title="1 Liter"
                     >
-                      <Plus className="w-3 h-3" />
+                      1 L
                     </button>
                   </div>
-
-                  {/* Total line item */}
-                  <div className="text-right min-w-[65px]">
-                    <span className="text-xs font-black text-slate-900 tabular">
-                      Rs. {(item.quantity * item.price).toLocaleString()}
-                    </span>
-                  </div>
-
-                  {/* Remove */}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveFromCart(item.id)}
-                    className="text-slate-300 hover:text-rose-500 transition p-1 cursor-pointer"
-                    title="Remove item"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Pricing summary */}
@@ -375,9 +483,9 @@ export default function POSSale() {
                   onChange={(e) => setDeliverySlot(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
                 >
-                  <option value="⚡ Instant Dispatch (30 mins)">⚡ Instant Dispatch (30 mins)</option>
-                  <option value="🌅 Morning Shift (6:00 AM - 8:00 AM)">🌅 Morning Shift (6:00 AM - 8:00 AM)</option>
-                  <option value="🌇 Evening Shift (5:00 PM - 7:00 PM)">🌇 Evening Shift (5:00 PM - 7:00 PM)</option>
+                  <option value=" Instant Dispatch (30 mins)"> Instant Dispatch (30 mins)</option>
+                  <option value=" Morning Shift (6:00 AM - 8:00 AM)"> Morning Shift (6:00 AM - 8:00 AM)</option>
+                  <option value=" Evening Shift (5:00 PM - 7:00 PM)"> Evening Shift (5:00 PM - 7:00 PM)</option>
                 </select>
               </div>
 

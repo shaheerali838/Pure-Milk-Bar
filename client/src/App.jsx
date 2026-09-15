@@ -23,6 +23,7 @@ import Proccessing from "./features/inventory/pages/Processing";
 import Pos from "./features/pos/pages/Pos";
 import Delivery from "./features/deliveries/pages/Delivery";
 import Products from "./features/inventory/pages/Products";
+import StaffManagement from "./features/staff/pages/StaffManagement";
 import { LoginPage } from "./features/auth";
 import { CustomerProvider } from "./context/CustomerContext";
 import { LedgerProvider } from "./context/LedgerContext";
@@ -33,6 +34,7 @@ import { DeliveryProvider } from "./context/DeliveryContext";
 import { DeliveryStaffProvider } from "./context/DeliveryStaffContext";
 import { FuelLogProvider } from "./context/FuelLogContext";
 import { RiderSalaryProvider } from "./context/RiderSalaryContext";
+import { StaffProvider } from "./context/StaffContext";
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -47,7 +49,8 @@ export default function App() {
                 <FuelLogProvider>
                   <RiderSalaryProvider>
                     <DeliveryProvider>
-                      <BrowserRouter>
+                      <StaffProvider>
+                        <BrowserRouter>
                         <Routes>
                           <Route
                             path="/login"
@@ -86,6 +89,7 @@ export default function App() {
                             <Route path="pos" element={<Pos />} />
                             <Route path="delivery" element={<Delivery />} />
                             <Route path="products" element={<Products />} />
+                            <Route path="staff" element={<StaffManagement />} />
 
                             {/* Accounts & Khata Ledger Routes */}
                             <Route path="customer" element={<CustomerManagement />} />
@@ -97,6 +101,7 @@ export default function App() {
                             {/* Finance Routes */}
                             <Route path="finance/customer" element={<CustomerFinance />} />
                             <Route path="finance/delivery" element={<RiderDeliveryFinancePage />} />
+                            <Route path="finance/staff" element={<StaffManagement />} />
 
                             {/* Catch-all redirect */}
                             <Route
@@ -106,7 +111,8 @@ export default function App() {
                           </Route>
                         </Routes>
                       </BrowserRouter>
-                    </DeliveryProvider>
+                    </StaffProvider>
+                  </DeliveryProvider>
                   </RiderSalaryProvider>
                 </FuelLogProvider>
               </DeliveryStaffProvider>

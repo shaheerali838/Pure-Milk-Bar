@@ -5,6 +5,7 @@ import AnimalStatsCards from "./AnimalStatsCards";
 import RegisterAnimalModal from "./RegisterAnimalModal";
 import AnimalFilterHeader from "./AnimalFilterHeader";
 import { useAnimalContext } from "../../../../context/AnimalContext";
+import { useStaffContext } from "../../../../context/StaffContext";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -42,6 +43,8 @@ export default function AnimalCardOverflow() {
   } = useAnimalContext();
 
   const navigate = useNavigate();
+  const { staffList = [] } = useStaffContext();
+  const displayWorkers = staffList.length > 0 ? staffList : mockWorkers;
   const [activeTab, setActiveTab] = useState("registry"); // 'registry' or 'workers'
   const [searchTerm, setSearchTerm] = useState("");
   const [speciesFilter, setSpeciesFilter] = useState("all");
@@ -125,7 +128,7 @@ export default function AnimalCardOverflow() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         animalsCount={animals.length}
-        workersCount={mockWorkers.length}
+        workersCount={displayWorkers.length}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         speciesFilter={speciesFilter}
@@ -285,7 +288,7 @@ export default function AnimalCardOverflow() {
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-slate-100">
-              {mockWorkers.map((w) => (
+              {displayWorkers.map((w) => (
                 <TableRow key={w.id} className="hover:bg-slate-50/60 transition-colors">
                   <TableCell className="px-6 py-4 font-bold text-slate-800 flex items-center gap-2">
                     <UserCheck className="w-4 h-4 text-emerald-600" />
@@ -297,7 +300,9 @@ export default function AnimalCardOverflow() {
                       {w.shift}
                     </Badge>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-slate-600 font-mono text-xs tabular">{w.phone}</TableCell>
+                  <TableCell className="px-6 py-4 text-slate-600 font-mono text-xs tabular">
+                    {w.mobile || w.phone || '—'}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

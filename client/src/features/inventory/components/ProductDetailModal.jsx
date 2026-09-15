@@ -34,9 +34,6 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
               <h1 className="text-xl font-bold text-slate-900 tracking-tight font-display">
                 Product Specifications — {product.name}
               </h1>
-              <p className="text-xs text-slate-500">
-                Catalog SKU #{product.sku || product.id} · {product.category} Specifications
-              </p>
             </div>
           </div>
 
@@ -69,16 +66,10 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
                     {product.status || 'Active'}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  {product.category} · Measurement Standard: {product.unit}
-                </p>
               </div>
             </div>
 
             <div className="text-right">
-              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                RETAIL SELLING RATE
-              </span>
               <span className="text-3xl font-black text-[#4f46e5] font-mono tabular">
                 Rs. {salePrice.toLocaleString()}
               </span>

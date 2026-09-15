@@ -66,7 +66,7 @@ export default function AddProduct({ onBack, product = null }) {
   };
 
   return (
-    <div className="space-y-4 max-w-4xl animate-in fade-in duration-150">
+    <div className=" animate-in fade-in duration-150">
       {/* Top Navigation Bar with Back Button */}
       <div className="flex items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
         <div className="flex items-center gap-3">
