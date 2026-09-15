@@ -7,13 +7,12 @@ import cookieParser from 'cookie-parser';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import authRoutes from './modules/auth/routes/auth.routes.js';
 import adminRoutes from './modules/admin/routes/admin.routes.js';
-<<<<<<< HEAD
 import farmRoutes from './modules/farm/routes/farm.routes.js';
 import supplierRoutes from './modules/suppliers/routes/supplier.routes.js';
-=======
 import customerRoutes from './modules/customers/routes/customer.routes.js';
 import deliveryRoutes from './modules/deliveries/routes/delivery.routes.js';
->>>>>>> origin/Nabeel-Ahmad
+import inventoryRoutes from './modules/inventory/routes/inventory.routes.js';
+import posRoutes from './modules/pos/routes/pos.routes.js';
 
 const app = express();
 
@@ -80,6 +79,8 @@ app.get('/', (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 app.use('/api/farm', farmRoutes);
 app.use('/api/v1/suppliers', supplierRoutes);
+app.use('/api/v1/inventory', inventoryRoutes);
+app.use('/api/v1/pos', posRoutes);
 app.use(notFoundHandler);
 
 // Centralized Error Handler
