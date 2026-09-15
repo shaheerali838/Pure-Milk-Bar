@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import CustomerHeader from '../components/Customer_&_Accounts/CustomerHeader';
 import CustomerStatsCards from '../components/Customer_&_Accounts/CustomerStatsCards';
 import CustomerFilters from '../components/Customer_&_Accounts/CustomerFilters';
 import CustomerTable from '../components/Customer_&_Accounts/CustomerTable';
