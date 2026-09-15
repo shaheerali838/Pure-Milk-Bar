@@ -19,6 +19,7 @@ import CustomerManagement from "./features/customers/pages/CustomerManagement";
 import CustomerKhataLedger from "./features/customers/pages/CustomerKhataLedger";
 import CustomerFinance from "./features/finance/pages/CustomerFinance";
 import RiderDeliveryFinancePage from "./features/finance/pages/RiderDeliveryFinancePage";
+import DailyClosing from "./features/finance/pages/DailyClosing";
 import Proccessing from "./features/inventory/pages/Processing";
 import Pos from "./features/pos/pages/Pos";
 import Delivery from "./features/deliveries/pages/Delivery";
@@ -97,6 +98,7 @@ export default function App() {
                             {/* Finance Routes */}
                             <Route path="finance/customer" element={<CustomerFinance />} />
                             <Route path="finance/delivery" element={<RiderDeliveryFinancePage />} />
+                            <Route path="finance/daily-closing" element={<DailyClosing />} />
 
                             {/* Catch-all redirect */}
                             <Route

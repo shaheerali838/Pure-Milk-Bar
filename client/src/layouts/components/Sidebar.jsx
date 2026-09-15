@@ -13,6 +13,8 @@ import {
   Package,
 } from 'lucide-react';
 
+import { reconciliationLinks } from '@/components/common/Reconciliation_links';
+
 export default function Sidebar() {
   // 1. Operations Command
   const operationsLinks = [
@@ -236,6 +238,34 @@ export default function Sidebar() {
           </div>
           <nav className="space-y-0.5">
             {customerLinks.map((link) => {
+              const Icon = link.icon;
+              return (
+                <NavLink
+                  key={link.id}
+                  to={link.path}
+                  className={({ isActive }) =>
+                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                      isActive
+                        ? 'bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`
+                  }
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{link.name}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Section 6: Reconciliation & Management */}
+        <div>
+          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+            RECONCILIATION & MANAGEMENT
+          </div>
+          <nav className="space-y-0.5">
+            {reconciliationLinks.map((link) => {
               const Icon = link.icon;
               return (
                 <NavLink
