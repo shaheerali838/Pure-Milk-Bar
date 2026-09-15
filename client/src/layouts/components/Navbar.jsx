@@ -1,20 +1,17 @@
 import React, { useState } from 'react';
-import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { ChevronRight, Milk, Search, Download, ShoppingCart, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAnimalContext } from '@/context/AnimalContext';
-import { useCustomerContext } from '@/context/CustomerContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
 
 export default function Navbar() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Access contexts for real data breadcrumb resolution
   const { animals = [] } = useAnimalContext() || {};
-  const { rawCustomers = [], customers = [] } = useCustomerContext() || {};
   const { deliveries = [] } = useDeliveryContext() || {};
   const { staffList = [] } = useDeliveryStaffContext() || {};
 
@@ -234,7 +231,7 @@ export default function Navbar() {
               <React.Fragment key={idx}>
                 <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
                 {isLast || !crumb.to ? (
-                  <span className="text-emerald-800 font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-xs shadow-2xs truncate max-w-[220px]">
+                  <span className="text-emerald-800 font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-xs shadow-2xs truncate max-w-55">
                     {crumb.label}
                   </span>
                 ) : (

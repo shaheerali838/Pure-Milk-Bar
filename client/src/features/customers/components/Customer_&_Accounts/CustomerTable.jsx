@@ -20,7 +20,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
       <div className="overflow-x-auto max-h-[calc(100vh-270px)]">
-        <Table className="w-full text-left border-collapse min-w-[760px]">
+        <Table className="w-full text-left border-collapse min-w-190">
           <TableHeader sticky className="bg-slate-50 border-b border-slate-100">
             <TableRow className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:bg-transparent">
               <TableHead className="px-3 py-2 h-auto text-[10px] text-slate-400">CUSTOMER</TableHead>

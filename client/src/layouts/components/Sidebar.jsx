@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React from "react";
+import { NavLink } from "react-router-dom";
 import {
   Milk,
   Users,
@@ -11,86 +11,86 @@ import {
   Bike,
   Wallet,
   Package,
-} from 'lucide-react';
+} from "lucide-react";
 
 export default function Sidebar() {
   // 1. Operations Command
   const operationsLinks = [
     {
-      id: 'Dashboard',
-      name: 'Main Dashboard',
+      id: "Dashboard",
+      name: "Main Dashboard",
       icon: LayoutGrid,
-      path: '/dashboard',
+      path: "/dashboard",
     },
     {
-      id: 'Farm',
-      name: 'Farm Dashboard',
+      id: "Farm",
+      name: "Farm Dashboard",
       icon: Tractor,
-      path: '/farm',
+      path: "/farm",
     },
     {
-      id: 'Supplier',
-      name: 'Supplier Dashboard',
+      id: "Supplier",
+      name: "Supplier Dashboard",
       icon: Truck,
-      path: '/supplier',
+      path: "/supplier",
     },
   ];
 
   // 2. Sales
   const salesLinks = [
     {
-      id: 'pos',
-      name: 'Counter POS & Sales',
+      id: "pos",
+      name: "Counter POS & Sales",
       icon: ShoppingCart,
-      path: '/pos',
+      path: "/pos",
     },
   ];
 
   // 3. Production
   const productionLinks = [
     {
-      id: 'processing',
-      name: 'Dahi & Milk Processing',
+      id: "processing",
+      name: "Dahi & Milk Processing",
       icon: Layers,
-      path: '/proccessing',
+      path: "/proccessing",
     },
     {
-      id: 'products',
-      name: 'Products & Pricing',
+      id: "products",
+      name: "Products & Pricing",
       icon: Milk,
-      path: '/products',
+      path: "/products",
     },
   ];
 
   // 4. Delivery
   const deliveryLinks = [
     {
-      id: 'doorstep-delivery',
-      name: 'Doorstep Deliveries',
+      id: "doorstep-delivery",
+      name: "Doorstep Deliveries",
       icon: Truck,
-      path: '/delivery',
+      path: "/delivery",
     },
     {
-      id: 'rider-delivery-finance',
-      name: 'Rider & Delivery Finance',
+      id: "rider-delivery-finance",
+      name: "Rider & Delivery Finance",
       icon: Bike,
-      path: '/finance/delivery',
+      path: "/finance/delivery",
     },
   ];
 
   // 5. Customers
   const customerLinks = [
     {
-      id: 'customer',
-      name: 'Customer & Accounts',
+      id: "customer",
+      name: "Customer & Accounts",
       icon: Users,
-      path: '/customer',
+      path: "/customer",
     },
     {
-      id: 'customer-finance',
-      name: 'Customer Finance',
+      id: "customer-finance",
+      name: "Customer Finance",
       icon: Wallet,
-      path: '/finance/customer',
+      path: "/finance/customer",
     },
   ];
 
@@ -103,7 +103,9 @@ export default function Sidebar() {
         </div>
         <div>
           <div className="flex items-center gap-1.5">
-            <h1 className="text-sm font-bold text-slate-900 leading-tight">Pure Milk Bar</h1>
+            <h1 className="text-sm font-bold text-slate-900 leading-tight">
+              Pure Milk Bar
+            </h1>
             <span className="px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
               ERP
             </span>
@@ -119,9 +121,6 @@ export default function Sidebar() {
       <div className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
         {/* Section 1: Operations Command */}
         <div>
-          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-            OPERATIONS COMMAND
-          </div>
           <nav className="space-y-0.5">
             {operationsLinks.map((link) => {
               const Icon = link.icon;
@@ -132,8 +131,8 @@ export default function Sidebar() {
                   className={({ isActive }) =>
                     `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
                       isActive
-                        ? 'bg-[#00a86b] text-white shadow-xs'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        ? "bg-[#00a86b] text-white shadow-xs"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     }`
                   }
                 >
@@ -160,8 +159,8 @@ export default function Sidebar() {
                   className={({ isActive }) =>
                     `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
                       isActive
-                        ? 'bg-[#00a86b] text-white shadow-xs'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        ? "bg-[#00a86b] text-white shadow-xs"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     }`
                   }
                 >
@@ -188,8 +187,8 @@ export default function Sidebar() {
                   className={({ isActive }) =>
                     `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
                       isActive
-                        ? 'bg-[#00a86b] text-white shadow-xs'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        ? "bg-[#00a86b] text-white shadow-xs"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     }`
                   }
                 >
@@ -216,8 +215,8 @@ export default function Sidebar() {
                   className={({ isActive }) =>
                     `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
                       isActive
-                        ? 'bg-[#00a86b] text-white shadow-xs'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        ? "bg-[#00a86b] text-white shadow-xs"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     }`
                   }
                 >
@@ -244,8 +243,8 @@ export default function Sidebar() {
                   className={({ isActive }) =>
                     `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
                       isActive
-                        ? 'bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        ? "bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     }`
                   }
                 >

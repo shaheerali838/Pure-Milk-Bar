@@ -31,7 +31,7 @@ export default function LedgerCustomerProfileCard({ customer, onEdit }) {
       {/* Header Profile Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white font-black text-base flex items-center justify-center shadow-xs shrink-0 font-display">
+          <div className="w-10 h-10 rounded-xl bg-linear-to-br from-emerald-500 to-teal-700 text-white font-black text-base flex items-center justify-center shadow-xs shrink-0 font-display">
             {initial}
           </div>
           <div className="min-w-0">
@@ -175,7 +175,7 @@ export default function LedgerCustomerProfileCard({ customer, onEdit }) {
         </div>
 
         {/* Card 4: Khata Credit Standing */}
-        <div className="p-3 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl space-y-1.5 shadow-2xs">
+        <div className="p-3 bg-linear-to-br from-slate-900 to-slate-800 text-white rounded-xl space-y-1.5 shadow-2xs">
           <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
             <span className="flex items-center gap-1 text-amber-400">
               <CreditCard className="w-3 h-3" /> Khata Standing

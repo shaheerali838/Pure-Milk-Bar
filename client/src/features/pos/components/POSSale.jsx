@@ -201,14 +201,14 @@ export default function POSSale() {
           <p className="text-xs sm:text-sm font-bold text-slate-700">
             Sale Cart is Empty
           </p>
-          <p className="text-[11px] text-slate-400 max-w-[220px]">
+          <p className="text-[11px] text-slate-400 max-w-55">
             Tap any dairy product on the left to add it to this active sale.
           </p>
         </div>
       ) : (
         <div className="space-y-2">
           {/* Item rows */}
-          <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
+          <div className="space-y-2.5 max-h-85 overflow-y-auto pr-1">
             {cart.map((item) => {
               const qty = Number(item.quantity) || 0;
               const rate = Number(item.price) || 0;
@@ -997,7 +997,7 @@ export default function POSSale() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center gap-1">
+                <label className="flex items-center gap-1 text-[10px] font-bold text-slate-500 uppercase mb-1">
                   <MapPin className="w-3 h-3 text-blue-600" />
                   Drop Address &amp; Customer Note:
                 </label>

@@ -35,7 +35,7 @@ export default function DropPoints({ onBookDelivery, onViewDelivery }) {
     <div className="space-y-1.5">
       {/* Action Header & Filters */}
       <div className="flex flex-wrap items-center justify-between gap-1.5 no-print">
-        <div className="flex-1 min-w-[260px]">
+        <div className="flex-1 min-w-65">
           <DeliveryFilters
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}

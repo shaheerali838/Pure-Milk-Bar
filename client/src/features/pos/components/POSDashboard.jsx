@@ -250,7 +250,7 @@ export default function POSDashboard() {
 
                         {inCartQty > 0 ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-600 text-white text-[11px] font-bold shadow-2xs">
-                            <Check className="w-3 h-3 stroke-[3]" />
+                            <Check className="w-3 h-3 stroke-3" />
                             {inCartQty} in cart
                           </span>
                         ) : (
