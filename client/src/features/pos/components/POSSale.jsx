@@ -20,11 +20,11 @@ export default function POSSale() {
   const {
     cart = [],
     cartCount = 0,
-    netPayable = 0,
     handleClearCart,
     saleCategory = 'walkin',
     setSaleCategory,
     setDeliverySubType,
+    netPayable = 0,
     handleCompleteSale,
   } = usePOSContext();
 
