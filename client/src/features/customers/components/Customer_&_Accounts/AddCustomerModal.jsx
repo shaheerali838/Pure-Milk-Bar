@@ -26,7 +26,6 @@ export default function AddCustomerModal({ isOpen, onClose }) {
     referenceName: '',
     subscription: '2 L Cow Milk',
     creditLimit: '10000',
-    khataBalance: '0',
     paymentMode: 'Khata',
   });
 
@@ -49,7 +48,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
       referenceName: formData.referenceName || '',
       subscription: formData.subscription,
       creditLimit: Number(formData.creditLimit) || 10000,
-      khataBalance: Number(formData.khataBalance) || 0,
+      khataBalance: 0,
       paymentMode: formData.paymentMode,
       status: 'Active',
     });
@@ -67,7 +66,6 @@ export default function AddCustomerModal({ isOpen, onClose }) {
       referenceName: '',
       subscription: '2 L Cow Milk',
       creditLimit: '10000',
-      khataBalance: '0',
       paymentMode: 'Khata',
     });
     onClose();
@@ -91,7 +89,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </Button>
@@ -270,23 +268,14 @@ export default function AddCustomerModal({ isOpen, onClose }) {
             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-display">
               Finance &amp; Khata Limits
             </h4>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Credit Limit (Rs.)</label>
                 <Input
                   type="number"
                   value={formData.creditLimit}
                   onChange={(e) => setFormData({ ...formData, creditLimit: e.target.value })}
-                  className="h-8 px-2 py-1 text-xs tabular font-bold"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Initial Khata (Rs.)</label>
-                <Input
-                  type="number"
-                  value={formData.khataBalance}
-                  onChange={(e) => setFormData({ ...formData, khataBalance: e.target.value })}
-                  className="h-8 px-2 py-1 text-xs tabular font-bold"
+                  className="h-8 px-2.5 py-1 text-xs tabular font-bold"
                 />
               </div>
               <div>

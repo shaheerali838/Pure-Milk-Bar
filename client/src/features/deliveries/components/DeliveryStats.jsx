@@ -1,43 +1,55 @@
 import React from 'react';
-import { Users, UserCheck, CreditCard, Wallet } from 'lucide-react';
-import { useCustomerContext } from '../../../../context/CustomerContext';
+import { Truck, Clock, CheckCircle2, Banknote } from 'lucide-react';
+import { useDeliveryContext } from '@/context/DeliveryContext';
 
-export default function CustomerStatsCards() {
-  const { allCustomersCount, activeAccountsCount, withKhataBalCount, totalKhataReceivable } =
-    useCustomerContext();
+export default function DeliveryStats() {
+  const { deliveries } = useDeliveryContext();
+
+  const todayISO = new Date().toISOString().split('T')[0];
+
+  const todayDeliveriesCount = deliveries.filter(
+    (d) => d.date && d.date.split('T')[0] === todayISO
+  ).length;
+
+  const pendingCount = deliveries.filter((d) => d.status === 'PENDING').length;
+  const deliveredCount = deliveries.filter((d) => d.status === 'DELIVERED').length;
+
+  const codToCollect = deliveries
+    .filter((d) => d.status !== 'DELIVERED')
+    .reduce((acc, d) => acc + (Number(d.codAmountToCollect) || 0), 0);
 
   const statCards = [
     {
-      label: "Total Customers",
-      value: `${allCustomersCount}`,
-      sub: "Registered buyers & accounts",
-      icon: Users,
-      color: "#009966",
-      badge: "All Accounts",
+      label: "TODAY'S DELIVERIES",
+      value: `${todayDeliveriesCount}`,
+      sub: 'Scheduled for today',
+      icon: Truck,
+      color: '#155dfc',
+      badge: 'Today',
     },
     {
-      label: "Active Accounts",
-      value: `${activeAccountsCount}`,
-      sub: "Regular daily buyers",
-      icon: UserCheck,
-      color: "#155dfc",
-      badge: "Active",
+      label: 'PENDING',
+      value: `${pendingCount}`,
+      sub: 'Awaiting delivery',
+      icon: Clock,
+      color: '#f59e0b',
+      badge: 'In Route',
     },
     {
-      label: "Khata Accounts",
-      value: `${withKhataBalCount}`,
-      sub: "Active credit balances",
-      icon: Wallet,
-      color: "#009689",
-      badge: "Ledger Bal.",
+      label: 'DELIVERED',
+      value: `${deliveredCount}`,
+      sub: 'Successfully completed',
+      icon: CheckCircle2,
+      color: '#009966',
+      badge: 'Done',
     },
     {
-      label: "Total Receivable",
-      value: `Rs. ${totalKhataReceivable.toLocaleString()}`,
-      sub: "Outstanding credit amount",
-      icon: CreditCard,
-      color: "#e11d48",
-      badge: "Receivables",
+      label: 'COD TO COLLECT',
+      value: `Rs. ${codToCollect.toLocaleString()}`,
+      sub: 'Pending cash on delivery',
+      icon: Banknote,
+      color: '#e11d48',
+      badge: 'Cash Due',
     },
   ];
 
