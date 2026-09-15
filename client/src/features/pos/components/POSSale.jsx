@@ -3,26 +3,24 @@ import { useSearchParams } from "react-router-dom";
 import {
   ShoppingCart,
   Trash2,
-  Plus,
-  Minus,
-  X,
-  Store,
-  Bike,
-  CreditCard,
-  Banknote,
-  Smartphone,
-  Truck,
   CheckCircle2,
-  AlertCircle,
-  MapPin,
-  DollarSign,
-  ChevronDown,
   Users,
   UserCheck,
   Calendar,
   Phone,
   User,
   Wallet,
+  Truck,
+  Plus,
+  Minus,
+  X,
+  DollarSign,
+  AlertCircle,
+  MapPin,
+  Banknote,
+  Smartphone,
+  CreditCard,
+  ChevronDown,
 } from "lucide-react";
 import { usePOSContext } from "@/context/POSContext";
 import { Card } from "@/components/ui/card";
@@ -44,6 +42,7 @@ export default function POSSale() {
     handleUpdatePrice,
     handleRemoveFromCart,
     handleClearCart,
+    executeKhataPayment,
 
     // 2 Primary Categories: 'walkin' | 'delivery'
     saleCategory = "walkin",
@@ -103,7 +102,6 @@ export default function POSSale() {
 
     // Sale Actions
     handleCompleteSale,
-    executeKhataPayment,
   } = usePOSContext();
 
   // Sync category from URL search params (e.g. /pos?category=delivery)
@@ -193,7 +191,7 @@ export default function POSSale() {
         )}
       </div>
 
-      {/* 2. Empty State or Cart Items */}
+      {/* 2. Empty State or Cart Items Component */}
       {cart.length === 0 ? (
         <div className="py-8 text-center flex flex-col items-center justify-center space-y-2">
           <div className="w-11 h-11 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
@@ -347,7 +345,6 @@ export default function POSSale() {
           </div>
         </div>
       )}
-
       {/* 3. Primary Sale Category Selector (2 Buttons: Walk-in & Delivery) */}
       <div className="pt-2 border-t border-slate-100 space-y-2">
         <div className="flex items-center justify-between">
