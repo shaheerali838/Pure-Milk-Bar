@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import { X, Beef } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const initialFormState = {
   tag: "",
@@ -65,13 +73,13 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Tag # <span className="text-slate-400 font-normal lowercase">(optional)</span>
               </label>
-              <input
+              <Input
                 type="text"
                 name="tag"
                 placeholder="Auto-generated if blank"
                 value={formData.tag}
                 onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all tabular"
               />
             </div>
 
@@ -79,7 +87,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Animal Name <span className="text-slate-400 font-normal lowercase">(optional)</span>
               </label>
-              <input
+              <Input
                 type="text"
                 name="name"
                 placeholder="e.g. Sahiwal Queen"
@@ -96,33 +104,43 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Species
               </label>
-              <select
-                name="species"
+              <Select
                 value={formData.species}
-                onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                onValueChange={(val) =>
+                  setFormData((prev) => ({ ...prev, species: val }))
+                }
               >
-                <option value="Cow (Sahiwal)">Cow (Sahiwal)</option>
-                <option value="Cow (Cholistani)">Cow (Cholistani)</option>
-                <option value="Buffalo (Nili Ravi)">Buffalo (Nili Ravi)</option>
-                <option value="Buffalo (Kundi)">Buffalo (Kundi)</option>
-              </select>
+                <SelectTrigger className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all">
+                  <SelectValue placeholder="Select species" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Cow (Sahiwal)">Cow (Sahiwal)</SelectItem>
+                  <SelectItem value="Cow (Cholistani)">Cow (Cholistani)</SelectItem>
+                  <SelectItem value="Buffalo (Nili Ravi)">Buffalo (Nili Ravi)</SelectItem>
+                  <SelectItem value="Buffalo (Kundi)">Buffalo (Kundi)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Lactation Status
               </label>
-              <select
-                name="lactationStatus"
+              <Select
                 value={formData.lactationStatus}
-                onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                onValueChange={(val) =>
+                  setFormData((prev) => ({ ...prev, lactationStatus: val }))
+                }
               >
-                <option value="Milking">Milking</option>
-                <option value="Dry/Gestating">Dry/Gestating</option>
-                <option value="Calf">Calf</option>
-              </select>
+                <SelectTrigger className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Milking">Milking</SelectItem>
+                  <SelectItem value="Dry/Gestating">Dry/Gestating</SelectItem>
+                  <SelectItem value="Calf">Calf</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -132,7 +150,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Acquisition Date
               </label>
-              <input
+              <Input
                 type="date"
                 name="acquisitionDate"
                 required
@@ -146,14 +164,14 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Purchase Price (Rs)
               </label>
-              <input
+              <Input
                 type="number"
                 name="purchasePrice"
                 min="0"
                 placeholder="e.g. 250000"
                 value={formData.purchasePrice}
                 onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all tabular"
               />
             </div>
           </div>
@@ -163,7 +181,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
               Expected Daily Yield (Kg/L)
             </label>
-            <input
+            <Input
               type="number"
               name="expectedYield"
               step="0.1"
@@ -171,7 +189,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               placeholder="e.g. 15.5"
               value={formData.expectedYield}
               onChange={handleChange}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all tabular"
             />
           </div>
 
@@ -181,7 +199,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Avg Morning Yield (L)
               </label>
-              <input
+              <Input
                 type="number"
                 name="morningYield"
                 step="0.1"
@@ -197,7 +215,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Avg Evening Yield (L)
               </label>
-              <input
+              <Input
                 type="number"
                 name="eveningYield"
                 step="0.1"

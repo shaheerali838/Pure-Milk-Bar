@@ -1,12 +1,3 @@
-/**
- * Layer 2: MilkingYieldLog Service — Business Logic & Transaction Orchestration
- *
- * Encapsulates 100% of business logic for the MilkingYieldLog domain.
- * - Validates animal existence before recording milking entries.
- * - Computes daily/shift aggregate summaries.
- * - Updates the parent Animal's dailyAvgYield after each entry.
- * - Accepts plain JavaScript objects, returns clean data objects.
- */
 import mongoose from 'mongoose';
 import MilkingYieldLog from '../../../models/MilkingYieldLog.model.js';
 import Animal from '../../../models/Animal.model.js';

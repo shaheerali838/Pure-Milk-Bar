@@ -2,6 +2,7 @@ import React from "react";
 import { Beef, Activity, Droplets, Users } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function AnimalStatsCards() {
   const { animals = [] } = useAnimalContext();
@@ -27,7 +28,7 @@ export default function AnimalStatsCards() {
       sub: `${cowsCount} Cows · ${buffaloesCount} Buffaloes`,
       icon: Beef,
       color: "#009966",
-      badge: "Herd Size"
+      badge: "Herd Size",
     },
     {
       title: "Active In Milking",
@@ -35,7 +36,7 @@ export default function AnimalStatsCards() {
       sub: `${nonMilkingCount} Dry / non-milking`,
       icon: Activity,
       color: "#155dfc",
-      badge: "Milking"
+      badge: "Milking",
     },
     {
       title: "Total Daily Output",
@@ -43,7 +44,7 @@ export default function AnimalStatsCards() {
       sub: "Morning + Evening Yield",
       icon: Droplets,
       color: "#009689",
-      badge: "Yield"
+      badge: "Yield",
     },
     {
       title: "Farm Milking Staff",
@@ -51,16 +52,16 @@ export default function AnimalStatsCards() {
       sub: "Herdsmen & Milkers",
       icon: Users,
       color: "#10b981",
-      badge: "Staff"
+      badge: "Staff",
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
       {stats.map(({ title, amount, sub, icon: Icon, color, badge }) => (
-        <div
+        <Card
           key={title}
-          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2 shadow-sm hover:shadow-md transition-all duration-200"
+          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3 shadow-xs hover:shadow-md transition-all duration-200"
           style={{ borderTop: `4px solid ${color}` }}
         >
           <div className="flex items-start justify-between mb-1">
@@ -70,20 +71,19 @@ export default function AnimalStatsCards() {
             >
               <Icon style={{ width: 16, height: 16, color }} />
             </div>
-            <span className="text-[10px] font-bold px-6 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
+            <Badge variant="outline" className="text-[10px] font-bold px-3 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
               {badge}
-            </span>
+            </Badge>
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5">
+            <p className="font-display text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
               {amount}
             </p>
             <p className="text-xs font-bold text-slate-700">{title}</p>
             <p className="text-[11px] font-medium text-slate-400">{sub}</p>
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );
 }
-

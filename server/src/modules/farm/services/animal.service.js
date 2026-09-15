@@ -1,11 +1,3 @@
-/**
- * Layer 2: Animal Service — Business Logic & Transaction Orchestration
- *
- * Encapsulates 100% of business logic for the Animal domain.
- * - Accepts plain JavaScript objects, returns clean data objects.
- * - No HTTP protocol awareness (no req/res objects).
- * - Throws descriptive operational errors using AppError.
- */
 import Animal from '../../../models/Animal.model.js';
 import AppError from '../../../utils/AppError.js';
 

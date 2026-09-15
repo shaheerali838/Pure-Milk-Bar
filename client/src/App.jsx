@@ -18,6 +18,7 @@ import Supplier from "./features/suppliers/pages/Supplier";
 import CustomerManagement from "./features/customers/pages/CustomerManagement";
 import CustomerKhataLedger from "./features/customers/pages/CustomerKhataLedger";
 import CustomerFinance from "./features/finance/pages/CustomerFinance";
+import RiderDeliveryFinancePage from "./features/finance/pages/RiderDeliveryFinancePage";
 import Proccessing from "./features/inventory/pages/Processing";
 import Pos from "./features/pos/pages/Pos";
 import Delivery from "./features/deliveries/pages/Delivery";
@@ -28,6 +29,10 @@ import { LedgerProvider } from "./context/LedgerContext";
 import { AnimalProvider } from "./context/AnimalContext";
 import { ExpenseProvider } from "./context/ExpenseContext";
 import { POSProvider } from "./context/POSContext";
+import { DeliveryProvider } from "./context/DeliveryContext";
+import { DeliveryStaffProvider } from "./context/DeliveryStaffContext";
+import { FuelLogProvider } from "./context/FuelLogContext";
+import { RiderSalaryProvider } from "./context/RiderSalaryContext";
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -38,64 +43,73 @@ export default function App() {
         <AnimalProvider>
           <ExpenseProvider>
             <POSProvider>
-              <BrowserRouter>
-            <Routes>
-              <Route
-                path="/login"
-                element={
-                  <LoginPage
-                    onLogin={(email, password) => {
-                      console.log('Logging in user:', email);
-                      setIsAuthenticated(true);
-                    }}
-                  />
-                }
-              />
-              <Route path="/" element={<Layout />}>
-                <Route index element={<Navigate to="/dashboard" replace />} />
-                <Route path="dashboard" element={<Dashboard />} />
+              <DeliveryStaffProvider>
+                <FuelLogProvider>
+                  <RiderSalaryProvider>
+                    <DeliveryProvider>
+                      <BrowserRouter>
+                        <Routes>
+                          <Route
+                            path="/login"
+                            element={
+                              <LoginPage
+                                onLogin={(email, password) => {
+                                  console.log("Logging in user:", email);
+                                  setIsAuthenticated(true);
+                                }}
+                              />
+                            }
+                          />
+                          <Route path="/" element={<Layout />}>
+                            <Route index element={<Navigate to="/dashboard" replace />} />
+                            <Route path="dashboard" element={<Dashboard />} />
 
-                {/* Farm Routes */}
-                <Route path="farm" element={<Farm />}>
-                  <Route index element={<FarmDashboard />} />
-                  <Route path="animals" element={<AnimalsHerd />} />
-                  <Route path="animals/detail/:id" element={<AnimalDetailPage />} />
-                  <Route path="milking" element={<MilkingRegister />} />
-                  <Route path="processing" element={<DahiProcessing />} />
-                  <Route path="expenses" element={<ExpenseLayout />}>
-                    <Route index element={<FarmExpenses />} />
-                    <Route path="new" element={<RecordFarmExpensePage />} />
-                    <Route path="edit/:id" element={<RecordFarmExpensePage />} />
-                    <Route path="detail/:id" element={<ExpenseDetailPage />} />
-                  </Route>
-                  <Route path="pl" element={<FarmPL />} />
-                  <Route path="dailysheet" element={<DailySheet />} />
-                </Route>
+                            {/* Farm Routes */}
+                            <Route path="farm" element={<Farm />}>
+                              <Route index element={<FarmDashboard />} />
+                              <Route path="animals" element={<AnimalsHerd />} />
+                              <Route path="animals/detail/:id" element={<AnimalDetailPage />} />
+                              <Route path="milking" element={<MilkingRegister />} />
+                              <Route path="processing" element={<DahiProcessing />} />
+                              <Route path="expenses" element={<ExpenseLayout />}>
+                                <Route index element={<FarmExpenses />} />
+                                <Route path="new" element={<RecordFarmExpensePage />} />
+                                <Route path="edit/:id" element={<RecordFarmExpensePage />} />
+                                <Route path="detail/:id" element={<ExpenseDetailPage />} />
+                              </Route>
+                              <Route path="pl" element={<FarmPL />} />
+                              <Route path="dailysheet" element={<DailySheet />} />
+                            </Route>
 
-                <Route path="supplier" element={<Supplier />} />
-                <Route path="proccessing" element={<Proccessing />} />
-                <Route path="pos" element={<Pos />} />
-                <Route path="delivery" element={<Delivery />} />
-                <Route path="products" element={<Products />} />
+                            <Route path="supplier" element={<Supplier />} />
+                            <Route path="proccessing" element={<Proccessing />} />
+                            <Route path="pos" element={<Pos />} />
+                            <Route path="delivery" element={<Delivery />} />
+                            <Route path="products" element={<Products />} />
 
-                {/* Accounts & Khata Ledger Routes */}
-                <Route path="customer" element={<CustomerManagement />} />
-                <Route
-                  path="customer-khata-ledger"
-                  element={<CustomerKhataLedger />}
-                />
+                            {/* Accounts & Khata Ledger Routes */}
+                            <Route path="customer" element={<CustomerManagement />} />
+                            <Route
+                              path="customer-khata-ledger"
+                              element={<CustomerKhataLedger />}
+                            />
 
-                {/* Finance Routes */}
-                <Route path="finance/customer" element={<CustomerFinance />} />
+                            {/* Finance Routes */}
+                            <Route path="finance/customer" element={<CustomerFinance />} />
+                            <Route path="finance/delivery" element={<RiderDeliveryFinancePage />} />
 
-                {/* Catch-all redirect */}
-                <Route
-                  path="*"
-                  element={<Navigate to="/dashboard" replace />}
-                />
-              </Route>
-            </Routes>
-            </BrowserRouter>
+                            {/* Catch-all redirect */}
+                            <Route
+                              path="*"
+                              element={<Navigate to="/dashboard" replace />}
+                            />
+                          </Route>
+                        </Routes>
+                      </BrowserRouter>
+                    </DeliveryProvider>
+                  </RiderSalaryProvider>
+                </FuelLogProvider>
+              </DeliveryStaffProvider>
             </POSProvider>
           </ExpenseProvider>
         </AnimalProvider>

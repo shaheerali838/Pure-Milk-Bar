@@ -3,44 +3,62 @@ import CustomerHeader from '../components/Customer_&_Accounts/CustomerHeader';
 import CustomerStatsCards from '../components/Customer_&_Accounts/CustomerStatsCards';
 import CustomerFilters from '../components/Customer_&_Accounts/CustomerFilters';
 import CustomerTable from '../components/Customer_&_Accounts/CustomerTable';
-import AddCustomerModal from '../components/Customer_&_Accounts/AddCustomerModal';
-import ViewCustomerModal from '../components/Customer_&_Accounts/ViewCustomerModal';
-import EditCustomerModal from '../components/Customer_&_Accounts/EditCustomerModal';
+import AddNewCustomerView from '../components/Customer_&_Accounts/AddNewCustomerView';
+import CustomerDetailsView from '../components/Customer_&_Accounts/CustomerDetailsView';
+import EditCustomerView from '../components/Customer_&_Accounts/EditCustomerView';
 
 export default function CustomerManagement() {
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [viewCustomer, setViewCustomer] = useState(null);
-  const [editCustomer, setEditCustomer] = useState(null);
+  const [currentView, setCurrentView] = useState('list'); // 'list' | 'add' | 'view' | 'edit'
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+  if (currentView === 'add') {
+    return <AddNewCustomerView onBack={() => setCurrentView('list')} />;
+  }
+
+  if (currentView === 'view' && selectedCustomer) {
+    return (
+      <CustomerDetailsView
+        customer={selectedCustomer}
+        onBack={() => {
+          setSelectedCustomer(null);
+          setCurrentView('list');
+        }}
+        onEdit={(cust) => {
+          setSelectedCustomer(cust);
+          setCurrentView('edit');
+        }}
+      />
+    );
+  }
+
+  if (currentView === 'edit' && selectedCustomer) {
+    return (
+      <EditCustomerView
+        customer={selectedCustomer}
+        onBack={() => {
+          setSelectedCustomer(null);
+          setCurrentView('list');
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-2.5">
-      <CustomerHeader onOpenAddModal={() => setIsAddModalOpen(true)} />
+      <CustomerHeader onOpenAddModal={() => setCurrentView('add')} />
       <CustomerStatsCards />
       <CustomerFilters />
       <CustomerTable
-        onViewCustomer={(cust) => setViewCustomer(cust)}
-        onEditCustomer={(cust) => setEditCustomer(cust)}
-      />
-
-      {/* Add Modal */}
-      <AddCustomerModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-      />
-
-      {/* View Details Modal (Eye Icon) */}
-      <ViewCustomerModal
-        customer={viewCustomer}
-        isOpen={!!viewCustomer}
-        onClose={() => setViewCustomer(null)}
-      />
-
-      {/* Edit Details Form Modal (Pencil Icon) */}
-      <EditCustomerModal
-        customer={editCustomer}
-        isOpen={!!editCustomer}
-        onClose={() => setEditCustomer(null)}
+        onViewCustomer={(cust) => {
+          setSelectedCustomer(cust);
+          setCurrentView('view');
+        }}
+        onEditCustomer={(cust) => {
+          setSelectedCustomer(cust);
+          setCurrentView('edit');
+        }}
       />
     </div>
   );
 }
+

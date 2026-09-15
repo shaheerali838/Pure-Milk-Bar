@@ -5,11 +5,12 @@ import LedgerHeader from '../components/CustomerKhataLedger/LedgerHeader';
 import LedgerCustomerSelector from '../components/CustomerKhataLedger/LedgerCustomerSelector';
 import LedgerStatsCards from '../components/CustomerKhataLedger/LedgerStatsCards';
 import LedgerTable from '../components/CustomerKhataLedger/LedgerTable';
-import AddDebitModal from '../components/CustomerKhataLedger/AddDebitModal';
-import RecordPaymentModal from '../components/CustomerKhataLedger/RecordPaymentModal';
-import ViewTransactionModal from '../components/CustomerKhataLedger/ViewTransactionModal';
-import HowToFinishModal from '../components/CustomerKhataLedger/HowToFinishModal';
-import ViewCustomerModal from '../components/Customer_&_Accounts/ViewCustomerModal';
+import BuyProductView from '../components/CustomerKhataLedger/BuyProductView';
+import AddDebitView from '../components/CustomerKhataLedger/AddDebitView';
+import RecordPaymentView from '../components/CustomerKhataLedger/RecordPaymentView';
+import ViewTransactionView from '../components/CustomerKhataLedger/ViewTransactionView';
+import HowToFinishView from '../components/CustomerKhataLedger/HowToFinishView';
+import CustomerDetailsView from '../components/Customer_&_Accounts/CustomerDetailsView';
 
 export default function CustomerKhataLedger() {
   const { customers } = useCustomerContext();
@@ -21,11 +22,8 @@ export default function CustomerKhataLedger() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  const [isAddDebitOpen, setIsAddDebitOpen] = useState(false);
-  const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
-  const [isHowToFinishOpen, setIsHowToFinishOpen] = useState(false);
+  const [currentSubView, setCurrentSubView] = useState('ledger'); // 'ledger' | 'buy' | 'addDebit' | 'recordPayment' | 'viewTransaction' | 'viewCustomer' | 'howToFinish'
   const [viewTransaction, setViewTransaction] = useState(null);
-  const [viewCustomerProfile, setViewCustomerProfile] = useState(null);
 
   // Auto-select first customer if none is selected
   useEffect(() => {
@@ -72,11 +70,44 @@ export default function CustomerKhataLedger() {
     window.print();
   };
 
+  if (currentSubView === 'buy' && currentCustomer) {
+    return <BuyProductView customer={currentCustomer} onBack={() => setCurrentSubView('ledger')} />;
+  }
+
+  if (currentSubView === 'addDebit' && currentCustomer) {
+    return <AddDebitView customer={currentCustomer} onBack={() => setCurrentSubView('ledger')} />;
+  }
+
+  if (currentSubView === 'recordPayment' && currentCustomer) {
+    return <RecordPaymentView customer={currentCustomer} onBack={() => setCurrentSubView('ledger')} />;
+  }
+
+  if (currentSubView === 'viewTransaction' && viewTransaction) {
+    return (
+      <ViewTransactionView
+        transaction={viewTransaction}
+        customer={currentCustomer}
+        onBack={() => {
+          setViewTransaction(null);
+          setCurrentSubView('ledger');
+        }}
+      />
+    );
+  }
+
+  if (currentSubView === 'viewCustomer' && currentCustomer) {
+    return <CustomerDetailsView customer={currentCustomer} onBack={() => setCurrentSubView('ledger')} />;
+  }
+
+  if (currentSubView === 'howToFinish') {
+    return <HowToFinishView onBack={() => setCurrentSubView('ledger')} />;
+  }
+
   return (
     <div className="space-y-2.5">
       {/* Header */}
       <LedgerHeader
-        onHowToFinish={() => setIsHowToFinishOpen(true)}
+        onHowToFinish={() => setCurrentSubView('howToFinish')}
         onPrint={handlePrint}
       />
 
@@ -86,9 +117,10 @@ export default function CustomerKhataLedger() {
         onSelectCustomer={(id) => setSelectedCustomerId(id)}
         selectedMonth={selectedMonth}
         onChangeMonth={(m) => setSelectedMonth(m)}
-        onViewCustomerDetails={() => setViewCustomerProfile(currentCustomer)}
-        onOpenAddDebit={() => setIsAddDebitOpen(true)}
-        onOpenRecordPayment={() => setIsRecordPaymentOpen(true)}
+        onViewCustomerDetails={() => setCurrentSubView('viewCustomer')}
+        onOpenBuyModal={() => setCurrentSubView('buy')}
+        onOpenAddDebit={() => setCurrentSubView('addDebit')}
+        onOpenRecordPayment={() => setCurrentSubView('recordPayment')}
         onSettleKhata={handleSettleKhata}
       />
 
@@ -103,51 +135,20 @@ export default function CustomerKhataLedger() {
         currentBalance={closingBalance}
       />
 
-      {/* Ledger Table with Horizontal Scroll Support */}
+      {/* Ledger Table */}
       <LedgerTable
         customer={currentCustomer}
         ledgerEntries={activeEntries}
         totalCharged={totalCharged}
         totalPaid={totalPaid}
         closingBalance={closingBalance}
-        onViewCustomerProfile={() => setViewCustomerProfile(currentCustomer)}
-        onViewTransaction={(txn) => setViewTransaction(txn)}
-      />
-
-      {/* Add Debit Modal */}
-      <AddDebitModal
-        customer={currentCustomer}
-        isOpen={isAddDebitOpen}
-        onClose={() => setIsAddDebitOpen(false)}
-      />
-
-      {/* Record Payment Modal */}
-      <RecordPaymentModal
-        customer={currentCustomer}
-        isOpen={isRecordPaymentOpen}
-        onClose={() => setIsRecordPaymentOpen(false)}
-      />
-
-      {/* View Transaction Modal */}
-      <ViewTransactionModal
-        transaction={viewTransaction}
-        customer={currentCustomer}
-        isOpen={!!viewTransaction}
-        onClose={() => setViewTransaction(null)}
-      />
-
-      {/* Customer Profile View Modal */}
-      <ViewCustomerModal
-        customer={viewCustomerProfile}
-        isOpen={!!viewCustomerProfile}
-        onClose={() => setViewCustomerProfile(null)}
-      />
-
-      {/* How to Finish Khata Guide Modal */}
-      <HowToFinishModal
-        isOpen={isHowToFinishOpen}
-        onClose={() => setIsHowToFinishOpen(false)}
+        onViewCustomerProfile={() => setCurrentSubView('viewCustomer')}
+        onViewTransaction={(txn) => {
+          setViewTransaction(txn);
+          setCurrentSubView('viewTransaction');
+        }}
       />
     </div>
   );
 }
+

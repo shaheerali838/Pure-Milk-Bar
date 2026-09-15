@@ -1,11 +1,3 @@
-/**
- * Layer 2: Supplier Service — Business Logic & Transaction Orchestration
- *
- * Encapsulates 100% of business logic for the Supplier domain.
- * - Accepts plain JavaScript objects, returns clean data objects.
- * - No HTTP protocol awareness (no req/res objects).
- * - Throws descriptive operational errors using AppError.
- */
 import Supplier from '../../../models/Supplier.model.js';
 import AppError from '../../../utils/AppError.js';
 

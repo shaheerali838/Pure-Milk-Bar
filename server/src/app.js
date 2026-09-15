@@ -11,6 +11,7 @@ import farmRoutes from "./modules/farm/routes/farm.routes.js";
 import supplierRoutes from "./modules/suppliers/routes/supplier.routes.js";
 import customerRoutes from "./modules/customers/routes/customer.routes.js";
 import deliveryRoutes from "./modules/deliveries/routes/delivery.routes.js";
+import financeRoutes from "./modules/finance/routes/finance.routes.js";
 
 const app = express();
 
@@ -63,6 +64,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/customers", customerRoutes);
 app.use("/api/v1/deliveries", deliveryRoutes);
+app.use("/api/v1/finance", financeRoutes);
 
 // Root route
 app.get("/", (req, res) => {

@@ -1,7 +1,7 @@
+import React from 'react';
 import { CreditCard, Clock, AlertTriangle, AlertCircle } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
-import { Card } from '@/components/ui/card';
 
 function computeAging(entries, customerKhataBalance) {
   const charges = (entries || [])
@@ -64,88 +64,78 @@ export default function ReceivablesAgingStats() {
     }
   });
 
+  const statCards = [
+    {
+      label: "Total Receivable",
+      value: `Rs. ${totalKhataReceivable.toLocaleString()}`,
+      sub: "All outstanding accounts",
+      icon: CreditCard,
+      color: "#155dfc",
+      badge: "Total",
+    },
+    {
+      label: "0–30 Days",
+      value: `Rs. ${total0_30.toLocaleString()}`,
+      sub: "Current cycle dues",
+      icon: Clock,
+      color: "#009966",
+      badge: "Current",
+    },
+    {
+      label: "31–90 Days",
+      value: `Rs. ${total31_90.toLocaleString()}`,
+      sub: "Moderate aging bracket",
+      icon: AlertTriangle,
+      color: "#f59e0b",
+      badge: "Overdue",
+    },
+    {
+      label: "90+ Days (High Risk)",
+      value: `Rs. ${total90Plus.toLocaleString()}`,
+      sub: "Critical overdue recovery",
+      icon: AlertCircle,
+      color: "#e11d48",
+      badge: "Critical",
+    },
+  ];
+
   return (
-    <div className="space-y-2 mb-2.5">
+    <div className="space-y-2 mb-2">
       {/* 4 Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        {/* Total Receivable */}
-        <Card className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              TOTAL RECEIVABLE
-            </span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-0.5 tabular">
-              Rs. {totalKhataReceivable.toLocaleString()}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+        {statCards.map(({ label, value, sub, icon: Icon, color, badge }) => (
+          <div
+            key={label}
+            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-sm hover:shadow-md transition-all duration-200"
+            style={{ borderTop: `4px solid ${color}` }}
+          >
+            <div className="flex items-start justify-between mb-1.5">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                style={{ background: `${color}15` }}
+              >
+                <Icon style={{ width: 16, height: 16, color }} />
+              </div>
+              <span className="text-[10px] font-bold px-3 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
+                {badge}
+              </span>
             </div>
-            <p className="text-[10px] text-slate-500 mt-0.5">
-              All outstanding accounts
-            </p>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <CreditCard className="w-4 h-4" />
-          </div>
-        </Card>
-
-        {/* 0-30 Days */}
-        <Card className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              0–30 DAYS
-            </span>
-            <div className="text-xl font-black text-blue-600 leading-tight mt-0.5 tabular">
-              Rs. {total0_30.toLocaleString()}
+            <div>
+              <p className="font-display text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
+                {value}
+              </p>
+              <p className="text-xs font-bold text-slate-700">{label}</p>
+              <p className="text-[11px] font-medium text-slate-400">{sub}</p>
             </div>
-            <p className="text-[10px] text-slate-500 mt-0.5">
-              Current cycle dues
-            </p>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <Clock className="w-4 h-4" />
-          </div>
-        </Card>
-
-        {/* 31-90 Days */}
-        <Card className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              31–90 DAYS
-            </span>
-            <div className="text-xl font-black text-amber-600 leading-tight mt-0.5 tabular">
-              Rs. {total31_90.toLocaleString()}
-            </div>
-            <p className="text-[10px] text-slate-500 mt-0.5">
-              Moderate aging bracket
-            </p>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-4 h-4" />
-          </div>
-        </Card>
-
-        {/* 90+ Days */}
-        <Card className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              90+ DAYS (HIGH RISK)
-            </span>
-            <div className="text-xl font-black text-rose-600 leading-tight mt-0.5 tabular">
-              Rs. {total90Plus.toLocaleString()}
-            </div>
-            <p className="text-[10px] text-slate-500 mt-0.5">
-              Critical overdue recovery
-            </p>
-          </div>
-          <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-            <AlertCircle className="w-4 h-4" />
-          </div>
-        </Card>
+        ))}
       </div>
 
       {/* Bucket Legend Row */}
       <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-600">
         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Legend:</span>
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
           <span>0–30 days (Current)</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -164,4 +154,3 @@ export default function ReceivablesAgingStats() {
     </div>
   );
 }
-

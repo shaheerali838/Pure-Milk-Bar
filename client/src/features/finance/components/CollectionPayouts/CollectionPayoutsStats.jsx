@@ -1,7 +1,7 @@
+import React from 'react';
 import { DollarSign, CreditCard, Clock, CheckCircle2 } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
-import { Card } from '@/components/ui/card';
 
 export default function CollectionPayoutsStats() {
   const { totalKhataReceivable, rawCustomers } = useCustomerContext();
@@ -30,80 +30,69 @@ export default function CollectionPayoutsStats() {
     });
   });
 
+  const statCards = [
+    {
+      label: "Total Recovered Today",
+      value: `Rs. ${totalRecoveredToday.toLocaleString()}`,
+      sub: "Direct Khata cash & online",
+      icon: DollarSign,
+      color: "#009966",
+      badge: "Today's Recovery",
+    },
+    {
+      label: "Outstanding Khata Dues",
+      value: `Rs. ${totalKhataReceivable.toLocaleString()}`,
+      sub: "Receivables from customers",
+      icon: CreditCard,
+      color: "#e11d48",
+      badge: "Pending",
+    },
+    {
+      label: "Pending Clearance",
+      value: `Rs. ${pendingClearance.toLocaleString()}`,
+      sub: "Unconfirmed vouchers / bank",
+      icon: Clock,
+      color: "#f59e0b",
+      badge: "Verification",
+    },
+    {
+      label: "Collections Recorded",
+      value: `${collectionsRecorded}`,
+      sub: "Receipt transactions total",
+      icon: CheckCircle2,
+      color: "#155dfc",
+      badge: "Receipts",
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-2.5">
-      {/* Total Recovered Today */}
-      <Card className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
-        <div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            TOTAL RECOVERED TODAY
-          </span>
-          <div className="text-xl font-black text-emerald-600 leading-tight mt-0.5 tabular">
-            Rs. {totalRecoveredToday.toLocaleString()}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
+      {statCards.map(({ label, value, sub, icon: Icon, color, badge }) => (
+        <div
+          key={label}
+          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-sm hover:shadow-md transition-all duration-200"
+          style={{ borderTop: `4px solid ${color}` }}
+        >
+          <div className="flex items-start justify-between mb-1.5">
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+              style={{ background: `${color}15` }}
+            >
+              <Icon style={{ width: 16, height: 16, color }} />
+            </div>
+            <span className="text-[10px] font-bold px-3 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
+              {badge}
+            </span>
           </div>
-          <p className="text-[10px] text-slate-500 mt-0.5">
-            Direct Khata cash &amp; online
-          </p>
-        </div>
-        <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-          <DollarSign className="w-4 h-4" />
-        </div>
-      </Card>
-
-      {/* Outstanding Khata Dues */}
-      <Card className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
-        <div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            OUTSTANDING KHATA DUES
-          </span>
-          <div className="text-xl font-black text-rose-600 leading-tight mt-0.5 tabular">
-            Rs. {totalKhataReceivable.toLocaleString()}
+          <div>
+            <p className="font-display text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
+              {value}
+            </p>
+            <p className="text-xs font-bold text-slate-700">{label}</p>
+            <p className="text-[11px] font-medium text-slate-400">{sub}</p>
           </div>
-          <p className="text-[10px] text-slate-500 mt-0.5">
-            Receivables from customers
-          </p>
         </div>
-        <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-          <CreditCard className="w-4 h-4" />
-        </div>
-      </Card>
-
-      {/* Pending Clearance */}
-      <Card className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
-        <div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            PENDING CLEARANCE
-          </span>
-          <div className="text-xl font-black text-amber-600 leading-tight mt-0.5 tabular">
-            Rs. {pendingClearance.toLocaleString()}
-          </div>
-          <p className="text-[10px] text-slate-500 mt-0.5">
-            Unconfirmed vouchers
-          </p>
-        </div>
-        <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-          <Clock className="w-4 h-4" />
-        </div>
-      </Card>
-
-      {/* Collections Recorded */}
-      <Card className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
-        <div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            COLLECTIONS RECORDED
-          </span>
-          <div className="text-xl font-black text-blue-600 leading-tight mt-0.5 tabular">
-            {collectionsRecorded}
-          </div>
-          <p className="text-[10px] text-slate-500 mt-0.5">
-            Receipt transactions
-          </p>
-        </div>
-        <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-          <CheckCircle2 className="w-4 h-4" />
-        </div>
-      </Card>
+      ))}
     </div>
   );
 }
-
