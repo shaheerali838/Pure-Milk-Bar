@@ -10,7 +10,7 @@ class MilkingYieldLogService {
    * 1. Animal must exist and be active.
    * 2. Duplicate (animalId + date + shift) is rejected by unique compound index.
    * 3. After recording, recalculate the animal's dailyAvgYield.
-   *
+   
    * @param {object} data - Validated milking yield data
    * @param {string} operatorId - The authenticated user's ObjectId (from JWT)
    * @returns {Promise<object>} Created milking yield log document
