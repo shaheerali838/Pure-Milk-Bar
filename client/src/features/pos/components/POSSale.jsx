@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   ShoppingCart,
   Trash2,
@@ -14,6 +15,8 @@ import POSDeliverySection from './POSDeliverySection';
 import POSCustomerKhataSection from './POSCustomerKhataSection';
 
 export default function POSSale() {
+  const [searchParams] = useSearchParams();
+
   const {
     cart = [],
     cartCount = 0,
@@ -21,8 +24,25 @@ export default function POSSale() {
     handleClearCart,
     saleCategory = 'walkin',
     setSaleCategory,
+    setDeliverySubType,
     handleCompleteSale,
   } = usePOSContext();
+
+  // Sync category from URL search params (e.g. /pos?category=delivery)
+  useEffect(() => {
+    const categoryParam = searchParams.get('category');
+    if (categoryParam === 'delivery') {
+      setSaleCategory('delivery');
+      const subType = searchParams.get('subType');
+      if (subType === 'monthly' || subType === 'ontime') {
+        setDeliverySubType(subType);
+      }
+    } else if (categoryParam === 'customer') {
+      setSaleCategory('customer');
+    } else if (categoryParam === 'walkin') {
+      setSaleCategory('walkin');
+    }
+  }, [searchParams, setSaleCategory, setDeliverySubType]);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3.5">
@@ -33,7 +53,9 @@ export default function POSSale() {
             <ShoppingCart className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-xs sm:text-sm font-bold text-slate-900 font-display">Sale Cart</h2>
+            <h2 className="text-xs sm:text-sm font-bold text-slate-900 font-display">
+              Sale Cart
+            </h2>
           </div>
           <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-600 text-white">
             {cartCount} items
@@ -58,7 +80,9 @@ export default function POSSale() {
           <div className="w-11 h-11 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
             <ShoppingCart className="w-5 h-5" />
           </div>
-          <p className="text-xs sm:text-sm font-bold text-slate-700">Sale Cart is Empty</p>
+          <p className="text-xs sm:text-sm font-bold text-slate-700">
+            Sale Cart is Empty
+          </p>
           <p className="text-[11px] text-slate-400 max-w-[220px]">
             Tap any dairy product on the left to add it to this active sale.
           </p>
@@ -67,18 +91,18 @@ export default function POSSale() {
         <POSCartItems />
       )}
 
-      {/* 3. Primary Sale Category Switcher */}
+      {/* 3. Primary Sale Category Switcher (3 Buttons: Walk-in, Delivery, Customer) */}
       <div className="pt-2 border-t border-slate-100 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">
             ORDER TYPE
           </span>
-          <span className="text-[10px] font-semibold text-slate-500">
+          <span className="text-[10px] font-semibold text-slate-600">
             {saleCategory === 'walkin'
               ? 'Walk-in Counter'
               : saleCategory === 'delivery'
               ? 'Home Delivery'
-              : 'Monthly Subscribed'}
+              : 'Customer Khata'}
           </span>
         </div>
 
@@ -88,7 +112,7 @@ export default function POSSale() {
           <button
             type="button"
             onClick={() => setSaleCategory('walkin')}
-            className={`py-2 px-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            className={`py-2 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
               saleCategory === 'walkin'
                 ? 'bg-[#00a86b] text-white shadow-xs'
                 : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'
@@ -102,7 +126,7 @@ export default function POSSale() {
           <button
             type="button"
             onClick={() => setSaleCategory('delivery')}
-            className={`py-2 px-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            className={`py-2 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
               saleCategory === 'delivery'
                 ? 'bg-[#2563eb] text-white shadow-xs'
                 : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'
@@ -112,11 +136,11 @@ export default function POSSale() {
             <span className="truncate">Delivery</span>
           </button>
 
-          {/* Button 3: Customer (Monthly Subscribed Khata Buy) */}
+          {/* Button 3: Customer Khata */}
           <button
             type="button"
             onClick={() => setSaleCategory('customer')}
-            className={`py-2 px-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            className={`py-2 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
               saleCategory === 'customer'
                 ? 'bg-[#7e22ce] text-white shadow-xs'
                 : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'

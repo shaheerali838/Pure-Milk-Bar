@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ShoppingCart, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import DeliveryFilters from './DeliveryFilters';
 import DeliveryTable from './DeliveryTable';
 
 export default function DropPoints({ onBookDelivery, onViewDelivery }) {
+  const navigate = useNavigate();
   const { deliveries = [] } = useDeliveryContext();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,11 +48,11 @@ export default function DropPoints({ onBookDelivery, onViewDelivery }) {
 
         <Button
           type="button"
-          onClick={onBookDelivery}
-          className="h-7.5 px-3 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs cursor-pointer"
+          onClick={onBookDelivery || (() => navigate('/pos?category=delivery'))}
+          className="h-7.5 px-3 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs cursor-pointer flex items-center gap-1"
         >
-          <Plus className="w-3.5 h-3.5 mr-1" />
-          Book New Delivery
+          <ShoppingCart className="w-3.5 h-3.5 mr-0.5" />
+          <span>New Delivery via POS</span>
         </Button>
       </div>
 

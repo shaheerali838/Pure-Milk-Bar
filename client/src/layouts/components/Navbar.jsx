@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, Milk, Search, Download, Truck, Bell } from 'lucide-react';
+import { ChevronRight, Milk, Search, Download, ShoppingCart, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useCustomerContext } from '@/context/CustomerContext';
@@ -265,16 +265,16 @@ export default function Navbar() {
           <span>Export</span>
         </Button>
 
-        <Link to="/delivery">
+        <Link to="/pos">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="h-7 px-2.5 text-xs font-semibold cursor-pointer"
-            title="Open Doorstep Deliveries"
+            className="h-7 px-2.5 text-xs font-semibold cursor-pointer bg-emerald-50/50 hover:bg-emerald-50 text-emerald-800 border-emerald-200/80 shadow-2xs"
+            title="Open POS Terminal"
           >
-            <Truck className="w-3.5 h-3.5 text-blue-600" />
-            <span>Deliveries</span>
+            <ShoppingCart className="w-3.5 h-3.5 text-emerald-600" />
+            <span>POS</span>
           </Button>
         </Link>
 

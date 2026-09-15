@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom';
 import {
   Milk,
   Users,
-  BookOpen,
   LayoutGrid,
   Tractor,
   Truck,
@@ -86,12 +85,6 @@ export default function Sidebar() {
       name: 'Customer & Accounts',
       icon: Users,
       path: '/customer',
-    },
-    {
-      id: 'customer-khata-ledger',
-      name: 'Customer Khata Ledger',
-      icon: BookOpen,
-      path: '/customer-khata-ledger',
     },
     {
       id: 'customer-finance',

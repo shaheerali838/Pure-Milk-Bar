@@ -16,6 +16,8 @@ import deliveryRoutes from "./modules/deliveries/routes/delivery.routes.js";
 import financeRoutes from "./modules/finance/routes/finance.routes.js";
 import dailyClosingRoutes from "./modules/dailyClosing/routes/dailyClosing.routes.js";
 import auditLogRoutes from "./modules/auditLog/routes/auditLog.routes.js";
+import inventoryRoutes from "./modules/inventory/routes/inventory.routes.js";
+import posRoutes from "./modules/pos/routes/pos.routes.js";
 
 const app = express();
 
@@ -86,6 +88,8 @@ app.get("/", (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 app.use("/api/farm", farmRoutes);
 app.use("/api/v1/suppliers", supplierRoutes);
+app.use("/api/v1/inventory", inventoryRoutes);
+app.use("/api/v1/pos", posRoutes);
 app.use(notFoundHandler);
 
 // Centralized Error Handler
