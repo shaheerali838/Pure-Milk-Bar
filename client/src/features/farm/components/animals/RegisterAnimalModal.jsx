@@ -66,7 +66,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Tag # <span className="text-slate-400 font-normal lowercase">(optional)</span>
               </label>
-              <Input
+              <input
                 type="text"
                 name="tag"
                 placeholder="Auto-generated if blank"
@@ -80,7 +80,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Animal Name <span className="text-slate-400 font-normal lowercase">(optional)</span>
               </label>
-              <Input
+              <input
                 type="text"
                 name="name"
                 placeholder="e.g. Sahiwal Queen"
@@ -133,7 +133,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Acquisition Date
               </label>
-              <Input
+              <input
                 type="date"
                 name="acquisitionDate"
                 required
@@ -164,7 +164,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
               Expected Daily Yield (Kg/L)
             </label>
-            <Input
+            <input
               type="number"
               name="expectedYield"
               step="0.1"
@@ -182,7 +182,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                 Avg Morning Yield (L)
               </label>
-              <Input
+              <input
                 type="number"
                 name="morningYield"
                 step="0.1"
