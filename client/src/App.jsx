@@ -42,11 +42,11 @@ export default function App() {
       <LedgerProvider>
         <AnimalProvider>
           <ExpenseProvider>
-            <POSProvider>
-              <DeliveryStaffProvider>
-                <FuelLogProvider>
-                  <RiderSalaryProvider>
-                    <DeliveryProvider>
+            <DeliveryStaffProvider>
+              <FuelLogProvider>
+                <RiderSalaryProvider>
+                  <DeliveryProvider>
+                    <POSProvider>
                       <BrowserRouter>
                         <Routes>
                           <Route
@@ -106,11 +106,11 @@ export default function App() {
                           </Route>
                         </Routes>
                       </BrowserRouter>
-                    </DeliveryProvider>
-                  </RiderSalaryProvider>
-                </FuelLogProvider>
-              </DeliveryStaffProvider>
-            </POSProvider>
+                    </POSProvider>
+                  </DeliveryProvider>
+                </RiderSalaryProvider>
+              </FuelLogProvider>
+            </DeliveryStaffProvider>
           </ExpenseProvider>
         </AnimalProvider>
       </LedgerProvider>

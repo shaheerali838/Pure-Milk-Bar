@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { MapPin, Users, Fuel, Printer } from 'lucide-react';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
@@ -7,7 +7,6 @@ import DeliveryStats from '../components/DeliveryStats';
 import DropPoints from '../components/DropPoints';
 import FleetAndStaff from '../components/FleetAndStaff';
 import FuelLog from '../components/FuelLog';
-import BookDeliveryView from '../components/BookDeliveryView';
 import DeliveryDetailView from '../components/DeliveryDetailView';
 import RegisterStaffView from '../components/RegisterStaffView';
 import StaffDetailView from '../components/StaffDetailView';
@@ -15,6 +14,7 @@ import LogFuelView from '../components/LogFuelView';
 
 export default function Delivery() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { deliveries = [] } = useDeliveryContext();
   const { staffList = [] } = useDeliveryStaffContext();
 
@@ -71,22 +71,6 @@ export default function Delivery() {
   };
 
   // Sub-views rendering (replaces modals with full components)
-  if (currentView === 'bookDelivery') {
-    return (
-      <BookDeliveryView
-        onBack={() => {
-          setCurrentView('main');
-          updateUrl(activeTab, 'main');
-        }}
-        onComplete={(newDelivery) => {
-          setViewingDelivery(newDelivery);
-          setCurrentView('viewDelivery');
-          updateUrl('drop-points', 'viewDelivery', newDelivery.id);
-        }}
-      />
-    );
-  }
-
   if (currentView === 'viewDelivery' && viewingDelivery) {
     return (
       <DeliveryDetailView
@@ -233,8 +217,7 @@ export default function Delivery() {
         {activeTab === 'drop-points' && (
           <DropPoints
             onBookDelivery={() => {
-              setCurrentView('bookDelivery');
-              updateUrl('drop-points', 'bookDelivery');
+              navigate('/pos?category=delivery');
             }}
             onViewDelivery={(delivery) => {
               setViewingDelivery(delivery);

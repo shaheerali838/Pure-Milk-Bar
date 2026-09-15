@@ -52,7 +52,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                   <TableRow
                     key={c.id}
                     onClick={() => onViewCustomer && onViewCustomer(c)}
-                    title={`Click to view details of ${c.name}`}
+                    title={`Click to view Khata ledger & complete details of ${c.name}`}
                     className="hover:bg-slate-50/70 transition-colors cursor-pointer"
                   >
                     {/* Customer */}
@@ -169,7 +169,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                             e.stopPropagation();
                             if (onViewCustomer) onViewCustomer(c);
                           }}
-                          title="View Details"
+                          title="View Khata Ledger & Details"
                           className="h-7 w-7 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
                         >
                           <Eye className="w-3.5 h-3.5" />

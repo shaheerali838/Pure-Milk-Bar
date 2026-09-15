@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useCustomerContext } from './CustomerContext';
 import { useLedgerContext } from './LedgerContext';
 import { useAnimalContext } from './AnimalContext';
+import { useDeliveryContext } from './DeliveryContext';
 
 const POSContext = createContext();
 
@@ -54,6 +55,8 @@ export function POSProvider({ children }) {
   const { rawCustomers = [], customers = [] } = useCustomerContext();
   const { addLedgerEntry } = useLedgerContext();
   const { animals = [] } = useAnimalContext();
+  const deliveryCtx = useDeliveryContext();
+  const addDelivery = deliveryCtx?.addDelivery;
 
   // =========================================================================
   // 1. PRODUCTS STATE - STRICTLY FROM LOCAL STORAGE (Empty [] if not found)
@@ -187,17 +190,20 @@ export function POSProvider({ children }) {
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [fulfillmentMode, setFulfillmentMode] = useState('counter'); // 'counter' | 'doorstep'
   
-  // 3 Primary Sale Categories: 'walkin' | 'delivery' | 'customer'
+  // 2 Primary Sale Categories: 'walkin' | 'delivery'
   const [saleCategory, setSaleCategory] = useState('walkin');
 
-  // Walk-in Customer Info (Optional)
+  // Walk-in Customer Type: 'first_time' | 'registered'
+  const [walkinCustomerType, setWalkinCustomerType] = useState('first_time');
+
+  // Walk-in Customer Info (for first_time / guest)
   const [walkinName, setWalkinName] = useState('');
   const [walkinPhone, setWalkinPhone] = useState('');
 
   // Delivery Sub-Types: 'ontime' | 'monthly'
   const [deliverySubType, setDeliverySubType] = useState('ontime');
 
-  // Customer Mode Khata Options: 'khata' | 'cash' | 'partial'
+  // Registered Customer Khata Options: 'khata' | 'cash' | 'partial'
   const [khataPaymentOption, setKhataPaymentOption] = useState('khata');
   const [partialPaidAmount, setPartialPaidAmount] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
@@ -211,7 +217,7 @@ export function POSProvider({ children }) {
     trxId: '',
   });
 
-  const [selectedRiderId, setSelectedRiderId] = useState(deliveryRidersList[0].id);
+  const [selectedRiderId, setSelectedRiderId] = useState('');
   const [customRiderName, setCustomRiderName] = useState('');
   const [deliverySlot, setDeliverySlot] = useState('⚡ Instant Dispatch (30 mins)');
   const [deliveryLandmark, setDeliveryLandmark] = useState('');
@@ -272,6 +278,10 @@ export function POSProvider({ children }) {
     setWalkinPhone('');
     setOrderNotes('');
     setPartialPaidAmount('');
+    setLinkedCustomerId('');
+    setSelectedRiderId('');
+    setCustomRiderName('');
+    setWalkinCustomerType('first_time');
     setOnlineDetails({ provider: 'JazzCash', senderAccount: '', trxId: '' });
   };
 
@@ -293,7 +303,7 @@ export function POSProvider({ children }) {
 
   const allCustomers = rawCustomers.length > 0 ? rawCustomers : customers;
   const activeCustomer = allCustomers.find((c) => String(c.id) === String(linkedCustomerId)) || null;
-  const activeRider = deliveryRidersList.find((r) => r.id === selectedRiderId) || deliveryRidersList[0];
+  const activeRider = selectedRiderId ? (deliveryRidersList.find((r) => r.id === selectedRiderId) || null) : null;
 
   // =========================================================================
   // 3. SALES & INVOICES - STRICTLY FROM LOCAL STORAGE
@@ -330,6 +340,9 @@ export function POSProvider({ children }) {
       .map((i) => `${i.quantity} ${i.unit || 'unit'} ${i.name} (@Rs. ${i.price})`)
       .join(' + ');
 
+    const isRegisteredWalkin = saleCategory === 'walkin' && walkinCustomerType === 'registered';
+    const isLegacyCustomerSale = saleCategory === 'customer';
+
     const saleRecord = {
       invoiceId,
       timestamp: new Date().toISOString(),
@@ -342,14 +355,22 @@ export function POSProvider({ children }) {
       discount: effectiveDiscount,
       netPayable,
       saleCategory,
+      walkinCustomerType: saleCategory === 'walkin' ? walkinCustomerType : null,
       deliverySubType: saleCategory === 'delivery' ? deliverySubType : null,
       fulfillmentMode: saleCategory === 'delivery' ? 'doorstep' : 'counter',
-      paymentMethod: saleCategory === 'customer' ? khataPaymentOption : paymentMethod,
-      cashTendered: paymentMethod === 'cash' ? Number(cashTendered) || netPayable : null,
-      changeDue: paymentMethod === 'cash' ? Math.max(0, (Number(cashTendered) || netPayable) - netPayable) : 0,
+      paymentMethod:
+        isRegisteredWalkin || isLegacyCustomerSale
+          ? khataPaymentOption
+          : paymentMethod,
+      cashTendered: paymentMethod === 'cash' || (isRegisteredWalkin && khataPaymentOption === 'cash')
+        ? Number(cashTendered) || netPayable
+        : null,
+      changeDue: paymentMethod === 'cash' || (isRegisteredWalkin && khataPaymentOption === 'cash')
+        ? Math.max(0, (Number(cashTendered) || netPayable) - netPayable)
+        : 0,
       onlineDetails: paymentMethod === 'online' ? { ...onlineDetails } : null,
       walkinCustomer:
-        saleCategory === 'walkin'
+        saleCategory === 'walkin' && walkinCustomerType === 'first_time'
           ? {
               name: walkinName.trim() || 'Walk-in Customer',
               phone: walkinPhone.trim() || 'N/A',
@@ -357,17 +378,30 @@ export function POSProvider({ children }) {
           : null,
       rider:
         saleCategory === 'delivery'
-          ? {
-              ...activeRider,
-              customName: customRiderName || activeRider.name,
-              deliverySlot,
-              deliveryLandmark,
-              dropAddress,
-              collectEmptyBottles,
-            }
+          ? (activeRider || customRiderName)
+            ? {
+                ...(activeRider || {}),
+                name: customRiderName || (activeRider ? activeRider.name : ''),
+                customName: customRiderName || (activeRider ? activeRider.name : ''),
+                deliverySlot,
+                deliveryLandmark,
+                dropAddress,
+                collectEmptyBottles,
+              }
+            : {
+                name: '',
+                customName: '',
+                deliverySlot,
+                deliveryLandmark,
+                dropAddress,
+                collectEmptyBottles,
+              }
           : null,
       customer:
-        (saleCategory === 'customer' || (saleCategory === 'delivery' && deliverySubType === 'monthly')) && activeCustomer
+        ((saleCategory === 'walkin' && walkinCustomerType === 'registered') ||
+          isLegacyCustomerSale ||
+          (saleCategory === 'delivery' && deliverySubType === 'monthly')) &&
+        activeCustomer
           ? {
               id: activeCustomer.id,
               name: activeCustomer.name,
@@ -378,9 +412,9 @@ export function POSProvider({ children }) {
       notes: orderNotes || '',
     };
 
-    // Customer / Monthly Subscribed Mode: Execute exact Customer Khata Ledger Buy logic
-    if (saleCategory === 'customer' && activeCustomer) {
-      const description = `POS Buy: ${itemSummary}`;
+    // Registered Customer / Monthly Subscribed Walk-in / Customer Mode: Execute exact Customer Khata Ledger Buy logic
+    if ((isRegisteredWalkin || isLegacyCustomerSale) && activeCustomer) {
+      const description = `POS Counter Buy: ${itemSummary}`;
 
       if (khataPaymentOption === 'cash') {
         addLedgerEntry(activeCustomer.id, {
@@ -430,16 +464,40 @@ export function POSProvider({ children }) {
           notes: orderNotes ? `POS Monthly Subscribed Buy. ${orderNotes}` : 'POS Monthly Subscribed Buy',
         });
       }
-    } else if (saleCategory === 'delivery' && deliverySubType === 'monthly' && activeCustomer && paymentMethod === 'khata') {
-      // Monthly Delivery charged to Khata
-      addLedgerEntry(activeCustomer.id, {
-        description: `POS Monthly Delivery: ${itemSummary} [${customRiderName || activeRider.name}]`,
-        debit: netPayable,
-        credit: 0,
-        date: todayDate,
-        method: 'Khata Credit',
-        notes: orderNotes ? `Doorstep Delivery. ${orderNotes}` : 'Doorstep Delivery',
-      });
+    } else if (saleCategory === 'delivery') {
+      const riderLabel = customRiderName || (activeRider ? activeRider.name : 'Unassigned');
+      if (deliverySubType === 'monthly' && activeCustomer && paymentMethod === 'khata') {
+        // Monthly Delivery charged to Khata
+        addLedgerEntry(activeCustomer.id, {
+          description: `POS Monthly Delivery: ${itemSummary} [${riderLabel}]`,
+          debit: netPayable,
+          credit: 0,
+          date: todayDate,
+          method: 'Khata Credit',
+          notes: orderNotes ? `Doorstep Delivery. ${orderNotes}` : 'Doorstep Delivery',
+        });
+      }
+
+      // Automatically register the delivery run in DeliveryContext (Drop Points table)
+      if (typeof addDelivery === 'function') {
+        const itemDesc = cart.map((i) => `${i.quantity}x ${i.name}`).join(', ');
+        const totalQty = cart.reduce((acc, i) => acc + (Number(i.quantity) || 0), 0);
+        addDelivery({
+          date: todayDate,
+          shift: activeCustomer?.shift || 'MORNING',
+          route: activeCustomer?.area || deliveryLandmark || 'Model Town & Faisal Town',
+          riderNameSnapshot: customRiderName || activeRider?.name || 'Unassigned',
+          staffType: activeRider?.vehicleType === 'Walking Man' ? 'WALKING_BOY' : (activeRider ? 'MOTORCYCLE_RIDER' : 'OTHER'),
+          customerId: activeCustomer ? activeCustomer.id : undefined,
+          customerName: activeCustomer ? activeCustomer.name : (walkinName.trim() || 'Home Delivery Customer'),
+          deliveryAddress: dropAddress || activeCustomer?.address || activeCustomer?.area || 'Model Town',
+          itemDescription: itemDesc,
+          qtyLiters: totalQty,
+          paymentMode: paymentMethod.toUpperCase(),
+          codAmountToCollect: paymentMethod === 'cod' || paymentMethod === 'cash' ? netPayable : 0,
+          bottlesReturned: 0,
+        });
+      }
     } else if (paymentMethod === 'khata' && activeCustomer) {
       // Fallback Khata payment
       addLedgerEntry(activeCustomer.id, {
@@ -546,6 +604,10 @@ export function POSProvider({ children }) {
         // Fulfillment & Sale Modes
         saleCategory,
         setSaleCategory,
+        walkinCustomerType,
+        setWalkinCustomerType,
+        walkinSubType: walkinCustomerType,
+        setWalkinSubType: setWalkinCustomerType,
         walkinName,
         setWalkinName,
         walkinPhone,

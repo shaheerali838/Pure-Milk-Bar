@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, ShieldCheck } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
+import { usePOSContext } from '../../../../context/POSContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,6 +14,8 @@ import {
 
 export default function EditCustomerModal({ customer, isOpen, onClose }) {
   const { updateCustomer } = useCustomerContext();
+  const { products = [] } = usePOSContext();
+
   const [formData, setFormData] = useState({
     id: '',
     name: '',
@@ -32,8 +35,50 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
     status: 'Active',
   });
 
+  const milkProducts = useMemo(() => {
+    if (products && products.length > 0) {
+      const milkOnly = products.filter(
+        (p) => p.category?.toLowerCase() === 'milk' || /milk/i.test(p.name)
+      );
+      if (milkOnly.length > 0) return milkOnly;
+      return products;
+    }
+    return [
+      { id: 'cow-milk', name: 'Cow Milk', price: 240, unit: 'L' },
+      { id: 'buffalo-milk', name: 'Buffalo Milk', price: 260, unit: 'L' },
+      { id: 'mixed-milk', name: 'Mixed Milk', price: 250, unit: 'L' },
+    ];
+  }, [products]);
+
+  const [selectedProductId, setSelectedProductId] = useState(() => milkProducts[0]?.id || 'cow-milk');
+
+  const selectedProduct = milkProducts.find((p) => String(p.id) === String(selectedProductId)) || milkProducts[0];
+  const currentPrice = Number(selectedProduct?.price) || 240;
+
+  const [subQty, setSubQty] = useState('2');
+  const [subUnit, setSubUnit] = useState('L');
+
+  const numQty = parseFloat(subQty) || 0;
+  const dailyCost = numQty * currentPrice;
+  const monthlyCost = dailyCost * 30;
+
+  const parseSubscriptionDetails = (str) => {
+    if (!str) return { qty: '2', unit: 'L', productId: milkProducts[0]?.id || 'cow-milk' };
+    const numMatch = str.match(/(\d+(\.\d+)?)/);
+    const qty = numMatch ? numMatch[1] : '2';
+    const unit = /kg/i.test(str) ? 'KG' : 'L';
+    const matched = milkProducts.find(p => p.name && str.toLowerCase().includes(p.name.toLowerCase()));
+    const productId = matched ? matched.id : (milkProducts[0]?.id || 'cow-milk');
+    return { qty, unit, productId };
+  };
+
   useEffect(() => {
     if (customer) {
+      const parsed = parseSubscriptionDetails(customer.subscription);
+      setSubQty(parsed.qty);
+      setSubUnit(parsed.unit);
+      setSelectedProductId(parsed.productId);
+
       setFormData({
         id: customer.id,
         name: customer.name || '',
@@ -61,6 +106,8 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
     e.preventDefault();
     if (!formData.name || !formData.phone) return;
 
+    const formattedSubscription = `${subQty} ${subUnit} ${selectedProduct?.name || 'Cow Milk'}`.trim();
+
     updateCustomer({
       ...customer,
       name: formData.name,
@@ -73,7 +120,7 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
       address: formData.address,
       secondaryPhone: formData.secondaryPhone,
       referenceName: formData.referenceName,
-      subscription: formData.subscription,
+      subscription: formattedSubscription,
       creditLimit: Number(formData.creditLimit) || 0,
       khataBalance: Number(formData.khataBalance) || 0,
       paymentMode: formData.paymentMode,
@@ -227,10 +274,10 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
 
           <hr className="border-slate-100" />
 
-          {/* Address & Subscription */}
+          {/* Section 3: Address & Subscription */}
           <div className="space-y-2">
             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-display">
-              Address &amp; Subscription
+              Address &amp; Subscription Plan
             </h4>
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -239,16 +286,90 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
                   type="text"
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                  placeholder="e.g. Model Town"
                   className="h-8 px-2.5 py-1 text-xs"
                 />
               </div>
+
               <div>
-                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Milk Subscription</label>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Milk Product (From Products)</label>
+                <Select
+                  value={String(selectedProductId)}
+                  onValueChange={(val) => setSelectedProductId(val)}
+                >
+                  <SelectTrigger className="h-8 text-xs font-medium">
+                    <SelectValue placeholder="Select Product" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {milkProducts.map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)} className="text-xs">
+                        {p.name} (Rs. {Number(p.price) || 0}/{p.unit ? p.unit.replace(/^per\s+/i, '') : 'L'})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Daily Qty</label>
                 <Input
-                  type="text"
-                  value={formData.subscription}
-                  onChange={(e) => setFormData({ ...formData, subscription: e.target.value })}
-                  className="h-8 px-2.5 py-1 text-xs"
+                  type="number"
+                  step="any"
+                  min="0"
+                  value={subQty}
+                  onChange={(e) => setSubQty(e.target.value)}
+                  placeholder="e.g. 2, 3, 5.3"
+                  className="h-8 px-2.5 py-1 text-xs font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Unit</label>
+                <Select
+                  value={subUnit}
+                  onValueChange={(val) => setSubUnit(val)}
+                >
+                  <SelectTrigger className="h-8 text-xs font-bold">
+                    <SelectValue placeholder="Unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="L" className="text-xs font-semibold">L (Liters)</SelectItem>
+                    <SelectItem value="KG" className="text-xs font-semibold">KG (Kilos)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Unit Price</label>
+                <Input
+                  disabled
+                  readOnly
+                  value={`Rs. ${currentPrice} / ${subUnit}`}
+                  className="h-8 px-2 py-1 text-xs bg-slate-100 font-bold text-slate-800 cursor-not-allowed select-none shadow-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Price / Day</label>
+                <Input
+                  disabled
+                  readOnly
+                  value={`Rs. ${dailyCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
+                  className="h-8 px-2 py-1 text-xs bg-slate-100 font-bold text-slate-800 cursor-not-allowed select-none shadow-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Price / Month</label>
+                <Input
+                  disabled
+                  readOnly
+                  value={`Rs. ${monthlyCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
+                  className="h-8 px-2 py-1 text-xs bg-slate-100 font-bold text-slate-800 cursor-not-allowed select-none shadow-none"
                 />
               </div>
             </div>
@@ -259,6 +380,7 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
                 type="text"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                placeholder="e.g. House #45, Block C"
                 className="h-8 px-2.5 py-1 text-xs"
               />
             </div>
