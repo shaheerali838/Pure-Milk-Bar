@@ -15,7 +15,7 @@ export default function AnimalFilterHeader({
   onOpenAddModal,
 }) {
   return (
-    <div className="flex flex-col gap-4 w-full">
+    <div className="flex flex-col  w-full">
       {/* Navigation Tabs (Livestock Registry vs Farm Workers) */}
       <div className="border-b border-slate-200 flex items-center gap-8 text-sm font-bold pt-2">
         <button

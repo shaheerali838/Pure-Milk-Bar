@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, Beef } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const initialFormState = {
   tag: "",
@@ -34,24 +35,26 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
               <Beef className="w-4 h-4" />
             </div>
-            <h2 className="text-lg font-bold text-slate-800">
+            <h2 className="font-display text-lg font-bold text-slate-800">
               Register New Livestock Animal
             </h2>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-600 h-8 w-8 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Form Body */}
@@ -135,7 +138,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
                 required
                 value={formData.acquisitionDate}
                 onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all tabular"
               />
             </div>
 
@@ -186,7 +189,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
                 placeholder="0.0"
                 value={formData.morningYield}
                 onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all tabular"
               />
             </div>
 
@@ -202,26 +205,27 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
                 placeholder="0.0"
                 value={formData.eveningYield}
                 onChange={handleChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all tabular"
               />
             </div>
           </div>
 
           {/* Actions */}
           <div className="pt-3 flex items-center justify-end gap-2">
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
               className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-all cursor-pointer"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
             >
               Register Animal
-            </button>
+            </Button>
           </div>
         </form>
       </div>

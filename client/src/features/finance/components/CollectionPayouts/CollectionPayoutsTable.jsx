@@ -1,7 +1,24 @@
 import { useState } from 'react';
-import { Eye, Search } from 'lucide-react';
+import { Eye, Search, CreditCard, Pencil } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 function getAllCollections(rawCustomers, ledgers) {
   const rows = [];
@@ -16,7 +33,7 @@ function getAllCollections(rawCustomers, ledgers) {
   return rows.sort((a, b) => (a.entry.date < b.entry.date ? 1 : -1));
 }
 
-export default function CollectionPayoutsTable({ onViewReceipt }) {
+export default function CollectionPayoutsTable({ onViewReceipt, onRecordPayment, onEditCustomer }) {
   const { rawCustomers } = useCustomerContext();
   const { ledgers } = useLedgerContext();
 
@@ -49,51 +66,55 @@ export default function CollectionPayoutsTable({ onViewReceipt }) {
       <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-2">
         <div className="relative flex-1 min-w-[240px]">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-          <input
+          <Input
             type="text"
             placeholder="Search by customer name, reference, or payment method..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-md text-xs focus:outline-none focus:border-emerald-500 placeholder:text-slate-400"
+            className="w-full h-8 pl-8 pr-3 py-1 bg-white border border-slate-200 rounded-md text-xs focus-visible:border-emerald-500 focus-visible:ring-0 placeholder:text-slate-400"
           />
         </div>
 
         <div className="w-44">
-          <select
+          <Select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-md text-xs focus:outline-none focus:border-emerald-500 text-slate-700 bg-white cursor-pointer"
+            onValueChange={(val) => setStatusFilter(val)}
           >
-            <option value="All Status">All Status</option>
-            <option value="Confirmed">Confirmed</option>
-            <option value="Pending">Pending</option>
-          </select>
+            <SelectTrigger className="w-full h-8 px-2.5 bg-white border border-slate-200 rounded-md text-xs text-slate-700 cursor-pointer">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All Status" className="text-xs">All Status</SelectItem>
+              <SelectItem value="Confirmed" className="text-xs">Confirmed</SelectItem>
+              <SelectItem value="Pending" className="text-xs">Pending</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {/* Main Collections Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto max-h-[calc(100vh-320px)]">
-          <table className="w-full text-left border-collapse min-w-[900px]">
-            <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-100">
-              <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                <th className="px-3.5 py-2">DATE &amp; REF</th>
-                <th className="px-3.5 py-2">CUSTOMER ACCOUNT</th>
-                <th className="px-3.5 py-2 text-center">PAYMENT TYPE</th>
-                <th className="px-3.5 py-2 text-right">PAID AMOUNT</th>
-                <th className="px-3.5 py-2">PAYMENT METHOD</th>
-                <th className="px-3.5 py-2 text-center">STATUS</th>
-                <th className="px-3.5 py-2">REMARKS</th>
-                <th className="px-3.5 py-2 text-right">ACTION</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+          <Table className="w-full text-left border-collapse min-w-[900px]">
+            <TableHeader className="sticky top-0 z-10 bg-slate-50 border-b border-slate-100">
+              <TableRow className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:bg-slate-50">
+                <TableHead className="px-3.5 py-2 h-auto text-slate-400 font-bold">DATE &amp; REF</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-slate-400 font-bold">CUSTOMER ACCOUNT</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-center text-slate-400 font-bold">PAYMENT TYPE</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-right text-slate-400 font-bold">PAID AMOUNT</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-slate-400 font-bold">PAYMENT METHOD</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-center text-slate-400 font-bold">STATUS</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-slate-400 font-bold">REMARKS</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-right text-slate-400 font-bold">ACTION</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-slate-100 text-xs text-slate-700">
               {filteredRows.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-3.5 py-8 text-center text-slate-400 font-medium">
+                <TableRow>
+                  <TableCell colSpan={8} className="px-3.5 py-8 text-center text-slate-400 font-medium">
                     No collection recovery records found.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredRows.map(({ customer, entry }, idx) => {
                   const refCode = entry.ref || (entry.id ? `TXN-${String(entry.id).slice(-4)}` : `VCH-${idx + 1}`);
@@ -101,38 +122,45 @@ export default function CollectionPayoutsTable({ onViewReceipt }) {
                   const paymentType = Number(entry.credit) >= 5000 ? 'Full Payment' : 'Partial Payment';
 
                   return (
-                    <tr key={entry.id || idx} className="hover:bg-slate-50/70 transition-colors">
+                    <TableRow
+                      key={entry.id || idx}
+                      onClick={() => onViewReceipt && onViewReceipt(customer, entry)}
+                      title={`Click to view payment receipt for ${customer.name}`}
+                      className="hover:bg-blue-50/40 transition-colors cursor-pointer group select-none"
+                    >
                       {/* Date & Ref */}
-                      <td className="px-3.5 py-2 whitespace-nowrap">
-                        <div className="font-mono text-[11px] text-slate-700 font-semibold">{entry.date}</div>
-                        <div className="text-[10px] font-mono text-slate-400">{refCode}</div>
-                      </td>
+                      <TableCell className="px-3.5 py-2 whitespace-nowrap">
+                        <div className="font-mono text-[11px] text-slate-700 font-semibold tabular">{entry.date}</div>
+                        <div className="text-[10px] font-mono text-slate-400 tabular">{refCode}</div>
+                      </TableCell>
 
                       {/* Customer Account */}
-                      <td className="px-3.5 py-2 whitespace-nowrap">
-                        <div className="font-bold text-slate-800 leading-tight">{customer.name}</div>
-                        <div className="text-[10px] text-slate-400 leading-tight">{customer.phone} · {customer.area || 'Model Town'}</div>
-                      </td>
+                      <TableCell className="px-3.5 py-2 whitespace-nowrap">
+                        <div className="font-bold text-slate-800 group-hover:text-blue-950 leading-tight transition-colors font-display">
+                          {customer.name}
+                        </div>
+                        <div className="text-[10px] text-slate-400 leading-tight tabular">{customer.phone} · {customer.area || 'Model Town'}</div>
+                      </TableCell>
 
                       {/* Payment Type */}
-                      <td className="px-3.5 py-2 text-center whitespace-nowrap">
+                      <TableCell className="px-3.5 py-2 text-center whitespace-nowrap">
                         <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-medium">
                           {paymentType}
                         </span>
-                      </td>
+                      </TableCell>
 
                       {/* Paid Amount */}
-                      <td className="px-3.5 py-2 text-right font-black text-emerald-600 whitespace-nowrap">
+                      <TableCell className="px-3.5 py-2 text-right font-black text-emerald-600 whitespace-nowrap tabular">
                         Rs. {Number(entry.credit || 0).toLocaleString()}
-                      </td>
+                      </TableCell>
 
                       {/* Payment Method */}
-                      <td className="px-3.5 py-2 font-medium text-slate-700 whitespace-nowrap">
+                      <TableCell className="px-3.5 py-2 font-medium text-slate-700 whitespace-nowrap">
                         {entry.method || 'Cash'}
-                      </td>
+                      </TableCell>
 
                       {/* Status */}
-                      <td className="px-3.5 py-2 text-center whitespace-nowrap">
+                      <TableCell className="px-3.5 py-2 text-center whitespace-nowrap">
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
                             isPending
@@ -142,31 +170,68 @@ export default function CollectionPayoutsTable({ onViewReceipt }) {
                         >
                           {isPending ? 'Pending' : 'Confirmed'}
                         </span>
-                      </td>
+                      </TableCell>
 
                       {/* Remarks */}
-                      <td className="px-3.5 py-2 text-slate-500 max-w-[200px] truncate">
+                      <TableCell className="px-3.5 py-2 text-slate-500 max-w-[200px] truncate">
                         {entry.notes || entry.description || 'Payment cleared'}
-                      </td>
+                      </TableCell>
 
-                      {/* Action */}
-                      <td className="px-3.5 py-2 text-right whitespace-nowrap">
-                        <button
-                          onClick={() => onViewReceipt(customer, entry)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-[11px] font-semibold transition cursor-pointer border border-slate-200"
-                        >
-                          <Eye className="w-3 h-3 text-slate-500" />
-                          <span>View</span>
-                        </button>
-                      </td>
-                    </tr>
+                      {/* Action Buttons: Eye (Receipt), CreditCard (Payment), Pencil (Edit Profile) */}
+                      <TableCell className="px-3.5 py-2 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onViewReceipt) onViewReceipt(customer, entry);
+                            }}
+                            title="View Payment Receipt"
+                            className="p-1.5 h-7 w-7 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs group/btn"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onRecordPayment) onRecordPayment(customer);
+                            }}
+                            title="Record Khata Payment (PKR)"
+                            className="p-1.5 h-7 w-7 rounded-lg bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-200/80 transition-all cursor-pointer shadow-2xs group/btn"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                          </Button>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onEditCustomer) onEditCustomer(customer);
+                            }}
+                            title="Edit Customer Profile"
+                            className="p-1.5 h-7 w-7 rounded-lg bg-amber-50 hover:bg-amber-600 text-amber-600 hover:text-white border border-amber-200/80 transition-all cursor-pointer shadow-2xs group/btn"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   );
                 })
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
     </div>
   );
 }
+

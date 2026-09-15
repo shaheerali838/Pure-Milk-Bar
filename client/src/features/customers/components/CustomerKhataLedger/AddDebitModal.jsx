@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, PlusCircle } from 'lucide-react';
 import { useLedgerContext } from '../../../../context/LedgerContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 export default function AddDebitModal({ customer, isOpen, onClose }) {
   const { addLedgerEntry } = useLedgerContext();
@@ -42,53 +44,56 @@ export default function AddDebitModal({ customer, isOpen, onClose }) {
           <div className="flex items-center gap-2">
             <PlusCircle className="w-4 h-4 text-rose-600" />
             <div>
-              <h3 className="text-xs font-bold text-slate-800">Add Manual Debit Charge</h3>
+              <h3 className="text-xs font-bold text-slate-800 font-display">Add Manual Debit Charge</h3>
               <p className="text-[10px] text-slate-400">Charge {customer.name}'s Khata</p>
             </div>
           </div>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+            className="h-7 w-7 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-3 text-xs">
           <div>
             <label className="block font-semibold text-slate-700 mb-1">Description *</label>
-            <input
+            <Input
               type="text"
               required
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="e.g. Delivery - 3 kg Cow + 1 kg Dahi"
-              className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:border-rose-500 text-slate-800 font-medium"
+              className="w-full h-8.5 px-2.5 bg-white border border-slate-200 rounded-lg focus-visible:border-rose-500 focus-visible:ring-0 text-slate-800 font-medium"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Amount (Rs.) *</label>
-              <input
+              <Input
                 type="number"
                 required
                 min="1"
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 placeholder="e.g. 790"
-                className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:border-rose-500 text-slate-800 font-bold"
+                className="w-full h-8.5 px-2.5 bg-white border border-slate-200 rounded-lg focus-visible:border-rose-500 focus-visible:ring-0 text-slate-800 font-bold tabular"
               />
             </div>
 
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Date *</label>
-              <input
+              <Input
                 type="date"
                 required
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:border-rose-500 text-slate-800 cursor-pointer"
+                className="w-full h-8.5 px-2.5 bg-white border border-slate-200 rounded-lg focus-visible:border-rose-500 focus-visible:ring-0 text-slate-800 cursor-pointer"
               />
             </div>
           </div>
@@ -105,22 +110,26 @@ export default function AddDebitModal({ customer, isOpen, onClose }) {
           </div>
 
           <div className="pt-2 flex justify-end gap-1.5 border-t border-slate-100">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={onClose}
-              className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition cursor-pointer text-xs"
+              className="px-3 py-1 h-7 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition cursor-pointer text-xs border-0 shadow-none"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="px-4 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold transition shadow-xs cursor-pointer text-xs"
+              size="sm"
+              className="px-4 py-1 h-7 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold transition shadow-xs cursor-pointer text-xs"
             >
               Add Debit
-            </button>
+            </Button>
           </div>
         </form>
       </div>
     </div>
   );
 }
+

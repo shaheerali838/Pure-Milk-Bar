@@ -1,6 +1,7 @@
 import React from "react";
 import { Beef, Activity, Droplets, Users } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
+import { Card } from "@/components/ui/card";
 
 export default function AnimalStatsCards() {
   const { animals = [] } = useAnimalContext();
@@ -21,66 +22,68 @@ export default function AnimalStatsCards() {
 
   const stats = [
     {
-      label: "TOTAL FARM ANIMALS",
-      value: String(totalAnimals),
+      title: "Total Farm Animals",
+      amount: String(totalAnimals),
       sub: `${cowsCount} Cows · ${buffaloesCount} Buffaloes`,
       icon: Beef,
-      bg: "bg-emerald-50 text-emerald-600 border border-emerald-100",
+      color: "#009966",
+      badge: "Herd Size"
     },
     {
-      label: "ACTIVE IN MILKING",
-      value: String(milkingCount),
+      title: "Active In Milking",
+      amount: String(milkingCount),
       sub: `${nonMilkingCount} Dry / non-milking`,
       icon: Activity,
-      bg: "bg-emerald-50 text-emerald-600 border border-emerald-100",
+      color: "#155dfc",
+      badge: "Milking"
     },
     {
-      label: "TOTAL DAILY OUTPUT",
-      value: `${totalDailyYield} L`,
+      title: "Total Daily Output",
+      amount: `${totalDailyYield} L`,
       sub: "Morning + Evening Yield",
       icon: Droplets,
-      bg: "bg-indigo-50 text-indigo-600 border border-indigo-100",
+      color: "#009689",
+      badge: "Yield"
     },
     {
-      label: "FARM MILKING STAFF",
-      value: "4 Staff",
+      title: "Farm Milking Staff",
+      amount: "4 Staff",
       sub: "Herdsmen & Milkers",
       icon: Users,
-      bg: "bg-purple-50 text-purple-600 border border-purple-100",
+      color: "#10b981",
+      badge: "Staff"
     },
   ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-      {stats.map((s, idx) => {
-        const Icon = s.icon;
-        return (
-          <div
-            key={idx}
-            className="bg-white border border-slate-200/80 rounded-[20px] p-3 flex flex-col justify-center shadow-2xs hover:shadow-xs transition-all"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-                {s.label}
-              </span>
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${s.bg}`}
-              >
-                <Icon className="w-4 h-4" />
-              </div>
+      {stats.map(({ title, amount, sub, icon: Icon, color, badge }) => (
+        <div
+          key={title}
+          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2 shadow-sm hover:shadow-md transition-all duration-200"
+          style={{ borderTop: `4px solid ${color}` }}
+        >
+          <div className="flex items-start justify-between mb-1">
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+              style={{ background: `${color}15` }}
+            >
+              <Icon style={{ width: 16, height: 16, color }} />
             </div>
-
-            <div className="mt-3">
-              <div className="text-2xl sm:text-2xl font-semibold text-slate-800 tracking-tight leading-none">
-                {s.value}
-              </div>
-              <p className="text-xs text-slate-400 font-medium mt-2">
-                {s.sub}
-              </p>
-            </div>
+            <span className="text-[10px] font-bold px-6 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
+              {badge}
+            </span>
           </div>
-        );
-      })}
+          <div>
+            <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5">
+              {amount}
+            </p>
+            <p className="text-xs font-bold text-slate-700">{title}</p>
+            <p className="text-[11px] font-medium text-slate-400">{sub}</p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
+

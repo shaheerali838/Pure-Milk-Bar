@@ -1,6 +1,7 @@
 import { CreditCard, Clock, AlertTriangle, AlertCircle } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
+import { Card } from '@/components/ui/card';
 
 function computeAging(entries, customerKhataBalance) {
   const charges = (entries || [])
@@ -68,12 +69,12 @@ export default function ReceivablesAgingStats() {
       {/* 4 Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         {/* Total Receivable */}
-        <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <Card className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               TOTAL RECEIVABLE
             </span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-0.5">
+            <div className="text-xl font-black text-slate-900 leading-tight mt-0.5 tabular">
               Rs. {totalKhataReceivable.toLocaleString()}
             </div>
             <p className="text-[10px] text-slate-500 mt-0.5">
@@ -83,15 +84,15 @@ export default function ReceivablesAgingStats() {
           <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
             <CreditCard className="w-4 h-4" />
           </div>
-        </div>
+        </Card>
 
         {/* 0-30 Days */}
-        <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <Card className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               0–30 DAYS
             </span>
-            <div className="text-xl font-black text-blue-600 leading-tight mt-0.5">
+            <div className="text-xl font-black text-blue-600 leading-tight mt-0.5 tabular">
               Rs. {total0_30.toLocaleString()}
             </div>
             <p className="text-[10px] text-slate-500 mt-0.5">
@@ -101,15 +102,15 @@ export default function ReceivablesAgingStats() {
           <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
             <Clock className="w-4 h-4" />
           </div>
-        </div>
+        </Card>
 
         {/* 31-90 Days */}
-        <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <Card className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               31–90 DAYS
             </span>
-            <div className="text-xl font-black text-amber-600 leading-tight mt-0.5">
+            <div className="text-xl font-black text-amber-600 leading-tight mt-0.5 tabular">
               Rs. {total31_90.toLocaleString()}
             </div>
             <p className="text-[10px] text-slate-500 mt-0.5">
@@ -119,15 +120,15 @@ export default function ReceivablesAgingStats() {
           <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
             <AlertTriangle className="w-4 h-4" />
           </div>
-        </div>
+        </Card>
 
         {/* 90+ Days */}
-        <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <Card className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               90+ DAYS (HIGH RISK)
             </span>
-            <div className="text-xl font-black text-rose-600 leading-tight mt-0.5">
+            <div className="text-xl font-black text-rose-600 leading-tight mt-0.5 tabular">
               Rs. {total90Plus.toLocaleString()}
             </div>
             <p className="text-[10px] text-slate-500 mt-0.5">
@@ -137,7 +138,7 @@ export default function ReceivablesAgingStats() {
           <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
             <AlertCircle className="w-4 h-4" />
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Bucket Legend Row */}
@@ -163,3 +164,4 @@ export default function ReceivablesAgingStats() {
     </div>
   );
 }
+

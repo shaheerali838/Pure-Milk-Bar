@@ -1,5 +1,7 @@
 import React from 'react';
 import { X, Phone, Smartphone, Milk, CreditCard, Shield, MapPin, ShieldCheck, UserCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 export default function ViewCustomerModal({ customer, isOpen, onClose }) {
   if (!isOpen || !customer) return null;
@@ -21,7 +23,7 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h3 className="text-xs font-bold text-slate-800 leading-tight">{customer.name}</h3>
+                <h3 className="text-xs font-bold text-slate-800 leading-tight font-display">{customer.name}</h3>
                 <span
                   className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold ${
                     customer.verificationStatus === 'Verified'
@@ -39,12 +41,15 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
             </div>
           </div>
 
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+            className="h-7 w-7 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </div>
 
         {/* Modal Body - Read Only Customer Details */}
@@ -55,14 +60,14 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
               <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider flex items-center gap-1">
                 <Phone className="w-2.5 h-2.5 text-slate-500" /> Primary Phone
               </span>
-              <p className="font-semibold text-slate-800 text-xs mt-0.5">{customer.phone}</p>
+              <p className="font-semibold text-slate-800 text-xs mt-0.5 tabular">{customer.phone}</p>
             </div>
 
             <div>
               <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider flex items-center gap-1">
                 <Smartphone className="w-2.5 h-2.5 text-emerald-600" /> Online Account
               </span>
-              <p className="font-semibold text-slate-800 text-xs mt-0.5">
+              <p className="font-semibold text-slate-800 text-xs mt-0.5 tabular">
                 {customer.onlineAccount || customer.phone}
               </p>
             </div>
@@ -70,13 +75,13 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
 
           {/* Verification & Identification Details */}
           <div className="p-2.5 bg-emerald-50/40 border border-emerald-100 rounded-lg space-y-1.5">
-            <h4 className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+            <h4 className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1 font-display">
               <ShieldCheck className="w-3 h-3 text-emerald-600" /> Identity &amp; Verification
             </h4>
             <div className="grid grid-cols-2 gap-2 pt-0.5">
               <div>
                 <span className="text-[9px] text-slate-400 font-semibold uppercase">CNIC / ID Number</span>
-                <p className="font-bold text-slate-800 font-mono text-[11px]">{customer.cnicNumber || 'Not Provided'}</p>
+                <p className="font-bold text-slate-800 font-mono text-[11px] tabular">{customer.cnicNumber || 'Not Provided'}</p>
               </div>
               <div>
                 <span className="text-[9px] text-slate-400 font-semibold uppercase">Document Type</span>
@@ -84,7 +89,7 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
               </div>
               <div>
                 <span className="text-[9px] text-slate-400 font-semibold uppercase">Secondary Phone</span>
-                <p className="font-semibold text-slate-800 text-[11px]">{customer.secondaryPhone || 'N/A'}</p>
+                <p className="font-semibold text-slate-800 text-[11px] tabular">{customer.secondaryPhone || 'N/A'}</p>
               </div>
               <div>
                 <span className="text-[9px] text-slate-400 font-semibold uppercase">Guarantor / Ref</span>
@@ -136,13 +141,13 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
           <div className="p-2.5 bg-slate-900 text-white rounded-lg space-y-1.5">
             <div className="flex justify-between items-center text-[11px]">
               <span className="text-slate-400 font-medium">Credit Limit</span>
-              <span className="font-bold">Rs. {(customer.creditLimit || 10000).toLocaleString()}</span>
+              <span className="font-bold tabular">Rs. {(customer.creditLimit || 10000).toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center text-xs font-bold">
               <span className="text-amber-400 flex items-center gap-1">
                 <CreditCard className="w-3.5 h-3.5" /> Khata Balance
               </span>
-              <span className="text-amber-400">Rs. {(customer.khataBalance || 0).toLocaleString()}</span>
+              <span className="text-amber-400 tabular">Rs. {(customer.khataBalance || 0).toLocaleString()}</span>
             </div>
             <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
               <div
@@ -155,12 +160,14 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
 
         {/* Footer */}
         <div className="px-4 py-2 border-t border-slate-100 flex justify-end bg-slate-50/70">
-          <button
+          <Button
+            type="button"
             onClick={onClose}
-            className="px-3 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded-md font-semibold transition text-xs cursor-pointer"
+            size="sm"
+            className="h-7 px-3 bg-slate-800 hover:bg-slate-900 text-white rounded-md font-semibold transition text-xs cursor-pointer shadow-none"
           >
             Close Details
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -1,7 +1,18 @@
 import { useState } from 'react';
-import { Eye, Search } from 'lucide-react';
+import { Eye, Search, CreditCard, Pencil } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 function getAgingBuckets(entries, customerKhataBalance) {
   const charges = (entries || [])
@@ -46,7 +57,7 @@ function getAgingBuckets(entries, customerKhataBalance) {
   return buckets;
 }
 
-export default function ReceivablesAgingTable({ onViewDetail }) {
+export default function ReceivablesAgingTable({ onViewDetail, onRecordPayment, onEditCustomer }) {
   const { rawCustomers } = useCustomerContext();
   const { getLedgerForCustomer } = useLedgerContext();
 
@@ -98,12 +109,12 @@ export default function ReceivablesAgingTable({ onViewDetail }) {
 
         <div className="relative w-72">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-          <input
+          <Input
             type="text"
             placeholder="Search by name, phone, area..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-md text-xs focus:outline-none focus:border-emerald-500 placeholder:text-slate-400"
+            className="w-full h-8 pl-8 pr-3 py-1 bg-white border border-slate-200 rounded-md text-xs focus-visible:border-emerald-500 focus-visible:ring-0 placeholder:text-slate-400"
           />
         </div>
       </div>
@@ -111,27 +122,27 @@ export default function ReceivablesAgingTable({ onViewDetail }) {
       {/* Main Aging Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto max-h-[calc(100vh-320px)]">
-          <table className="w-full text-left border-collapse min-w-[920px]">
-            <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-100">
-              <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                <th className="px-3.5 py-2">CUSTOMER</th>
-                <th className="px-3.5 py-2 text-right">0–30D</th>
-                <th className="px-3.5 py-2 text-right">31–60D</th>
-                <th className="px-3.5 py-2 text-right">61–90D</th>
-                <th className="px-3.5 py-2 text-right">90+D</th>
-                <th className="px-3.5 py-2 text-right">TOTAL</th>
-                <th className="px-3.5 py-2 text-center w-36">DISTRIBUTION</th>
-                <th className="px-3.5 py-2 text-center">RISK</th>
-                <th className="px-3.5 py-2 text-right">ACTION</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+          <Table className="w-full text-left border-collapse min-w-[920px]">
+            <TableHeader className="sticky top-0 z-10 bg-slate-50 border-b border-slate-100">
+              <TableRow className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hover:bg-slate-50">
+                <TableHead className="px-3.5 py-2 h-auto text-slate-400 font-bold">CUSTOMER</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-right text-slate-400 font-bold">0–30D</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-right text-slate-400 font-bold">31–60D</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-right text-slate-400 font-bold">61–90D</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-right text-slate-400 font-bold">90+D</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-right text-slate-400 font-bold">TOTAL</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-center w-36 text-slate-400 font-bold">DISTRIBUTION</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-center text-slate-400 font-bold">RISK</TableHead>
+                <TableHead className="px-3.5 py-2 h-auto text-right text-slate-400 font-bold">ACTION</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-slate-100 text-xs text-slate-700">
               {filteredRows.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-3.5 py-8 text-center text-slate-400 font-medium">
+                <TableRow>
+                  <TableCell colSpan={9} className="px-3.5 py-8 text-center text-slate-400 font-medium">
                     No customers with outstanding balances found.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredRows.map(({ customer, buckets, total, risk }) => {
                   const initial = customer.name ? customer.name.charAt(0).toUpperCase() : 'C';
@@ -142,57 +153,64 @@ export default function ReceivablesAgingTable({ onViewDetail }) {
                   const p90plus = total > 0 ? (buckets.d90plus / total) * 100 : 0;
 
                   return (
-                    <tr key={customer.id} className="hover:bg-slate-50/70 transition-colors">
+                    <TableRow
+                      key={customer.id}
+                      onClick={() => onViewDetail && onViewDetail(customer, buckets)}
+                      title={`Click to view aging breakdown for ${customer.name}`}
+                      className="hover:bg-amber-50/40 transition-colors cursor-pointer group select-none"
+                    >
                       {/* Customer */}
-                      <td className="px-3.5 py-2">
+                      <TableCell className="px-3.5 py-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs shrink-0">
+                          <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 group-hover:bg-amber-100 group-hover:text-amber-800 font-bold flex items-center justify-center text-xs shrink-0 transition-colors font-display">
                             {initial}
                           </div>
                           <div>
-                            <div className="font-bold text-slate-800 leading-tight">{customer.name}</div>
-                            <div className="text-[10px] text-slate-400 leading-tight">{customer.phone} · {customer.area || 'Model Town'}</div>
+                            <div className="font-bold text-slate-800 group-hover:text-amber-950 leading-tight transition-colors font-display">
+                              {customer.name}
+                            </div>
+                            <div className="text-[10px] text-slate-400 leading-tight tabular">{customer.phone} · {customer.area || 'Model Town'}</div>
                           </div>
                         </div>
-                      </td>
+                      </TableCell>
 
                       {/* 0-30D */}
-                      <td className="px-3.5 py-2 text-right font-medium text-slate-700 whitespace-nowrap">
+                      <TableCell className="px-3.5 py-2 text-right font-medium text-slate-700 whitespace-nowrap tabular">
                         {buckets.d0_30 > 0 ? `Rs. ${buckets.d0_30.toLocaleString()}` : '—'}
-                      </td>
+                      </TableCell>
 
                       {/* 31-60D */}
-                      <td className="px-3.5 py-2 text-right font-medium text-slate-700 whitespace-nowrap">
+                      <TableCell className="px-3.5 py-2 text-right font-medium text-slate-700 whitespace-nowrap tabular">
                         {buckets.d31_60 > 0 ? `Rs. ${buckets.d31_60.toLocaleString()}` : '—'}
-                      </td>
+                      </TableCell>
 
                       {/* 61-90D */}
-                      <td className="px-3.5 py-2 text-right font-medium text-slate-700 whitespace-nowrap">
+                      <TableCell className="px-3.5 py-2 text-right font-medium text-slate-700 whitespace-nowrap tabular">
                         {buckets.d61_90 > 0 ? `Rs. ${buckets.d61_90.toLocaleString()}` : '—'}
-                      </td>
+                      </TableCell>
 
                       {/* 90+D */}
-                      <td className="px-3.5 py-2 text-right font-bold text-rose-600 whitespace-nowrap">
+                      <TableCell className="px-3.5 py-2 text-right font-bold text-rose-600 whitespace-nowrap tabular">
                         {buckets.d90plus > 0 ? `Rs. ${buckets.d90plus.toLocaleString()}` : '—'}
-                      </td>
+                      </TableCell>
 
                       {/* Total */}
-                      <td className="px-3.5 py-2 text-right font-black text-slate-900 whitespace-nowrap">
+                      <TableCell className="px-3.5 py-2 text-right font-black text-slate-900 whitespace-nowrap tabular">
                         Rs. {total.toLocaleString()}
-                      </td>
+                      </TableCell>
 
                       {/* Distribution Stacked Bar */}
-                      <td className="px-3.5 py-2">
+                      <TableCell className="px-3.5 py-2">
                         <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden flex">
                           {p0_30 > 0 && <div style={{ width: `${p0_30}%` }} className="bg-blue-500 h-full" />}
                           {p31_60 > 0 && <div style={{ width: `${p31_60}%` }} className="bg-amber-500 h-full" />}
                           {p61_90 > 0 && <div style={{ width: `${p61_90}%` }} className="bg-orange-500 h-full" />}
                           {p90plus > 0 && <div style={{ width: `${p90plus}%` }} className="bg-rose-500 h-full" />}
                         </div>
-                      </td>
+                      </TableCell>
 
                       {/* Risk Badge */}
-                      <td className="px-3.5 py-2 text-center whitespace-nowrap">
+                      <TableCell className="px-3.5 py-2 text-center whitespace-nowrap">
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
                             risk === 'High'
@@ -204,40 +222,77 @@ export default function ReceivablesAgingTable({ onViewDetail }) {
                         >
                           {risk}
                         </span>
-                      </td>
+                      </TableCell>
 
-                      {/* Action */}
-                      <td className="px-3.5 py-2 text-right whitespace-nowrap">
-                        <button
-                          onClick={() => onViewDetail(customer, buckets)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-[11px] font-semibold transition cursor-pointer border border-slate-200"
-                        >
-                          <Eye className="w-3 h-3 text-slate-500" />
-                          <span>View</span>
-                        </button>
-                      </td>
-                    </tr>
+                      {/* Action Buttons: Eye (Aging Detail), CreditCard (Payment), Pencil (Edit Profile) */}
+                      <TableCell className="px-3.5 py-2 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onViewDetail) onViewDetail(customer, buckets);
+                            }}
+                            title="View Aging Breakdown"
+                            className="p-1.5 h-7 w-7 rounded-lg bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200/80 transition-all cursor-pointer shadow-2xs group/btn"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onRecordPayment) onRecordPayment(customer);
+                            }}
+                            title="Record Khata Payment (PKR)"
+                            className="p-1.5 h-7 w-7 rounded-lg bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-200/80 transition-all cursor-pointer shadow-2xs group/btn"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                          </Button>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onEditCustomer) onEditCustomer(customer);
+                            }}
+                            title="Edit Customer Profile"
+                            className="p-1.5 h-7 w-7 rounded-lg bg-amber-50 hover:bg-amber-600 text-amber-600 hover:text-white border border-amber-200/80 transition-all cursor-pointer shadow-2xs group/btn"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   );
                 })
               )}
-            </tbody>
+            </TableBody>
             {/* Totals Row */}
             {filteredRows.length > 0 && (
-              <tfoot className="border-t-2 border-slate-200 bg-slate-50/90 font-bold text-xs text-slate-900">
-                <tr>
-                  <td className="px-3.5 py-2 uppercase font-black text-slate-800">Totals</td>
-                  <td className="px-3.5 py-2 text-right">Rs. {sum0_30.toLocaleString()}</td>
-                  <td className="px-3.5 py-2 text-right">Rs. {sum31_60.toLocaleString()}</td>
-                  <td className="px-3.5 py-2 text-right">Rs. {sum61_90.toLocaleString()}</td>
-                  <td className="px-3.5 py-2 text-right text-rose-600">Rs. {sum90plus.toLocaleString()}</td>
-                  <td className="px-3.5 py-2 text-right font-black">Rs. {sumTotal.toLocaleString()}</td>
-                  <td colSpan={3}></td>
-                </tr>
-              </tfoot>
+              <TableFooter className="border-t-2 border-slate-200 bg-slate-50/90 font-bold text-xs text-slate-900">
+                <TableRow>
+                  <TableCell className="px-3.5 py-2 uppercase font-black text-slate-800">Totals</TableCell>
+                  <TableCell className="px-3.5 py-2 text-right tabular">Rs. {sum0_30.toLocaleString()}</TableCell>
+                  <TableCell className="px-3.5 py-2 text-right tabular">Rs. {sum31_60.toLocaleString()}</TableCell>
+                  <TableCell className="px-3.5 py-2 text-right tabular">Rs. {sum61_90.toLocaleString()}</TableCell>
+                  <TableCell className="px-3.5 py-2 text-right text-rose-600 tabular">Rs. {sum90plus.toLocaleString()}</TableCell>
+                  <TableCell className="px-3.5 py-2 text-right font-black tabular">Rs. {sumTotal.toLocaleString()}</TableCell>
+                  <TableCell colSpan={3}></TableCell>
+                </TableRow>
+              </TableFooter>
             )}
-          </table>
+          </Table>
         </div>
       </div>
     </div>
   );
 }
+
