@@ -18,6 +18,7 @@ import Supplier from "./features/suppliers/pages/Supplier";
 import CustomerManagement from "./features/customers/pages/CustomerManagement";
 import CustomerKhataLedger from "./features/customers/pages/CustomerKhataLedger";
 import CustomerFinance from "./features/finance/pages/CustomerFinance";
+import RiderDeliveryFinancePage from "./features/finance/pages/RiderDeliveryFinancePage";
 import Proccessing from "./features/inventory/pages/Processing";
 import Pos from "./features/pos/pages/Pos";
 import Delivery from "./features/deliveries/pages/Delivery";
@@ -28,6 +29,10 @@ import { LedgerProvider } from "./context/LedgerContext";
 import { AnimalProvider } from "./context/AnimalContext";
 import { ExpenseProvider } from "./context/ExpenseContext";
 import { POSProvider } from "./context/POSContext";
+import { DeliveryProvider } from "./context/DeliveryContext";
+import { DeliveryStaffProvider } from "./context/DeliveryStaffContext";
+import { FuelLogProvider } from "./context/FuelLogContext";
+import { RiderSalaryProvider } from "./context/RiderSalaryContext";
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -38,14 +43,18 @@ export default function App() {
         <AnimalProvider>
           <ExpenseProvider>
             <POSProvider>
-              <BrowserRouter>
+              <DeliveryStaffProvider>
+                <FuelLogProvider>
+                  <RiderSalaryProvider>
+                    <DeliveryProvider>
+                      <BrowserRouter>
             <Routes>
               <Route
                 path="/login"
                 element={
                   <LoginPage
                     onLogin={(email, password) => {
-                      console.log('Logging in user:', email);
+                      console.log("Logging in user:", email);
                       setIsAuthenticated(true);
                     }}
                   />
@@ -87,6 +96,7 @@ export default function App() {
 
                 {/* Finance Routes */}
                 <Route path="finance/customer" element={<CustomerFinance />} />
+                <Route path="finance/delivery" element={<RiderDeliveryFinancePage />} />
 
                 {/* Catch-all redirect */}
                 <Route
@@ -95,7 +105,11 @@ export default function App() {
                 />
               </Route>
             </Routes>
-            </BrowserRouter>
+                      </BrowserRouter>
+                    </DeliveryProvider>
+                  </RiderSalaryProvider>
+                </FuelLogProvider>
+              </DeliveryStaffProvider>
             </POSProvider>
           </ExpenseProvider>
         </AnimalProvider>

@@ -139,23 +139,23 @@ export default function AnimalCardOverflow() {
       {activeTab === "registry" ? (
         /* Animals Table */
         <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-2xs">
-          <table className="w-full border-collapse text-[13px]">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
+          <Table className="w-full border-collapse text-[13px]">
+            <TableHeader>
+              <TableRow className="bg-slate-50 border-b border-slate-200 hover:bg-slate-50">
                 {headers.map((h) => (
-                  <th
+                  <TableHead
                     key={h}
                     className="px-3.5 py-2.5 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap"
                   >
                     {h}
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredAnimals.length === 0 ? (
-                <tr>
-                  <td
+                <TableRow>
+                  <TableCell
                     colSpan={headers.length}
                     className="px-4 py-12 text-center text-slate-400 text-sm"
                   >
@@ -164,100 +164,107 @@ export default function AnimalCardOverflow() {
                       "Add Animal"
                     </strong>{" "}
                     to register a new livestock record.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredAnimals.map((a) => (
-                  <tr
+                  <TableRow
                     key={a.id}
                     onClick={() => navigate(`/farm/animals/detail/${a.id}`)}
                     className="border-b border-slate-100 last:border-b-0 hover:bg-emerald-50/30 transition-colors cursor-pointer group"
                   >
                     {/* Tag # */}
-                    <td className="px-3.5 py-2.5">
-                      <span className="flex items-center gap-1.5 font-mono text-[12px] font-bold text-slate-800 group-hover:text-emerald-700">
+                    <TableCell className="px-3.5 py-2.5">
+                      <span className="flex items-center gap-1.5 font-mono text-[12px] font-bold text-slate-800 group-hover:text-emerald-700 tabular">
                         <Beef className="w-3.5 h-3.5 text-emerald-600" />
                         {a.tag}
                       </span>
-                    </td>
+                    </TableCell>
 
                     {/* Species */}
-                    <td className="px-3.5 py-2.5 text-slate-700 font-medium">
+                    <TableCell className="px-3.5 py-2.5 text-slate-700 font-medium">
                       {a.species}
-                    </td>
+                    </TableCell>
 
                     {/* Lactation Status */}
-                    <td className="px-3.5 py-2.5">
-                      <span
+                    <TableCell className="px-3.5 py-2.5">
+                      <Badge
+                        variant="outline"
                         className={
-                          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-semibold " +
+                          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-semibold border-0 " +
                           (statusStyle[a.lactationStatus] ||
                             "bg-slate-100 text-slate-600")
                         }
                       >
                         {a.lactationStatus}
-                      </span>
-                    </td>
+                      </Badge>
+                    </TableCell>
 
                     {/* Acquisition Date */}
-                    <td className="px-3.5 py-2.5 text-slate-600 font-mono text-[12px]">
+                    <TableCell className="px-3.5 py-2.5 text-slate-600 font-mono text-[12px] tabular">
                       {a.acquisitionDate}
-                    </td>
+                    </TableCell>
 
                     {/* Morning (L) */}
-                    <td className="px-3.5 py-2.5 text-slate-700 font-semibold">
+                    <TableCell className="px-3.5 py-2.5 text-slate-700 font-semibold tabular">
                       {a.morningYield}
-                    </td>
+                    </TableCell>
 
                     {/* Evening (L) */}
-                    <td className="px-3.5 py-2.5 text-slate-700 font-semibold">
+                    <TableCell className="px-3.5 py-2.5 text-slate-700 font-semibold tabular">
                       {a.eveningYield}
-                    </td>
+                    </TableCell>
 
                     {/* Total Daily Yield */}
-                    <td className="px-3.5 py-2.5 font-bold text-emerald-700 text-sm">
+                    <TableCell className="px-3.5 py-2.5 font-bold text-emerald-700 text-sm tabular">
                       {a.totalDailyYield}
-                    </td>
+                    </TableCell>
 
                     {/* Actions */}
-                    <td className="px-3.5 py-2.5">
+                    <TableCell className="px-3.5 py-2.5">
                       <div
                         className="flex items-center gap-1"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {/* View Detail Button */}
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => navigate(`/farm/animals/detail/${a.id}`)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all cursor-pointer"
+                          className="p-1.5 h-8 w-8 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all cursor-pointer"
                           title="View Animal Details"
                         >
                           <Eye className="w-4 h-4" />
-                        </button>
+                        </Button>
 
                         {/* Edit Button */}
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => setEditAnimal(a)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
+                          className="p-1.5 h-8 w-8 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
                           title="Edit Animal"
                         >
                           <Edit3 className="w-4 h-4" />
-                        </button>
+                        </Button>
 
                         {/* Delete Button */}
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => setDeleteTargetAnimal(a)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+                          className="p-1.5 h-8 w-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
                           title="Delete Animal"
                         >
                           <Trash2 className="w-4 h-4" />
-                        </button>
+                        </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       ) : (
         /* Workers & Milkers View */
@@ -265,36 +272,36 @@ export default function AnimalCardOverflow() {
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-emerald-600" />
-              <h3 className="text-base font-bold text-slate-800">Farm Workers & Milking Staff</h3>
+              <h3 className="font-display text-base font-bold text-slate-800">Farm Workers & Milking Staff</h3>
             </div>
           </div>
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase">
-              <tr>
-                <th className="px-6 py-3">Staff Name</th>
-                <th className="px-6 py-3">Role</th>
-                <th className="px-6 py-3">Assigned Shift</th>
-                <th className="px-6 py-3">Phone</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+          <Table className="w-full text-left text-sm">
+            <TableHeader>
+              <TableRow className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-400 uppercase hover:bg-slate-50">
+                <TableHead className="px-6 py-3">Staff Name</TableHead>
+                <TableHead className="px-6 py-3">Role</TableHead>
+                <TableHead className="px-6 py-3">Assigned Shift</TableHead>
+                <TableHead className="px-6 py-3">Phone</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-slate-100">
               {mockWorkers.map((w) => (
-                <tr key={w.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="px-6 py-4 font-bold text-slate-800 flex items-center gap-2">
+                <TableRow key={w.id} className="hover:bg-slate-50/60 transition-colors">
+                  <TableCell className="px-6 py-4 font-bold text-slate-800 flex items-center gap-2">
                     <UserCheck className="w-4 h-4 text-emerald-600" />
                     {w.name}
-                  </td>
-                  <td className="px-6 py-4 font-semibold text-slate-600">{w.role}</td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                  </TableCell>
+                  <TableCell className="px-6 py-4 font-semibold text-slate-600">{w.role}</TableCell>
+                  <TableCell className="px-6 py-4">
+                    <Badge variant="outline" className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
                       {w.shift}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-600 font-mono text-xs">{w.phone}</td>
-                </tr>
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-slate-600 font-mono text-xs tabular">{w.phone}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 
@@ -314,17 +321,19 @@ export default function AnimalCardOverflow() {
                 <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
                   <Edit3 className="w-4 h-4" />
                 </div>
-                <h2 className="text-lg font-bold text-slate-800">
+                <h2 className="font-display text-lg font-bold text-slate-800">
                   Edit Livestock Record
                 </h2>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => setEditAnimal(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 h-8 w-8 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </Button>
             </div>
 
             <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
@@ -340,7 +349,7 @@ export default function AnimalCardOverflow() {
                   onChange={(e) =>
                     setEditFormData({ ...editFormData, tag: e.target.value })
                   }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all tabular"
                 />
               </div>
 
@@ -392,7 +401,7 @@ export default function AnimalCardOverflow() {
                   onChange={(e) =>
                     setEditFormData({ ...editFormData, acquisitionDate: e.target.value })
                   }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all tabular"
                 />
               </div>
 
@@ -410,7 +419,7 @@ export default function AnimalCardOverflow() {
                     onChange={(e) =>
                       setEditFormData({ ...editFormData, morningYield: e.target.value })
                     }
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all tabular"
                   />
                 </div>
 
@@ -427,25 +436,26 @@ export default function AnimalCardOverflow() {
                     onChange={(e) =>
                       setEditFormData({ ...editFormData, eveningYield: e.target.value })
                     }
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all tabular"
                   />
                 </div>
               </div>
 
               <div className="pt-3 flex items-center justify-end gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => setEditAnimal(null)}
                   className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-all cursor-pointer"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
                 >
                   Save Changes
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -457,16 +467,18 @@ export default function AnimalCardOverflow() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h2 className="text-xl font-bold text-[#0F172A] tracking-tight">
+              <h2 className="font-display text-xl font-bold text-[#0F172A] tracking-tight">
                 Delete Livestock Record
               </h2>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => setDeleteTargetAnimal(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 h-8 w-8 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5 text-slate-400" />
-              </button>
+              </Button>
             </div>
 
             <div className="px-6 py-6 space-y-6">
@@ -475,14 +487,15 @@ export default function AnimalCardOverflow() {
               </p>
 
               <div className="flex items-center justify-end gap-3 pt-2">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => setDeleteTargetAnimal(null)}
                   className="px-6 py-2.5 rounded-full border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-all cursor-pointer"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => {
                     deleteAnimal(deleteTargetAnimal.id);
@@ -491,14 +504,12 @@ export default function AnimalCardOverflow() {
                   className="px-6 py-2.5 rounded-full bg-[#E11D48] hover:bg-[#D91B42] text-white text-sm font-bold shadow-xs transition-all cursor-pointer"
                 >
                   Delete Animal
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         </div>
       )}
-
-
     </div>
   );
 }
