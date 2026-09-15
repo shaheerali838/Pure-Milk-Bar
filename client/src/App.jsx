@@ -44,79 +44,79 @@ export default function App() {
       <LedgerProvider>
         <AnimalProvider>
           <ExpenseProvider>
-            <POSProvider>
-              <DeliveryStaffProvider>
-                <FuelLogProvider>
-                  <RiderSalaryProvider>
-                    <DeliveryProvider>
+            <DeliveryStaffProvider>
+              <FuelLogProvider>
+                <RiderSalaryProvider>
+                  <DeliveryProvider>
+                    <POSProvider>
                       <StaffProvider>
                         <BrowserRouter>
-                        <Routes>
-                          <Route
-                            path="/login"
-                            element={
-                              <LoginPage
-                                onLogin={(email, password) => {
-                                  console.log("Logging in user:", email);
-                                  setIsAuthenticated(true);
-                                }}
-                              />
-                            }
-                          />
-                          <Route path="/" element={<Layout />}>
-                            <Route index element={<Navigate to="/dashboard" replace />} />
-                            <Route path="dashboard" element={<Dashboard />} />
+                          <Routes>
+                            <Route
+                              path="/login"
+                              element={
+                                <LoginPage
+                                  onLogin={(email, password) => {
+                                    console.log("Logging in user:", email);
+                                    setIsAuthenticated(true);
+                                  }}
+                                />
+                              }
+                            />
+                            <Route path="/" element={<Layout />}>
+                              <Route index element={<Navigate to="/dashboard" replace />} />
+                              <Route path="dashboard" element={<Dashboard />} />
 
-                            {/* Farm Routes */}
-                            <Route path="farm" element={<Farm />}>
-                              <Route index element={<FarmDashboard />} />
-                              <Route path="animals" element={<AnimalsHerd />} />
-                              <Route path="animals/detail/:id" element={<AnimalDetailPage />} />
-                              <Route path="milking" element={<MilkingRegister />} />
-                              <Route path="processing" element={<DahiProcessing />} />
-                              <Route path="expenses" element={<ExpenseLayout />}>
-                                <Route index element={<FarmExpenses />} />
-                                <Route path="new" element={<RecordFarmExpensePage />} />
-                                <Route path="edit/:id" element={<RecordFarmExpensePage />} />
-                                <Route path="detail/:id" element={<ExpenseDetailPage />} />
+                              {/* Farm Routes */}
+                              <Route path="farm" element={<Farm />}>
+                                <Route index element={<FarmDashboard />} />
+                                <Route path="animals" element={<AnimalsHerd />} />
+                                <Route path="animals/detail/:id" element={<AnimalDetailPage />} />
+                                <Route path="milking" element={<MilkingRegister />} />
+                                <Route path="processing" element={<DahiProcessing />} />
+                                <Route path="expenses" element={<ExpenseLayout />}>
+                                  <Route index element={<FarmExpenses />} />
+                                  <Route path="new" element={<RecordFarmExpensePage />} />
+                                  <Route path="edit/:id" element={<RecordFarmExpensePage />} />
+                                  <Route path="detail/:id" element={<ExpenseDetailPage />} />
+                                </Route>
+                                <Route path="pl" element={<FarmPL />} />
+                                <Route path="dailysheet" element={<DailySheet />} />
                               </Route>
-                              <Route path="pl" element={<FarmPL />} />
-                              <Route path="dailysheet" element={<DailySheet />} />
+
+                              <Route path="supplier" element={<Supplier />} />
+                              <Route path="proccessing" element={<Proccessing />} />
+                              <Route path="pos" element={<Pos />} />
+                              <Route path="delivery" element={<Delivery />} />
+                              <Route path="products" element={<Products />} />
+                              <Route path="staff" element={<StaffManagement />} />
+
+                              {/* Accounts & Khata Ledger Routes */}
+                              <Route path="customer" element={<CustomerManagement />} />
+                              <Route
+                                path="customer-khata-ledger"
+                                element={<CustomerKhataLedger />}
+                              />
+
+                              {/* Finance Routes */}
+                              <Route path="finance/customer" element={<CustomerFinance />} />
+                              <Route path="finance/delivery" element={<RiderDeliveryFinancePage />} />
+                              <Route path="finance/staff" element={<StaffManagement />} />
+
+                              {/* Catch-all redirect */}
+                              <Route
+                                path="*"
+                                element={<Navigate to="/dashboard" replace />}
+                              />
                             </Route>
-
-                            <Route path="supplier" element={<Supplier />} />
-                            <Route path="proccessing" element={<Proccessing />} />
-                            <Route path="pos" element={<Pos />} />
-                            <Route path="delivery" element={<Delivery />} />
-                            <Route path="products" element={<Products />} />
-                            <Route path="staff" element={<StaffManagement />} />
-
-                            {/* Accounts & Khata Ledger Routes */}
-                            <Route path="customer" element={<CustomerManagement />} />
-                            <Route
-                              path="customer-khata-ledger"
-                              element={<CustomerKhataLedger />}
-                            />
-
-                            {/* Finance Routes */}
-                            <Route path="finance/customer" element={<CustomerFinance />} />
-                            <Route path="finance/delivery" element={<RiderDeliveryFinancePage />} />
-                            <Route path="finance/staff" element={<StaffManagement />} />
-
-                            {/* Catch-all redirect */}
-                            <Route
-                              path="*"
-                              element={<Navigate to="/dashboard" replace />}
-                            />
-                          </Route>
-                        </Routes>
-                      </BrowserRouter>
-                    </StaffProvider>
+                          </Routes>
+                        </BrowserRouter>
+                      </StaffProvider>
+                    </POSProvider>
                   </DeliveryProvider>
-                  </RiderSalaryProvider>
-                </FuelLogProvider>
-              </DeliveryStaffProvider>
-            </POSProvider>
+                </RiderSalaryProvider>
+              </FuelLogProvider>
+            </DeliveryStaffProvider>
           </ExpenseProvider>
         </AnimalProvider>
       </LedgerProvider>

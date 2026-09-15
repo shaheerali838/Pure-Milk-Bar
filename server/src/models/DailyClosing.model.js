@@ -16,15 +16,33 @@ const dailyClosingSchema = new Schema(
       required: [true, 'Closed by User ID is required'],
       index: true,
     },
+    approvedByUserId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    reopenedByUserId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     closedAt: {
       type: Date,
       required: [true, 'Closed at timestamp is required'],
       default: Date.now,
     },
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
+    reopenedAt: {
+      type: Date,
+      default: null,
+    },
     status: {
       type: String,
-      enum: ['OPEN', 'CLOSED', 'LOCKED'],
-      default: 'CLOSED',
+      enum: ['DRAFT', 'RECONCILED', 'APPROVED', 'REOPENED', 'CLOSED', 'LOCKED'],
+      default: 'DRAFT',
       index: true,
     },
     milkBalance: {
@@ -36,6 +54,10 @@ const dailyClosingSchema = new Schema(
       required: true,
     },
     supervisorNotes: {
+      type: String,
+      default: null,
+    },
+    reopenReason: {
       type: String,
       default: null,
     },

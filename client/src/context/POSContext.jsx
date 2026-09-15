@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useCustomerContext } from './CustomerContext';
 import { useLedgerContext } from './LedgerContext';
 import { useAnimalContext } from './AnimalContext';
+import { useDeliveryContext } from './DeliveryContext';
 
 const POSContext = createContext();
 
@@ -54,6 +55,8 @@ export function POSProvider({ children }) {
   const { rawCustomers = [], customers = [] } = useCustomerContext();
   const { addLedgerEntry } = useLedgerContext();
   const { animals = [] } = useAnimalContext();
+  const deliveryCtx = useDeliveryContext();
+  const addDelivery = deliveryCtx?.addDelivery;
 
   // =========================================================================
   // 1. PRODUCTS STATE - STRICTLY FROM LOCAL STORAGE (Empty [] if not found)
@@ -186,6 +189,25 @@ export function POSProvider({ children }) {
   const [discount, setDiscount] = useState(0);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [fulfillmentMode, setFulfillmentMode] = useState('counter'); // 'counter' | 'doorstep'
+  
+  // 2 Primary Sale Categories: 'walkin' | 'delivery'
+  const [saleCategory, setSaleCategory] = useState('walkin');
+
+  // Walk-in Customer Type: 'first_time' | 'registered'
+  const [walkinCustomerType, setWalkinCustomerType] = useState('first_time');
+
+  // Walk-in Customer Info (for first_time / guest)
+  const [walkinName, setWalkinName] = useState('');
+  const [walkinPhone, setWalkinPhone] = useState('');
+
+  // Delivery Sub-Types: 'ontime' | 'monthly'
+  const [deliverySubType, setDeliverySubType] = useState('ontime');
+
+  // Registered Customer Khata Options: 'khata' | 'cash' | 'partial'
+  const [khataPaymentOption, setKhataPaymentOption] = useState('khata');
+  const [partialPaidAmount, setPartialPaidAmount] = useState('');
+  const [orderNotes, setOrderNotes] = useState('');
+
   const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'khata' | 'online' | 'cod'
   const [cashTendered, setCashTendered] = useState('');
 
@@ -195,7 +217,7 @@ export function POSProvider({ children }) {
     trxId: '',
   });
 
-  const [selectedRiderId, setSelectedRiderId] = useState(deliveryRidersList[0].id);
+  const [selectedRiderId, setSelectedRiderId] = useState('');
   const [customRiderName, setCustomRiderName] = useState('');
   const [deliverySlot, setDeliverySlot] = useState('⚡ Instant Dispatch (30 mins)');
   const [deliveryLandmark, setDeliveryLandmark] = useState('');
@@ -302,6 +324,14 @@ export function POSProvider({ children }) {
     setDiscount(0);
     setDeliveryCharge(0);
     setCashTendered('');
+    setWalkinName('');
+    setWalkinPhone('');
+    setOrderNotes('');
+    setPartialPaidAmount('');
+    setLinkedCustomerId('');
+    setSelectedRiderId('');
+    setCustomRiderName('');
+    setWalkinCustomerType('first_time');
     setOnlineDetails({ provider: 'JazzCash', senderAccount: '', trxId: '' });
   };
 
@@ -310,7 +340,7 @@ export function POSProvider({ children }) {
     (sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0),
     0
   );
-  const effectiveDeliveryCharge = fulfillmentMode === 'doorstep' ? Number(deliveryCharge) || 0 : 0;
+  const effectiveDeliveryCharge = saleCategory === 'delivery' ? Number(deliveryCharge) || 0 : 0;
   const effectiveDiscount = Math.min(cartSubtotal, Math.max(0, Number(discount) || 0));
   const netPayable = Math.max(0, cartSubtotal + effectiveDeliveryCharge - effectiveDiscount);
 
@@ -323,7 +353,7 @@ export function POSProvider({ children }) {
 
   const allCustomers = rawCustomers.length > 0 ? rawCustomers : customers;
   const activeCustomer = allCustomers.find((c) => String(c.id) === String(linkedCustomerId)) || null;
-  const activeRider = deliveryRidersList.find((r) => r.id === selectedRiderId) || deliveryRidersList[0];
+  const activeRider = selectedRiderId ? (deliveryRidersList.find((r) => r.id === selectedRiderId) || null) : null;
 
   // =========================================================================
   // 3. SALES & INVOICES - STRICTLY FROM LOCAL STORAGE
@@ -355,6 +385,14 @@ export function POSProvider({ children }) {
     if (cart.length === 0) return null;
 
     const invoiceId = `INV-${1000 + salesHistory.length + 25}`;
+    const todayDate = new Date().toISOString().split('T')[0];
+    const itemSummary = cart
+      .map((i) => `${i.quantity} ${i.unit || 'unit'} ${i.name} (@Rs. ${i.price})`)
+      .join(' + ');
+
+    const isRegisteredWalkin = saleCategory === 'walkin' && walkinCustomerType === 'registered';
+    const isLegacyCustomerSale = saleCategory === 'customer';
+
     const saleRecord = {
       invoiceId,
       timestamp: new Date().toISOString(),
@@ -375,38 +413,157 @@ export function POSProvider({ children }) {
       deliveryCharge: effectiveDeliveryCharge,
       discount: effectiveDiscount,
       netPayable,
-      fulfillmentMode,
-      paymentMethod,
-      cashTendered: paymentMethod === 'cash' ? Number(cashTendered) || netPayable : null,
-      changeDue: paymentMethod === 'cash' ? Math.max(0, (Number(cashTendered) || netPayable) - netPayable) : 0,
+      saleCategory,
+      walkinCustomerType: saleCategory === 'walkin' ? walkinCustomerType : null,
+      deliverySubType: saleCategory === 'delivery' ? deliverySubType : null,
+      fulfillmentMode: saleCategory === 'delivery' ? 'doorstep' : 'counter',
+      paymentMethod:
+        isRegisteredWalkin || isLegacyCustomerSale
+          ? khataPaymentOption
+          : paymentMethod,
+      cashTendered: paymentMethod === 'cash' || (isRegisteredWalkin && khataPaymentOption === 'cash')
+        ? Number(cashTendered) || netPayable
+        : null,
+      changeDue: paymentMethod === 'cash' || (isRegisteredWalkin && khataPaymentOption === 'cash')
+        ? Math.max(0, (Number(cashTendered) || netPayable) - netPayable)
+        : 0,
       onlineDetails: paymentMethod === 'online' ? { ...onlineDetails } : null,
-      rider:
-        fulfillmentMode === 'doorstep'
+      walkinCustomer:
+        saleCategory === 'walkin' && walkinCustomerType === 'first_time'
           ? {
-              ...activeRider,
-              customName: customRiderName || activeRider.name,
-              deliverySlot,
-              deliveryLandmark,
-              dropAddress,
-              collectEmptyBottles,
+              name: walkinName.trim() || 'Walk-in Customer',
+              phone: walkinPhone.trim() || 'N/A',
             }
           : null,
-      customer: activeCustomer
-        ? {
-            id: activeCustomer.id,
-            name: activeCustomer.name,
-            phone: activeCustomer.phone,
-            area: activeCustomer.area,
-          }
-        : null,
+      rider:
+        saleCategory === 'delivery'
+          ? (activeRider || customRiderName)
+            ? {
+                ...(activeRider || {}),
+                name: customRiderName || (activeRider ? activeRider.name : ''),
+                customName: customRiderName || (activeRider ? activeRider.name : ''),
+                deliverySlot,
+                deliveryLandmark,
+                dropAddress,
+                collectEmptyBottles,
+              }
+            : {
+                name: '',
+                customName: '',
+                deliverySlot,
+                deliveryLandmark,
+                dropAddress,
+                collectEmptyBottles,
+              }
+          : null,
+      customer:
+        ((saleCategory === 'walkin' && walkinCustomerType === 'registered') ||
+          isLegacyCustomerSale ||
+          (saleCategory === 'delivery' && deliverySubType === 'monthly')) &&
+        activeCustomer
+          ? {
+              id: activeCustomer.id,
+              name: activeCustomer.name,
+              phone: activeCustomer.phone,
+              area: activeCustomer.area,
+            }
+          : null,
+      notes: orderNotes || '',
     };
 
-    // If Khata Pay: add transaction to customer ledger
-    if (paymentMethod === 'khata' && activeCustomer) {
+    // Registered Customer / Monthly Subscribed Walk-in / Customer Mode: Execute exact Customer Khata Ledger Buy logic
+    if ((isRegisteredWalkin || isLegacyCustomerSale) && activeCustomer) {
+      const description = `POS Counter Buy: ${itemSummary}`;
+
+      if (khataPaymentOption === 'cash') {
+        addLedgerEntry(activeCustomer.id, {
+          description,
+          debit: netPayable,
+          credit: 0,
+          date: todayDate,
+          method: 'Cash',
+          notes: orderNotes ? `Instant POS Cash Purchase. ${orderNotes}` : 'Instant POS Cash Purchase',
+        });
+        addLedgerEntry(activeCustomer.id, {
+          description: `Payment Received (Against POS Buy Order)`,
+          debit: 0,
+          credit: netPayable,
+          date: todayDate,
+          method: 'Cash',
+          notes: 'Full immediate cash settlement',
+        });
+      } else if (khataPaymentOption === 'partial') {
+        const paid = parseFloat(partialPaidAmount) || 0;
+        addLedgerEntry(activeCustomer.id, {
+          description,
+          debit: netPayable,
+          credit: 0,
+          date: todayDate,
+          method: 'Khata Credit',
+          notes: orderNotes ? `Partial Cash: Rs. ${paid}. ${orderNotes}` : `Partial Cash: Rs. ${paid}`,
+        });
+        if (paid > 0) {
+          addLedgerEntry(activeCustomer.id, {
+            description: `Partial Payment (Against POS Buy Order)`,
+            debit: 0,
+            credit: paid,
+            date: todayDate,
+            method: 'Cash',
+            notes: 'Partial on-the-spot payment',
+          });
+        }
+      } else {
+        // Full Khata Charge
+        addLedgerEntry(activeCustomer.id, {
+          description,
+          debit: netPayable,
+          credit: 0,
+          date: todayDate,
+          method: 'Khata Credit',
+          notes: orderNotes ? `POS Monthly Subscribed Buy. ${orderNotes}` : 'POS Monthly Subscribed Buy',
+        });
+      }
+    } else if (saleCategory === 'delivery') {
+      const riderLabel = customRiderName || (activeRider ? activeRider.name : 'Unassigned');
+      if (deliverySubType === 'monthly' && activeCustomer && paymentMethod === 'khata') {
+        // Monthly Delivery charged to Khata
+        addLedgerEntry(activeCustomer.id, {
+          description: `POS Monthly Delivery: ${itemSummary} [${riderLabel}]`,
+          debit: netPayable,
+          credit: 0,
+          date: todayDate,
+          method: 'Khata Credit',
+          notes: orderNotes ? `Doorstep Delivery. ${orderNotes}` : 'Doorstep Delivery',
+        });
+      }
+
+      // Automatically register the delivery run in DeliveryContext (Drop Points table)
+      if (typeof addDelivery === 'function') {
+        const itemDesc = cart.map((i) => `${i.quantity}x ${i.name}`).join(', ');
+        const totalQty = cart.reduce((acc, i) => acc + (Number(i.quantity) || 0), 0);
+        addDelivery({
+          date: todayDate,
+          shift: activeCustomer?.shift || 'MORNING',
+          route: activeCustomer?.area || deliveryLandmark || 'Model Town & Faisal Town',
+          riderNameSnapshot: customRiderName || activeRider?.name || 'Unassigned',
+          staffType: activeRider?.vehicleType === 'Walking Man' ? 'WALKING_BOY' : (activeRider ? 'MOTORCYCLE_RIDER' : 'OTHER'),
+          customerId: activeCustomer ? activeCustomer.id : undefined,
+          customerName: activeCustomer ? activeCustomer.name : (walkinName.trim() || 'Home Delivery Customer'),
+          deliveryAddress: dropAddress || activeCustomer?.address || activeCustomer?.area || 'Model Town',
+          itemDescription: itemDesc,
+          qtyLiters: totalQty,
+          paymentMode: paymentMethod.toUpperCase(),
+          codAmountToCollect: paymentMethod === 'cod' || paymentMethod === 'cash' ? netPayable : 0,
+          bottlesReturned: 0,
+        });
+      }
+    } else if (paymentMethod === 'khata' && activeCustomer) {
+      // Fallback Khata payment
       addLedgerEntry(activeCustomer.id, {
         description: `POS Counter Sale (${invoiceId})`,
         debit: netPayable,
         credit: 0,
+        date: todayDate,
         method: 'Khata',
         notes: `Items: ${cart.map((i) => `${i.name} x${i.quantity}`).join(', ')}`,
       });
@@ -515,7 +672,25 @@ export function POSProvider({ children }) {
         handleClearCart,
         clearCart: handleClearCart,
 
-        // Fulfillment
+        // Fulfillment & Sale Modes
+        saleCategory,
+        setSaleCategory,
+        walkinCustomerType,
+        setWalkinCustomerType,
+        walkinSubType: walkinCustomerType,
+        setWalkinSubType: setWalkinCustomerType,
+        walkinName,
+        setWalkinName,
+        walkinPhone,
+        setWalkinPhone,
+        deliverySubType,
+        setDeliverySubType,
+        khataPaymentOption,
+        setKhataPaymentOption,
+        partialPaidAmount,
+        setPartialPaidAmount,
+        orderNotes,
+        setOrderNotes,
         fulfillmentMode,
         setFulfillmentMode,
         riders: deliveryRidersList,

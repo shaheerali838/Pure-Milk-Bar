@@ -1,57 +1,98 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Milk, Users, BookOpen, LayoutGrid, Tractor, Truck } from 'lucide-react';
-import accountKhataLinks from '../../components/common/Accounts_& _Khata_ledge';
-import { saleInformation } from '../../components/common/SaleAndProducation/saleInformation';
-import financeLinks from '../../components/common/Finance_links';
+import {
+  Milk,
+  Users,
+  LayoutGrid,
+  Tractor,
+  Truck,
+  ShoppingCart,
+  Layers,
+  Bike,
+  Wallet,
+  Package,
+} from 'lucide-react';
 
 export default function Sidebar() {
-  const links = [
+  // 1. Operations Command
+  const operationsLinks = [
     {
       id: 'Dashboard',
       name: 'Main Dashboard',
       icon: LayoutGrid,
       path: '/dashboard',
-      iconBg: 'bg-[#f0f4f9]',
-      iconColor: 'text-[#486581]',
-      iconBorder: 'border border-[#e2e8f0]',
-      activeBg: 'bg-slate-900 text-white shadow-xs',
-      activeBadgeBg: 'bg-slate-800 text-white',
     },
     {
       id: 'Farm',
       name: 'Farm Dashboard',
       icon: Tractor,
       path: '/farm',
-      iconBg: 'bg-[#eafaf1]',
-      iconColor: 'text-[#10b981]',
-      iconBorder: 'border border-[#c6f6d5]',
-      activeBg: 'bg-[#009966] text-white shadow-xs',
-      activeBadgeBg: 'bg-[#007a52] text-white',
     },
     {
       id: 'Supplier',
       name: 'Supplier Dashboard',
       icon: Truck,
       path: '/supplier',
-      iconBg: 'bg-[#eef4ff]',
-      iconColor: 'text-[#2563eb]',
-      iconBorder: 'border border-[#dbeafe]',
-      activeBg: 'bg-[#1864f7] text-white shadow-xs',
-      activeBadgeBg: 'bg-[#0f4ec4] text-white',
     },
   ];
 
-  const getLinkIcon = (id) => {
-    switch (id) {
-      case 'customer':
-        return Users;
-      case 'customer khata ledger':
-        return BookOpen;
-      default:
-        return Users;
-    }
-  };
+  // 2. Sales
+  const salesLinks = [
+    {
+      id: 'pos',
+      name: 'Counter POS & Sales',
+      icon: ShoppingCart,
+      path: '/pos',
+    },
+  ];
+
+  // 3. Production
+  const productionLinks = [
+    {
+      id: 'processing',
+      name: 'Dahi & Milk Processing',
+      icon: Layers,
+      path: '/proccessing',
+    },
+    {
+      id: 'products',
+      name: 'Products & Pricing',
+      icon: Milk,
+      path: '/products',
+    },
+  ];
+
+  // 4. Delivery
+  const deliveryLinks = [
+    {
+      id: 'doorstep-delivery',
+      name: 'Doorstep Deliveries',
+      icon: Truck,
+      path: '/delivery',
+    },
+    {
+      id: 'rider-delivery-finance',
+      name: 'Rider & Delivery Finance',
+      icon: Bike,
+      path: '/finance/delivery',
+    },
+  ];
+
+  // 5. Customers
+  const customerLinks = [
+    {
+      id: 'customer',
+      name: 'Customer & Accounts',
+      icon: Users,
+      path: '/customer',
+    },
+    {
+      id: 'customer-finance',
+      name: 'Customer Finance',
+      icon: Wallet,
+      path: '/finance/customer',
+    },
+  ];
 
   return (
     <aside className="w-64 bg-white h-screen sticky top-0 flex flex-col border-r border-slate-200/80 shadow-xs shrink-0 select-none z-30">
@@ -74,26 +115,25 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Main Navigation Container (Single unified scroll direction) */}
+      {/* Main Navigation Container */}
       <div className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
-        
-
         {/* Section 1: Operations Command */}
         <div>
           <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
             OPERATIONS COMMAND
           </div>
           <nav className="space-y-0.5">
-            {links.map((link) => {
+            {operationsLinks.map((link) => {
               const Icon = link.icon;
               return (
                 <NavLink
                   key={link.id}
                   to={link.path}
                   className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${isActive
-                      ? 'bg-[#00a86b] text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                      isActive
+                        ? 'bg-[#00a86b] text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`
                   }
                 >
@@ -105,49 +145,23 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        {/* Section 2: Sales & Production */}
+        {/* Section 2: Sales */}
         <div>
           <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-            SALES &amp; PRODUCTION
+            SALES
           </div>
           <nav className="space-y-0.5">
-            {saleInformation.map((sale) => {
-              const Icon = sale.icon;
-              return (
-                <NavLink
-                  key={sale.id}
-                  to={sale.path}
-                  className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${isActive
-                      ? 'bg-[#00a86b] text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                    }`
-                  }
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{sale.name}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Section 3: Accounts & Khata Ledger */}
-        <div>
-          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-            ACCOUNTS &amp; KHATA LEDGER
-          </div>
-          <nav className="space-y-0.5">
-            {accountKhataLinks.map((link) => {
-              const Icon = getLinkIcon(link.id);
+            {salesLinks.map((link) => {
+              const Icon = link.icon;
               return (
                 <NavLink
                   key={link.id}
                   to={link.path}
                   className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${isActive
-                      ? 'bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                      isActive
+                        ? 'bg-[#00a86b] text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`
                   }
                 >
@@ -159,22 +173,79 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        {/* Section 4: Finance */}
+        {/* Section 3: Production */}
         <div>
           <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-            FINANCE
+            PRODUCTION
           </div>
           <nav className="space-y-0.5">
-            {financeLinks.map((link) => {
+            {productionLinks.map((link) => {
               const Icon = link.icon;
               return (
                 <NavLink
                   key={link.id}
                   to={link.path}
                   className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${isActive
-                      ? 'bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                      isActive
+                        ? 'bg-[#00a86b] text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`
+                  }
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{link.name}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Section 4: Delivery */}
+        <div>
+          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+            DELIVERY
+          </div>
+          <nav className="space-y-0.5">
+            {deliveryLinks.map((link) => {
+              const Icon = link.icon;
+              return (
+                <NavLink
+                  key={link.id}
+                  to={link.path}
+                  className={({ isActive }) =>
+                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                      isActive
+                        ? 'bg-[#00a86b] text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`
+                  }
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{link.name}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Section 5: Customers */}
+        <div>
+          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+            CUSTOMERS
+          </div>
+          <nav className="space-y-0.5">
+            {customerLinks.map((link) => {
+              const Icon = link.icon;
+              return (
+                <NavLink
+                  key={link.id}
+                  to={link.path}
+                  className={({ isActive }) =>
+                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                      isActive
+                        ? 'bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`
                   }
                 >

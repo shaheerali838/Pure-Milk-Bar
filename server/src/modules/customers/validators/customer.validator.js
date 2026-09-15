@@ -76,32 +76,45 @@ const updateCreditLimitSchema = Joi.object({
 
 // Helper validation runner
 const runValidation = (schema, data, next) => {
-  const { error, value } = schema.validate(data, { abortEarly: false, stripUnknown: true });
+  const { error, value } = schema.validate(data || {}, { abortEarly: false, stripUnknown: true });
   if (error) {
     const messages = error.details.map((d) => d.message).join(', ');
     const validationError = new Error(messages);
     validationError.statusCode = 422;
-    return next(validationError);
+    next(validationError);
+    return undefined;
   }
   return value;
 };
 
 export const validateCreateCustomer = (req, res, next) => {
-  req.body = runValidation(createCustomerSchema, req.body, next) || req.body;
-  next();
+  const validated = runValidation(createCustomerSchema, req.body, next);
+  if (validated !== undefined) {
+    req.body = validated;
+    next();
+  }
 };
 
 export const validateUpdateCustomer = (req, res, next) => {
-  req.body = runValidation(updateCustomerSchema, req.body, next) || req.body;
-  next();
+  const validated = runValidation(updateCustomerSchema, req.body, next);
+  if (validated !== undefined) {
+    req.body = validated;
+    next();
+  }
 };
 
 export const validateSetStatus = (req, res, next) => {
-  req.body = runValidation(setStatusSchema, req.body, next) || req.body;
-  next();
+  const validated = runValidation(setStatusSchema, req.body, next);
+  if (validated !== undefined) {
+    req.body = validated;
+    next();
+  }
 };
 
 export const validateUpdateCreditLimit = (req, res, next) => {
-  req.body = runValidation(updateCreditLimitSchema, req.body, next) || req.body;
-  next();
+  const validated = runValidation(updateCreditLimitSchema, req.body, next);
+  if (validated !== undefined) {
+    req.body = validated;
+    next();
+  }
 };

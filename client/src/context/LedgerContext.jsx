@@ -4,16 +4,196 @@ import { useCustomerContext } from './CustomerContext';
 const LedgerContext = createContext();
 const LEDGER_STORAGE_KEY = 'pure_milk_bar_ledgers';
 
+const DEFAULT_LEDGERS = {
+  '1': [
+    {
+      id: 'txn-1-init',
+      date: '2026-08-01',
+      description: 'Opening Balance (Khata Start)',
+      type: 'OPENING',
+      debit: 0,
+      credit: 0,
+      runningBalance: 1000,
+      method: '-',
+      notes: 'Initial opening ledger balance',
+    },
+    {
+      id: 'txn-1-01',
+      date: '2026-09-01',
+      description: 'Daily Milk Delivery (2 L Cow Milk)',
+      type: 'DEBIT',
+      debit: 480,
+      credit: 0,
+      runningBalance: 1480,
+      method: 'Khata Charge',
+      notes: 'Delivered Morning Shift',
+    },
+    {
+      id: 'txn-1-02',
+      date: '2026-09-05',
+      description: 'Customer Payment Received',
+      type: 'CREDIT',
+      debit: 0,
+      credit: 1000,
+      runningBalance: 480,
+      method: 'Online Payment',
+      notes: 'EasyPaisa TRX #EP98124',
+    },
+    {
+      id: 'txn-1-03',
+      date: '2026-09-10',
+      description: 'POS Sale: Pure Cow Milk & Dahi',
+      type: 'DEBIT',
+      debit: 1200,
+      credit: 0,
+      runningBalance: 1680,
+      method: 'Khata Charge',
+      notes: 'Counter POS Purchase',
+    },
+    {
+      id: 'txn-1-04',
+      date: '2026-09-14',
+      description: 'Daily Milk Delivery (6 Days Batch)',
+      type: 'DEBIT',
+      debit: 2880,
+      credit: 0,
+      runningBalance: 4560,
+      method: 'Khata Charge',
+      notes: 'Doorstep batch cycle',
+    },
+    {
+      id: 'txn-1-05',
+      date: '2026-09-15',
+      description: 'Cash Payment Received at Counter',
+      type: 'CREDIT',
+      debit: 0,
+      credit: 1360,
+      runningBalance: 3200,
+      method: 'Cash',
+      notes: 'Walk-in cash counter settlement',
+    },
+  ],
+  '2': [
+    {
+      id: 'txn-2-init',
+      date: '2026-08-10',
+      description: 'Opening Balance',
+      type: 'OPENING',
+      debit: 0,
+      credit: 0,
+      runningBalance: 2000,
+      method: '-',
+      notes: 'Account opened',
+    },
+    {
+      id: 'txn-2-01',
+      date: '2026-09-02',
+      description: 'Delivery: 3 L Buffalo Milk',
+      type: 'DEBIT',
+      debit: 780,
+      credit: 0,
+      runningBalance: 2780,
+      method: 'Khata Charge',
+      notes: 'Evening delivery',
+    },
+    {
+      id: 'txn-2-02',
+      date: '2026-09-08',
+      description: 'Bulk Dahi (2 KG) & Desi Ghee (1 KG)',
+      type: 'DEBIT',
+      debit: 3500,
+      credit: 0,
+      runningBalance: 6280,
+      method: 'Khata Charge',
+      notes: 'Special farm order',
+    },
+    {
+      id: 'txn-2-03',
+      date: '2026-09-12',
+      description: 'Payment: JazzCash Transfer',
+      type: 'CREDIT',
+      debit: 0,
+      credit: 2000,
+      runningBalance: 4280,
+      method: 'Online Payment',
+      notes: 'JazzCash TRX #JC33421',
+    },
+    {
+      id: 'txn-2-04',
+      date: '2026-09-15',
+      description: 'Weekly Delivery charges',
+      type: 'DEBIT',
+      debit: 1520,
+      credit: 0,
+      runningBalance: 5800,
+      method: 'Khata Charge',
+      notes: 'Evening batch',
+    },
+  ],
+  '4': [
+    {
+      id: 'txn-4-init',
+      date: '2026-08-20',
+      description: 'Opening Balance',
+      type: 'OPENING',
+      debit: 0,
+      credit: 0,
+      runningBalance: 5000,
+      method: '-',
+      notes: 'DHA Phase 5 Residence setup',
+    },
+    {
+      id: 'txn-4-01',
+      date: '2026-09-03',
+      description: 'Daily Milk Delivery (4 L Mixed Milk x 7 days)',
+      type: 'DEBIT',
+      debit: 7000,
+      credit: 0,
+      runningBalance: 12000,
+      method: 'Khata Charge',
+      notes: 'Weekly milk cycle',
+    },
+    {
+      id: 'txn-4-02',
+      date: '2026-09-09',
+      description: 'Bank / Online Transfer Received',
+      type: 'CREDIT',
+      debit: 0,
+      credit: 5000,
+      runningBalance: 7000,
+      method: 'Online Payment',
+      notes: 'Meezan Bank Direct',
+    },
+    {
+      id: 'txn-4-03',
+      date: '2026-09-15',
+      description: 'Daily Milk Delivery (4 L Mixed Milk x 5 days) + Farm Butter',
+      type: 'DEBIT',
+      debit: 5400,
+      credit: 0,
+      runningBalance: 12400,
+      method: 'Khata Charge',
+      notes: 'Morning shift batch',
+    },
+  ],
+};
+
 export function LedgerProvider({ children }) {
   const { customers, updateCustomer } = useCustomerContext();
 
   const [ledgers, setLedgers] = useState(() => {
     try {
       const saved = localStorage.getItem(LEDGER_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : {};
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+          return parsed;
+        }
+      }
+      return DEFAULT_LEDGERS;
     } catch (err) {
       console.error('Failed to load ledgers from localStorage:', err);
-      return {};
+      return DEFAULT_LEDGERS;
     }
   });
 

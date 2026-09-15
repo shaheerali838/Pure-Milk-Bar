@@ -100,37 +100,53 @@ const resetPasswordSchema = Joi.object({
 
 // Helper validation runner
 const runValidation = (schema, data, next) => {
-  const { error, value } = schema.validate(data, { abortEarly: false, stripUnknown: true });
+  const { error, value } = schema.validate(data || {}, { abortEarly: false, stripUnknown: true });
   if (error) {
     const messages = error.details.map((d) => d.message).join(', ');
     const validationError = new Error(messages);
     validationError.statusCode = 422;
-    return next(validationError);
+    next(validationError);
+    return undefined;
   }
   return value;
 };
 
 export const validateCreateUser = (req, res, next) => {
-  req.body = runValidation(createUserSchema, req.body, next) || req.body;
-  next();
+  const validated = runValidation(createUserSchema, req.body, next);
+  if (validated !== undefined) {
+    req.body = validated;
+    next();
+  }
 };
 
 export const validateUpdateUser = (req, res, next) => {
-  req.body = runValidation(updateUserSchema, req.body, next) || req.body;
-  next();
+  const validated = runValidation(updateUserSchema, req.body, next);
+  if (validated !== undefined) {
+    req.body = validated;
+    next();
+  }
 };
 
 export const validateSetStatus = (req, res, next) => {
-  req.body = runValidation(setStatusSchema, req.body, next) || req.body;
-  next();
+  const validated = runValidation(setStatusSchema, req.body, next);
+  if (validated !== undefined) {
+    req.body = validated;
+    next();
+  }
 };
 
 export const validateSetRole = (req, res, next) => {
-  req.body = runValidation(setRoleSchema, req.body, next) || req.body;
-  next();
+  const validated = runValidation(setRoleSchema, req.body, next);
+  if (validated !== undefined) {
+    req.body = validated;
+    next();
+  }
 };
 
 export const validateResetPassword = (req, res, next) => {
-  req.body = runValidation(resetPasswordSchema, req.body, next) || req.body;
-  next();
+  const validated = runValidation(resetPasswordSchema, req.body, next);
+  if (validated !== undefined) {
+    req.body = validated;
+    next();
+  }
 };

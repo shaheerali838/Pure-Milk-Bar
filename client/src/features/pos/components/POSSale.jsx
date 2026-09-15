@@ -1,25 +1,34 @@
-import React from 'react';
+import React, { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   ShoppingCart,
   Trash2,
+  CheckCircle2,
+  Users,
+  UserCheck,
+  Calendar,
+  Phone,
+  User,
+  Wallet,
+  Truck,
   Plus,
   Minus,
   X,
-  Store,
-  Bike,
-  CreditCard,
-  Banknote,
-  Smartphone,
-  Truck,
-  CheckCircle2,
+  DollarSign,
   AlertCircle,
   MapPin,
-  DollarSign,
+  Banknote,
+  Smartphone,
+  CreditCard,
   ChevronDown,
-} from 'lucide-react';
-import { usePOSContext } from '@/context/POSContext';
+} from "lucide-react";
+import { usePOSContext } from "@/context/POSContext";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function POSSale() {
+  const [searchParams] = useSearchParams();
+
   const {
     cart = [],
     cartCount = 0,
@@ -34,10 +43,35 @@ export default function POSSale() {
     handleUpdatePrice,
     handleRemoveFromCart,
     handleClearCart,
+    executeKhataPayment,
 
-    // Fulfillment
-    fulfillmentMode = 'counter',
-    setFulfillmentMode,
+    // 2 Primary Categories: 'walkin' | 'delivery'
+    saleCategory = "walkin",
+    setSaleCategory,
+
+    // Walk-in Customer Type: 'first_time' | 'registered'
+    walkinCustomerType = "first_time",
+    setWalkinCustomerType,
+
+    // Walk-in Customer Info
+    walkinName = "",
+    setWalkinName,
+    walkinPhone = "",
+    setWalkinPhone,
+
+    // Delivery Sub-types: 'ontime' | 'monthly'
+    deliverySubType = "ontime",
+    setDeliverySubType,
+
+    // Customer Mode Khata Options: 'khata' | 'cash' | 'partial'
+    khataPaymentOption = "khata",
+    setKhataPaymentOption,
+    partialPaidAmount = "",
+    setPartialPaidAmount,
+    orderNotes = "",
+    setOrderNotes,
+
+    // Delivery Riders & Details
     riders = [],
     selectedRiderId,
     setSelectedRiderId,
@@ -54,7 +88,7 @@ export default function POSSale() {
     setCollectEmptyBottles,
 
     // Payment
-    paymentMethod = 'cash',
+    paymentMethod = "cash",
     setPaymentMethod,
     cashTendered,
     setCashTendered,
@@ -69,8 +103,21 @@ export default function POSSale() {
 
     // Sale Actions
     handleCompleteSale,
-    executeKhataPayment,
   } = usePOSContext();
+
+  // Sync category from URL search params (e.g. /pos?category=delivery)
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    if (categoryParam === "delivery") {
+      setSaleCategory("delivery");
+      const subType = searchParams.get("subType");
+      if (subType === "monthly" || subType === "ontime") {
+        setDeliverySubType(subType);
+      }
+    } else if (categoryParam === "walkin") {
+      setSaleCategory("walkin");
+    }
+  }, [searchParams, setSaleCategory, setDeliverySubType]);
 
   const handleDirectClearKhata = (cust) => {
     const target = cust || activeCustomer;
@@ -80,12 +127,16 @@ export default function POSSale() {
       alert(`Customer ${target.name} has no outstanding khata debt.`);
       return;
     }
-    if (window.confirm(`Clear and finish full khata debt of Rs. ${balance.toLocaleString()} for ${target.name}?`)) {
+    if (
+      window.confirm(
+        `Clear and finish full khata debt of Rs. ${balance.toLocaleString()} for ${target.name}?`,
+      )
+    ) {
       executeKhataPayment({
         customerId: target.id,
         amountPaid: balance,
-        paymentMethod: 'Cash',
-        notes: 'Full Khata finished and cleared at POS register',
+        paymentMethod: "Cash",
+        notes: "Full Khata finished and cleared at POS register",
       });
       alert(`Khata for ${target.name} has been finished.`);
     }
@@ -95,28 +146,36 @@ export default function POSSale() {
   const changeDue = Math.max(0, numCashTendered - netPayable);
 
   const cashChips = [
-    { label: 'Exact', value: netPayable },
-    { label: 'Rs. 500', value: 500 },
-    { label: 'Rs. 1,000', value: 1000 },
-    { label: 'Rs. 2,000', value: 2000 },
-    { label: 'Rs. 5,000', value: 5000 },
+    { label: "Exact", value: netPayable },
+    { label: "Rs. 500", value: 500 },
+    { label: "Rs. 1,000", value: 1000 },
+    { label: "Rs. 2,000", value: 2000 },
+    { label: "Rs. 5,000", value: 5000 },
   ];
 
-  const paymentLabels = {
-    cash: 'Cash',
-    khata: 'Khata Pay',
-    online: 'Online',
-    cod: 'COD',
-  };
+  const currentKhataBal = Number(activeCustomer?.khataBalance || 0);
+  const projectedCustomerBalance =
+    khataPaymentOption === "khata"
+      ? currentKhataBal + netPayable
+      : khataPaymentOption === "cash"
+        ? currentKhataBal
+        : currentKhataBal +
+          Math.max(0, netPayable - (parseFloat(partialPaidAmount) || 0));
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-4">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3.5">
       {/* 1. Header of Sale Cart */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <ShoppingCart className="w-4 h-4 text-purple-600" />
-          <h2 className="text-sm font-bold text-slate-800 font-display">Sale Cart</h2>
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-600 text-white">
+          <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+            <ShoppingCart className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-xs sm:text-sm font-bold text-slate-900 font-display">
+              Sale Cart
+            </h2>
+          </div>
+          <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-600 text-white">
             {cartCount} items
           </span>
         </div>
@@ -133,19 +192,21 @@ export default function POSSale() {
         )}
       </div>
 
-      {/* 2. Empty State or Cart Items */}
+      {/* 2. Empty State or Cart Items Component */}
       {cart.length === 0 ? (
-        <div className="py-10 text-center flex flex-col items-center justify-center space-y-2">
-          <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
-            <ShoppingCart className="w-6 h-6" />
+        <div className="py-8 text-center flex flex-col items-center justify-center space-y-2">
+          <div className="w-11 h-11 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+            <ShoppingCart className="w-5 h-5" />
           </div>
-          <p className="text-sm font-bold text-slate-700">Sale Cart is Empty</p>
-          <p className="text-xs text-slate-400 max-w-[240px]">
-            Tap any milk, yogurt, or lassi item on the left to add it to the active sale.
+          <p className="text-xs sm:text-sm font-bold text-slate-700">
+            Sale Cart is Empty
+          </p>
+          <p className="text-[11px] text-slate-400 max-w-[220px]">
+            Tap any dairy product on the left to add it to this active sale.
           </p>
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {/* Item rows */}
           <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
             {cart.map((item) => {
@@ -176,10 +237,10 @@ export default function POSSale() {
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-sm shadow-2xs shrink-0">
                         {item.category && item.category.toLowerCase().includes('dahi')
-                          ? ''
+                          ? '🥣'
                           : item.category && item.category.toLowerCase().includes('lassi')
-                          ? ''
-                          : ''}
+                          ? '🧃'
+                          : '🥛'}
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs font-bold text-slate-800 leading-tight truncate">
@@ -330,486 +391,766 @@ export default function POSSale() {
           </div>
 
           {/* Pricing summary */}
-          <div className="pt-2 border-t border-slate-100 space-y-1.5 text-xs text-slate-600">
-            <div className="flex justify-between items-center">
+          <div className="pt-2 border-t border-slate-100 space-y-1 text-xs text-slate-600">
+            <div className="flex justify-between items-center text-[11px]">
               <span>Subtotal</span>
               <span className="font-bold text-slate-800 tabular">
                 Rs. {cartSubtotal.toLocaleString()}
               </span>
             </div>
 
-            {/* Delivery Charges (when Doorstep Delivery is chosen) */}
-            {fulfillmentMode === 'doorstep' && (
-              <div className="flex justify-between items-center text-indigo-700">
+            {/* Delivery Charges (when Delivery Mode is active) */}
+            {saleCategory === "delivery" && (
+              <div className="flex justify-between items-center text-blue-700 text-[11px]">
                 <span className="flex items-center gap-1">
-                  <Bike className="w-3.5 h-3.5" /> Delivery Charges (Rs.)
+                  <Truck className="w-3 h-3" /> Delivery Fee (Rs.)
                 </span>
                 <input
                   type="number"
                   min="0"
                   value={deliveryCharge}
                   onChange={(e) => setDeliveryCharge(e.target.value)}
-                  className="w-16 text-right bg-white border border-indigo-200 rounded px-1.5 py-0.5 font-bold text-xs text-indigo-900 focus:outline-none focus:ring-1 focus:ring-indigo-400 tabular"
+                  className="w-16 text-right bg-white border border-blue-200 rounded px-1.5 py-0.5 font-bold text-xs text-blue-900 focus:outline-none focus:ring-1 focus:ring-blue-400 tabular"
                   placeholder="0"
                 />
               </div>
             )}
 
-            {/* Discount input */}
-            <div className="flex justify-between items-center text-slate-600">
+            {/* Discount */}
+            <div className="flex justify-between items-center text-slate-600 text-[11px]">
               <span className="flex items-center gap-1">
-                <DollarSign className="w-3.5 h-3.5 text-slate-400" /> Discount (Rs.)
+                <DollarSign className="w-3 h-3 text-slate-400" /> Discount (Rs.)
               </span>
               <input
                 type="number"
                 min="0"
                 value={discount}
                 onChange={(e) => setDiscount(e.target.value)}
-                className="w-16 text-right bg-white border border-slate-200 rounded px-1.5 py-0.5 font-bold text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-400 tabular"
+                className="w-16 text-right bg-white border border-slate-200 rounded px-1.5 py-0.5 font-bold text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-400 tabular"
                 placeholder="0"
               />
             </div>
 
             {/* NET PAYABLE */}
-            <div className="flex justify-between items-center pt-2 border-t border-dashed border-slate-200 text-sm font-black text-slate-900">
-              <span className="uppercase tracking-wide font-display">NET PAYABLE</span>
-              <span className="text-base text-purple-700 tabular">
+            <div className="flex justify-between items-center pt-1.5 border-t border-dashed border-slate-200 text-xs font-black text-slate-900">
+              <span className="uppercase tracking-wide font-display text-[11px]">
+                NET PAYABLE
+              </span>
+              <span className="text-sm font-black text-emerald-700 tabular">
                 Rs. {netPayable.toLocaleString()}
               </span>
             </div>
           </div>
         </div>
       )}
-
-      {/* 3. Fulfillment Mode */}
+      {/* 3. Primary Sale Category Selector (2 Buttons: Walk-in & Delivery) */}
       <div className="pt-2 border-t border-slate-100 space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">
-            FULFILLMENT MODE
+          <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">
+            ORDER TYPE
           </span>
-          <span className="text-[10px] font-medium text-slate-400">
-            {fulfillmentMode === 'doorstep' ? 'Assign Rider / Walking Man' : 'Store Walk-in Pickup'}
+          <span className="text-[10px] font-semibold text-slate-600">
+            {saleCategory === "walkin"
+              ? `Walk-in (${walkinCustomerType === "registered" ? "Registered / Monthly" : "First-Time / Regular"})`
+              : `Delivery (${deliverySubType === "monthly" ? "Monthly" : "On-Time"})`}
           </span>
         </div>
 
+        {/* 2 Buttons: Walk-in & Delivery */}
         <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
+          {/* Button 1: Walkin */}
           <button
             type="button"
-            onClick={() => setFulfillmentMode('counter')}
-            className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-              fulfillmentMode === 'counter'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-500 hover:text-slate-800'
+            onClick={() => setSaleCategory("walkin")}
+            className={`py-2 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+              saleCategory === "walkin"
+                ? "bg-[#00a86b] text-white shadow-xs"
+                : "text-slate-600 hover:bg-white/60 hover:text-slate-900"
             }`}
           >
-            <Store className="w-3.5 h-3.5" />
-            Counter Pickup
+            <UserCheck className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Walk-in Counter</span>
           </button>
 
+          {/* Button 2: Delivery */}
           <button
             type="button"
-            onClick={() => setFulfillmentMode('doorstep')}
-            className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-              fulfillmentMode === 'doorstep'
-                ? 'bg-[#4f46e5] text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-800'
+            onClick={() => setSaleCategory("delivery")}
+            className={`py-2 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+              saleCategory === "delivery"
+                ? "bg-[#2563eb] text-white shadow-xs"
+                : "text-slate-600 hover:bg-white/60 hover:text-slate-900"
             }`}
           >
-            <Bike className="w-3.5 h-3.5" />
-            Doorstep Delivery
+            <Truck className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Home Delivery</span>
           </button>
         </div>
+      </div>
 
-        {/* Doorstep Delivery Details (image_cd0aa6.png) */}
-        {fulfillmentMode === 'doorstep' && (
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2.5 animate-in fade-in duration-150 text-xs">
-            <span className="font-bold text-slate-700 text-[11px] block">Delivery Personnel:</span>
+      {/* 4. MODE SPECIFIC VIEWS */}
 
-            {/* Rider Dropdown (with vehicle type) */}
-            <div className="relative">
-              <select
-                value={selectedRiderId}
-                onChange={(e) => setSelectedRiderId(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-500 pr-8 appearance-none"
-              >
-                {riders.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.vehicleType === 'Motorbike' ? '🛵' : '🚲'} [Rider] {r.name} — {r.vehicleName} ({r.plateNumber}) ({r.phone})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
-            </div>
+      {/* ========================================================================= */}
+      {/* MODE 1: WALKIN COUNTER (FIRST-TIME vs REGISTERED / MONTHLY SUBSCRIBED) */}
+      {/* ========================================================================= */}
+      {saleCategory === "walkin" && (
+        <div className="space-y-2.5 animate-in fade-in duration-150">
+          {/* Sub-toggle: First-Time Walk-in vs Registered / Monthly Subscribed */}
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-emerald-50/70 rounded-xl border border-emerald-100">
+            <button
+              type="button"
+              onClick={() => setWalkinCustomerType("first_time")}
+              className={`py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                walkinCustomerType === "first_time"
+                  ? "bg-[#00a86b] text-white shadow-xs"
+                  : "text-emerald-900 hover:bg-white/60"
+              }`}
+            >
+              <User className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">First-Time / Walk-in</span>
+            </button>
 
-            {/* Custom Delivery Person Input */}
-            <input
-              type="text"
-              placeholder="Or type custom delivery person / hawker name..."
-              value={customRiderName}
-              onChange={(e) => setCustomRiderName(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
-            />
+            <button
+              type="button"
+              onClick={() => setWalkinCustomerType("registered")}
+              className={`py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                walkinCustomerType === "registered"
+                  ? "bg-[#7e22ce] text-white shadow-xs"
+                  : "text-purple-900 hover:bg-white/60"
+              }`}
+            >
+              <Users className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Monthly Subscribed</span>
+            </button>
+          </div>
 
-            {/* Selected Rider Box */}
-            {activeRider && (
-              <div className="bg-white p-2.5 rounded-xl border border-indigo-100 flex items-center justify-between shadow-2xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center text-sm font-bold">
-                    {activeRider.vehicleType === 'Motorbike' ? '🛵' : '🚲'}
+          {/* 1A: FIRST-TIME / REGULAR WALK-IN VIEW */}
+          {walkinCustomerType === "first_time" && (
+            <div className="space-y-2.5">
+              <div className="p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/90 space-y-2 text-xs">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Walk-in Customer Details (Optional)
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Customer Name (Optional)"
+                      value={walkinName}
+                      onChange={(e) => setWalkinName(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
+                    />
                   </div>
                   <div>
-                    <span className="font-bold text-slate-800 leading-tight block">
-                      {customRiderName || activeRider.name}
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      {activeRider.vehicleName} ({activeRider.plateNumber}) · {activeRider.phone}
-                    </span>
+                    <input
+                      type="text"
+                      placeholder="Phone Number (Optional)"
+                      value={walkinPhone}
+                      onChange={(e) => setWalkinPhone(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 tabular"
+                    />
                   </div>
                 </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                  {activeRider.badge}
-                </span>
               </div>
-            )}
 
-            {/* Shift & Landmark */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Payment Method (Cash vs Online for Walk-in) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase text-slate-400 tracking-wider">
+                  <span>PAYMENT METHOD</span>
+                  <span className="text-slate-600 capitalize">
+                    {paymentMethod}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("cash")}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                      paymentMethod === "cash"
+                        ? "bg-[#009966] text-white shadow-xs"
+                        : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Banknote className="w-3.5 h-3.5" />
+                    <span>Cash Payment</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("online")}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                      paymentMethod === "online"
+                        ? "bg-[#2563eb] text-white shadow-xs"
+                        : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>Online (EasyPaisa/JazzCash)</span>
+                  </button>
+                </div>
+
+                {/* Cash Tendered */}
+                {paymentMethod === "cash" && (
+                  <div className="space-y-1.5 pt-1">
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1.5 text-xs font-bold text-slate-400">
+                        Rs.
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={cashTendered}
+                        onChange={(e) => setCashTendered(e.target.value)}
+                        placeholder="0"
+                        className="w-full pl-8 pr-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500 tabular"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-1">
+                      {cashChips.map((chip) => (
+                        <button
+                          key={chip.label}
+                          type="button"
+                          onClick={() => setCashTendered(String(chip.value))}
+                          className="py-1 px-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-[10px] font-bold text-slate-700 transition cursor-pointer text-center tabular"
+                        >
+                          {chip.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {changeDue > 0 && (
+                      <div className="p-1.5 bg-emerald-50 border border-emerald-200 rounded-lg flex justify-between items-center text-xs font-bold text-emerald-800">
+                        <span>Change Due:</span>
+                        <span className="tabular">
+                          Rs. {changeDue.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Online Details */}
+                {paymentMethod === "online" && (
+                  <div className="p-2.5 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-blue-900 uppercase">
+                        Gateway
+                      </span>
+                      <select
+                        value={onlineDetails.provider}
+                        onChange={(e) =>
+                          setOnlineDetails({
+                            ...onlineDetails,
+                            provider: e.target.value,
+                          })
+                        }
+                        className="bg-white border border-blue-200 rounded px-2 py-0.5 text-xs font-bold text-blue-800"
+                      >
+                        <option value="JazzCash">JazzCash</option>
+                        <option value="EasyPaisa">EasyPaisa</option>
+                        <option value="Raast">Raast Instant</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Sender Mobile #"
+                        value={onlineDetails.senderAccount}
+                        onChange={(e) =>
+                          setOnlineDetails({
+                            ...onlineDetails,
+                            senderAccount: e.target.value,
+                          })
+                        }
+                        className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs"
+                      />
+                      <input
+                        type="text"
+                        placeholder="TRX ID #"
+                        value={onlineDetails.trxId}
+                        onChange={(e) =>
+                          setOnlineDetails({
+                            ...onlineDetails,
+                            trxId: e.target.value,
+                          })
+                        }
+                        className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 1B: REGISTERED / MONTHLY SUBSCRIBED WALK-IN VIEW */}
+          {walkinCustomerType === "registered" && (
+            <div className="space-y-3 animate-in fade-in duration-150 text-xs">
+              {/* Registered Customer Picker */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                  Delivery Slot / Shift
+                <label className="block text-[10px] font-bold text-purple-900 uppercase mb-1">
+                  Select Monthly Subscribed Customer:
                 </label>
-                <select
-                  value={deliverySlot}
-                  onChange={(e) => setDeliverySlot(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
-                >
-                  <option value=" Instant Dispatch (30 mins)"> Instant Dispatch (30 mins)</option>
-                  <option value=" Morning Shift (6:00 AM - 8:00 AM)"> Morning Shift (6:00 AM - 8:00 AM)</option>
-                  <option value=" Evening Shift (5:00 PM - 7:00 PM)"> Evening Shift (5:00 PM - 7:00 PM)</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={linkedCustomerId}
+                    onChange={(e) => setLinkedCustomerId(e.target.value)}
+                    className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500 pr-8 appearance-none"
+                  >
+                    <option value="">— Choose Customer Account —</option>
+                    {registeredCustomers.map((cust) => (
+                      <option key={cust.id} value={cust.id}>
+                        {cust.name} ({cust.phone}) — {cust.area || "Model Town"}{" "}
+                        (Khata: Rs. {(cust.khataBalance || 0).toLocaleString()})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                  Delivery Landmark / Area
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Model Town / Near Mosque"
-                  value={deliveryLandmark}
-                  onChange={(e) => setDeliveryLandmark(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-            </div>
+              {activeCustomer ? (
+                <div className="space-y-2.5">
+                  {/* Customer Info Badge */}
+                  <div className="p-2 bg-purple-50/50 rounded-lg border border-purple-100 flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-slate-800 text-xs block">
+                        {activeCustomer.name}
+                      </span>
+                      <span className="text-[10px] text-slate-500">
+                        {activeCustomer.phone} ·{" "}
+                        {activeCustomer.area || "Model Town"}
+                      </span>
+                    </div>
+                    {activeCustomer.khataBalance > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleDirectClearKhata(activeCustomer)}
+                        className="text-[10px] font-bold text-rose-600 hover:text-rose-800 bg-white border border-rose-200 rounded px-2 py-0.5 shadow-2xs transition cursor-pointer"
+                      >
+                        Clear Due
+                      </button>
+                    )}
+                  </div>
 
-            {/* Drop Address */}
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-indigo-500" />
-                Drop Address &amp; House / Gate Note:
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Street 4, House 18, Block B (Milk box on main gate)"
-                value={dropAddress}
-                onChange={(e) => setDropAddress(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
-              />
-            </div>
+                  {/* 3 Metric Highlight Cards */}
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-center">
+                      <span className="text-[9px] font-bold text-rose-700 uppercase block">
+                        Current Due
+                      </span>
+                      <div className="text-xs font-black text-rose-800 tabular mt-0.5">
+                        Rs. {currentKhataBal.toLocaleString()}
+                      </div>
+                    </div>
 
-            {/* Checkbox */}
-            <label className="flex items-center gap-2 cursor-pointer select-none text-[11px] text-slate-600 font-medium">
-              <input
-                type="checkbox"
-                checked={collectEmptyBottles}
-                onChange={(e) => setCollectEmptyBottles(e.target.checked)}
-                className="rounded text-indigo-600 focus:ring-indigo-500"
-              />
-              <span>Collect empty milk bottles / jars upon doorstep delivery</span>
-            </label>
-          </div>
-        )}
-      </div>
+                    <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                      <span className="text-[9px] font-bold text-blue-700 uppercase block">
+                        This Sale
+                      </span>
+                      <div className="text-xs font-black text-blue-800 tabular mt-0.5">
+                        Rs. {netPayable.toLocaleString()}
+                      </div>
+                    </div>
 
-      {/* 4. Payment Method */}
-      <div className="pt-2 border-t border-slate-100 space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">
-            PAYMENT METHOD
-          </span>
-          <span className="text-[10px] font-medium text-slate-400 capitalize">
-            {fulfillmentMode === 'doorstep' && paymentMethod === 'cod'
-              ? 'Doorstep Cash Collection'
-              : `Counter ${paymentLabels[paymentMethod]}`}
-          </span>
-        </div>
+                    <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-center">
+                      <span className="text-[9px] font-bold text-emerald-700 uppercase block">
+                        New Balance
+                      </span>
+                      <div className="text-xs font-black text-emerald-800 tabular mt-0.5">
+                        Rs. {projectedCustomerBalance.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
 
-        {/* 4 buttons */}
-        <div className="grid grid-cols-4 gap-1.5">
-          {/* Cash */}
-          <button
-            type="button"
-            onClick={() => setPaymentMethod('cash')}
-            className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 transition cursor-pointer ${
-              paymentMethod === 'cash'
-                ? 'bg-[#009966] text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            <Banknote className="w-3.5 h-3.5" />
-            <span>Cash</span>
-          </button>
+                  {/* Settlement Options: Khata vs Cash vs Partial */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                      Khata &amp; Payment Settlement
+                    </span>
 
-          {/* Khata Pay */}
-          <button
-            type="button"
-            onClick={() => setPaymentMethod('khata')}
-            className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 transition cursor-pointer ${
-              paymentMethod === 'khata'
-                ? 'bg-purple-600 text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            <span>Khata Pay</span>
-          </button>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <label
+                        className={`flex flex-col p-2 rounded-xl border cursor-pointer transition-all ${
+                          khataPaymentOption === "khata"
+                            ? "border-purple-500 bg-purple-50/60 text-purple-900 font-bold"
+                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="radio"
+                            name="khataPaymentOption"
+                            value="khata"
+                            checked={khataPaymentOption === "khata"}
+                            onChange={() => setKhataPaymentOption("khata")}
+                            className="text-purple-600 focus:ring-purple-500"
+                          />
+                          <span className="text-xs">Charge Khata</span>
+                        </div>
+                        <span className="text-[9px] text-slate-400 font-normal mt-0.5">
+                          Full on ledger
+                        </span>
+                      </label>
 
-          {/* Online Payment */}
-          <button
-            type="button"
-            onClick={() => setPaymentMethod('online')}
-            className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 transition cursor-pointer ${
-              paymentMethod === 'online'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            <Smartphone className="w-3.5 h-3.5" />
-            <span>Online</span>
-          </button>
+                      <label
+                        className={`flex flex-col p-2 rounded-xl border cursor-pointer transition-all ${
+                          khataPaymentOption === "cash"
+                            ? "border-emerald-500 bg-emerald-50/60 text-emerald-900 font-bold"
+                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="radio"
+                            name="khataPaymentOption"
+                            value="cash"
+                            checked={khataPaymentOption === "cash"}
+                            onChange={() => setKhataPaymentOption("cash")}
+                            className="text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="text-xs">Paid in Cash</span>
+                        </div>
+                        <span className="text-[9px] text-slate-400 font-normal mt-0.5">
+                          Immediate full pay
+                        </span>
+                      </label>
 
-          {/* COD */}
-          <button
-            type="button"
-            onClick={() => setPaymentMethod('cod')}
-            className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 transition cursor-pointer ${
-              paymentMethod === 'cod'
-                ? 'bg-[#4f46e5] text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            <Truck className="w-3.5 h-3.5" />
-            <span>COD</span>
-          </button>
-        </div>
+                      <label
+                        className={`flex flex-col p-2 rounded-xl border cursor-pointer transition-all ${
+                          khataPaymentOption === "partial"
+                            ? "border-amber-500 bg-amber-50/60 text-amber-900 font-bold"
+                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="radio"
+                            name="khataPaymentOption"
+                            value="partial"
+                            checked={khataPaymentOption === "partial"}
+                            onChange={() => setKhataPaymentOption("partial")}
+                            className="text-amber-600 focus:ring-amber-500"
+                          />
+                          <span className="text-xs">Partial Pay</span>
+                        </div>
+                        <span className="text-[9px] text-slate-400 font-normal mt-0.5">
+                          Part cash, part khata
+                        </span>
+                      </label>
+                    </div>
 
-        {/* 4.A Cash Tendered Fields */}
-        {paymentMethod === 'cash' && (
-          <div className="space-y-2 pt-1">
-            <label className="block text-[10px] font-bold text-slate-500 uppercase">
-              CASH TENDERED / AMOUNT RECEIVED
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-xs font-bold text-slate-400">Rs.</span>
-              <input
-                type="number"
-                min="0"
-                value={cashTendered}
-                onChange={(e) => setCashTendered(e.target.value)}
-                placeholder="0"
-                className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 tabular"
-              />
-            </div>
+                    {/* Partial Amount Input */}
+                    {khataPaymentOption === "partial" && (
+                      <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
+                        <label className="block text-[10px] font-bold text-amber-900 uppercase">
+                          Cash Paid Now (Rs.):
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max={netPayable}
+                          value={partialPaidAmount}
+                          onChange={(e) => setPartialPaidAmount(e.target.value)}
+                          placeholder="e.g. 500"
+                          className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 tabular"
+                        />
+                      </div>
+                    )}
 
-            {/* Denomination Chips */}
-            <div className="grid grid-cols-5 gap-1 pt-0.5">
-              {cashChips.map((chip) => (
-                <button
-                  key={chip.label}
-                  type="button"
-                  onClick={() => setCashTendered(String(chip.value))}
-                  className="py-1 px-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 transition cursor-pointer text-center"
-                >
-                  {chip.label}
-                </button>
-              ))}
-            </div>
+                    {/* Paid in Cash Quick Tender */}
+                    {khataPaymentOption === "cash" && (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1.5 text-xs font-bold text-slate-400">
+                            Rs.
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={cashTendered}
+                            onChange={(e) => setCashTendered(e.target.value)}
+                            placeholder="0"
+                            className="w-full pl-8 pr-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500 tabular"
+                          />
+                        </div>
 
-            {changeDue > 0 && (
-              <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-xl flex justify-between items-center text-xs font-bold text-emerald-800">
-                <span>Change to Return:</span>
-                <span className="tabular text-sm">Rs. {changeDue.toLocaleString()}</span>
-              </div>
-            )}
-          </div>
-        )}
+                        <div className="grid grid-cols-5 gap-1">
+                          {cashChips.map((chip) => (
+                            <button
+                              key={chip.label}
+                              type="button"
+                              onClick={() =>
+                                setCashTendered(String(chip.value))
+                              }
+                              className="py-1 px-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-[10px] font-bold text-slate-700 transition cursor-pointer text-center tabular"
+                            >
+                              {chip.label}
+                            </button>
+                          ))}
+                        </div>
 
-        {/* 4.B Online Payment Fields */}
-        {paymentMethod === 'online' && (
-          <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase text-blue-900 tracking-wider">
-                Online Payment Verification
-              </span>
-              <select
-                value={onlineDetails.provider}
-                onChange={(e) =>
-                  setOnlineDetails({ ...onlineDetails, provider: e.target.value })
-                }
-                className="bg-white border border-blue-200 rounded-lg px-2 py-0.5 text-[11px] font-bold text-blue-800"
-              >
-                <option value="JazzCash">JazzCash</option>
-                <option value="EasyPaisa">EasyPaisa</option>
-                <option value="Raast">Raast Instant</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-              </select>
-            </div>
+                        {changeDue > 0 && (
+                          <div className="p-1.5 bg-emerald-50 border border-emerald-200 rounded-lg flex justify-between items-center text-xs font-bold text-emerald-800">
+                            <span>Change Due:</span>
+                            <span className="tabular">
+                              Rs. {changeDue.toLocaleString()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                  Sender Phone / Account *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 0300-1234567"
-                  value={onlineDetails.senderAccount}
-                  onChange={(e) =>
-                    setOnlineDetails({ ...onlineDetails, senderAccount: e.target.value })
-                  }
-                  className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                  TRX ID / Reference # *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. TRX-992140"
-                  value={onlineDetails.trxId}
-                  onChange={(e) =>
-                    setOnlineDetails({ ...onlineDetails, trxId: e.target.value })
-                  }
-                  className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 4.C Khata Pay Details */}
-        {paymentMethod === 'khata' && (
-          <div className="p-3 bg-purple-50/70 rounded-xl border border-purple-100 space-y-2 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-purple-900 text-xs">Khata / Credit Account</span>
-              {activeCustomer && (
-                <button
-                  type="button"
-                  onClick={() => handleDirectClearKhata(activeCustomer)}
-                  className="text-[11px] font-bold text-purple-700 hover:text-purple-900 underline cursor-pointer"
-                >
-                  Finish &amp; Clear Khata
-                </button>
+                    {/* Notes */}
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Order Memo / Subscription Note (Optional)..."
+                        value={orderNotes}
+                        onChange={(e) => setOrderNotes(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-purple-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-purple-50/80 border border-purple-200 rounded-xl flex items-center gap-2 text-purple-900 text-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-purple-600" />
+                  <span>
+                    Please select a registered customer above to link their
+                    account and apply Khata/subscription rules.
+                  </span>
+                </div>
               )}
             </div>
-
-            {activeCustomer ? (
-              <div className="space-y-1 text-slate-700">
-                <div className="flex justify-between">
-                  <span>Current Outstanding Khata:</span>
-                  <span className="font-bold text-slate-900 tabular">
-                    Rs. {(activeCustomer.khataBalance || 0).toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between text-purple-800 font-bold border-t border-purple-200/60 pt-1">
-                  <span>New Khata Balance after this sale:</span>
-                  <span className="tabular">
-                    Rs. {((activeCustomer.khataBalance || 0) + netPayable).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200 text-[11px]">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>Please select a registered customer below to record this sale on their Khata.</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 4.D COD Banner */}
-        {paymentMethod === 'cod' && (
-          <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 space-y-1 text-xs">
-            <div className="flex items-center gap-1.5 text-indigo-900 font-bold">
-              <Truck className="w-4 h-4 text-indigo-600" />
-              <span>Doorstep Cash on Delivery (COD)</span>
-            </div>
-            <p className="text-[11px] text-slate-600">
-              The assigned Delivery Rider (<strong>{customRiderName || activeRider.name}</strong>) will collect{' '}
-              <strong className="text-slate-900">Rs. {netPayable.toLocaleString()}</strong> in cash directly from the customer at their doorstep.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* 5. Customer Account Link */}
-      <div className="pt-2 border-t border-slate-100 space-y-1.5">
-        <label className="block text-[10px] font-bold text-slate-500 uppercase">
-          {paymentMethod === 'cod'
-            ? 'Select or Link Registered Customer (Optional for COD):'
-            : 'Customer Account Link (Optional for History / Loyalty):'}
-        </label>
-        <div className="relative">
-          <select
-            value={linkedCustomerId}
-            onChange={(e) => setLinkedCustomerId(e.target.value)}
-            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-purple-500 pr-8 appearance-none"
-          >
-            <option value="">
-              {fulfillmentMode === 'doorstep'
-                ? '— Walk-in / Quick Doorstep Buyer —'
-                : '— Walk-in Customer (Unlinked) —'}
-            </option>
-            {registeredCustomers.map((cust) => (
-              <option key={cust.id} value={cust.id}>
-                {cust.name} ({cust.phone}) — {cust.area || 'Model Town'} (Khata: Rs. {(cust.khataBalance || 0).toLocaleString()})
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
+          )}
         </div>
+      )}
 
-        {activeCustomer && (
-          <div className="flex items-center justify-between px-2.5 py-1.5 bg-slate-50 rounded-lg border border-slate-200 text-[11px]">
-            <span className="text-slate-600">
-              Linked: <strong className="text-slate-800">{activeCustomer.name}</strong>
+      {/* ========================================================================= */}
+      {/* MODE 2: DELIVERY (ON-TIME vs MONTHLY) */}
+      {/* ========================================================================= */}
+      {saleCategory === "delivery" && (
+        <div className="space-y-2.5 animate-in fade-in duration-150">
+          {/* Sub-toggle: On-Time vs Monthly */}
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-blue-50/80 rounded-xl border border-blue-100">
+            <button
+              type="button"
+              onClick={() => setDeliverySubType("ontime")}
+              className={`py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                deliverySubType === "ontime"
+                  ? "bg-blue-600 text-white shadow-xs"
+                  : "text-blue-900 hover:bg-white/60"
+              }`}
+            >
+              <span>⚡ On-Time Delivery</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDeliverySubType("monthly")}
+              className={`py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                deliverySubType === "monthly"
+                  ? "bg-blue-600 text-white shadow-xs"
+                  : "text-blue-900 hover:bg-white/60"
+              }`}
+            >
+              <span>📅 Monthly Delivery</span>
+            </button>
+          </div>
+
+          {/* 2A: On-Time Delivery Details */}
+          {deliverySubType === "ontime" && (
+            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  Delivery Rider / Boy (Optional):
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="relative">
+                    <select
+                      value={selectedRiderId}
+                      onChange={(e) => setSelectedRiderId(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 pr-7 appearance-none"
+                    >
+                      <option value="">— No Rider (Optional) —</option>
+                      {riders.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.vehicleType === "Motorbike" ? "🛵" : "🚲"} {r.name}{" "}
+                          ({r.phone})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-2.5 pointer-events-none" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Or custom rider name (optional)..."
+                    value={customRiderName}
+                    onChange={(e) => setCustomRiderName(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-blue-600" />
+                  Drop Address &amp; Customer Note:
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. House 14-B, Street 3 (Near Main Park)"
+                  value={dropAddress}
+                  onChange={(e) => setDropAddress(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* 2B: Monthly Delivery Details (Select Registered Customer) */}
+          {deliverySubType === "monthly" && (
+            <div className="p-2.5 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-2 text-xs">
+              <div>
+                <label className="block text-[10px] font-bold text-blue-900 uppercase mb-1">
+                  Select Registered Monthly Customer:
+                </label>
+                <div className="relative">
+                  <select
+                    value={linkedCustomerId}
+                    onChange={(e) => setLinkedCustomerId(e.target.value)}
+                    className="w-full bg-white border border-blue-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 pr-7 appearance-none"
+                  >
+                    <option value="">— Choose Registered Customer —</option>
+                    {registeredCustomers.map((cust) => (
+                      <option key={cust.id} value={cust.id}>
+                        {cust.name} ({cust.phone}) — {cust.area || "Model Town"}{" "}
+                        [Khata: Rs. {(cust.khataBalance || 0).toLocaleString()}]
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-2.5 pointer-events-none" />
+                </div>
+              </div>
+
+              {activeCustomer && (
+                <div className="p-2 bg-white rounded-lg border border-blue-100 space-y-1">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                    <span>{activeCustomer.name}</span>
+                    <span className="text-amber-600 tabular text-[11px]">
+                      Khata Due: Rs.{" "}
+                      {(activeCustomer.khataBalance || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-500">
+                    <span>
+                      {activeCustomer.phone} ·{" "}
+                      {activeCustomer.area || "Model Town"}
+                    </span>
+                    {activeCustomer.shift && (
+                      <span> · Shift: {activeCustomer.shift}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  Assigned Rider (Optional):
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedRiderId}
+                    onChange={(e) => setSelectedRiderId(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 pr-7 appearance-none"
+                  >
+                    <option value="">— No Rider (Optional) —</option>
+                    {riders.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.vehicleType === "Motorbike" ? "🛵" : "🚲"} {r.name} (
+                        {r.phone})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-2.5 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delivery Payment Methods */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">
+              DELIVERY PAYMENT METHOD
             </span>
-            <div className="flex items-center gap-2">
-              <span className="text-amber-600 font-semibold tabular">
-                Khata: Rs. {(activeCustomer.khataBalance || 0).toLocaleString()}
-              </span>
+            <div className="grid grid-cols-4 gap-1">
               <button
                 type="button"
-                onClick={() => handleDirectClearKhata(activeCustomer)}
-                className="text-[10px] font-bold text-purple-600 hover:text-purple-800 underline cursor-pointer"
+                onClick={() => setPaymentMethod("cod")}
+                className={`py-1.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
+                  paymentMethod === "cod"
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                }`}
               >
-                Finish Khata
+                <Truck className="w-3.5 h-3.5 mb-0.5" />
+                <span>COD</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("cash")}
+                className={`py-1.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
+                  paymentMethod === "cash"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                <Banknote className="w-3.5 h-3.5 mb-0.5" />
+                <span>Cash</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("online")}
+                className={`py-1.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
+                  paymentMethod === "online"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5 mb-0.5" />
+                <span>Online</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("khata")}
+                className={`py-1.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
+                  paymentMethod === "khata"
+                    ? "bg-purple-600 text-white shadow-xs"
+                    : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                <CreditCard className="w-3.5 h-3.5 mb-0.5" />
+                <span>Khata</span>
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* 6. Complete Sale Action Button */}
+      {/* 5. Complete Sale Action Button */}
       <div className="pt-2">
         {cart.length === 0 ? (
           <button
             type="button"
             disabled
-            className="w-full py-3 rounded-xl bg-slate-100 text-slate-400 font-semibold text-xs flex items-center justify-center gap-2 cursor-not-allowed border border-slate-200"
+            className="w-full py-2.5 rounded-xl bg-slate-100 text-slate-400 font-bold text-xs flex items-center justify-center gap-2 cursor-not-allowed border border-slate-200"
           >
             <CheckCircle2 className="w-4 h-4" />
             Add products to cart
@@ -818,10 +1159,16 @@ export default function POSSale() {
           <button
             type="button"
             onClick={handleCompleteSale}
-            className="w-full py-3 rounded-xl bg-[#4f46e5] hover:bg-[#4338ca] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+            className={`w-full py-2.5 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer ${
+              saleCategory === "walkin"
+                ? walkinCustomerType === "registered"
+                  ? "bg-[#7e22ce] hover:bg-[#6b21a8]"
+                  : "bg-[#00a86b] hover:bg-[#008f5b]"
+                : "bg-[#2563eb] hover:bg-[#1d4ed8]"
+            }`}
           >
             <CheckCircle2 className="w-4 h-4" />
-            Complete Sale - Rs. {netPayable.toLocaleString()} ({paymentLabels[paymentMethod]})
+            Complete Sale &bull; Rs. {netPayable.toLocaleString()}
           </button>
         )}
       </div>

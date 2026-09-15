@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useCustomerContext } from '../../../context/CustomerContext';
 import { useLedgerContext } from '../../../context/LedgerContext';
 import LedgerHeader from '../components/CustomerKhataLedger/LedgerHeader';
 import LedgerCustomerSelector from '../components/CustomerKhataLedger/LedgerCustomerSelector';
+import LedgerCustomerProfileCard from '../components/CustomerKhataLedger/LedgerCustomerProfileCard';
 import LedgerStatsCards from '../components/CustomerKhataLedger/LedgerStatsCards';
 import LedgerTable from '../components/CustomerKhataLedger/LedgerTable';
 import BuyProductView from '../components/CustomerKhataLedger/BuyProductView';
@@ -11,12 +13,15 @@ import RecordPaymentView from '../components/CustomerKhataLedger/RecordPaymentVi
 import ViewTransactionView from '../components/CustomerKhataLedger/ViewTransactionView';
 import HowToFinishView from '../components/CustomerKhataLedger/HowToFinishView';
 import CustomerDetailsView from '../components/Customer_&_Accounts/CustomerDetailsView';
+import EditCustomerModal from '../components/Customer_&_Accounts/EditCustomerModal';
 
 export default function CustomerKhataLedger() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { customers } = useCustomerContext();
   const { getLedgerForCustomer, settleKhata } = useLedgerContext();
 
-  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const urlCustomerId = searchParams.get('customerId');
+  const [selectedCustomerId, setSelectedCustomerId] = useState(urlCustomerId || '');
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -24,13 +29,21 @@ export default function CustomerKhataLedger() {
 
   const [currentSubView, setCurrentSubView] = useState('ledger'); // 'ledger' | 'buy' | 'addDebit' | 'recordPayment' | 'viewTransaction' | 'viewCustomer' | 'howToFinish'
   const [viewTransaction, setViewTransaction] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Auto-select first customer if none is selected
+  // Sync selected customer from URL or fallback to first customer
   useEffect(() => {
-    if ((!selectedCustomerId || !customers.some((c) => String(c.id) === String(selectedCustomerId))) && customers.length > 0) {
+    if (urlCustomerId && customers.some((c) => String(c.id) === String(urlCustomerId))) {
+      setSelectedCustomerId(String(urlCustomerId));
+    } else if ((!selectedCustomerId || !customers.some((c) => String(c.id) === String(selectedCustomerId))) && customers.length > 0) {
       setSelectedCustomerId(String(customers[0].id));
     }
-  }, [customers, selectedCustomerId]);
+  }, [customers, urlCustomerId]);
+
+  const handleSelectCustomer = (id) => {
+    setSelectedCustomerId(id);
+    setSearchParams({ customerId: id });
+  };
 
   const currentCustomer = customers.find((c) => String(c.id) === String(selectedCustomerId)) || null;
 
@@ -114,7 +127,7 @@ export default function CustomerKhataLedger() {
       {/* Customer Selector & Quick Action Buttons */}
       <LedgerCustomerSelector
         selectedCustomerId={selectedCustomerId}
-        onSelectCustomer={(id) => setSelectedCustomerId(id)}
+        onSelectCustomer={handleSelectCustomer}
         selectedMonth={selectedMonth}
         onChangeMonth={(m) => setSelectedMonth(m)}
         onViewCustomerDetails={() => setCurrentSubView('viewCustomer')}
@@ -123,6 +136,14 @@ export default function CustomerKhataLedger() {
         onOpenRecordPayment={() => setCurrentSubView('recordPayment')}
         onSettleKhata={handleSettleKhata}
       />
+
+      {/* Complete Customer Profile & Standing Card */}
+      {currentCustomer && (
+        <LedgerCustomerProfileCard
+          customer={currentCustomer}
+          onEdit={() => setIsEditModalOpen(true)}
+        />
+      )}
 
       {/* 4 Summary Stats Cards */}
       <LedgerStatsCards
@@ -148,6 +169,15 @@ export default function CustomerKhataLedger() {
           setCurrentSubView('viewTransaction');
         }}
       />
+
+      {/* Edit Customer Modal */}
+      {currentCustomer && (
+        <EditCustomerModal
+          customer={currentCustomer}
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

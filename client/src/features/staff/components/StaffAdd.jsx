@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useStaffContext } from '../context/StaffContext';
 
-export const ROLE_OPTIONS = [
+const ROLE_OPTIONS = [
   'Delivery Man / Milk Rider',
   'Security Guard',
   'Farm Work Man',
@@ -25,7 +25,7 @@ export const ROLE_OPTIONS = [
   'Owner',
 ];
 
-export const SHIFT_OPTIONS = [
+const SHIFT_OPTIONS = [
   'Morning',
   'Evening',
   'Both',
