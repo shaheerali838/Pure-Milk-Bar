@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Beef, Activity, Droplets, Users } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
-import { useStaffContext } from "../../../../context/StaffContext";
+import { useStaffContext } from "@/context/StaffContext";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 

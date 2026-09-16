@@ -1,6 +1,6 @@
 import React from 'react';
 import { Users, Banknote, Bike, Tractor, ShieldCheck } from 'lucide-react';
-import { useStaffContext } from '../context/StaffContext';
+import { useStaffContext } from '@/context/StaffContext';
 
 export default function StaffCardOverflow() {
   const { metrics } = useStaffContext();
