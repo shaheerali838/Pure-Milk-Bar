@@ -74,10 +74,6 @@ export default function TodayProfitBreakdown({
                             ? '🥛'
                             : item.category === 'Dahi'
                             ? '🥣'
-                            : item.category === 'Ghee'
-                            ? '🧈'
-                            : item.category === 'Butter'
-                            ? '🧈'
                             : '🧃'}
                         </span>
                         <span>{item.name}</span>

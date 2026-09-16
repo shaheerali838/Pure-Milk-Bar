@@ -79,8 +79,6 @@ export const getDailyClosingSummary = async (options = {}) => {
     productBreakdown: [
       { id: 'prod-milk', name: 'Fresh Buffalo Milk', category: 'Milk', unitsSold: null, unit: 'Liters', revenue: null, estimatedCost: null, profit: null },
       { id: 'prod-dahi', name: 'Fresh Farm Dahi', category: 'Dahi', unitsSold: null, unit: 'KG', revenue: null, estimatedCost: null, profit: null },
-      { id: 'prod-ghee', name: 'Pure Desi Ghee', category: 'Ghee', unitsSold: null, unit: 'KG', revenue: null, estimatedCost: null, profit: null },
-      { id: 'prod-butter', name: 'Farm Fresh Makhan (Butter)', category: 'Butter', unitsSold: null, unit: 'KG', revenue: null, estimatedCost: null, profit: null },
       { id: 'prod-lassi', name: 'Sweet / Salty Lassi', category: 'Lassi', unitsSold: null, unit: 'Bottles', revenue: null, estimatedCost: null, profit: null },
     ],
   };
