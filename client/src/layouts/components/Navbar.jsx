@@ -5,17 +5,17 @@ import { Button } from '@/components/ui/button';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
+import ExportCSVModal from '@/components/common/ExportCSVModal';
 
 export default function Navbar() {
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
-  // Access contexts for real data breadcrumb resolution
   const { animals = [] } = useAnimalContext() || {};
   const { deliveries = [] } = useDeliveryContext() || {};
   const { staffList = [] } = useDeliveryStaffContext() || {};
 
-  // Build dynamic, clickable breadcrumbs with actual entity data
   const getBreadcrumbs = (pathname, search) => {
     const searchParams = new URLSearchParams(search);
     const tabParam = searchParams.get('tab');
@@ -30,7 +30,6 @@ export default function Navbar() {
       },
     ];
 
-    // 1. Deliveries Route (/delivery)
     if (pathname.startsWith('/delivery')) {
       crumbs.push({
         label: 'Doorstep Deliveries',
@@ -81,7 +80,6 @@ export default function Navbar() {
       return crumbs;
     }
 
-    // 2. Farm Routes (/farm/...)
     if (pathname.startsWith('/farm')) {
       crumbs.push({
         label: 'Farm Operations',
@@ -127,7 +125,6 @@ export default function Navbar() {
       return crumbs;
     }
 
-    // 3. Customer & Khata Routes
     if (pathname.startsWith('/customer-khata-ledger')) {
       crumbs.push({ label: 'Customer Management', to: '/customer' });
       crumbs.push({ label: 'Customer Khata Ledger', to: '/customer-khata-ledger' });
@@ -140,7 +137,6 @@ export default function Navbar() {
       return crumbs;
     }
 
-    // 4. Finance Routes
     if (pathname.startsWith('/finance/delivery')) {
       crumbs.push({ label: 'Finance & Accounts', to: '/finance/customer' });
       crumbs.push({ label: 'Rider & Delivery Finance', to: '/finance/delivery' });
@@ -153,57 +149,62 @@ export default function Navbar() {
       return crumbs;
     }
 
-    // 5. Supplier Sourcing
+    if (pathname.startsWith('/finance/daily-closing')) {
+      crumbs.push({ label: 'Finance & Accounts', to: '/finance/daily-closing' });
+      crumbs.push({ label: 'Daily Closing & Audit', to: '/finance/daily-closing' });
+      return crumbs;
+    }
+
+    if (pathname.startsWith('/finance/staff') || pathname.startsWith('/staff')) {
+      crumbs.push({ label: 'Staff Management', to: '/staff' });
+      crumbs.push({ label: 'Staff Directory & Payroll', to: '/staff' });
+      return crumbs;
+    }
+
     if (pathname.startsWith('/supplier')) {
       crumbs.push({ label: 'Supplier Sourcing', to: '/supplier' });
       crumbs.push({ label: 'Milk Suppliers', to: '/supplier' });
       return crumbs;
     }
 
-    // 6. Processing / Inventory
     if (pathname.startsWith('/proccessing')) {
       crumbs.push({ label: 'Processing & Batching', to: '/proccessing' });
       crumbs.push({ label: 'Dahi & Milk Processing', to: '/proccessing' });
       return crumbs;
     }
 
-    // 7. Counter POS
     if (pathname.startsWith('/pos')) {
       crumbs.push({ label: 'Sales & Billing', to: '/pos' });
       crumbs.push({ label: 'Counter Point of Sale', to: '/pos' });
       return crumbs;
     }
 
-    // 8. Products Catalog
     if (pathname.startsWith('/products')) {
       crumbs.push({ label: 'Product Inventory', to: '/products' });
       crumbs.push({ label: 'Dairy Catalog', to: '/products' });
       return crumbs;
     }
 
-    // Default Dashboard
     crumbs.push({ label: 'Dashboard Overview', to: '/dashboard' });
     return crumbs;
   };
 
-  const breadcrumbs = getBreadcrumbs(location.pathname, location.search);
-  const activeCrumb = breadcrumbs[breadcrumbs.length - 1];
-
-  const handleExportCSV = () => {
-    const csvContent =
-      'data:text/csv;charset=utf-8,ID,Item,Category,Metric,Date\n1,Milk Collection,Dairy,3840L,' +
-      new Date().toLocaleDateString();
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute(
-      'download',
-      `${activeCrumb.label.toLowerCase().replace(/\s+/g, '_')}_export.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const getDefaultModule = (pathname) => {
+    if (pathname.includes('/farm/animals') || pathname.includes('/farm/milking')) return 'animals';
+    if (pathname.includes('/farm/expenses')) return 'expenses';
+    if (pathname.startsWith('/farm')) return 'daily_closing';
+    if (pathname.startsWith('/pos')) return 'pos_sales';
+    if (pathname.startsWith('/delivery')) return 'deliveries';
+    if (pathname.startsWith('/customer-khata-ledger') || pathname.startsWith('/finance/customer')) return 'khata_ledger';
+    if (pathname.startsWith('/customer')) return 'customers';
+    if (pathname.startsWith('/products') || pathname.startsWith('/proccessing')) return 'products';
+    if (pathname.startsWith('/staff') || pathname.startsWith('/finance/staff')) return 'users';
+    if (pathname.startsWith('/supplier')) return 'suppliers';
+    if (pathname.startsWith('/finance/daily-closing')) return 'daily_closing';
+    return 'all';
   };
+
+  const breadcrumbs = getBreadcrumbs(location.pathname, location.search);
 
   return (
     <header className="bg-white border-b border-slate-200/80 px-3.5 py-1.5 flex items-center justify-between gap-3 shadow-2xs sticky top-0 z-20 no-print">
@@ -252,9 +253,9 @@ export default function Navbar() {
         <Button
           type="button"
           size="sm"
-          onClick={handleExportCSV}
+          onClick={() => setIsExportModalOpen(true)}
           className="h-7 px-2.5 text-xs font-semibold shadow-2xs cursor-pointer"
-          title="Export CSV"
+          title="Export CSV Data & Custom Filter"
         >
           <Download className="w-3.5 h-3.5" />
           <span>Export</span>
@@ -297,6 +298,12 @@ export default function Navbar() {
           <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
         </Button>
       </div>
+
+      <ExportCSVModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        defaultModule={getDefaultModule(location.pathname)}
+      />
     </header>
   );
 }
