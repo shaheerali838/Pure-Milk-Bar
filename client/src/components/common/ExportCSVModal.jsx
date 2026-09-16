@@ -4,7 +4,6 @@ import {
   Calendar,
   Filter,
   FileSpreadsheet,
-  Check,
   CheckCircle2,
   Layers,
   Sparkles,
@@ -25,15 +24,6 @@ import {
   History,
   X,
 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useExpense } from '@/context/ExpenseContext';
 import { useCustomerContext } from '@/context/CustomerContext';
@@ -50,98 +40,98 @@ const MODULES_LIST = [
     id: 'all',
     name: 'All Modules (Complete Bundle)',
     category: 'Master Export',
-    icon: Sparkles,
-    desc: 'Master combined export containing data from all modules in structured multi-table CSV',
+    icon: '✨',
+    desc: 'Master combined export containing data from all modules in multi-table CSV',
   },
   {
     id: 'daily_closing',
     name: 'Daily Closing & P&L',
     category: 'Finance',
-    icon: Coins,
+    icon: '📊',
     desc: 'Cash, Online Payment, Khata revenue, expenses & daily profit margins',
   },
   {
     id: 'pos_sales',
     name: 'POS Sales & Invoices',
     category: 'Sales',
-    icon: ShoppingCart,
+    icon: '🛒',
     desc: 'Counter sales, retail receipts, itemized invoices and billing history',
   },
   {
     id: 'deliveries',
     name: 'Milk Deliveries & Subscriptions',
     category: 'Sales',
-    icon: Truck,
+    icon: '🚚',
     desc: 'Doorstep subscriptions, rider dispatches, drop locations & bottle tracking',
   },
   {
     id: 'procurement',
     name: 'Milk Procurement & Suppliers',
     category: 'Procurement',
-    icon: Milk,
+    icon: '🥛',
     desc: 'External supplier milk batches, purchases, rates & payment statuses',
   },
   {
     id: 'khata_ledger',
     name: 'Customer Khata Ledgers',
     category: 'Finance',
-    icon: Wallet,
+    icon: '📒',
     desc: 'Detailed debit/credit entries, running balances & aging history',
   },
   {
     id: 'expenses',
     name: 'Expenses & Feed Allocation',
     category: 'Expenses',
-    icon: Coins,
+    icon: '💸',
     desc: 'Shop overheads, generator fuel, fodder/chara & vet medicine expenses',
   },
   {
     id: 'payments',
     name: 'Customer Payments & Receipts',
     category: 'Finance',
-    icon: FileText,
+    icon: '💳',
     desc: 'Cash, Online Payment collection records & verification',
   },
   {
     id: 'animals',
     name: 'Herd Animals & Milk Yield',
     category: 'Farm',
-    icon: Tractor,
+    icon: '🐄',
     desc: 'Cattle tags, morning/evening milking yield logs & health status',
   },
   {
     id: 'customers',
     name: 'Customer Directory',
     category: 'Directory',
-    icon: Users,
+    icon: '👥',
     desc: 'Customer addresses, credit limits, phone numbers & delivery schedules',
   },
   {
     id: 'suppliers',
     name: 'Dairy Suppliers Registry',
     category: 'Directory',
-    icon: Milk,
+    icon: '🤝',
     desc: 'Farmer contacts, rates per liter/kg, total supply volume & balances',
   },
   {
     id: 'products',
     name: 'Products Catalog & Rates',
     category: 'Catalog',
-    icon: Package,
+    icon: '🏷️',
     desc: 'Cow milk, Buffalo milk, Dahi, Lassi pricing and active products',
   },
   {
     id: 'users',
     name: 'Staff & Payroll Roster',
     category: 'System',
-    icon: UserCheck,
+    icon: '🧑‍💼',
     desc: 'Riders, cashiers, labor list, monthly salaries & shift assignments',
   },
   {
     id: 'audit_log',
     name: 'System Audit Trail Log',
     category: 'System',
-    icon: History,
+    icon: '🛡️',
     desc: 'User activity history, price modifications & system event audit',
   },
 ];
@@ -150,9 +140,10 @@ export default function ExportCSVModal({
   isOpen,
   onClose,
   defaultModule = 'all',
+  defaultPeriod = 'all',
 }) {
   const [selectedModule, setSelectedModule] = useState(defaultModule);
-  const [period, setPeriod] = useState('all');
+  const [period, setPeriod] = useState(defaultPeriod);
   const [singleDate, setSingleDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
@@ -174,7 +165,19 @@ export default function ExportCSVModal({
 
   useEffect(() => {
     if (defaultModule) setSelectedModule(defaultModule);
-  }, [defaultModule, isOpen]);
+    if (defaultPeriod) setPeriod(defaultPeriod);
+  }, [defaultModule, defaultPeriod, isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   const isDateInRange = (dateStr) => {
     if (period === 'all') return true;
@@ -379,77 +382,106 @@ export default function ExportCSVModal({
     }, 900);
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-6 bg-white rounded-2xl border border-slate-200">
-        <DialogHeader className="text-left space-y-1">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold border border-emerald-100">
-              <FileSpreadsheet className="w-4 h-4" />
-            </div>
-            <div>
-              <DialogTitle className="text-lg font-bold text-slate-900">
-                Export CSV Data & Custom Date Filter
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500">
-                Generate structured CSV exports for external reporting, accounting audits, and Excel analysis.
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+  if (!isOpen) return null;
 
-        <div className="space-y-5 py-2">
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-150"
+      onClick={onClose}
+    >
+      <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs transition-opacity" />
+
+      <div
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col my-auto border border-slate-200 z-10 animate-in zoom-in-95 duration-150"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100 gap-4 shrink-0 bg-slate-50/80 rounded-t-2xl">
+          <div>
+            <h2 className="text-base font-bold text-slate-900 leading-snug">
+              Export CSV Data & Custom Date Filter
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5 font-normal">
+              Generate structured CSV exports for external reporting, accounting audits, and Excel analysis.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 cursor-pointer shrink-0 transition-colors"
+            title="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-5 overscroll-contain space-y-5">
           {toastMessage && (
             <div className="p-3 bg-emerald-50 text-emerald-800 text-xs font-semibold rounded-xl border border-emerald-200 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>{toastMessage}</span>
             </div>
           )}
 
-          {/* Section 1: Module Selector Grid */}
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 uppercase tracking-wide">
-                <Layers className="w-4 h-4 text-emerald-600" />
-                <span>1. Select Module to Export</span>
+          <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-slate-900 text-white rounded-2xl p-4.5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 border border-emerald-700/40">
+            <div className="flex items-center gap-3">
+              <div className="w-10.5 h-10.5 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0">
+                <FileSpreadsheet className="text-emerald-300 w-5 h-5" />
               </div>
-              <span className="text-[11px] text-slate-400 font-medium">
-                {MODULES_LIST.length} Exportable Data Modules Available
-              </span>
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  Export System Data to CSV / Excel
+                  <span className="bg-emerald-500/30 text-emerald-200 border border-emerald-400/40 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                    UTF-8 Enabled
+                  </span>
+                </h3>
+                <p className="text-xs text-emerald-200/90 mt-0.5 font-sans">
+                  Generate clean, compatible CSV files for Microsoft Excel, Google Sheets, or Tally with custom date range filtering.
+                </p>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={handleExport}
+              className="shrink-0 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Download size={14} />
+              Export Now
+            </button>
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1">
+          <div>
+            <label className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Layers size={14} className="text-emerald-600" />
+              1. Select Module to Export:
+            </label>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto pr-1 p-1 bg-slate-50 border border-slate-200/90 rounded-2xl">
               {MODULES_LIST.map((mod) => {
-                const Icon = mod.icon;
                 const isSelected = selectedModule === mod.id;
                 return (
                   <button
                     key={mod.id}
                     type="button"
                     onClick={() => setSelectedModule(mod.id)}
-                    className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer flex items-start gap-2.5 ${
+                    className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer relative flex flex-col justify-between ${
                       isSelected
-                        ? 'bg-emerald-50/80 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
-                        : 'bg-white border-slate-200/80 hover:bg-slate-50 hover:border-slate-300'
+                        ? 'bg-emerald-600 text-white border-emerald-700 shadow-md ring-2 ring-emerald-300'
+                        : 'bg-white text-slate-800 border-slate-200/90 hover:border-slate-300 hover:bg-slate-100/80 shadow-2xs'
                     }`}
                   >
-                    <div
-                      className={`p-2 rounded-lg shrink-0 mt-0.5 ${
-                        isSelected ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
+                    <div className="flex items-start justify-between gap-1 mb-1">
+                      <span className="text-lg leading-none">{mod.icon}</span>
+                      {isSelected && (
+                        <CheckCircle2 size={14} className="text-white shrink-0" />
+                      )}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className={`text-xs font-bold truncate ${isSelected ? 'text-emerald-950' : 'text-slate-800'}`}>
-                          {mod.name}
-                        </span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                    <div>
+                      <div className={`text-xs font-bold truncate ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                        {mod.name}
                       </div>
-                      <p className="text-[10px] text-slate-500 line-clamp-1 leading-snug mt-0.5">
-                        {mod.desc}
-                      </p>
+                      <div className={`text-[10px] truncate ${isSelected ? 'text-emerald-100' : 'text-slate-500'}`}>
+                        {mod.category}
+                      </div>
                     </div>
                   </button>
                 );
@@ -457,7 +489,6 @@ export default function ExportCSVModal({
             </div>
           </div>
 
-          {/* Section 2: Date Filters & Preset Buttons */}
           <div className="border border-slate-200/90 rounded-2xl p-4 bg-slate-50/60 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 pb-2.5">
               <div className="flex items-center gap-2">
@@ -467,7 +498,6 @@ export default function ExportCSVModal({
                 </span>
               </div>
 
-              {/* Quick Presets */}
               <div className="flex flex-wrap items-center gap-1">
                 <span className="text-[11px] text-slate-500 font-semibold mr-1">Presets:</span>
                 <button
@@ -508,7 +538,6 @@ export default function ExportCSVModal({
               </div>
             </div>
 
-            {/* Period Selection Buttons */}
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -576,7 +605,6 @@ export default function ExportCSVModal({
               </button>
             </div>
 
-            {/* Sub-inputs */}
             {period === 'today' && (
               <div className="flex items-center gap-3 pt-2.5 border-t border-slate-200/80">
                 <span className="text-xs font-bold text-slate-700">Select Day:</span>
@@ -587,7 +615,7 @@ export default function ExportCSVModal({
                   className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-medium"
                 />
                 <span className="text-xs text-slate-500 font-normal">
-                  Filters records matching date: {singleDate}
+                  Filters records matching exact day {singleDate}
                 </span>
               </div>
             )}
@@ -595,7 +623,7 @@ export default function ExportCSVModal({
             {period === 'custom' && (
               <div className="flex flex-wrap items-center gap-3 pt-2.5 border-t border-slate-200/80">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-700">From (Start):</span>
+                  <span className="text-xs font-bold text-slate-700">From (Start Date):</span>
                   <input
                     type="date"
                     value={startDate}
@@ -603,9 +631,9 @@ export default function ExportCSVModal({
                     className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-medium"
                   />
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-400 hidden sm:inline" />
+                <ArrowRight size={14} className="text-slate-400 hidden sm:inline" />
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-700">To (End):</span>
+                  <span className="text-xs font-bold text-slate-700">To (End Date):</span>
                   <input
                     type="date"
                     value={endDate}
@@ -617,7 +645,6 @@ export default function ExportCSVModal({
             )}
           </div>
 
-          {/* Section 3: Live Export Preview & Summary */}
           <div className="border border-slate-200/90 rounded-2xl p-4 bg-white shadow-2xs space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div className="flex items-center gap-2">
@@ -627,12 +654,12 @@ export default function ExportCSVModal({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="green" className="font-bold text-xs bg-emerald-100 text-emerald-800 border-emerald-200">
+                <span className="px-2.5 py-0.5 rounded-full font-bold text-xs bg-emerald-100 text-emerald-800 border border-emerald-200">
                   {selectedModule === 'all' ? '14 Modules Combined' : `${preview.count} Records Found`}
-                </Badge>
-                <Badge variant="outline" className="capitalize text-xs font-medium">
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full capitalize text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
                   Period: {period}
-                </Badge>
+                </span>
               </div>
             </div>
 
@@ -655,7 +682,7 @@ export default function ExportCSVModal({
                 {preview.count > 0 && (
                   <div className="mt-3 text-[11px] text-slate-600 flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                     <span>
-                      First record preview: <strong className="text-slate-900 font-bold">{String(preview.rows[0]?.[1] || preview.rows[0]?.[0])}</strong>
+                      First record sample: <strong className="text-slate-900 font-bold">{String(preview.rows[0]?.[1] || preview.rows[0]?.[0])}</strong>
                     </span>
                     <span className="font-semibold text-emerald-800">Ready to download .CSV</span>
                   </div>
@@ -673,31 +700,32 @@ export default function ExportCSVModal({
               </div>
             )}
           </div>
+        </div>
 
-          {/* Footer Actions */}
-          <div className="flex items-center justify-between pt-2 border-t border-slate-200/90">
-            <div className="text-xs text-slate-500 flex items-center gap-1.5 font-normal">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              Compatible with MS Excel, Tally & Google Sheets
-            </div>
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={onClose} className="cursor-pointer">
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={handleExport}
-                className="px-5 font-bold cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-              >
-                <Download className="w-3.5 h-3.5 mr-1" />
-                Download CSV File
-              </Button>
-            </div>
+        <div className="px-6 py-3.5 border-t border-slate-100 flex items-center justify-between gap-2.5 shrink-0 bg-slate-50/80 rounded-b-2xl">
+          <div className="text-xs text-slate-500 flex items-center gap-1.5 font-normal">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            Compatible with MS Excel, Tally & Google Sheets
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleExport}
+              className="px-5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <Download size={14} />
+              Download CSV File
+            </button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
