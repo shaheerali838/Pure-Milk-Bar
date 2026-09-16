@@ -557,11 +557,11 @@ export default function Navbar() {
           type="button"
           size="sm"
           onClick={handleExportCSV}
-          className="h-7 px-2.5 text-xs font-semibold shadow-2xs cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+          className="h-7 px-2.5 text-xs font-semibold shadow-2xs cursor-pointer"
           title="Export CSV data for current view"
         >
           <Download className="w-3.5 h-3.5" />
-          <span>Export CSV</span>
+          <span>Export</span>
         </Button>
 
         <Link to="/pos">
