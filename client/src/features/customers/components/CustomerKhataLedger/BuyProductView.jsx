@@ -32,10 +32,8 @@ const DAIRY_PRODUCTS = [
   { id: 'p1', name: 'Buffalo Milk', defaultRate: 220, unit: 'L' },
   { id: 'p2', name: 'Cow Milk', defaultRate: 190, unit: 'L' },
   { id: 'p3', name: 'Fresh Dahi (Yogurt)', defaultRate: 240, unit: 'Kg' },
-  { id: 'p4', name: 'Desi Ghee (Pure)', defaultRate: 2400, unit: 'Kg' },
   { id: 'p5', name: 'Fresh Paneer', defaultRate: 950, unit: 'Kg' },
   { id: 'p6', name: 'Khoya / Mawa', defaultRate: 850, unit: 'Kg' },
-  { id: 'p7', name: 'White Butter (Makhan)', defaultRate: 1600, unit: 'Kg' },
   { id: 'p8', name: 'Sweet Lassi', defaultRate: 90, unit: 'Bottle' },
   { id: 'p9', name: 'Other Dairy Product', defaultRate: 100, unit: 'Item' },
 ];
