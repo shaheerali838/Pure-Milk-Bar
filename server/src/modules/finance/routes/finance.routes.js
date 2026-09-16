@@ -19,9 +19,6 @@ const router = express.Router();
 
 router.use(authenticate);
 
-/* ==========================================================================
-   Khata & Customer Ledger Routes
-   ========================================================================== */
 
 // Receivables Aging Engine (ADMIN, MANAGER)
 router.get('/khata/aging', authorize('ADMIN', 'MANAGER'), getReceivablesAging);
@@ -41,9 +38,6 @@ router.get(
   getCustomerStatement
 );
 
-/* ==========================================================================
-   Expense Management Routes
-   ========================================================================== */
 
 // Expense Category Summary Report (ADMIN, MANAGER)
 router.get('/expenses/summary', authorize('ADMIN', 'MANAGER'), getExpenseSummary);

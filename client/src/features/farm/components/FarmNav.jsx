@@ -25,7 +25,6 @@ export default function FarmNav() {
 
   return (
     <div className="flex flex-col gap-1.5">
-      {/* Top row — 7 colored pill tabs */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-1.5">
         {tabs.map(({ to, label, icon: Icon, color }) => {
           const isActive = to === '/farm' ? (pathname === '/farm' || pathname === '/farm/') : pathname.startsWith(to);

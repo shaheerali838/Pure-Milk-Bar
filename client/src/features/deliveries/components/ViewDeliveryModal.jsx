@@ -68,7 +68,6 @@ export default function ViewDeliveryModal({ delivery, isOpen, onClose }) {
           </div>
         </DialogHeader>
 
-        {/* Hero Card */}
         <div className="bg-slate-900 text-white rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-xs">
           <div>
             <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
@@ -95,9 +94,7 @@ export default function ViewDeliveryModal({ delivery, isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Detailed Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          {/* Schedule Info */}
           <div className="p-3.5 bg-slate-50 border border-slate-200/70 rounded-xl space-y-2">
             <h5 className="font-bold text-slate-900 uppercase tracking-wide text-[11px] flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-slate-500" />
@@ -125,7 +122,6 @@ export default function ViewDeliveryModal({ delivery, isOpen, onClose }) {
             </div>
           </div>
 
-          {/* Payment & Bottle Info */}
           <div className="p-3.5 bg-slate-50 border border-slate-200/70 rounded-xl space-y-2">
             <h5 className="font-bold text-slate-900 uppercase tracking-wide text-[11px] flex items-center gap-1.5">
               <CreditCard className="w-3.5 h-3.5 text-slate-500" />
@@ -161,7 +157,6 @@ export default function ViewDeliveryModal({ delivery, isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Quick Actions if Pending */}
         {delivery.status === 'PENDING' && (
           <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl space-y-2">
             <p className="text-xs font-bold text-amber-900">Update Delivery Run Status</p>

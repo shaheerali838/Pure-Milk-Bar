@@ -67,7 +67,6 @@ export default function AddProduct({ onBack, product = null }) {
 
   return (
     <div className=" animate-in fade-in duration-150">
-      {/* Top Navigation Bar with Back Button */}
       <div className="flex items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
         <div className="flex items-center gap-3">
           <button
@@ -106,10 +105,8 @@ export default function AddProduct({ onBack, product = null }) {
         </span>
       </div>
 
-      {/* Main Form Card on the Right Side of Sidebar */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs">
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Header Icon + Section Title */}
           <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
             <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
               <PackagePlus className="w-5 h-5" />
@@ -125,7 +122,6 @@ export default function AddProduct({ onBack, product = null }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            {/* Product ID / SKU */}
             <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Product ID / SKU
@@ -140,7 +136,6 @@ export default function AddProduct({ onBack, product = null }) {
               <p className="text-[10px] text-slate-400 mt-1">Unique barcode identifier</p>
             </div>
 
-            {/* Product Name */}
             <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Product Name <span className="text-rose-500">*</span>
@@ -156,7 +151,6 @@ export default function AddProduct({ onBack, product = null }) {
               <p className="text-[10px] text-slate-400 mt-1">Display title on POS screen and receipts</p>
             </div>
 
-            {/* Category Dropdown */}
             <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Category <span className="text-rose-500">*</span>
@@ -175,7 +169,6 @@ export default function AddProduct({ onBack, product = null }) {
               </div>
             </div>
 
-            {/* Unit Dropdown */}
             <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Unit <span className="text-rose-500">*</span>
@@ -193,7 +186,6 @@ export default function AddProduct({ onBack, product = null }) {
               </div>
             </div>
 
-            {/* Sale Price (RS) */}
             <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Sale Price (RS) <span className="text-rose-500">*</span>
@@ -216,7 +208,6 @@ export default function AddProduct({ onBack, product = null }) {
               <p className="text-[10px] text-slate-400 mt-1">Retail counter selling rate per unit</p>
             </div>
 
-            {/* Cost / Unit (RS) */}
             <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Cost / Unit (RS)
@@ -238,7 +229,6 @@ export default function AddProduct({ onBack, product = null }) {
               <p className="text-[10px] text-slate-400 mt-1">Estimated farm production or purchase cost</p>
             </div>
 
-            {/* Description */}
             <div className="md:col-span-2">
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Description &amp; Storage Notes
@@ -253,7 +243,6 @@ export default function AddProduct({ onBack, product = null }) {
             </div>
           </div>
 
-          {/* Form Actions */}
           <div className="pt-4 flex items-center justify-end gap-2.5 border-t border-slate-100">
             <button
               type="button"

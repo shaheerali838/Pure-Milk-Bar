@@ -63,7 +63,6 @@ export default function StaffDetail({
   if (onBack) {
     return (
       <div className="space-y-4 animate-in fade-in duration-150 pb-8">
-        {/* Top Navigation Bar with Back Button */}
         <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
           <div className="flex items-center gap-3">
             <button
@@ -106,9 +105,7 @@ export default function StaffDetail({
           </div>
         </div>
 
-        {/* Main Details Card taking full space */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-2xs space-y-6">
-          {/* Profile Hero Header Box */}
           <div className="bg-[#f8fafc] p-5 rounded-2xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-2xl shadow-xs shrink-0 font-display">
@@ -151,7 +148,6 @@ export default function StaffDetail({
             </div>
           </div>
 
-          {/* Quick Metrics Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-200/70">
               <div className="flex items-center gap-1.5 text-emerald-700 text-[10px] font-bold uppercase tracking-wider mb-1">
@@ -194,9 +190,7 @@ export default function StaffDetail({
             </div>
           </div>
 
-          {/* Detailed Info Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
-            {/* Contact & Identity Details */}
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
               <h3 className="font-bold text-slate-900 flex items-center gap-2 text-xs uppercase tracking-wider text-slate-600">
                 <User className="w-4 h-4 text-slate-500" />
@@ -230,7 +224,6 @@ export default function StaffDetail({
               </div>
             </div>
 
-            {/* Employment & Station Details */}
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
               <h3 className="font-bold text-slate-900 flex items-center gap-2 text-xs uppercase tracking-wider text-slate-600">
                 <Briefcase className="w-4 h-4 text-slate-500" />
@@ -257,7 +250,6 @@ export default function StaffDetail({
             </div>
           </div>
 
-          {/* Notes & Responsibilities Section */}
           {staff.notes && (
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/40">
               <h3 className="font-bold text-slate-800 flex items-center gap-2 text-xs uppercase tracking-wider mb-2 text-slate-600">

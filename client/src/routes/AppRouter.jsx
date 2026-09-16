@@ -53,7 +53,6 @@ export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public / Authentication Routes */}
         <Route
           path="/login"
           element={
@@ -66,13 +65,10 @@ export function AppRouter() {
           }
         />
 
-        {/* Protected Application Routes with Global Layout */}
         <Route path="/" element={<Layout />}>
-          {/* Dashboard Redirect & Home */}
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
 
-          {/* Farm Management Routes */}
           <Route path="farm" element={<Farm />}>
             <Route index element={<FarmDashboard />} />
             <Route path="animals" element={<AnimalsHerd />} />
@@ -89,31 +85,24 @@ export function AppRouter() {
             <Route path="dailysheet" element={<DailySheet />} />
           </Route>
 
-          {/* Operations & Inventory */}
           <Route path="supplier" element={<Supplier />} />
           <Route path="proccessing" element={<Proccessing />} />
           <Route path="products" element={<Products />} />
 
-          {/* Sales & Counter POS */}
           <Route path="pos" element={<Pos />} />
 
-          {/* Deliveries & Riders */}
           <Route path="delivery" element={<Delivery />} />
 
-          {/* Customers & Khata Ledger */}
           <Route path="customer" element={<CustomerManagement />} />
           <Route path="customer-khata-ledger" element={<CustomerKhataLedger />} />
 
-          {/* Finance & Reconciliation */}
           <Route path="finance/customer" element={<CustomerFinance />} />
           <Route path="finance/delivery" element={<RiderDeliveryFinancePage />} />
           <Route path="finance/daily-closing" element={<DailyClosing />} />
           <Route path="finance/staff" element={<StaffManagement />} />
 
-          {/* Staff Management */}
           <Route path="staff" element={<StaffManagement />} />
 
-          {/* Catch-all redirect */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

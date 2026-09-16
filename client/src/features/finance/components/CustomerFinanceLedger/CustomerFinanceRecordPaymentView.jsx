@@ -123,7 +123,6 @@ export default function CustomerFinanceRecordPaymentView({ customer, onBack }) {
 
   return (
     <div className="space-y-3 animate-in fade-in duration-200 pb-4">
-      {/* Header */}
       <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
         <Button
           type="button"
@@ -146,10 +145,8 @@ export default function CustomerFinanceRecordPaymentView({ customer, onBack }) {
         </div>
       </div>
 
-      {/* Main Form Card */}
       <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Payment Type Selection */}
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label className="text-xs font-bold text-slate-700">Payment Type:</label>
@@ -207,7 +204,6 @@ export default function CustomerFinanceRecordPaymentView({ customer, onBack }) {
             </div>
           </div>
 
-          {/* Form Fields Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
@@ -277,7 +273,6 @@ export default function CustomerFinanceRecordPaymentView({ customer, onBack }) {
             </div>
           </div>
 
-          {/* Description & Notes */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
@@ -306,7 +301,6 @@ export default function CustomerFinanceRecordPaymentView({ customer, onBack }) {
             </div>
           </div>
 
-          {/* Real-Time Balance Calculator Preview */}
           {outstanding > 0 && (
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs flex items-center justify-between">
               <div>
@@ -328,7 +322,6 @@ export default function CustomerFinanceRecordPaymentView({ customer, onBack }) {
             </div>
           )}
 
-          {/* Bottom Action Buttons */}
           <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
             <Button
               type="button"

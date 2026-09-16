@@ -44,7 +44,6 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
-        {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
@@ -65,9 +64,7 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
           </Button>
         </div>
 
-        {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-          {/* Tag & Name */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -98,7 +95,6 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
             </div>
           </div>
 
-          {/* Species & Lactation Status */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -144,7 +140,6 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
             </div>
           </div>
 
-          {/* Date & Purchase Price */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -176,7 +171,6 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
             </div>
           </div>
 
-          {/* Expected Yield */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
               Expected Daily Yield (Kg/L)
@@ -193,7 +187,6 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
             />
           </div>
 
-          {/* Baseline Morning & Evening Yields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -228,7 +221,6 @@ export default function RegisterAnimalModal({ isOpen, onClose, onRegister }) {
             </div>
           </div>
 
-          {/* Actions */}
           <div className="pt-3 flex items-center justify-end gap-2">
             <Button
               type="button"

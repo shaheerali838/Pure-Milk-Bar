@@ -4,18 +4,12 @@ import VehicleFuelLog from '../../../models/VehicleFuelLog.model.js';
 import User from '../../../models/User.model.js';
 
 class DeliveryService {
-  /**
-   * Helper to generate unique Run Code if not supplied (e.g. DR-20260910-4821)
-   */
   generateRunCode() {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     return `DR-${today}-${randomSuffix}`;
   }
 
-  /**
-   * 1. Create Delivery Run (Supports ADR-002 single transaction for DeliveryRun + VehicleFuelLog)
-   */
   async createDeliveryRun(payload) {
     const { fuelLog, ...deliveryData } = payload;
 
@@ -67,9 +61,6 @@ class DeliveryService {
     return { deliveryRun };
   }
 
-  /**
-   * 2. List Delivery Runs with Filters & Pagination
-   */
   async getDeliveryRuns(query = {}) {
     const {
       date,
@@ -124,9 +115,6 @@ class DeliveryService {
     };
   }
 
-  /**
-   * 3. Get Single Delivery Run by ID
-   */
   async getDeliveryRunById(id) {
     const deliveryRun = await DeliveryRun.findById(id)
       .populate('riderId', 'name phone role')
@@ -141,9 +129,6 @@ class DeliveryService {
     return deliveryRun;
   }
 
-  /**
-   * 4. Update Delivery Run Details
-   */
   async updateDeliveryRun(id, updateData) {
     if (!updateData || Object.keys(updateData).length === 0) {
       const error = new Error('No fields provided to update');
@@ -175,9 +160,6 @@ class DeliveryService {
     return updatedRun;
   }
 
-  /**
-   * 5. Delete Delivery Run
-   */
   async deleteDeliveryRun(id) {
     const deletedRun = await DeliveryRun.findByIdAndDelete(id);
 
@@ -190,9 +172,6 @@ class DeliveryService {
     return deletedRun;
   }
 
-  /**
-   * 6. Assign Rider to Delivery Run
-   */
   async assignRider(id, riderId, riderNameSnapshot) {
     let nameSnapshot = riderNameSnapshot;
     if (!nameSnapshot && riderId) {
@@ -222,9 +201,6 @@ class DeliveryService {
     return updatedRun;
   }
 
-  /**
-   * 7. Update Delivery Status (DELIVERED, FAILED, SKIPPED, PENDING)
-   */
   async updateDeliveryStatus(id, statusData) {
     const { status, deliveredAt, bottlesReturned, codAmountToCollect } = statusData;
 
@@ -264,17 +240,11 @@ class DeliveryService {
   // Vehicle Fuel Log Service Methods
   // ====================================================
 
-  /**
-   * 8. Create Vehicle Fuel Log
-   */
   async createVehicleFuelLog(payload) {
     const fuelLog = await VehicleFuelLog.create(payload);
     return fuelLog;
   }
 
-  /**
-   * 9. Get List of Vehicle Fuel Logs
-   */
   async getVehicleFuelLogs(query = {}) {
     const { riderId, date, shift, vehiclePlate, linkedDeliveryRunId, page = 1, limit = 50 } = query;
 
@@ -316,9 +286,6 @@ class DeliveryService {
     };
   }
 
-  /**
-   * 10. Get Single Vehicle Fuel Log by ID
-   */
   async getVehicleFuelLogById(id) {
     const fuelLog = await VehicleFuelLog.findById(id)
       .populate('riderId', 'name phone role')
@@ -333,9 +300,6 @@ class DeliveryService {
     return fuelLog;
   }
 
-  /**
-   * 11. Update Vehicle Fuel Log
-   */
   async updateVehicleFuelLog(id, updateData) {
     if (!updateData || Object.keys(updateData).length === 0) {
       const error = new Error('No fields provided to update');
@@ -357,9 +321,6 @@ class DeliveryService {
     return updatedFuelLog;
   }
 
-  /**
-   * 12. Delete Vehicle Fuel Log
-   */
   async deleteVehicleFuelLog(id) {
     const deletedFuelLog = await VehicleFuelLog.findByIdAndDelete(id);
 
@@ -372,9 +333,6 @@ class DeliveryService {
     return deletedFuelLog;
   }
 
-  /**
-   * 13. Rider Run Sheet Summary Aggregation
-   */
   async getRiderRunSheetSummary({ riderId, date, shift }) {
     const filter = {};
 

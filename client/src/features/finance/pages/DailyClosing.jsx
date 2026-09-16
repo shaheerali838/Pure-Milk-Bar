@@ -116,7 +116,6 @@ export default function DailyClosing() {
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-5">
-      {/* 1. Header: Title, Breadcrumb, Period Selector (Today/Weekly/Monthly/Custom Range), Action Buttons */}
       <DailyClosingHeader
         period={period}
         onPeriodChange={setPeriod}
@@ -131,16 +130,13 @@ export default function DailyClosing() {
         onOpenConfirmDialog={() => setConfirmDialogOpen(true)}
       />
 
-      {/* 2. Variance & Closing Verification Alert Banner */}
       <DailyClosingVarianceAlert
         variance={variance}
         hasPhysicalCount={isPhysicalInput}
         status={summaryData?.status || 'open'}
       />
 
-      {/* 3. Two-Column Core Reconciliation Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-        {/* Left Column: Milk Flow Mass Balance + Physical Tank Measurement */}
         <div className="space-y-5">
           <MilkFlowReconciliationCard
             milkFlow={summaryData?.milkFlow || {}}
@@ -153,7 +149,6 @@ export default function DailyClosing() {
           />
         </div>
 
-        {/* Right Column: Multi-Channel Collections + Daily Expenses */}
         <div className="space-y-5">
           <CollectionsAndProfitCard
             collections={summaryData?.collections || {}}
@@ -162,20 +157,17 @@ export default function DailyClosing() {
         </div>
       </div>
 
-      {/* 4. Net Liquid Cash Flow Banner */}
       <NetLiquidFlowSummary
         financialSummary={summaryData?.financialSummary || {}}
         collections={summaryData?.collections || {}}
         expenses={summaryData?.expenses || {}}
       />
 
-      {/* 5. Today's P&L & Product Breakdown Block */}
       <TodayProfitBreakdown
         productBreakdown={summaryData?.productBreakdown || []}
         financialSummary={summaryData?.financialSummary || {}}
       />
 
-      {/* 6. Confirm Closing Confirmation Modal */}
       <ConfirmClosingDialog
         open={confirmDialogOpen}
         onOpenChange={setConfirmDialogOpen}

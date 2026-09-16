@@ -156,9 +156,7 @@ export default function SellingRevenue({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* 4 Filter Tabs & Channel Metric Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-3 shadow-2xs">
-        {/* Filter Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto p-0.5">
           {CHANNELS.map((ch) => {
             const isActive = selectedChannel === ch;
@@ -179,7 +177,6 @@ export default function SellingRevenue({
           })}
         </div>
 
-        {/* Channel Highlights Badge */}
         <div className="flex items-center gap-3 text-xs shrink-0 px-2">
           <div className="flex items-center gap-1.5">
             <span className="text-slate-400 font-medium">Channel Revenue:</span>
@@ -198,9 +195,7 @@ export default function SellingRevenue({
         </div>
       </div>
 
-      {/* 2 Charts Grid: Left = Horizontal Bar Chart, Right = Pie Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Section 1: Horizontal Bar Chart (Revenue by Product Category) */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3">
             <div>
@@ -281,7 +276,6 @@ export default function SellingRevenue({
           </div>
         </div>
 
-        {/* Section 2: Pie Chart (Farm Expense Distribution) */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3">
             <div>

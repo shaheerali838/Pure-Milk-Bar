@@ -13,7 +13,6 @@ export default function ViewTransactionView({ transaction, customer, onBack }) {
 
   return (
     <div className="space-y-3 animate-in fade-in duration-200 pb-4">
-      {/* Header */}
       <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
         <Button
           type="button"
@@ -35,9 +34,7 @@ export default function ViewTransactionView({ transaction, customer, onBack }) {
         </div>
       </div>
 
-      {/* Main Details Card */}
       <Card className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-4 max-w-3xl">
-        {/* Amount Banner */}
         <div className={`p-4 rounded-xl text-center border ${
           isDebit ? 'bg-rose-50/50 border-rose-200' : isCredit ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200'
         }`}>
@@ -51,7 +48,6 @@ export default function ViewTransactionView({ transaction, customer, onBack }) {
           </div>
         </div>
 
-        {/* Details Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div className="p-3 bg-slate-50/70 border border-slate-100 rounded-xl">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Customer Name</span>
@@ -88,7 +84,6 @@ export default function ViewTransactionView({ transaction, customer, onBack }) {
           )}
         </div>
 
-        {/* Back Button */}
         <div className="pt-2 flex justify-end border-t border-slate-100">
           <Button
             type="button"

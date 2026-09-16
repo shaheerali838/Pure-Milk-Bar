@@ -36,7 +36,6 @@ export default function StaffCard({ staff, onClick }) {
       className="cursor-pointer bg-white border border-slate-200/90 hover:border-purple-300 rounded-xl p-3 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
     >
       <div>
-        {/* Header: Name, Type Badge & Active Badge */}
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-2">
             <div
@@ -67,7 +66,6 @@ export default function StaffCard({ staff, onClick }) {
           </Badge>
         </div>
 
-        {/* Staff Details */}
         <div className="space-y-1 text-[11px] text-slate-600 mb-2 bg-slate-50/70 p-2 rounded-lg border border-slate-100">
           <div className="flex items-center gap-1.5 text-slate-700">
             <Phone className="w-3 h-3 text-slate-400 shrink-0" />
@@ -88,7 +86,6 @@ export default function StaffCard({ staff, onClick }) {
         </div>
       </div>
 
-      {/* Footer: Delivery Status */}
       <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
         <div className="flex items-center gap-1 font-medium">
           {pendingCount > 0 ? (

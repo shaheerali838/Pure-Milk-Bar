@@ -49,7 +49,6 @@ export default function TodayProfitBreakdown({
       </CardHeader>
 
       <CardContent className="p-5 pt-2 space-y-4 text-xs">
-        {/* Product Table / Flex Rows */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>

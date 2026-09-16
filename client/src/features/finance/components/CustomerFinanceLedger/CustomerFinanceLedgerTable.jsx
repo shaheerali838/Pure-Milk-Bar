@@ -73,7 +73,6 @@ export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayme
 
   return (
     <div className="space-y-2.5">
-      {/* Search & Filter Bar */}
       <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-2">
         <div className="relative flex-1 min-w-[240px]">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -104,7 +103,6 @@ export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayme
         </div>
       </div>
 
-      {/* Main Ledger Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto max-h-[calc(100vh-320px)]">
           <Table className="w-full text-left border-collapse min-w-[900px]">
@@ -146,7 +144,6 @@ export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayme
                       title={`Click to view financial details of ${customer.name}`}
                       className="hover:bg-emerald-50/40 transition-colors cursor-pointer group select-none"
                     >
-                      {/* Customer */}
                       <TableCell className="px-3.5 py-2">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 group-hover:bg-emerald-100 group-hover:text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 transition-colors font-display">
@@ -161,23 +158,19 @@ export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayme
                         </div>
                       </TableCell>
 
-                      {/* Area & Contact */}
                       <TableCell className="px-3.5 py-2">
                         <div className="font-semibold text-slate-800 leading-tight tabular">{customer.phone}</div>
                         <div className="text-[10px] text-slate-400 leading-tight">{customer.area || 'Model Town'}</div>
                       </TableCell>
 
-                      {/* Credit Limit */}
                       <TableCell className="px-3.5 py-2 text-right font-bold text-slate-700 whitespace-nowrap tabular">
                         Rs. {(customer.creditLimit || 10000).toLocaleString()}
                       </TableCell>
 
-                      {/* Total Paid */}
                       <TableCell className="px-3.5 py-2 text-right font-bold text-emerald-600 whitespace-nowrap tabular">
                         Rs. {totalPaid.toLocaleString()}
                       </TableCell>
 
-                      {/* Credit (Outstanding) */}
                       <TableCell className="px-3.5 py-2 text-right font-black whitespace-nowrap tabular">
                         {outstanding === 0 ? (
                           <span className="text-emerald-600">Cleared (Rs. 0)</span>
@@ -186,7 +179,6 @@ export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayme
                         )}
                       </TableCell>
 
-                      {/* Last Payment / Status */}
                       <TableCell className="px-3.5 py-2 whitespace-nowrap">
                         <div className="font-mono text-[11px] text-slate-600 tabular">{lastPaymentDate}</div>
                         <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200/60 text-[9px] font-semibold">
@@ -194,7 +186,6 @@ export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayme
                         </span>
                       </TableCell>
 
-                      {/* Overall Status */}
                       <TableCell className="px-3.5 py-2 text-center whitespace-nowrap">
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
@@ -209,7 +200,6 @@ export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayme
                         </span>
                       </TableCell>
 
-                      {/* Action Buttons: Eye (Details), CreditCard (Payment), Pencil (Edit Profile) */}
                       <TableCell className="px-3.5 py-2 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           <Button

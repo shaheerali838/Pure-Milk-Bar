@@ -101,7 +101,6 @@ export default function ReceivablesAgingTable({ onViewDetail, onRecordPayment, o
 
   return (
     <div className="space-y-2.5">
-      {/* Search Bar & Header */}
       <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-2">
         <div className="text-xs font-bold text-slate-700">
           <span>{customersWithDues.length} customers with outstanding balance</span>
@@ -119,7 +118,6 @@ export default function ReceivablesAgingTable({ onViewDetail, onRecordPayment, o
         </div>
       </div>
 
-      {/* Main Aging Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto max-h-[calc(100vh-320px)]">
           <Table className="w-full text-left border-collapse min-w-[920px]">
@@ -159,7 +157,6 @@ export default function ReceivablesAgingTable({ onViewDetail, onRecordPayment, o
                       title={`Click to view aging breakdown for ${customer.name}`}
                       className="hover:bg-amber-50/40 transition-colors cursor-pointer group select-none"
                     >
-                      {/* Customer */}
                       <TableCell className="px-3.5 py-2">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 group-hover:bg-amber-100 group-hover:text-amber-800 font-bold flex items-center justify-center text-xs shrink-0 transition-colors font-display">
@@ -174,32 +171,26 @@ export default function ReceivablesAgingTable({ onViewDetail, onRecordPayment, o
                         </div>
                       </TableCell>
 
-                      {/* 0-30D */}
                       <TableCell className="px-3.5 py-2 text-right font-medium text-slate-700 whitespace-nowrap tabular">
                         {buckets.d0_30 > 0 ? `Rs. ${buckets.d0_30.toLocaleString()}` : '—'}
                       </TableCell>
 
-                      {/* 31-60D */}
                       <TableCell className="px-3.5 py-2 text-right font-medium text-slate-700 whitespace-nowrap tabular">
                         {buckets.d31_60 > 0 ? `Rs. ${buckets.d31_60.toLocaleString()}` : '—'}
                       </TableCell>
 
-                      {/* 61-90D */}
                       <TableCell className="px-3.5 py-2 text-right font-medium text-slate-700 whitespace-nowrap tabular">
                         {buckets.d61_90 > 0 ? `Rs. ${buckets.d61_90.toLocaleString()}` : '—'}
                       </TableCell>
 
-                      {/* 90+D */}
                       <TableCell className="px-3.5 py-2 text-right font-bold text-rose-600 whitespace-nowrap tabular">
                         {buckets.d90plus > 0 ? `Rs. ${buckets.d90plus.toLocaleString()}` : '—'}
                       </TableCell>
 
-                      {/* Total */}
                       <TableCell className="px-3.5 py-2 text-right font-black text-slate-900 whitespace-nowrap tabular">
                         Rs. {total.toLocaleString()}
                       </TableCell>
 
-                      {/* Distribution Stacked Bar */}
                       <TableCell className="px-3.5 py-2">
                         <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden flex">
                           {p0_30 > 0 && <div style={{ width: `${p0_30}%` }} className="bg-blue-500 h-full" />}
@@ -209,7 +200,6 @@ export default function ReceivablesAgingTable({ onViewDetail, onRecordPayment, o
                         </div>
                       </TableCell>
 
-                      {/* Risk Badge */}
                       <TableCell className="px-3.5 py-2 text-center whitespace-nowrap">
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
@@ -224,7 +214,6 @@ export default function ReceivablesAgingTable({ onViewDetail, onRecordPayment, o
                         </span>
                       </TableCell>
 
-                      {/* Action Buttons: Eye (Aging Detail), CreditCard (Payment), Pencil (Edit Profile) */}
                       <TableCell className="px-3.5 py-2 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           <Button
@@ -275,7 +264,6 @@ export default function ReceivablesAgingTable({ onViewDetail, onRecordPayment, o
                 })
               )}
             </TableBody>
-            {/* Totals Row */}
             {filteredRows.length > 0 && (
               <TableFooter className="border-t-2 border-slate-200 bg-slate-50/90 font-bold text-xs text-slate-900">
                 <TableRow>

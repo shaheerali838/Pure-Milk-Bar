@@ -41,7 +41,6 @@ export default function DailyClosingHeader({
   return (
     <div className="space-y-3 pb-4 border-b border-slate-200/80">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        {/* Title, Subtitle, and Status Badge */}
         <div className="space-y-1">
           <div className="flex items-center gap-2.5 flex-wrap">
             <Typography variant="h3" className="font-bold text-slate-900 tracking-tight">
@@ -65,9 +64,7 @@ export default function DailyClosingHeader({
           </Typography>
         </div>
 
-        {/* Period Selector & Action Buttons */}
         <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Period Selector Tabs (Today, Weekly, Monthly, Custom) */}
           <Tabs
             value={period}
             onValueChange={onPeriodChange}
@@ -89,7 +86,6 @@ export default function DailyClosingHeader({
             </TabsList>
           </Tabs>
 
-          {/* Export CSV Button */}
           <Button
             type="button"
             variant="outline"
@@ -101,7 +97,6 @@ export default function DailyClosingHeader({
             Export CSV
           </Button>
 
-          {/* Confirm Daily Closing Button */}
           <Button
             type="button"
             variant="primary"
@@ -115,7 +110,6 @@ export default function DailyClosingHeader({
         </div>
       </div>
 
-      {/* Date Selectors (Single Date Picker or Custom Date Range) */}
       {period === 'custom' ? (
         <div className="p-3 bg-slate-50 border border-slate-200/90 rounded-xl flex flex-wrap items-center gap-3 animate-in fade-in duration-150">
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">

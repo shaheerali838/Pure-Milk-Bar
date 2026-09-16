@@ -1,10 +1,5 @@
 import AppError from '../utils/AppError.js';
 
-/**
- * Centralized error handler middleware.
- * Differentiates between operational errors (AppError) and unexpected programmer errors.
- * Stack traces are completely suppressed in production.
- */
 export const errorHandler = (err, req, res, next) => {
   // Default to 500 for unexpected errors
   let statusCode = err.statusCode || 500;
@@ -66,9 +61,6 @@ export const errorHandler = (err, req, res, next) => {
   res.status(statusCode).json(response);
 };
 
-/**
- * 404 handler for undefined routes.
- */
 export const notFoundHandler = (req, res, next) => {
   const error = new AppError(
     `Route not found: ${req.method} ${req.originalUrl}`,

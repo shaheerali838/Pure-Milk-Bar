@@ -133,7 +133,6 @@ export default function EditCustomerView({ customer, onBack }) {
 
   return (
     <div className="space-y-3 animate-in fade-in duration-200 pb-4">
-      {/* Header */}
       <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
         <Button
           type="button"
@@ -152,10 +151,8 @@ export default function EditCustomerView({ customer, onBack }) {
         </div>
       </div>
 
-      {/* Main Form Container */}
       <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Section 1: Customer Identity & Contact */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
               <span className="w-5 h-5 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[11px]">
@@ -223,7 +220,6 @@ export default function EditCustomerView({ customer, onBack }) {
             </div>
           </div>
 
-          {/* Section 2: Verification Details */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
               <span className="w-5 h-5 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-[11px]">
@@ -297,7 +293,6 @@ export default function EditCustomerView({ customer, onBack }) {
             </div>
           </div>
 
-          {/* Section 3: Delivery Location & Subscription */}
           <div className="space-y-2.5">
             <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
               <span className="w-5 h-5 rounded-md bg-purple-50 text-purple-700 flex items-center justify-center font-bold text-[11px]">
@@ -427,7 +422,6 @@ export default function EditCustomerView({ customer, onBack }) {
             </div>
           </div>
 
-          {/* Section 4: Finance, Khata Balance & Account Status */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
               <span className="w-5 h-5 rounded-md bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-[11px]">
@@ -498,7 +492,6 @@ export default function EditCustomerView({ customer, onBack }) {
             </div>
           </div>
 
-          {/* Bottom Action Buttons (Single Instance) */}
           <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
             <Button
               type="button"

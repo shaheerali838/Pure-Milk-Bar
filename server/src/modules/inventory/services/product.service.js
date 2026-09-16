@@ -2,11 +2,6 @@ import Product from '../../../models/Product.model.js';
 import AppError from '../../../utils/AppError.js';
 
 class ProductService {
-  /**
-   * Create a new product in the inventory.
-   * @param {object} data - Validated product data
-   * @returns {Promise<object>} Created product document
-   */
   async createProduct(data) {
     // Check for duplicate SKU
     const existingProduct = await Product.findOne({ sku: data.sku });
@@ -22,11 +17,6 @@ class ProductService {
     return product;
   }
 
-  /**
-   * Get all products with filtering, search, and pagination.
-   * @param {object} query - Validated query parameters
-   * @returns {Promise<{products: Array, total: number, page: number, limit: number}>}
-   */
   async getAllProducts(query) {
     const { page, limit, category, unit, isAvailableForPos, isAvailableForDelivery, search } = query;
 
@@ -56,11 +46,6 @@ class ProductService {
     return { products, total, page, limit };
   }
 
-  /**
-   * Get a single product by ID.
-   * @param {string} id - Product ObjectId
-   * @returns {Promise<object>} Product document
-   */
   async getProductById(id) {
     const product = await Product.findById(id).lean();
 
@@ -71,12 +56,6 @@ class ProductService {
     return product;
   }
 
-  /**
-   * Update an existing product.
-   * @param {string} id - Product ObjectId
-   * @param {object} data - Validated update data
-   * @returns {Promise<object>} Updated product document
-   */
   async updateProduct(id, data) {
     // If SKU is being changed, check for duplicates
     if (data.sku) {
@@ -105,11 +84,6 @@ class ProductService {
     return product;
   }
 
-  /**
-   * Delete a product from inventory.
-   * @param {string} id - Product ObjectId
-   * @returns {Promise<object>} Deleted product document
-   */
   async deleteProduct(id) {
     const product = await Product.findByIdAndDelete(id).lean();
 
@@ -120,10 +94,6 @@ class ProductService {
     return product;
   }
 
-  /**
-   * Get products that are below their minimum alert stock level.
-   * @returns {Promise<Array>} Low stock products
-   */
   async getLowStockProducts() {
     const products = await Product.find({
       $expr: { $lte: ['$currentStock', '$minimumAlertStock'] },
@@ -134,10 +104,6 @@ class ProductService {
     return products;
   }
 
-  /**
-   * Get aggregate statistics for the inventory.
-   * @returns {Promise<object>} Summary statistics
-   */
   async getProductStats() {
     const [stats] = await Product.aggregate([
       {

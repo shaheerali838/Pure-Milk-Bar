@@ -111,7 +111,6 @@ export default function FuelLogTable({ fuelLogs = [] }) {
         </Table>
       </div>
 
-      {/* Summary Totals Line Underneath */}
       {fuelLogs.length > 0 && (
         <div className="bg-slate-900 text-white px-3.5 py-2 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs shadow-xs">
           <div className="flex items-center gap-1.5 font-display font-semibold text-xs">

@@ -1,9 +1,5 @@
 import { logAuditEvent } from '../modules/auditLog/services/auditLog.service.js';
 
-/**
- * System Security Audit Logging Middleware Interceptor
- * Usage in routes: auditInterceptor('CREATE_CUSTOMER', 'Customer')
- */
 export const auditInterceptor = (actionName, resourceName) => {
   return (req, res, next) => {
     const originalJson = res.json;

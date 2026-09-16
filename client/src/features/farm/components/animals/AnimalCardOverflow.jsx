@@ -120,10 +120,8 @@ export default function AnimalCardOverflow() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Top Stat Cards */}
       <AnimalStatsCards />
 
-      {/* Separate Filter & Search Header Component */}
       <AnimalFilterHeader
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -138,9 +136,7 @@ export default function AnimalCardOverflow() {
         onOpenAddModal={openModal}
       />
 
-      {/* Main Content Depending on Active Tab */}
       {activeTab === "registry" ? (
-        /* Animals Table */
         <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-2xs">
           <Table className="w-full border-collapse text-[13px]">
             <TableHeader>
@@ -176,7 +172,6 @@ export default function AnimalCardOverflow() {
                     onClick={() => navigate(`/farm/animals/detail/${a.id}`)}
                     className="border-b border-slate-100 last:border-b-0 hover:bg-emerald-50/30 transition-colors cursor-pointer group"
                   >
-                    {/* Tag # */}
                     <TableCell className="px-3.5 py-2.5">
                       <span className="flex items-center gap-1.5 font-mono text-[12px] font-bold text-slate-800 group-hover:text-emerald-700 tabular">
                         <Beef className="w-3.5 h-3.5 text-emerald-600" />
@@ -184,12 +179,10 @@ export default function AnimalCardOverflow() {
                       </span>
                     </TableCell>
 
-                    {/* Species */}
                     <TableCell className="px-3.5 py-2.5 text-slate-700 font-medium">
                       {a.species}
                     </TableCell>
 
-                    {/* Lactation Status */}
                     <TableCell className="px-3.5 py-2.5">
                       <Badge
                         variant="outline"
@@ -203,33 +196,27 @@ export default function AnimalCardOverflow() {
                       </Badge>
                     </TableCell>
 
-                    {/* Acquisition Date */}
                     <TableCell className="px-3.5 py-2.5 text-slate-600 font-mono text-[12px] tabular">
                       {a.acquisitionDate}
                     </TableCell>
 
-                    {/* Morning (L) */}
                     <TableCell className="px-3.5 py-2.5 text-slate-700 font-semibold tabular">
                       {a.morningYield}
                     </TableCell>
 
-                    {/* Evening (L) */}
                     <TableCell className="px-3.5 py-2.5 text-slate-700 font-semibold tabular">
                       {a.eveningYield}
                     </TableCell>
 
-                    {/* Total Daily Yield */}
                     <TableCell className="px-3.5 py-2.5 font-bold text-emerald-700 text-sm tabular">
                       {a.totalDailyYield}
                     </TableCell>
 
-                    {/* Actions */}
                     <TableCell className="px-3.5 py-2.5">
                       <div
                         className="flex items-center gap-1"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {/* View Detail Button */}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -240,7 +227,6 @@ export default function AnimalCardOverflow() {
                           <Eye className="w-4 h-4" />
                         </Button>
 
-                        {/* Edit Button */}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -251,7 +237,6 @@ export default function AnimalCardOverflow() {
                           <Edit3 className="w-4 h-4" />
                         </Button>
 
-                        {/* Delete Button */}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -270,7 +255,6 @@ export default function AnimalCardOverflow() {
           </Table>
         </div>
       ) : (
-        /* Workers & Milkers View */
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -310,14 +294,12 @@ export default function AnimalCardOverflow() {
         </div>
       )}
 
-      {/* Register Animal Modal */}
       <RegisterAnimalModal
         isOpen={isModalOpen}
         onClose={closeModal}
         onRegister={addAnimal}
       />
 
-      {/* Inline Edit Animal Modal */}
       {editAnimal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -467,7 +449,6 @@ export default function AnimalCardOverflow() {
         </div>
       )}
 
-      {/* Inline Delete Confirmation Modal */}
       {deleteTargetAnimal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">

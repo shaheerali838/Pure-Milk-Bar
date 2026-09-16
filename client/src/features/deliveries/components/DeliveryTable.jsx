@@ -59,7 +59,6 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden print:border-none print:shadow-none">
-      {/* Print-only Header */}
       <div className="hidden print:block p-3 border-b border-slate-300 text-black">
         <h2 className="text-lg font-bold font-display">Pure Milk Bar — Daily Delivery Run Sheet</h2>
         <p className="text-xs text-slate-600 mt-0.5">
@@ -104,7 +103,6 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
                   onClick={() => onViewDelivery && onViewDelivery(delivery)}
                   className="cursor-pointer hover:bg-slate-50/80 transition-colors"
                 >
-                  {/* DATE & SHIFT */}
                   <TableCell className="align-top py-2">
                     <div className="space-y-0.5">
                       <div className="text-xs font-semibold text-slate-900 font-mono tabular leading-none">
@@ -119,7 +117,6 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
                     </div>
                   </TableCell>
 
-                  {/* CUSTOMER */}
                   <TableCell className="align-top py-2">
                     <div className="space-y-0.5">
                       <div className="text-xs font-bold text-slate-900 flex items-center gap-1 font-display leading-none">
@@ -135,7 +132,6 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
                     </div>
                   </TableCell>
 
-                  {/* ITEM & QTY */}
                   <TableCell className="align-top py-2">
                     <div className="space-y-0.5">
                       <div className="text-xs font-semibold text-slate-800 leading-none">
@@ -147,7 +143,6 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
                     </div>
                   </TableCell>
 
-                  {/* RIDER / ROUTE */}
                   <TableCell className="align-top py-2">
                     <div className="space-y-0.5">
                       <div className="text-xs font-medium text-slate-800 flex items-center gap-1 leading-none">
@@ -160,7 +155,6 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
                     </div>
                   </TableCell>
 
-                  {/* PAYMENT */}
                   <TableCell className="align-top py-2">
                     <div className="space-y-0.5">
                       <div>{getPaymentBadge(delivery.paymentMode)}</div>
@@ -172,12 +166,10 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
                     </div>
                   </TableCell>
 
-                  {/* STATUS */}
                   <TableCell className="align-top py-2">
                     {getStatusBadge(delivery.status)}
                   </TableCell>
 
-                  {/* ACTION */}
                   <TableCell className="align-top py-2 text-right no-print">
                     <Button
                       type="button"

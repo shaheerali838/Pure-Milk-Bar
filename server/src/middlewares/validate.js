@@ -1,20 +1,5 @@
 import { sendError } from '../utils/apiResponse.js';
 
-/**
- * Generic Joi request schema validator middleware.
- * Validates req.body, req.query, and/or req.params against the provided Joi schema object.
- *
- * NOTE: In Express v5, req.query and req.params are read-only getters.
- * Validated data is stored on req._validated[source] for query/params,
- * and req.body is replaced directly (it remains writable).
- *
- * Usage in routes:
- *   validate({ body: createAnimalSchema })
- *   validate({ body: schema, params: paramsSchema })
- *
- * @param {object} schemas - Object with optional keys: body, query, params (each a Joi schema)
- * @returns {import('express').RequestHandler}
- */
 const validate = (schemas) => {
   return (req, res, next) => {
     const errors = [];

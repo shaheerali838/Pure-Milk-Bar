@@ -17,9 +17,6 @@ const generateExpenseVoucher = () => {
   return `EXP-${dateStr}-${randomSuffix}`;
 };
 
-/* ==========================================================================
-   KHATA SERVICES
-   ========================================================================== */
 
 export const addKhataEntryService = async (data, userId) => {
   const session = await mongoose.startSession();
@@ -253,9 +250,6 @@ export const getReceivablesAgingService = async () => {
   };
 };
 
-/* ==========================================================================
-   EXPENSE SERVICES
-   ========================================================================== */
 
 export const createExpenseService = async (data, userId) => {
   const { category, title, amountRupees, paymentMethod = 'CASH', receiptNumber, notes, date } = data;

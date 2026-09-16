@@ -119,7 +119,6 @@ export default function RiderPerformanceTable({
                     }
                     className="cursor-pointer hover:bg-slate-50/80 transition-colors"
                   >
-                    {/* Staff Name & Role */}
                     <TableCell className="align-top py-2">
                       <div className="space-y-0.5">
                         <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5 font-display">
@@ -136,7 +135,6 @@ export default function RiderPerformanceTable({
                       </div>
                     </TableCell>
 
-                    {/* Route & Vehicle */}
                     <TableCell className="align-top py-2">
                       <div className="space-y-0.5 text-xs text-slate-700">
                         <div className="font-medium truncate max-w-[140px]" title={staff.route}>
@@ -150,7 +148,6 @@ export default function RiderPerformanceTable({
                       </div>
                     </TableCell>
 
-                    {/* Completed Runs */}
                     <TableCell className="align-top py-2">
                       <div className="text-xs font-bold text-slate-900 tabular">
                         {completedRuns} done
@@ -162,28 +159,24 @@ export default function RiderPerformanceTable({
                       )}
                     </TableCell>
 
-                    {/* Volume Delivered */}
                     <TableCell className="align-top py-2">
                       <span className="text-xs font-bold text-emerald-700 tabular">
                         {totalLiters.toFixed(1)} L
                       </span>
                     </TableCell>
 
-                    {/* Fuel Used */}
                     <TableCell className="align-top py-2">
                       <span className="text-xs font-semibold text-blue-700 tabular">
                         {totalFuelLiters > 0 ? `${totalFuelLiters.toFixed(1)} L` : '—'}
                       </span>
                     </TableCell>
 
-                    {/* Fuel Expense */}
                     <TableCell className="align-top py-2">
                       <span className="text-xs font-bold text-slate-900 tabular">
                         Rs. {totalFuelCost.toLocaleString()}
                       </span>
                     </TableCell>
 
-                    {/* Action */}
                     <TableCell className="align-top py-2 text-right">
                       <Button
                         type="button"

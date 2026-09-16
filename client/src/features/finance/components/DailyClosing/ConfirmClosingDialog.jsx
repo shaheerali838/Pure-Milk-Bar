@@ -52,7 +52,6 @@ export default function ConfirmClosingDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Verification Summary Checklist */}
         <div className="space-y-2.5 my-2 text-xs">
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
             <Typography variant="overline" className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">

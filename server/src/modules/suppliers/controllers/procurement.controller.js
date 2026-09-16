@@ -2,10 +2,6 @@ import procurementService from '../services/procurement.service.js';
 import { sendSuccess } from '../../../utils/apiResponse.js';
 
 class ProcurementController {
-  /**
-   * POST /api/v1/suppliers/procurements
-   * Record a new milk procurement entry.
-   */
   async createProcurement(req, res, next) {
     try {
       const procurement = await procurementService.createProcurement(req.body);
@@ -16,10 +12,6 @@ class ProcurementController {
     }
   }
 
-  /**
-   * GET /api/v1/suppliers/procurements
-   * List all procurement records with filtering and pagination.
-   */
   async getAllProcurements(req, res, next) {
     try {
       const query = req._validated?.query || req.query;
@@ -38,10 +30,6 @@ class ProcurementController {
     }
   }
 
-  /**
-   * GET /api/v1/suppliers/procurements/daily-summary
-   * Get daily procurement summary for a given date.
-   */
   async getDailySummary(req, res, next) {
     try {
       const query = req._validated?.query || req.query;
@@ -54,10 +42,6 @@ class ProcurementController {
     }
   }
 
-  /**
-   * GET /api/v1/suppliers/procurements/:id
-   * Get a single procurement record by ID.
-   */
   async getProcurementById(req, res, next) {
     try {
       const params = req._validated?.params || req.params;
@@ -69,10 +53,6 @@ class ProcurementController {
     }
   }
 
-  /**
-   * PATCH /api/v1/suppliers/procurements/:id
-   * Update a procurement record (status / amountPaid).
-   */
   async updateProcurement(req, res, next) {
     try {
       const params = req._validated?.params || req.params;

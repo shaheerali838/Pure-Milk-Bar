@@ -23,7 +23,6 @@ export default function FarmCostsDetail({ data, onClose, onBack }) {
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-200">
-      {/* Top Navigation Bar with Back Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/90 rounded-2xl p-4 md:p-5 shadow-2xs">
         <div className="flex items-center gap-3">
           <button
@@ -53,7 +52,6 @@ export default function FarmCostsDetail({ data, onClose, onBack }) {
         </div>
       </div>
 
-      {/* Total Cost Banner */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-rose-600 via-rose-700 to-red-800 text-white shadow-sm">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs font-bold text-rose-100 uppercase tracking-wider">
@@ -71,9 +69,7 @@ export default function FarmCostsDetail({ data, onClose, onBack }) {
         </p>
       </div>
 
-      {/* 2-Column Grid: Category Breakdown on Left, Itemized List on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Category-Wise Costs Breakdown Card */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
@@ -117,7 +113,6 @@ export default function FarmCostsDetail({ data, onClose, onBack }) {
           </div>
         </div>
 
-        {/* Itemized Expenses List from Context */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-xs space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 pb-3.5 border-b border-slate-100">
             <div>
@@ -125,7 +120,6 @@ export default function FarmCostsDetail({ data, onClose, onBack }) {
               <p className="text-[11px] text-slate-400">Fetched directly from ExpenseContext</p>
             </div>
 
-            {/* Category Quick Filter */}
             <div className="flex items-center gap-1.5 overflow-x-auto text-[11px]">
               {['All', 'Feed', 'Veterinary', 'Labor', 'Energy', 'Maintenance'].map((opt) => (
                 <button

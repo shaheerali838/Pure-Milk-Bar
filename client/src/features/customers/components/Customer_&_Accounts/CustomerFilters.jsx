@@ -15,7 +15,6 @@ export default function CustomerFilters() {
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-      {/* Search Input */}
       <div className="relative flex-1 min-w-[240px]">
         <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <Input
@@ -27,7 +26,6 @@ export default function CustomerFilters() {
         />
       </div>
 
-      {/* Status Filter Dropdown */}
       <div className="w-40">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="h-9 bg-white text-xs font-semibold text-slate-700 shadow-2xs">

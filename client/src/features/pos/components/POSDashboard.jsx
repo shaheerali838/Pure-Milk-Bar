@@ -74,7 +74,6 @@ export default function POSDashboard() {
 
   return (
     <div className="space-y-2">
-      {/* 1. Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 py-2">
         <div>
           <div className="flex items-center gap-2.5">
@@ -89,7 +88,6 @@ export default function POSDashboard() {
 
         </div>
 
-        {/* Header Action Buttons */}
         <div className="flex items-center gap-2">
           {cart.length > 0 && (
             <button
@@ -104,15 +102,11 @@ export default function POSDashboard() {
         </div>
       </div>
 
-      {/* 2. 6 POS Inventory Summary Cards (from localStorage data) */}
       <POSCardOverflow />
 
-      {/* 3. Main Split Grid (Products Selection Left, Cart & Sale Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
-        {/* Left Side: Product Selection (7 cols) */}
         <div className="lg:col-span-7 space-y-2 ">
           <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs space-y-3">
-            {/* Search and Filters */}
             <div className="space-y-2.5 flex items-center gap-2 justify-between">
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-sm text-slate-700 w-full sm:w-72 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
                 <Search className="w-4 h-4 text-slate-400 shrink-0" />
@@ -125,7 +119,6 @@ export default function POSDashboard() {
                 />
               </div>
 
-              {/* Category Pills */}
               <div className="block bg-slate-100 rounded-full px-2 py-2">
                 {[
                   { id: 'all', label: 'All Items' },
@@ -148,7 +141,6 @@ export default function POSDashboard() {
               </div>
             </div>
 
-            {/* Products Grid */}
             {filteredProducts.length === 0 ? (
               <div className="text-center py-12 px-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
                 <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400 mb-2">
@@ -180,7 +172,6 @@ export default function POSDashboard() {
                           : 'border-slate-200/90 hover:border-indigo-200'
                         }`}
                     >
-                      {/* Top Row: Category Badge + Detail/Delete Actions */}
                       <div className="flex items-center justify-between gap-2 mb-2.5">
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isMilk
@@ -193,7 +184,6 @@ export default function POSDashboard() {
                           {product.category || 'Dairy'}
                         </span>
 
-                        {/* Card Actions: Detail (Eye) & Delete */}
                         <div className="flex items-center gap-1 bg-slate-50 border border-slate-200/80 rounded-lg p-0.5 shadow-2xs">
                           <button
                             type="button"
@@ -214,7 +204,6 @@ export default function POSDashboard() {
                         </div>
                       </div>
 
-                      {/* Middle: Emoji + Name & Specs */}
                       <div className="flex items-start gap-3 my-1">
                         <div
                           className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 shadow-2xs ${isMilk
@@ -235,9 +224,7 @@ export default function POSDashboard() {
                         </div>
                       </div>
 
-                      {/* Quick Rupee Buy Chips for Dairy Products (Milk / Dahi) */}
                      
-                      {/* Bottom Row: Price & In-Cart Badge / Add Button */}
                       <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
                         <div>
                           <span className="text-sm font-black text-slate-900 tracking-tight">
@@ -273,7 +260,6 @@ export default function POSDashboard() {
               </div>
             )}
 
-            {/* Bottom Tip Banner */}
             <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
               <span> Click any product card to add 1 unit to cart</span>
               <span className="font-semibold text-slate-500">Live POS Engine</span>
@@ -281,13 +267,11 @@ export default function POSDashboard() {
           </div>
         </div>
 
-        {/* Right Side: Cart, Checkout & Khata Settlement (5 cols) */}
         <div className="lg:col-span-5">
           <POSSale />
         </div>
       </div>
 
-      {/* Completed Sale Receipt Modal */}
       <POSReceiptModal />
     </div>
   );

@@ -75,7 +75,6 @@ export default function PLCardOverflow({
           className="group flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 cursor-pointer relative overflow-hidden active:scale-[0.99]"
           style={{ borderTop: `3.5px solid ${color}` }}
         >
-          {/* Header Row */}
           <div className="flex items-start justify-between mb-2">
             <div
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-2xs transition-transform group-hover:scale-105"
@@ -91,7 +90,6 @@ export default function PLCardOverflow({
             </div>
           </div>
 
-          {/* Amount and Labels */}
           <div>
             <p className="text-lg sm:text-xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
               {amount}

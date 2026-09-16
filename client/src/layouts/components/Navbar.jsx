@@ -207,7 +207,6 @@ export default function Navbar() {
 
   return (
     <header className="bg-white border-b border-slate-200/80 px-3.5 py-1.5 flex items-center justify-between gap-3 shadow-2xs sticky top-0 z-20 no-print">
-      {/* Clickable Real-Data Breadcrumbs */}
       <div className="shrink-0 overflow-x-auto py-0.5 max-w-[65vw]">
         <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-xs whitespace-nowrap">
           {breadcrumbs.map((crumb, idx) => {
@@ -249,7 +248,6 @@ export default function Navbar() {
         </nav>
       </div>
 
-      {/* Right Header Actions */}
       <div className="flex items-center gap-2 shrink-0">
         <Button
           type="button"

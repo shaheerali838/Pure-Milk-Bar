@@ -155,7 +155,6 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-3.5 space-y-2.5 text-xs max-h-[82vh] overflow-y-auto">
-          {/* Basic Details */}
           <div className="space-y-2">
             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-display">
               Basic Details
@@ -211,7 +210,6 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
 
           <hr className="border-slate-100" />
 
-          {/* Verification Details */}
           <div className="space-y-2">
             <h4 className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1 font-display">
               <ShieldCheck className="w-3 h-3" /> Verification Parameters
@@ -274,7 +272,6 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
 
           <hr className="border-slate-100" />
 
-          {/* Section 3: Address & Subscription */}
           <div className="space-y-2">
             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-display">
               Address &amp; Subscription Plan
@@ -388,7 +385,6 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
 
           <hr className="border-slate-100" />
 
-          {/* Finance & Status */}
           <div className="space-y-2">
             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-display">
               Finance &amp; Status

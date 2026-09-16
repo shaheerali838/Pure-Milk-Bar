@@ -715,7 +715,6 @@ export default function FarmPL() {
 
   return (
     <div className="flex flex-col gap-5 pb-16 animate-in fade-in duration-200">
-      {/* 1. Header with Heading, Date Picker (Filter) & CSV Export Button */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
         <div>
           <div className="flex items-center gap-2">
@@ -729,9 +728,7 @@ export default function FarmPL() {
           
         </div>
 
-        {/* Heading Right Side: Date Filter & Export Button */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Quick Date Mode Tabs */}
           <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 text-xs">
             <button
               type="button"
@@ -777,7 +774,6 @@ export default function FarmPL() {
             </button>
           </div>
 
-          {/* Date Picker (Custom Date Filter) */}
           <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
             <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <input
@@ -792,7 +788,6 @@ export default function FarmPL() {
             />
           </div>
 
-          {/* Export CSV Download Button */}
           <button
             type="button"
             onClick={handleExportCSV}
@@ -804,7 +799,6 @@ export default function FarmPL() {
         </div>
       </div>
 
-      {/* Active Filter Indicator Badge */}
       <div className="flex items-center justify-between px-2 text-xs text-slate-500">
         <div className="flex items-center gap-2">
           <Filter className="w-3.5 h-3.5 text-slate-400" />
@@ -834,7 +828,6 @@ export default function FarmPL() {
         )}
       </div>
 
-      {/* 2. Summary Cards Component (PLCardOverflow.jsx) */}
       <PLCardOverflow
         rawMilkRevenue={calculatedMetrics.rawMilkRevenue}
         rawMilkVolume={calculatedMetrics.rawMilkVolume}
@@ -854,14 +847,12 @@ export default function FarmPL() {
         }}
       />
 
-      {/* 3. Revenue & Charts Component (SellingRevenue.jsx) */}
       <SellingRevenue
         sales={filteredSales}
         expenses={filteredExpenses}
         categoryBreakdown={calculatedMetrics.categoryBreakdown}
       />
 
-      {/* 4. NEW COMPONENT: ProductRevenueBreakdown.jsx */}
       <ProductRevenueBreakdown
         productsData={calculatedMetrics.farmProductsTableData}
         onSelectProduct={(prod) => {
@@ -870,7 +861,6 @@ export default function FarmPL() {
         }}
       />
 
-      {/* 5. NEW COMPONENT: ProfitLossSummary.jsx */}
       <ProfitLossSummary
         incomeData={{
           milkSales: calculatedMetrics.rawMilkRevenue,

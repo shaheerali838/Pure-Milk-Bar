@@ -52,7 +52,6 @@ export default function CustomerDropPointsDetailView({
 
   return (
     <div className="space-y-2.5 animate-in fade-in duration-150 pb-4">
-      {/* Header with Back button */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200">
         <div className="flex items-center gap-2.5">
           <Button
@@ -79,7 +78,6 @@ export default function CustomerDropPointsDetailView({
         </div>
       </div>
 
-      {/* Hero Stats Card */}
       <div className="bg-slate-900 text-white rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-950 text-emerald-400 border border-emerald-800/60 flex items-center justify-center text-lg font-bold font-display">
@@ -119,7 +117,6 @@ export default function CustomerDropPointsDetailView({
         </div>
       </div>
 
-      {/* Drop Points Table */}
       <div className="bg-white border border-slate-200/90 rounded-xl p-3 shadow-2xs space-y-2">
         <h4 className="font-bold text-slate-900 text-xs font-display flex items-center gap-1.5">
           <Package className="w-3.5 h-3.5 text-emerald-600" />

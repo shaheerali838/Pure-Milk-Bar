@@ -30,7 +30,6 @@ export default function POSWalkinSection() {
 
   return (
     <div className="space-y-2.5 animate-in fade-in duration-150">
-      {/* Optional Walk-in Customer Info */}
       <div className="p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/90 space-y-2 text-xs">
         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
           Walk-in Customer Details (Optional)
@@ -57,7 +56,6 @@ export default function POSWalkinSection() {
         </div>
       </div>
 
-      {/* Payment Method (Cash vs Online) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-[10px] font-bold uppercase text-slate-400 tracking-wider">
           <span>PAYMENT METHOD</span>
@@ -92,7 +90,6 @@ export default function POSWalkinSection() {
           </button>
         </div>
 
-        {/* Cash Tendered */}
         {paymentMethod === 'cash' && (
           <div className="space-y-1.5 pt-1">
             <div className="relative">
@@ -129,7 +126,6 @@ export default function POSWalkinSection() {
           </div>
         )}
 
-        {/* Online Details */}
         {paymentMethod === 'online' && (
           <div className="p-2.5 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2 text-xs">
             <div className="flex items-center justify-between">

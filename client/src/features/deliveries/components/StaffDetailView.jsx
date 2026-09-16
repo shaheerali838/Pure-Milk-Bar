@@ -61,7 +61,6 @@ export default function StaffDetailView({ staff, onBack, onViewDelivery }) {
 
   return (
     <div className="space-y-2.5 animate-in fade-in duration-150 pb-4">
-      {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200">
         <div className="flex items-center gap-2.5">
           <Button
@@ -113,7 +112,6 @@ export default function StaffDetailView({ staff, onBack, onViewDelivery }) {
         </div>
       </div>
 
-      {/* Hero Card */}
       <div className="bg-slate-900 text-white rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-purple-950 text-purple-300 border border-purple-800/60 flex items-center justify-center text-lg font-bold font-display">
@@ -153,7 +151,6 @@ export default function StaffDetailView({ staff, onBack, onViewDelivery }) {
         </div>
       </div>
 
-      {/* Profile Details Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs">
         <div className="bg-white border border-slate-200/90 rounded-xl p-3 shadow-2xs space-y-2">
           <h4 className="font-bold text-slate-900 uppercase tracking-wide text-xs flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
@@ -208,7 +205,6 @@ export default function StaffDetailView({ staff, onBack, onViewDelivery }) {
         </div>
       </div>
 
-      {/* Assigned Delivery Runs Table */}
       <div className="bg-white border border-slate-200/90 rounded-xl p-3 shadow-2xs space-y-2">
         <h4 className="font-bold text-slate-900 text-xs font-display flex items-center gap-1.5">
           <Package className="w-3.5 h-3.5 text-emerald-600" />

@@ -40,7 +40,6 @@ export default function LogYieldModal({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="bg-white rounded-3xl max-w-lg w-full p-5 shadow-2xl border border-slate-100">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-extrabold text-slate-900">Log Farm Milking Yield</h3>
           <button
@@ -52,9 +51,7 @@ export default function LogYieldModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-3 text-xs font-semibold">
-          {/* Select Livestock */}
           <div>
             <label className="block text-slate-700 font-bold mb-1">
               Select Livestock Animal
@@ -72,7 +69,6 @@ export default function LogYieldModal({ isOpen, onClose }) {
             </select>
           </div>
 
-          {/* Morning & Evening Yield */}
           <div className="grid grid-cols-2 gap-3">
             <InputField
               label="Morning Milking (Liters)"
@@ -90,7 +86,6 @@ export default function LogYieldModal({ isOpen, onClose }) {
             />
           </div>
 
-          {/* Fat % & SNF % */}
           <div className="grid grid-cols-2 gap-3">
             <InputField
               label="Fat %"
@@ -108,7 +103,6 @@ export default function LogYieldModal({ isOpen, onClose }) {
             />
           </div>
 
-          {/* Herdsman / Milker Name */}
           <InputField
             label="Herdsman / Milker Name"
             type="text"
@@ -117,7 +111,6 @@ export default function LogYieldModal({ isOpen, onClose }) {
             placeholder="Allah Ditta"
           />
 
-          {/* Action Buttons */}
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
             <button
               type="button"

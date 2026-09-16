@@ -1,9 +1,3 @@
-/**
- * Typography Design Tokens & Style Mappings
- * 
- * Centralized mapping for typography variants, color overrides, and HTML tags.
- * Easily tweak font sizes, weights, line heights, and colors in one place.
- */
 
 // Base font size, weight, and tracking styles per variant
 export const variantStyles = {

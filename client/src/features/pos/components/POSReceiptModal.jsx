@@ -18,7 +18,6 @@ export default function POSReceiptModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-3 overflow-y-auto animate-in fade-in duration-150">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-4">
-        {/* Header */}
         <div className="px-6 py-4 bg-emerald-600 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-white" />
@@ -40,9 +39,7 @@ export default function POSReceiptModal() {
           </button>
         </div>
 
-        {/* Receipt Content */}
         <div className="p-6 space-y-4 text-xs">
-          {/* Business Brand */}
           <div className="text-center pb-2 border-b border-dashed border-slate-200">
             <h2 className="text-base font-black text-slate-900 font-display">
               PURE MILK BAR
@@ -56,7 +53,6 @@ export default function POSReceiptModal() {
             </p>
           </div>
 
-          {/* Customer & Fulfillment Info */}
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1 text-slate-600 text-[11px]">
             <div className="flex justify-between">
               <span>Customer:</span>
@@ -111,7 +107,6 @@ export default function POSReceiptModal() {
             </div>
           </div>
 
-          {/* Items Table */}
           <div>
             <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider pb-1 border-b border-slate-200">
               <span>ITEM</span>
@@ -140,7 +135,6 @@ export default function POSReceiptModal() {
             </div>
           </div>
 
-          {/* Financial Breakdown */}
           <div className="pt-2 border-t border-dashed border-slate-200 space-y-1 text-[11px]">
             <div className="flex justify-between text-slate-500">
               <span>Subtotal:</span>
@@ -191,7 +185,6 @@ export default function POSReceiptModal() {
             )}
           </div>
 
-          {/* Actions */}
           <div className="pt-3 flex items-center justify-between gap-2 border-t border-slate-100">
             <button
               type="button"

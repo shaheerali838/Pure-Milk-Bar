@@ -4,11 +4,6 @@ import { Button } from '@/components/ui/button';
 import AuthInput from './AuthInput';
 import PasswordInput from './PasswordInput';
 
-/**
- * LoginForm component.
- * Features Email, Password inputs, Remember Me checkbox, Forgot password link,
- * and submit button styled in Emerald Green.
- */
 const LoginForm = ({
   onLogin,
   initialEmail = '',
@@ -67,7 +62,6 @@ const LoginForm = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-      {/* Inline Error Alert */}
       {displayError && (
         <div
           role="alert"
@@ -78,7 +72,6 @@ const LoginForm = ({
         </div>
       )}
 
-      {/* Form Inputs */}
       <AuthInput
         id="email"
         label="Email Address"
@@ -111,7 +104,6 @@ const LoginForm = ({
         autoComplete="current-password"
       />
 
-      {/* Remember Me & Forgot Password Row */}
       <div className="flex items-center justify-between pt-0.5">
         <label className="flex items-center gap-2 cursor-pointer select-none">
           <input
@@ -133,7 +125,6 @@ const LoginForm = ({
         </a>
       </div>
 
-      {/* Primary Submit Button */}
       <Button
         type="submit"
         disabled={isLoading}

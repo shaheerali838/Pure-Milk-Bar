@@ -60,7 +60,6 @@ export default function DailyExpensesList({ expenses = {} }) {
         )}
       </div>
 
-      {/* Expenses Subtotal */}
       <div className="flex items-center justify-between px-2 pt-1 font-bold text-xs text-slate-700">
         <span className="text-[11px] font-bold text-slate-600">Total Expenses Paid Today</span>
         <span className="font-black text-rose-600 tabular">

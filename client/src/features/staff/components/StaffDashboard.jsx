@@ -95,7 +95,6 @@ export default function StaffDashboard() {
 
   return (
     <div className="space-y-4 pb-8">
-      {/* 1. Header with Title & 'Add Staff' Button */}
       <div className="flex flex-wrap items-center justify-between gap-3 py-1">
         <div>
           <div className="flex items-center gap-2.5">
@@ -112,7 +111,6 @@ export default function StaffDashboard() {
           </p>
         </div>
 
-        {/* 'Add Staff' Button: switches to full-width Add view */}
         <button
           type="button"
           onClick={() => setCurrentView('add')}
@@ -123,14 +121,10 @@ export default function StaffDashboard() {
         </button>
       </div>
 
-      {/* 2. Top 5 Summary Cards */}
       <StaffCardOverflow />
 
-      {/* 3. Main Data Card with Search & Table */}
       <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
-        {/* Search & Filter Bar */}
         <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
-          {/* Left Search Input */}
           <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 w-full sm:w-80 shadow-2xs focus-within:border-[#00a86b] transition">
             <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
@@ -142,7 +136,6 @@ export default function StaffDashboard() {
             />
           </div>
 
-          {/* Role Filter Pills */}
           <div className="flex flex-wrap items-center gap-1.5">
             {[
               { id: 'all', label: 'All Roles' },
@@ -168,7 +161,6 @@ export default function StaffDashboard() {
           </div>
         </div>
 
-        {/* Staff Table */}
         {filteredStaff.length === 0 ? (
           <div className="py-14 text-center px-4 flex flex-col items-center justify-center space-y-2">
             <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-1">
@@ -219,12 +211,10 @@ export default function StaffDashboard() {
                     }}
                     className="hover:bg-emerald-50/30 transition duration-150 cursor-pointer"
                   >
-                    {/* ID */}
                     <td className="py-3 px-4 font-mono font-bold text-slate-900">
                       {staff.id}
                     </td>
 
-                    {/* Name */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 font-display">
@@ -234,14 +224,12 @@ export default function StaffDashboard() {
                       </div>
                     </td>
 
-                    {/* Role Badge */}
                     <td className="py-3 px-4">
                       <span className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded-md border ${getRoleBadgeStyle(staff.role)}`}>
                         {staff.role}
                       </span>
                     </td>
 
-                    {/* Shift */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1 text-slate-600 font-medium">
                         <Clock className="w-3 h-3 text-slate-400" />
@@ -249,7 +237,6 @@ export default function StaffDashboard() {
                       </div>
                     </td>
 
-                    {/* Contact */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1 font-mono text-slate-800 font-bold tabular">
                         <Phone className="w-3 h-3 text-slate-400" />
@@ -262,17 +249,14 @@ export default function StaffDashboard() {
                       )}
                     </td>
 
-                    {/* CNIC */}
                     <td className="py-3 px-4 font-mono text-slate-600 tabular">
                       {staff.cnic || '—'}
                     </td>
 
-                    {/* Monthly Salary */}
                     <td className="py-3 px-4 font-mono font-black text-slate-900 tabular">
                       Rs. {Number(staff.monthlySalary || 0).toLocaleString()}
                     </td>
 
-                    {/* Route */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1 text-slate-600 font-medium truncate max-w-[160px]">
                         <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
@@ -280,7 +264,6 @@ export default function StaffDashboard() {
                       </div>
                     </td>
 
-                    {/* Actions */}
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                         <button

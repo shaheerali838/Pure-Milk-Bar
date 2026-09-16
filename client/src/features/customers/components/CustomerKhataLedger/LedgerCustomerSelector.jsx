@@ -27,7 +27,6 @@ export default function LedgerCustomerSelector({
   return (
     <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-xs space-y-2 mb-3">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-end">
-        {/* Customer Select Dropdown */}
         <div className="md:col-span-8">
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
             Select Customer Khata
@@ -49,7 +48,6 @@ export default function LedgerCustomerSelector({
           </Select>
         </div>
 
-        {/* Month Selector */}
         <div className="md:col-span-4">
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
             <Calendar className="w-2.5 h-2.5 text-slate-400" /> Month
@@ -63,7 +61,6 @@ export default function LedgerCustomerSelector({
         </div>
       </div>
 
-      {/* Action Buttons Row */}
       <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1.5 border-t border-slate-100">
         <Button
           type="button"
@@ -77,7 +74,6 @@ export default function LedgerCustomerSelector({
           Customer Details
         </Button>
 
-        {/* Buy Product / New Order Button */}
         <Button
           type="button"
           size="sm"

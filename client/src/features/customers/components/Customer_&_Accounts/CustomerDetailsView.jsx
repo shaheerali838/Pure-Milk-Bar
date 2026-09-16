@@ -28,7 +28,6 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
 
   return (
     <div className="space-y-3 animate-in fade-in duration-200 pb-4">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-200">
         <div className="flex items-center gap-3">
           <Button
@@ -93,7 +92,6 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
         </div>
       </div>
 
-      {/* Top 3 Metric Highlight Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         <Card className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs flex items-center justify-between border-t-3 border-t-emerald-500">
           <div>
@@ -141,9 +139,7 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
         </Card>
       </div>
 
-      {/* Main Details Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        {/* Section 1: Contact & Security Profile */}
         <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-3">
           <div className="flex items-center gap-2 pb-1.5 border-b border-slate-100">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
@@ -190,7 +186,6 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
           </div>
         </Card>
 
-        {/* Section 2: Delivery & Khata Balance Status */}
         <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-3">
           <div className="flex items-center gap-2 pb-1.5 border-b border-slate-100">
             <CreditCard className="w-4 h-4 text-blue-600" />
@@ -200,7 +195,6 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
           </div>
 
           <div className="space-y-3 text-xs">
-            {/* Address box */}
             <div className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-xl">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Delivery Address</span>
               <p className="font-semibold text-slate-900 mt-0.5">
@@ -211,7 +205,6 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
               </p>
             </div>
 
-            {/* Credit Limit & Khata Status */}
             <div className="p-3 bg-slate-900 text-white rounded-xl space-y-2">
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-400 font-medium">Khata Credit Limit</span>
@@ -237,7 +230,6 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
               </div>
             </div>
 
-            {/* Subscription & Mode Details */}
             <div className="grid grid-cols-2 gap-2.5">
               <div className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-xl">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Subscription Type</span>

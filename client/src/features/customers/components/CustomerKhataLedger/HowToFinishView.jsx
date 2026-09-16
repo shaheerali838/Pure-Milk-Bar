@@ -6,7 +6,6 @@ import { Card } from '@/components/ui/card';
 export default function HowToFinishView({ onBack }) {
   return (
     <div className="space-y-3 animate-in fade-in duration-200 pb-4">
-      {/* Header */}
       <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
         <Button
           type="button"
@@ -28,7 +27,6 @@ export default function HowToFinishView({ onBack }) {
         </div>
       </div>
 
-      {/* Guide Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-4xl">
         <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2 border-t-3 border-t-emerald-500">
           <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-sm">

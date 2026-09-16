@@ -118,13 +118,11 @@ export default function CustomerKhataLedger() {
 
   return (
     <div className="space-y-2.5">
-      {/* Header */}
       <LedgerHeader
         onHowToFinish={() => setCurrentSubView('howToFinish')}
         onPrint={handlePrint}
       />
 
-      {/* Customer Selector & Quick Action Buttons */}
       <LedgerCustomerSelector
         selectedCustomerId={selectedCustomerId}
         onSelectCustomer={handleSelectCustomer}
@@ -137,7 +135,6 @@ export default function CustomerKhataLedger() {
         onSettleKhata={handleSettleKhata}
       />
 
-      {/* Complete Customer Profile & Standing Card */}
       {currentCustomer && (
         <LedgerCustomerProfileCard
           customer={currentCustomer}
@@ -145,7 +142,6 @@ export default function CustomerKhataLedger() {
         />
       )}
 
-      {/* 4 Summary Stats Cards */}
       <LedgerStatsCards
         openingBalance={openingBalance}
         openingDate={openingDate}
@@ -156,7 +152,6 @@ export default function CustomerKhataLedger() {
         currentBalance={closingBalance}
       />
 
-      {/* Ledger Table */}
       <LedgerTable
         customer={currentCustomer}
         ledgerEntries={activeEntries}
@@ -170,7 +165,6 @@ export default function CustomerKhataLedger() {
         }}
       />
 
-      {/* Edit Customer Modal */}
       {currentCustomer && (
         <EditCustomerModal
           customer={currentCustomer}

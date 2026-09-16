@@ -2,10 +2,6 @@ import milkingYieldLogService from '../services/milkingYieldLog.service.js';
 import { sendSuccess } from '../../../utils/apiResponse.js';
 
 class MilkingYieldLogController {
-  /**
-   * POST /api/farm/milking-logs
-   * Record a new milking yield log entry.
-   */
   async createMilkingYieldLog(req, res, next) {
     try {
       // In production, operatorId comes from JWT (req.user._id).
@@ -20,10 +16,6 @@ class MilkingYieldLogController {
     }
   }
 
-  /**
-   * GET /api/farm/milking-logs
-   * List all milking yield logs with filtering and pagination.
-   */
   async getAllMilkingYieldLogs(req, res, next) {
     try {
       const query = req._validated?.query || req.query;
@@ -42,10 +34,6 @@ class MilkingYieldLogController {
     }
   }
 
-  /**
-   * GET /api/farm/milking-logs/daily-summary
-   * Get daily yield summary for a specific date.
-   */
   async getDailyYieldSummary(req, res, next) {
     try {
       const query = req._validated?.query || req.query;
@@ -58,10 +46,6 @@ class MilkingYieldLogController {
     }
   }
 
-  /**
-   * GET /api/farm/milking-logs/:id
-   * Get a single milking yield log by ID.
-   */
   async getMilkingYieldLogById(req, res, next) {
     try {
       const params = req._validated?.params || req.params;
@@ -73,10 +57,6 @@ class MilkingYieldLogController {
     }
   }
 
-  /**
-   * PATCH /api/farm/milking-logs/:id
-   * Update a milking yield log entry.
-   */
   async updateMilkingYieldLog(req, res, next) {
     try {
       const params = req._validated?.params || req.params;
@@ -88,10 +68,6 @@ class MilkingYieldLogController {
     }
   }
 
-  /**
-   * DELETE /api/farm/milking-logs/:id
-   * Delete a milking yield log entry.
-   */
   async deleteMilkingYieldLog(req, res, next) {
     try {
       const params = req._validated?.params || req.params;

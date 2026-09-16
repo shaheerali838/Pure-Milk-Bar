@@ -67,7 +67,6 @@ export default function FarmDashboardContent() {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Extracted Stats Cards */}
       <FarmCardOverflow 
         totalAnimals={totalAnimals}
         cowsCount={cowsCount}
@@ -78,9 +77,7 @@ export default function FarmDashboardContent() {
         monthlyNetProfit={monthlyNetProfit}
       />
 
-      {/* Visual Chart & Financial Highlights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Trend Chart (2 Cols) */}
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -132,7 +129,6 @@ export default function FarmDashboardContent() {
           </div>
         </div>
 
-        {/* Financial Summary Sidebar (1 Col) */}
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">

@@ -101,7 +101,6 @@ export default function ReceivablesAgingStats() {
 
   return (
     <div className="space-y-2 mb-2">
-      {/* 4 Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         {statCards.map(({ label, value, sub, icon: Icon, color, badge }) => (
           <div
@@ -131,7 +130,6 @@ export default function ReceivablesAgingStats() {
         ))}
       </div>
 
-      {/* Bucket Legend Row */}
       <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-600">
         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Legend:</span>
         <div className="flex items-center gap-1.5">

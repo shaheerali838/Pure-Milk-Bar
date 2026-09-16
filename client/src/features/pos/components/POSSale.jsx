@@ -164,7 +164,6 @@ export default function POSSale() {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3.5">
-      {/* 1. Header of Sale Cart */}
       <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
@@ -192,7 +191,6 @@ export default function POSSale() {
         )}
       </div>
 
-      {/* 2. Empty State or Cart Items Component */}
       {cart.length === 0 ? (
         <div className="py-8 text-center flex flex-col items-center justify-center space-y-2">
           <div className="w-11 h-11 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
@@ -207,7 +205,6 @@ export default function POSSale() {
         </div>
       ) : (
         <div className="space-y-2">
-          {/* Item rows */}
           <div className="space-y-2.5 max-h-85 overflow-y-auto pr-1">
             {cart.map((item) => {
               const qty = Number(item.quantity) || 0;
@@ -232,7 +229,6 @@ export default function POSSale() {
                   key={item.id}
                   className="p-2.5 rounded-xl border border-slate-200/90 bg-slate-50/70 hover:bg-slate-50 transition space-y-2"
                 >
-                  {/* Top Row: Icon + Name + Rate + Total & Remove */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-sm shadow-2xs shrink-0">
@@ -280,9 +276,7 @@ export default function POSSale() {
                     </div>
                   </div>
 
-                  {/* Inputs: Quantity Stepper & Direct Rupee Amount */}
                   <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/60 text-xs">
-                    {/* Quantity Stepper with manual typing */}
                     <div className="flex items-center gap-1">
                       <span className="text-[10px] font-bold text-slate-400 uppercase">{unitLabel}:</span>
                       <div className="flex items-center border border-slate-200 bg-white rounded-lg shadow-2xs">
@@ -320,7 +314,6 @@ export default function POSSale() {
                       </div>
                     </div>
 
-                    {/* Direct Rupee (Rs) Input */}
                     <div className="flex items-center gap-1">
                       <span className="text-[10px] font-bold text-indigo-500 uppercase">Rs:</span>
                       <div className="flex items-center border border-indigo-200 bg-white rounded-lg shadow-2xs px-1.5 py-0.5">
@@ -338,7 +331,6 @@ export default function POSSale() {
                     </div>
                   </div>
 
-                  {/* Quick Rupee & Liter Preset Chips */}
                   <div className="flex flex-wrap items-center gap-1 pt-1">
                     <span className="text-[9px] font-semibold text-slate-400 mr-0.5">Quick:</span>
                     {[50, 100, 200, 500].map((rs) => {
@@ -390,7 +382,6 @@ export default function POSSale() {
             })}
           </div>
 
-          {/* Pricing summary */}
           <div className="pt-2 border-t border-slate-100 space-y-1 text-xs text-slate-600">
             <div className="flex justify-between items-center text-[11px]">
               <span>Subtotal</span>
@@ -399,7 +390,6 @@ export default function POSSale() {
               </span>
             </div>
 
-            {/* Delivery Charges (when Delivery Mode is active) */}
             {saleCategory === "delivery" && (
               <div className="flex justify-between items-center text-blue-700 text-[11px]">
                 <span className="flex items-center gap-1">
@@ -416,7 +406,6 @@ export default function POSSale() {
               </div>
             )}
 
-            {/* Discount */}
             <div className="flex justify-between items-center text-slate-600 text-[11px]">
               <span className="flex items-center gap-1">
                 <DollarSign className="w-3 h-3 text-slate-400" /> Discount (Rs.)
@@ -431,7 +420,6 @@ export default function POSSale() {
               />
             </div>
 
-            {/* NET PAYABLE */}
             <div className="flex justify-between items-center pt-1.5 border-t border-dashed border-slate-200 text-xs font-black text-slate-900">
               <span className="uppercase tracking-wide font-display text-[11px]">
                 NET PAYABLE
@@ -443,7 +431,6 @@ export default function POSSale() {
           </div>
         </div>
       )}
-      {/* 3. Primary Sale Category Selector (2 Buttons: Walk-in & Delivery) */}
       <div className="pt-2 border-t border-slate-100 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">
@@ -456,9 +443,7 @@ export default function POSSale() {
           </span>
         </div>
 
-        {/* 2 Buttons: Walk-in & Delivery */}
         <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
-          {/* Button 1: Walkin */}
           <button
             type="button"
             onClick={() => setSaleCategory("walkin")}
@@ -472,7 +457,6 @@ export default function POSSale() {
             <span className="truncate">Walk-in Counter</span>
           </button>
 
-          {/* Button 2: Delivery */}
           <button
             type="button"
             onClick={() => setSaleCategory("delivery")}
@@ -488,14 +472,9 @@ export default function POSSale() {
         </div>
       </div>
 
-      {/* 4. MODE SPECIFIC VIEWS */}
 
-      {/* ========================================================================= */}
-      {/* MODE 1: WALKIN COUNTER (FIRST-TIME vs REGISTERED / MONTHLY SUBSCRIBED) */}
-      {/* ========================================================================= */}
       {saleCategory === "walkin" && (
         <div className="space-y-2.5 animate-in fade-in duration-150">
-          {/* Sub-toggle: First-Time Walk-in vs Registered / Monthly Subscribed */}
           <div className="grid grid-cols-2 gap-1.5 p-1 bg-emerald-50/70 rounded-xl border border-emerald-100">
             <button
               type="button"
@@ -524,7 +503,6 @@ export default function POSSale() {
             </button>
           </div>
 
-          {/* 1A: FIRST-TIME / REGULAR WALK-IN VIEW */}
           {walkinCustomerType === "first_time" && (
             <div className="space-y-2.5">
               <div className="p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/90 space-y-2 text-xs">
@@ -553,7 +531,6 @@ export default function POSSale() {
                 </div>
               </div>
 
-              {/* Payment Method (Cash vs Online for Walk-in) */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-[10px] font-bold uppercase text-slate-400 tracking-wider">
                   <span>PAYMENT METHOD</span>
@@ -590,7 +567,6 @@ export default function POSSale() {
                   </button>
                 </div>
 
-                {/* Cash Tendered */}
                 {paymentMethod === "cash" && (
                   <div className="space-y-1.5 pt-1">
                     <div className="relative">
@@ -631,7 +607,6 @@ export default function POSSale() {
                   </div>
                 )}
 
-                {/* Online Details */}
                 {paymentMethod === "online" && (
                   <div className="p-2.5 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2 text-xs">
                     <div className="flex items-center justify-between">
@@ -686,10 +661,8 @@ export default function POSSale() {
             </div>
           )}
 
-          {/* 1B: REGISTERED / MONTHLY SUBSCRIBED WALK-IN VIEW */}
           {walkinCustomerType === "registered" && (
             <div className="space-y-3 animate-in fade-in duration-150 text-xs">
-              {/* Registered Customer Picker */}
               <div>
                 <label className="block text-[10px] font-bold text-purple-900 uppercase mb-1">
                   Select Monthly Subscribed Customer:
@@ -714,7 +687,6 @@ export default function POSSale() {
 
               {activeCustomer ? (
                 <div className="space-y-2.5">
-                  {/* Customer Info Badge */}
                   <div className="p-2 bg-purple-50/50 rounded-lg border border-purple-100 flex items-center justify-between">
                     <div>
                       <span className="font-bold text-slate-800 text-xs block">
@@ -736,7 +708,6 @@ export default function POSSale() {
                     )}
                   </div>
 
-                  {/* 3 Metric Highlight Cards */}
                   <div className="grid grid-cols-3 gap-1.5">
                     <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-center">
                       <span className="text-[9px] font-bold text-rose-700 uppercase block">
@@ -766,7 +737,6 @@ export default function POSSale() {
                     </div>
                   </div>
 
-                  {/* Settlement Options: Khata vs Cash vs Partial */}
                   <div className="space-y-1.5">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                       Khata &amp; Payment Settlement
@@ -843,7 +813,6 @@ export default function POSSale() {
                       </label>
                     </div>
 
-                    {/* Partial Amount Input */}
                     {khataPaymentOption === "partial" && (
                       <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
                         <label className="block text-[10px] font-bold text-amber-900 uppercase">
@@ -861,7 +830,6 @@ export default function POSSale() {
                       </div>
                     )}
 
-                    {/* Paid in Cash Quick Tender */}
                     {khataPaymentOption === "cash" && (
                       <div className="space-y-1.5 pt-1">
                         <div className="relative">
@@ -904,7 +872,6 @@ export default function POSSale() {
                       </div>
                     )}
 
-                    {/* Notes */}
                     <div>
                       <input
                         type="text"
@@ -930,12 +897,8 @@ export default function POSSale() {
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODE 2: DELIVERY (ON-TIME vs MONTHLY) */}
-      {/* ========================================================================= */}
       {saleCategory === "delivery" && (
         <div className="space-y-2.5 animate-in fade-in duration-150">
-          {/* Sub-toggle: On-Time vs Monthly */}
           <div className="grid grid-cols-2 gap-1.5 p-1 bg-blue-50/80 rounded-xl border border-blue-100">
             <button
               type="button"
@@ -962,7 +925,6 @@ export default function POSSale() {
             </button>
           </div>
 
-          {/* 2A: On-Time Delivery Details */}
           {deliverySubType === "ontime" && (
             <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
               <div>
@@ -1012,7 +974,6 @@ export default function POSSale() {
             </div>
           )}
 
-          {/* 2B: Monthly Delivery Details (Select Registered Customer) */}
           {deliverySubType === "monthly" && (
             <div className="p-2.5 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-2 text-xs">
               <div>
@@ -1082,7 +1043,6 @@ export default function POSSale() {
             </div>
           )}
 
-          {/* Delivery Payment Methods */}
           <div className="space-y-1.5">
             <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">
               DELIVERY PAYMENT METHOD
@@ -1144,7 +1104,6 @@ export default function POSSale() {
         </div>
       )}
 
-      {/* 5. Complete Sale Action Button */}
       <div className="pt-2">
         {cart.length === 0 ? (
           <button

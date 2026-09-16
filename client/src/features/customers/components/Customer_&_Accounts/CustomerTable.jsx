@@ -55,7 +55,6 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                     title={`Click to view Khata ledger & complete details of ${c.name}`}
                     className="hover:bg-slate-50/70 transition-colors cursor-pointer"
                   >
-                    {/* Customer */}
                     <TableCell className="px-3.5 py-2">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs shrink-0">
@@ -68,7 +67,6 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                       </div>
                     </TableCell>
 
-                    {/* Phone & Online Account */}
                     <TableCell className="px-3.5 py-2">
                       <div className="font-semibold text-slate-800 leading-tight">{c.phone}</div>
                       {c.onlineAccount && (
@@ -79,7 +77,6 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                       )}
                     </TableCell>
 
-                    {/* Daily Subscription */}
                     <TableCell className="px-3.5 py-2">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium text-[11px] border border-slate-200/60">
                         <Milk className="w-2.5 h-2.5 text-slate-500" />
@@ -87,12 +84,10 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                       </span>
                     </TableCell>
 
-                    {/* Credit Limit */}
                     <TableCell className="px-3.5 py-2 font-bold text-slate-800 tabular">
                       Rs. {(c.creditLimit || 0).toLocaleString()}
                     </TableCell>
 
-                    {/* Khata Balance */}
                     <TableCell className="px-3.5 py-2">
                       <div className="font-bold text-slate-900 leading-tight tabular">
                         Rs. {(c.khataBalance || 0).toLocaleString()}
@@ -105,7 +100,6 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                       </div>
                     </TableCell>
 
-                    {/* Payment Mode */}
                     <TableCell className="px-3.5 py-2">
                       {c.paymentMode === 'Online Payment' ? (
                         <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-semibold border border-emerald-200/60">
@@ -148,7 +142,6 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                       )}
                     </TableCell>
 
-                    {/* Status */}
                     <TableCell className="px-3.5 py-2">
                       <Badge
                         variant={c.status === 'Active' ? 'green' : 'slate'}
@@ -158,7 +151,6 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                       </Badge>
                     </TableCell>
 
-                    {/* Actions */}
                     <TableCell className="px-3.5 py-2 text-right">
                       <div className="flex items-center justify-end gap-1 text-slate-400">
                         <Button

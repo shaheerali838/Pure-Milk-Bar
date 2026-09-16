@@ -94,9 +94,7 @@ export default function CustomerFinance() {
 
   return (
     <div className="space-y-3">
-      {/* Top 3 Standalone Colored Buttons */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* Button 1: Customer Accounts (Green) */}
         <Button
           type="button"
           onClick={() => setActiveTab('accounts')}
@@ -119,7 +117,6 @@ export default function CustomerFinance() {
           )}
         </Button>
 
-        {/* Button 2: Invoices & Collections (Blue) */}
         <Button
           type="button"
           onClick={() => setActiveTab('collections')}
@@ -142,7 +139,6 @@ export default function CustomerFinance() {
           )}
         </Button>
 
-        {/* Button 3: Receivables Aging (Amber/Gold) */}
         <Button
           type="button"
           onClick={() => setActiveTab('aging')}
@@ -166,7 +162,6 @@ export default function CustomerFinance() {
         </Button>
       </div>
 
-      {/* Tab 1: Customer Accounts */}
       {activeTab === 'accounts' && (
         <div className="space-y-2.5">
           <CustomerFinanceStats />
@@ -187,7 +182,6 @@ export default function CustomerFinance() {
         </div>
       )}
 
-      {/* Tab 2: Invoices & Collections */}
       {activeTab === 'collections' && (
         <div className="space-y-2.5">
           <CollectionPayoutsStats />
@@ -208,7 +202,6 @@ export default function CustomerFinance() {
         </div>
       )}
 
-      {/* Tab 3: Receivables Aging */}
       {activeTab === 'aging' && (
         <div className="space-y-2.5">
           <ReceivablesAgingStats />

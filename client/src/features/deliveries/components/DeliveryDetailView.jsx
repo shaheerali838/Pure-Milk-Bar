@@ -52,7 +52,6 @@ export default function DeliveryDetailView({ delivery, onBack }) {
 
   return (
     <div className="space-y-2.5 animate-in fade-in duration-150 pb-4">
-      {/* Top Header with Back button */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200">
         <div className="flex items-center gap-2.5">
           <Button
@@ -90,7 +89,6 @@ export default function DeliveryDetailView({ delivery, onBack }) {
         </div>
       </div>
 
-      {/* Hero Card */}
       <div className="bg-slate-900 text-white rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-950 text-emerald-400 border border-emerald-800/60 flex items-center justify-center text-lg font-bold font-display">
@@ -122,9 +120,7 @@ export default function DeliveryDetailView({ delivery, onBack }) {
         </div>
       </div>
 
-      {/* Detailed Info Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs">
-        {/* Logistics Card */}
         <div className="bg-white border border-slate-200/90 rounded-xl p-3 shadow-2xs space-y-2">
           <h4 className="font-bold text-slate-900 uppercase tracking-wide text-xs flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
             <Calendar className="w-3.5 h-3.5 text-slate-500" />
@@ -153,7 +149,6 @@ export default function DeliveryDetailView({ delivery, onBack }) {
           </div>
         </div>
 
-        {/* Payment & Bottle Return Card */}
         <div className="bg-white border border-slate-200/90 rounded-xl p-3 shadow-2xs space-y-2">
           <h4 className="font-bold text-slate-900 uppercase tracking-wide text-xs flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
             <CreditCard className="w-3.5 h-3.5 text-slate-500" />
@@ -191,7 +186,6 @@ export default function DeliveryDetailView({ delivery, onBack }) {
         </div>
       </div>
 
-      {/* Quick Status Action Bar */}
       <div className="bg-white border border-slate-200/90 rounded-xl p-3 shadow-2xs space-y-2">
         <h4 className="font-bold text-slate-900 text-xs">Update Delivery Run Status</h4>
         <div className="flex flex-wrap items-center gap-2">

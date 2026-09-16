@@ -67,7 +67,6 @@ export default function LogFuelView({ onBack, onComplete }) {
 
   return (
     <div className="space-y-2.5 animate-in fade-in duration-150 pb-4">
-      {/* Header */}
       <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200">
         <Button
           type="button"
@@ -96,10 +95,8 @@ export default function LogFuelView({ onBack, onComplete }) {
         </div>
       )}
 
-      {/* Form Card */}
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200/90 rounded-xl p-3.5 shadow-2xs space-y-3 max-w-2xl">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          {/* Staff Member */}
           <div className="space-y-1 sm:col-span-2">
             <Label className="text-xs font-semibold text-slate-700">
               Staff Member / Rider <span className="text-rose-500">*</span>
@@ -129,7 +126,6 @@ export default function LogFuelView({ onBack, onComplete }) {
             )}
           </div>
 
-          {/* Date */}
           <div className="space-y-1 sm:col-span-2">
             <Label className="text-xs font-semibold text-slate-700">Receipt Date</Label>
             <Input
@@ -143,7 +139,6 @@ export default function LogFuelView({ onBack, onComplete }) {
             />
           </div>
 
-          {/* Liters */}
           <div className="space-y-1">
             <Label className="text-xs font-semibold text-slate-700">
               Fuel Liters <span className="text-rose-500">*</span>
@@ -162,7 +157,6 @@ export default function LogFuelView({ onBack, onComplete }) {
             />
           </div>
 
-          {/* Amount */}
           <div className="space-y-1">
             <Label className="text-xs font-semibold text-slate-700">
               Amount Paid (Rs.) <span className="text-rose-500">*</span>
@@ -180,7 +174,6 @@ export default function LogFuelView({ onBack, onComplete }) {
             />
           </div>
 
-          {/* Distance */}
           <div className="space-y-1 sm:col-span-2">
             <Label className="text-xs font-semibold text-slate-700">
               Distance Covered (KM)
@@ -197,7 +190,6 @@ export default function LogFuelView({ onBack, onComplete }) {
             />
           </div>
 
-          {/* Notes */}
           <div className="space-y-1 sm:col-span-2">
             <Label className="text-xs font-semibold text-slate-700">Notes / Fuel Station Info</Label>
             <Input

@@ -15,7 +15,6 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-2 overflow-y-auto">
       <div className="bg-white w-full max-w-md rounded-xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-4">
-        {/* Header */}
         <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-sm shrink-0">
@@ -52,9 +51,7 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
           </Button>
         </div>
 
-        {/* Modal Body - Read Only Customer Details */}
         <div className="p-3.5 space-y-2.5 text-xs text-slate-700 max-h-[82vh] overflow-y-auto">
-          {/* Primary Phone & Online Account */}
           <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
             <div>
               <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider flex items-center gap-1">
@@ -73,7 +70,6 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
             </div>
           </div>
 
-          {/* Verification & Identification Details */}
           <div className="p-2.5 bg-emerald-50/40 border border-emerald-100 rounded-lg space-y-1.5">
             <h4 className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1 font-display">
               <ShieldCheck className="w-3 h-3 text-emerald-600" /> Identity &amp; Verification
@@ -98,7 +94,6 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
             </div>
           </div>
 
-          {/* Address & Subscription */}
           <div className="grid grid-cols-2 gap-2">
             <div className="p-2 bg-white border border-slate-200 rounded-lg">
               <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider flex items-center gap-1">
@@ -137,7 +132,6 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
             </div>
           )}
 
-          {/* Balance & Limits */}
           <div className="p-2.5 bg-slate-900 text-white rounded-lg space-y-1.5">
             <div className="flex justify-between items-center text-[11px]">
               <span className="text-slate-400 font-medium">Credit Limit</span>
@@ -158,7 +152,6 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="px-4 py-2 border-t border-slate-100 flex justify-end bg-slate-50/70">
           <Button
             type="button"

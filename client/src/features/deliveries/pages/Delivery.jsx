@@ -135,7 +135,6 @@ export default function Delivery() {
 
   return (
     <div className="space-y-2">
-      {/* Page Heading */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-0.5 no-print">
         <div>
           <h3 className="font-display text-lg font-bold text-slate-800 leading-tight">
@@ -147,15 +146,12 @@ export default function Delivery() {
         </div>
       </div>
 
-      {/* 4 Summary Stat Cards */}
       <div className="no-print">
         <DeliveryStats />
       </div>
 
-      {/* Module Switcher Bar */}
       <div className="bg-white p-1 rounded-xl border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-1.5 no-print">
         <div className="flex flex-wrap items-center gap-1">
-          {/* Drop Points (Green) */}
           <button
             type="button"
             onClick={() => handleTabChange('drop-points')}
@@ -169,7 +165,6 @@ export default function Delivery() {
             Drop Points
           </button>
 
-          {/* Fleet & Staff (Purple) */}
           <button
             type="button"
             onClick={() => handleTabChange('fleet')}
@@ -183,7 +178,6 @@ export default function Delivery() {
             Fleet & Staff
           </button>
 
-          {/* Fuel Log (Blue) */}
           <button
             type="button"
             onClick={() => handleTabChange('fuel')}
@@ -198,7 +192,6 @@ export default function Delivery() {
           </button>
         </div>
 
-        {/* Print Sheet (Orange) */}
         <div>
           <button
             type="button"
@@ -212,7 +205,6 @@ export default function Delivery() {
         </div>
       </div>
 
-      {/* Module Content Sections */}
       <div>
         {activeTab === 'drop-points' && (
           <DropPoints

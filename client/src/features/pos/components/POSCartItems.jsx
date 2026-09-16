@@ -25,7 +25,6 @@ export default function POSCartItems() {
 
   return (
     <div className="space-y-2">
-      {/* Item rows */}
       <div className="space-y-1.5 max-h-[190px] overflow-y-auto pr-1">
         {cart.map((item) => (
           <div
@@ -59,7 +58,6 @@ export default function POSCartItems() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              {/* Quantity Stepper */}
               <div className="flex items-center border border-slate-200 bg-white rounded-lg shadow-2xs">
                 <button
                   type="button"
@@ -80,14 +78,12 @@ export default function POSCartItems() {
                 </button>
               </div>
 
-              {/* Total line item */}
               <div className="text-right min-w-[55px]">
                 <span className="text-xs font-black text-slate-900 tabular">
                   Rs. {(item.quantity * item.price).toLocaleString()}
                 </span>
               </div>
 
-              {/* Remove item */}
               <button
                 type="button"
                 onClick={() => handleRemoveFromCart(item.id)}
@@ -101,7 +97,6 @@ export default function POSCartItems() {
         ))}
       </div>
 
-      {/* Pricing Summary */}
       <div className="pt-2 border-t border-slate-100 space-y-1 text-xs text-slate-600">
         <div className="flex justify-between items-center text-[11px]">
           <span>Subtotal</span>
@@ -110,7 +105,6 @@ export default function POSCartItems() {
           </span>
         </div>
 
-        {/* Delivery Charges (when Delivery Mode is active) */}
         {saleCategory === 'delivery' && (
           <div className="flex justify-between items-center text-blue-700 text-[11px]">
             <span className="flex items-center gap-1">
@@ -127,7 +121,6 @@ export default function POSCartItems() {
           </div>
         )}
 
-        {/* Discount */}
         <div className="flex justify-between items-center text-slate-600 text-[11px]">
           <span className="flex items-center gap-1">
             <DollarSign className="w-3 h-3 text-slate-400" /> Discount (Rs.)
@@ -142,7 +135,6 @@ export default function POSCartItems() {
           />
         </div>
 
-        {/* NET PAYABLE */}
         <div className="flex justify-between items-center pt-1.5 border-t border-dashed border-slate-200 text-xs font-black text-slate-900">
           <span className="uppercase tracking-wide font-display text-[11px]">NET PAYABLE</span>
           <span className="text-sm font-black text-emerald-700 tabular">

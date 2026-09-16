@@ -101,7 +101,6 @@ export default function CustomerDeliveryBreakdownTable({
                     }
                     className="cursor-pointer hover:bg-slate-50/80 transition-colors"
                   >
-                    {/* Customer */}
                     <TableCell className="align-top py-2">
                       <div className="space-y-0.5">
                         <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5 font-display">
@@ -117,35 +116,30 @@ export default function CustomerDeliveryBreakdownTable({
                       </div>
                     </TableCell>
 
-                    {/* Drop Runs */}
                     <TableCell className="align-top py-2">
                       <span className="text-xs font-bold text-slate-800 tabular">
                         {totalRuns} {totalRuns === 1 ? 'run' : 'runs'}
                       </span>
                     </TableCell>
 
-                    {/* Total Liters */}
                     <TableCell className="align-top py-2">
                       <span className="text-xs font-bold text-emerald-700 tabular">
                         {totalLiters.toFixed(1)} L
                       </span>
                     </TableCell>
 
-                    {/* COD Collected */}
                     <TableCell className="align-top py-2">
                       <span className="text-xs font-bold text-slate-900 tabular">
                         Rs. {totalCodCollected.toLocaleString()}
                       </span>
                     </TableCell>
 
-                    {/* Bottles */}
                     <TableCell className="align-top py-2">
                       <span className="text-xs font-medium text-slate-700 tabular">
                         {totalBottles}
                       </span>
                     </TableCell>
 
-                    {/* Khata Balance */}
                     <TableCell className="align-top py-2">
                       <Badge
                         variant={khataBal > 0 ? 'amber' : 'green'}
@@ -155,7 +149,6 @@ export default function CustomerDeliveryBreakdownTable({
                       </Badge>
                     </TableCell>
 
-                    {/* Action */}
                     <TableCell className="align-top py-2 text-right">
                       <Button
                         type="button"

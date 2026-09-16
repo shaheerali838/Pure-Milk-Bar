@@ -130,9 +130,7 @@ export default function MilkingRegisterTable() {
 
   return (
     <div className="flex flex-col gap-4 w-full">
-      {/* Header Card */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs flex flex-wrap items-center justify-between gap-6">
-        {/* Date & Shift Selectors */}
         <div className="flex flex-wrap items-center gap-6">
           <div className="flex flex-col">
             <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
@@ -173,7 +171,6 @@ export default function MilkingRegisterTable() {
           </div>
         </div>
 
-        {/* Top Summary Metrics */}
         <div className="flex items-center gap-6 sm:gap-8">
           <div className="flex flex-col items-center sm:items-end">
             <div className="text-2xl font-black text-indigo-600 tracking-tight">
@@ -212,7 +209,6 @@ export default function MilkingRegisterTable() {
         </div>
       </div>
 
-      {/* Table Section */}
       <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm">
@@ -298,7 +294,6 @@ export default function MilkingRegisterTable() {
           </table>
         </div>
 
-        {/* Footer Actions */}
         <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-slate-700 text-sm font-semibold">
             <Zap className="w-4 h-4 text-indigo-500 fill-indigo-500" />

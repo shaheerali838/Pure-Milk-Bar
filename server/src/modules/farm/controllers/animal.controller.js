@@ -2,10 +2,6 @@ import animalService from '../services/animal.service.js';
 import { sendSuccess } from '../../../utils/apiResponse.js';
 
 class AnimalController {
-  /**
-   * POST /api/farm/animals
-   * Register a new animal in the livestock directory.
-   */
   async createAnimal(req, res, next) {
     try {
       const animal = await animalService.createAnimal(req.body);
@@ -16,10 +12,6 @@ class AnimalController {
     }
   }
 
-  /**
-   * GET /api/farm/animals
-   * List all animals with filtering, search, and pagination.
-   */
   async getAllAnimals(req, res, next) {
     try {
       const query = req._validated?.query || req.query;
@@ -37,10 +29,6 @@ class AnimalController {
     }
   }
 
-  /**
-   * GET /api/farm/animals/stats
-   * Get aggregate statistics for the livestock directory.
-   */
   async getAnimalStats(req, res, next) {
     try {
       const stats = await animalService.getAnimalStats();
@@ -51,10 +39,6 @@ class AnimalController {
     }
   }
 
-  /**
-   * GET /api/farm/animals/:id
-   * Get a single animal by ID.
-   */
   async getAnimalById(req, res, next) {
     try {
       const params = req._validated?.params || req.params;
@@ -66,10 +50,6 @@ class AnimalController {
     }
   }
 
-  /**
-   * PATCH /api/farm/animals/:id
-   * Update an existing animal.
-   */
   async updateAnimal(req, res, next) {
     try {
       const params = req._validated?.params || req.params;
@@ -81,10 +61,6 @@ class AnimalController {
     }
   }
 
-  /**
-   * DELETE /api/farm/animals/:id
-   * Soft-delete an animal (set isActive = false).
-   */
   async deleteAnimal(req, res, next) {
     try {
       const params = req._validated?.params || req.params;

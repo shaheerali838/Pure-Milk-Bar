@@ -16,7 +16,6 @@ export default function ValueAddedDetail({ data, onClose, onBack }) {
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-200">
-      {/* Top Navigation Bar with Back Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/90 rounded-2xl p-4 md:p-5 shadow-2xs">
         <div className="flex items-center gap-3">
           <button
@@ -46,9 +45,7 @@ export default function ValueAddedDetail({ data, onClose, onBack }) {
         </div>
       </div>
 
-      {/* Top 4 KPI Metrics - Redesigned Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Total Revenue Card */}
         <div className="bg-white border border-slate-200/90 border-t-4 border-t-teal-500 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -67,7 +64,6 @@ export default function ValueAddedDetail({ data, onClose, onBack }) {
           </div>
         </div>
 
-        {/* Packaging Cost Card */}
         <div className="bg-white border border-slate-200/90 border-t-4 border-t-amber-500 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -86,7 +82,6 @@ export default function ValueAddedDetail({ data, onClose, onBack }) {
           </div>
         </div>
 
-        {/* Net Margin Gain Card */}
         <div className="bg-white border border-slate-200/90 border-t-4 border-t-emerald-500 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -105,7 +100,6 @@ export default function ValueAddedDetail({ data, onClose, onBack }) {
           </div>
         </div>
 
-        {/* Processing Premium Margin % Card */}
         <div className="bg-white border border-slate-200/90 border-t-4 border-t-purple-500 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -125,7 +119,6 @@ export default function ValueAddedDetail({ data, onClose, onBack }) {
         </div>
       </div>
 
-      {/* Value-Added Products Breakdown Table Card */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
@@ -204,7 +197,6 @@ export default function ValueAddedDetail({ data, onClose, onBack }) {
         )}
       </div>
 
-      {/* Value Addition Insights Card */}
       <div className="p-5 rounded-2xl bg-gradient-to-br from-teal-50/70 via-white to-emerald-50/50 border border-teal-200/60 shadow-xs flex items-start gap-3.5">
         <div className="w-9 h-9 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 shadow-2xs">
           <Sparkles className="w-4 h-4 text-teal-600" />

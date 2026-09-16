@@ -6,10 +6,6 @@ import KhataEntry from '../../../models/KhataEntry.model.js';
 import AppError from '../../../utils/AppError.js';
 
 class OrderService {
-  /**
-   * Helper to generate a human-readable, unique receipt number.
-   * Format: REC-YYYYMMDD-XXXX (e.g. REC-20260914-A1B2)
-   */
   async generateReceiptNumber() {
     const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     let isUnique = false;
@@ -27,14 +23,6 @@ class OrderService {
     return receiptNumber;
   }
 
-  /**
-   * Create and record a new POS order.
-   * Deducts inventory stock, logs customer khata debt if applicable, and saves the order.
-   *
-   * @param {object} orderData - Validated order payload
-   * @param {object} [cashierUser] - Authenticated user object from req.user
-   * @returns {Promise<object>} Created order document populated with cashier & customer
-   */
   async createOrder(orderData, cashierUser = null) {
     // 1. Resolve Cashier ID
     const cashierId = cashierUser?.id || orderData.cashierId;
@@ -161,12 +149,6 @@ class OrderService {
       .lean();
   }
 
-  /**
-   * Fetch all orders with filtering, date range, search, and pagination.
-   *
-   * @param {object} query - Validated query parameters
-   * @returns {Promise<{orders: Array, total: number, page: number, limit: number, totalPages: number}>}
-   */
   async getAllOrders(query) {
     const {
       page = 1,
@@ -236,12 +218,6 @@ class OrderService {
     };
   }
 
-  /**
-   * Get single order by MongoDB ObjectId.
-   *
-   * @param {string} id - Order ObjectId
-   * @returns {Promise<object>} Order document
-   */
   async getOrderById(id) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new AppError(`Invalid Order ID format: '${id}'`, 400, 'INVALID_ORDER_ID');
@@ -259,12 +235,6 @@ class OrderService {
     return order;
   }
 
-  /**
-   * Get single order by its unique receipt number.
-   *
-   * @param {string} receiptNumber - Formatted receipt number
-   * @returns {Promise<object>} Order document
-   */
   async getOrderByReceiptNumber(receiptNumber) {
     const cleanReceiptNumber = receiptNumber.trim().toUpperCase();
     const order = await Order.findOne({ receiptNumber: cleanReceiptNumber })
@@ -279,12 +249,6 @@ class OrderService {
     return order;
   }
 
-  /**
-   * Aggregate daily sales summary and register closing statistics.
-   *
-   * @param {string|Date} [targetDate] - Optional date to view stats for (defaults to today)
-   * @returns {Promise<object>} Sales stats breakdown
-   */
   async getDailySalesStats(targetDate = null) {
     const baseDate = targetDate ? new Date(targetDate) : new Date();
     const startOfDay = new Date(baseDate.setHours(0, 0, 0, 0));
@@ -370,15 +334,6 @@ class OrderService {
     };
   }
 
-  /**
-   * Cancel and void an order.
-   * Restores product stock and reverses any Khata debt on the customer account.
-   *
-   * @param {string} id - Order ObjectId
-   * @param {string} reason - Cancellation reason
-   * @param {string} [cancelledByUserId] - User ID performing the cancellation
-   * @returns {Promise<object>} Cancelled order summary
-   */
   async cancelOrder(id, reason, cancelledByUserId = null) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       throw new AppError(`Invalid Order ID: '${id}'`, 400, 'INVALID_ORDER_ID');

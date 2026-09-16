@@ -98,7 +98,6 @@ export default function Sidebar() {
 
   return (
     <aside className="w-64 bg-white h-screen sticky top-0 flex flex-col border-r border-slate-200/80 shadow-xs shrink-0 select-none z-30">
-      {/* Brand Header */}
       <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
         <div className="w-9 h-9 rounded-full bg-[#00a86b] text-white flex items-center justify-center font-bold shadow-xs shrink-0">
           <Milk className="w-5 h-5" />
@@ -119,9 +118,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Main Navigation Container */}
       <div className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
-        {/* Section 1: Operations Command */}
         <div>
           <nav className="space-y-0.5">
             {operationsLinks.map((link) => {
@@ -146,7 +143,6 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        {/* Section 2: Sales */}
         <div>
           <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
             SALES
@@ -174,7 +170,6 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        {/* Section 3: Production */}
         <div>
           <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
             PRODUCTION
@@ -202,7 +197,6 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        {/* Section 4: Delivery */}
         <div>
           <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
             DELIVERY
@@ -230,7 +224,6 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        {/* Section 5: Customers */}
         <div>
           <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
             CUSTOMERS
@@ -258,7 +251,6 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        {/* Section 6: Reconciliation & Management */}
         <div>
           <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
             RECONCILIATION & MANAGEMENT

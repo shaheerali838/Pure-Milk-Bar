@@ -2,11 +2,6 @@ import Supplier from '../../../models/Supplier.model.js';
 import AppError from '../../../utils/AppError.js';
 
 class SupplierService {
-  /**
-   * Create a new supplier.
-   * @param {object} data - Validated supplier data
-   * @returns {Promise<object>} Created supplier document
-   */
   async createSupplier(data) {
     // Check for duplicate code
     const existingCode = await Supplier.findOne({ code: data.code });
@@ -32,11 +27,6 @@ class SupplierService {
     return supplier;
   }
 
-  /**
-   * Get all suppliers with filtering, search, and pagination.
-   * @param {object} query - Validated query parameters
-   * @returns {Promise<{suppliers: Array, total: number, page: number, limit: number}>}
-   */
   async getAllSuppliers(query) {
     const { page, limit, milkType, isActive, search } = query;
 
@@ -65,11 +55,6 @@ class SupplierService {
     return { suppliers, total, page, limit };
   }
 
-  /**
-   * Get a single supplier by ID.
-   * @param {string} id - Supplier ObjectId
-   * @returns {Promise<object>} Supplier document
-   */
   async getSupplierById(id) {
     const supplier = await Supplier.findById(id).lean();
 
@@ -80,12 +65,6 @@ class SupplierService {
     return supplier;
   }
 
-  /**
-   * Update an existing supplier.
-   * @param {string} id - Supplier ObjectId
-   * @param {object} data - Validated update data
-   * @returns {Promise<object>} Updated supplier document
-   */
   async updateSupplier(id, data) {
     // If phone is changing, check for duplicate
     if (data.phone) {
@@ -114,12 +93,6 @@ class SupplierService {
     return supplier;
   }
 
-  /**
-   * Soft-delete a supplier (set isActive = false).
-   * Suppliers are never physically deleted from the database.
-   * @param {string} id - Supplier ObjectId
-   * @returns {Promise<object>} Deactivated supplier document
-   */
   async deleteSupplier(id) {
     const supplier = await Supplier.findByIdAndUpdate(
       id,
@@ -134,10 +107,6 @@ class SupplierService {
     return supplier;
   }
 
-  /**
-   * Get aggregate statistics for suppliers.
-   * @returns {Promise<object>} Summary statistics
-   */
   async getSupplierStats() {
     const [stats] = await Supplier.aggregate([
       {

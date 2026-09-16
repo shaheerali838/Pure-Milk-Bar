@@ -4,17 +4,6 @@ import Animal from '../../../models/Animal.model.js';
 import AppError from '../../../utils/AppError.js';
 
 class MilkingYieldLogService {
-  /**
-   * Record a new milking yield log entry.
-   * Business Rules:
-   * 1. Animal must exist and be active.
-   * 2. Duplicate (animalId + date + shift) is rejected by unique compound index.
-   * 3. After recording, recalculate the animal's dailyAvgYield.
-   
-   * @param {object} data - Validated milking yield data
-   * @param {string} operatorId - The authenticated user's ObjectId (from JWT)
-   * @returns {Promise<object>} Created milking yield log document
-   */
   async createMilkingYieldLog(data, operatorId) {
     // 1. Verify animal exists and is active
     const animal = await Animal.findById(data.animalId);
@@ -47,11 +36,6 @@ class MilkingYieldLogService {
     return populated;
   }
 
-  /**
-   * Get all milking yield logs with filtering and pagination.
-   * @param {object} query - Validated query parameters
-   * @returns {Promise<{logs: Array, total: number, page: number, limit: number}>}
-   */
   async getAllMilkingYieldLogs(query) {
     const { page, limit, animalId, shift, startDate, endDate } = query;
 
@@ -84,11 +68,6 @@ class MilkingYieldLogService {
     return { logs, total, page, limit };
   }
 
-  /**
-   * Get a single milking yield log by ID.
-   * @param {string} id - MilkingYieldLog ObjectId
-   * @returns {Promise<object>} Milking yield log document
-   */
   async getMilkingYieldLogById(id) {
     const log = await MilkingYieldLog.findById(id)
       .populate('animalId', 'tagNumber name type breed lactationStage')
@@ -102,15 +81,6 @@ class MilkingYieldLogService {
     return log;
   }
 
-  /**
-   * Update a milking yield log entry.
-   * Only yieldLiters, fatPercentage, snfPercentage, and notes can be updated.
-   * The animalId, date, shift, and operatorId are immutable after creation.
-   *
-   * @param {string} id - MilkingYieldLog ObjectId
-   * @param {object} data - Validated update data
-   * @returns {Promise<object>} Updated milking yield log document
-   */
   async updateMilkingYieldLog(id, data) {
     const log = await MilkingYieldLog.findByIdAndUpdate(id, data, {
       new: true,
@@ -130,11 +100,6 @@ class MilkingYieldLogService {
     return log;
   }
 
-  /**
-   * Delete a milking yield log entry.
-   * @param {string} id - MilkingYieldLog ObjectId
-   * @returns {Promise<object>} Deleted milking yield log document
-   */
   async deleteMilkingYieldLog(id) {
     const log = await MilkingYieldLog.findByIdAndDelete(id).lean();
 
@@ -148,13 +113,6 @@ class MilkingYieldLogService {
     return log;
   }
 
-  /**
-   * Get daily yield summary for a specific date.
-   * Aggregates total yield by shift, by animal type, and grand total.
-   *
-   * @param {string} dateStr - ISO date string (e.g., '2026-09-08')
-   * @returns {Promise<object>} Daily yield summary
-   */
   async getDailyYieldSummary(dateStr) {
     const targetDate = new Date(dateStr);
     const startOfDay = new Date(targetDate.setUTCHours(0, 0, 0, 0));
@@ -243,13 +201,6 @@ class MilkingYieldLogService {
     };
   }
 
-  /**
-   * PRIVATE: Recalculate an animal's daily average yield based on last 30 days.
-   * Updates the Animal document's dailyAvgYield field.
-   *
-   * @param {string} animalId - Animal ObjectId
-   * @private
-   */
   async _recalculateAnimalAvgYield(animalId) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);

@@ -33,7 +33,6 @@ export default function DropPoints({ onBookDelivery, onViewDelivery }) {
 
   return (
     <div className="space-y-1.5">
-      {/* Action Header & Filters */}
       <div className="flex flex-wrap items-center justify-between gap-1.5 no-print">
         <div className="flex-1 min-w-65">
           <DeliveryFilters
@@ -56,7 +55,6 @@ export default function DropPoints({ onBookDelivery, onViewDelivery }) {
         </Button>
       </div>
 
-      {/* Deliveries Table */}
       <DeliveryTable
         deliveries={filteredDeliveries}
         onViewDelivery={onViewDelivery}

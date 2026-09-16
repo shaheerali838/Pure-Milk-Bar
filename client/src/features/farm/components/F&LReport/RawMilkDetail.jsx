@@ -21,7 +21,6 @@ export default function RawMilkDetail({ data, onClose, onBack }) {
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-200">
-      {/* Top Navigation Bar with Back Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/90 rounded-2xl p-4 md:p-5 shadow-2xs">
         <div className="flex items-center gap-3">
           <button
@@ -51,9 +50,7 @@ export default function RawMilkDetail({ data, onClose, onBack }) {
         </div>
       </div>
 
-      {/* Top 4 KPI Metrics - Redesigned Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Total Volume Card */}
         <div className="bg-white border border-slate-200/90 border-t-4 border-t-blue-500 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -72,7 +69,6 @@ export default function RawMilkDetail({ data, onClose, onBack }) {
           </div>
         </div>
 
-        {/* Gross Revenue Card */}
         <div className="bg-white border border-slate-200/90 border-t-4 border-t-emerald-500 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -91,7 +87,6 @@ export default function RawMilkDetail({ data, onClose, onBack }) {
           </div>
         </div>
 
-        {/* Direct COGS Card */}
         <div className="bg-white border border-slate-200/90 border-t-4 border-t-amber-500 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -110,7 +105,6 @@ export default function RawMilkDetail({ data, onClose, onBack }) {
           </div>
         </div>
 
-        {/* Gross Margin Card */}
         <div className="bg-white border border-slate-200/90 border-t-4 border-t-indigo-500 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -130,9 +124,7 @@ export default function RawMilkDetail({ data, onClose, onBack }) {
         </div>
       </div>
 
-      {/* 2-Column Split: Selling Channels on Left, Itemized Sales on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Selling Channels Breakdown Card */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
@@ -147,7 +139,6 @@ export default function RawMilkDetail({ data, onClose, onBack }) {
           </div>
 
           <div className="space-y-3.5">
-            {/* Doorstep Delivery Card */}
             <div className="p-4 rounded-xl border border-emerald-100 bg-gradient-to-r from-emerald-50/40 via-white to-white hover:border-emerald-300 transition-all duration-150 space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -170,7 +161,6 @@ export default function RawMilkDetail({ data, onClose, onBack }) {
                   </span>
                 </div>
               </div>
-              {/* Progress Bar */}
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500" 
@@ -179,7 +169,6 @@ export default function RawMilkDetail({ data, onClose, onBack }) {
               </div>
             </div>
 
-            {/* POS & Farm Gate Card */}
             <div className="p-4 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50/40 via-white to-white hover:border-blue-300 transition-all duration-150 space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -202,7 +191,6 @@ export default function RawMilkDetail({ data, onClose, onBack }) {
                   </span>
                 </div>
               </div>
-              {/* Progress Bar */}
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500" 
@@ -211,7 +199,6 @@ export default function RawMilkDetail({ data, onClose, onBack }) {
               </div>
             </div>
 
-            {/* Bulk Wholesale Card */}
             <div className="p-4 rounded-xl border border-purple-100 bg-gradient-to-r from-purple-50/40 via-white to-white hover:border-purple-300 transition-all duration-150 space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -234,7 +221,6 @@ export default function RawMilkDetail({ data, onClose, onBack }) {
                   </span>
                 </div>
               </div>
-              {/* Progress Bar */}
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-purple-500 to-violet-500 rounded-full transition-all duration-500" 
@@ -245,7 +231,6 @@ export default function RawMilkDetail({ data, onClose, onBack }) {
           </div>
         </div>
 
-        {/* Itemized Milk Sales Records Card */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
             <h3 className="text-sm font-bold text-slate-900">Itemized Milk Sales Recorded</h3>

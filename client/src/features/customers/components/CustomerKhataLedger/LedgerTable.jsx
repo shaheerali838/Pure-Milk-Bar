@@ -34,7 +34,6 @@ export default function LedgerTable({
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden mb-3">
-      {/* Table Header Bar */}
       <div className="px-3.5 py-2.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2 bg-slate-50/50">
         <div>
           <h3 className="text-xs font-bold text-slate-900 tracking-tight uppercase leading-tight font-display">
@@ -67,7 +66,6 @@ export default function LedgerTable({
         </div>
       </div>
 
-      {/* Horizontal Scrollable Table */}
       <div className="overflow-x-auto w-full">
         <Table className="w-full text-left border-collapse min-w-[650px]">
           <TableHeader>
@@ -95,12 +93,10 @@ export default function LedgerTable({
                   title="Click to view transaction details"
                   className="hover:bg-slate-50/60 transition-colors cursor-pointer"
                 >
-                  {/* Date */}
                   <TableCell className="px-3.5 py-2 font-mono text-[11px] text-slate-500 whitespace-nowrap tabular">
                     {entry.date}
                   </TableCell>
 
-                  {/* Description */}
                   <TableCell className="px-3.5 py-2">
                     <div className="flex items-center gap-1.5">
                       {getEntryIcon(entry)}
@@ -110,22 +106,18 @@ export default function LedgerTable({
                     </div>
                   </TableCell>
 
-                  {/* Debit */}
                   <TableCell className="px-3.5 py-2 text-right font-bold text-rose-600 whitespace-nowrap tabular">
                     {entry.debit > 0 ? `Rs. ${Number(entry.debit).toLocaleString()}` : '—'}
                   </TableCell>
 
-                  {/* Credit */}
                   <TableCell className="px-3.5 py-2 text-right font-bold text-emerald-600 whitespace-nowrap tabular">
                     {entry.credit > 0 ? `Rs. ${Number(entry.credit).toLocaleString()}` : '—'}
                   </TableCell>
 
-                  {/* Running Balance */}
                   <TableCell className="px-3.5 py-2 text-right font-black text-slate-900 whitespace-nowrap tabular">
                     Rs. {Number(entry.runningBalance || 0).toLocaleString()}
                   </TableCell>
 
-                  {/* Action */}
                   <TableCell className="px-3.5 py-2 text-center whitespace-nowrap">
                     <Button
                       type="button"
@@ -148,7 +140,6 @@ export default function LedgerTable({
         </Table>
       </div>
 
-      {/* Bottom Summary Bar */}
       <div className="px-4 py-2.5 bg-slate-50/80 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
           <div>

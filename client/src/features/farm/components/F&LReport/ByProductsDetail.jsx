@@ -14,7 +14,6 @@ export default function ByProductsDetail({ data, onClose, onBack }) {
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-200">
-      {/* Top Navigation Bar with Back Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/90 rounded-2xl p-4 md:p-5 shadow-2xs">
         <div className="flex items-center gap-3">
           <button
@@ -44,7 +43,6 @@ export default function ByProductsDetail({ data, onClose, onBack }) {
         </div>
       </div>
 
-      {/* Main By-Products Banner */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-white shadow-sm">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs font-bold text-amber-100 uppercase tracking-wider">
@@ -62,7 +60,6 @@ export default function ByProductsDetail({ data, onClose, onBack }) {
         </p>
       </div>
 
-      {/* 2 Streams Cards - Redesigned */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="p-5 rounded-2xl bg-white border border-slate-200/90 border-t-4 border-t-amber-500 shadow-xs hover:shadow-md transition-all duration-200 space-y-2">
           <div className="flex items-center justify-between">
@@ -99,7 +96,6 @@ export default function ByProductsDetail({ data, onClose, onBack }) {
         </div>
       </div>
 
-      {/* Itemized By-Products Recorded Card */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
           <h3 className="text-sm font-bold text-slate-900">Itemized Secondary Transactions</h3>

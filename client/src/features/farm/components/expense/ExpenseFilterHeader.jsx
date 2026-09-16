@@ -34,7 +34,6 @@ export default function ExpenseFilterHeader({
 
   return (
     <div className="flex flex-col px-4 py-2 sm:flex-row justify-between items-start sm:items-center gap-3 space-y-4 sm:space-y-0">
-      {/* Left side: Search Input */}
       <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-sm text-slate-700 w-full sm:w-72 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all shadow-2xs">
         <Search className="w-4 h-4 text-slate-400 shrink-0" />
         <input
@@ -46,7 +45,6 @@ export default function ExpenseFilterHeader({
         />
       </div>
 
-      {/* Right side: Category Select Filter */}
       <div className="flex items-center w-full sm:w-auto">
         <select
           value={category}

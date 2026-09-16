@@ -41,7 +41,6 @@ export default function ReceivablesAgingDetailView({ customer, buckets, onBack, 
 
   return (
     <div className="space-y-3 animate-in fade-in duration-200 pb-4">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-200">
         <div className="flex items-center gap-3">
           <Button
@@ -88,7 +87,6 @@ export default function ReceivablesAgingDetailView({ customer, buckets, onBack, 
         </div>
       </div>
 
-      {/* Dark Total Debt Card */}
       <Card className="p-4 sm:p-5 bg-slate-900 text-white border-0 rounded-2xl shadow-xs space-y-1">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">
@@ -106,7 +104,6 @@ export default function ReceivablesAgingDetailView({ customer, buckets, onBack, 
         </div>
       </Card>
 
-      {/* 4 Aging Buckets */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         <Card className="p-3 bg-blue-50/60 border border-blue-200/80 rounded-xl text-center shadow-xs">
           <span className="text-[10px] font-bold text-blue-700 uppercase block">0–30 DAYS</span>
@@ -137,7 +134,6 @@ export default function ReceivablesAgingDetailView({ customer, buckets, onBack, 
         </Card>
       </div>
 
-      {/* Profile Details & Recovery Recommendation */}
       <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="p-3 bg-slate-50/70 border border-slate-100 rounded-xl">

@@ -79,7 +79,6 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
 
   return (
     <div className="space-y-4">
-      {/* 1. Header (image_ce0e25.png) */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight font-display">
@@ -100,7 +99,6 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
         </button>
       </div>
 
-      {/* 2. 4 Summary Cards (matching POS / Farm Card design with borderTop and badge) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
         {[
           {
@@ -168,7 +166,6 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
         ))}
       </div>
 
-      {/* 3. Filter Bar (matching POS pill design) */}
       <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-sm text-slate-700 w-full sm:w-72 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
@@ -204,7 +201,6 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
         </div>
       </div>
 
-      {/* 4. Products & Pricing Card Grid */}
       {filteredProducts.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-10 text-center space-y-3">
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto text-xl shadow-2xs">
@@ -251,9 +247,7 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
                 className="bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-400 shadow-2xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group relative"
                 style={{ borderTop: `4px solid ${accentColor}` }}
               >
-                {/* Card Main Body */}
                 <div className="p-4 space-y-3">
-                  {/* Top Bar: Icon, Category & Status */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <div className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-lg shadow-2xs shrink-0 group-hover:scale-105 transition-transform">
@@ -282,7 +276,6 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
                     </span>
                   </div>
 
-                  {/* Title & SKU */}
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors font-display line-clamp-1">
                       {p.name}
@@ -292,7 +285,6 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
                     </p>
                   </div>
 
-                  {/* Price Card Block */}
                   <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5">
                     <div className="flex items-baseline justify-between">
                       <span className="text-[10px] font-bold uppercase text-slate-400">Sale Price</span>
@@ -317,7 +309,6 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
                   </div>
                 </div>
 
-                {/* Card Footer Actions */}
                 <div
                   className="px-4 py-2.5 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between gap-2"
                   onClick={(e) => e.stopPropagation()}

@@ -18,7 +18,6 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-200">
-      {/* Top Navigation Bar with Back Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/90 rounded-2xl p-4 md:p-5 shadow-2xs">
         <div className="flex items-center gap-3">
           <button
@@ -50,7 +49,6 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
         </div>
       </div>
 
-      {/* Main Net Profit Banner */}
       <div className={`p-6 rounded-2xl text-white shadow-sm ${
         isProfitable 
           ? 'bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-800' 
@@ -74,9 +72,7 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
         </p>
       </div>
 
-      {/* 2-Column: Step-by-Step Formula on Left, Unit Economics & Health on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Step-by-Step Income Minus Bills Calculation Card */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
@@ -91,7 +87,6 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
           </div>
 
           <div className="space-y-3.5">
-            {/* Step 1: Gross Inflow Card */}
             <div className="flex items-center justify-between p-4 rounded-xl border border-emerald-100 bg-gradient-to-r from-emerald-50/50 via-white to-white hover:border-emerald-300 transition-all duration-150">
               <div className="flex items-center gap-3">
                 <span className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 font-black text-base flex items-center justify-center shrink-0 shadow-2xs">
@@ -107,7 +102,6 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
               </p>
             </div>
 
-            {/* Step 2: Total Bills Card */}
             <div className="flex items-center justify-between p-4 rounded-xl border border-rose-100 bg-gradient-to-r from-rose-50/50 via-white to-white hover:border-rose-300 transition-all duration-150">
               <div className="flex items-center gap-3">
                 <span className="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 font-black text-base flex items-center justify-center shrink-0 shadow-2xs">
@@ -123,7 +117,6 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
               </p>
             </div>
 
-            {/* Step 3: Net Take-Home Profit Result Card */}
             <div className="flex items-center justify-between p-4.5 rounded-xl bg-slate-900 border border-slate-800 text-white shadow-md">
               <div className="flex items-center gap-3">
                 <span className="w-9 h-9 rounded-xl bg-white/20 text-white font-black text-base flex items-center justify-center shrink-0">
@@ -146,10 +139,8 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
           </div>
         </div>
 
-        {/* Unit Economics & Health */}
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Profit Per Liter Card */}
             <div className="bg-white border border-slate-200/90 border-t-4 border-t-blue-500 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -165,7 +156,6 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
               </p>
             </div>
 
-            {/* Net Margin Ratio Card */}
             <div className="bg-white border border-slate-200/90 border-t-4 border-t-indigo-500 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -182,7 +172,6 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
             </div>
           </div>
 
-          {/* Financial Health Overview Card */}
           <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-2">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">

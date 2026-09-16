@@ -15,7 +15,6 @@ export default function CollectionPayoutsReceiptModal({ customer, entry, isOpen,
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-2 overflow-y-auto">
       <div className="bg-white w-full max-w-md rounded-xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-4">
-        {/* Header */}
         <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
           <div>
             <h3 className="text-xs font-bold text-slate-800 leading-tight font-display">Khata Payment Receipt</h3>
@@ -33,9 +32,7 @@ export default function CollectionPayoutsReceiptModal({ customer, entry, isOpen,
           </Button>
         </div>
 
-        {/* Modal Body */}
         <div className="p-4 space-y-3 text-xs text-slate-700">
-          {/* Dark Green Inflow Card */}
           <div className="p-3.5 bg-emerald-950 text-white rounded-xl shadow-xs space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">
@@ -60,7 +57,6 @@ export default function CollectionPayoutsReceiptModal({ customer, entry, isOpen,
             </div>
           </div>
 
-          {/* Info List */}
           <div className="divide-y divide-slate-100 bg-slate-50 rounded-lg border border-slate-200/80 p-2.5 space-y-1.5 text-[11px]">
             <div className="flex justify-between items-center py-1">
               <span className="text-slate-500 flex items-center gap-1">
@@ -104,7 +100,6 @@ export default function CollectionPayoutsReceiptModal({ customer, entry, isOpen,
           </div>
         </div>
 
-        {/* Footer */}
         <div className="px-4 py-2.5 border-t border-slate-100 flex justify-end gap-2 bg-slate-50/70">
           <Button
             type="button"

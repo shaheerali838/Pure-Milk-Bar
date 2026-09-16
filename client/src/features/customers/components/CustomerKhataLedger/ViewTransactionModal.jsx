@@ -28,7 +28,6 @@ export default function ViewTransactionModal({ transaction, customer, isOpen, on
         </div>
 
         <div className="p-5 space-y-4 text-xs">
-          {/* Amount Display */}
           <div className="text-center py-3 bg-slate-50 rounded-xl border border-slate-100">
             <span className="text-[10px] font-bold uppercase text-slate-400">
               {isDebit ? 'Amount Owed (Debit)' : isCredit ? 'Amount Paid (Credit)' : 'Balance'}

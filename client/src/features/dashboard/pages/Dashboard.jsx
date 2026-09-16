@@ -8,16 +8,12 @@ import RecentRecoveriesTable from '../components/RecentRecoveriesTable';
 export default function Dashboard() {
   return (
     <div className="space-y-4">
-      {/* 1. Execution Module Switcher Bar */}
       <ExecationOperation />
 
-      {/* 3. Real KPIs Row (Receivables, Today's Recoveries, Milk Deliveries) */}
       <ReceivablesRecoveriesStats />
 
-      {/* 4. Quick Stats Row (Honest empty states for Farm, Supplier, POS, Expenses) */}
       <QuickStatsRow />
 
-      {/* 5. Real-Data Split Panels: Recent Recoveries & Top Receivables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <RecentRecoveriesTable />
         <TopReceivablesCard />

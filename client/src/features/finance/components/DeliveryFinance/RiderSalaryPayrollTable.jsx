@@ -102,7 +102,6 @@ export default function RiderSalaryPayrollTable({
                     key={staff.id}
                     className="hover:bg-slate-50/70 transition-colors"
                   >
-                    {/* Staff Name & Role */}
                     <TableCell className="align-top py-2">
                       <div className="space-y-0.5">
                         <div className="text-xs font-bold text-slate-900 font-display">
@@ -114,32 +113,26 @@ export default function RiderSalaryPayrollTable({
                       </div>
                     </TableCell>
 
-                    {/* Route */}
                     <TableCell className="align-top py-2 text-xs text-slate-700">
                       {staff.route || 'General Delivery Area'}
                     </TableCell>
 
-                    {/* Base Salary */}
                     <TableCell className="align-top py-2 font-bold text-slate-900 tabular text-xs">
                       Rs. {baseSalary.toLocaleString()}
                     </TableCell>
 
-                    {/* Paid Amount */}
                     <TableCell className="align-top py-2 font-bold text-emerald-700 tabular text-xs">
                       Rs. {paidAmount.toLocaleString()}
                     </TableCell>
 
-                    {/* Remaining Due */}
                     <TableCell className="align-top py-2 font-bold text-rose-700 tabular text-xs">
                       Rs. {remainingBalance.toLocaleString()}
                     </TableCell>
 
-                    {/* Status */}
                     <TableCell className="align-top py-2">
                       {getStatusBadge(status)}
                     </TableCell>
 
-                    {/* Pay Button */}
                     <TableCell className="align-top py-2 text-right">
                       <Button
                         type="button"
@@ -164,7 +157,6 @@ export default function RiderSalaryPayrollTable({
         </Table>
       </div>
 
-      {/* Summary Footer */}
       {payrollData.length > 0 && (
         <div className="bg-slate-900 text-white px-3.5 py-2.5 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
           <div className="flex items-center gap-2 font-display font-semibold">

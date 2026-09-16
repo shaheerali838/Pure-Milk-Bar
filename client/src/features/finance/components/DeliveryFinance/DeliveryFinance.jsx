@@ -187,7 +187,6 @@ export default function DeliveryFinance() {
 
   return (
     <div className="space-y-2">
-      {/* 4 Summary Stats */}
       <DeliveryFinanceStats
         filteredDeliveries={filteredDeliveries}
         filteredFuelLogs={filteredFuelLogs}
@@ -195,9 +194,7 @@ export default function DeliveryFinance() {
         timeRangeLabel={getTimeRangeLabel()}
       />
 
-      {/* Filter & Controls Bar */}
       <div className="bg-white p-2 rounded-xl border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-2">
-        {/* Sub-tabs Switcher */}
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -239,7 +236,6 @@ export default function DeliveryFinance() {
           </button>
         </div>
 
-        {/* Time Range Filters */}
         <div className="flex flex-wrap items-center gap-1.5">
           <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs">
             <button
@@ -288,7 +284,6 @@ export default function DeliveryFinance() {
             </button>
           </div>
 
-          {/* Custom Date Pickers */}
           {timeFilter === 'custom' && (
             <div className="flex items-center gap-1 text-xs">
               <Input
@@ -307,7 +302,6 @@ export default function DeliveryFinance() {
             </div>
           )}
 
-          {/* Search Box */}
           <div className="relative w-36 sm:w-44">
             <Search className="w-3 h-3 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
             <Input
@@ -321,7 +315,6 @@ export default function DeliveryFinance() {
         </div>
       </div>
 
-      {/* Sub-tab 1: Customer Drop Points */}
       {subTab === 'customers' && (
         <CustomerDeliveryBreakdownTable
           rawCustomers={searchedCustomers}
@@ -334,7 +327,6 @@ export default function DeliveryFinance() {
         />
       )}
 
-      {/* Sub-tab 2: Rider Performance & Fuel */}
       {subTab === 'riders' && (
         <RiderPerformanceTable
           staffList={searchedStaff}
@@ -349,7 +341,6 @@ export default function DeliveryFinance() {
         />
       )}
 
-      {/* Sub-tab 3: Rider Payroll & Salary */}
       {subTab === 'payroll' && (
         <RiderSalaryPayrollTable
           staffList={searchedStaff}

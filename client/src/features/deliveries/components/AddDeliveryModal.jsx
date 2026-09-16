@@ -175,7 +175,6 @@ export default function AddDeliveryModal({ isOpen, onClose }) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {/* Customer Picker with full readable details */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-slate-700">
               Customer <span className="text-rose-500">*</span>
@@ -203,7 +202,6 @@ export default function AddDeliveryModal({ isOpen, onClose }) {
             )}
           </div>
 
-          {/* Delivery Address */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-slate-700">
               Delivery Address <span className="text-rose-500">*</span>
@@ -220,7 +218,6 @@ export default function AddDeliveryModal({ isOpen, onClose }) {
             />
           </div>
 
-          {/* Date, Shift & Staff Type */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700">Delivery Date</Label>
@@ -273,7 +270,6 @@ export default function AddDeliveryModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          {/* Route & Rider Name */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700">Assigned Route</Label>
@@ -323,7 +319,6 @@ export default function AddDeliveryModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          {/* Item Description & Quantity */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700">Item Description</Label>
@@ -359,7 +354,6 @@ export default function AddDeliveryModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          {/* Payment Mode & COD Amount */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700">Payment Mode</Label>
@@ -405,7 +399,6 @@ export default function AddDeliveryModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          {/* Bottles Returned */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-slate-700">Empty Bottles Collected</Label>
             <Input

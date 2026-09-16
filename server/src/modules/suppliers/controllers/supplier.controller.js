@@ -2,10 +2,6 @@ import supplierService from '../services/supplier.service.js';
 import { sendSuccess } from '../../../utils/apiResponse.js';
 
 class SupplierController {
-  /**
-   * POST /api/v1/suppliers
-   * Register a new milk supplier.
-   */
   async createSupplier(req, res, next) {
     try {
       const supplier = await supplierService.createSupplier(req.body);
@@ -16,10 +12,6 @@ class SupplierController {
     }
   }
 
-  /**
-   * GET /api/v1/suppliers
-   * List all suppliers with filtering, search, and pagination.
-   */
   async getAllSuppliers(req, res, next) {
     try {
       const query = req._validated?.query || req.query;
@@ -37,10 +29,6 @@ class SupplierController {
     }
   }
 
-  /**
-   * GET /api/v1/suppliers/stats
-   * Get aggregate statistics for all suppliers.
-   */
   async getSupplierStats(req, res, next) {
     try {
       const stats = await supplierService.getSupplierStats();
@@ -51,10 +39,6 @@ class SupplierController {
     }
   }
 
-  /**
-   * GET /api/v1/suppliers/:id
-   * Get a single supplier by ID.
-   */
   async getSupplierById(req, res, next) {
     try {
       const params = req._validated?.params || req.params;
@@ -66,10 +50,6 @@ class SupplierController {
     }
   }
 
-  /**
-   * PATCH /api/v1/suppliers/:id
-   * Update an existing supplier's details.
-   */
   async updateSupplier(req, res, next) {
     try {
       const params = req._validated?.params || req.params;
@@ -81,10 +61,6 @@ class SupplierController {
     }
   }
 
-  /**
-   * DELETE /api/v1/suppliers/:id
-   * Soft-delete a supplier (set isActive = false).
-   */
   async deleteSupplier(req, res, next) {
     try {
       const params = req._validated?.params || req.params;

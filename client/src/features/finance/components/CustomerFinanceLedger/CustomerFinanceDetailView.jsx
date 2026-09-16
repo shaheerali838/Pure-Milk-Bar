@@ -29,7 +29,6 @@ export default function CustomerFinanceDetailView({ customer, onBack, onRecordPa
 
   return (
     <div className="space-y-3 animate-in fade-in duration-200 pb-4">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-200">
         <div className="flex items-center gap-3">
           <Button
@@ -64,7 +63,6 @@ export default function CustomerFinanceDetailView({ customer, onBack, onRecordPa
         )}
       </div>
 
-      {/* Hero Balance Card */}
       <Card className="bg-[#0b1b1a] p-4 sm:p-5 rounded-2xl text-white border-0 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
@@ -103,7 +101,6 @@ export default function CustomerFinanceDetailView({ customer, onBack, onRecordPa
         </div>
       </Card>
 
-      {/* 3 Metric Highlight Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         <Card className="p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
@@ -133,7 +130,6 @@ export default function CustomerFinanceDetailView({ customer, onBack, onRecordPa
         </Card>
       </div>
 
-      {/* Transaction History Section */}
       <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-3">
         <div className="flex items-center justify-between pb-2 border-b border-slate-100">
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider font-display">

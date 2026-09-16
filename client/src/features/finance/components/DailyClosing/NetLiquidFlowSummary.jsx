@@ -25,11 +25,9 @@ export default function NetLiquidFlowSummary({
 
   return (
     <Card className="bg-gradient-to-br from-emerald-900 to-emerald-950 text-white border-0 shadow-md rounded-2xl p-5 overflow-hidden relative">
-      {/* Background ambient lighting */}
       <div className="absolute right-0 top-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 relative z-10">
-        {/* Left Hero: Net Liquid Cash in Hand */}
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <span className="p-1 rounded-md bg-emerald-800/80 text-emerald-300">
@@ -57,9 +55,7 @@ export default function NetLiquidFlowSummary({
           </Typography>
         </div>
 
-        {/* Right 3 Mini Cards: Revenue vs Expenses vs Net Margin */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 shrink-0">
-          {/* Card 1: Total Collections */}
           <div className="p-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/10 space-y-0.5">
             <span className="text-[10px] font-extrabold text-emerald-200 uppercase tracking-wider block">
               Total Inflows
@@ -72,7 +68,6 @@ export default function NetLiquidFlowSummary({
             </span>
           </div>
 
-          {/* Card 2: Total Expenses */}
           <div className="p-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/10 space-y-0.5">
             <span className="text-[10px] font-extrabold text-rose-200 uppercase tracking-wider block">
               Total Expenses
@@ -85,7 +80,6 @@ export default function NetLiquidFlowSummary({
             </span>
           </div>
 
-          {/* Card 3: Net Estimated Profit */}
           <div className="p-3 bg-emerald-500/20 backdrop-blur-md rounded-xl border border-emerald-400/30 space-y-0.5">
             <span className="text-[10px] font-extrabold text-emerald-300 uppercase tracking-wider block">
               Estimated Profit

@@ -2,10 +2,6 @@ import productService from '../services/product.service.js';
 import { sendSuccess } from '../../../utils/apiResponse.js';
 
 class ProductController {
-  /**
-   * POST /api/v1/inventory/products
-   * Add a new product to the inventory.
-   */
   async createProduct(req, res, next) {
     try {
       const product = await productService.createProduct(req.body);
@@ -16,10 +12,6 @@ class ProductController {
     }
   }
 
-  /**
-   * GET /api/v1/inventory/products
-   * List all products with filtering, search, and pagination.
-   */
   async getAllProducts(req, res, next) {
     try {
       const query = req._validated?.query || req.query;
@@ -37,10 +29,6 @@ class ProductController {
     }
   }
 
-  /**
-   * GET /api/v1/inventory/products/stats
-   * Get aggregate statistics for the inventory.
-   */
   async getProductStats(req, res, next) {
     try {
       const stats = await productService.getProductStats();
@@ -51,10 +39,6 @@ class ProductController {
     }
   }
 
-  /**
-   * GET /api/v1/inventory/products/low-stock
-   * Get products that are below their minimum alert stock.
-   */
   async getLowStockProducts(req, res, next) {
     try {
       const products = await productService.getLowStockProducts();
@@ -65,10 +49,6 @@ class ProductController {
     }
   }
 
-  /**
-   * GET /api/v1/inventory/products/:id
-   * Get a single product by ID.
-   */
   async getProductById(req, res, next) {
     try {
       const params = req._validated?.params || req.params;
@@ -80,10 +60,6 @@ class ProductController {
     }
   }
 
-  /**
-   * PATCH /api/v1/inventory/products/:id
-   * Update an existing product.
-   */
   async updateProduct(req, res, next) {
     try {
       const params = req._validated?.params || req.params;
@@ -95,10 +71,6 @@ class ProductController {
     }
   }
 
-  /**
-   * DELETE /api/v1/inventory/products/:id
-   * Delete a product from inventory.
-   */
   async deleteProduct(req, res, next) {
     try {
       const params = req._validated?.params || req.params;

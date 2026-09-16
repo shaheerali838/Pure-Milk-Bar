@@ -133,7 +133,6 @@ export default function BookDeliveryView({ onBack, onComplete }) {
 
   return (
     <div className="space-y-2.5 animate-in fade-in duration-150 pb-4">
-      {/* Top Header with Back button */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200">
         <div className="flex items-center gap-2.5">
           <Button
@@ -164,9 +163,7 @@ export default function BookDeliveryView({ onBack, onComplete }) {
         </div>
       )}
 
-      {/* Form Card */}
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200/90 rounded-xl p-3.5 shadow-2xs space-y-3">
-        {/* Section 1: Customer Details */}
         <div className="space-y-2">
           <h3 className="font-display font-bold text-xs text-slate-900 flex items-center gap-1.5">
             <User className="w-3.5 h-3.5 text-emerald-600" />
@@ -219,7 +216,6 @@ export default function BookDeliveryView({ onBack, onComplete }) {
           </div>
         </div>
 
-        {/* Section 2: Product & Quantity */}
         <div className="space-y-2 pt-2 border-t border-slate-100">
           <h3 className="font-display font-bold text-xs text-slate-900 flex items-center gap-1.5">
             <Package className="w-3.5 h-3.5 text-blue-600" />
@@ -279,7 +275,6 @@ export default function BookDeliveryView({ onBack, onComplete }) {
           </div>
         </div>
 
-        {/* Section 3: Schedule & Staff */}
         <div className="space-y-2 pt-2 border-t border-slate-100">
           <h3 className="font-display font-bold text-xs text-slate-900 flex items-center gap-1.5">
             <Bike className="w-3.5 h-3.5 text-purple-600" />
@@ -367,7 +362,6 @@ export default function BookDeliveryView({ onBack, onComplete }) {
           </div>
         </div>
 
-        {/* Section 4: Payment & COD */}
         <div className="space-y-2 pt-2 border-t border-slate-100">
           <h3 className="font-display font-bold text-xs text-slate-900 flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-amber-600" />
@@ -420,7 +414,6 @@ export default function BookDeliveryView({ onBack, onComplete }) {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="pt-2.5 border-t border-slate-100 flex items-center justify-end gap-2">
           <Button
             type="button"

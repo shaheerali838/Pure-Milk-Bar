@@ -99,7 +99,6 @@ export default function RecordPaymentView({ customer, onBack }) {
 
   return (
     <div className="space-y-3 animate-in fade-in duration-200 pb-4">
-      {/* Header */}
       <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
         <Button
           type="button"
@@ -122,10 +121,8 @@ export default function RecordPaymentView({ customer, onBack }) {
         </div>
       </div>
 
-      {/* Main Form Container */}
       <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Payment Type Toggle & Presets */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
             <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200">
               <button
@@ -169,7 +166,6 @@ export default function RecordPaymentView({ customer, onBack }) {
             )}
           </div>
 
-          {/* Form Fields Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
@@ -238,7 +234,6 @@ export default function RecordPaymentView({ customer, onBack }) {
             </div>
           </div>
 
-          {/* Description & Notes */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
@@ -267,7 +262,6 @@ export default function RecordPaymentView({ customer, onBack }) {
             </div>
           </div>
 
-          {/* Balance Calculator Preview */}
           {totalDue > 0 && (
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs flex items-center justify-between">
               <div>
@@ -289,7 +283,6 @@ export default function RecordPaymentView({ customer, onBack }) {
             </div>
           )}
 
-          {/* Bottom Action Buttons */}
           <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
             <Button
               type="button"

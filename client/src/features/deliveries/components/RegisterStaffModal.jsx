@@ -87,7 +87,6 @@ export default function RegisterStaffModal({ isOpen, onClose }) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
-          {/* Name */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-slate-700">
               Staff Full Name <span className="text-rose-500">*</span>
@@ -104,7 +103,6 @@ export default function RegisterStaffModal({ isOpen, onClose }) {
             />
           </div>
 
-          {/* Phone */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-slate-700">Phone Number</Label>
             <Input
@@ -118,7 +116,6 @@ export default function RegisterStaffModal({ isOpen, onClose }) {
             />
           </div>
 
-          {/* Type */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-slate-700">Delivery Role / Type</Label>
             <Select
@@ -141,7 +138,6 @@ export default function RegisterStaffModal({ isOpen, onClose }) {
             </Select>
           </div>
 
-          {/* Vehicle (shown for Rider) */}
           {isRider && (
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700">
@@ -159,7 +155,6 @@ export default function RegisterStaffModal({ isOpen, onClose }) {
             </div>
           )}
 
-          {/* Primary Route */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-slate-700">Assigned Route / Area</Label>
             <Input

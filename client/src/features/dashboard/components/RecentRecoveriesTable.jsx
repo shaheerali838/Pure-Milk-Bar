@@ -54,7 +54,6 @@ export default function RecentRecoveriesTable() {
   return (
     <Card className="p-4 bg-white border border-slate-200/90 rounded-2xl shadow-xs flex flex-col justify-between">
       <div>
-        {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
@@ -78,7 +77,6 @@ export default function RecentRecoveriesTable() {
           </Link>
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto py-1">
           <Table className="w-full text-xs">
             <TableHeader>

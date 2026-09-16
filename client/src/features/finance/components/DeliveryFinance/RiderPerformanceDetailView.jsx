@@ -44,7 +44,6 @@ export default function RiderPerformanceDetailView({
 
   return (
     <div className="space-y-2.5 animate-in fade-in duration-150 pb-4">
-      {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200">
         <div className="flex items-center gap-2.5">
           <Button
@@ -71,7 +70,6 @@ export default function RiderPerformanceDetailView({
         </div>
       </div>
 
-      {/* Hero Stats Card */}
       <div className="bg-slate-900 text-white rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-purple-950 text-purple-300 border border-purple-800/60 flex items-center justify-center text-lg font-bold font-display">
@@ -120,7 +118,6 @@ export default function RiderPerformanceDetailView({
         </div>
       </div>
 
-      {/* Section Switcher Tabs */}
       <div className="flex items-center gap-1.5 border-b border-slate-200 pb-1">
         <button
           type="button"
@@ -146,7 +143,6 @@ export default function RiderPerformanceDetailView({
         </button>
       </div>
 
-      {/* Section 1: Delivery Runs */}
       {activeSection === 'runs' && (
         <div className="bg-white border border-slate-200/90 rounded-xl p-3 shadow-2xs space-y-2">
           {deliveries.length === 0 ? (
@@ -208,7 +204,6 @@ export default function RiderPerformanceDetailView({
         </div>
       )}
 
-      {/* Section 2: Fuel Receipts */}
       {activeSection === 'fuel' && (
         <div className="bg-white border border-slate-200/90 rounded-xl p-3 shadow-2xs space-y-2">
           {fuelLogs.length === 0 ? (

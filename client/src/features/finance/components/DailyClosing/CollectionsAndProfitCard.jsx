@@ -48,7 +48,6 @@ export default function CollectionsAndProfitCard({
       </CardHeader>
 
       <CardContent className="p-5 pt-2 space-y-4 text-xs">
-        {/* Group 1: Multi-Channel Collections */}
         <div className="space-y-2">
           <div className="flex items-center justify-between pb-1">
             <Typography variant="overline" className="text-[10px] font-extrabold text-slate-400 tracking-wider">
@@ -59,7 +58,6 @@ export default function CollectionsAndProfitCard({
             </span>
           </div>
 
-          {/* Row 1: Walk-in Counter Cash */}
           <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50/70 border border-slate-100 hover:bg-slate-50 transition">
             <div className="flex items-center gap-2">
               <span className="w-5 h-5 rounded-full bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold">
@@ -82,7 +80,6 @@ export default function CollectionsAndProfitCard({
             </div>
           </div>
 
-          {/* Row 2: Walk-in Online Digital Transfer */}
           <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50/70 border border-slate-100 hover:bg-slate-50 transition">
             <div className="flex items-center gap-2">
               <span className="w-5 h-5 rounded-full bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold">
@@ -105,7 +102,6 @@ export default function CollectionsAndProfitCard({
             </div>
           </div>
 
-          {/* Row 3: Doorstep Delivery Cash on Delivery */}
           <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50/70 border border-slate-100 hover:bg-slate-50 transition">
             <div className="flex items-center gap-2">
               <span className="w-5 h-5 rounded-full bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold">
@@ -128,7 +124,6 @@ export default function CollectionsAndProfitCard({
             </div>
           </div>
 
-          {/* Row 4: Customer Khata Dues Recovered */}
           <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50/70 border border-slate-100 hover:bg-slate-50 transition">
             <div className="flex items-center gap-2">
               <span className="w-5 h-5 rounded-full bg-white border border-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold">
@@ -151,7 +146,6 @@ export default function CollectionsAndProfitCard({
             </div>
           </div>
 
-          {/* Inflow Subtotal */}
           <div className="flex items-center justify-between px-2 pt-1 font-bold text-xs text-slate-700">
             <span className="text-[11px] font-bold text-slate-600">Total Money Collected Today</span>
             <span className="font-black text-slate-900 tabular font-display">
@@ -162,7 +156,6 @@ export default function CollectionsAndProfitCard({
 
         <Separator className="bg-slate-200/80" />
 
-        {/* Group 2: Embedded Daily Expenses List */}
         <DailyExpensesList expenses={expenses} />
       </CardContent>
     </Card>

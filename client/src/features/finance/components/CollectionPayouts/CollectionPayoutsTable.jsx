@@ -62,7 +62,6 @@ export default function CollectionPayoutsTable({ onViewReceipt, onRecordPayment,
 
   return (
     <div className="space-y-2.5">
-      {/* Search & Filter Bar */}
       <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-2">
         <div className="relative flex-1 min-w-[240px]">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -92,7 +91,6 @@ export default function CollectionPayoutsTable({ onViewReceipt, onRecordPayment,
         </div>
       </div>
 
-      {/* Main Collections Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto max-h-[calc(100vh-320px)]">
           <Table className="w-full text-left border-collapse min-w-[900px]">
@@ -128,13 +126,11 @@ export default function CollectionPayoutsTable({ onViewReceipt, onRecordPayment,
                       title={`Click to view payment receipt for ${customer.name}`}
                       className="hover:bg-blue-50/40 transition-colors cursor-pointer group select-none"
                     >
-                      {/* Date & Ref */}
                       <TableCell className="px-3.5 py-2 whitespace-nowrap">
                         <div className="font-mono text-[11px] text-slate-700 font-semibold tabular">{entry.date}</div>
                         <div className="text-[10px] font-mono text-slate-400 tabular">{refCode}</div>
                       </TableCell>
 
-                      {/* Customer Account */}
                       <TableCell className="px-3.5 py-2 whitespace-nowrap">
                         <div className="font-bold text-slate-800 group-hover:text-blue-950 leading-tight transition-colors font-display">
                           {customer.name}
@@ -142,24 +138,20 @@ export default function CollectionPayoutsTable({ onViewReceipt, onRecordPayment,
                         <div className="text-[10px] text-slate-400 leading-tight tabular">{customer.phone} · {customer.area || 'Model Town'}</div>
                       </TableCell>
 
-                      {/* Payment Type */}
                       <TableCell className="px-3.5 py-2 text-center whitespace-nowrap">
                         <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-medium">
                           {paymentType}
                         </span>
                       </TableCell>
 
-                      {/* Paid Amount */}
                       <TableCell className="px-3.5 py-2 text-right font-black text-emerald-600 whitespace-nowrap tabular">
                         Rs. {Number(entry.credit || 0).toLocaleString()}
                       </TableCell>
 
-                      {/* Payment Method */}
                       <TableCell className="px-3.5 py-2 font-medium text-slate-700 whitespace-nowrap">
                         {entry.method || 'Cash'}
                       </TableCell>
 
-                      {/* Status */}
                       <TableCell className="px-3.5 py-2 text-center whitespace-nowrap">
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
@@ -172,12 +164,10 @@ export default function CollectionPayoutsTable({ onViewReceipt, onRecordPayment,
                         </span>
                       </TableCell>
 
-                      {/* Remarks */}
                       <TableCell className="px-3.5 py-2 text-slate-500 max-w-[200px] truncate">
                         {entry.notes || entry.description || 'Payment cleared'}
                       </TableCell>
 
-                      {/* Action Buttons: Eye (Receipt), CreditCard (Payment), Pencil (Edit Profile) */}
                       <TableCell className="px-3.5 py-2 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           <Button

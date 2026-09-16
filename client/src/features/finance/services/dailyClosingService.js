@@ -1,11 +1,3 @@
-/**
- * Daily Closing Data Service
- * 
- * Provides API interaction for daily closing mass-balance reconciliation,
- * cash-drawer balancing, expense auditing, and daily P&L snapshot.
- * 
- * TODO: connect to /api/finance/daily-closing once backend + supplier dashboard data exists
- */
 
 export const getDailyClosingSummary = async (options = {}) => {
   // Can be called with a date string or options object { date, period, startDate, endDate }
@@ -94,10 +86,6 @@ export const getDailyClosingSummary = async (options = {}) => {
   };
 };
 
-/**
- * Confirm and lock daily closing
- * TODO: connect to /api/finance/daily-closing once backend + supplier dashboard data exists
- */
 export const confirmDailyClosing = async (closingPayload) => {
   // TODO: connect to /api/finance/daily-closing once backend + supplier dashboard data exists
   await new Promise((resolve) => setTimeout(resolve, 400));
@@ -109,9 +97,6 @@ export const confirmDailyClosing = async (closingPayload) => {
   };
 };
 
-/**
- * Export Daily Closing CSV
- */
 export const exportDailyClosingCsv = (summaryData) => {
   if (!summaryData) return;
 

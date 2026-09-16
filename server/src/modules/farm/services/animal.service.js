@@ -2,11 +2,6 @@ import Animal from '../../../models/Animal.model.js';
 import AppError from '../../../utils/AppError.js';
 
 class AnimalService {
-  /**
-   * Create a new animal in the livestock directory.
-   * @param {object} data - Validated animal data
-   * @returns {Promise<object>} Created animal document
-   */
   async createAnimal(data) {
     // Check for duplicate tag number
     const existingAnimal = await Animal.findOne({ tagNumber: data.tagNumber });
@@ -22,11 +17,6 @@ class AnimalService {
     return animal;
   }
 
-  /**
-   * Get all animals with filtering, search, and pagination.
-   * @param {object} query - Validated query parameters
-   * @returns {Promise<{animals: Array, total: number, page: number, limit: number}>}
-   */
   async getAllAnimals(query) {
     const { page, limit, type, healthStatus, lactationStage, isActive, search } = query;
 
@@ -56,11 +46,6 @@ class AnimalService {
     return { animals, total, page, limit };
   }
 
-  /**
-   * Get a single animal by ID.
-   * @param {string} id - Animal ObjectId
-   * @returns {Promise<object>} Animal document
-   */
   async getAnimalById(id) {
     const animal = await Animal.findById(id).lean();
 
@@ -71,12 +56,6 @@ class AnimalService {
     return animal;
   }
 
-  /**
-   * Update an existing animal.
-   * @param {string} id - Animal ObjectId
-   * @param {object} data - Validated update data
-   * @returns {Promise<object>} Updated animal document
-   */
   async updateAnimal(id, data) {
     // If tagNumber is being changed, check for duplicates
     if (data.tagNumber) {
@@ -105,12 +84,6 @@ class AnimalService {
     return animal;
   }
 
-  /**
-   * Soft-delete an animal (set isActive = false).
-   * Animals are never physically deleted from the database.
-   * @param {string} id - Animal ObjectId
-   * @returns {Promise<object>} Deactivated animal document
-   */
   async deleteAnimal(id) {
     const animal = await Animal.findByIdAndUpdate(
       id,
@@ -125,10 +98,6 @@ class AnimalService {
     return animal;
   }
 
-  /**
-   * Get aggregate statistics for the livestock directory.
-   * @returns {Promise<object>} Summary statistics
-   */
   async getAnimalStats() {
     const [stats] = await Animal.aggregate([
       {

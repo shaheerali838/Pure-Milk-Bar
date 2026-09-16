@@ -27,7 +27,6 @@ export default function POSCustomerKhataSection() {
 
   return (
     <div className="space-y-3 animate-in fade-in duration-150 text-xs">
-      {/* Registered Customer Picker */}
       <div>
         <label className="block text-[10px] font-bold text-purple-900 uppercase mb-1">
           Select Monthly Subscribed Customer:
@@ -51,7 +50,6 @@ export default function POSCustomerKhataSection() {
 
       {activeCustomer ? (
         <div className="space-y-2.5">
-          {/* 3 Metric Highlight Cards (From CustomerKhataLedger BuyProductView) */}
           <div className="grid grid-cols-3 gap-1.5">
             <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-center">
               <span className="text-[9px] font-bold text-rose-700 uppercase block">Current Due</span>
@@ -75,7 +73,6 @@ export default function POSCustomerKhataSection() {
             </div>
           </div>
 
-          {/* Settlement Options: Khata vs Cash vs Partial */}
           <div className="space-y-1.5">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
               Khata &amp; Payment Settlement
@@ -146,7 +143,6 @@ export default function POSCustomerKhataSection() {
               </label>
             </div>
 
-            {/* Partial Amount Input */}
             {khataPaymentOption === 'partial' && (
               <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
                 <label className="block text-[10px] font-bold text-amber-900 uppercase">
@@ -164,7 +160,6 @@ export default function POSCustomerKhataSection() {
               </div>
             )}
 
-            {/* Notes */}
             <div>
               <input
                 type="text"

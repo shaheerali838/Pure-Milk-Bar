@@ -16,7 +16,6 @@ export default function CollectionPayoutsReceiptView({ customer, entry, onBack }
 
   return (
     <div className="space-y-3 animate-in fade-in duration-200 pb-4">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-200">
         <div className="flex items-center gap-3">
           <Button
@@ -53,9 +52,7 @@ export default function CollectionPayoutsReceiptView({ customer, entry, onBack }
         </div>
       </div>
 
-      {/* Main Receipt Card */}
       <Card className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-4 max-w-3xl">
-        {/* Inflow Banner */}
         <div className="p-4 bg-emerald-950 text-white rounded-2xl shadow-xs space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
@@ -80,7 +77,6 @@ export default function CollectionPayoutsReceiptView({ customer, entry, onBack }
           </div>
         </div>
 
-        {/* Breakdown Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div className="p-3 bg-slate-50/70 border border-slate-100 rounded-xl">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Customer Account</span>
@@ -120,7 +116,6 @@ export default function CollectionPayoutsReceiptView({ customer, entry, onBack }
           </div>
         </div>
 
-        {/* Back Button */}
         <div className="pt-2 flex justify-end border-t border-slate-100">
           <Button
             type="button"

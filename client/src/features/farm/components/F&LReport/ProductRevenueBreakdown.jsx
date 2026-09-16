@@ -25,7 +25,6 @@ export default function ProductRevenueBreakdown({ productsData = [], onSelectPro
 
   return (
     <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs space-y-4">
-      {/* Header Row: Left Title, Right Select Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div>
           <h2 className="text-base font-bold text-slate-900 tracking-tight font-display flex items-center gap-2">
@@ -35,7 +34,6 @@ export default function ProductRevenueBreakdown({ productsData = [], onSelectPro
           
         </div>
 
-        {/* Right <select> Dropdown Filter */}
         <div className="flex items-center gap-2">
           <label className="text-xs font-semibold text-slate-500 flex items-center gap-1">
             <Filter className="w-3.5 h-3.5 text-slate-400" /> Filter:
@@ -54,7 +52,6 @@ export default function ProductRevenueBreakdown({ productsData = [], onSelectPro
         </div>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>
@@ -92,7 +89,6 @@ export default function ProductRevenueBreakdown({ productsData = [], onSelectPro
                     className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
                     title={`Click to view ${item.name} channels and specifications`}
                   >
-                    {/* Product Name */}
                     <td className="py-3.5 px-3">
                       <div className="flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 text-sm">
@@ -109,29 +105,24 @@ export default function ProductRevenueBreakdown({ productsData = [], onSelectPro
                       </div>
                     </td>
 
-                    {/* Category Badge */}
                     <td className="py-3.5 px-3">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200/80">
                         {item.category}
                       </span>
                     </td>
 
-                    {/* Total Output */}
                     <td className="py-3.5 px-3 text-center font-bold text-slate-800 tabular">
                       {Number(item.totalOutput || 0).toFixed(1)} <span className="text-[10px] font-medium text-slate-400">{item.unit || 'L'}</span>
                     </td>
 
-                    {/* Selling Rate */}
                     <td className="py-3.5 px-3 text-right font-medium text-slate-600 tabular">
                       Rs. {item.sellingRate || 0}
                     </td>
 
-                    {/* Gross Realized */}
                     <td className="py-3.5 px-3 text-right font-black text-slate-900 tabular">
                       {fmt(item.grossRealized || 0)}
                     </td>
 
-                    {/* Net Profit (Margin) */}
                     <td className="py-3.5 px-3 text-right tabular">
                       <span className={`font-bold ${isProfitable ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {fmt(item.netProfit || 0)}
@@ -141,7 +132,6 @@ export default function ProductRevenueBreakdown({ productsData = [], onSelectPro
                       </span>
                     </td>
 
-                    {/* Channel Split (Doorstep, POS, Wholesale) */}
                     <td className="py-3.5 px-3 text-center">
                       <div className="flex items-center justify-center gap-1.5 text-[10px]">
                         <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200/60" title={`Doorstep: ${item.channelSplit?.doorstep?.share || 0}%`}>
@@ -156,7 +146,6 @@ export default function ProductRevenueBreakdown({ productsData = [], onSelectPro
                       </div>
                     </td>
 
-                    {/* Action */}
                     <td className="py-3.5 px-3 text-center">
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 group-hover:text-blue-800 transition">
                         Detail <ChevronRight className="w-3.5 h-3.5" />

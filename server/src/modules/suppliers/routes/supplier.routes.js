@@ -27,11 +27,6 @@ const router = Router();
 //  SUPPLIER ROUTES — /api/v1/suppliers
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * GET /api/v1/suppliers/stats
- * Get aggregate statistics for all suppliers.
- * NOTE: Must be declared BEFORE /:id to avoid route conflict.
- */
 router.get(
   '/stats',
   // authenticate,
@@ -39,10 +34,6 @@ router.get(
   supplierController.getSupplierStats
 );
 
-/**
- * POST /api/v1/suppliers
- * Register a new milk supplier.
- */
 router.post(
   '/',
   // authenticate,
@@ -51,10 +42,6 @@ router.post(
   supplierController.createSupplier
 );
 
-/**
- * GET /api/v1/suppliers
- * List all suppliers with filtering, search, and pagination.
- */
 router.get(
   '/',
   // authenticate,
@@ -63,10 +50,6 @@ router.get(
   supplierController.getAllSuppliers
 );
 
-/**
- * GET /api/v1/suppliers/:id
- * Get a single supplier by ID.
- */
 router.get(
   '/:id',
   // authenticate,
@@ -75,10 +58,6 @@ router.get(
   supplierController.getSupplierById
 );
 
-/**
- * PATCH /api/v1/suppliers/:id
- * Update an existing supplier's details.
- */
 router.patch(
   '/:id',
   // authenticate,
@@ -87,10 +66,6 @@ router.patch(
   supplierController.updateSupplier
 );
 
-/**
- * DELETE /api/v1/suppliers/:id
- * Soft-delete a supplier (set isActive = false).
- */
 router.delete(
   '/:id',
   // authenticate,
@@ -103,11 +78,6 @@ router.delete(
 //  PROCUREMENT ROUTES — /api/v1/suppliers/procurements
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * GET /api/v1/suppliers/procurements/daily-summary
- * Get daily procurement totals for a given date (?date=YYYY-MM-DD).
- * NOTE: Must be declared BEFORE /procurements/:id to avoid route conflict.
- */
 router.get(
   '/procurements/daily-summary',
   // authenticate,
@@ -115,10 +85,6 @@ router.get(
   procurementController.getDailySummary
 );
 
-/**
- * POST /api/v1/suppliers/procurements
- * Record a new milk procurement entry.
- */
 router.post(
   '/procurements',
   // authenticate,
@@ -127,10 +93,6 @@ router.post(
   procurementController.createProcurement
 );
 
-/**
- * GET /api/v1/suppliers/procurements
- * List all procurement records with filtering and pagination.
- */
 router.get(
   '/procurements',
   // authenticate,
@@ -139,10 +101,6 @@ router.get(
   procurementController.getAllProcurements
 );
 
-/**
- * GET /api/v1/suppliers/procurements/:id
- * Get a single procurement record by ID.
- */
 router.get(
   '/procurements/:id',
   // authenticate,
@@ -151,10 +109,6 @@ router.get(
   procurementController.getProcurementById
 );
 
-/**
- * PATCH /api/v1/suppliers/procurements/:id
- * Update a procurement record (status or amountPaid).
- */
 router.patch(
   '/procurements/:id',
   // authenticate,

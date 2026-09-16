@@ -7,9 +7,6 @@ import Expense from '../../../models/Expense.model.js';
 import User from '../../../models/User.model.js';
 import AuditLog from '../../../models/AuditLog.model.js';
 
-/**
- * Helper function to create an AuditLog entry
- */
 const createAuditLog = async ({ reqUser, action, resourceId, beforeSnapshot, afterSnapshot, details, ipAddress = '127.0.0.1' }) => {
   try {
     const user = await User.findById(reqUser.id).select('username role');
@@ -31,9 +28,6 @@ const createAuditLog = async ({ reqUser, action, resourceId, beforeSnapshot, aft
   }
 };
 
-/**
- * Helper: Calculate theoretical milk & financial mass balances for a specific date
- */
 export const calculateTheoreticalBalancesForDate = async (targetDateStr, manualOpeningMilk = null, manualOpeningCash = null) => {
   const targetDate = targetDateStr ? new Date(targetDateStr) : new Date();
   const startOfDay = new Date(targetDate);
@@ -178,9 +172,6 @@ export const calculateTheoreticalBalancesForDate = async (targetDateStr, manualO
   };
 };
 
-/**
- * 1. POST /api/v1/daily-closings - Create/Start Daily Closing Draft
- */
 export const createDailyClosingService = async (reqUser, payload = {}, ipAddress) => {
   const targetDate = payload?.closingDate ? new Date(payload.closingDate) : new Date();
   const startOfDay = new Date(targetDate);
@@ -237,9 +228,6 @@ export const createDailyClosingService = async (reqUser, payload = {}, ipAddress
   return newClosing;
 };
 
-/**
- * 2. GET /api/v1/daily-closings - Get Daily Closings History List
- */
 export const getDailyClosingsService = async (queryParams) => {
   const page = parseInt(queryParams.page, 10) || 1;
   const limit = parseInt(queryParams.limit, 10) || 20;
@@ -285,9 +273,6 @@ export const getDailyClosingsService = async (queryParams) => {
   };
 };
 
-/**
- * 3. GET /api/v1/daily-closings/:id - Get Daily Closing Details by ID
- */
 export const getDailyClosingByIdService = async (id) => {
   const closing = await DailyClosing.findById(id)
     .populate('closedByUserId', 'name username role')
@@ -303,9 +288,6 @@ export const getDailyClosingByIdService = async (id) => {
   return closing;
 };
 
-/**
- * 4. GET /api/v1/daily-closings/date/:date - Get Daily Closing by Date or Live Draft
- */
 export const getDailyClosingByDateService = async (dateStr) => {
   const targetDate = new Date(dateStr);
   if (isNaN(targetDate.getTime())) {
@@ -341,9 +323,6 @@ export const getDailyClosingByDateService = async (dateStr) => {
   return closing;
 };
 
-/**
- * 5. POST /api/v1/daily-closings/:id/reconcile - Reconcile Physical Dipstick & Cash
- */
 export const reconcileDailyClosingService = async (id, reqUser, payload = {}, ipAddress) => {
   const closing = await DailyClosing.findById(id);
   if (!closing) {
@@ -405,9 +384,6 @@ export const reconcileDailyClosingService = async (id, reqUser, payload = {}, ip
   return closing;
 };
 
-/**
- * 6. POST /api/v1/daily-closings/:id/approve - Approve Closing by Manager/Admin
- */
 export const approveDailyClosingService = async (id, reqUser, payload = {}, ipAddress) => {
   const closing = await DailyClosing.findById(id);
   if (!closing) {
@@ -446,9 +422,6 @@ export const approveDailyClosingService = async (id, reqUser, payload = {}, ipAd
   return closing;
 };
 
-/**
- * 7. POST /api/v1/daily-closings/:id/reopen - Reopen Approved Closing (Admin Only)
- */
 export const reopenDailyClosingService = async (id, reqUser, payload = {}, ipAddress) => {
   const closing = await DailyClosing.findById(id);
   if (!closing) {
@@ -485,9 +458,6 @@ export const reopenDailyClosingService = async (id, reqUser, payload = {}, ipAdd
   return closing;
 };
 
-/**
- * 8. GET /api/v1/daily-closings/:id/report - Get Formatted Closing Audit Report
- */
 export const getDailyClosingReportService = async (id) => {
   const closing = await DailyClosing.findById(id)
     .populate('closedByUserId', 'name username role')

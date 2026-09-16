@@ -176,7 +176,6 @@ export default function BuyProductView({ customer, onBack }) {
 
   return (
     <div className="space-y-3 animate-in fade-in duration-200 pb-4">
-      {/* Header */}
       <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
         <Button
           type="button"
@@ -195,7 +194,6 @@ export default function BuyProductView({ customer, onBack }) {
         </div>
       </div>
 
-      {/* Top 3 Metric Highlight Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs border-t-3 border-t-rose-500">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Current Khata Due</span>
@@ -219,9 +217,7 @@ export default function BuyProductView({ customer, onBack }) {
         </Card>
       </div>
 
-      {/* Main Content Container */}
       <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-4">
-        {/* Product Selection Bar */}
         <div className="p-3 border border-emerald-100 bg-emerald-50/30 rounded-xl space-y-2">
           <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
             <Package className="w-3.5 h-3.5 text-emerald-600" />
@@ -288,7 +284,6 @@ export default function BuyProductView({ customer, onBack }) {
           </div>
         </div>
 
-        {/* Selected Items Cart Table */}
         <div className="border border-slate-200 rounded-xl overflow-hidden">
           <div className="bg-slate-50 px-3 py-2 border-b border-slate-200 flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
@@ -352,7 +347,6 @@ export default function BuyProductView({ customer, onBack }) {
           </Table>
         </div>
 
-        {/* Date, Delivery Shift & Payment Method */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div>
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
@@ -397,7 +391,6 @@ export default function BuyProductView({ customer, onBack }) {
           </div>
         </div>
 
-        {/* Payment & Settlement Selection */}
         <div className="space-y-2">
           <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             Payment &amp; Settlement Option
@@ -485,7 +478,6 @@ export default function BuyProductView({ customer, onBack }) {
           )}
         </div>
 
-        {/* Bottom Action Buttons */}
         <div className="pt-3 flex items-center justify-between border-t border-slate-100">
           <div className="text-xs">
             <span className="text-slate-500 font-medium">Grand Total: </span>

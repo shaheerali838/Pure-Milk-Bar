@@ -23,7 +23,6 @@ export default function FleetAndStaff({ onRegisterStaff, onViewStaff }) {
 
   return (
     <div className="space-y-1.5">
-      {/* Top Header & Search Bar */}
       <div className="bg-white p-1.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-1.5">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -46,7 +45,6 @@ export default function FleetAndStaff({ onRegisterStaff, onViewStaff }) {
         </Button>
       </div>
 
-      {/* Staff Grid */}
       {filteredStaff.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200/80 p-6 text-center">
           <div className="flex flex-col items-center justify-center text-slate-400 space-y-1.5">

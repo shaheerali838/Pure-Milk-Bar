@@ -7,9 +7,6 @@ import {
   getExpenseSummaryService,
 } from '../services/finance.service.js';
 
-/* ==========================================================================
-   KHATA CONTROLLER HANDLERS
-   ========================================================================== */
 
 
 export const addKhataEntry = async (req, res, next) => {
@@ -51,9 +48,6 @@ export const getReceivablesAging = async (req, res, next) => {
 };
 
 
-/* ==========================================================================
-   EXPENSE CONTROLLER HANDLERS
-   ========================================================================== */
 
 export const createExpense = async (req, res, next) => {
   try {

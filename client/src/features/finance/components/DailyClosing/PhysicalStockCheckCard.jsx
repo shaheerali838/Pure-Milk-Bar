@@ -58,7 +58,6 @@ export default function PhysicalStockCheckCard({
       </CardHeader>
 
       <CardContent className="p-5 pt-2 space-y-4 text-xs">
-        {/* Input Field: Physical Measured Liters */}
         <div className="space-y-1.5">
           <Label htmlFor="physicalClosingStock" className="text-xs font-bold text-slate-700">
             Actual Measured Stock in Tanks (Liters)
@@ -83,7 +82,6 @@ export default function PhysicalStockCheckCard({
           </Typography>
         </div>
 
-        {/* Difference from Expected Result Box */}
         <div
           className={`p-3.5 rounded-xl border transition-all ${
             numVariance === 0

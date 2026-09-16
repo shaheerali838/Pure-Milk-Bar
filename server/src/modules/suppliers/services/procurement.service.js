@@ -4,12 +4,6 @@ import Supplier from '../../../models/Supplier.model.js';
 import AppError from '../../../utils/AppError.js';
 
 class ProcurementService {
-  /**
-   * Record a new milk procurement entry.
-   * Also updates the supplier's payable balance.
-   * @param {object} data - Validated procurement data
-   * @returns {Promise<object>} Created procurement document (populated)
-   */
   async createProcurement(data) {
     // Verify supplier exists and is active
     const supplier = await Supplier.findById(data.supplierId);
@@ -56,11 +50,6 @@ class ProcurementService {
     return procurement.populate('supplierId', 'code name phone');
   }
 
-  /**
-   * Get all procurement records with filtering and pagination.
-   * @param {object} query - Validated query parameters
-   * @returns {Promise<{procurements: Array, total: number, page: number, limit: number}>}
-   */
   async getAllProcurements(query) {
     const { page, limit, supplierId, shift, status, dateFrom, dateTo } = query;
 
@@ -93,11 +82,6 @@ class ProcurementService {
     return { procurements, total, page, limit };
   }
 
-  /**
-   * Get a single procurement record by ID.
-   * @param {string} id - MilkProcurement ObjectId
-   * @returns {Promise<object>} Procurement document (populated)
-   */
   async getProcurementById(id) {
     const procurement = await MilkProcurement.findById(id)
       .populate('supplierId', 'code name phone villageOrLocation milkType')
@@ -111,13 +95,6 @@ class ProcurementService {
     return procurement;
   }
 
-  /**
-   * Update a procurement record (status or amountPaid).
-   * If status changes to REJECTED, reverses the balance on the supplier's khata.
-   * @param {string} id - MilkProcurement ObjectId
-   * @param {object} data - Validated update data
-   * @returns {Promise<object>} Updated procurement document
-   */
   async updateProcurement(id, data) {
     const existing = await MilkProcurement.findById(id);
     if (!existing) {
@@ -154,11 +131,6 @@ class ProcurementService {
     return updated.populate('supplierId', 'code name phone');
   }
 
-  /**
-   * Get daily procurement summary for a given date.
-   * @param {string} date - ISO date string (YYYY-MM-DD)
-   * @returns {Promise<object>} Daily summary object
-   */
   async getDailySummary(date) {
     const dayStart = new Date(date);
     dayStart.setHours(0, 0, 0, 0);

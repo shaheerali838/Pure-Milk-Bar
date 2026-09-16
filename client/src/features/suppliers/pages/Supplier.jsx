@@ -12,13 +12,11 @@ import {
 export default function Supplier() {
   return (
     <div className="space-y-6">
-      {/* Title */}
       <div>
         <h3 className="text-xl font-bold text-slate-800 font-display">Supplier &amp; Farmer Ledger</h3>
         <p className="text-sm text-slate-500">Manage dairy suppliers, routes, and milk procurement</p>
       </div>
 
-      {/* Supplier Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <p className="text-sm font-medium text-slate-500">Total Registered Farmers</p>
@@ -36,7 +34,6 @@ export default function Supplier() {
         </Card>
       </div>
 
-      {/* Supplier Directory Table */}
       <Card className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <h4 className="text-base font-bold text-slate-800 mb-4 font-display">Supplier Directory</h4>
         <div className="overflow-x-auto">

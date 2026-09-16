@@ -78,7 +78,6 @@ export default function ViewStaffModal({ staff, isOpen, onClose }) {
           </div>
         </DialogHeader>
 
-        {/* Staff Profile Card */}
         <div className="bg-slate-900 text-white rounded-xl p-4 flex items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-purple-900/60 text-purple-300 border border-purple-700/50 flex items-center justify-center text-xl font-bold font-display">
@@ -103,7 +102,6 @@ export default function ViewStaffModal({ staff, isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Info Grid */}
         <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2 text-xs">
           <div className="flex justify-between py-1 border-b border-slate-200/50 text-slate-600">
             <span className="text-slate-400 flex items-center gap-1.5">
@@ -142,7 +140,6 @@ export default function ViewStaffModal({ staff, isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Quick Actions */}
         <div className="flex items-center justify-between pt-2 border-t border-slate-100">
           <div className="flex items-center gap-2">
             <Button

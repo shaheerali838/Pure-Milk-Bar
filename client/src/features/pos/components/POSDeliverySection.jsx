@@ -32,7 +32,6 @@ export default function POSDeliverySection() {
 
   return (
     <div className="space-y-2.5 animate-in fade-in duration-150">
-      {/* Sub-toggle: On-Time vs Monthly */}
       <div className="grid grid-cols-2 gap-1.5 p-1 bg-blue-50/80 rounded-xl border border-blue-100">
         <button
           type="button"
@@ -59,7 +58,6 @@ export default function POSDeliverySection() {
         </button>
       </div>
 
-      {/* 2A: On-Time Delivery Details */}
       {deliverySubType === 'ontime' && (
         <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
           <div>
@@ -119,7 +117,6 @@ export default function POSDeliverySection() {
         </div>
       )}
 
-      {/* 2B: Monthly Delivery Details (Select Registered Customer) */}
       {deliverySubType === 'monthly' && (
         <div className="p-2.5 bg-blue-50/40 rounded-xl border border-blue-200/80 space-y-2 text-xs">
           <div>
@@ -177,7 +174,6 @@ export default function POSDeliverySection() {
         </div>
       )}
 
-      {/* Delivery Payment Methods */}
       <div className="space-y-1.5">
         <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">
           DELIVERY PAYMENT METHOD

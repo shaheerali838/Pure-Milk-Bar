@@ -20,9 +20,7 @@ export default function AnimalYieldBreakdown() {
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-      {/* Component Header with Title & Action Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        {/* Title */}
         <div className="flex items-center gap-2">
           <Droplets className="w-5 h-5 text-emerald-600 fill-emerald-100" />
           <h3 className="text-base font-black text-emerald-900 tracking-tight">
@@ -30,9 +28,7 @@ export default function AnimalYieldBreakdown() {
           </h3>
         </div>
 
-        {/* Right Action Buttons */}
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          {/* Log Yield Button */}
           <button
             type="button"
             onClick={() => setIsLogModalOpen(true)}
@@ -41,7 +37,6 @@ export default function AnimalYieldBreakdown() {
             <Plus className="w-4 h-4" /> Log Yield
           </button>
 
-          {/* View All Logs Button */}
           <button
             type="button"
             onClick={() => navigate("/farm/milking")}
@@ -52,7 +47,6 @@ export default function AnimalYieldBreakdown() {
         </div>
       </div>
 
-      {/* Table Section */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
@@ -87,12 +81,10 @@ export default function AnimalYieldBreakdown() {
                   onClick={() => navigate(`/farm/animals/detail/${animal.id || animal.tag}`)}
                   className="hover:bg-emerald-50/50 transition-colors font-medium cursor-pointer group"
                 >
-                  {/* Animal Tag */}
                   <td className="py-3.5 px-3 font-mono font-black text-slate-900 tracking-wider group-hover:text-emerald-700">
                     {animal.tag}
                   </td>
 
-                  {/* Species Pill */}
                   <td className="py-3.5 px-3">
                     <span
                       className={`px-3 py-1 rounded-full text-[11px] font-bold ${
@@ -105,32 +97,26 @@ export default function AnimalYieldBreakdown() {
                     </span>
                   </td>
 
-                  {/* Morning Yield */}
                   <td className="py-3.5 px-3 font-semibold text-slate-700">
                     {morning.toFixed(1)} L
                   </td>
 
-                  {/* Evening Yield */}
                   <td className="py-3.5 px-3 font-semibold text-slate-700">
                     {evening.toFixed(1)} L
                   </td>
 
-                  {/* Total Yield (Highlighted) */}
                   <td className="py-3.5 px-3 font-black text-slate-900 bg-emerald-50/50">
                     {total.toFixed(1)} L
                   </td>
 
-                  {/* Milker */}
                   <td className="py-3.5 px-3 text-slate-700 font-semibold">
                     {milkerName}
                   </td>
 
-                  {/* Health Note */}
                   <td className="py-3.5 px-3 font-serif italic text-slate-600 text-xs">
                     {healthNote}
                   </td>
 
-                  {/* Action View Button */}
                   <td className="py-3.5 px-3 text-center">
                     <button
                       type="button"
@@ -150,7 +136,6 @@ export default function AnimalYieldBreakdown() {
         </table>
       </div>
 
-      {/* Log Yield Form Modal */}
       <LogYieldModal
         isOpen={isLogModalOpen}
         onClose={() => setIsLogModalOpen(false)}

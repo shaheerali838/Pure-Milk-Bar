@@ -50,7 +50,6 @@ export default function ProfitLossSummary({
 
   return (
     <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
         <div>
           <h2 className="text-base font-bold text-slate-900 tracking-tight font-display flex items-center gap-2">
@@ -71,11 +70,7 @@ export default function ProfitLossSummary({
         </div>
       </div>
 
-      {/* Step-by-Step Breakdown Container */}
       <div className="space-y-4">
-        {/* ==================================================================== */}
-        {/* 1. TOTAL FARM INCOME (MONEY IN) */}
-        {/* ==================================================================== */}
         <div className="rounded-2xl border border-emerald-200/70 bg-emerald-50/30 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -110,9 +105,6 @@ export default function ProfitLossSummary({
           </div>
         </div>
 
-        {/* ==================================================================== */}
-        {/* 2. DIRECT PRODUCTION COSTS (FEED & PACKING) */}
-        {/* ==================================================================== */}
         <div className="rounded-2xl border border-amber-200/70 bg-amber-50/30 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -148,9 +140,6 @@ export default function ProfitLossSummary({
           </div>
         </div>
 
-        {/* ==================================================================== */}
-        {/* 3. SUBTOTAL LINE: GROSS PROFIT */}
-        {/* ==================================================================== */}
         <div className="p-4 rounded-2xl bg-slate-900 text-white flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2.5">
             <span className="w-6 h-6 rounded-lg bg-white/20 text-white flex items-center justify-center font-bold text-xs">
@@ -169,9 +158,6 @@ export default function ProfitLossSummary({
           </div>
         </div>
 
-        {/* ==================================================================== */}
-        {/* 4. FARM RUNNING EXPENSES (LABOR, VET & BILLS) */}
-        {/* ==================================================================== */}
         <div className="rounded-2xl border border-rose-200/70 bg-rose-50/30 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -217,9 +203,6 @@ export default function ProfitLossSummary({
           </div>
         </div>
 
-        {/* ==================================================================== */}
-        {/* 5. FINAL RESULT LINE: TOTAL NET PROFIT (TAKE-HOME EARNINGS) */}
-        {/* ==================================================================== */}
         <div className={`p-5 rounded-2xl text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
           isProfitable
             ? 'bg-gradient-to-r from-indigo-700 via-indigo-800 to-purple-900'

@@ -102,7 +102,6 @@ export default function LogFuelModal({ isOpen, onClose }) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
-          {/* Staff Member */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-slate-700">
               Staff Member <span className="text-rose-500">*</span>
@@ -132,7 +131,6 @@ export default function LogFuelModal({ isOpen, onClose }) {
             )}
           </div>
 
-          {/* Date */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-slate-700">Receipt Date</Label>
             <Input
@@ -146,7 +144,6 @@ export default function LogFuelModal({ isOpen, onClose }) {
             />
           </div>
 
-          {/* Liters & Amount */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700">
@@ -184,7 +181,6 @@ export default function LogFuelModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          {/* Distance */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-slate-700">
               Distance Covered (KM)
@@ -201,7 +197,6 @@ export default function LogFuelModal({ isOpen, onClose }) {
             />
           </div>
 
-          {/* Notes */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-slate-700">Notes / Remarks</Label>
             <Input

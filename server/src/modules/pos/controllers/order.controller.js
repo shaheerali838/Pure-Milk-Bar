@@ -2,10 +2,6 @@ import orderService from '../services/order.service.js';
 import { sendSuccess } from '../../../utils/apiResponse.js';
 
 class OrderController {
-  /**
-   * POST /api/v1/pos/orders
-   * Create and record a new POS transaction.
-   */
   async createOrder(req, res, next) {
     try {
       const order = await orderService.createOrder(req.body, req.user);
@@ -16,10 +12,6 @@ class OrderController {
     }
   }
 
-  /**
-   * GET /api/v1/pos/orders
-   * Retrieve paginated orders with filters (date range, cashier, payment method, etc.).
-   */
   async getAllOrders(req, res, next) {
     try {
       const query = req._validated?.query || req.query;
@@ -37,10 +29,6 @@ class OrderController {
     }
   }
 
-  /**
-   * GET /api/v1/pos/orders/stats/daily
-   * Get register closing summary & daily sales statistics.
-   */
   async getDailySalesStats(req, res, next) {
     try {
       const query = req._validated?.query || req.query;
@@ -52,10 +40,6 @@ class OrderController {
     }
   }
 
-  /**
-   * GET /api/v1/pos/orders/receipt/:receiptNumber
-   * Fetch an order by its unique receipt number (e.g. for reprinting or return verification).
-   */
   async getOrderByReceiptNumber(req, res, next) {
     try {
       const params = req._validated?.params || req.params;
@@ -67,10 +51,6 @@ class OrderController {
     }
   }
 
-  /**
-   * GET /api/v1/pos/orders/:id
-   * Get single order details by MongoDB ObjectId.
-   */
   async getOrderById(req, res, next) {
     try {
       const params = req._validated?.params || req.params;
@@ -82,10 +62,6 @@ class OrderController {
     }
   }
 
-  /**
-   * POST /api/v1/pos/orders/:id/cancel
-   * Void an order, restock inventory, and adjust Khata ledger if needed.
-   */
   async cancelOrder(req, res, next) {
     try {
       const params = req._validated?.params || req.params;

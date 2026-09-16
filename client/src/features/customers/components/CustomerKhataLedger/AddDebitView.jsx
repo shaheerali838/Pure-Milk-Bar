@@ -34,7 +34,6 @@ export default function AddDebitView({ customer, onBack }) {
 
   return (
     <div className="space-y-3 animate-in fade-in duration-200 pb-4">
-      {/* Header */}
       <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
         <Button
           type="button"
@@ -56,7 +55,6 @@ export default function AddDebitView({ customer, onBack }) {
         </div>
       </div>
 
-      {/* Main Form Container */}
       <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -118,7 +116,6 @@ export default function AddDebitView({ customer, onBack }) {
             </div>
           </div>
 
-          {/* Bottom Action Buttons */}
           <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
             <Button
               type="button"

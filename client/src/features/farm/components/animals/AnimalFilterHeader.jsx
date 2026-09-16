@@ -16,7 +16,6 @@ export default function AnimalFilterHeader({
 }) {
   return (
     <div className="flex flex-col  w-full">
-      {/* Navigation Tabs (Livestock Registry vs Farm Workers) */}
       <div className="border-b border-slate-200 flex items-center gap-8 text-sm font-bold pt-2">
         <button
           type="button"
@@ -49,10 +48,8 @@ export default function AnimalFilterHeader({
         </button>
       </div>
 
-      {/* Filter & Search Controls Bar */}
       {activeTab === "registry" && (
         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-wrap items-center justify-between gap-4">
-          {/* Search Input on Left */}
           <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-sm text-slate-700 w-full sm:w-72 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
             <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
@@ -64,9 +61,7 @@ export default function AnimalFilterHeader({
             />
           </div>
 
-          {/* Filter Dropdowns & Add Button on Right */}
           <div className="flex items-center gap-3 flex-wrap">
-            {/* Species Select */}
             <select
               value={speciesFilter}
               onChange={(e) => setSpeciesFilter(e.target.value)}
@@ -77,7 +72,6 @@ export default function AnimalFilterHeader({
               <option value="buffalo">Buffalo</option>
             </select>
 
-            {/* Status Select */}
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -89,7 +83,6 @@ export default function AnimalFilterHeader({
               <option value="Calf">Calf</option>
             </select>
 
-            {/* Add Animal Button */}
             <button
               type="button"
               onClick={onOpenAddModal}

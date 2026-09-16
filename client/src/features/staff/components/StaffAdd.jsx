@@ -98,7 +98,6 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
 
   return (
     <div className="space-y-3 animate-in fade-in duration-150 no-scrollbar">
-      {/* 1. Slim Top Navigation Bar */}
       <div className="flex items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-xl px-4 py-2.5 shadow-2xs">
         <div className="flex items-center gap-3">
           <button
@@ -133,10 +132,8 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
         </span>
       </div>
 
-      {/* 2. Compact Full-Width Form Card without scrollbar */}
       <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs no-scrollbar">
         <form onSubmit={handleSubmit} className="space-y-3.5">
-          {/* Section 1: Basic & Contact Info (3 columns) */}
           <div>
             <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-2.5">
               <div
@@ -152,7 +149,6 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-              {/* Full Name */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Full Name <span className="text-rose-500">*</span>
@@ -168,7 +164,6 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                 />
               </div>
 
-              {/* Role */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Role / Designation <span className="text-rose-500">*</span>
@@ -187,7 +182,6 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                 </select>
               </div>
 
-              {/* Status */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Status
@@ -204,7 +198,6 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                 </select>
               </div>
 
-              {/* Mobile Phone */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Mobile Number
@@ -224,7 +217,6 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                 </div>
               </div>
 
-              {/* Email */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Email Address
@@ -244,7 +236,6 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                 </div>
               </div>
 
-              {/* CNIC */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   CNIC Number
@@ -266,7 +257,6 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
             </div>
           </div>
 
-          {/* Section 2: Shift, Salary & Territory (3 columns) */}
           <div className="pt-2 border-t border-slate-100">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-2.5">
               <div className="w-6 h-6 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center text-xs">
@@ -278,7 +268,6 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-              {/* Shift */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Work Shift <span className="text-rose-500">*</span>
@@ -297,7 +286,6 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                 </select>
               </div>
 
-              {/* Monthly Salary */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Monthly Salary (Rs.)
@@ -318,7 +306,6 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                 </div>
               </div>
 
-              {/* Joining Date */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Joining Date
@@ -337,7 +324,6 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                 </div>
               </div>
 
-              {/* Route */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Delivery Route / Station
@@ -357,7 +343,6 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                 </div>
               </div>
 
-              {/* Notes / Emergency Contact (Spans 2 columns) */}
               <div className="md:col-span-2">
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Notes &amp; Emergency Contact
@@ -379,7 +364,6 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
             </div>
           </div>
 
-          {/* Form Actions Footer */}
           <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
             <button
               type="button"

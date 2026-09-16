@@ -19,7 +19,6 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
   if (onBack) {
     return (
       <div className="space-y-4 max-w-4xl animate-in fade-in duration-150">
-        {/* Top Navigation Bar with Back Button */}
         <div className="flex items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
           <div className="flex items-center gap-3">
             <button
@@ -49,9 +48,7 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
           )}
         </div>
 
-        {/* Main Content Card on the Right Side of Sidebar */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-5">
-          {/* Top Hero Box */}
           <div className="bg-[#f0f4ff] p-5 rounded-2xl border border-indigo-100/70 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div className="w-14 h-14 rounded-2xl bg-white border border-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-3xl shrink-0 shadow-xs">
@@ -85,7 +82,6 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
             </div>
           </div>
 
-          {/* 3 Summary Financial Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
               <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -118,7 +114,6 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
             </div>
           </div>
 
-          {/* Specifications Table */}
           <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
             <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider font-display flex items-center gap-1.5">
               <Layers className="w-4 h-4 text-slate-500" />
@@ -168,7 +163,6 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
             </div>
           </div>
 
-          {/* Bottom Actions */}
           <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-slate-100">
             <button
               type="button"
@@ -197,7 +191,6 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-3 overflow-y-auto animate-in fade-in duration-150">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-4">
-        {/* Header - Customer Type Design */}
         <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xl shrink-0 shadow-2xs">
@@ -227,9 +220,7 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
           </button>
         </div>
 
-        {/* Modal Body - Customer View Style */}
         <div className="p-5 space-y-3.5 text-xs text-slate-700 max-h-[82vh] overflow-y-auto">
-          {/* Top Retail Selling Rate Hero Card */}
           <div className="bg-[#f0f4ff] p-4 rounded-2xl border border-indigo-100/70 flex items-center justify-between">
             <div>
               <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">
@@ -251,7 +242,6 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
             </div>
           </div>
 
-          {/* 3 Summary Financial Cards */}
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
               <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">
@@ -281,7 +271,6 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
             </div>
           </div>
 
-          {/* Specifications Table (Customer detail style) */}
           <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
             <h4 className="text-[10px] font-bold text-slate-700 uppercase tracking-wider font-display flex items-center gap-1.5">
               <Layers className="w-3 h-3 text-slate-500" />
@@ -331,7 +320,6 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
             <button
               type="button"

@@ -108,7 +108,6 @@ export default function AnimalDetailPage() {
     <div className="p-6 bg-slate-50 min-h-screen">
       <div className="max-w-3xl mx-auto space-y-6">
         
-        {/* Header with Back Button */}
         <div className="flex items-center space-x-4 mb-8">
           <Button
             variant="ghost"
@@ -131,10 +130,8 @@ export default function AnimalDetailPage() {
           </div>
         </div>
 
-        {/* Main Details Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Left Column */}
             <div className="space-y-6">
               <div>
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">
@@ -194,7 +191,6 @@ export default function AnimalDetailPage() {
               </div>
             </div>
 
-            {/* Right Column */}
             <div className="space-y-6">
               <div>
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">
@@ -234,7 +230,6 @@ export default function AnimalDetailPage() {
             </div>
           </div>
 
-          {/* 7-Day Milking Performance Chart */}
           <div className="mt-8 pt-8 border-t border-slate-100">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
@@ -318,7 +313,6 @@ export default function AnimalDetailPage() {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex justify-end space-x-4 pt-8 border-t border-slate-100 mt-8">
             <Button
               variant="outline"
@@ -344,7 +338,6 @@ export default function AnimalDetailPage() {
         </div>
       </div>
 
-      {/* Edit Animal Modal */}
       {isEditOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -504,7 +497,6 @@ export default function AnimalDetailPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {isDeleteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">

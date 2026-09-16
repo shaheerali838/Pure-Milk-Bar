@@ -87,7 +87,6 @@ export default function POSKhataSettlementModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-3 overflow-y-auto animate-in fade-in duration-150">
       <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-4">
-        {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-emerald-50/70">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-xs">
@@ -111,7 +110,6 @@ export default function POSKhataSettlementModal() {
           </button>
         </div>
 
-        {/* Confirmation or Form */}
         {successMessage ? (
           <div className="p-6 text-center space-y-4">
             <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
@@ -159,7 +157,6 @@ export default function POSKhataSettlementModal() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {/* Customer Selector */}
             <div>
               <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
                 Select Customer
@@ -177,7 +174,6 @@ export default function POSKhataSettlementModal() {
               </select>
             </div>
 
-            {/* Outstanding Info Box */}
             {targetCustomer && (
               <div className="bg-slate-900 text-white p-3.5 rounded-xl space-y-2">
                 <div className="flex justify-between items-center text-xs">
@@ -198,7 +194,6 @@ export default function POSKhataSettlementModal() {
               </div>
             )}
 
-            {/* Amount to Pay */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
@@ -228,7 +223,6 @@ export default function POSKhataSettlementModal() {
               </div>
             </div>
 
-            {/* Payment Method */}
             <div>
               <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
                 Payment Channel
@@ -251,7 +245,6 @@ export default function POSKhataSettlementModal() {
               </div>
             </div>
 
-            {/* Notes */}
             <div>
               <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
                 Remarks / Receipt Note (Optional)
@@ -265,7 +258,6 @@ export default function POSKhataSettlementModal() {
               />
             </div>
 
-            {/* Footer Buttons */}
             <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-slate-100">
               <button
                 type="button"

@@ -45,7 +45,6 @@ export default function ReceivablesAgingDetailModal({ customer, buckets, isOpen,
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-2 overflow-y-auto">
       <div className="bg-white w-full max-w-lg rounded-xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-4">
-        {/* Header */}
         <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
           <div>
             <h3 className="text-xs font-bold text-slate-800 leading-tight font-display">
@@ -67,9 +66,7 @@ export default function ReceivablesAgingDetailModal({ customer, buckets, isOpen,
           </Button>
         </div>
 
-        {/* Modal Body */}
         <div className="p-4 space-y-3 text-xs text-slate-700">
-          {/* Dark Red Total Debt Card */}
           <div className="p-3.5 bg-slate-900 text-white rounded-xl shadow-xs space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[9px] font-bold text-rose-400 uppercase tracking-wider">
@@ -87,7 +84,6 @@ export default function ReceivablesAgingDetailModal({ customer, buckets, isOpen,
             </div>
           </div>
 
-          {/* 4 Aging Bucket Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="p-2 bg-blue-50/60 rounded-lg border border-blue-200/80 text-center">
               <span className="text-[9px] font-bold text-blue-700 uppercase block">0–30 DAYS</span>
@@ -118,7 +114,6 @@ export default function ReceivablesAgingDetailModal({ customer, buckets, isOpen,
             </div>
           </div>
 
-          {/* Customer Details & Recovery Recommendation */}
           <div className="divide-y divide-slate-100 bg-slate-50 rounded-lg border border-slate-200/80 p-2.5 space-y-1.5 text-[11px]">
             <div className="flex justify-between items-center py-1">
               <span className="text-slate-500 flex items-center gap-1">
@@ -152,7 +147,6 @@ export default function ReceivablesAgingDetailModal({ customer, buckets, isOpen,
           </div>
         </div>
 
-        {/* Footer */}
         <div className="px-4 py-2.5 border-t border-slate-100 flex justify-end gap-2 bg-slate-50/70">
           <Button
             type="button"

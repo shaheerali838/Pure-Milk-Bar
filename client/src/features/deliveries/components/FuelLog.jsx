@@ -22,7 +22,6 @@ export default function FuelLog({ onLogFuel }) {
 
   return (
     <div className="space-y-1.5">
-      {/* Top Header & Action */}
       <div className="bg-white p-1.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-1.5">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -45,7 +44,6 @@ export default function FuelLog({ onLogFuel }) {
         </Button>
       </div>
 
-      {/* Fuel Log Table */}
       <FuelLogTable fuelLogs={filteredLogs} />
     </div>
   );

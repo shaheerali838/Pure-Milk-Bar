@@ -86,7 +86,6 @@ export default function PaySalaryView({
 
   return (
     <div className="space-y-2.5 animate-in fade-in duration-150 pb-4">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200">
         <div className="flex items-center gap-2.5">
           <Button
@@ -117,7 +116,6 @@ export default function PaySalaryView({
         </div>
       )}
 
-      {/* Hero Summary */}
       <div className="bg-slate-900 text-white rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-purple-950 text-purple-300 border border-purple-800/60 flex items-center justify-center text-lg font-bold font-display">
@@ -162,14 +160,12 @@ export default function PaySalaryView({
         </div>
       </div>
 
-      {/* Payment Form Card */}
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200/90 rounded-xl p-3.5 shadow-2xs space-y-3">
         <h3 className="font-display font-bold text-xs text-slate-900 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
           <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
           Record Salary Payout
         </h3>
 
-        {/* Quick Amount Presets */}
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-[11px] font-semibold text-slate-500 mr-1">Quick Presets:</span>
           <Button
@@ -204,7 +200,6 @@ export default function PaySalaryView({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          {/* Base Salary */}
           <div className="space-y-1">
             <Label className="text-xs font-semibold text-slate-700">Monthly Base Salary (Rs.)</Label>
             <Input
@@ -217,7 +212,6 @@ export default function PaySalaryView({
             />
           </div>
 
-          {/* Amount Paid */}
           <div className="space-y-1">
             <Label className="text-xs font-semibold text-slate-700">
               Amount to Pay Now (Rs.) <span className="text-rose-500">*</span>
@@ -232,7 +226,6 @@ export default function PaySalaryView({
             />
           </div>
 
-          {/* Payment Mode */}
           <div className="space-y-1">
             <Label className="text-xs font-semibold text-slate-700">Payment Mode</Label>
             <Select value={paymentMode} onValueChange={setPaymentMode}>
@@ -253,7 +246,6 @@ export default function PaySalaryView({
             </Select>
           </div>
 
-          {/* Notes */}
           <div className="space-y-1 sm:col-span-3">
             <Label className="text-xs font-semibold text-slate-700">Payment Notes / Remarks</Label>
             <Input
@@ -286,7 +278,6 @@ export default function PaySalaryView({
         </div>
       </form>
 
-      {/* Past Salary Payments Log */}
       {pastPayments.length > 0 && (
         <div className="bg-white border border-slate-200/90 rounded-xl p-3 shadow-2xs space-y-2">
           <h4 className="font-bold text-slate-900 text-xs font-display flex items-center gap-1.5">

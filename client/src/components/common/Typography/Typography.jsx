@@ -1,11 +1,3 @@
-/**
- * Typography Component
- * 
- * Usage Examples:
- * <Typography variant="h1">Welcome back</Typography>
- * <Typography variant="body" color="muted">Enter your credentials to continue</Typography>
- * <Typography variant="label" as="label" htmlFor="email">Email Address</Typography>
- */
 
 import React from 'react';
 import {

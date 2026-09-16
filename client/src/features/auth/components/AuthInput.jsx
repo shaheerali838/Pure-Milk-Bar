@@ -1,9 +1,5 @@
 import React from 'react';
 
-/**
- * Reusable labeled text input component for auth forms.
- * Supports leading icons, error states, and emerald green focus styling.
- */
 const AuthInput = ({
   id,
   label,

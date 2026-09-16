@@ -2,9 +2,6 @@ import mongoose from 'mongoose';
 import AuditLog from '../../../models/AuditLog.model.js';
 import User from '../../../models/User.model.js';
 
-/**
- * Safe Helper to create an AuditLog entry internally in any service or middleware
- */
 export const logAuditEvent = async ({
   reqUser,
   action,
@@ -61,9 +58,6 @@ export const logAuditEvent = async ({
   }
 };
 
-/**
- * 1. GET /api/v1/audit-logs - Get Audit Logs List with Pagination & Filtering
- */
 export const getAuditLogsService = async (queryParams = {}) => {
   const page = parseInt(queryParams.page, 10) || 1;
   const limit = parseInt(queryParams.limit, 10) || 20;
@@ -138,9 +132,6 @@ export const getAuditLogsService = async (queryParams = {}) => {
   };
 };
 
-/**
- * Helper: Compute diff comparison between before and after snapshots
- */
 const computeSnapshotDiff = (before, after) => {
   if (!before && !after) return null;
   if (!before) return { type: 'CREATED', after };
@@ -164,9 +155,6 @@ const computeSnapshotDiff = (before, after) => {
   return { type: 'MODIFIED', diff };
 };
 
-/**
- * 2. GET /api/v1/audit-logs/:id - Get Audit Log Details by ID
- */
 export const getAuditLogByIdService = async (id) => {
   const cleanId = typeof id === 'string' ? id.trim() : id;
 
@@ -190,9 +178,6 @@ export const getAuditLogByIdService = async (id) => {
   return logObj;
 };
 
-/**
- * 3. GET /api/v1/audit-logs/resource/:resource/:resourceId - Entity History
- */
 export const getAuditLogsByResourceService = async (resource, resourceId, queryParams = {}) => {
   const page = parseInt(queryParams.page, 10) || 1;
   const limit = parseInt(queryParams.limit, 10) || 20;
@@ -227,9 +212,6 @@ export const getAuditLogsByResourceService = async (resource, resourceId, queryP
   };
 };
 
-/**
- * 4. GET /api/v1/audit-logs/stats - Dashboard Metrics & Activity Stats
- */
 export const getAuditStatsService = async () => {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
@@ -274,9 +256,6 @@ export const getAuditStatsService = async () => {
   };
 };
 
-/**
- * 5. GET /api/v1/audit-logs/export - Export Audit Logs Data (JSON / CSV)
- */
 export const exportAuditLogsService = async (queryParams = {}) => {
   const { logs } = await getAuditLogsService({ ...queryParams, limit: 5000, page: 1 });
   const format = queryParams.format === 'csv' ? 'csv' : 'json';

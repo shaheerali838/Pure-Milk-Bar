@@ -19,7 +19,6 @@ export default function DeliveryFilters({
 }) {
   return (
     <div className="bg-white p-1.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-1.5">
-      {/* Search Input */}
       <div className="relative flex-1 min-w-[220px]">
         <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
         <Input
@@ -31,7 +30,6 @@ export default function DeliveryFilters({
         />
       </div>
 
-      {/* Shift Filter */}
       <div className="w-32">
         <Select value={shiftFilter} onValueChange={setShiftFilter}>
           <SelectTrigger className="w-full h-7.5 px-2 bg-white border border-slate-200 rounded-md text-xs text-slate-700 cursor-pointer">
@@ -51,7 +49,6 @@ export default function DeliveryFilters({
         </Select>
       </div>
 
-      {/* Status Filter */}
       <div className="w-36">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full h-7.5 px-2 bg-white border border-slate-200 rounded-md text-xs text-slate-700 cursor-pointer">

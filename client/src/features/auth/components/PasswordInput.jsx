@@ -2,9 +2,6 @@ import React, { useState } from 'react';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-/**
- * Password input component with eye toggle button and emerald green focus styling.
- */
 const PasswordInput = ({
   id = 'password',
   label = 'Password',

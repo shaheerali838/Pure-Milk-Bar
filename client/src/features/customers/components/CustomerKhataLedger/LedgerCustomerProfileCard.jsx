@@ -28,7 +28,6 @@ export default function LedgerCustomerProfileCard({ customer, onEdit }) {
 
   return (
     <Card className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 space-y-3.5 mb-3 transition-all">
-      {/* Header Profile Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-linear-to-br from-emerald-500 to-teal-700 text-white font-black text-base flex items-center justify-center shadow-xs shrink-0 font-display">
@@ -89,9 +88,7 @@ export default function LedgerCustomerProfileCard({ customer, onEdit }) {
         )}
       </div>
 
-      {/* 4 Details Grid Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
-        {/* Card 1: Contact & Communication */}
         <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/70 space-y-1.5">
           <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase tracking-wider">
             <Phone className="w-3 h-3 text-blue-500" />
@@ -115,7 +112,6 @@ export default function LedgerCustomerProfileCard({ customer, onEdit }) {
           </div>
         </div>
 
-        {/* Card 2: Delivery & Shift */}
         <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/70 space-y-1.5">
           <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase tracking-wider">
             <MapPin className="w-3 h-3 text-rose-500" />
@@ -148,7 +144,6 @@ export default function LedgerCustomerProfileCard({ customer, onEdit }) {
           )}
         </div>
 
-        {/* Card 3: Subscription & Billing Plan */}
         <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/70 space-y-1.5">
           <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase tracking-wider">
             <Milk className="w-3 h-3 text-emerald-600" />
@@ -174,7 +169,6 @@ export default function LedgerCustomerProfileCard({ customer, onEdit }) {
           )}
         </div>
 
-        {/* Card 4: Khata Credit Standing */}
         <div className="p-3 bg-linear-to-br from-slate-900 to-slate-800 text-white rounded-xl space-y-1.5 shadow-2xs">
           <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
             <span className="flex items-center gap-1 text-amber-400">
@@ -190,7 +184,6 @@ export default function LedgerCustomerProfileCard({ customer, onEdit }) {
             </span>
           </div>
 
-          {/* Progress Bar */}
           <div className="w-full bg-slate-700/80 h-1.5 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-300 ${

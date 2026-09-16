@@ -109,7 +109,6 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-2">
       <div className="bg-white w-full max-w-sm rounded-xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        {/* Header */}
         <div className="px-3.5 py-2.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-2">
             <div className="p-1 rounded-lg bg-emerald-100 text-emerald-700">
@@ -134,7 +133,6 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-3 space-y-2.5 text-xs">
-          {/* Payment Type Selection (Partial vs Full) */}
           <div>
             <div className="flex rounded-lg bg-slate-100 p-0.5 border border-slate-200">
               <button
@@ -161,7 +159,6 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
               </button>
             </div>
 
-            {/* Quick Percentage Presets for Partial Payment */}
             {totalDue > 0 && paymentType === 'partial' && (
               <div className="flex items-center gap-1 mt-1.5 justify-between">
                 <span className="text-[10px] font-medium text-slate-400">Quick:</span>
@@ -179,7 +176,6 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
             )}
           </div>
 
-          {/* Amount and Payment Mode */}
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Amount (Rs.) *</label>
@@ -218,7 +214,6 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
             </div>
           </div>
 
-          {/* Real-Time Balance Calculator Preview */}
           {totalDue > 0 && (
             <div className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] flex items-center justify-between">
               <div>
@@ -240,7 +235,6 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
             </div>
           )}
 
-          {/* Date and Ref / Trx ID */}
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Date *</label>
@@ -267,7 +261,6 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
             </div>
           </div>
 
-          {/* Description */}
           <div>
             <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Description</label>
             <Input
@@ -279,7 +272,6 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
             />
           </div>
 
-          {/* Notes */}
           <div>
             <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Notes (Optional)</label>
             <textarea
@@ -291,7 +283,6 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
             />
           </div>
 
-          {/* Actions */}
           <div className="pt-2 flex justify-end gap-1.5 border-t border-slate-100">
             <Button
               type="button"

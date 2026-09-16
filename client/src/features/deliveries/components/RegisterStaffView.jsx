@@ -52,7 +52,6 @@ export default function RegisterStaffView({ onBack, onComplete }) {
 
   return (
     <div className="space-y-2.5 animate-in fade-in duration-150 pb-4">
-      {/* Header */}
       <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200">
         <Button
           type="button"
@@ -81,10 +80,8 @@ export default function RegisterStaffView({ onBack, onComplete }) {
         </div>
       )}
 
-      {/* Form Card */}
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200/90 rounded-xl p-3.5 shadow-2xs space-y-3 max-w-2xl">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          {/* Name */}
           <div className="space-y-1 sm:col-span-2">
             <Label className="text-xs font-semibold text-slate-700">
               Staff Full Name <span className="text-rose-500">*</span>
@@ -101,7 +98,6 @@ export default function RegisterStaffView({ onBack, onComplete }) {
             />
           </div>
 
-          {/* Phone */}
           <div className="space-y-1">
             <Label className="text-xs font-semibold text-slate-700">Phone Number</Label>
             <Input
@@ -115,7 +111,6 @@ export default function RegisterStaffView({ onBack, onComplete }) {
             />
           </div>
 
-          {/* Role / Type */}
           <div className="space-y-1">
             <Label className="text-xs font-semibold text-slate-700">Delivery Role</Label>
             <Select
@@ -138,7 +133,6 @@ export default function RegisterStaffView({ onBack, onComplete }) {
             </Select>
           </div>
 
-          {/* Vehicle (for Rider) */}
           {isRider && (
             <div className="space-y-1 sm:col-span-2">
               <Label className="text-xs font-semibold text-slate-700">
@@ -156,7 +150,6 @@ export default function RegisterStaffView({ onBack, onComplete }) {
             </div>
           )}
 
-          {/* Route */}
           <div className="space-y-1 sm:col-span-2">
             <Label className="text-xs font-semibold text-slate-700">Assigned Route / Delivery Area</Label>
             <Input
