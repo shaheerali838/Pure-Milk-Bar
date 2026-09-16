@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Download,
   Calendar,
@@ -384,12 +385,12 @@ export default function ExportCSVModal({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-150"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-150"
       onClick={onClose}
     >
-      <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs transition-opacity" />
+      <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity" />
 
       <div
         className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col my-auto border border-slate-200 z-10 animate-in zoom-in-95 duration-150"
@@ -726,6 +727,7 @@ export default function ExportCSVModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
