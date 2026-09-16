@@ -99,7 +99,7 @@ const DEFAULT_LEDGERS = {
     {
       id: 'txn-2-02',
       date: '2026-09-08',
-      description: 'Bulk Dahi (2 KG) & Desi Ghee (1 KG)',
+      description: 'Bulk Dahi (5 KG)',
       type: 'DEBIT',
       debit: 3500,
       credit: 0,
@@ -167,7 +167,7 @@ const DEFAULT_LEDGERS = {
     {
       id: 'txn-4-03',
       date: '2026-09-15',
-      description: 'Daily Milk Delivery (4 L Mixed Milk x 5 days) + Farm Butter',
+      description: 'Daily Milk Delivery (4 L Mixed Milk x 5 days) + Farm Dahi',
       type: 'DEBIT',
       debit: 5400,
       credit: 0,

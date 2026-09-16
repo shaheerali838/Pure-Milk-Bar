@@ -13,7 +13,7 @@ import {
   Briefcase,
   FileText,
 } from 'lucide-react';
-import { useStaffContext } from '../context/StaffContext';
+import { useStaffContext } from '@/context/StaffContext';
 
 const ROLE_OPTIONS = [
   'Delivery Man / Milk Rider',

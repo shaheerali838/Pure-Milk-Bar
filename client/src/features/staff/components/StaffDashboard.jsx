@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Plus, Eye, Edit2, Trash2, Users, Phone, MapPin, Clock } from 'lucide-react';
-import { useStaffContext } from '../context/StaffContext';
+import { useStaffContext } from '@/context/StaffContext';
 import StaffCardOverflow from './StaffCardOverflow';
 import StaffAdd from './StaffAdd';
 import StaffDetail from './StaffDetail';

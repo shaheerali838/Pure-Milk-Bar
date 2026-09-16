@@ -5,7 +5,7 @@ import AnimalStatsCards from "./AnimalStatsCards";
 import RegisterAnimalModal from "./RegisterAnimalModal";
 import AnimalFilterHeader from "./AnimalFilterHeader";
 import { useAnimalContext } from "../../../../context/AnimalContext";
-import { useStaffContext } from "../../../../context/StaffContext";
+import { useStaffContext } from "@/context/StaffContext";
 import { Button } from "@/components/ui/button";
 import {
   Table,
