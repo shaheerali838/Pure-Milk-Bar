@@ -10,10 +10,6 @@ import { FuelLogProvider } from "./FuelLogContext";
 import { RiderSalaryProvider } from "./RiderSalaryContext";
 import { StaffProvider } from "./StaffContext";
 
-/**
- * Ordered list of global context providers.
- * Providers at the top wrap those below them.
- */
 const providers = [
   CustomerProvider,
   LedgerProvider,
@@ -27,10 +23,6 @@ const providers = [
   StaffProvider,
 ];
 
-/**
- * AppProviders: Flattens the provider hierarchy to prevent "pyramid of doom"
- * and provides a unified context entry point for the entire application.
- */
 export const AppProviders = ({ children }) => {
   return providers.reduceRight(
     (accumulatedProviders, CurrentProvider) => (

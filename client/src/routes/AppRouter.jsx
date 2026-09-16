@@ -47,10 +47,6 @@ import DailyClosing from "../features/finance/pages/DailyClosing";
 // Staff Management
 import StaffManagement from "../features/staff/pages/StaffManagement";
 
-/**
- * AppRouter defines all client-side navigation routing,
- * layouts, and page hierarchies for the ERP system.
- */
 export function AppRouter() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
