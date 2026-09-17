@@ -13,7 +13,7 @@ export default function ExpenseDashboard() {
 
     return (
         <div className=" bg-slate-50">
-            <div className="max-w-7xl mx-auto space-y-2">
+            <div className=" space-y-2">
                 <div className="flex justify-between items-center py-2">
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Farm Operating Expenses</h1>
                     <div className="items-center w-full sm:w-auto">
