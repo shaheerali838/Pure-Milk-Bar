@@ -1,4 +1,4 @@
-import { ClipboardCheck } from 'lucide-react';
+import { ClipboardCheck, Users } from 'lucide-react';
 
 export const reconciliationLinks = [
   {
@@ -12,6 +12,18 @@ export const reconciliationLinks = [
     activeBg: 'bg-[#00a86b] text-white shadow-md shadow-emerald-500/25',
     activeBadgeBg: 'bg-[#008f5b] text-white',
   },
+  {
+    id: 'staff',
+    name: 'Staff Management',
+    icon: Users,
+    path: '/staff',
+    iconBg: 'bg-[#eff6ff]',
+    iconColor: 'text-[#2563eb]',
+    iconBorder: 'border border-[#dbeafe]',
+    activeBg: 'bg-[#00a86b] text-white shadow-md shadow-emerald-500/25',
+    activeBadgeBg: 'bg-[#008f5b] text-white',
+  },
 ];
 
 export default reconciliationLinks;
+

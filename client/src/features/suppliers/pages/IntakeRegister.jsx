@@ -5,6 +5,7 @@ import {
   Edit3,
   History,
   Download,
+  Wallet,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import IntakeCardOverflow from '../components/intakeRegistor/IntakeCardOverflow';
@@ -12,21 +13,32 @@ import IntakeHistory from '../components/intakeRegistor/IntakeHistory';
 import IntakeShifting from '../components/intakeRegistor/IntakeShifting';
 import LogIntakeForm from '../components/intakeRegistor/LogIntakeForm';
 import IntakeDetail from '../components/intakeRegistor/IntakeDetail';
+import PaySupplierForm from '../components/intakeRegistor/PaySupplierForm';
 import { useIntakeContext } from '@/context/IntakeContext';
 
 export default function IntakeRegister() {
   const { intakeLogs } = useIntakeContext();
 
-  // Active view: 'shift' | 'history' | 'form' | 'detail' (defaults to 'shift' as requested)
+  // Active view: 'shift' | 'history' | 'form' | 'pay' | 'detail'
   const [viewMode, setViewMode] = useState('shift');
   const [editingItem, setEditingItem] = useState(null);
   const [viewingItem, setViewingItem] = useState(null);
+  const [payingSlip, setPayingSlip] = useState(null);
 
   // Open Log Form in full space
   const handleOpenLog = () => {
     setEditingItem(null);
     setViewingItem(null);
+    setPayingSlip(null);
     setViewMode('form');
+  };
+
+  // Open Pay Supplier Form in full space (matching Log Single Intake type)
+  const handleOpenPay = (slip = null) => {
+    setPayingSlip(slip);
+    setEditingItem(null);
+    setViewingItem(null);
+    setViewMode('pay');
   };
 
   // Open Edit Form in full space
@@ -95,7 +107,7 @@ export default function IntakeRegister() {
     document.body.removeChild(link);
   };
 
-  // 1. FULL SPACE: Log Single Intake / Edit Form View
+  // 1. FULL SPACE: Log Intake Form View
   if (viewMode === 'form') {
     return (
       <LogIntakeForm
@@ -108,7 +120,24 @@ export default function IntakeRegister() {
     );
   }
 
-  // 2. MAIN REGISTER: History or Shift View
+  // 2. FULL SPACE: Pay Supplier Form View
+  if (viewMode === 'pay') {
+    return (
+      <PaySupplierForm
+        slip={payingSlip}
+        onCancel={() => {
+          setViewMode('history');
+          setPayingSlip(null);
+        }}
+        onPaymentSuccess={() => {
+          setViewMode('history');
+          setPayingSlip(null);
+        }}
+      />
+    );
+  }
+
+  // 3. MAIN REGISTER: History or Shift View
   return (
     <div className="space-y-4 animate-in fade-in duration-150">
       {/* 1. Page Header with Action Controls & View Switcher */}
@@ -167,7 +196,18 @@ export default function IntakeRegister() {
             <span>Export</span>
           </button>
 
-          {/* 4. Log Single Intake Button (Solid Green background) */}
+          {/* 4. Pay Supplier Button (Opens Full-Space Form) */}
+          <button
+            type="button"
+            onClick={() => handleOpenPay(null)}
+            className="flex items-center gap-1.5 px-4 h-[38px] rounded-full text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 transition-all cursor-pointer shadow-2xs"
+            title="Pay Supplier and decrease pending balance"
+          >
+            <Wallet className="w-4 h-4 text-emerald-700" />
+            <span>Pay Supplier</span>
+          </button>
+
+          {/* 5. Log Single Intake Button (Solid Green background) */}
           <button
             type="button"
             onClick={handleOpenLog}
@@ -187,10 +227,10 @@ export default function IntakeRegister() {
       {viewMode === 'shift' ? (
         <IntakeShifting onSaveSuccess={() => setViewMode('history')} />
       ) : (
-        <IntakeHistory onView={handleView} onEdit={handleEdit} />
+        <IntakeHistory onView={handleView} onEdit={handleEdit} onPaySupplier={handleOpenPay} />
       )}
 
-      {/* 4. Intake Batch Detail Modal (Matching user screenshot exactly) */}
+      {/* 4. Intake Batch Detail Modal */}
       {viewingItem && (
         <IntakeDetail
           item={viewingItem}

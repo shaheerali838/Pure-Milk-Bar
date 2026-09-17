@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Beef, Edit3, Trash2, Eye, X, Users, UserCheck } from "lucide-react";
 import AnimalStatsCards from "./AnimalStatsCards";
-import RegisterAnimalModal from "./RegisterAnimalModal";
+import AnimalAdd from "./AnimalAdd";
 import AnimalFilterHeader from "./AnimalFilterHeader";
+import AnimalDetail from "./AnimalDetail";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { useStaffContext } from "@/context/StaffContext";
 import { Button } from "@/components/ui/button";
@@ -52,37 +53,7 @@ export default function AnimalCardOverflow() {
 
   const [editAnimal, setEditAnimal] = useState(null);
   const [deleteTargetAnimal, setDeleteTargetAnimal] = useState(null);
-
-  // Edit form state
-  const [editFormData, setEditFormData] = useState({
-    tag: "",
-    species: "Cow (Sahiwal)",
-    lactationStatus: "Milking",
-    acquisitionDate: "",
-    morningYield: "",
-    eveningYield: "",
-  });
-
-  useEffect(() => {
-    if (editAnimal) {
-      setEditFormData({
-        tag: editAnimal.tag || "",
-        species: editAnimal.species || "Cow (Sahiwal)",
-        lactationStatus: editAnimal.lactationStatus || "Milking",
-        acquisitionDate: editAnimal.acquisitionDate || new Date().toISOString().split("T")[0],
-        morningYield: editAnimal.morningYield ? editAnimal.morningYield.replace(" L", "") : "",
-        eveningYield: editAnimal.eveningYield ? editAnimal.eveningYield.replace(" L", "") : "",
-      });
-    }
-  }, [editAnimal]);
-
-  const handleEditSubmit = (e) => {
-    e.preventDefault();
-    if (editAnimal && updateAnimal) {
-      updateAnimal(editAnimal.id, editFormData);
-    }
-    setEditAnimal(null);
-  };
+  const [selectedAnimalId, setSelectedAnimalId] = useState(null);
 
   // Filter animals list based on search term, species, and status
   const filteredAnimals = animals.filter((a) => {
@@ -117,6 +88,42 @@ export default function AnimalCardOverflow() {
     "Total Daily Yield",
     "Actions",
   ];
+
+  // 1. Full-space Add Animal View
+  if (isModalOpen) {
+    return (
+      <AnimalAdd
+        onBack={closeModal}
+        onSuccess={closeModal}
+      />
+    );
+  }
+
+  // 2. Full-space Edit Animal View
+  if (editAnimal) {
+    return (
+      <AnimalAdd
+        editingAnimal={editAnimal}
+        onBack={() => setEditAnimal(null)}
+        onSuccess={() => setEditAnimal(null)}
+      />
+    );
+  }
+
+  // 3. Full-space Animal Detail View
+  if (selectedAnimalId) {
+    return (
+      <AnimalDetail
+        animalId={selectedAnimalId}
+        onBack={() => setSelectedAnimalId(null)}
+        onClose={() => setSelectedAnimalId(null)}
+        onEdit={(animal) => {
+          setEditAnimal(animal);
+          setSelectedAnimalId(null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -169,7 +176,7 @@ export default function AnimalCardOverflow() {
                 filteredAnimals.map((a) => (
                   <TableRow
                     key={a.id}
-                    onClick={() => navigate(`/farm/animals/detail/${a.id}`)}
+                    onClick={() => setSelectedAnimalId(a.id)}
                     className="border-b border-slate-100 last:border-b-0 hover:bg-emerald-50/30 transition-colors cursor-pointer group"
                   >
                     <TableCell className="px-3.5 py-2.5">
@@ -220,7 +227,7 @@ export default function AnimalCardOverflow() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => navigate(`/farm/animals/detail/${a.id}`)}
+                          onClick={() => setSelectedAnimalId(a.id)}
                           className="p-1.5 h-8 w-8 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all cursor-pointer"
                           title="View Animal Details"
                         >
@@ -294,160 +301,7 @@ export default function AnimalCardOverflow() {
         </div>
       )}
 
-      <RegisterAnimalModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        onRegister={addAnimal}
-      />
 
-      {editAnimal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                  <Edit3 className="w-4 h-4" />
-                </div>
-                <h2 className="font-display text-lg font-bold text-slate-800">
-                  Edit Livestock Record
-                </h2>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setEditAnimal(null)}
-                className="text-slate-400 hover:text-slate-600 h-8 w-8 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
-
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Tag #
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. COW-1050"
-                  value={editFormData.tag}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, tag: e.target.value })
-                  }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all tabular"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Species
-                  </label>
-                  <select
-                    value={editFormData.species}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, species: e.target.value })
-                    }
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
-                  >
-                    <option value="Cow (Sahiwal)">Cow (Sahiwal)</option>
-                    <option value="Cow (Cholistani)">Cow (Cholistani)</option>
-                    <option value="Buffalo (Nili Ravi)">Buffalo (Nili Ravi)</option>
-                    <option value="Buffalo (Kundi)">Buffalo (Kundi)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Lactation Status
-                  </label>
-                  <select
-                    value={editFormData.lactationStatus}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, lactationStatus: e.target.value })
-                    }
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all"
-                  >
-                    <option value="Milking">Milking</option>
-                    <option value="Dry/Gestating">Dry/Gestating</option>
-                    <option value="Calf">Calf</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Acquisition Date
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={editFormData.acquisitionDate}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, acquisitionDate: e.target.value })
-                  }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all tabular"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Morning (L)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    placeholder="0.0"
-                    value={editFormData.morningYield}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, morningYield: e.target.value })
-                    }
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all tabular"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Evening (L)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    placeholder="0.0"
-                    value={editFormData.eveningYield}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, eveningYield: e.target.value })
-                    }
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition-all tabular"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-3 flex items-center justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditAnimal(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-all cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
-                >
-                  Save Changes
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {deleteTargetAnimal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 overflow-y-auto">
@@ -496,6 +350,7 @@ export default function AnimalCardOverflow() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

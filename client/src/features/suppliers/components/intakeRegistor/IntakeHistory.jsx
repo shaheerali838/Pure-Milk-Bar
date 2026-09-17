@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Clock,
   Filter,
+  Wallet,
 } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +24,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 
-export default function IntakeHistory({ onView, onEdit }) {
+export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
   const { intakeLogs, deleteIntake, updateBatchSettlement } = useIntakeContext();
   const [search, setSearch] = useState('');
   const [shiftFilter, setShiftFilter] = useState('All');
@@ -108,6 +109,17 @@ export default function IntakeHistory({ onView, onEdit }) {
               </button>
             ))}
           </div>
+
+          {/* Pay Supplier Button */}
+          <button
+            type="button"
+            onClick={() => onPaySupplier && onPaySupplier(null)}
+            className="flex items-center gap-1.5 px-3.5 h-[32px] rounded-full text-xs font-bold text-white bg-[#009966] hover:brightness-110 shadow-xs transition-all cursor-pointer"
+            title="Disburse payment to a supplier"
+          >
+            <Wallet className="w-3.5 h-3.5" />
+            <span>Pay Supplier</span>
+          </button>
         </div>
       </div>
 
@@ -117,7 +129,7 @@ export default function IntakeHistory({ onView, onEdit }) {
           <TableHeader className="bg-slate-50/80 border-b border-slate-200">
             <TableRow>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                Date &amp; Slip #
+                Date & Slip #
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
                 Supplier Name
@@ -126,22 +138,19 @@ export default function IntakeHistory({ onView, onEdit }) {
                 Shift
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
-                Quantity (L)
+                Quantity
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
-                Rate / Liter
+                Rate/L
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
                 Total Cost
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-center">
-                Quality (Fat/LR)
+                Quality (Fat|LR)
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-center">
                 Settlement
-              </TableHead>
-              <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                Received By
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
                 Actions
@@ -152,157 +161,172 @@ export default function IntakeHistory({ onView, onEdit }) {
           <TableBody className="divide-y divide-slate-100">
             {filteredLogs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-14 text-slate-400">
-                  <div className="flex flex-col items-center justify-center gap-1.5">
-                    <div className="w-11 h-11 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-1">
-                      <Droplets className="w-5 h-5 text-slate-400" />
-                    </div>
-                    <p className="text-sm font-bold text-slate-700 font-display">
-                      No Intake Records Found
-                    </p>
-                    <p className="text-xs text-slate-400 max-w-xs">
-                      {search
-                        ? 'No intake slips match your active search filters.'
-                        : 'No intake entries recorded yet. Click "Log Single Intake" or "Shift Intake Entry" above.'}
-                    </p>
-                  </div>
+                <TableCell colSpan={9} className="text-center py-12 text-slate-400">
+                  <Droplets className="w-8 h-8 mx-auto text-slate-300 mb-2 opacity-50" />
+                  <p className="font-semibold text-slate-600">No intake slips found</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Try adjusting search or shift filter</p>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredLogs.map((log) => (
-                <TableRow
-                  key={log.id}
-                  onClick={() => onView(log)}
-                  className="hover:bg-slate-50/60 transition-colors duration-150 cursor-pointer"
-                >
-                  {/* Date & Slip # */}
-                  <TableCell className="py-3 px-4">
-                    <span className="font-mono font-bold text-blue-600 text-xs block">
-                      {log.id}
-                    </span>
-                    <span className="text-[11px] text-slate-400">{log.date}</span>
-                  </TableCell>
+              filteredLogs.map((log) => {
+                const isMorning = log.shift.toLowerCase() === 'morning';
 
-                  {/* Supplier Name */}
-                  <TableCell className="py-3 px-4">
-                    <span className="font-bold text-slate-900 font-display block">
-                      {log.supplierName}
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-mono">
-                      {log.area || log.supplierId}
-                    </span>
-                  </TableCell>
+                return (
+                  <TableRow
+                    key={log.id}
+                    onClick={() => onView(log)}
+                    className="hover:bg-slate-50/70 cursor-pointer transition-colors group"
+                  >
+                    {/* Date & Slip ID */}
+                    <TableCell className="py-3 px-4">
+                      <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{log.date}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                        #{log.id} • {log.time}
+                      </div>
+                    </TableCell>
 
-                  {/* Shift */}
-                  <TableCell className="py-3 px-4 text-center">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                        log.shift === 'Morning'
-                          ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
-                          : 'bg-indigo-50 text-indigo-700 border border-indigo-200/60'
-                      }`}
-                    >
-                      {log.shift}
-                    </span>
-                  </TableCell>
+                    {/* Supplier Name */}
+                    <TableCell className="py-3 px-4 font-bold text-slate-800">
+                      <div>{log.supplierName}</div>
+                      {log.area && (
+                        <div className="text-[11px] text-slate-400 font-normal">
+                          {log.area}
+                        </div>
+                      )}
+                    </TableCell>
 
-                  {/* Quantity */}
-                  <TableCell className="py-3 px-4 text-right font-bold text-slate-900 tabular">
-                    {log.quantity.toFixed(1)} L
-                  </TableCell>
-
-                  {/* Rate / Liter */}
-                  <TableCell className="py-3 px-4 text-right font-medium text-slate-700 tabular">
-                    Rs. {log.ratePerLiter}
-                  </TableCell>
-
-                  {/* Total Cost */}
-                  <TableCell className="py-3 px-4 text-right font-bold text-emerald-700 tabular">
-                    Rs. {log.totalCost.toLocaleString()}
-                  </TableCell>
-
-                  {/* Quality: Fat & LR */}
-                  <TableCell className="py-3 px-4 text-center text-xs tabular">
-                    <span className="font-bold text-blue-600">{log.fat}%</span>
-                    <span className="text-slate-300 mx-1">|</span>
-                    <span className="text-slate-600 font-semibold">{log.lr} LR</span>
-                  </TableCell>
-
-                  {/* Settlement */}
-                  <TableCell className="py-3 px-4 text-center">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (updateBatchSettlement) {
-                          updateBatchSettlement(
-                            log.id,
-                            log.settlement === 'Paid' ? 'Pending' : 'Paid'
-                          );
-                        }
-                      }}
-                      title="Click to toggle settlement between Paid and Pending"
-                      className="cursor-pointer transition-transform hover:scale-105 select-none"
-                    >
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] font-semibold border-0 ${
-                          log.settlement === 'Paid'
-                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                            : log.settlement === 'Partial'
-                            ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                            : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                    {/* Shift */}
+                    <TableCell className="py-3 px-4 text-center">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                          isMorning
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
                         }`}
                       >
-                        {log.settlement}
-                      </Badge>
-                    </button>
-                  </TableCell>
+                        <Clock className="w-3 h-3" />
+                        {log.shift}
+                      </span>
+                    </TableCell>
 
-                  {/* Received By */}
-                  <TableCell className="py-3 px-4 text-slate-600 text-xs">
-                    {log.receivedBy || 'Staff'}
-                  </TableCell>
+                    {/* Quantity */}
+                    <TableCell className="py-3 px-4 text-right font-bold text-slate-900 tabular">
+                      {log.quantity.toFixed(1)} L
+                    </TableCell>
 
-                  {/* Actions */}
-                  <TableCell
-                    className="py-3 px-4 text-right"
-                    onClick={(e) => e.stopPropagation()} // don't trigger row click
-                  >
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        type="button"
-                        onClick={() => onView(log)}
-                        title="View Slip"
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                    {/* Rate / Liter */}
+                    <TableCell className="py-3 px-4 text-right font-medium text-slate-700 tabular">
+                      Rs. {log.ratePerLiter}
+                    </TableCell>
 
-                      <button
-                        type="button"
-                        onClick={() => onEdit(log)}
-                        title="Edit Entry"
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
+                    {/* Total Cost */}
+                    <TableCell className="py-3 px-4 text-right font-bold text-emerald-700 tabular">
+                      Rs. {log.totalCost.toLocaleString()}
+                    </TableCell>
 
-                      <button
-                        type="button"
-                        onClick={() => setConfirmDeleteId(log.id)}
-                        title="Delete Entry"
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                    {/* Quality: Fat & LR */}
+                    <TableCell className="py-3 px-4 text-center text-xs tabular">
+                      <span className="font-bold text-blue-600">{log.fat}%</span>
+                      <span className="text-slate-300 mx-1">|</span>
+                      <span className="text-slate-600 font-semibold">{log.lr} LR</span>
+                    </TableCell>
+
+                    {/* Settlement */}
+                    <TableCell className="py-3 px-4 text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-semibold border-0 ${
+                              log.settlement === 'Paid'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : log.settlement === 'Partial'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {log.settlement}
+                          </Badge>
+
+                          {log.settlement !== 'Paid' && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onPaySupplier) onPaySupplier(log);
+                              }}
+                              title="Pay Supplier for this delivery"
+                              className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#009966] text-white hover:brightness-110 shadow-2xs transition-all cursor-pointer select-none"
+                            >
+                              <Wallet className="w-2.5 h-2.5" />
+                              <span>Pay</span>
+                            </button>
+                          )}
+                        </div>
+
+                        {log.settlement === 'Partial' && (
+                          <span className="text-[9px] font-mono text-slate-500 font-semibold">
+                            Paid: Rs. {(log.paidAmount !== undefined ? log.paidAmount : Math.round(log.totalCost * 0.5)).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    {/* Action Buttons */}
+                    <TableCell className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1">
+                        {/* View Button */}
+                        <button
+                          type="button"
+                          onClick={() => onView(log)}
+                          title="View Intake Slip"
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+
+                        {/* Edit Button */}
+                        <button
+                          type="button"
+                          onClick={() => onEdit(log)}
+                          title="Edit Intake Entry"
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+
+                        {/* Delete Button */}
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(log.id)}
+                          title="Delete Intake Entry"
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Pagination Footer */}
+      <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+        <div>
+          Showing{' '}
+          <strong className="text-slate-800 font-semibold">{filteredLogs.length}</strong> of{' '}
+          <strong className="text-slate-800 font-semibold">{intakeLogs.length}</strong> intake slips
+        </div>
+        <div className="flex items-center gap-1 font-medium">
+          <span>Milk Procurement Register • Pur Milk Bar Dairy ERP</span>
+        </div>
       </div>
 
       {/* Delete Confirmation Modal */}
