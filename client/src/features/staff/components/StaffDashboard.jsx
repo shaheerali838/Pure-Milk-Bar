@@ -144,6 +144,7 @@ export default function StaffDashboard() {
               { id: 'security', label: 'Security' },
               { id: 'cashier', label: 'Cashier' },
               { id: 'manager', label: 'Manager' },
+              { id: 'accountant', label: 'Accountant' },
             ].map((filter) => (
               <button
                 key={filter.id}

@@ -4,19 +4,6 @@ const ExpenseContext = createContext();
 
 const STORAGE_KEY = 'pure_milk_bar_farm_expenses_v1';
 
-const defaultExpenses = [
-    {
-        id: '1',
-        category: 'Feed — Green chara, silage, wanda, toori, khal',
-        description: 'Fodder silage truck delivery (500 kg)',
-        amount: 3200,
-        date: '2026-08-24',
-        paymentMethod: 'Cash',
-        receiptRef: 'REC-F10',
-        authorizedBy: 'Allah Ditta'
-    }
-];
-
 export function useExpense() {
     const context = useContext(ExpenseContext);
     if (!context) {
@@ -31,12 +18,15 @@ export function ExpenseProvider({ children }) {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved !== null) {
                 const parsed = JSON.parse(saved);
-                if (Array.isArray(parsed)) return parsed;
+                if (Array.isArray(parsed)) {
+                    // Filter out any legacy dummy data with id 1 or Allah Ditta
+                    return parsed.filter((exp) => exp.id !== '1' && exp.authorizedBy !== 'Allah Ditta');
+                }
             }
-            return defaultExpenses;
+            return [];
         } catch (err) {
             console.error('Failed to load expenses from localStorage:', err);
-            return defaultExpenses;
+            return [];
         }
     });
 

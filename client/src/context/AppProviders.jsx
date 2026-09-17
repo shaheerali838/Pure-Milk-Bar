@@ -9,6 +9,8 @@ import { DeliveryStaffProvider } from "./DeliveryStaffContext";
 import { FuelLogProvider } from "./FuelLogContext";
 import { RiderSalaryProvider } from "./RiderSalaryContext";
 import { StaffProvider } from "./StaffContext";
+import { PayrollProvider } from "./PayrollContext";
+import { TransactionProvider } from "./TransactionContext";
 import { AuditProvider } from "./AuditContext";
 
 const providers = [
@@ -22,6 +24,8 @@ const providers = [
   DeliveryProvider,
   POSProvider,
   StaffProvider,
+  PayrollProvider,
+  TransactionProvider,
   AuditProvider,
 ];
 

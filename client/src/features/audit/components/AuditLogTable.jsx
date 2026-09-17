@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Eye, Filter, Shield, User, ArrowRight } from 'lucide-react';
+import { Search, Eye, Filter, Shield, User, ArrowRight, X, RotateCcw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,51 +19,76 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Typography } from '@/components/common/Typography';
+import { useStaffContext } from '@/context/StaffContext';
 
 export default function AuditLogTable({
   events = [],
   onViewDetail,
 }) {
+  const { staffList = [] } = useStaffContext();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState('ALL');
   const [userFilter, setUserFilter] = useState('ALL');
-  const [moduleFilter, setModuleFilter] = useState('ALL');
 
-  // Extract distinct users and modules for filter dropdowns
+  // Extract distinct actual users STRICTLY from users created inside Staff & Payroll
   const distinctUsers = useMemo(() => {
-    const set = new Set(events.map((e) => e.user || 'System'));
-    return Array.from(set);
-  }, [events]);
+    const userSet = new Set();
+    staffList.forEach((s) => {
+      const name = (s.name || '').trim();
+      if (name) {
+        userSet.add(name);
+      }
+    });
 
-  const distinctModules = useMemo(() => {
-    const set = new Set(events.map((e) => e.module || 'System'));
-    return Array.from(set);
-  }, [events]);
+    return Array.from(userSet).sort((a, b) => a.localeCompare(b));
+  }, [staffList]);
 
-  // Filtered list
+  // Filtered list with strict user and action matching
   const filteredEvents = useMemo(() => {
     return events.filter((e) => {
-      // Search term
-      const term = searchTerm.toLowerCase();
+      // 1. Search term matching ID, user, module, action, and detail
+      const term = searchTerm.trim().toLowerCase();
       const matchesSearch =
         !term ||
         (e.id && e.id.toLowerCase().includes(term)) ||
         (e.user && e.user.toLowerCase().includes(term)) ||
+        (e.action && e.action.toLowerCase().includes(term)) ||
         (e.module && e.module.toLowerCase().includes(term)) ||
         (e.detail && e.detail.toLowerCase().includes(term));
 
-      // Action
-      const matchesAction = actionFilter === 'ALL' || e.action === actionFilter;
+      // 2. Action Filter (Strict matching)
+      const eventAction = (e.action || 'Create').trim().toLowerCase();
+      const targetAction = actionFilter.trim().toLowerCase();
+      const matchesAction =
+        actionFilter === 'ALL' ||
+        actionFilter === 'All Actions' ||
+        eventAction === targetAction;
 
-      // User
-      const matchesUser = userFilter === 'ALL' || e.user === userFilter;
+      // 3. User Filter (Matching selected staff member)
+      const eventUser = (e.user || '').trim().toLowerCase();
+      const eventDetail = (e.detail || '').trim().toLowerCase();
+      const targetUser = userFilter.trim().toLowerCase();
+      const matchesUser =
+        userFilter === 'ALL' ||
+        userFilter === 'All Users' ||
+        eventUser === targetUser ||
+        eventDetail.includes(targetUser);
 
-      // Module
-      const matchesModule = moduleFilter === 'ALL' || e.module === moduleFilter;
-
-      return matchesSearch && matchesAction && matchesUser && matchesModule;
+      return matchesSearch && matchesAction && matchesUser;
     });
-  }, [events, searchTerm, actionFilter, userFilter, moduleFilter]);
+  }, [events, searchTerm, actionFilter, userFilter]);
+
+  const hasActiveFilters =
+    searchTerm !== '' ||
+    (actionFilter !== 'ALL' && actionFilter !== 'All Actions') ||
+    (userFilter !== 'ALL' && userFilter !== 'All Users');
+
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setActionFilter('ALL');
+    setUserFilter('ALL');
+  };
 
   const getActionBadge = (action) => {
     switch (action) {
@@ -149,7 +174,7 @@ export default function AuditLogTable({
 
           {/* User Filter */}
           <Select value={userFilter} onValueChange={setUserFilter}>
-            <SelectTrigger className="w-[135px] h-9 text-xs font-semibold bg-slate-50 border-slate-200 rounded-xl">
+            <SelectTrigger className="w-[155px] h-9 text-xs font-semibold bg-slate-50 border-slate-200 rounded-xl">
               <SelectValue placeholder="All Users" />
             </SelectTrigger>
             <SelectContent>
@@ -162,20 +187,20 @@ export default function AuditLogTable({
             </SelectContent>
           </Select>
 
-          {/* Module Filter */}
-          <Select value={moduleFilter} onValueChange={setModuleFilter}>
-            <SelectTrigger className="w-[130px] h-9 text-xs font-semibold bg-slate-50 border-slate-200 rounded-xl">
-              <SelectValue placeholder="All Modules" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Modules</SelectItem>
-              {distinctModules.map((m) => (
-                <SelectItem key={m} value={m}>
-                  {m}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Clear Filters Button */}
+          {hasActiveFilters && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleResetFilters}
+              className="h-9 px-2.5 rounded-xl text-xs font-bold text-rose-600 border-rose-200 bg-rose-50 hover:bg-rose-100 hover:text-rose-700 transition cursor-pointer"
+              title="Reset all search and dropdown filters"
+            >
+              <RotateCcw className="w-3.5 h-3.5 mr-1" />
+              Reset
+            </Button>
+          )}
         </div>
       </div>
 
@@ -275,11 +300,25 @@ export default function AuditLogTable({
                       <Shield className="w-5 h-5" />
                     </div>
                     <Typography variant="bodySmall" className="font-bold text-slate-700">
-                      No audit events found
+                      {hasActiveFilters ? 'No Matching Audit Records Found' : 'No Audit Records Recorded Yet'}
                     </Typography>
                     <Typography variant="caption" color="muted" className="max-w-sm">
-                      No audit events recorded yet — actions across POS, Staff, Payments, Customers, and Expenses will appear here automatically.
+                      {hasActiveFilters
+                        ? `No events found where user "${userFilter === 'ALL' ? 'Any' : userFilter}" performed action "${actionFilter === 'ALL' ? 'Any' : actionFilter}".`
+                        : 'Activity across POS sales, staff updates, cattle registrations, and expenses will appear here automatically.'}
                     </Typography>
+                    {hasActiveFilters && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleResetFilters}
+                        className="mt-2 text-xs font-bold text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100 cursor-pointer"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                        Clear Filter
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

@@ -100,10 +100,14 @@ export function AppRouter() {
           <Route path="finance/customer" element={<CustomerFinance />} />
           <Route path="finance/delivery" element={<RiderDeliveryFinancePage />} />
           <Route path="finance/daily-closing" element={<DailyClosing />} />
+          <Route path="daily-closing" element={<DailyClosing />} />
           <Route path="finance/audit-log" element={<TransactionAuditLog />} />
+          <Route path="audit-log" element={<TransactionAuditLog />} />
+          <Route path="audit" element={<TransactionAuditLog />} />
+          <Route path="transactions" element={<TransactionAuditLog />} />
           <Route path="finance/staff" element={<StaffManagement />} />
-
           <Route path="staff" element={<StaffManagement />} />
+          <Route path="payroll" element={<StaffManagement />} />
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
