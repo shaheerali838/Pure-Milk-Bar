@@ -1,9 +1,12 @@
 import React from "react";
 import { X, CheckCircle, Printer, ArrowRight } from "lucide-react";
 import { usePOSContext } from "@/context/POSContext";
+import { useSettingsContext } from "@/context/SettingsContext";
 
 export default function POSReceiptModal() {
   const { completedSaleReceipt, setCompletedSaleReceipt } = usePOSContext();
+  const { settings } = useSettingsContext();
+  const business = settings?.business || {};
 
   if (!completedSaleReceipt) return null;
 
@@ -14,6 +17,10 @@ export default function POSReceiptModal() {
   const handleClose = () => {
     setCompletedSaleReceipt(null);
   };
+
+  const displayName = business.businessName?.trim() || "PURE MILK BAR";
+  const displayAddress = business.address1?.trim() || "Pure Organic Dairy & Milk Products";
+  const displayPhone = business.phone?.trim() ? `Tel: ${business.phone}` : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-3 overflow-y-auto animate-in fade-in duration-150">
@@ -41,12 +48,17 @@ export default function POSReceiptModal() {
 
         <div className="p-6 space-y-4 text-xs">
           <div className="text-center pb-2 border-b border-dashed border-slate-200">
-            <h2 className="text-base font-black text-slate-900 font-display">
-              PURE MILK BAR
+            <h2 className="text-base font-black text-slate-900 font-display uppercase tracking-tight">
+              {displayName}
             </h2>
             <p className="text-[11px] text-slate-500">
-              Pure Organic Dairy &amp; Milk Products
+              {displayAddress}
             </p>
+            {displayPhone && (
+              <p className="text-[10px] text-slate-400 font-mono">
+                {displayPhone}
+              </p>
+            )}
             <p className="text-[10px] text-slate-400 font-mono mt-0.5">
               {completedSaleReceipt.formattedDate} ·{" "}
               {completedSaleReceipt.formattedTime}

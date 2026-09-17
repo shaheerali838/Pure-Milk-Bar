@@ -48,6 +48,9 @@ import TransactionAuditLog from "../features/audit/pages/TransactionAuditLog";
 // Staff Management
 import StaffManagement from "../features/staff/pages/StaffManagement";
 
+// Global Settings
+import GlobalSettings from "../features/settings/pages/GlobalSettings";
+
 export function AppRouter() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -108,6 +111,9 @@ export function AppRouter() {
           <Route path="finance/staff" element={<StaffManagement />} />
           <Route path="staff" element={<StaffManagement />} />
           <Route path="payroll" element={<StaffManagement />} />
+
+          <Route path="settings" element={<GlobalSettings />} />
+          <Route path="global-settings" element={<GlobalSettings />} />
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>

@@ -1,4 +1,4 @@
-import { ClipboardCheck, History, Users2 } from 'lucide-react';
+import { ClipboardCheck, History, Users2, SlidersHorizontal } from 'lucide-react';
 
 export const reconciliationLinks = [
   {
@@ -33,6 +33,17 @@ export const reconciliationLinks = [
     iconBorder: 'border border-[#ede9fe]',
     activeBg: 'bg-[#7c3aed] text-white shadow-md shadow-purple-500/25',
     activeBadgeBg: 'bg-[#6d28d9] text-white',
+  },
+  {
+    id: 'global-settings',
+    name: 'Global Settings',
+    icon: SlidersHorizontal,
+    path: '/settings',
+    iconBg: 'bg-[#ecfdf5]',
+    iconColor: 'text-[#059669]',
+    iconBorder: 'border border-[#d1fae5]',
+    activeBg: 'bg-[#00a86b] text-white shadow-md shadow-emerald-500/25',
+    activeBadgeBg: 'bg-[#008f5b] text-white',
   },
 ];
 
