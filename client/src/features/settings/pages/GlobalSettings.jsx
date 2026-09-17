@@ -194,11 +194,11 @@ export default function GlobalSettings() {
   };
 
   return (
-    <div className="space-y-4 pb-8">
+    <div className="space-y-3 pb-6">
       {/* Settings Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-200/80">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-2.5 border-b border-slate-200/80">
         <div className="space-y-0.5">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <Typography variant="h3" className="font-bold text-slate-900 tracking-tight text-xl font-display">
               Global ERP Settings
             </Typography>
@@ -214,19 +214,19 @@ export default function GlobalSettings() {
         <Button
           type="button"
           onClick={handleSaveChanges}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00a86b] hover:bg-[#008f5a] text-white text-xs font-bold shadow-xs transition-all duration-150 cursor-pointer h-9 shrink-0"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#00a86b] hover:bg-[#008f5a] text-white text-xs font-bold shadow-xs transition-all duration-150 cursor-pointer h-8 shrink-0"
         >
-          <Save className="w-4 h-4 stroke-[2.5]" />
+          <Save className="w-3.5 h-3.5 stroke-[2.5]" />
           Save Changes
         </Button>
       </div>
 
       {/* Tabs Layout */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-4">
-        <TabsList className="bg-slate-100 p-1 rounded-xl h-auto flex flex-wrap gap-1 border border-slate-200/60 justify-start">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-3">
+        <TabsList className="bg-slate-100 p-0.5 rounded-xl h-auto flex flex-wrap gap-1 border border-slate-200/60 justify-start">
           <TabsTrigger
             value="business"
-            className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold py-1.5 px-3 rounded-lg flex items-center gap-1.5"
+            className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold py-1.5 px-2.5 rounded-lg flex items-center gap-1.5"
           >
             <Building2 className="w-3.5 h-3.5" />
             <span>Business Info</span>
@@ -234,7 +234,7 @@ export default function GlobalSettings() {
 
           <TabsTrigger
             value="fleet"
-            className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold py-1.5 px-3 rounded-lg flex items-center gap-1.5"
+            className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold py-1.5 px-2.5 rounded-lg flex items-center gap-1.5"
           >
             <Bike className="w-3.5 h-3.5" />
             <span>Delivery Fleet</span>
@@ -242,7 +242,7 @@ export default function GlobalSettings() {
 
           <TabsTrigger
             value="products"
-            className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold py-1.5 px-3 rounded-lg flex items-center gap-1.5"
+            className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold py-1.5 px-2.5 rounded-lg flex items-center gap-1.5"
           >
             <Package className="w-3.5 h-3.5" />
             <span>Product Defaults</span>
@@ -250,7 +250,7 @@ export default function GlobalSettings() {
 
           <TabsTrigger
             value="pricing"
-            className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold py-1.5 px-3 rounded-lg flex items-center gap-1.5"
+            className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold py-1.5 px-2.5 rounded-lg flex items-center gap-1.5"
           >
             <Banknote className="w-3.5 h-3.5" />
             <span>Pricing &amp; Credit</span>
@@ -258,7 +258,7 @@ export default function GlobalSettings() {
 
           <TabsTrigger
             value="roles"
-            className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold py-1.5 px-3 rounded-lg flex items-center gap-1.5"
+            className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold py-1.5 px-2.5 rounded-lg flex items-center gap-1.5"
           >
             <Shield className="w-3.5 h-3.5" />
             <span>User Roles</span>
@@ -266,7 +266,7 @@ export default function GlobalSettings() {
 
           <TabsTrigger
             value="notifs"
-            className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold py-1.5 px-3 rounded-lg flex items-center gap-1.5"
+            className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold py-1.5 px-2.5 rounded-lg flex items-center gap-1.5"
           >
             <Bell className="w-3.5 h-3.5" />
             <span>Notifications</span>

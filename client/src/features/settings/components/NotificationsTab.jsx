@@ -44,15 +44,15 @@ export default function NotificationsTab({ data = {}, onChange }) {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <Card className="border-slate-200/80 shadow-2xs">
-        <CardHeader className="pb-4 border-b border-slate-100 bg-slate-50/50">
+        <CardHeader className="p-3.5 pb-3 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-800 flex items-center justify-center">
-              <Bell className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-purple-100 text-purple-800 flex items-center justify-center shrink-0">
+              <Bell className="w-3.5 h-3.5" />
             </div>
             <div>
-              <CardTitle className="text-sm font-bold text-slate-900 font-display">
+              <CardTitle className="text-sm font-bold text-slate-900 font-display leading-tight">
                 Automated System &amp; Operational Alerts
               </CardTitle>
               <CardDescription className="text-xs text-slate-500">
@@ -61,7 +61,7 @@ export default function NotificationsTab({ data = {}, onChange }) {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-4 divide-y divide-slate-100">
+        <CardContent className="p-3.5 pt-1 divide-y divide-slate-100">
           {notificationItems.map((item) => {
             const Icon = item.icon;
             const isChecked = Boolean(data[item.id]);
@@ -69,7 +69,7 @@ export default function NotificationsTab({ data = {}, onChange }) {
             return (
               <div
                 key={item.id}
-                className="py-3.5 flex items-start justify-between gap-4 hover:bg-slate-50/50 px-2 rounded-xl transition"
+                className="py-2.5 flex items-start justify-between gap-3 hover:bg-slate-50/50 px-2 rounded-xl transition"
               >
                 <div className="flex items-start gap-3">
                   <div

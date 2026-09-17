@@ -44,10 +44,10 @@ export default function RolesTab() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Warning Alert */}
-      <div className="flex items-start gap-2.5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-900">
-        <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+      <div className="flex items-start gap-2.5 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-900">
+        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 mt-0.5 shrink-0" />
         <div className="text-xs space-y-0.5">
           <p className="font-bold text-amber-900">
             Changing role permissions affects all users with that role immediately.
@@ -59,13 +59,13 @@ export default function RolesTab() {
       </div>
 
       <Card className="border-slate-200/80 shadow-2xs">
-        <CardHeader className="pb-4 border-b border-slate-100 bg-slate-50/50">
+        <CardHeader className="p-3.5 pb-3 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-800 flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-800 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-3.5 h-3.5" />
             </div>
             <div>
-              <CardTitle className="text-sm font-bold text-slate-900 font-display">
+              <CardTitle className="text-sm font-bold text-slate-900 font-display leading-tight">
                 Access Control &amp; System Roles
               </CardTitle>
               <CardDescription className="text-xs text-slate-500">
@@ -74,11 +74,11 @@ export default function RolesTab() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-4 divide-y divide-slate-100">
+        <CardContent className="p-3.5 pt-1 divide-y divide-slate-100">
           {sampleRoles.map((role) => (
             <div
               key={role.code}
-              className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:bg-slate-50/50 px-2 rounded-xl transition"
+              className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:bg-slate-50/50 px-2 rounded-xl transition"
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2">

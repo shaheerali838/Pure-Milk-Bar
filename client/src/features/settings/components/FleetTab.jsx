@@ -33,16 +33,16 @@ export default function FleetTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* 1. Registered Delivery Men & Fleet Card */}
       <Card className="border-slate-200/80 shadow-2xs">
-        <CardHeader className="pb-4 border-b border-slate-100 bg-slate-50/50 flex flex-row items-center justify-between gap-4">
+        <CardHeader className="p-3.5 pb-3 border-b border-slate-100 bg-slate-50/50 flex flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-800 flex items-center justify-center">
-              <Bike className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-purple-100 text-purple-800 flex items-center justify-center shrink-0">
+              <Bike className="w-3.5 h-3.5" />
             </div>
             <div>
-              <CardTitle className="text-sm font-bold text-slate-900 font-display">
+              <CardTitle className="text-sm font-bold text-slate-900 font-display leading-tight">
                 Registered Delivery Men &amp; Fleet Roster
               </CardTitle>
               <CardDescription className="text-xs text-slate-500">
@@ -54,13 +54,13 @@ export default function FleetTab() {
           <Button
             type="button"
             onClick={() => setView('add')}
-            className="h-8 px-3 text-xs font-bold bg-[#00a86b] hover:bg-[#008f5a] text-white shadow-xs cursor-pointer"
+            className="h-7 px-2.5 text-xs font-bold bg-[#00a86b] hover:bg-[#008f5a] text-white shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 mr-1 stroke-[2.5]" />
             Add Delivery Man
           </Button>
         </CardHeader>
-        <CardContent className="pt-4">
+        <CardContent className="p-3.5 pt-2">
           {staffList.length === 0 ? (
             <div className="py-12 text-center px-4 flex flex-col items-center justify-center space-y-2">
               <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center mb-1">

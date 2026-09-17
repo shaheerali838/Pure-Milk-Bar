@@ -13,15 +13,15 @@ export default function PricingTab({ data = {}, onChange }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <Card className="border-slate-200/80 shadow-2xs">
-        <CardHeader className="pb-4 border-b border-slate-100 bg-slate-50/50">
+        <CardHeader className="p-3.5 pb-3 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
-              <Banknote className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+              <Banknote className="w-3.5 h-3.5" />
             </div>
             <div>
-              <CardTitle className="text-sm font-bold text-slate-900 font-display">
+              <CardTitle className="text-sm font-bold text-slate-900 font-display leading-tight">
                 Baseline Pricing &amp; Customer Credit Rules
               </CardTitle>
               <CardDescription className="text-xs text-slate-500">
@@ -30,8 +30,8 @@ export default function PricingTab({ data = {}, onChange }) {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-5 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <CardContent className="p-3.5 pt-3.5 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Cow Milk Rate */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700">
