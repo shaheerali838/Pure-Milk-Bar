@@ -9,6 +9,7 @@ import { DeliveryStaffProvider } from "./DeliveryStaffContext";
 import { FuelLogProvider } from "./FuelLogContext";
 import { RiderSalaryProvider } from "./RiderSalaryContext";
 import { StaffProvider } from "./StaffContext";
+import { AuditProvider } from "./AuditContext";
 
 const providers = [
   CustomerProvider,
@@ -21,6 +22,7 @@ const providers = [
   DeliveryProvider,
   POSProvider,
   StaffProvider,
+  AuditProvider,
 ];
 
 export const AppProviders = ({ children }) => {
