@@ -4,6 +4,7 @@ import { useLedgerContext } from './LedgerContext';
 import { useAnimalContext } from './AnimalContext';
 import { useDeliveryContext } from './DeliveryContext';
 import { useFuelLogContext } from './FuelLogContext';
+import { useDeliveryStaffContext } from './DeliveryStaffContext';
 import { estimateDistanceKm } from '@/features/pos/utils/estimateDeliveryDistance';
 
 const POSContext = createContext();
@@ -61,6 +62,25 @@ export function POSProvider({ children }) {
   const addDelivery = deliveryCtx?.addDelivery;
   const fuelLogCtx = useFuelLogContext();
   const addFuelLog = fuelLogCtx?.addFuelLog;
+  const deliveryStaffCtx = useDeliveryStaffContext();
+  const staffList = deliveryStaffCtx?.staffList || [];
+
+  // Dynamic riders derived from live delivery staff context
+  const dynamicRiders = React.useMemo(() => {
+    if (Array.isArray(staffList) && staffList.length > 0) {
+      return staffList.map((s) => ({
+        id: s.id,
+        name: s.name,
+        phone: s.phone || s.mobile || '',
+        vehicleType: s.type === 'WALKING' ? 'Walking Man' : 'Motorbike',
+        vehicleName: s.vehicle || (s.type === 'WALKING' ? 'On Foot' : 'Motorbike'),
+        plateNumber: s.vehicle || 'Standard',
+        active: s.active !== false,
+        badge: s.type === 'WALKING' ? 'Walking Courier' : 'Delivery Rider',
+      }));
+    }
+    return deliveryRidersList;
+  }, [staffList]);
 
   // =========================================================================
   // 1. PRODUCTS STATE - STRICTLY FROM LOCAL STORAGE (Empty [] if not found)
@@ -270,6 +290,7 @@ export function POSProvider({ children }) {
   const [linkedCustomerId, setLinkedCustomerId] = useState('');
 
   // Fuel Log state for delivery orders
+  const [showFuelLog, setShowFuelLog] = useState(false);
   const [fuelLog, setFuelLog] = useState({
     liters: '',
     amount: '',
@@ -283,6 +304,7 @@ export function POSProvider({ children }) {
 
   // Reset fuel log when delivery sub-type changes
   useEffect(() => {
+    setShowFuelLog(false);
     setFuelLog({ liters: '', amount: '', distanceKm: '', notes: '' });
   }, [deliverySubType]);
 
@@ -392,6 +414,7 @@ export function POSProvider({ children }) {
     setLinkedCustomerId('');
     setSelectedRiderId('');
     setCustomRiderName('');
+    setShowFuelLog(false);
     setFuelLog({ liters: '', amount: '', distanceKm: '', notes: '' });
     setWalkinCustomerType('first_time');
     setOnlineDetails({ provider: 'JazzCash', senderAccount: '', trxId: '' });
@@ -415,7 +438,9 @@ export function POSProvider({ children }) {
 
   const allCustomers = rawCustomers.length > 0 ? rawCustomers : customers;
   const activeCustomer = allCustomers.find((c) => String(c.id) === String(linkedCustomerId)) || null;
-  const activeRider = selectedRiderId ? (deliveryRidersList.find((r) => r.id === selectedRiderId) || null) : null;
+  const activeRider = selectedRiderId
+    ? dynamicRiders.find((r) => String(r.id) === String(selectedRiderId)) || null
+    : null;
 
   // Auto-estimate distance for monthly delivery customer if not already edited
   useEffect(() => {
@@ -633,8 +658,9 @@ export function POSProvider({ children }) {
         });
       }
 
-      // Record fuel log if liters and amount are provided
+      // Record fuel log if toggle is on and liters and amount are provided
       if (
+        showFuelLog &&
         fuelLog.liters &&
         Number(fuelLog.liters) > 0 &&
         fuelLog.amount &&
@@ -788,7 +814,7 @@ export function POSProvider({ children }) {
         setOrderNotes,
         fulfillmentMode,
         setFulfillmentMode,
-        riders: deliveryRidersList,
+        riders: dynamicRiders,
         selectedRiderId,
         setSelectedRiderId,
         activeRider,
@@ -804,6 +830,8 @@ export function POSProvider({ children }) {
         setCollectEmptyBottles,
 
         // Fuel Log
+        showFuelLog,
+        setShowFuelLog,
         fuelLog,
         setFuelLog,
         updateFuelLog,

@@ -14,6 +14,7 @@ import StaffScheduleCards from './StaffScheduleCards';
 import StaffPayrollBreakdown from './StaffPayrollBreakdown';
 import StaffContactCard from './StaffContactCard';
 import StaffJobCard from './StaffJobCard';
+import StaffPerformanceFuelSection from './StaffPerformanceFuelSection';
 
 export default function StaffDetail({
   staff,
@@ -126,6 +127,9 @@ export default function StaffDetail({
             <StaffJobCard staff={staff} />
           </div>
 
+          {/* Subcomponent 6: Rider Performance, Delivery Runs & Fuel Logs */}
+          <StaffPerformanceFuelSection staff={staff} />
+
           {/* Optional Notes Section */}
           {staff.notes && (
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/40">
@@ -166,6 +170,7 @@ export default function StaffDetail({
         <StaffPayrollBreakdown staff={staff} />
         <StaffContactCard staff={staff} />
         <StaffJobCard staff={staff} />
+        <StaffPerformanceFuelSection staff={staff} />
       </div>
     </div>
   );

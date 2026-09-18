@@ -45,10 +45,24 @@ export default function StaffProfileHeader({ staff }) {
             >
               {staff.role}
             </span>
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Active On Duty
-            </span>
+            {(() => {
+              const isActive =
+                staff.status !== 'Inactive' &&
+                staff.status !== 'Off Duty' &&
+                staff.active !== false;
+
+              return isActive ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Active On Duty
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                  Off Duty / Inactive
+                </span>
+              );
+            })()}
           </div>
         </div>
       </div>

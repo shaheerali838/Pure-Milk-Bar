@@ -15,6 +15,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
 import RegisterStaffView from '@/features/deliveries/components/RegisterStaffView';
 import { Typography } from '@/components/common/Typography';
@@ -160,7 +161,11 @@ export default function FleetTab() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => toggleStaffActive(staff.id)}
+                            onClick={() => {
+                              toggleStaffActive(staff.id);
+                              const newStatus = isActive ? 'Off Duty' : 'Active On Duty';
+                              toast.success(`Rider status updated: ${staff.name} is now ${newStatus}!`);
+                            }}
                             className={`h-7 px-2.5 text-[11px] font-bold rounded-lg transition cursor-pointer ${
                               isActive
                                 ? 'text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100'
