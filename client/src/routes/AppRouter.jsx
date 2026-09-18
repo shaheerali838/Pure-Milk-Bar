@@ -26,6 +26,12 @@ import DailySheet from "../features/farm/pages/DailySheet";
 
 // Suppliers & Production
 import Supplier from "../features/suppliers/pages/Supplier";
+import SupplierDashboard from "../features/suppliers/pages/SupplierDashboard";
+import SupplierDirectory from "../features/suppliers/pages/SupplierDirectory";
+import IntakeRegister from "../features/suppliers/pages/IntakeRegister";
+import SourceExpense from "../features/suppliers/pages/SourceExpense";
+import SupplierPL from "../features/suppliers/pages/SupplierPL";
+import ProcurementSheet from "../features/suppliers/pages/ProcurementSheet";
 import Proccessing from "../features/inventory/pages/Processing";
 import Products from "../features/inventory/pages/Products";
 
@@ -89,7 +95,15 @@ export function AppRouter() {
             <Route path="dailysheet" element={<DailySheet />} />
           </Route>
 
-          <Route path="supplier" element={<Supplier />} />
+          <Route path="supplier" element={<Supplier />}>
+            <Route index element={<SupplierDashboard />} />
+            <Route path="dashboard" element={<SupplierDashboard />} />
+            <Route path="directory" element={<SupplierDirectory />} />
+            <Route path="intake" element={<IntakeRegister />} />
+            <Route path="expenses" element={<SourceExpense />} />
+            <Route path="pl" element={<SupplierPL />} />
+            <Route path="procurement" element={<ProcurementSheet />} />
+          </Route>
           <Route path="proccessing" element={<Proccessing />} />
           <Route path="products" element={<Products />} />
 

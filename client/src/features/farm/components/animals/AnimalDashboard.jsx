@@ -4,7 +4,7 @@ import AnimalCardOverflow from "./AnimalCardOverflow";
 export default function AnimalDashboard() {
   return (
     <div className="bg-slate-50">
-      <div className="max-w-7xl">
+      <div >
         <AnimalCardOverflow />
       </div>
     </div>
