@@ -289,7 +289,7 @@ export default function IntakeShifting({ onSaveSuccess }) {
               <TableHeader className="bg-slate-50/70 border-b border-slate-200">
                 <TableRow>
                   <TableHead className="py-3.5 px-5 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                    SUPPLIER / VENDOR
+                    SUPPLIER
                   </TableHead>
                   <TableHead className="py-3.5 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
                     LOCATION &amp; TYPE
@@ -351,7 +351,7 @@ export default function IntakeShifting({ onSaveSuccess }) {
 
                     return (
                       <TableRow key={supplier.id} className="hover:bg-slate-50/50 transition-colors">
-                      {/* Column 1: SUPPLIER / VENDOR with Blue Initial Circle */}
+                      {/* Column 1: SUPPLIER with Blue Initial Circle */}
                       <TableCell className="py-3.5 px-5">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-100 text-[#155dfc] flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">

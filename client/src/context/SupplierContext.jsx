@@ -293,17 +293,20 @@ export function SupplierProvider({ children }) {
 
   // 11. Dynamic Summary Totals
   const totals = useMemo(() => {
-    const totalVendors = enrichedSuppliers.length;
-    const activeVendors = enrichedSuppliers.filter((s) => s.status === 'Active').length;
-    const inactiveVendors = enrichedSuppliers.filter((s) => s.status === 'Inactive').length;
+    const totalSuppliers = enrichedSuppliers.length;
+    const activeSuppliers = enrichedSuppliers.filter((s) => s.status === 'Active').length;
+    const inactiveSuppliers = enrichedSuppliers.filter((s) => s.status === 'Inactive').length;
     const totalSourcedLiters = enrichedSuppliers.reduce((sum, s) => sum + (s.totalSourced || 0), 0);
     const totalPayouts = enrichedSuppliers.reduce((sum, s) => sum + (s.totalPayout || 0), 0);
     const outstandingBalances = enrichedSuppliers.reduce((sum, s) => sum + (s.balanceDue || 0), 0);
 
     return {
-      totalVendors,
-      activeVendors,
-      inactiveVendors,
+      totalSuppliers,
+      activeSuppliers,
+      inactiveSuppliers,
+      totalVendors: totalSuppliers,
+      activeVendors: activeSuppliers,
+      inactiveVendors: inactiveSuppliers,
       totalSourcedLiters: parseFloat(totalSourcedLiters.toFixed(1)),
       totalPayouts: Math.round(totalPayouts),
       outstandingBalances: Math.round(outstandingBalances),

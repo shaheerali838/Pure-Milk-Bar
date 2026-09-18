@@ -249,7 +249,7 @@ export default function SupplierDetail({ supplier, onBack, onEdit }) {
 
         {/* Breakdown & Batch History Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
-          {/* Left Column: Vendor Details (1 col) */}
+          {/* Left Column: Supplier Details (1 col) */}
           <div className="space-y-4">
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
               <h3 className="font-bold text-slate-900 flex items-center gap-2 text-xs uppercase tracking-wider text-slate-600">

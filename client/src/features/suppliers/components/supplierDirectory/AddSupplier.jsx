@@ -124,7 +124,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
       {/* Main form container */}
       <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs no-scrollbar">
         <form onSubmit={handleSubmit} className="space-y-3.5">
-          {/* Section 1: Vendor Profile & Identification */}
+          {/* Section 1: Supplier Profile & Identification */}
           <div>
             <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-2.5">
               <div
@@ -135,7 +135,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
                 <Building2 className="w-3.5 h-3.5" />
               </div>
               <h2 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
-                1. Vendor Profile &amp; Contact Details
+                1. Supplier Profile &amp; Contact Details
               </h2>
             </div>
 

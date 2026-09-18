@@ -142,7 +142,7 @@ export default function SourceExpense() {
       category: formData.category,
       description: formData.description,
       routeCenter: formData.routeCenter,
-      payee: formData.payee || 'Direct Vendor',
+      payee: formData.payee || 'Direct Supplier',
       paymentMethod: formData.paymentMethod,
       amount: parseFloat(formData.amount) || 0,
       loggedBy: 'Logged in User',
@@ -321,7 +321,7 @@ export default function SourceExpense() {
                   Route / Center
                 </TableHead>
                 <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
-                  Vendor / Payee
+                  Supplier / Payee
                 </TableHead>
                 <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[11px] tracking-wider">
                   Method
@@ -487,7 +487,7 @@ export default function SourceExpense() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                    Vendor / Payee
+                    Supplier / Payee
                   </label>
                   <input
                     type="text"

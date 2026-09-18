@@ -10,7 +10,7 @@ import {
  * - Header: "Supplier Milk Intake Batch Details" with Close 'X' button
  * - Royal Blue Top Banner: Total Purchase Net (Rs. 6,900), Volume (30.0 Liters @ Rs. 230/L), Shift Pill, Date
  * - 10-Row Key-Value Details Card:
- *   1. Supplier / Vendor
+ *   1. Supplier Name
  *   2. Intake Date
  *   3. Shift Timing
  *   4. Milk Quantity
@@ -33,7 +33,7 @@ export default function IntakeDetail({ item, onClose, onBack }) {
   const fat = parseFloat(item.fat) || 0;
   const lr = parseFloat(item.lr) || 0;
 
-  // Clean vendor name (e.g. "Supplier A (Ahmad Farms)" -> "Ahmad Farms")
+  // Clean supplier name (e.g. "Supplier A (Ahmad Farms)" -> "Ahmad Farms")
   const rawName = item.supplierName || 'Ahmad Farms';
   const supplierDisplayName = rawName.includes('(')
     ? rawName.replace(/Supplier\s+[A-Z0-9-]+\s*\((.*?)\)/i, '$1')
@@ -95,9 +95,9 @@ export default function IntakeDetail({ item, onClose, onBack }) {
 
           {/* 10-Row Key-Value Details Card */}
           <div className="bg-slate-50/50 rounded-2xl border border-slate-200/80 divide-y divide-slate-100 px-4 py-1 text-xs">
-            {/* Row 1: Supplier / Vendor */}
+            {/* Row 1: Supplier */}
             <div className="flex items-center justify-between py-2.5">
-              <span className="text-slate-500 font-medium">Supplier / Vendor</span>
+              <span className="text-slate-500 font-medium">Supplier</span>
               <span className="font-bold text-slate-900 font-display text-sm">
                 {supplierDisplayName}
               </span>

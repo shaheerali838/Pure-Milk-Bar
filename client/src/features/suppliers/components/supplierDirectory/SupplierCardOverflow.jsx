@@ -10,12 +10,12 @@ export default function SupplierCardOverflow({ onSelectSupplier }) {
   const statCards = [
     {
       id: 'vendors',
-      label: 'Registered Vendors',
-      value: `${totals.totalVendors} Vendors`,
-      sub: `${totals.activeVendors} Active • ${totals.inactiveVendors} Inactive`,
+      label: 'Registered Suppliers',
+      value: `${totals.totalSuppliers ?? totals.totalVendors} Suppliers`,
+      sub: `${totals.activeSuppliers ?? totals.activeVendors} Active • ${totals.inactiveSuppliers ?? totals.inactiveVendors} Inactive`,
       icon: Users,
       color: '#009966',
-      badge: 'Total Vendors',
+      badge: 'Total Suppliers',
     },
     {
       id: 'sourced',
@@ -28,7 +28,7 @@ export default function SupplierCardOverflow({ onSelectSupplier }) {
     },
     {
       id: 'payouts',
-      label: 'Total Vendor Payouts',
+      label: 'Total Supplier Payouts',
       value: `Rs. ${totals.totalPayouts.toLocaleString()}`,
       sub: 'Disbursed supplier payments',
       icon: Receipt,
