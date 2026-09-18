@@ -55,7 +55,7 @@ export default function FarmCardOverflow({
     {
       label: "Farm Net Profit",
       value: `Rs. ${dailyNetProfit.toLocaleString()}`,
-      sub: `~ Rs. ${(monthlyNetProfit / 100000).toFixed(2)}M / month net`,
+      sub:  "Rs.  month net ",
       icon: DollarSign,
       color: "#10b981",
       badge: "Net Profit / Day",

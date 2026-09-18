@@ -1,38 +1,50 @@
 import React, { useState } from 'react';
 import {
+  ArrowLeft,
+  Edit,
+  Building2,
   Phone,
   MapPin,
-  Edit2,
-  CheckCircle2,
-  Clock,
+  Tag,
+  DollarSign,
   Wallet,
+  Clock,
+  Droplets,
+  Calendar,
+  CreditCard,
+  CheckCircle2,
+  AlertCircle,
+  FileText,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import IntakeDetail from '../intakeRegistor/IntakeDetail';
 
-/**
- * SupplierDetail Component
- * Matches the user-provided reference layout exactly:
- * 1. Top Breadcrumb: Supplier Directory > Supplier A (Ahmad Farms)
- * 2. Header Profile Card with Avatar initial circle, Name, Contact, Address, Active badge, and Edit Vendor button
- * 3. 3 Metric Cards: Total Liters Procured, Total Procurement Value, Agreed Rate / Liter
- * 4. Recent Procurement Batches table with columns: DATE, SHIFT, QUANTITY (L), RATE / LITER, TOTAL VALUE, QUALITY TEST, PAYMENT STATUS
- */
 export default function SupplierDetail({ supplier, onBack, onEdit }) {
   const { intakeLogs = [], updateBatchSettlement } = useIntakeContext();
   const { settleSupplierBalance } = useSupplierContext();
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [showSettleModal, setShowSettleModal] = useState(false);
+  const [settleAmount, setSettleAmount] = useState('');
 
   if (!supplier) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400">
-        <p className="text-sm font-bold text-slate-700">No supplier profile selected.</p>
-        <Button variant="outline" onClick={onBack} className="mt-3 rounded-full">
-          Go Back
-        </Button>
+      <div className="p-8 bg-slate-50 min-h-[400px] flex flex-col items-center justify-center space-y-3">
+        <div className="w-12 h-12 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center">
+          <Building2 className="w-6 h-6" />
+        </div>
+        <h2 className="text-base font-bold text-slate-800 font-display">
+          Supplier Record Not Found
+        </h2>
+        <p className="text-xs text-slate-500">
+          The requested supplier profile does not exist or has been removed.
+        </p>
+        <button
+          onClick={onBack}
+          className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 cursor-pointer transition shadow-2xs"
+        >
+          Back to Suppliers
+        </button>
       </div>
     );
   }
@@ -45,9 +57,9 @@ export default function SupplierDetail({ supplier, onBack, onEdit }) {
         b.supplierName.toLowerCase().includes(supplier.name.toLowerCase()))
   );
 
-  const rate = parseFloat(supplier.ratePerLiter) || 230;
+  const rate = parseFloat(supplier.ratePerLiter) || 228;
 
-  // Calculate totals from batches, or fall back to supplier profile recorded stats
+  // Calculate totals
   const batchesLiters = supplierBatches.reduce(
     (sum, b) => sum + (parseFloat(b.quantity) || 0),
     0
@@ -83,303 +95,387 @@ export default function SupplierDetail({ supplier, onBack, onEdit }) {
 
   const balanceDue = Math.max(0, Math.round(totalValue - totalPayout));
 
-  // Avatar initial letter (e.g. 'S' or first letter of name)
+  const handleSettleSubmit = (e) => {
+    e.preventDefault();
+    const amt = parseFloat(settleAmount) || balanceDue;
+    if (amt <= 0) {
+      alert('Please enter a valid payment amount.');
+      return;
+    }
+    if (settleSupplierBalance) {
+      settleSupplierBalance(supplier.id, amt);
+    }
+    setShowSettleModal(false);
+    setSettleAmount('');
+  };
+
   const initialLetter =
     supplier.name.replace(/Supplier\s+/i, '').charAt(0).toUpperCase() || 'S';
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-150">
-      {/* 1. Top Breadcrumb Navigation */}
-      <div className="flex items-center gap-1.5 text-xs">
-        <button
-          type="button"
-          onClick={onBack}
-          className="font-bold text-[#009966] hover:underline cursor-pointer flex items-center gap-1 transition-colors"
-        >
-          Supplier Directory
-        </button>
-        <span className="text-slate-400">&gt;</span>
-        <span className="text-slate-600 font-medium">{supplier.name}</span>
-      </div>
-
-      {/* 2. Header Profile Card */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Left: Avatar + Title + Contact Info */}
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-blue-100 text-[#155dfc] flex items-center justify-center font-bold text-lg shrink-0 shadow-2xs">
-            {initialLetter}
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 font-display">
-              {supplier.name}
-            </h2>
-            <div className="flex items-center gap-2.5 text-xs text-slate-500 mt-1 flex-wrap font-medium">
-              <div className="flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-slate-400" />
-                <span>{supplier.contact || '0300-1234567'}</span>
-              </div>
-              <span className="text-slate-300">·</span>
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                <span>{supplier.address || supplier.area || 'Okara Road, Sahiwal'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Rate Badge + Active Badge + Edit Vendor Button */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            Rate: Rs. {rate} / L
-          </span>
-
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200/60">
-            {supplier.status || 'Active'}
-          </span>
-
+    <div className="space-y-4 animate-in fade-in duration-150 pb-8">
+      {/* Top action & header bar - EXACT StaffDetail / AnimalDetail match */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
+        <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => onEdit && onEdit(supplier)}
-            className="px-4 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+            onClick={onBack}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition cursor-pointer"
           >
-            <Edit2 className="w-3.5 h-3.5 text-slate-500" />
-            <span>Edit Vendor</span>
+            <ArrowLeft className="w-4 h-4" />
+            Back to Suppliers
           </button>
-        </div>
-      </div>
-
-      {/* 3. Metric Cards Row (Total Liters, Gross Value, Total Payout, Balance Due) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {/* Card 1: Total Liters Procured */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
-          <span className="text-xs text-slate-500 font-medium block mb-1.5">
-            Total Liters Procured
-          </span>
-          <div className="text-2xl font-black text-slate-900 font-display tabular">
-            {totalLiters.toLocaleString()}{' '}
-            <span className="text-base font-bold text-slate-700">L</span>
-          </div>
-        </div>
-
-        {/* Card 2: Total Procurement Value */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
-          <span className="text-xs text-slate-500 font-medium block mb-1.5">
-            Total Procurement Value
-          </span>
-          <div className="text-2xl font-black text-[#9333ea] font-display tabular">
-            Rs. {Math.round(totalValue).toLocaleString()}
-          </div>
-        </div>
-
-        {/* Card 3: Total Payout Disbursed */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
-          <span className="text-xs text-slate-500 font-medium block mb-1.5">
-            Total Payout (Paid)
-          </span>
-          <div className="text-2xl font-black text-emerald-600 font-display tabular">
-            Rs. {Math.round(totalPayout).toLocaleString()}
-          </div>
-        </div>
-
-        {/* Card 4: Balance Due (Pending) */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs text-slate-500 font-medium">
-                Balance Due (Pending)
-              </span>
-              {balanceDue > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowSettleModal(true)}
-                  className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 hover:bg-emerald-600 hover:text-white border border-amber-200 transition-all cursor-pointer shadow-2xs"
-                >
-                  Settle Balance
-                </button>
-              )}
-            </div>
-            <div
-              className={`text-2xl font-black font-display tabular ${
-                balanceDue > 0 ? 'text-amber-600' : 'text-slate-400'
-              }`}
-            >
-              Rs. {balanceDue.toLocaleString()}
-            </div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight font-display">
+              Supplier Profile — {supplier.name}
+            </h1>
+            <p className="text-xs text-slate-500">
+              Supplier ID: {supplier.id} • Route: {supplier.area || 'Direct Supply'}
+            </p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {balanceDue > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setSettleAmount(String(balanceDue));
+                setShowSettleModal(true);
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs transition cursor-pointer"
+            >
+              <Wallet className="w-3.5 h-3.5" />
+              Settle Due (Rs. {balanceDue.toLocaleString()})
+            </button>
+          )}
+
+          {onEdit && (
+            <button
+              type="button"
+              onClick={() => onEdit(supplier)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200/70 transition shadow-2xs cursor-pointer"
+            >
+              <Edit className="w-3.5 h-3.5" />
+              Edit Supplier
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 4. Recent Procurement Batches Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100">
-          <h3 className="text-sm font-bold text-slate-900 font-display">
-            Recent Procurement Batches ({supplier.name})
-          </h3>
+      {/* Main Details Card Container */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-2xs space-y-6">
+        {/* Profile Hero Section */}
+        <div className="bg-[#f8fafc] p-5 rounded-2xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-2xl shadow-xs shrink-0 font-display">
+              {initialLetter}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-slate-900 font-display">
+                  {supplier.name}
+                </h2>
+                <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-200 text-slate-700">
+                  {supplier.id}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="inline-block text-xs font-bold px-2.5 py-0.5 rounded-md border bg-slate-50 text-slate-700 border-slate-200">
+                  {supplier.supplierType || 'Commercial Dairy Farm'}
+                </span>
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {supplier.status || 'Active'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Agreed Milk Rate
+              </span>
+              <span className="text-2xl font-black text-emerald-700 font-mono">
+                Rs. {rate} / L
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs sm:text-sm border-collapse">
-            <thead>
-              <tr className="bg-slate-50/70 border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                <th className="px-5 py-3.5">DATE</th>
-                <th className="px-4 py-3.5">SHIFT</th>
-                <th className="px-4 py-3.5 text-center">QUANTITY (L)</th>
-                <th className="px-4 py-3.5 text-center">RATE / LITER</th>
-                <th className="px-4 py-3.5 text-right">TOTAL VALUE</th>
-                <th className="px-4 py-3.5 text-center">QUALITY TEST</th>
-                <th className="px-5 py-3.5 text-right">
-                  PAYMENT <span className="text-emerald-600 font-bold">STATUS</span>
-                </th>
-              </tr>
-            </thead>
+        {/* 4 Highlight Metric Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-200/70">
+            <div className="flex items-center gap-1.5 text-emerald-700 text-[10px] font-bold uppercase tracking-wider mb-1">
+              <Droplets className="w-3.5 h-3.5" />
+              Total Liters Procured
+            </div>
+            <p className="text-base font-black text-slate-900 font-mono">
+              {totalLiters.toFixed(1)} L
+            </p>
+          </div>
 
-            <tbody className="divide-y divide-slate-100">
-              {supplierBatches.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-slate-400 text-xs">
-                    No procurement batches recorded yet for this supplier.
-                  </td>
-                </tr>
-              ) : (
-                supplierBatches.map((batch) => {
-                  const qty = parseFloat(batch.quantity) || 0;
-                  const bRate = parseFloat(batch.ratePerLiter) || rate;
-                  const cost = parseFloat(batch.totalCost) || qty * bRate;
+          <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-200/70">
+            <div className="flex items-center gap-1.5 text-blue-700 text-[10px] font-bold uppercase tracking-wider mb-1">
+              <DollarSign className="w-3.5 h-3.5" />
+              Gross Procurement
+            </div>
+            <p className="text-base font-black text-slate-900 font-mono">
+              Rs. {Math.round(totalValue).toLocaleString()}
+            </p>
+          </div>
 
-                  return (
-                    <tr
-                      key={batch.id}
-                      onClick={() => setSelectedBatch(batch)}
-                      className="hover:bg-slate-50/80 transition-colors cursor-pointer"
-                    >
-                      {/* DATE */}
-                      <td className="px-5 py-3.5 font-medium text-slate-800 tabular">
-                        {batch.date}
-                      </td>
+          <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-200/70">
+            <div className="flex items-center gap-1.5 text-purple-700 text-[10px] font-bold uppercase tracking-wider mb-1">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Total Amount Paid
+            </div>
+            <p className="text-base font-black text-slate-900 font-mono">
+              Rs. {Math.round(totalPayout).toLocaleString()}
+            </p>
+          </div>
 
-                      {/* SHIFT */}
-                      <td className="px-4 py-3.5">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                            batch.shift === 'Morning'
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                              : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                          }`}
-                        >
-                          {batch.shift}
-                        </span>
-                      </td>
+          <div className={`p-4 rounded-xl border ${balanceDue > 0 ? 'bg-amber-50/70 border-amber-200/80' : 'bg-slate-50/70 border-slate-200/70'}`}>
+            <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider mb-1 ${balanceDue > 0 ? 'text-amber-700' : 'text-slate-500'}`}>
+              <Wallet className="w-3.5 h-3.5" />
+              Balance Due
+            </div>
+            <p className={`text-base font-black font-mono ${balanceDue > 0 ? 'text-amber-700' : 'text-slate-700'}`}>
+              Rs. {balanceDue.toLocaleString()}
+            </p>
+          </div>
+        </div>
 
-                      {/* QUANTITY (L) */}
-                      <td className="px-4 py-3.5 text-center font-bold text-slate-900 tabular">
-                        {qty.toFixed(1)} L
-                      </td>
+        {/* Breakdown & Batch History Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+          {/* Left Column: Supplier Details (1 col) */}
+          <div className="space-y-4">
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+              <h3 className="font-bold text-slate-900 flex items-center gap-2 text-xs uppercase tracking-wider text-slate-600">
+                <Building2 className="w-4 h-4 text-slate-500" />
+                Contact &amp; Location
+              </h3>
+              <div className="space-y-2.5 divide-y divide-slate-200/60 text-slate-700">
+                <div className="flex justify-between items-center pt-1.5">
+                  <span className="text-slate-500 flex items-center gap-1">
+                    <Phone className="w-3.5 h-3.5 text-slate-400" /> Phone:
+                  </span>
+                  <span className="font-mono font-bold text-slate-800">
+                    {supplier.contact || '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-slate-500 flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400" /> Area:
+                  </span>
+                  <span className="font-medium text-slate-800">
+                    {supplier.area || '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-start pt-2">
+                  <span className="text-slate-500 shrink-0">Address:</span>
+                  <span className="text-slate-700 text-right pl-3">
+                    {supplier.address || '—'}
+                  </span>
+                </div>
+              </div>
+            </div>
 
-                      {/* RATE / LITER */}
-                      <td className="px-4 py-3.5 text-center font-medium text-slate-700 tabular">
-                        Rs. {bRate} / L
-                      </td>
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+              <h3 className="font-bold text-slate-900 flex items-center gap-2 text-xs uppercase tracking-wider text-slate-600">
+                <Tag className="w-4 h-4 text-slate-500" />
+                Terms &amp; Account
+              </h3>
+              <div className="space-y-2.5 divide-y divide-slate-200/60 text-slate-700">
+                <div className="flex justify-between items-center pt-1.5">
+                  <span className="text-slate-500">Agreed Rate:</span>
+                  <span className="font-mono font-bold text-slate-900">
+                    Rs. {rate} / L
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-slate-500">Daily Expected:</span>
+                  <span className="font-mono font-medium text-slate-800">
+                    {supplier.avgLiters ? `${supplier.avgLiters} L/day` : '10 L/day'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-slate-500">Payment Terms:</span>
+                  <span className="font-medium text-slate-800">
+                    {supplier.paymentMethod || 'Direct Cash'}
+                  </span>
+                </div>
+                {supplier.accountNumber && (
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="text-slate-500 flex items-center gap-1">
+                      <CreditCard className="w-3.5 h-3.5 text-slate-400" /> Account:
+                    </span>
+                    <span className="font-mono font-bold text-slate-800">
+                      {supplier.accountNumber}
+                    </span>
+                  </div>
+                )}
+                {supplier.notes && (
+                  <div className="flex justify-between items-start pt-2">
+                    <span className="text-slate-500 shrink-0">Notes:</span>
+                    <span className="text-slate-700 text-right pl-3">
+                      {supplier.notes}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
-                      {/* TOTAL VALUE */}
-                      <td className="px-4 py-3.5 text-right font-bold text-slate-900 tabular">
-                        Rs. {cost.toLocaleString()}
-                      </td>
+          {/* Right Column: Procurement Batches Table (2 cols) */}
+          <div className="md:col-span-2 p-5 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between space-y-3">
+            <div>
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                <h3 className="font-bold text-slate-900 flex items-center gap-2 text-xs uppercase tracking-wider text-slate-600">
+                  <Droplets className="w-4 h-4 text-[#009966]" />
+                  Recent Procurement Batches ({supplierBatches.length})
+                </h3>
+              </div>
+            </div>
 
-                      {/* QUALITY TEST */}
-                      <td className="px-4 py-3.5 text-center text-xs text-slate-600">
-                        {batch.fat ? (
-                          <span className="font-mono text-[11px] bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                            Fat: {batch.fat}% · LR: {batch.lr || '28.5'}
-                          </span>
-                        ) : (
-                          <span className="text-emerald-700 font-semibold">Passed</span>
-                        )}
-                      </td>
-
-                      {/* PAYMENT STATUS */}
-                      <td className="px-5 py-3.5 text-right">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (updateBatchSettlement) {
-                              updateBatchSettlement(
-                                batch.id,
-                                batch.settlement === 'Paid' ? 'Pending' : 'Paid'
-                              );
-                            }
-                          }}
-                          title="Click to toggle settlement status"
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer shadow-2xs hover:scale-105 ${
-                            batch.settlement === 'Paid'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                              : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
-                          }`}
-                        >
-                          {batch.settlement === 'Paid' ? (
-                            <CheckCircle2 className="w-3 h-3 mr-1" />
-                          ) : (
-                            <Clock className="w-3 h-3 mr-1" />
-                          )}
-                          {batch.settlement || 'Pending'}
-                        </button>
+            <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-2xs">
+              <table className="w-full border-collapse text-left text-xs">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    <th className="px-3.5 py-2.5">Date &amp; Shift</th>
+                    <th className="px-3.5 py-2.5">Quantity</th>
+                    <th className="px-3.5 py-2.5">Rate / L</th>
+                    <th className="px-3.5 py-2.5">Total Value</th>
+                    <th className="px-3.5 py-2.5">Quality Test</th>
+                    <th className="px-3.5 py-2.5">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {supplierBatches.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                        No intake logs recorded yet for this supplier.
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                  ) : (
+                    supplierBatches.slice(0, 10).map((batch) => {
+                      const cost =
+                        parseFloat(batch.totalCost) ||
+                        (parseFloat(batch.quantity) || 0) * (parseFloat(batch.ratePerLiter) || rate);
+                      return (
+                        <tr
+                          key={batch.id}
+                          onClick={() => setSelectedBatch(batch)}
+                          className="hover:bg-slate-50 cursor-pointer transition-colors"
+                        >
+                          <td className="px-3.5 py-2.5">
+                            <span className="font-mono font-bold text-slate-800">{batch.date}</span>
+                            <span className="block text-[10px] text-slate-400">{batch.shift}</span>
+                          </td>
+                          <td className="px-3.5 py-2.5 font-mono font-bold text-emerald-700">
+                            {batch.quantity} L
+                          </td>
+                          <td className="px-3.5 py-2.5 font-mono text-slate-600">
+                            Rs. {batch.ratePerLiter || rate}
+                          </td>
+                          <td className="px-3.5 py-2.5 font-mono font-bold text-slate-900">
+                            Rs. {Math.round(cost).toLocaleString()}
+                          </td>
+                          <td className="px-3.5 py-2.5 font-mono text-[11px] text-slate-600">
+                            Fat: {batch.fat || '4.5'}% • LR: {batch.lr || '28'}
+                          </td>
+                          <td className="px-3.5 py-2.5">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                batch.settlement === 'Paid'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : batch.settlement === 'Partial'
+                                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
+                              }`}
+                            >
+                              {batch.settlement || 'Pending'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Settle Balance Confirmation Modal */}
+      {/* Settle Due Balance Modal */}
       {showSettleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-150">
-            <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-            <h4 className="text-base font-bold text-slate-900 font-display">
-              Settle Outstanding Balance?
-            </h4>
-            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-              Disburse full payment of{' '}
-              <span className="font-bold text-slate-900">
-                Rs. {balanceDue.toLocaleString()}
-              </span>{' '}
-              to <span className="font-bold text-slate-900">{supplier.name}</span>.
-              This will mark all their pending intake slips as settled and increase Total Payouts.
-            </p>
-
-            <div className="flex items-center justify-end gap-2 pt-4 mt-3 border-t border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h2 className="text-base font-bold text-slate-900 font-display">
+                Settle Balance with {supplier.name}
+              </h2>
               <button
                 type="button"
                 onClick={() => setShowSettleModal(false)}
-                className="px-3.5 h-[34px] rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors cursor-pointer"
               >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  settleSupplierBalance(supplier.id);
-                  setShowSettleModal(false);
-                }}
-                className="px-4 h-[34px] rounded-full text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs cursor-pointer"
-              >
-                Confirm Settlement
+                ✕
               </button>
             </div>
+            <form onSubmit={handleSettleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                  Current Outstanding Due
+                </label>
+                <p className="text-xl font-black text-amber-700 font-mono">
+                  Rs. {balanceDue.toLocaleString()}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                  Amount to Pay (Rs.)
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  max={balanceDue}
+                  value={settleAmount}
+                  onChange={(e) => setSettleAmount(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-bold font-mono focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] transition"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSettleModal(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                >
+                  Confirm Settlement
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Intake Batch Detail Modal */}
+      {/* Batch Detail Popup */}
       {selectedBatch && (
         <IntakeDetail
           item={selectedBatch}
           onClose={() => setSelectedBatch(null)}
+          onEdit={() => setSelectedBatch(null)}
         />
       )}
     </div>

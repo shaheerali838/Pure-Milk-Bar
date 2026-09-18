@@ -60,7 +60,7 @@ export default function SupplierTable({ onView, onEdit }) {
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input
             type="text"
-            placeholder="Search vendor name, contact, area..."
+            placeholder="Search supplier name, contact, area..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-transparent border-none outline-none text-xs sm:text-sm text-slate-700 placeholder:text-slate-400"
@@ -141,7 +141,7 @@ export default function SupplierTable({ onView, onEdit }) {
                     <p className="text-xs text-slate-400 max-w-xs">
                       {search
                         ? 'No suppliers match your search filters.'
-                        : 'Storage data is 0. Click "Add Supplier" above to register your first dairy vendor.'}
+                        : 'Storage data is 0. Click "Add Supplier" above to register your first dairy supplier.'}
                     </p>
                   </div>
                 </TableCell>

@@ -863,8 +863,9 @@ export function POSProvider({ children }) {
         // 6 Inventory metrics
         inventoryMetrics: {
           totalFarmYield: totalFarmMilk,
-          totalMilk: (remainingFarmMilk % 1 === 0 ? remainingFarmMilk.toFixed(0) : remainingFarmMilk.toFixed(2)),
-          totalDahi: products.filter((p) => p.category && p.category.toLowerCase().includes('dahi')).length > 0 ? Math.max(0, 110 - totalDahiSold).toFixed(1) : 0,
+          totalDahi: products.filter((p) => p.category && p.category.toLowerCase().includes('dahi')).reduce((sum, p) => sum + (Number(p.stock) || 0), 0) > 0 
+            ? products.filter((p) => p.category && p.category.toLowerCase().includes('dahi')).reduce((sum, p) => sum + (Number(p.stock) || 0), 0).toFixed(1)
+            : (totalDahiSold > 0 ? totalDahiSold.toFixed(1) : '0'),
           milkSold: (totalMilkSold % 1 === 0 ? totalMilkSold.toFixed(0) : totalMilkSold.toFixed(2)),
           dahiSold: (totalDahiSold % 1 === 0 ? totalDahiSold.toFixed(0) : totalDahiSold.toFixed(2)),
           totalMilkPrice,

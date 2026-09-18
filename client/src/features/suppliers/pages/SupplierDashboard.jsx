@@ -55,7 +55,7 @@ const INITIAL_VOLUME_TREND = [
 ];
 
 // Supplier Breakdown Data
-const INITIAL_VENDOR_BREAKDOWN = [
+const INITIAL_SUPPLIER_BREAKDOWN = [
   { name: 'Supplier 1 (Ahmad Farms)', liters: 2400 },
   { name: 'Supplier 2 (Chaudhry Dairy)', liters: 1600 },
   { name: 'Supplier 3 (Al-Madina Milk)', liters: 1200 },
@@ -118,11 +118,11 @@ export default function SupplierDashboard() {
   // Dynamic state
   const [intakeLogs, setIntakeLogs] = useState(INITIAL_TODAY_INTAKE);
   const [expenses, setExpenses] = useState(INITIAL_EXPENSES);
-  const [vendors, setVendors] = useState(INITIAL_VENDOR_BREAKDOWN);
+  const [suppliersData, setSuppliersData] = useState(INITIAL_SUPPLIER_BREAKDOWN);
 
   // Modals
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-  const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+  const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [viewDetailItem, setViewDetailItem] = useState(null);
 
@@ -138,7 +138,7 @@ export default function SupplierDashboard() {
     destination: 'Usman Milk',
   });
 
-  const [newVendor, setNewVendor] = useState({
+  const [newSupplier, setNewSupplier] = useState({
     name: '',
     initialLiters: '',
   });
@@ -188,19 +188,19 @@ export default function SupplierDashboard() {
     });
   };
 
-  const handleAddVendor = (e) => {
+  const handleAddSupplier = (e) => {
     e.preventDefault();
-    if (!newVendor.name) return;
+    if (!newSupplier.name) return;
 
-    setVendors([
-      ...vendors,
+    setSuppliersData([
+      ...suppliersData,
       {
-        name: newVendor.name,
-        liters: parseFloat(newVendor.initialLiters) || 800,
+        name: newSupplier.name,
+        liters: parseFloat(newSupplier.initialLiters) || 800,
       },
     ]);
-    setIsVendorModalOpen(false);
-    setNewVendor({ name: '', initialLiters: '' });
+    setIsSupplierModalOpen(false);
+    setNewSupplier({ name: '', initialLiters: '' });
   };
 
   const handleAddExpense = (e) => {
@@ -235,7 +235,7 @@ export default function SupplierDashboard() {
           </div>
           <div className="mt-2">
             <p className="text-[26px] font-bold text-slate-900 tracking-tight font-display">
-              {vendors.length} Vendors
+              {suppliersData.length} Suppliers
             </p>
           </div>
           <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
@@ -381,17 +381,17 @@ export default function SupplierDashboard() {
                 Supplier Intake Breakdown
               </h3>
               <p className="text-xs text-slate-500">
-                Liters supplied by each active vendor
+                Liters supplied by each active supplier
               </p>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setIsVendorModalOpen(true)}
+                onClick={() => setIsSupplierModalOpen(true)}
                 className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
               >
                 <Plus className="w-3 h-3 text-slate-500" />
-                <span>Add Vendor</span>
+                <span>Add Supplier</span>
               </button>
               <button
                 type="button"
@@ -406,7 +406,7 @@ export default function SupplierDashboard() {
 
           <div className="h-[210px] w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={vendors} margin={{ top: 10, right: 10, left: -10, bottom: 25 }}>
+              <BarChart data={suppliersData} margin={{ top: 10, right: 10, left: -10, bottom: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis
                   dataKey="name"
@@ -495,7 +495,7 @@ export default function SupplierDashboard() {
                 Supplier Sourcing P&L Performance
               </h3>
               <p className="text-xs text-slate-500">
-                Procured milk sales revenue vs. vendor acquisition costs
+                Procured milk sales revenue vs. supplier acquisition costs
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -519,7 +519,7 @@ export default function SupplierDashboard() {
                 <Tooltip
                   formatter={(val, name) => [
                     `Rs. ${val.toLocaleString()}`,
-                    name === 'revenue' ? 'Sales Revenue' : name === 'cost' ? 'Vendor Cost' : 'Gross Margin',
+                    name === 'revenue' ? 'Sales Revenue' : name === 'cost' ? 'Supplier Cost' : 'Gross Margin',
                   ]}
                   contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}
                 />
@@ -814,34 +814,34 @@ export default function SupplierDashboard() {
         </div>
       )}
 
-      {/* MODAL 2: Add Vendor Modal */}
-      {isVendorModalOpen && (
+      {/* MODAL 2: Add Supplier Modal */}
+      {isSupplierModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-150">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
               <h3 className="text-lg font-bold text-slate-900 font-display flex items-center gap-2">
                 <Users className="w-5 h-5 text-indigo-600" />
-                Add New Vendor
+                Add New Supplier
               </h3>
               <button
-                onClick={() => setIsVendorModalOpen(false)}
+                onClick={() => setIsSupplierModalOpen(false)}
                 className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAddVendor} className="space-y-4">
+            <form onSubmit={handleAddSupplier} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                  Vendor / Supplier Name *
+                  Supplier Name *
                 </label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Supplier 5 (Bilal Agro)"
-                  value={newVendor.name}
-                  onChange={(e) => setNewVendor({ ...newVendor, name: e.target.value })}
+                  value={newSupplier.name}
+                  onChange={(e) => setNewSupplier({ ...newSupplier, name: e.target.value })}
                   className="w-full h-[40px] px-3.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-500"
                 />
               </div>
@@ -853,8 +853,8 @@ export default function SupplierDashboard() {
                 <input
                   type="number"
                   placeholder="e.g. 1000"
-                  value={newVendor.initialLiters}
-                  onChange={(e) => setNewVendor({ ...newVendor, initialLiters: e.target.value })}
+                  value={newSupplier.initialLiters}
+                  onChange={(e) => setNewSupplier({ ...newSupplier, initialLiters: e.target.value })}
                   className="w-full h-[40px] px-3.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-indigo-500"
                 />
               </div>
@@ -863,7 +863,7 @@ export default function SupplierDashboard() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsVendorModalOpen(false)}
+                  onClick={() => setIsSupplierModalOpen(false)}
                   className="rounded-full h-[38px] px-4 text-xs font-semibold text-slate-600"
                 >
                   Cancel
@@ -872,7 +872,7 @@ export default function SupplierDashboard() {
                   type="submit"
                   className="rounded-full h-[38px] px-5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700"
                 >
-                  Save Vendor
+                  Save Supplier
                 </Button>
               </div>
             </form>

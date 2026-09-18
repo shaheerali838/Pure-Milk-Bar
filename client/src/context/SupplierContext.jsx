@@ -96,6 +96,7 @@ export function SupplierProvider({ children }) {
       totalSourced: parseFloat(newSupplierData.totalSourced) || 0,
       totalPayout: parseFloat(newSupplierData.totalPayout) || 0,
       balanceDue: parseFloat(newSupplierData.balanceDue) || 0,
+      initialBalanceDue: parseFloat(newSupplierData.balanceDue) || 0,
       status: newSupplierData.status || 'Active',
       createdAt: new Date().toISOString().split('T')[0],
     };
@@ -196,10 +197,6 @@ export function SupplierProvider({ children }) {
       notes: note || `Disbursed payout of Rs. ${numAmount.toLocaleString()}`,
     };
     setDirectPayouts((prev) => [payoutRecord, ...prev]);
-
-    if (settleAllBatchesForSupplier) {
-      settleAllBatchesForSupplier(target.id, target.name);
-    }
   };
 
   // 10. DYNAMIC ENRICHMENT: Calculate Live Sourced, Payout, and Balance Due per Supplier
@@ -259,19 +256,27 @@ export function SupplierProvider({ children }) {
         return sum + (parseFloat(b.totalCost) || (qty * rate));
       }, 0);
 
-      // Paid slips value
+      // Paid slips value using actual paidAmount
       const slipsPaid = matchedBatches.reduce((sum, b) => {
         const qty = parseFloat(b.quantity) || 0;
         const rate = parseFloat(b.ratePerLiter) || supRate;
         const cost = parseFloat(b.totalCost) || (qty * rate);
+        if (b.paidAmount !== undefined && b.paidAmount !== '') {
+          return sum + Math.min(cost, Math.max(0, parseFloat(b.paidAmount) || 0));
+        }
         if (b.settlement === 'Paid') return sum + cost;
         if (b.settlement === 'Partial') return sum + (cost * 0.5);
         return sum;
       }, 0);
 
-      const pendingBatches = matchedBatches.filter((b) => b.settlement !== 'Paid');
+      const pendingBatches = matchedBatches.filter((b) => {
+        if (b.pendingAmount !== undefined) return parseFloat(b.pendingAmount) > 0;
+        return b.settlement !== 'Paid';
+      });
+
+      const initialDue = parseFloat(sup.initialBalanceDue || 0);
       const totalPayout = Math.round(slipsPaid + manualPaid);
-      const balanceDue = Math.max(0, Math.round(grossProcuredValue - totalPayout));
+      const balanceDue = Math.max(0, Math.round(initialDue + grossProcuredValue - totalPayout));
 
       return {
         ...sup,
@@ -288,17 +293,20 @@ export function SupplierProvider({ children }) {
 
   // 11. Dynamic Summary Totals
   const totals = useMemo(() => {
-    const totalVendors = enrichedSuppliers.length;
-    const activeVendors = enrichedSuppliers.filter((s) => s.status === 'Active').length;
-    const inactiveVendors = enrichedSuppliers.filter((s) => s.status === 'Inactive').length;
+    const totalSuppliers = enrichedSuppliers.length;
+    const activeSuppliers = enrichedSuppliers.filter((s) => s.status === 'Active').length;
+    const inactiveSuppliers = enrichedSuppliers.filter((s) => s.status === 'Inactive').length;
     const totalSourcedLiters = enrichedSuppliers.reduce((sum, s) => sum + (s.totalSourced || 0), 0);
     const totalPayouts = enrichedSuppliers.reduce((sum, s) => sum + (s.totalPayout || 0), 0);
     const outstandingBalances = enrichedSuppliers.reduce((sum, s) => sum + (s.balanceDue || 0), 0);
 
     return {
-      totalVendors,
-      activeVendors,
-      inactiveVendors,
+      totalSuppliers,
+      activeSuppliers,
+      inactiveSuppliers,
+      totalVendors: totalSuppliers,
+      activeVendors: activeSuppliers,
+      inactiveVendors: inactiveSuppliers,
       totalSourcedLiters: parseFloat(totalSourcedLiters.toFixed(1)),
       totalPayouts: Math.round(totalPayouts),
       outstandingBalances: Math.round(outstandingBalances),

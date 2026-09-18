@@ -17,6 +17,8 @@ const DEFAULT_INTAKE_RECORDS = [
     quantity: 45.0,
     ratePerLiter: 230,
     totalCost: 10350,
+    paidAmount: 10350,
+    pendingAmount: 0,
     fat: 6.8,
     lr: 29.5,
     snf: 9.07,
@@ -35,6 +37,8 @@ const DEFAULT_INTAKE_RECORDS = [
     quantity: 65.0,
     ratePerLiter: 225,
     totalCost: 14625,
+    paidAmount: 0,
+    pendingAmount: 14625,
     fat: 4.2,
     lr: 28.5,
     snf: 8.52,
@@ -53,6 +57,8 @@ const DEFAULT_INTAKE_RECORDS = [
     quantity: 50.0,
     ratePerLiter: 228,
     totalCost: 11400,
+    paidAmount: 11400,
+    pendingAmount: 0,
     fat: 5.1,
     lr: 29.0,
     snf: 8.87,
@@ -71,6 +77,8 @@ const DEFAULT_INTAKE_RECORDS = [
     quantity: 40.0,
     ratePerLiter: 230,
     totalCost: 9200,
+    paidAmount: 9200,
+    pendingAmount: 0,
     fat: 6.7,
     lr: 29.2,
     snf: 8.97,
@@ -89,6 +97,8 @@ const DEFAULT_INTAKE_RECORDS = [
     quantity: 55.0,
     ratePerLiter: 225,
     totalCost: 12375,
+    paidAmount: 0,
+    pendingAmount: 12375,
     fat: 4.3,
     lr: 28.8,
     snf: 8.62,
@@ -107,6 +117,8 @@ const DEFAULT_INTAKE_RECORDS = [
     quantity: 48.0,
     ratePerLiter: 228,
     totalCost: 10944,
+    paidAmount: 10944,
+    pendingAmount: 0,
     fat: 5.0,
     lr: 29.1,
     snf: 8.88,
@@ -125,6 +137,8 @@ const DEFAULT_INTAKE_RECORDS = [
     quantity: 42.0,
     ratePerLiter: 230,
     totalCost: 9660,
+    paidAmount: 4830,
+    pendingAmount: 4830,
     fat: 6.6,
     lr: 29.0,
     snf: 8.90,
@@ -170,6 +184,26 @@ export function IntakeProvider({ children }) {
     const lrVal = parseFloat(newRecord.lr) || 28.0;
     const snfVal = parseFloat(((lrVal / 4) + (0.25 * fatVal) + 0.35).toFixed(2));
 
+    let paid = 0;
+    if (newRecord.paidAmount !== undefined && newRecord.paidAmount !== '') {
+      paid = parseFloat(newRecord.paidAmount) || 0;
+    } else if (newRecord.settlement === 'Paid') {
+      paid = cost;
+    } else if (newRecord.settlement === 'Partial') {
+      paid = parseFloat((cost * 0.5).toFixed(2));
+    }
+    paid = Math.min(cost, Math.max(0, paid));
+    const pending = parseFloat(Math.max(0, cost - paid).toFixed(2));
+
+    let settlement = newRecord.settlement || 'Pending';
+    if (cost > 0 && pending <= 0) {
+      settlement = 'Paid';
+    } else if (paid > 0 && pending > 0) {
+      settlement = 'Partial';
+    } else if (paid === 0) {
+      settlement = 'Pending';
+    }
+
     const entry = {
       id: nextId,
       date: newRecord.date || new Date().toISOString().split('T')[0],
@@ -181,10 +215,12 @@ export function IntakeProvider({ children }) {
       quantity: qty,
       ratePerLiter: rate,
       totalCost: cost,
+      paidAmount: paid,
+      pendingAmount: pending,
       fat: fatVal,
       lr: lrVal,
       snf: snfVal,
-      settlement: newRecord.settlement || 'Pending',
+      settlement,
       receivedBy: newRecord.receivedBy || 'Staff Receiver',
       notes: newRecord.notes || '',
     };
@@ -207,6 +243,26 @@ export function IntakeProvider({ children }) {
       const lrVal = parseFloat(rec.lr) || 28.0;
       const snfVal = parseFloat(((lrVal / 4) + (0.25 * fatVal) + 0.35).toFixed(2));
 
+      let paid = 0;
+      if (rec.paidAmount !== undefined && rec.paidAmount !== '') {
+        paid = parseFloat(rec.paidAmount) || 0;
+      } else if (rec.settlement === 'Paid') {
+        paid = cost;
+      } else if (rec.settlement === 'Partial') {
+        paid = parseFloat((cost * 0.5).toFixed(2));
+      }
+      paid = Math.min(cost, Math.max(0, paid));
+      const pending = parseFloat(Math.max(0, cost - paid).toFixed(2));
+
+      let settlement = rec.settlement || 'Pending';
+      if (cost > 0 && pending <= 0) {
+        settlement = 'Paid';
+      } else if (paid > 0 && pending > 0) {
+        settlement = 'Partial';
+      } else if (paid === 0) {
+        settlement = 'Pending';
+      }
+
       return {
         id: nextId,
         date: rec.date || new Date().toISOString().split('T')[0],
@@ -218,10 +274,12 @@ export function IntakeProvider({ children }) {
         quantity: qty,
         ratePerLiter: rate,
         totalCost: cost,
+        paidAmount: paid,
+        pendingAmount: pending,
         fat: fatVal,
         lr: lrVal,
         snf: snfVal,
-        settlement: rec.settlement || 'Pending',
+        settlement,
         receivedBy: rec.receivedBy || 'Shift Supervisor',
         notes: rec.notes || 'Bulk shift entry',
       };
@@ -254,12 +312,37 @@ export function IntakeProvider({ children }) {
               : item.lr;
           const snfVal = parseFloat(((lrVal / 4) + (0.25 * fatVal) + 0.35).toFixed(2));
 
+          let paid = item.paidAmount !== undefined ? item.paidAmount : (item.settlement === 'Paid' ? cost : item.settlement === 'Partial' ? cost * 0.5 : 0);
+          if (updatedFields.paidAmount !== undefined && updatedFields.paidAmount !== '') {
+            paid = parseFloat(updatedFields.paidAmount) || 0;
+          } else if (updatedFields.settlement === 'Paid') {
+            paid = cost;
+          } else if (updatedFields.settlement === 'Pending') {
+            paid = 0;
+          } else if (updatedFields.settlement === 'Partial' && paid === 0) {
+            paid = parseFloat((cost * 0.5).toFixed(2));
+          }
+          paid = Math.min(cost, Math.max(0, paid));
+          const pending = parseFloat(Math.max(0, cost - paid).toFixed(2));
+
+          let settlement = updatedFields.settlement || item.settlement || 'Pending';
+          if (cost > 0 && pending <= 0) {
+            settlement = 'Paid';
+          } else if (paid > 0 && pending > 0) {
+            settlement = 'Partial';
+          } else if (paid === 0) {
+            settlement = 'Pending';
+          }
+
           return {
             ...item,
             ...updatedFields,
             quantity: qty,
             ratePerLiter: rate,
             totalCost: cost,
+            paidAmount: paid,
+            pendingAmount: pending,
+            settlement,
             fat: fatVal,
             lr: lrVal,
             snf: snfVal,
@@ -273,7 +356,20 @@ export function IntakeProvider({ children }) {
   // 4. Update settlement status for a single batch ('Paid' | 'Pending' | 'Partial')
   const updateBatchSettlement = (id, newStatus) => {
     setIntakeLogs((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, settlement: newStatus } : item))
+      prev.map((item) => {
+        if (item.id === id) {
+          const cost = item.totalCost || 0;
+          const paid = newStatus === 'Paid' ? cost : newStatus === 'Partial' ? cost * 0.5 : 0;
+          const pending = Math.max(0, cost - paid);
+          return {
+            ...item,
+            settlement: newStatus,
+            paidAmount: paid,
+            pendingAmount: pending,
+          };
+        }
+        return item;
+      })
     );
   };
 
@@ -290,7 +386,13 @@ export function IntakeProvider({ children }) {
             supplierName.toLowerCase().includes(item.supplierName.toLowerCase()));
 
         if ((matchesId || matchesName) && item.settlement !== 'Paid') {
-          return { ...item, settlement: 'Paid' };
+          const cost = item.totalCost || 0;
+          return {
+            ...item,
+            settlement: 'Paid',
+            paidAmount: cost,
+            pendingAmount: 0,
+          };
         }
         return item;
       })
@@ -319,8 +421,14 @@ export function IntakeProvider({ children }) {
     const totalIntakeSpend = intakeLogs.reduce((sum, item) => sum + (item.totalCost || 0), 0);
     const avgPurchaseRate = totalProcuredVolume > 0 ? totalIntakeSpend / totalProcuredVolume : 0;
     const pendingSettlements = intakeLogs
-      .filter((item) => item.settlement !== 'Paid')
-      .reduce((sum, item) => sum + (item.totalCost || 0), 0);
+      .reduce((sum, item) => {
+        if (item.pendingAmount !== undefined) {
+          return sum + (parseFloat(item.pendingAmount) || 0);
+        }
+        if (item.settlement === 'Paid') return sum;
+        if (item.settlement === 'Partial') return sum + ((item.totalCost || 0) * 0.5);
+        return sum + (item.totalCost || 0);
+      }, 0);
     const morningVolume = intakeLogs
       .filter((item) => item.shift === 'Morning')
       .reduce((sum, item) => sum + (item.quantity || 0), 0);

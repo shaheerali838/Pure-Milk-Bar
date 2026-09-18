@@ -10,7 +10,7 @@ import {
  * - Header: "Supplier Milk Intake Batch Details" with Close 'X' button
  * - Royal Blue Top Banner: Total Purchase Net (Rs. 6,900), Volume (30.0 Liters @ Rs. 230/L), Shift Pill, Date
  * - 10-Row Key-Value Details Card:
- *   1. Supplier / Vendor
+ *   1. Supplier Name
  *   2. Intake Date
  *   3. Shift Timing
  *   4. Milk Quantity
@@ -33,7 +33,7 @@ export default function IntakeDetail({ item, onClose, onBack }) {
   const fat = parseFloat(item.fat) || 0;
   const lr = parseFloat(item.lr) || 0;
 
-  // Clean vendor name (e.g. "Supplier A (Ahmad Farms)" -> "Ahmad Farms")
+  // Clean supplier name (e.g. "Supplier A (Ahmad Farms)" -> "Ahmad Farms")
   const rawName = item.supplierName || 'Ahmad Farms';
   const supplierDisplayName = rawName.includes('(')
     ? rawName.replace(/Supplier\s+[A-Z0-9-]+\s*\((.*?)\)/i, '$1')
@@ -95,9 +95,9 @@ export default function IntakeDetail({ item, onClose, onBack }) {
 
           {/* 10-Row Key-Value Details Card */}
           <div className="bg-slate-50/50 rounded-2xl border border-slate-200/80 divide-y divide-slate-100 px-4 py-1 text-xs">
-            {/* Row 1: Supplier / Vendor */}
+            {/* Row 1: Supplier */}
             <div className="flex items-center justify-between py-2.5">
-              <span className="text-slate-500 font-medium">Supplier / Vendor</span>
+              <span className="text-slate-500 font-medium">Supplier</span>
               <span className="font-bold text-slate-900 font-display text-sm">
                 {supplierDisplayName}
               </span>
@@ -162,12 +162,36 @@ export default function IntakeDetail({ item, onClose, onBack }) {
             {/* Row 9: Payment Status */}
             <div className="flex items-center justify-between py-2.5">
               <span className="text-slate-500 font-medium">Payment Status</span>
-              <span className="px-3 py-0.5 rounded font-semibold text-xs bg-slate-100 text-slate-700 border border-slate-200">
-                {item.settlement || 'Paid'}
+              <span className={`px-3 py-0.5 rounded-full font-semibold text-xs ${
+                item.settlement === 'Paid'
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : item.settlement === 'Partial'
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'bg-amber-100 text-amber-800'
+              }`}>
+                {item.settlement || 'Pending'}
               </span>
             </div>
 
-            {/* Row 10: Receiving Lab Inspector */}
+            {/* Row 10: Paid Amount */}
+            <div className="flex items-center justify-between py-2.5">
+              <span className="text-slate-500 font-medium">Amount Paid by Owner</span>
+              <span className="font-bold text-emerald-700 font-mono text-xs">
+                Rs. {(item.paidAmount !== undefined ? item.paidAmount : (item.settlement === 'Paid' ? cost : item.settlement === 'Partial' ? cost * 0.5 : 0)).toLocaleString()}
+              </span>
+            </div>
+
+            {/* Row 11: Remaining Pending */}
+            <div className="flex items-center justify-between py-2.5">
+              <span className="text-slate-500 font-medium">Remaining Pending for Delivery</span>
+              <span className={`font-bold font-mono text-xs ${
+                (item.pendingAmount !== undefined ? item.pendingAmount : (item.settlement === 'Paid' ? 0 : cost)) > 0 ? 'text-amber-700' : 'text-emerald-700'
+              }`}>
+                Rs. {(item.pendingAmount !== undefined ? item.pendingAmount : (item.settlement === 'Paid' ? 0 : item.settlement === 'Partial' ? cost * 0.5 : cost)).toLocaleString()}
+              </span>
+            </div>
+
+            {/* Row 12: Receiving Lab Inspector */}
             <div className="flex items-center justify-between py-2.5">
               <span className="text-slate-500 font-medium">Receiving Lab Inspector</span>
               <span className="font-bold text-slate-800">
