@@ -16,16 +16,29 @@ export default function StaffDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState('all');
 
+  // Derive latest staff data from staffList context in real-time
+  const currentSelectedStaff = selectedStaff
+    ? staffList.find(
+        (s) =>
+          String(s.id) === String(selectedStaff.id) ||
+          (s.name && selectedStaff.name && s.name.toLowerCase().trim() === selectedStaff.name.toLowerCase().trim())
+      ) || selectedStaff
+    : null;
+
+  const activeStaffCount = staffList.filter(
+    (s) => s.status !== 'Inactive' && s.status !== 'Off Duty' && s.active !== false
+  ).length;
+
   // 1. Full-Width Add Staff View (Opens beside the ERP sidebar taking full space)
   if (currentView === 'add') {
     return <StaffAdd onBack={() => setCurrentView('list')} />;
   }
 
   // 2. Full-Width Edit Staff View (Prefilled form taking full space)
-  if (currentView === 'edit' && selectedStaff) {
+  if (currentView === 'edit' && currentSelectedStaff) {
     return (
       <StaffAdd
-        editingStaff={selectedStaff}
+        editingStaff={currentSelectedStaff}
         onBack={() => {
           setSelectedStaff(null);
           setCurrentView('list');
@@ -35,10 +48,10 @@ export default function StaffDashboard() {
   }
 
   // 3. Full-Width Staff Detail View (Taking full space)
-  if (currentView === 'detail' && selectedStaff) {
+  if (currentView === 'detail' && currentSelectedStaff) {
     return (
       <StaffDetail
-        staff={selectedStaff}
+        staff={currentSelectedStaff}
         onBack={() => {
           setSelectedStaff(null);
           setCurrentView('list');
@@ -103,7 +116,7 @@ export default function StaffDashboard() {
             </h1>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Active Roster
+              {activeStaffCount} / {staffList.length} Active On Duty
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -194,6 +207,7 @@ export default function StaffDashboard() {
                   <th className="py-3 px-4">Staff ID</th>
                   <th className="py-3 px-4">Name</th>
                   <th className="py-3 px-4">Role</th>
+                  <th className="py-3 px-4">Duty Status</th>
                   <th className="py-3 px-4">Shift</th>
                   <th className="py-3 px-4">Contact</th>
                   <th className="py-3 px-4">CNIC</th>
@@ -203,67 +217,91 @@ export default function StaffDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                {filteredStaff.map((staff) => (
-                  <tr
-                    key={staff.id}
-                    onClick={() => {
-                      setSelectedStaff(staff);
-                      setCurrentView('detail');
-                    }}
-                    className="hover:bg-emerald-50/30 transition duration-150 cursor-pointer"
-                  >
-                    <td className="py-3 px-4 font-mono font-bold text-slate-900">
-                      {staff.id}
-                    </td>
+                {filteredStaff.map((staff) => {
+                  const isActive =
+                    staff.status !== 'Inactive' &&
+                    staff.status !== 'Off Duty' &&
+                    staff.active !== false;
 
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 font-display">
-                          {staff.name ? staff.name.charAt(0).toUpperCase() : 'S'}
+                  return (
+                    <tr
+                      key={staff.id}
+                      onClick={() => {
+                        setSelectedStaff(staff);
+                        setCurrentView('detail');
+                      }}
+                      className="hover:bg-emerald-50/30 transition duration-150 cursor-pointer"
+                    >
+                      <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                        {staff.id}
+                      </td>
+
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 font-display">
+                            {staff.name ? staff.name.charAt(0).toUpperCase() : 'S'}
+                          </div>
+                          <span className="font-bold text-slate-900">{staff.name}</span>
                         </div>
-                        <span className="font-bold text-slate-900">{staff.name}</span>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="py-3 px-4">
-                      <span className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded-md border ${getRoleBadgeStyle(staff.role)}`}>
-                        {staff.role}
-                      </span>
-                    </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded-md border ${getRoleBadgeStyle(
+                            staff.role
+                          )}`}
+                        >
+                          {staff.role}
+                        </span>
+                      </td>
 
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1 text-slate-600 font-medium">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        <span>{staff.shift || 'Morning'}</span>
-                      </div>
-                    </td>
+                      <td className="py-3 px-4">
+                        {isActive ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Active On Duty
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                            Off Duty
+                          </span>
+                        )}
+                      </td>
 
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1 font-mono text-slate-800 font-bold tabular">
-                        <Phone className="w-3 h-3 text-slate-400" />
-                        <span>{staff.mobile || '—'}</span>
-                      </div>
-                      {staff.email && (
-                        <p className="text-[10px] text-slate-400 truncate max-w-[150px]">
-                          {staff.email}
-                        </p>
-                      )}
-                    </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1 text-slate-600 font-medium">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          <span>{staff.shift || 'Morning'}</span>
+                        </div>
+                      </td>
 
-                    <td className="py-3 px-4 font-mono text-slate-600 tabular">
-                      {staff.cnic || '—'}
-                    </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1 font-mono text-slate-800 font-bold tabular">
+                          <Phone className="w-3 h-3 text-slate-400" />
+                          <span>{staff.mobile || '—'}</span>
+                        </div>
+                        {staff.email && (
+                          <p className="text-[10px] text-slate-400 truncate max-w-[150px]">
+                            {staff.email}
+                          </p>
+                        )}
+                      </td>
 
-                    <td className="py-3 px-4 font-mono font-black text-slate-900 tabular">
-                      Rs. {Number(staff.monthlySalary || 0).toLocaleString()}
-                    </td>
+                      <td className="py-3 px-4 font-mono text-slate-600 tabular">
+                        {staff.cnic || '—'}
+                      </td>
 
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1 text-slate-600 font-medium truncate max-w-[160px]">
-                        <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                        <span className="truncate">{staff.route || 'Not Assigned'}</span>
-                      </div>
-                    </td>
+                      <td className="py-3 px-4 font-mono font-black text-slate-900 tabular">
+                        Rs. {Number(staff.monthlySalary || 0).toLocaleString()}
+                      </td>
+
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1 text-slate-600 font-medium truncate max-w-[160px]">
+                          <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span className="truncate">{staff.route || 'Not Assigned'}</span>
+                        </div>
+                      </td>
 
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
@@ -299,8 +337,9 @@ export default function StaffDashboard() {
                         </button>
                       </div>
                     </td>
-                  </tr>
-                ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

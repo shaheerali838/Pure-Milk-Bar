@@ -6,6 +6,7 @@ import {
   Banknote,
   Smartphone,
   CreditCard,
+  Fuel,
 } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 import FuelLogForm from '@/features/deliveries/components/FuelLogForm';
@@ -21,8 +22,8 @@ export default function POSDeliverySection() {
     setCustomRiderName,
     dropAddress,
     setDropAddress,
-    collectEmptyBottles,
-    setCollectEmptyBottles,
+    showFuelLog,
+    setShowFuelLog,
     linkedCustomerId,
     setLinkedCustomerId,
     activeCustomer,
@@ -30,6 +31,7 @@ export default function POSDeliverySection() {
     paymentMethod = 'cod',
     setPaymentMethod,
     fuelLog,
+    setFuelLog,
     updateFuelLog,
   } = usePOSContext();
 
@@ -77,7 +79,7 @@ export default function POSDeliverySection() {
                   <option value="">— No Rider (Optional) —</option>
                   {riders.map((r) => (
                     <option key={r.id} value={r.id}>
-                      {r.vehicleType === 'Motorbike' ? '🛵' : '🚲'} {r.name} ({r.phone})
+                      {r.vehicleType === 'Motorbike' ? '🛵' : '🚲'} {r.name} ({r.phone || 'No phone'}){r.active === false ? ' • [OFF DUTY]' : ''}
                     </option>
                   ))}
                 </select>
@@ -107,27 +109,39 @@ export default function POSDeliverySection() {
             />
           </div>
 
-          <div className="flex items-center justify-between pt-0.5">
-            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-600 font-medium">
+          <div className="pt-0.5">
+            <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 select-none hover:text-blue-700 transition">
               <input
                 type="checkbox"
-                checked={collectEmptyBottles}
-                onChange={(e) => setCollectEmptyBottles(e.target.checked)}
-                className="rounded text-blue-600 focus:ring-blue-500"
+                checked={showFuelLog}
+                onChange={(e) => {
+                  setShowFuelLog(e.target.checked);
+                  if (!e.target.checked && setFuelLog) {
+                    setFuelLog({ liters: '', amount: '', distanceKm: '', notes: '' });
+                  }
+                }}
+                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
-              <span>Collect empty bottles upon delivery</span>
+              <span className="flex items-center gap-1.5">
+                <Fuel className="w-3.5 h-3.5 text-amber-600" />
+                <span>Fuel Log (Optional)</span>
+                <span className="text-[10px] font-normal text-slate-400">(Record vehicle fuel / distance)</span>
+              </span>
             </label>
           </div>
 
-          <div className="p-2.5 bg-white rounded-lg border border-slate-200/90 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">
-                Fuel Log (Optional)
-              </span>
-              <span className="text-[10px] text-slate-400">Record vehicle expense</span>
+          {showFuelLog && (
+            <div className="p-2.5 bg-white rounded-lg border border-slate-200/90 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider flex items-center gap-1">
+                  <Fuel className="w-3 h-3 text-amber-600" />
+                  Fuel Log Details
+                </span>
+                <span className="text-[10px] text-slate-400">Record vehicle expense</span>
+              </div>
+              <FuelLogForm compact values={fuelLog} onChange={updateFuelLog} />
             </div>
-            <FuelLogForm compact values={fuelLog} onChange={updateFuelLog} />
-          </div>
+          )}
         </div>
       )}
 
@@ -182,7 +196,7 @@ export default function POSDeliverySection() {
                 <option value="">— No Rider (Optional) —</option>
                 {riders.map((r) => (
                   <option key={r.id} value={r.id}>
-                    {r.vehicleType === 'Motorbike' ? '🛵' : '🚲'} {r.name} ({r.phone})
+                    {r.vehicleType === 'Motorbike' ? '🛵' : '🚲'} {r.name} ({r.phone || 'No phone'}){r.active === false ? ' • [OFF DUTY]' : ''}
                   </option>
                 ))}
               </select>
@@ -190,19 +204,43 @@ export default function POSDeliverySection() {
             </div>
           </div>
 
-          <div className="p-2.5 bg-white rounded-lg border border-blue-100 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase text-blue-900 tracking-wider">
-                Fuel Log (Optional)
+          <div className="pt-0.5">
+            <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-blue-900 select-none hover:text-blue-700 transition">
+              <input
+                type="checkbox"
+                checked={showFuelLog}
+                onChange={(e) => {
+                  setShowFuelLog(e.target.checked);
+                  if (!e.target.checked && setFuelLog) {
+                    setFuelLog({ liters: '', amount: '', distanceKm: '', notes: '' });
+                  }
+                }}
+                className="w-4 h-4 rounded border-blue-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+              <span className="flex items-center gap-1.5">
+                <Fuel className="w-3.5 h-3.5 text-amber-600" />
+                <span>Fuel Log (Optional)</span>
+                <span className="text-[10px] font-normal text-slate-500">(Record vehicle fuel / distance)</span>
               </span>
-              {activeCustomer?.area && (
-                <span className="text-[10px] text-slate-500">
-                  Estimated distance based on {activeCustomer.area} — adjust if needed
-                </span>
-              )}
-            </div>
-            <FuelLogForm compact values={fuelLog} onChange={updateFuelLog} />
+            </label>
           </div>
+
+          {showFuelLog && (
+            <div className="p-2.5 bg-white rounded-lg border border-blue-100 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase text-blue-900 tracking-wider flex items-center gap-1">
+                  <Fuel className="w-3 h-3 text-amber-600" />
+                  Fuel Log Details
+                </span>
+                {activeCustomer?.area && (
+                  <span className="text-[10px] text-slate-500">
+                    Estimated distance based on {activeCustomer.area} — adjust if needed
+                  </span>
+                )}
+              </div>
+              <FuelLogForm compact values={fuelLog} onChange={updateFuelLog} />
+            </div>
+          )}
         </div>
       )}
 
