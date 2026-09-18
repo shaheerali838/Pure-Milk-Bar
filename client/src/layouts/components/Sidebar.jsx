@@ -11,6 +11,7 @@ import {
   Bike,
   Wallet,
   Package,
+  Sparkles,
 } from "lucide-react";
 
 import { reconciliationLinks } from '@/components/common/Reconciliation_links';
@@ -308,6 +309,27 @@ export default function Sidebar() {
             })}
           </nav>
         </div>
+      </div>
+
+      <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+        <NavLink
+          to="/landing"
+          className={({ isActive }) =>
+            `w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+              isActive
+                ? "bg-slate-900 text-emerald-400 border-slate-800 shadow-xs"
+                : "bg-white text-slate-700 hover:text-emerald-700 hover:bg-emerald-50/60 border-slate-200"
+            }`
+          }
+        >
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+            <span>ERP Landing Page</span>
+          </div>
+          <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+            v2.4
+          </span>
+        </NavLink>
       </div>
     </aside>
   );

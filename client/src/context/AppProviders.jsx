@@ -40,7 +40,7 @@ export const AppProviders = ({ children }) => {
     (accumulatedProviders, CurrentProvider) => (
       <CurrentProvider>{accumulatedProviders}</CurrentProvider>
     ),
-    children
+    children,
   );
 };
 
