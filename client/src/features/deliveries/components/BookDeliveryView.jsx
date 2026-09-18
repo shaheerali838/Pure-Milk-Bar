@@ -61,6 +61,18 @@ export default function BookDeliveryView({ onBack, onComplete }) {
     }
   }, [rawCustomers, formData.customerId]);
 
+  useEffect(() => {
+    if (staffList.length > 0 && (!formData.riderNameSnapshot || formData.riderNameSnapshot === 'Shahid Rider')) {
+      const firstStaff = staffList[0];
+      setFormData((prev) => ({
+        ...prev,
+        riderNameSnapshot: firstStaff.name,
+        staffType: firstStaff.type === 'WALKING' ? 'WALKING_BOY' : 'MOTORCYCLE_RIDER',
+        route: firstStaff.route || prev.route,
+      }));
+    }
+  }, [staffList]);
+
   const handleCustomerChange = (selectedCustId) => {
     const selected = rawCustomers.find((c) => String(c.id) === String(selectedCustId));
     if (selected) {

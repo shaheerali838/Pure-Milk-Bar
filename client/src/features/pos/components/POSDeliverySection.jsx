@@ -8,6 +8,7 @@ import {
   CreditCard,
 } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
+import FuelLogForm from '@/features/deliveries/components/FuelLogForm';
 
 export default function POSDeliverySection() {
   const {
@@ -28,6 +29,8 @@ export default function POSDeliverySection() {
     registeredCustomers = [],
     paymentMethod = 'cod',
     setPaymentMethod,
+    fuelLog,
+    updateFuelLog,
   } = usePOSContext();
 
   return (
@@ -71,6 +74,7 @@ export default function POSDeliverySection() {
                   onChange={(e) => setSelectedRiderId(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 pr-7 appearance-none"
                 >
+                  <option value="">— No Rider (Optional) —</option>
                   {riders.map((r) => (
                     <option key={r.id} value={r.id}>
                       {r.vehicleType === 'Motorbike' ? '🛵' : '🚲'} {r.name} ({r.phone})
@@ -103,7 +107,7 @@ export default function POSDeliverySection() {
             />
           </div>
 
-          <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center justify-between pt-0.5">
             <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-600 font-medium">
               <input
                 type="checkbox"
@@ -113,6 +117,16 @@ export default function POSDeliverySection() {
               />
               <span>Collect empty bottles upon delivery</span>
             </label>
+          </div>
+
+          <div className="p-2.5 bg-white rounded-lg border border-slate-200/90 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">
+                Fuel Log (Optional)
+              </span>
+              <span className="text-[10px] text-slate-400">Record vehicle expense</span>
+            </div>
+            <FuelLogForm compact values={fuelLog} onChange={updateFuelLog} />
           </div>
         </div>
       )}
@@ -157,19 +171,37 @@ export default function POSDeliverySection() {
 
           <div>
             <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-              Assigned Rider:
+              Assigned Rider (Optional):
             </label>
-            <select
-              value={selectedRiderId}
-              onChange={(e) => setSelectedRiderId(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500"
-            >
-              {riders.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.vehicleType === 'Motorbike' ? '🛵' : '🚲'} {r.name} ({r.phone})
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={selectedRiderId}
+                onChange={(e) => setSelectedRiderId(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 pr-7 appearance-none"
+              >
+                <option value="">— No Rider (Optional) —</option>
+                {riders.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.vehicleType === 'Motorbike' ? '🛵' : '🚲'} {r.name} ({r.phone})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-2.5 pointer-events-none" />
+            </div>
+          </div>
+
+          <div className="p-2.5 bg-white rounded-lg border border-blue-100 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase text-blue-900 tracking-wider">
+                Fuel Log (Optional)
+              </span>
+              {activeCustomer?.area && (
+                <span className="text-[10px] text-slate-500">
+                  Estimated distance based on {activeCustomer.area} — adjust if needed
+                </span>
+              )}
+            </div>
+            <FuelLogForm compact values={fuelLog} onChange={updateFuelLog} />
           </div>
         </div>
       )}

@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { MapPin, Users, Fuel, Printer } from 'lucide-react';
+import { MapPin, Users, Printer } from 'lucide-react';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
 import DeliveryStats from '../components/DeliveryStats';
 import DropPoints from '../components/DropPoints';
 import FleetAndStaff from '../components/FleetAndStaff';
-import FuelLog from '../components/FuelLog';
 import DeliveryDetailView from '../components/DeliveryDetailView';
 import RegisterStaffView from '../components/RegisterStaffView';
 import StaffDetailView from '../components/StaffDetailView';
-import LogFuelView from '../components/LogFuelView';
 
 export default function Delivery() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -18,7 +16,8 @@ export default function Delivery() {
   const { deliveries = [] } = useDeliveryContext();
   const { staffList = [] } = useDeliveryStaffContext();
 
-  const tabParam = searchParams.get('tab') || 'drop-points';
+  const rawTabParam = searchParams.get('tab') || 'drop-points';
+  const tabParam = rawTabParam === 'fuel' ? 'drop-points' : rawTabParam;
   const viewParam = searchParams.get('view') || 'main';
   const idParam = searchParams.get('id');
 
@@ -56,11 +55,12 @@ export default function Delivery() {
   };
 
   const handleTabChange = (newTab) => {
-    setActiveTab(newTab);
+    const safeTab = newTab === 'fuel' ? 'drop-points' : newTab;
+    setActiveTab(safeTab);
     setCurrentView('main');
     setViewingDelivery(null);
     setViewingStaff(null);
-    updateUrl(newTab, 'main');
+    updateUrl(safeTab, 'main');
   };
 
   const handlePrintSheet = () => {
@@ -118,21 +118,6 @@ export default function Delivery() {
     );
   }
 
-  if (currentView === 'logFuel') {
-    return (
-      <LogFuelView
-        onBack={() => {
-          setCurrentView('main');
-          updateUrl('fuel', 'main');
-        }}
-        onComplete={() => {
-          setCurrentView('main');
-          updateUrl('fuel', 'main');
-        }}
-      />
-    );
-  }
-
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-0.5 no-print">
@@ -141,7 +126,7 @@ export default function Delivery() {
             Doorstep Deliveries
           </h3>
           <p className="text-xs text-slate-500">
-            Manage daily milk delivery routes, fleet staff, and fuel logs
+            Manage daily milk delivery routes and fleet staff
           </p>
         </div>
       </div>
@@ -175,20 +160,7 @@ export default function Delivery() {
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            Fleet & Staff
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleTabChange('fuel')}
-            className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all border ${
-              activeTab === 'fuel'
-                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                : 'bg-blue-50/80 text-blue-800 border-blue-200/80 hover:bg-blue-100 hover:text-blue-900'
-            }`}
-          >
-            <Fuel className="w-3.5 h-3.5" />
-            Fuel Log
+            Fleet &amp; Staff
           </button>
         </div>
 
@@ -228,14 +200,6 @@ export default function Delivery() {
               setViewingStaff(staff);
               setCurrentView('viewStaff');
               updateUrl('fleet', 'viewStaff', staff.id);
-            }}
-          />
-        )}
-        {activeTab === 'fuel' && (
-          <FuelLog
-            onLogFuel={() => {
-              setCurrentView('logFuel');
-              updateUrl('fuel', 'logFuel');
             }}
           />
         )}
