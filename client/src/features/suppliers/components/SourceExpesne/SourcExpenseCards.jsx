@@ -59,40 +59,39 @@ export default function SourcExpenseCards() {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
       {cards.map((card) => {
         const Icon = card.icon;
+        const colorHex = card.color === 'text-emerald-600' ? '#059669' :
+                         card.color === 'text-blue-600' ? '#2563eb' :
+                         card.color === 'text-indigo-600' ? '#4f46e5' :
+                         card.color === 'text-amber-600' ? '#d97706' : '#64748b';
+                         
         return (
           <div
             key={card.title}
-            className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs transition-shadow"
+            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs"
+            style={{ borderTop: `3.5px solid ${colorHex}` }}
           >
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                {card.title}
-              </span>
+            <div className="flex items-start justify-between mb-1.5">
               <div
-                className={`w-8 h-8 rounded-xl ${card.bgColor} ${card.color} flex items-center justify-center shrink-0 shadow-2xs`}
+                className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs ${card.bgColor} ${card.color}`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-[15px] h-[15px]" />
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
+                  {card.badge}
+                </span>
               </div>
             </div>
 
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl font-extrabold text-slate-900 font-display tracking-tight">
+            <div>
+              <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
                 Rs. {card.amount.toLocaleString()}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-[11px]">
-              <span className="text-slate-500 font-medium truncate">
-                {card.subtitle}
-              </span>
-              <span
-                className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold ${card.badgeBg}`}
-              >
-                {card.badge}
-              </span>
+              </p>
+              <p className="text-xs font-bold text-slate-800">{card.title}</p>
+              <p className="text-[10px] font-medium text-slate-400 line-clamp-1">{card.subtitle}</p>
             </div>
           </div>
         );

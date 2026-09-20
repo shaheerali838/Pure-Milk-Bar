@@ -159,7 +159,7 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                   required
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="e.g. Muhammad Farooq"
+                  placeholder="Enter name"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
                 />
               </div>
@@ -211,7 +211,7 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                     name="mobile"
                     value={formData.mobile}
                     onChange={handleChange}
-                    placeholder="0300-1234567"
+                    placeholder="Enter phone number"
                     className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono"
                   />
                 </div>
@@ -337,7 +337,7 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                     name="route"
                     value={formData.route}
                     onChange={handleChange}
-                    placeholder="e.g. Model Town Block C, Shed 1"
+                    placeholder="Enter address"
                     className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition"
                   />
                 </div>

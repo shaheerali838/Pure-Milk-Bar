@@ -15,14 +15,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-/**
- * SupplierCardDetailModal
- * Renders a rich, interactive drilldown modal when clicking any summary card in Supplier Directory:
- * 1. 'vendors'  -> Registered Suppliers Breakdown
- * 2. 'sourced'  -> Total Procured Milk Volume Breakdown
- * 3. 'payouts'  -> Disbursed Supplier Payouts Breakdown
- * 4. 'balances' -> Outstanding Supplier Balances Due (with 1-click settle)
- */
+// Modal dialog for supplier directory summary card drilldown
 export default function SupplierCardDetailModal({
   cardType,
   onClose,
@@ -57,6 +50,13 @@ export default function SupplierCardDetailModal({
 
   // Modal configuration based on cardType
   const config = {
+    suppliers: {
+      title: 'Registered Supplier Directory Breakdown',
+      subtitle: `Viewing all ${totals.totalSuppliers || totals.totalVendors || suppliers.length} registered dairy farmers & collection centers`,
+      icon: Users,
+      color: '#009966',
+      badge: 'Total Suppliers',
+    },
     vendors: {
       title: 'Registered Supplier Directory Breakdown',
       subtitle: `Viewing all ${totals.totalSuppliers || totals.totalVendors || suppliers.length} registered dairy farmers & collection centers`,
@@ -146,7 +146,7 @@ export default function SupplierCardDetailModal({
 
         {/* 2. Top Summary KPI Pill Row */}
         <div className="p-4 bg-white border-b border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {cardType === 'vendors' && (
+          {(cardType === 'suppliers' || cardType === 'vendors') && (
             <>
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                 <span className="text-[11px] text-slate-500 font-medium block">Total Suppliers</span>
@@ -370,7 +370,7 @@ export default function SupplierCardDetailModal({
                     {/* Right: Metrics & Actions */}
                     <div className="flex items-center justify-between sm:justify-end gap-3.5 border-t sm:border-t-0 pt-2 sm:pt-0">
                       {/* Card Specific Numbers */}
-                      {cardType === 'vendors' && (
+                      {(cardType === 'suppliers' || cardType === 'vendors') && (
                         <div className="text-right">
                           <span className="text-[10px] text-slate-400 font-medium block">
                             Procured Volume

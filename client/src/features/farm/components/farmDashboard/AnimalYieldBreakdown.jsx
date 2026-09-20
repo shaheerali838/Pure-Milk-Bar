@@ -12,11 +12,20 @@ const parseYield = (val) => {
   return match ? parseFloat(match[0]) : 0;
 };
 
-export default function AnimalYieldBreakdown() {
+export default function AnimalYieldBreakdown({ onSelectAnimal }) {
   const { animals = [] } = useAnimalContext();
   const navigate = useNavigate();
 
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+
+  const handleAnimalClick = (animal) => {
+    const animalId = animal.id || animal.tag;
+    if (onSelectAnimal) {
+      onSelectAnimal(animalId);
+    } else {
+      navigate(`/farm/animals/detail/${animalId}`);
+    }
+  };
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
@@ -78,7 +87,7 @@ export default function AnimalYieldBreakdown() {
               return (
                 <tr
                   key={animal.id || animal.tag}
-                  onClick={() => navigate(`/farm/animals/detail/${animal.id || animal.tag}`)}
+                  onClick={() => handleAnimalClick(animal)}
                   className="hover:bg-emerald-50/50 transition-colors font-medium cursor-pointer group"
                 >
                   <td className="py-3.5 px-3 font-mono font-black text-slate-900 tracking-wider group-hover:text-emerald-700">
@@ -122,7 +131,7 @@ export default function AnimalYieldBreakdown() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/farm/animals/detail/${animal.id || animal.tag}`);
+                        handleAnimalClick(animal);
                       }}
                       className="px-3 py-1 rounded-lg text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 text-[11px] font-extrabold transition-all inline-flex items-center gap-1 cursor-pointer"
                     >

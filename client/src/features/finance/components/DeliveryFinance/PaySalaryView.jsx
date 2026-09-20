@@ -250,7 +250,7 @@ export default function PaySalaryView({
             <Label className="text-xs font-semibold text-slate-700">Payment Notes / Remarks</Label>
             <Input
               type="text"
-              placeholder="e.g. Monthly salary payout for September 2026"
+              placeholder="Enter details"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="text-xs h-8"

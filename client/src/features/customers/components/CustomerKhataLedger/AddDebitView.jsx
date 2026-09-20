@@ -67,7 +67,7 @@ export default function AddDebitView({ customer, onBack }) {
                 required
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="e.g. Extra 2L Buffalo Milk + 1kg Dahi"
+                placeholder="Enter value"
                 className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white"
               />
             </div>
@@ -97,7 +97,7 @@ export default function AddDebitView({ customer, onBack }) {
                 min="1"
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                placeholder="e.g. 850"
+                placeholder="Enter value"
                 className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-bold tabular"
               />
             </div>
@@ -110,7 +110,7 @@ export default function AddDebitView({ customer, onBack }) {
                 type="text"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="e.g. Ordered on WhatsApp for guest event"
+                placeholder="Enter value"
                 className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white"
               />
             </div>

@@ -1,7 +1,10 @@
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
 import { cva } from "class-variance-authority"
-import { cn } from "@/utils/cn"
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+const cn = (...inputs) => twMerge(clsx(inputs));
 
 const Tabs = TabsPrimitive.Root
 

@@ -181,7 +181,7 @@ export default function LogFuelView({ onBack, onComplete }) {
             <Input
               type="number"
               min="0"
-              placeholder="e.g. 25"
+              placeholder="Enter value"
               value={formData.distanceKm}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, distanceKm: e.target.value }))
@@ -194,7 +194,7 @@ export default function LogFuelView({ onBack, onComplete }) {
             <Label className="text-xs font-semibold text-slate-700">Notes / Fuel Station Info</Label>
             <Input
               type="text"
-              placeholder="e.g. Morning delivery route fill-up at PSO pump"
+              placeholder="Enter details"
               value={formData.notes}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, notes: e.target.value }))

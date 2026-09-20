@@ -375,7 +375,7 @@ export default function ExpenseVoucherDetail({
                 <td className="py-2.5 px-4 font-medium text-slate-800">
                   <span className="inline-flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                    {expense.costAttribution || 'General Procurement Unit'}
+                    {expense.costAttribution || '—'}
                   </span>
                 </td>
               </tr>

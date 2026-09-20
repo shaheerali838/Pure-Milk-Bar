@@ -12,6 +12,7 @@ export function SupplierProvider({ children }) {
   let intakeLogs = [];
   let updateBatchSettlement = null;
   let settleAllBatchesForSupplier = null;
+  let settleBatchesWithAmount = null;
 
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -20,6 +21,7 @@ export function SupplierProvider({ children }) {
       intakeLogs = intakeCtx.intakeLogs || [];
       updateBatchSettlement = intakeCtx.updateBatchSettlement;
       settleAllBatchesForSupplier = intakeCtx.settleAllBatchesForSupplier;
+      settleBatchesWithAmount = intakeCtx.settleBatchesWithAmount;
     }
   } catch (err) {
     console.warn('IntakeContext not available in SupplierProvider:', err);
@@ -157,31 +159,45 @@ export function SupplierProvider({ children }) {
     setDirectPayouts([]);
   };
 
-  // 8. Settle Outstanding Balance for a Supplier
-  const settleSupplierBalance = (supplierId) => {
-    const target = suppliers.find((s) => s.id === supplierId);
+  // 8. Settle Outstanding Balance for a Supplier (Partial or Full)
+  const settleSupplierBalance = (supplierId, customAmount = null) => {
+    const target = enrichedSuppliers.find((s) => s.id === supplierId) || suppliers.find((s) => s.id === supplierId);
     if (!target) return;
 
+    const totalDue = target.balanceDue || 0;
+    const payAmt = customAmount !== null && customAmount !== undefined
+      ? Math.min(totalDue, Math.max(0, parseFloat(customAmount) || 0))
+      : totalDue;
+
+    if (payAmt <= 0) return;
+
+    const isFull = payAmt >= totalDue;
+
     // Settle pending intake slips
-    if (settleAllBatchesForSupplier) {
+    if (isFull && settleAllBatchesForSupplier) {
       settleAllBatchesForSupplier(target.id, target.name);
+    } else if (settleBatchesWithAmount) {
+      settleBatchesWithAmount(target.id, target.name, payAmt);
     }
 
-    // Also record a clearance payout record
+    // Record payout history
     const payoutRecord = {
       id: `PAY-${Date.now()}`,
       supplierId: target.id,
       supplierName: target.name,
-      amount: target.balanceDue || 0,
+      amount: payAmt,
       date: new Date().toISOString().split('T')[0],
-      method: 'Cash / Clearance',
-      notes: `Balance cleared for ${target.name}`,
+      method: 'Cash / Settlement',
+      notes: isFull
+        ? `Full balance cleared for ${target.name}`
+        : `Partial payment of Rs. ${payAmt.toLocaleString()} disbursed for ${target.name}`,
+      isBatchSettlement: true,
     };
     setDirectPayouts((prev) => [payoutRecord, ...prev]);
   };
 
   // 9. Record a Direct Supplier Payout
-  const recordSupplierPayout = (supplierId, amount, note = '') => {
+  const recordSupplierPayout = (supplierId, amount, note = '', isBatchSettlement = false) => {
     const target = suppliers.find((s) => s.id === supplierId);
     if (!target) return;
     const numAmount = parseFloat(amount) || 0;
@@ -195,6 +211,7 @@ export function SupplierProvider({ children }) {
       date: new Date().toISOString().split('T')[0],
       method: 'Cash / Settlement',
       notes: note || `Disbursed payout of Rs. ${numAmount.toLocaleString()}`,
+      isBatchSettlement: !!isBatchSettlement,
     };
     setDirectPayouts((prev) => [payoutRecord, ...prev]);
   };
@@ -220,9 +237,9 @@ export function SupplierProvider({ children }) {
 
       const supRate = parseFloat(sup.ratePerLiter) || 220;
 
-      // Sum of any direct manual payouts recorded for this supplier
+      // Sum of any direct manual payouts recorded for this supplier (excluding batch settlements to prevent double counting)
       const manualPaid = directPayouts
-        .filter((p) => p.supplierId === sup.id)
+        .filter((p) => p.supplierId === sup.id && !p.isBatchSettlement)
         .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
 
       // If no batches exist yet in intake register for this supplier

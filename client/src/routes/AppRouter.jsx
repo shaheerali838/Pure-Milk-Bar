@@ -14,6 +14,7 @@ import Dashboard from "../features/dashboard/pages/Dashboard";
 import Farm from "../features/farm/pages/Farm";
 import FarmDashboard from "../features/farm/pages/FarmDashboard";
 import AnimalsHerd from "../features/farm/pages/AnimalsHerd";
+import AnimalDetailPage from "../features/farm/pages/AnimalDetailPage";
 
 import MilkingRegister from "../features/farm/pages/MilkingRegister";
 import DahiProcessing from "../features/farm/pages/DahiProcessing";
@@ -82,6 +83,7 @@ export function AppRouter() {
           <Route path="farm" element={<Farm />}>
             <Route index element={<FarmDashboard />} />
             <Route path="animals" element={<AnimalsHerd />} />
+            <Route path="animals/detail/:id" element={<AnimalDetailPage />} />
 
             <Route path="milking" element={<MilkingRegister />} />
             <Route path="processing" element={<DahiProcessing />} />

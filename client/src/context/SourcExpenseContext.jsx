@@ -4,75 +4,6 @@ const SourcExpenseContext = createContext(null);
 
 const STORAGE_KEY = 'pure_milk_bar_sourcing_expenses';
 
-// Pre-seeded initial records for realistic procurement operations
-const INITIAL_EXPENSES = [
-  {
-    id: 'EXP-SRC-101',
-    date: '2026-09-17',
-    category: 'Collection Route Fuel',
-    description: 'Milk collection van diesel (Route 1 - Green Meadows)',
-    amount: 14500,
-    paymentMode: 'Cash on Hand',
-    voucherNo: 'VCH-2026-081',
-    loggedBy: 'Farhan Ali (Driver)',
-    costAttribution: 'Green Meadows Center',
-  },
-  {
-    id: 'EXP-SRC-102',
-    date: '2026-09-16',
-    category: 'Chilling & Lab Testing',
-    description: 'Gerber butyrometer sulfuric acid & alcohol testing solution',
-    amount: 8500,
-    paymentMode: 'Bank Transfer',
-    voucherNo: 'VCH-2026-082',
-    loggedBy: 'Imran Khan (Lab Incharge)',
-    costAttribution: 'Central Procurement Lab',
-  },
-  {
-    id: 'EXP-SRC-103',
-    date: '2026-09-15',
-    category: 'Transit Vehicle Maintenance',
-    description: 'Chiller vehicle oil change and tire pressure valve replacement',
-    amount: 9200,
-    paymentMode: 'Cash on Hand',
-    voucherNo: 'VCH-2026-083',
-    loggedBy: 'Rashid Mehmood (Transport)',
-    costAttribution: 'Logistics Hub',
-  },
-  {
-    id: 'EXP-SRC-104',
-    date: '2026-09-15',
-    category: 'Supplier Loading Handling',
-    description: 'Morning shift can loading & dock handling daily wage',
-    amount: 4800,
-    paymentMode: 'Cash on Hand',
-    voucherNo: 'VCH-2026-084',
-    loggedBy: 'Bilal Ahmad (Supervisor)',
-    costAttribution: 'Dock Station A',
-  },
-  {
-    id: 'EXP-SRC-105',
-    date: '2026-09-14',
-    category: 'Transit Can Sanitization',
-    description: 'Hot steam washing detergent & food-grade disinfectant cans',
-    amount: 3600,
-    paymentMode: 'Cash on Hand',
-    voucherNo: 'VCH-2026-085',
-    loggedBy: 'Kamran Siddiqui',
-    costAttribution: 'Hygiene Wash Bay',
-  },
-  {
-    id: 'EXP-SRC-106',
-    date: '2026-09-13',
-    category: 'Milk Collection Logistics',
-    description: 'Highway toll taxes & driver transit allowance',
-    amount: 2200,
-    paymentMode: 'Cash on Hand',
-    voucherNo: 'VCH-2026-086',
-    loggedBy: 'Farhan Ali (Driver)',
-    costAttribution: 'Inter-City Route',
-  },
-];
 
 export const CATEGORY_OPTIONS = [
   'Milk Collection Logistics',
@@ -98,14 +29,23 @@ export function SourcExpenseProvider({ children }) {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+        if (Array.isArray(parsed)) {
+          // Remove old seeded dummy expenses if present
+          const dummyIds = new Set([
+            'EXP-SRC-101',
+            'EXP-SRC-102',
+            'EXP-SRC-103',
+            'EXP-SRC-104',
+            'EXP-SRC-105',
+            'EXP-SRC-106',
+          ]);
+          return parsed.filter((item) => !dummyIds.has(item.id));
         }
       }
     } catch (e) {
       console.error('Failed to parse sourcing expenses from localStorage', e);
     }
-    return INITIAL_EXPENSES;
+    return [];
   });
 
   // Sync state to localStorage whenever it changes
@@ -127,8 +67,8 @@ export function SourcExpenseProvider({ children }) {
       amount: Number(data.amount) || 0,
       paymentMode: data.paymentMode || 'Cash on Hand',
       voucherNo: data.voucherNo || `VCH-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
-      loggedBy: data.loggedBy || 'System Admin',
-      costAttribution: data.costAttribution || 'General Procurement',
+      loggedBy: data.loggedBy ? data.loggedBy.trim() : 'System Admin',
+      costAttribution: data.costAttribution ? data.costAttribution.trim() : '',
     };
 
     setExpenses((prev) => [newExpense, ...prev]);
@@ -156,12 +96,14 @@ export function SourcExpenseProvider({ children }) {
   };
 
   // Dynamic summary metrics
-  const totalSourcingCosts = expenses.reduce(
+  const safeExpenses = expenses || [];
+
+  const totalSourcingCosts = safeExpenses.reduce(
     (sum, item) => sum + (Number(item.amount) || 0),
     0
   );
 
-  const collectionRouteFuel = expenses
+  const collectionRouteFuel = safeExpenses
     .filter(
       (item) =>
         item.category === 'Collection Route Fuel' ||
@@ -169,11 +111,11 @@ export function SourcExpenseProvider({ children }) {
     )
     .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
-  const chillingLabTesting = expenses
+  const chillingLabTesting = safeExpenses
     .filter((item) => item.category === 'Chilling & Lab Testing')
     .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
-  const handlingLabor = expenses
+  const handlingLabor = safeExpenses
     .filter(
       (item) =>
         item.category === 'Supplier Loading Handling' ||

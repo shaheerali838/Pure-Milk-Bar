@@ -17,6 +17,8 @@ import {
   CATEGORY_OPTIONS,
   PAYMENT_MODES,
 } from '@/context/SourcExpenseContext';
+import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
+import { useStaffContext } from '@/context/StaffContext';
 
 const initialForm = {
   category: 'Collection Route Fuel',
@@ -25,8 +27,8 @@ const initialForm = {
   description: '',
   amount: '',
   voucherNo: '',
-  loggedBy: 'Farhan Ali (Driver)',
-  costAttribution: 'Route 1 - Green Meadows Center',
+  loggedBy: '',
+  costAttribution: '',
   notes: '',
 };
 
@@ -37,11 +39,48 @@ export default function RecordExpenseForm({
   onSuccess,
 }) {
   const { addExpense, updateExpense } = useSourcExpenseContext();
+  const { staffList: deliveryStaff = [] } = useDeliveryStaffContext() || {};
+  const staffCtx = useStaffContext?.();
+  const generalStaff = staffCtx?.staffList || [];
+
   const handleBack = onBack || onClose;
   const isEdit = Boolean(editingExpense);
 
   const [formData, setFormData] = useState(initialForm);
   const [errors, setErrors] = useState({});
+
+  // Delivery staff options
+  const deliveryStaffOptions = deliveryStaff.map((s) => {
+    let suffix = '';
+    if (s.vehicle) {
+      suffix = ` (${s.vehicle})`;
+    } else if (s.type === 'RIDER') {
+      suffix = ' (Driver / Rider)';
+    } else if (s.type === 'WALKING') {
+      suffix = ' (Walking Courier)';
+    } else if (s.route) {
+      suffix = ` (${s.route})`;
+    }
+    return {
+      id: `del-${s.id}`,
+      name: s.name,
+      label: `${s.name}${suffix}`,
+    };
+  });
+
+  const otherStaffOptions = generalStaff
+    .filter(
+      (s) =>
+        s.name &&
+        !deliveryStaff.some(
+          (d) => (d.name || '').toLowerCase().trim() === (s.name || '').toLowerCase().trim()
+        )
+    )
+    .map((s) => ({
+      id: `gen-${s.id}`,
+      name: s.name,
+      label: `${s.name}${s.role ? ` (${s.role})` : ''}`,
+    }));
 
   useEffect(() => {
     if (editingExpense) {
@@ -54,7 +93,7 @@ export default function RecordExpenseForm({
           ? String(editingExpense.amount).replace(/[^0-9.]/g, '')
           : '',
         voucherNo: editingExpense.voucherNo || editingExpense.id || '',
-        loggedBy: editingExpense.loggedBy || 'System Admin',
+        loggedBy: editingExpense.loggedBy || '',
         costAttribution: editingExpense.costAttribution || '',
         notes: editingExpense.notes || '',
       });
@@ -63,6 +102,8 @@ export default function RecordExpenseForm({
         ...initialForm,
         date: new Date().toISOString().split('T')[0],
         voucherNo: `VCH-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
+        loggedBy: '',
+        costAttribution: '',
       });
     }
   }, [editingExpense]);
@@ -273,7 +314,7 @@ export default function RecordExpenseForm({
                     name="amount"
                     value={formData.amount}
                     onChange={handleChange}
-                    placeholder="14500"
+                    placeholder="Enter amount"
                     className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#4f39f6] focus:border-[#4f39f6] transition font-mono font-bold"
                   />
                 </div>
@@ -294,7 +335,7 @@ export default function RecordExpenseForm({
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
-                    placeholder="e.g. Milk collection van diesel (Route 1 - Green Meadows)"
+                    placeholder="Enter description"
                     className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#4f39f6] focus:border-[#4f39f6] transition font-medium"
                   />
                 </div>
@@ -324,14 +365,38 @@ export default function RecordExpenseForm({
                   <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
                     <User className="w-3.5 h-3.5" />
                   </span>
-                  <input
-                    type="text"
+                  <select
                     name="loggedBy"
                     value={formData.loggedBy}
                     onChange={handleChange}
-                    placeholder="e.g. Farhan Ali (Driver)"
-                    className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#4f39f6] focus:border-[#4f39f6] transition font-medium"
-                  />
+                    className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#4f39f6] focus:border-[#4f39f6] transition cursor-pointer font-medium"
+                  >
+                    <option value="">Select Staff / Driver</option>
+                    {/* Retain existing value if editing historical record and not in active staff */}
+                    {formData.loggedBy &&
+                      !deliveryStaffOptions.some((s) => s.name === formData.loggedBy) &&
+                      !otherStaffOptions.some((s) => s.name === formData.loggedBy) && (
+                        <option value={formData.loggedBy}>{formData.loggedBy}</option>
+                    )}
+                    {deliveryStaffOptions.length > 0 && (
+                      <optgroup label="Delivery Staff & Drivers">
+                        {deliveryStaffOptions.map((s) => (
+                          <option key={s.id} value={s.name}>
+                            {s.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {otherStaffOptions.length > 0 && (
+                      <optgroup label="Farm & Operations Staff">
+                        {otherStaffOptions.map((s) => (
+                          <option key={s.id} value={s.name}>
+                            {s.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
                 </div>
               </div>
 
@@ -349,7 +414,7 @@ export default function RecordExpenseForm({
                     name="costAttribution"
                     value={formData.costAttribution}
                     onChange={handleChange}
-                    placeholder="e.g. Green Meadows Route Center"
+                    placeholder="Enter cost attribution"
                     className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#4f39f6] focus:border-[#4f39f6] transition font-medium"
                   />
                 </div>
@@ -365,7 +430,7 @@ export default function RecordExpenseForm({
                   name="notes"
                   value={formData.notes}
                   onChange={handleChange}
-                  placeholder="e.g. Verified by Chilling Incharge..."
+                  placeholder="Enter authorized by"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#4f39f6] focus:border-[#4f39f6] transition font-medium"
                 />
               </div>

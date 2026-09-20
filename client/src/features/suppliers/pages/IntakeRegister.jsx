@@ -48,9 +48,10 @@ export default function IntakeRegister() {
     setViewMode('form');
   };
 
-  // Open Detail View in modal dialog matching user screenshot
+  // Open Detail View in full space matching SupplierDetail / ExpenseVoucherDetail
   const handleView = (item) => {
     setViewingItem(item);
+    setViewMode('detail');
   };
 
   // Export CSV of current intake records
@@ -133,6 +134,21 @@ export default function IntakeRegister() {
           setViewMode('history');
           setPayingSlip(null);
         }}
+      />
+    );
+  }
+
+  // 3. FULL SPACE: Intake Detail View (Matching ExpenseVoucherDetail / SupplierDetail)
+  if (viewMode === 'detail' && viewingItem) {
+    return (
+      <IntakeDetail
+        item={viewingItem}
+        onBack={() => {
+          setViewMode('history');
+          setViewingItem(null);
+        }}
+        onEdit={(item) => handleEdit(item)}
+        onPaySupplier={(slip) => handleOpenPay(slip)}
       />
     );
   }
@@ -224,15 +240,6 @@ export default function IntakeRegister() {
         <IntakeShifting onSaveSuccess={() => setViewMode('history')} />
       ) : (
         <IntakeHistory onView={handleView} onEdit={handleEdit} onPaySupplier={handleOpenPay} />
-      )}
-
-      {/* 4. Intake Batch Detail Modal */}
-      {viewingItem && (
-        <IntakeDetail
-          item={viewingItem}
-          onClose={() => setViewingItem(null)}
-          onEdit={handleEdit}
-        />
       )}
     </div>
   );

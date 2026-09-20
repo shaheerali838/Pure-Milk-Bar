@@ -8,11 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import IntakeDetail from './IntakeDetail';
 
-/**
- * IntakeDetailSidebar Component
- * Right side par FIXED sidebar drawer jo slip ki complete details display karta hai.
- * Uses the standalone IntakeDetail component inside.
- */
+// Sidebar drawer displaying intake slip details
 export default function IntakeDetailSidebar({
   item,
   isOpen,

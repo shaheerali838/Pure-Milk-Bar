@@ -323,7 +323,7 @@ export default function POSSale() {
                           step="1"
                           value={lineTotal || ''}
                           onChange={(e) => handleUpdateByRupees(item.id, e.target.value)}
-                          placeholder="e.g. 100"
+                          placeholder="Enter value"
                           className="w-14 text-right text-xs font-bold text-indigo-700 outline-none tabular"
                           title="Type amount in rupees (e.g. 100) to auto-calculate liters"
                         />
@@ -824,7 +824,7 @@ export default function POSSale() {
                           max={netPayable}
                           value={partialPaidAmount}
                           onChange={(e) => setPartialPaidAmount(e.target.value)}
-                          placeholder="e.g. 500"
+                          placeholder="Enter value"
                           className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 tabular"
                         />
                       </div>
@@ -965,7 +965,7 @@ export default function POSSale() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. House 14-B, Street 3 (Near Main Park)"
+                  placeholder="Enter address"
                   value={dropAddress}
                   onChange={(e) => setDropAddress(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"

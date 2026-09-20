@@ -18,16 +18,7 @@ import { useSupplierContext } from '@/context/SupplierContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
-/**
- * PaySupplierModal
- * Dedicated modal for owner to disburse payments to suppliers:
- * - Shows Supplier Name and total outstanding pending balance
- * - Shows Shift (Morning / Evening), Liters, and Total Cost of the delivery
- * - Quick buttons: Pay Full (100%), Pay Half (50%)
- * - Interactive numeric input for custom amount paid
- * - Live ledger showing pending balance decrease
- * - Updates IntakeContext & SupplierContext seamlessly
- */
+// Modal for disbursing supplier intake payments
 export default function PaySupplierModal({
   slip = null,
   supplier = null,
@@ -124,7 +115,8 @@ export default function PaySupplierModal({
       recordSupplierPayout(
         matchedSupplier.id,
         numPay,
-        paymentNote || `Owner payout for ${shift} Shift slip (#${targetSlip?.id || 'Direct'})`
+        paymentNote || `Owner payout for ${shift} Shift slip (#${targetSlip?.id || 'Direct'})`,
+        true
       );
     }
 
@@ -205,42 +197,41 @@ export default function PaySupplierModal({
 
           {/* Shift Details (Which shift is pending, Liters, Rate, Total Amount) */}
           {targetSlip && (
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-slate-700 flex items-center gap-1.5">
+            <div className="bg-white border border-slate-200/90 rounded-xl p-0 shadow-xs overflow-hidden mt-2 w-full">
+              <div className="p-3 border-b border-slate-100 flex items-center justify-between text-slate-800 font-bold text-xs font-display bg-slate-50">
+                <div className="flex items-center gap-2">
                   {isMorning ? (
-                    <Sun className="w-4 h-4 text-amber-500" />
+                    <Sun className="w-3.5 h-3.5 text-amber-500" />
                   ) : (
-                    <Moon className="w-4 h-4 text-indigo-500" />
+                    <Moon className="w-3.5 h-3.5 text-indigo-500" />
                   )}
-                  <span>{shift} Shift Collection Slip (#{targetSlip.id})</span>
-                </span>
-                <span className="text-[11px] font-semibold text-slate-500">
-                  {targetSlip.date}
+                  <span>
+                    {shift} Shift (#{targetSlip.id})
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-500 font-normal">
+                  Date: <strong className="text-slate-800">{targetSlip.date}</strong>
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 pt-1 text-center">
-                <div className="p-2 rounded-xl bg-white border border-slate-200">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Delivered Liters</span>
-                  <span className="text-xs font-black text-slate-800">{quantity.toFixed(1)} L</span>
-                </div>
-                <div className="p-2 rounded-xl bg-white border border-slate-200">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Agreed Rate</span>
-                  <span className="text-xs font-bold text-slate-800">Rs. {rate}/L</span>
-                </div>
-                <div className="p-2 rounded-xl bg-white border border-slate-200">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Amount</span>
-                  <span className="text-xs font-black text-emerald-700">Rs. {totalCost.toLocaleString()}</span>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs">
-                <span className="text-slate-500">Pending Amount for this Slip:</span>
-                <span className="font-black text-amber-700 tabular">
-                  Rs. {slipPendingAmount.toLocaleString()}
-                </span>
-              </div>
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50/50 border-b border-slate-100">
+                  <tr>
+                    <th className="py-2 px-3 text-slate-500 font-bold uppercase text-[9px]">Delivered</th>
+                    <th className="py-2 px-3 text-slate-500 font-bold uppercase text-[9px]">Rate</th>
+                    <th className="py-2 px-3 text-slate-500 font-bold uppercase text-[9px]">Total Value</th>
+                    <th className="py-2 px-3 text-amber-600 font-bold uppercase text-[9px] text-right">Current Due</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  <tr>
+                    <td className="py-2.5 px-3 font-bold text-slate-800">{quantity.toFixed(1)} L</td>
+                    <td className="py-2.5 px-3 font-bold text-slate-800">Rs. {rate}/L</td>
+                    <td className="py-2.5 px-3 font-bold text-slate-900">Rs. {totalCost.toLocaleString()}</td>
+                    <td className="py-2.5 px-3 font-bold text-amber-700 text-right">Rs. {slipPendingAmount.toLocaleString()}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           )}
 
@@ -294,30 +285,38 @@ export default function PaySupplierModal({
                 required
                 value={payAmount}
                 onChange={(e) => setPayAmount(e.target.value)}
-                placeholder="e.g. 5000"
+                placeholder="Enter amount"
                 className="w-full h-[46px] pl-13 pr-3.5 rounded-2xl border border-slate-200 text-lg font-black text-slate-900 outline-none focus:border-emerald-600 shadow-2xs tabular"
               />
             </div>
           </div>
 
           {/* Live Pending Decrease Ledger Calculation */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
-            <div className="flex items-center justify-between text-slate-600">
-              <span>Current Pending Balance:</span>
-              <strong className="text-slate-800 font-mono">Rs. {slipPendingAmount.toLocaleString()}</strong>
-            </div>
-            <div className="flex items-center justify-between text-slate-600">
-              <span>Payment Disbursed by Owner:</span>
-              <strong className="text-emerald-700 font-mono">- Rs. {numPay.toLocaleString()}</strong>
-            </div>
-            <div className="pt-2 border-t border-slate-200 flex items-center justify-between font-bold text-slate-900">
-              <span className="flex items-center gap-1">
-                <span>Remaining Pending After Payment:</span>
-              </span>
-              <span className={`font-mono text-sm ${remainingSlipPending > 0 ? 'text-amber-700' : 'text-emerald-600'}`}>
-                Rs. {remainingSlipPending.toLocaleString()}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mt-2">
+            <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs font-bold text-slate-700">
+              <span className="flex items-center gap-1.5">
+                <Receipt className="w-3.5 h-3.5 text-slate-500" />
+                <span>Settlement Summary</span>
               </span>
             </div>
+            <table className="w-full text-left text-xs">
+              <thead className="bg-white border-b border-slate-100">
+                <tr>
+                  <th className="py-1.5 px-3 text-slate-500 font-semibold text-[10px]">Pending Before</th>
+                  <th className="py-1.5 px-3 text-emerald-600 font-semibold text-[10px]">Paying Now</th>
+                  <th className="py-1.5 px-3 text-amber-600 font-semibold text-[10px] text-right">Remaining Due</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="py-2.5 px-3 font-mono font-bold text-slate-800">Rs. {slipPendingAmount.toLocaleString()}</td>
+                  <td className="py-2.5 px-3 font-mono font-bold text-emerald-700">- Rs. {numPay.toLocaleString()}</td>
+                  <td className={`py-2.5 px-3 font-mono font-bold text-right ${remainingSlipPending > 0 ? 'text-amber-700' : 'text-slate-400'}`}>
+                    Rs. {remainingSlipPending.toLocaleString()}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           {/* Modal Footer Buttons */}

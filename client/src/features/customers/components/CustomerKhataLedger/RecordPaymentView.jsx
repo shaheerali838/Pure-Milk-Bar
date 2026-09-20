@@ -182,7 +182,7 @@ export default function RecordPaymentView({ customer, onBack }) {
                     setPaymentType('partial');
                   }
                 }}
-                placeholder="e.g. 5000"
+                placeholder="Enter amount"
                 className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-bold tabular"
               />
             </div>
@@ -228,7 +228,7 @@ export default function RecordPaymentView({ customer, onBack }) {
                 type="text"
                 value={formData.reference}
                 onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-                placeholder="e.g. TXN-8921"
+                placeholder="Enter value"
                 className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-mono"
               />
             </div>
@@ -243,7 +243,7 @@ export default function RecordPaymentView({ customer, onBack }) {
                 type="text"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="e.g. Monthly milk payment clearance"
+                placeholder="Enter value"
                 className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white"
               />
             </div>
@@ -256,7 +256,7 @@ export default function RecordPaymentView({ customer, onBack }) {
                 type="text"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="e.g. Collected by rider directly"
+                placeholder="Enter value"
                 className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white"
               />
             </div>

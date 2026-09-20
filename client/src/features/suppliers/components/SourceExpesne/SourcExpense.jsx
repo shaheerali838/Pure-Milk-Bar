@@ -62,12 +62,9 @@ export default function SourcExpense() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h2 className="text-xl font-bold text-slate-900 font-display flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-[#4f39f6]" />
             Supplier Operating Expenses
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Log procurement overheads, collection route fuel, chiller maintenance, and testing supplies
-          </p>
+          
         </div>
 
         <div className="flex items-center gap-2">

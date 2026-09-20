@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { TrendingUp, PieChart as PieChartIcon } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import {
@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import FarmCardOverflow from "./FarmCardOverflow";
 import AnimalYieldBreakdown from "./AnimalYieldBreakdown";
+import AnimalDetail from "../animals/AnimalDetail";
 
 const parseYield = (val) => {
   if (typeof val === "number") return val;
@@ -22,6 +23,7 @@ const parseYield = (val) => {
 
 export default function FarmDashboardContent() {
   const { animals = [] } = useAnimalContext();
+  const [selectedAnimalId, setSelectedAnimalId] = useState(null);
 
   // Metrics
   const totalAnimals = animals.length;
@@ -64,6 +66,16 @@ export default function FarmDashboardContent() {
       profit: Math.round(dayProfit)
     };
   });
+
+  if (selectedAnimalId) {
+    return (
+      <AnimalDetail
+        animalId={selectedAnimalId}
+        onBack={() => setSelectedAnimalId(null)}
+        onClose={() => setSelectedAnimalId(null)}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -184,7 +196,7 @@ export default function FarmDashboardContent() {
         </div>
       </div>
 
-      <AnimalYieldBreakdown />
+      <AnimalYieldBreakdown onSelectAnimal={setSelectedAnimalId} />
     </div>
   );
 }

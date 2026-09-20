@@ -1,5 +1,8 @@
 import * as React from "react"
-import { cn } from "@/utils/cn"
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+const cn = (...inputs) => twMerge(clsx(inputs));
 
 const Input = React.forwardRef(({ className, type, prefix, suffix, error, onWheel, ...props }, ref) => {
   const hasWrapper = Boolean(prefix || suffix)
