@@ -158,11 +158,22 @@ export function CustomerProvider({ children }) {
     return matchesSearch && matchesStatus;
   });
 
+  const updateCreditLimitBatch = (newLimit) => {
+    if (!newLimit || isNaN(newLimit)) return;
+    setCustomers((prev) =>
+      prev.map((c) => ({
+        ...c,
+        creditLimit: Number(newLimit),
+      }))
+    );
+  };
+
   return (
     <CustomerContext.Provider
       value={{
         customers: filteredCustomers,
         rawCustomers: customers,
+        setCustomers,
         allCustomersCount: customers.length,
         activeAccountsCount,
         withKhataBalCount,
@@ -173,6 +184,7 @@ export function CustomerProvider({ children }) {
         setStatusFilter,
         addCustomer,
         updateCustomer,
+        updateCreditLimitBatch,
       }}
     >
       {children}

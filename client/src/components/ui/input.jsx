@@ -1,12 +1,22 @@
 import * as React from "react"
 import { cn } from "@/utils/cn"
 
-const Input = React.forwardRef(({ className, type, prefix, suffix, error, ...props }, ref) => {
+const Input = React.forwardRef(({ className, type, prefix, suffix, error, onWheel, ...props }, ref) => {
   const hasWrapper = Boolean(prefix || suffix)
+
+  const handleWheel = (e) => {
+    if (type === "number") {
+      e.currentTarget.blur()
+    }
+    if (onWheel) {
+      onWheel(e)
+    }
+  }
 
   const inputElement = (
     <input
       type={type}
+      onWheel={handleWheel}
       className={cn(
         "flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50",
         error && "border-rose-500 focus-visible:ring-rose-500 focus-visible:border-rose-500",

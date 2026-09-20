@@ -49,9 +49,13 @@ import CustomerKhataLedger from "../features/customers/pages/CustomerKhataLedger
 import CustomerFinance from "../features/finance/pages/CustomerFinance";
 import RiderDeliveryFinancePage from "../features/finance/pages/RiderDeliveryFinancePage";
 import DailyClosing from "../features/finance/pages/DailyClosing";
+import TransactionAuditLog from "../features/audit/pages/TransactionAuditLog";
 
 // Staff Management
 import StaffManagement from "../features/staff/pages/StaffManagement";
+
+// Global Settings
+import GlobalSettings from "../features/settings/pages/GlobalSettings";
 
 export function AppRouter() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -112,9 +116,17 @@ export function AppRouter() {
           <Route path="finance/customer" element={<CustomerFinance />} />
           <Route path="finance/delivery" element={<RiderDeliveryFinancePage />} />
           <Route path="finance/daily-closing" element={<DailyClosing />} />
+          <Route path="daily-closing" element={<DailyClosing />} />
+          <Route path="finance/audit-log" element={<TransactionAuditLog />} />
+          <Route path="audit-log" element={<TransactionAuditLog />} />
+          <Route path="audit" element={<TransactionAuditLog />} />
+          <Route path="transactions" element={<TransactionAuditLog />} />
           <Route path="finance/staff" element={<StaffManagement />} />
-
           <Route path="staff" element={<StaffManagement />} />
+          <Route path="payroll" element={<StaffManagement />} />
+
+          <Route path="settings" element={<GlobalSettings />} />
+          <Route path="global-settings" element={<GlobalSettings />} />
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>

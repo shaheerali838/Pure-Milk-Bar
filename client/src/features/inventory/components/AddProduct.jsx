@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, PackagePlus, ChevronDown, Check } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
+import { useSettingsContext } from '@/context/SettingsContext';
 
 export default function AddProduct({ onBack, product = null }) {
   const { products = [], addProduct, updateProduct } = usePOSContext();
+  const { settings } = useSettingsContext();
 
   const isEditing = Boolean(product);
   const nextNumber = products.length + 1;
   const defaultSku = `PRD-${String(nextNumber).padStart(3, '0')}`;
+  const defaultUnit = settings?.productDefaults?.defaultUnit === 'liter' ? 'per liter' : 'per kg';
 
   const [formData, setFormData] = useState({
     id: product ? product.id || product.sku || defaultSku : defaultSku,
     name: product ? product.name || '' : '',
     category: product ? product.category || 'Milk' : 'Milk',
-    unit: product ? product.unit || 'per kg' : 'per kg',
+    unit: product ? product.unit || defaultUnit : defaultUnit,
     price: product ? product.price ?? '' : '',
     cost: product ? product.cost ?? '' : '',
     description: product ? product.description || '' : '',

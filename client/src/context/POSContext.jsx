@@ -88,46 +88,59 @@ export function POSProvider({ children }) {
 
   // A. Add Product
   const addProduct = (newProduct) => {
-    const nextNumber = products.length + 1;
-    const generatedSku = `PRD-${String(nextNumber).padStart(3, '0')}`;
+    let createdItem = null;
+    setProducts((prevProducts) => {
+      const nextNumber = prevProducts.length + 1;
+      const generatedSku = `PRD-${String(nextNumber).padStart(3, '0')}`;
 
-    const item = {
-      id: newProduct.id ? newProduct.id.trim() : generatedSku,
-      sku: newProduct.sku ? newProduct.sku.trim() : generatedSku,
-      name: newProduct.name || 'Unnamed Product',
-      category: newProduct.category || 'Milk',
-      unit: newProduct.unit || 'per kg',
-      price: Number(newProduct.price) || 0,
-      cost: Number(newProduct.cost) || 0,
-      status: 'Active',
-      barcode: newProduct.barcode || `890100${100 + nextNumber}`,
-      storage: newProduct.storage || 'Refrigerated Chiller (0 - 4 °C)',
-      frequency: newProduct.frequency || 'Daily Morning & Evening Batches',
-      description: newProduct.description || '',
-    };
+      createdItem = {
+        id: newProduct.id ? newProduct.id.trim() : generatedSku,
+        sku: newProduct.sku ? newProduct.sku.trim() : generatedSku,
+        name: newProduct.name || 'Unnamed Product',
+        category: newProduct.category || 'Milk',
+        unit: newProduct.unit || 'per kg',
+        price: newProduct.price !== undefined && newProduct.price !== null && newProduct.price !== '' ? Number(newProduct.price) : 0,
+        cost: newProduct.cost !== undefined && newProduct.cost !== null && newProduct.cost !== '' ? Number(newProduct.cost) : 0,
+        status: newProduct.status || 'Active',
+        barcode: newProduct.barcode || `890100${100 + nextNumber}`,
+        storage: newProduct.storage || 'Refrigerated Chiller (0 - 4 °C)',
+        frequency: newProduct.frequency || 'Daily Morning & Evening Batches',
+        description: newProduct.description || '',
+      };
 
-    const updated = [item, ...products];
-    setProducts(updated);
-    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updated));
-    return item;
+      const updated = [createdItem, ...prevProducts];
+      try {
+        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updated));
+      } catch (err) {
+        console.error('Error saving products to localStorage:', err);
+      }
+      return updated;
+    });
+    return createdItem;
   };
 
   // B. Edit / Update Product
   const updateProduct = (updatedProduct) => {
-    const updated = products.map((item) => {
-      if (item.id === updatedProduct.id) {
-        return {
-          ...item,
-          ...updatedProduct,
-          price: Number(updatedProduct.price) || item.price,
-          cost: Number(updatedProduct.cost) || item.cost,
-        };
-      }
-      return item;
-    });
+    setProducts((prevProducts) => {
+      const updated = prevProducts.map((item) => {
+        if (item.id === updatedProduct.id) {
+          return {
+            ...item,
+            ...updatedProduct,
+            price: updatedProduct.price !== undefined && updatedProduct.price !== null && updatedProduct.price !== '' ? Number(updatedProduct.price) : item.price,
+            cost: updatedProduct.cost !== undefined && updatedProduct.cost !== null && updatedProduct.cost !== '' ? Number(updatedProduct.cost) : item.cost,
+          };
+        }
+        return item;
+      });
 
-    setProducts(updated);
-    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updated));
+      try {
+        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updated));
+      } catch (err) {
+        console.error('Error saving products to localStorage:', err);
+      }
+      return updated;
+    });
     setEditingProduct(null);
 
     // Also update price and name in active cart if present
@@ -136,10 +149,10 @@ export function POSProvider({ children }) {
         if (cartItem.id === updatedProduct.id) {
           return {
             ...cartItem,
-            name: updatedProduct.name,
-            price: Number(updatedProduct.price) || cartItem.price,
-            unit: updatedProduct.unit,
-            category: updatedProduct.category,
+            name: updatedProduct.name || cartItem.name,
+            price: updatedProduct.price !== undefined && updatedProduct.price !== null && updatedProduct.price !== '' ? Number(updatedProduct.price) : cartItem.price,
+            unit: updatedProduct.unit || cartItem.unit,
+            category: updatedProduct.category || cartItem.category,
           };
         }
         return cartItem;
@@ -147,11 +160,38 @@ export function POSProvider({ children }) {
     );
   };
 
-  // C. Delete Product
+  // C. Batch Update Products
+  const batchUpdateProducts = (updaterOrList) => {
+    setProducts((prevProducts) => {
+      let updated;
+      if (typeof updaterOrList === 'function') {
+        updated = updaterOrList(prevProducts);
+      } else if (Array.isArray(updaterOrList)) {
+        updated = updaterOrList;
+      } else {
+        return prevProducts;
+      }
+
+      try {
+        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updated));
+      } catch (err) {
+        console.error('Error saving products batch to localStorage:', err);
+      }
+      return updated;
+    });
+  };
+
+  // D. Delete Product
   const deleteProduct = (productId) => {
-    const updated = products.filter((item) => item.id !== productId);
-    setProducts(updated);
-    localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updated));
+    setProducts((prevProducts) => {
+      const updated = prevProducts.filter((item) => item.id !== productId);
+      try {
+        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updated));
+      } catch (err) {
+        console.error('Error saving products to localStorage:', err);
+      }
+      return updated;
+    });
 
     if (editingProduct && editingProduct.id === productId) {
       setEditingProduct(null);
@@ -639,11 +679,13 @@ export function POSProvider({ children }) {
       value={{
         // Products
         products,
+        setProducts,
         editingProduct,
         setEditingProduct,
         addProduct,
         updateProduct,
         editProduct: updateProduct,
+        batchUpdateProducts,
         deleteProduct,
 
         // Cart
