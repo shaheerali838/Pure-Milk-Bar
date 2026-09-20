@@ -85,7 +85,7 @@ export default function PaySalaryView({
   };
 
   return (
-    <div className="space-y-2.5 animate-in fade-in duration-150 pb-4">
+    <div className="space-y-2 animate-in fade-in duration-150 pb-4">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200">
         <div className="flex items-center gap-2.5">
           <Button

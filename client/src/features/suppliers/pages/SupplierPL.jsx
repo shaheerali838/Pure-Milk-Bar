@@ -150,9 +150,9 @@ export default function SupplierPL() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h2 className="text-xl font-bold text-slate-900 font-display flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-[#0092b8]" />

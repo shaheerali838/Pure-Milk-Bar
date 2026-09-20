@@ -161,9 +161,9 @@ export default function ProcurementSheet() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h2 className="text-xl font-bold text-slate-900 font-display flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#d97706]" />
@@ -174,7 +174,7 @@ export default function ProcurementSheet() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-3.5 h-[38px] text-xs font-semibold text-slate-700 shadow-xs">
             <Calendar className="w-3.5 h-3.5 text-amber-600" />
             <input
@@ -213,7 +213,7 @@ export default function ProcurementSheet() {
       </div>
 
       {/* Primary KPI Ribbon */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
           <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             Total Procured Today
@@ -270,7 +270,7 @@ export default function ProcurementSheet() {
         <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
           Route-Wise Procurement Totals
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
           {ROUTE_SUMMARIES.map((r) => (
             <div
               key={r.name}
@@ -439,7 +439,7 @@ export default function ProcurementSheet() {
         </div>
 
         {/* Footer Summary */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-4 text-slate-600">
             <span>
               Total Filtered Volume: <strong>{totalCollected.toFixed(1)} Liters</strong>

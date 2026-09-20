@@ -139,17 +139,13 @@ export default function IntakeRegister() {
 
   // 3. MAIN REGISTER: History or Shift View
   return (
-    <div className="space-y-4 animate-in fade-in duration-150">
+    <div className="space-y-2 animate-in fade-in duration-150">
       {/* 1. Page Header with Action Controls & View Switcher */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2">
         <div>
           <h2 className="text-xl font-bold text-slate-900 font-display flex items-center gap-2">
-            <Droplets className="w-5 h-5 text-[#155dfc]" />
             Supplier Milk Intake Register
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Daily morning &amp; evening collection shifts, Gerber test quality, and supplier payments
-          </p>
         </div>
 
         {/* Action Controls & View Switcher */}

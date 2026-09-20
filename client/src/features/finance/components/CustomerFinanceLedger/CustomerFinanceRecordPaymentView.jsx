@@ -122,7 +122,7 @@ export default function CustomerFinanceRecordPaymentView({ customer, onBack }) {
   };
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-200 pb-4">
+    <div className="space-y-2 animate-in fade-in duration-200 pb-4">
       <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
         <Button
           type="button"

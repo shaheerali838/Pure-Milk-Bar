@@ -100,7 +100,7 @@ export default function ReceivablesAgingTable({ onViewDetail, onRecordPayment, o
   const sumTotal = filteredRows.reduce((acc, r) => acc + r.total, 0);
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2">
       <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-2">
         <div className="text-xs font-bold text-slate-700">
           <span>{customersWithDues.length} customers with outstanding balance</span>

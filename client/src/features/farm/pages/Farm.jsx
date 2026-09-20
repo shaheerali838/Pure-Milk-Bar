@@ -4,7 +4,7 @@ import FarmNav from '../components/FarmNav';
 
 export default function Farm() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <FarmNav />
       <Outlet />
     </div>
