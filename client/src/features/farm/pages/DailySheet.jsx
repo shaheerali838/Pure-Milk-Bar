@@ -6,6 +6,7 @@ import {
   Printer,
   CheckCircle2,
   Lock,
+  Droplets,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {

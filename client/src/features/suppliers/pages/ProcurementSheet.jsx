@@ -6,6 +6,9 @@ import {
   Printer,
   CheckCircle2,
   Lock,
+  Droplets,
+  Layers,
+  DollarSign,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
