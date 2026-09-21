@@ -536,15 +536,14 @@ export default function LandingPage() {
       </header>
 
       {/* =========================================================================
-          3. HERO SECTION (Strict 1-Screen Viewport Fit - No Vertical Cut-Offs)
+          3. HERO SECTION (Strict 1-Screen Viewport Fit with dairyfarm.jpeg Backdrop)
       ========================================================================= */}
       <section
         id="home"
-        className="text-white min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center relative overflow-hidden py-2 sm:py-3"
+        className="text-white min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center relative overflow-hidden py-2 sm:py-3 bg-cover bg-center"
         style={{
-          backgroundColor: "#1F4B3F",
           backgroundImage:
-            "radial-gradient(circle at 15% 25%, rgba(91, 187, 123, 0.14) 0%, transparent 45%), radial-gradient(circle at 85% 75%, rgba(0, 168, 107, 0.1) 0%, transparent 50%)",
+            "linear-gradient(to right, rgba(15, 38, 33, 0.93) 0%, rgba(27, 62, 53, 0.86) 45%, rgba(16, 43, 37, 0.82) 100%), url('/images/dairyfarm.jpeg')",
         }}
       >
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex-1 flex flex-col justify-center my-auto">
@@ -664,15 +663,15 @@ export default function LandingPage() {
             {/* Right Freeio Arched Double Card Composition (Fitted to Screen Height) */}
             <div className="lg:col-span-5 relative flex justify-center items-center">
               <div className="relative w-full max-w-sm flex items-end justify-center gap-2.5">
-                {/* Left Foreground Arch: Farm Dairy Operations Overview */}
+                {/* Left Foreground Arch: Farm Dairy Milking Overview */}
                 <div
                   className="w-1/2 h-[200px] sm:h-[230px] xl:h-[250px] overflow-hidden shadow-2xl border-2 border-white/20 bg-slate-800 relative z-20 group block cursor-pointer shrink-0"
                   style={{ borderRadius: "100px 100px 20px 20px" }}
                 >
                   <img
-                    alt="Dairy Farm Operations"
+                    alt="Dairy Milking Log"
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                    src="/images/dairyfarm.jpeg"
+                    src="/images/milking-register.jpeg"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                   <div className="absolute bottom-2.5 left-2.5 right-2.5 text-white">
