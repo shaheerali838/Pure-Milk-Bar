@@ -84,9 +84,20 @@ async function request(endpoint, options = {}) {
     }
 
     if (!response.ok) {
-      const errorMsg =
-        (typeof data === 'object' && (data.message || data.error)) ||
-        `Request failed with status ${response.status}`;
+      let errorMsg = `Request failed with status ${response.status}`;
+      if (typeof data === 'object' && data !== null) {
+        if (typeof data.message === 'string') {
+          errorMsg = data.message;
+        } else if (typeof data.error === 'string') {
+          errorMsg = data.error;
+        } else if (typeof data.error?.message === 'string') {
+          errorMsg = data.error.message;
+        } else {
+          errorMsg = JSON.stringify(data);
+        }
+      } else if (typeof data === 'string' && data) {
+        errorMsg = data;
+      }
       const error = new Error(errorMsg);
       error.status = response.status;
       error.data = data;
