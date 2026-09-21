@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import adminService from '@/services/adminService';
 
 const StaffContext = createContext();
@@ -82,10 +82,42 @@ export function StaffProvider({ children }) {
     }
   };
 
+  // Dynamic live metrics derived from actual staff records
+  const metrics = useMemo(() => {
+    const totalStaff = staffList.length;
+    const monthlySalaries = staffList.reduce(
+      (sum, s) => sum + (Number(s.monthlySalary || s.salary) || 0),
+      0
+    );
+    const totalDeliveryMen = staffList.filter((s) => {
+      const r = (s.role || '').toLowerCase();
+      return r.includes('delivery') || r.includes('rider');
+    }).length;
+
+    const totalFarmWorkers = staffList.filter((s) => {
+      const r = (s.role || '').toLowerCase();
+      return r.includes('farm') || r.includes('milker') || r.includes('herd') || r.includes('work');
+    }).length;
+
+    const totalSecurityGuards = staffList.filter((s) => {
+      const r = (s.role || '').toLowerCase();
+      return r.includes('guard') || r.includes('security');
+    }).length;
+
+    return {
+      totalStaff,
+      monthlySalaries,
+      totalDeliveryMen,
+      totalFarmWorkers,
+      totalSecurityGuards,
+    };
+  }, [staffList]);
+
   return (
     <StaffContext.Provider
       value={{
         staffList,
+        metrics,
         isLoading,
         error,
         refreshStaff: fetchStaff,
