@@ -85,8 +85,6 @@ export default function LandingPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [categoriesOpen, setCategoriesOpen] = useState(false);
 
-  // Active Interactive ERP Preview Tab
-  const [activeScreenTab, setActiveScreenTab] = useState("dashboard");
 
   // Active Module Filter in System Showcase
   const [activeModuleFilter, setActiveModuleFilter] = useState("all");
@@ -504,7 +502,6 @@ export default function LandingPage() {
           <nav aria-label="Main Navigation" className="hidden lg:flex items-center space-x-5 text-[11px] font-semibold text-slate-200">
             <a href="#how-it-works" className="hover:text-white transition">How It Works</a>
             <a href="#modules" className="hover:text-white transition">Modules</a>
-            <a href="#screen-preview" className="hover:text-white transition">Live UI Preview</a>
             <a href="#pos-sandbox" className="hover:text-white transition">POS Sandbox</a>
             <a href="#simulators" className="hover:text-white transition">Simulators</a>
             <a href="#team" className="hover:text-white transition">Team</a>
@@ -863,145 +860,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* =========================================================================
-          6. INTERACTIVE LIVE ERP SCREEN PREVIEW SECTION (1-Screen Viewport Fit)
-      ========================================================================= */}
-      <section className="min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center py-4 lg:py-6 bg-white border-b border-slate-200 overflow-hidden" id="screen-preview">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto flex flex-col justify-center">
-          <div className="text-center max-w-3xl mx-auto mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
-              Interactive System UI
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">
-              Preview Real ERP Modules in Action
-            </h2>
-            <p className="text-slate-500 text-xs sm:text-[13px] mt-0.5">
-              Switch between tabs to see the actual operational interfaces driving our dairy ERP system.
-            </p>
-          </div>
-
-          {/* Tab Navigation */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 mb-3">
-            {[
-              { id: "dashboard", label: "Executive Dashboard", icon: BarChart3 },
-              { id: "pos", label: "POS Sales Counter", icon: ShoppingCart },
-              { id: "farm", label: "Livestock & Milking", icon: Tractor },
-              { id: "supplier", label: "Procurement Dock", icon: Layers },
-              { id: "delivery", label: "Rider Fleet Logistics", icon: Truck },
-              { id: "closing", label: "Daily Mass-Balance", icon: Scale },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveScreenTab(tab.id)}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 transition cursor-pointer ${
-                    activeScreenTab === tab.id
-                      ? "bg-[#1F4B3F] text-white shadow-md"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5 text-[#5BBB7B]" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Interactive Screen Container */}
-          <div className="bg-slate-900 rounded-2xl p-2.5 sm:p-3 shadow-2xl border border-slate-800 relative overflow-hidden max-w-5xl mx-auto w-full">
-            {/* Window Top Controls */}
-            <div className="flex items-center justify-between px-2.5 py-1 border-b border-slate-800 text-[11px] text-slate-400 mb-2">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                <span className="ml-2 font-mono text-[10.5px] text-slate-400">
-                  puremilkbar.local / {activeScreenTab}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-emerald-400 font-bold">● LIVE DEMO</span>
-                <Link
-                  to={
-                    activeScreenTab === "pos"
-                      ? "/pos"
-                      : activeScreenTab === "farm"
-                      ? "/farm"
-                      : activeScreenTab === "supplier"
-                      ? "/supplier"
-                      : activeScreenTab === "delivery"
-                      ? "/delivery"
-                      : activeScreenTab === "closing"
-                      ? "/finance/daily-closing"
-                      : "/dashboard"
-                  }
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-lg transition"
-                >
-                  Open in App &rarr;
-                </Link>
-              </div>
-            </div>
-
-            {/* Screen Image Display */}
-            <div className="relative rounded-xl overflow-hidden bg-slate-950 h-[220px] sm:h-[260px] lg:h-[300px]">
-              <img
-                src={
-                  activeScreenTab === "dashboard"
-                    ? "/images/screen.png"
-                    : activeScreenTab === "pos"
-                    ? "/images/delivery.jpeg"
-                    : activeScreenTab === "farm"
-                    ? "/images/animals.webp"
-                    : activeScreenTab === "supplier"
-                    ? "/images/storage.webp"
-                    : activeScreenTab === "delivery"
-                    ? "/images/delivery.jpeg"
-                    : "/images/PnL.jpeg"
-                }
-                alt="ERP Module Interface"
-                className="w-full h-full object-cover object-top"
-              />
-
-              {/* Floating Feature Highlighter Box */}
-              <div className="absolute bottom-2 left-2 right-2 bg-slate-900/90 backdrop-blur-md border border-white/10 p-2.5 rounded-xl flex items-center justify-between gap-2 text-white">
-                <div>
-                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#5BBB7B] shrink-0" />
-                    {activeScreenTab === "dashboard" && "Executive Command Center — Live Real-Time KPIs"}
-                    {activeScreenTab === "pos" && "Point of Sale (POS) — Sub-Second Walk-in & Delivery Checkout"}
-                    {activeScreenTab === "farm" && "Livestock & Milking — RFID Herd Yield & Batch Chiller Sync"}
-                    {activeScreenTab === "supplier" && "Milk Procurement Dock — Direct Supplier Intake & Chiller Transfer"}
-                    {activeScreenTab === "delivery" && "Fleet Logistics — Neighborhood Route Drops & Vehicle Fuel Log"}
-                    {activeScreenTab === "closing" && "Daily Closing — Mass Balance Dipstick & Cash Reconciliation"}
-                  </h4>
-                  <p className="text-[10px] text-slate-300">
-                    100% offline-resilient with instant localStorage and reactive state synchronizers.
-                  </p>
-                </div>
-                <Link
-                  to={
-                    activeScreenTab === "pos"
-                      ? "/pos"
-                      : activeScreenTab === "farm"
-                      ? "/farm"
-                      : activeScreenTab === "supplier"
-                      ? "/supplier"
-                      : activeScreenTab === "delivery"
-                      ? "/delivery"
-                      : activeScreenTab === "closing"
-                      ? "/finance/daily-closing"
-                      : "/dashboard"
-                  }
-                  className="bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0 transition"
-                >
-                  Launch Module
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* =========================================================================
           7. INTERACTIVE LIVE POS QUICK-ORDER SANDBOX (1-Screen Viewport Fit)
