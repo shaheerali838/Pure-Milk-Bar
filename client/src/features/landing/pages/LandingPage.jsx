@@ -504,7 +504,7 @@ export default function LandingPage() {
             <a href="#modules" className="hover:text-white transition">Modules</a>
             <a href="#pos-sandbox" className="hover:text-white transition">POS Sandbox</a>
             <a href="#simulators" className="hover:text-white transition">Simulators</a>
-            <a href="#team" className="hover:text-white transition">Team</a>
+            <a href="#farms" className="hover:text-white transition">Enrolled Farms</a>
             <a href="#pricing" className="hover:text-white transition">Pricing</a>
           </nav>
 
@@ -1313,84 +1313,43 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          9. TOP OPERATIONS SPECIALISTS & FLEET MASTERS (1-Screen Viewport Fit)
+          9. ENROLLED COMMERCIAL FARMS & PRODUCER HUBS (1-Screen Viewport Fit)
       ========================================================================= */}
-      <section className="min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center py-4 lg:py-6 bg-slate-50 border-b border-slate-200 overflow-hidden" id="team">
+      <section className="min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center py-4 lg:py-6 bg-slate-50 border-b border-slate-200 overflow-hidden" id="farms">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto flex flex-col justify-center">
           <div className="flex items-center justify-between mb-4">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
-                Verified Personnel
+                Verified Dairy Producers
               </span>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">
-                Operations Specialists &amp; Fleet Team
+                Commercial Farms Enrolled With Pure Milk Bar ERP
               </h2>
               <p className="text-xs sm:text-[13px] text-slate-500 mt-0.5">
-                Background-checked, CNIC verified, and specialized across milking, lab quality, and cold-chain logistics.
+                Leading dairy farms and commercial milk producers managing daily herd milking, bulk chiller procurement, and distribution.
               </p>
             </div>
             <Link
-              to="/staff"
-              className="text-xs font-bold text-slate-700 hover:text-[#00a86b] flex items-center gap-1 transition"
+              to="/farm"
+              className="text-xs font-bold text-slate-700 hover:text-[#00a86b] flex items-center gap-1 transition cursor-pointer"
             >
-              <span>Manage Staff</span>
+              <span>Explore Farm Module</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Specialist 1: Ahmad Khan */}
+            {/* Farm 1: Al-Noor Dairy & Cattle Farm */}
             <div className="relative h-[270px] sm:h-[310px] lg:h-[340px] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group bg-slate-900 border border-slate-200/80 cursor-pointer">
               <img
-                alt="Ahmad Khan"
-                className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 ease-out"
-                src="/images/staff.jpeg"
+                alt="Al-Noor Dairy Farm"
+                className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
+                src="/images/dairyfarm.jpeg"
               />
               <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10 pointer-events-none">
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white text-[9.5px] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Verified Master
-                </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold shadow-md">
-                  ★ 4.95
-                </span>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity duration-300 group-hover:opacity-0 pointer-events-none"></div>
-              <div className="absolute bottom-3 left-3 right-3 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
-                <h3 className="text-sm font-bold text-white tracking-tight">Ahmad Khan</h3>
-                <p className="text-[11px] text-slate-200 font-medium">Head Milker &amp; Herd Specialist</p>
-                <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/15 text-[10px] text-slate-300">
-                  <span>Farm Shed 1</span>
-                  <span className="text-emerald-300 font-semibold">99% Yield Consistency</span>
-                </div>
-              </div>
-              <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-3.5 text-white">
-                <span className="text-[8.5px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-1.5 py-0.2 rounded-full border border-[#5BBB7B]/30 w-fit mb-1">
-                  Herd Master
-                </span>
-                <h3 className="text-sm font-bold text-white">Ahmad Khan</h3>
-                <p className="text-[11px] text-emerald-100 font-medium">Lactation &amp; Milking Hygiene</p>
-                <Link
-                  to="/farm/animals"
-                  className="mt-2.5 w-full py-2 rounded-lg bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-lg"
-                >
-                  <span>View Herd Roster</span>
-                  <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Specialist 2: Tariq Mehmood */}
-            <div className="relative h-[270px] sm:h-[310px] lg:h-[340px] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group bg-slate-900 border border-slate-200/80 cursor-pointer">
-              <img
-                alt="Tariq Mehmood"
-                className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 ease-out"
-                src="/images/staff-2.jpeg"
-              />
-              <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10 pointer-events-none">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white text-[9.5px] font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Verified Incharge
+                  Active ERP Node
                 </span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold shadow-md">
                   ★ 4.98
@@ -1398,106 +1357,155 @@ export default function LandingPage() {
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity duration-300 group-hover:opacity-0 pointer-events-none"></div>
               <div className="absolute bottom-3 left-3 right-3 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
-                <h3 className="text-sm font-bold text-white tracking-tight">Tariq Mehmood</h3>
-                <p className="text-[11px] text-slate-200 font-medium">Chiller &amp; Tank Manager</p>
+                <h3 className="text-sm font-bold text-white tracking-tight">Al-Noor Dairy &amp; Cattle Farm</h3>
+                <p className="text-[11px] text-slate-200 font-medium">Sahiwal &amp; HF Cattle Herd • Lahore</p>
                 <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/15 text-[10px] text-slate-300">
-                  <span>Dock Terminal</span>
-                  <span className="text-emerald-300 font-semibold">Zero Spillage Record</span>
+                  <span>180 Head Herd</span>
+                  <span className="text-emerald-300 font-semibold">3,200 L Daily Yield</span>
                 </div>
               </div>
               <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-3.5 text-white">
                 <span className="text-[8.5px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-1.5 py-0.2 rounded-full border border-[#5BBB7B]/30 w-fit mb-1">
-                  Quality Lead
+                  Tier-1 Commercial Producer
                 </span>
-                <h3 className="text-sm font-bold text-white">Tariq Mehmood</h3>
-                <p className="text-[11px] text-emerald-100 font-medium">Cold Storage &amp; Chilled Integrity</p>
+                <h3 className="text-sm font-bold text-white">Al-Noor Dairy Farm</h3>
+                <p className="text-[11px] text-emerald-100 font-medium leading-relaxed">
+                  Automated milking parlor with direct refrigerated chiller tank transfer and batch lactation logs.
+                </p>
                 <Link
-                  to="/supplier/intake"
+                  to="/farm/animals"
                   className="mt-2.5 w-full py-2 rounded-lg bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-lg"
                 >
-                  <span>View Milk Intake</span>
+                  <span>View Farm Herd</span>
                   <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
             </div>
 
-            {/* Specialist 3: Rashid Minhas */}
+            {/* Farm 2: Green Pastures Dairy Complex */}
             <div className="relative h-[270px] sm:h-[310px] lg:h-[340px] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group bg-slate-900 border border-slate-200/80 cursor-pointer">
               <img
-                alt="Rashid Minhas"
-                className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 ease-out"
-                src="/images/staff.jpeg"
+                alt="Green Pastures Dairy Complex"
+                className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
+                src="/images/animals.webp"
               />
               <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10 pointer-events-none">
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white text-[9.5px] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Route Captain
+                  Live Inflow Dock
                 </span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold shadow-md">
-                  ★ 4.92
+                  ★ 4.95
                 </span>
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity duration-300 group-hover:opacity-0 pointer-events-none"></div>
               <div className="absolute bottom-3 left-3 right-3 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
-                <h3 className="text-sm font-bold text-white tracking-tight">Rashid Minhas</h3>
-                <p className="text-[11px] text-slate-200 font-medium">Senior Fleet Courier</p>
+                <h3 className="text-sm font-bold text-white tracking-tight">Green Pastures Dairy Complex</h3>
+                <p className="text-[11px] text-slate-200 font-medium">Nili-Ravi Buffalo &amp; Cow Unit • Faisalabad</p>
                 <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/15 text-[10px] text-slate-300">
-                  <span>Model Town Route</span>
-                  <span className="text-emerald-300 font-semibold">100% On-Time Drops</span>
+                  <span>240 Head Herd</span>
+                  <span className="text-emerald-300 font-semibold">4,500 L Daily Yield</span>
                 </div>
               </div>
               <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-3.5 text-white">
                 <span className="text-[8.5px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-1.5 py-0.2 rounded-full border border-[#5BBB7B]/30 w-fit mb-1">
-                  Fleet Rider
+                  High-Volume Unit
                 </span>
-                <h3 className="text-sm font-bold text-white">Rashid Minhas</h3>
-                <p className="text-[11px] text-emerald-100 font-medium">Doorstep Delivery Lead</p>
+                <h3 className="text-sm font-bold text-white">Green Pastures Complex</h3>
+                <p className="text-[11px] text-emerald-100 font-medium leading-relaxed">
+                  High-yield lactation logs with 100% automated feed formula allocation and veterinary schedules.
+                </p>
+                <Link
+                  to="/farm/feeding"
+                  className="mt-2.5 w-full py-2 rounded-lg bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-lg"
+                >
+                  <span>View Feed Formulations</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Farm 3: Bismillah Organic Milk Farm */}
+            <div className="relative h-[270px] sm:h-[310px] lg:h-[340px] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group bg-slate-900 border border-slate-200/80 cursor-pointer">
+              <img
+                alt="Bismillah Milk Farm"
+                className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
+                src="/images/milking-register.jpeg"
+              />
+              <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10 pointer-events-none">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white text-[9.5px] font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Chiller Dock Hub
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold shadow-md">
+                  ★ 4.99
+                </span>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity duration-300 group-hover:opacity-0 pointer-events-none"></div>
+              <div className="absolute bottom-3 left-3 right-3 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
+                <h3 className="text-sm font-bold text-white tracking-tight">Bismillah Organic Milk Farm</h3>
+                <p className="text-[11px] text-slate-200 font-medium">Raw Milk Chilling Station • Sahiwal</p>
+                <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/15 text-[10px] text-slate-300">
+                  <span>120 Head Herd</span>
+                  <span className="text-emerald-300 font-semibold">2,800 L Daily Yield</span>
+                </div>
+              </div>
+              <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-3.5 text-white">
+                <span className="text-[8.5px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-1.5 py-0.2 rounded-full border border-[#5BBB7B]/30 w-fit mb-1">
+                  Bulk Supplier Hub
+                </span>
+                <h3 className="text-sm font-bold text-white">Bismillah Milk Farm</h3>
+                <p className="text-[11px] text-emerald-100 font-medium leading-relaxed">
+                  Zero-shrinkage mass-balance tank audit and automated supplier khata payout settlement.
+                </p>
+                <Link
+                  to="/supplier"
+                  className="mt-2.5 w-full py-2 rounded-lg bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-lg"
+                >
+                  <span>View Milk Procurement</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Farm 4: Royal Fresh Dairy Estate */}
+            <div className="relative h-[270px] sm:h-[310px] lg:h-[340px] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group bg-slate-900 border border-slate-200/80 cursor-pointer">
+              <img
+                alt="Royal Fresh Dairy Estate"
+                className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
+                src="/images/storage.webp"
+              />
+              <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10 pointer-events-none">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white text-[9.5px] font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Cold-Chain Certified
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold shadow-md">
+                  ★ 4.96
+                </span>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity duration-300 group-hover:opacity-0 pointer-events-none"></div>
+              <div className="absolute bottom-3 left-3 right-3 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
+                <h3 className="text-sm font-bold text-white tracking-tight">Royal Fresh Dairy Estate</h3>
+                <p className="text-[11px] text-slate-200 font-medium">Pasteurization &amp; Chilling • Multan</p>
+                <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/15 text-[10px] text-slate-300">
+                  <span>310 Head Herd</span>
+                  <span className="text-emerald-300 font-semibold">6,200 L Daily Yield</span>
+                </div>
+              </div>
+              <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-3.5 text-white">
+                <span className="text-[8.5px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-1.5 py-0.2 rounded-full border border-[#5BBB7B]/30 w-fit mb-1">
+                  Integrated Estate
+                </span>
+                <h3 className="text-sm font-bold text-white">Royal Fresh Estate</h3>
+                <p className="text-[11px] text-emerald-100 font-medium leading-relaxed">
+                  Direct farm-to-counter distribution with real-time route fleet tracking and automated closing balances.
+                </p>
                 <Link
                   to="/delivery"
                   className="mt-2.5 w-full py-2 rounded-lg bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-lg"
                 >
                   <span>View Delivery Fleet</span>
-                  <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Specialist 4: Shahid Bilal */}
-            <div className="relative h-[270px] sm:h-[310px] lg:h-[340px] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group bg-slate-900 border border-slate-200/80 cursor-pointer">
-              <img
-                alt="Shahid Bilal"
-                className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 ease-out"
-                src="/images/staff-2.jpeg"
-              />
-              <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10 pointer-events-none">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white text-[9.5px] font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Khata Officer
-                </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold shadow-md">
-                  ★ 4.97
-                </span>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity duration-300 group-hover:opacity-0 pointer-events-none"></div>
-              <div className="absolute bottom-3 left-3 right-3 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
-                <h3 className="text-sm font-bold text-white tracking-tight">Shahid Bilal</h3>
-                <p className="text-[11px] text-slate-200 font-medium">Customer Accounts Auditor</p>
-                <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/15 text-[10px] text-slate-300">
-                  <span>Finance Desk</span>
-                  <span className="text-emerald-300 font-semibold">100% Recovery Rate</span>
-                </div>
-              </div>
-              <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-3.5 text-white">
-                <span className="text-[8.5px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-1.5 py-0.2 rounded-full border border-[#5BBB7B]/30 w-fit mb-1">
-                  Accountant
-                </span>
-                <h3 className="text-sm font-bold text-white">Shahid Bilal</h3>
-                <p className="text-[11px] text-emerald-100 font-medium">Ledger Reconciliation &amp; Billing</p>
-                <Link
-                  to="/customer-khata-ledger"
-                  className="mt-2.5 w-full py-2 rounded-lg bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-lg"
-                >
-                  <span>Open Khata Ledger</span>
                   <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
