@@ -62,25 +62,12 @@ import StaffManagement from "../features/staff/pages/StaffManagement";
 import GlobalSettings from "../features/settings/pages/GlobalSettings";
 
 export function AppRouter() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/landing" element={<LandingPage />} />
-
-        <Route
-          path="/login"
-          element={
-            <LoginPage
-              onLogin={(email, password) => {
-                console.log("User logged in:", email);
-                setIsAuthenticated(true);
-              }}
-            />
-          }
-        />
+        <Route path="/login" element={<LoginPage />} />
 
         <Route element={<Layout />}>
           <Route path="dashboard" element={<Dashboard />} />

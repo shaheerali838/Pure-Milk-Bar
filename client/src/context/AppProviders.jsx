@@ -1,4 +1,5 @@
 import React from "react";
+import { AuthProvider } from "./AuthContext";
 import { CustomerProvider } from "./CustomerContext";
 import { LedgerProvider } from "./LedgerContext";
 import { AnimalProvider } from "./AnimalContext";
@@ -18,6 +19,7 @@ import { IntakeProvider } from "./IntakeContext";
 import { SourcExpenseProvider } from "./SourcExpenseContext";
 
 const providers = [
+  AuthProvider,
   CustomerProvider,
   LedgerProvider,
   AnimalProvider,

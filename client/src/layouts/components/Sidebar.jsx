@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   Milk,
   Users,
@@ -12,11 +12,22 @@ import {
   Wallet,
   Package,
   Sparkles,
+  LogOut,
+  LogIn,
+  ShieldCheck,
 } from "lucide-react";
 
 import { reconciliationLinks } from '@/components/common/Reconciliation_links';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Sidebar() {
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
   // 1. Operations Command
   const operationsLinks = [
     {
@@ -311,22 +322,60 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+      <div className="p-2.5 border-t border-slate-100 bg-slate-50/70 space-y-2">
+        {/* Active Logged-in User Profile */}
+        {user ? (
+          <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0 shadow-2xs">
+                {user.avatar || 'SA'}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-900 truncate leading-tight">
+                  {user.name}
+                </p>
+                <div className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                  <p className="text-[10px] font-semibold text-emerald-700 truncate">
+                    {user.role === 'ADMIN' ? 'Admin' : user.role === 'MANAGER' ? 'Manager' : user.role === 'CASHIER' ? 'Cashier' : 'Supervisor'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+              title="Sign Out / Change Account"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <NavLink
+            to="/login"
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-all cursor-pointer"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>Sign In to ERP</span>
+          </NavLink>
+        )}
+
         <NavLink
           to="/landing"
           className={({ isActive }) =>
-            `w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+            `w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all border ${
               isActive
                 ? "bg-slate-900 text-emerald-400 border-slate-800 shadow-xs"
                 : "bg-white text-slate-700 hover:text-emerald-700 hover:bg-emerald-50/60 border-slate-200"
             }`
           }
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            <span>ERP Landing Page</span>
+            <span>Public Website</span>
           </div>
-          <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+          <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
             v2.4
           </span>
         </NavLink>
