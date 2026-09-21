@@ -6,16 +6,16 @@ import User from '../../../models/User.model.js';
 const generateAccessToken = (userId, role) => {
   return jwt.sign(
     { id: userId, role },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+    process.env.JWT_SECRET || 'dairy_farm_super_secret_jwt_key_2026',
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
 };
 
 const generateRefreshToken = (userId) => {
   return jwt.sign(
     { id: userId },
-    process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d' }
+    process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET || 'dairy_farm_super_secret_refresh_jwt_key_2026',
+    { expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '30d' }
   );
 };
 
@@ -67,7 +67,7 @@ export const rotateRefreshToken = async (token) => {
   let decoded;
 
   try {
-    decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+    decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET || 'dairy_farm_super_secret_refresh_jwt_key_2026');
   } catch (err) {
     const error = new Error('Invalid or expired refresh token. Please login again.');
     error.statusCode = 401;
