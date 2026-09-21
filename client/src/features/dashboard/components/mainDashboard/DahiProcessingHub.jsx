@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Layers, ArrowRight } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 import { useAnimalContext } from '@/context/AnimalContext';
@@ -10,6 +10,26 @@ export default function DahiProcessingHub() {
   const { products = [], inventoryMetrics = {} } = usePOSContext();
   const { animals = [] } = useAnimalContext();
   const { totals: intakeTotals = {} } = useIntakeContext();
+
+  // Load live processing batches from storage
+  const processingBatches = useMemo(() => {
+    try {
+      const saved = localStorage.getItem('pure_milk_bar_processing_batches_v2');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load processing batches for hub:', e);
+    }
+    return [];
+  }, []);
+
+  const todayISO = new Date().toISOString().split('T')[0];
+
+  // Batches recorded for today or all active batches
+  const todayBatches = processingBatches.filter((b) => b.date === todayISO);
+  const activeBatches = todayBatches.length > 0 ? todayBatches : processingBatches;
 
   // Processed products from context
   const dahiProducts = products.filter(
@@ -23,34 +43,42 @@ export default function DahiProcessingHub() {
   );
   const milkPrice = Number(inventoryMetrics.milkPrice) || Number(milkProducts[0]?.price) || 210;
 
-  // Conversion statistics
-  // 1 kg Dahi uses ~1.1 L raw milk
-  const dahiOutputKg =
-    parseFloat(inventoryMetrics.totalDahi) ||
-    parseFloat(inventoryMetrics.dahiSold) ||
-    64.1;
-  const rawMilkConverted = parseFloat((dahiOutputKg * 1.014).toFixed(1)) || 65.0;
+  // Live conversion statistics calculated purely from batches or POS inventory
+  const rawMilkConverted = activeBatches.reduce((sum, b) => {
+    const rawVal = parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0;
+    return sum + rawVal;
+  }, 0) || (parseFloat(inventoryMetrics.totalDahi) ? parseFloat((parseFloat(inventoryMetrics.totalDahi) * 1.05).toFixed(1)) : 0);
+
+  const dahiOutputKg = activeBatches.reduce((sum, b) => {
+    const outVal = parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
+    return sum + outVal;
+  }, 0) || (parseFloat(inventoryMetrics.totalDahi) || parseFloat(inventoryMetrics.dahiSold) || 0);
 
   // Source allocation (Farm vs Supplier)
   const totalFarmMilk = animals.reduce((s, a) => s + (parseFloat(a.totalDailyYield) || 0), 0);
   const totalProcured = Number(intakeTotals.totalProcuredVolume) || 0;
   const totalAvailable = totalFarmMilk + totalProcured;
 
-  let farmMilkPortion = 35;
-  let supMilkPortion = 30;
+  let farmMilkPortion = 0;
+  let supMilkPortion = 0;
   if (totalAvailable > 0 && rawMilkConverted > 0) {
     farmMilkPortion = Math.round((totalFarmMilk / totalAvailable) * rawMilkConverted);
     supMilkPortion = Math.max(0, Math.round(rawMilkConverted - farmMilkPortion));
+  } else if (rawMilkConverted > 0) {
+    farmMilkPortion = Math.round(rawMilkConverted);
   }
 
   // Yield %
-  const yieldPct = rawMilkConverted > 0 ? ((dahiOutputKg / rawMilkConverted) * 100).toFixed(1) : '98.6';
+  const yieldPct = rawMilkConverted > 0 ? ((dahiOutputKg / rawMilkConverted) * 100).toFixed(1) : '0.0';
 
   // Revenue & margin uplift:
   const rawMilkCost = Math.round(rawMilkConverted * milkPrice);
   const finishedValue = Math.round(dahiOutputKg * activeDahiPrice);
-  const valueAddProfit = Math.max(0, finishedValue - rawMilkCost) || 4374;
-  const marginUpliftPct = rawMilkCost > 0 ? ((valueAddProfit / rawMilkCost) * 100).toFixed(1) : '23.9';
+  const valueAddProfit = Math.max(0, finishedValue - rawMilkCost);
+  const marginUpliftPct = rawMilkCost > 0 ? ((valueAddProfit / rawMilkCost) * 100).toFixed(1) : '0.0';
+
+  const completedCount = activeBatches.filter((b) => b.status === 'Completed').length;
+  const inProgressCount = activeBatches.filter((b) => b.status === 'In Progress').length;
 
   return (
     <div
@@ -83,7 +111,7 @@ export default function DahiProcessingHub() {
           <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium">Raw Milk Converted Today:</span>
             <span className="font-mono font-bold text-slate-900 tabular">
-              {rawMilkConverted.toFixed(1)} kg (Farm: {farmMilkPortion} kg • Sup: {supMilkPortion} kg)
+              {rawMilkConverted.toFixed(1)} L (Farm: {farmMilkPortion} L • Sup: {supMilkPortion} L)
             </span>
           </div>
 
@@ -97,7 +125,7 @@ export default function DahiProcessingHub() {
           <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium">Active Batches Lifecycle:</span>
             <span className="font-mono font-bold text-slate-900 tabular">
-              1 Incubating • 1 Ready • 1 at POS
+              {inProgressCount} In Progress • {completedCount} Completed
             </span>
           </div>
         </div>
