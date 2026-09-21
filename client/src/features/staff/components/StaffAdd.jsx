@@ -55,6 +55,11 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
   const [formData, setFormData] = useState(initialForm);
   const isEdit = Boolean(editingStaff);
 
+  const isDeliveryRole =
+    formData.role === 'Delivery Man / Milk Rider' ||
+    (formData.role || '').toLowerCase().includes('delivery') ||
+    (formData.role || '').toLowerCase().includes('rider');
+
   useEffect(() => {
     if (editingStaff) {
       setFormData({
@@ -77,6 +82,18 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'role') {
+      const isDelivery =
+        value === 'Delivery Man / Milk Rider' ||
+        value.toLowerCase().includes('delivery') ||
+        value.toLowerCase().includes('rider');
+      setFormData((prev) => ({
+        ...prev,
+        role: value,
+        route: isDelivery ? prev.route : '',
+      }));
+      return;
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -87,10 +104,15 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
       return;
     }
 
+    const staffData = {
+      ...formData,
+      route: isDeliveryRole ? formData.route : '',
+    };
+
     if (isEdit && editingStaff) {
-      updateStaff(editingStaff.id, formData);
+      updateStaff(editingStaff.id, staffData);
     } else {
-      addStaff(formData);
+      addStaff(staffData);
     }
 
     if (handleBack) handleBack();
@@ -159,7 +181,7 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                   required
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="e.g. Muhammad Farooq"
+                  placeholder="Enter name"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
                 />
               </div>
@@ -211,7 +233,7 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                     name="mobile"
                     value={formData.mobile}
                     onChange={handleChange}
-                    placeholder="0300-1234567"
+                    placeholder="Enter phone number"
                     className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono"
                   />
                 </div>
@@ -307,6 +329,34 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
               </div>
 
               <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
+                  <span>Per Day Salary</span>
+                  <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 font-semibold px-1.5 py-0.2 rounded">
+                    30 Days Auto
+                  </span>
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-emerald-600 font-bold text-[11px]">
+                    Rs.
+                  </span>
+                  <input
+                    type="text"
+                    readOnly
+                    tabIndex={-1}
+                    value={
+                      formData.monthlySalary && Number(formData.monthlySalary) > 0
+                        ? `${Math.round(Number(formData.monthlySalary) / 30).toLocaleString()} / day`
+                        : '0 / day'
+                    }
+                    className="w-full pl-9 pr-3 py-2 bg-emerald-50/70 border border-emerald-200/80 rounded-lg text-emerald-800 text-xs font-mono font-bold cursor-default select-all"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  Absent hone par isi rate se salary kate gi
+                </p>
+              </div>
+
+              <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Joining Date
                 </label>
@@ -324,26 +374,28 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null }) {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Delivery Route / Station
-                </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                    <MapPin className="w-3.5 h-3.5" />
-                  </span>
-                  <input
-                    type="text"
-                    name="route"
-                    value={formData.route}
-                    onChange={handleChange}
-                    placeholder="e.g. Model Town Block C, Shed 1"
-                    className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition"
-                  />
+              {isDeliveryRole && (
+                <div className="animate-in fade-in duration-150">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Delivery Route / Station
+                  </label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                      <MapPin className="w-3.5 h-3.5" />
+                    </span>
+                    <input
+                      type="text"
+                      name="route"
+                      value={formData.route}
+                      onChange={handleChange}
+                      placeholder="e.g. Model Town Block C, Shed 1"
+                      className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="md:col-span-2">
+              <div className={isDeliveryRole ? 'md:col-span-1' : 'md:col-span-2'}>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Notes &amp; Emergency Contact
                 </label>

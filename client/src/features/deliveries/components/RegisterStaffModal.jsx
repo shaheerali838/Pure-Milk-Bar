@@ -93,7 +93,7 @@ export default function RegisterStaffModal({ isOpen, onClose }) {
             </Label>
             <Input
               type="text"
-              placeholder="e.g. Shahid Rider"
+              placeholder="Enter rider name"
               value={formData.name}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, name: e.target.value }))
@@ -107,7 +107,7 @@ export default function RegisterStaffModal({ isOpen, onClose }) {
             <Label className="text-xs font-semibold text-slate-700">Phone Number</Label>
             <Input
               type="text"
-              placeholder="e.g. 0304-9988771"
+              placeholder="Enter phone number"
               value={formData.phone}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, phone: e.target.value }))
@@ -145,7 +145,7 @@ export default function RegisterStaffModal({ isOpen, onClose }) {
               </Label>
               <Input
                 type="text"
-                placeholder="e.g. Honda CD 70 (LER-4521)"
+                placeholder="Enter vehicle details"
                 value={formData.vehicle}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, vehicle: e.target.value }))
@@ -159,7 +159,7 @@ export default function RegisterStaffModal({ isOpen, onClose }) {
             <Label className="text-xs font-semibold text-slate-700">Assigned Route / Area</Label>
             <Input
               type="text"
-              placeholder="e.g. Route 1: Model Town & Faisal Town"
+              placeholder="Enter route"
               value={formData.route}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, route: e.target.value }))

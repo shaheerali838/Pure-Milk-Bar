@@ -255,7 +255,7 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
                 type="text"
                 value={formData.reference}
                 onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-                placeholder="e.g. TXN-881"
+                placeholder="Enter value"
                 className="w-full h-8 px-2 bg-white border border-slate-200 rounded-md focus-visible:border-emerald-500 focus-visible:ring-0 text-slate-800 text-xs"
               />
             </div>
@@ -267,7 +267,7 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
               type="text"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="e.g. Partial Payment Received"
+              placeholder="Enter value"
               className="w-full h-8 px-2 bg-white border border-slate-200 rounded-md focus-visible:border-emerald-500 focus-visible:ring-0 text-slate-800 text-xs"
             />
           </div>

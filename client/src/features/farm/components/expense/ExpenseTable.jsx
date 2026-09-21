@@ -4,7 +4,7 @@ import { useExpense } from '../../../../context/ExpenseContext';
 import { FileText, Eye, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function ExpenseTable({ searchQuery = '', categoryFilter = 'All' }) {
+export default function ExpenseTable({ searchQuery = '', categoryFilter = 'All', onEditExpense }) {
   const { expenses = [], deleteExpense } = useExpense();
   const navigate = useNavigate();
 
@@ -103,7 +103,7 @@ export default function ExpenseTable({ searchQuery = '', categoryFilter = 'All' 
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-full"
-                      onClick={(e) => { e.stopPropagation(); navigate(`/farm/expenses/edit/${expense.id}`); }}
+                      onClick={(e) => { e.stopPropagation(); onEditExpense(expense.id); }}
                     >
                       <Edit className="w-4 h-4" />
                     </Button>

@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
-  Users,
-  Save,
   Building2,
   Phone,
   MapPin,
   Tag,
-  CheckCircle2,
-  AlertCircle,
+  Check,
+  Calendar,
+  DollarSign,
+  FileText,
+  CreditCard,
+  Droplets,
 } from 'lucide-react';
 import { useSupplierContext } from '@/context/SupplierContext';
-import { Button } from '@/components/ui/button';
 
 const SUPPLIER_TYPES = [
   'Commercial Dairy Farm',
@@ -20,26 +21,29 @@ const SUPPLIER_TYPES = [
   'Middleman / Collection Center',
 ];
 
-/**
- * AddSupplier Component
- * Full-Space Form component for adding and editing suppliers in Supplier Directory.
- * Takes 100% of the content space next to the app sidebar.
- */
-export default function AddSupplier({ onCancel, editSupplier = null }) {
+const STATUS_OPTIONS = ['Active', 'On Hold', 'Inactive'];
+
+const initialForm = {
+  name: '',
+  contact: '',
+  area: '',
+  supplierType: 'Commercial Dairy Farm',
+  ratePerLiter: '228',
+  avgLiters: '10',
+  address: '',
+  status: 'Active',
+  paymentMethod: 'Cash / Direct Settlement',
+  accountNumber: '',
+  notes: '',
+};
+
+export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
   const { addSupplier, updateSupplier } = useSupplierContext();
+  const handleBack = onBack || onCancel;
+  const isEdit = Boolean(editSupplier);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    contact: '',
-    area: '',
-    supplierType: 'Commercial Dairy Farm',
-    ratePerLiter: '228',
-    avgLiters: '10',
-    address: '',
-    status: 'Active',
-  });
+  const [formData, setFormData] = useState(initialForm);
 
-  // Sync state with editSupplier if editing, or reset if adding
   useEffect(() => {
     if (editSupplier) {
       setFormData({
@@ -47,24 +51,23 @@ export default function AddSupplier({ onCancel, editSupplier = null }) {
         contact: editSupplier.contact || '',
         area: editSupplier.area || '',
         supplierType: editSupplier.supplierType || 'Commercial Dairy Farm',
-        ratePerLiter: editSupplier.ratePerLiter ? String(editSupplier.ratePerLiter) : '228',
-        avgLiters: editSupplier.avgLiters ? String(editSupplier.avgLiters) : '10',
+        ratePerLiter: editSupplier.ratePerLiter !== undefined ? String(editSupplier.ratePerLiter) : '228',
+        avgLiters: editSupplier.avgLiters !== undefined ? String(editSupplier.avgLiters) : '10',
         address: editSupplier.address || '',
         status: editSupplier.status || 'Active',
+        paymentMethod: editSupplier.paymentMethod || 'Cash / Direct Settlement',
+        accountNumber: editSupplier.accountNumber || '',
+        notes: editSupplier.notes || '',
       });
     } else {
-      setFormData({
-        name: '',
-        contact: '',
-        area: '',
-        supplierType: 'Commercial Dairy Farm',
-        ratePerLiter: '228',
-        avgLiters: '10',
-        address: '',
-        status: 'Active',
-      });
+      setFormData(initialForm);
     }
   }, [editSupplier]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -73,249 +76,321 @@ export default function AddSupplier({ onCancel, editSupplier = null }) {
       return;
     }
 
-    if (editSupplier) {
+    if (isEdit && editSupplier) {
       updateSupplier(editSupplier.id, formData);
     } else {
       addSupplier(formData);
     }
 
-    if (onCancel) onCancel();
+    if (handleBack) handleBack();
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-200">
-      {/* 1. Header Bar with Back Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs">
+    <div className="space-y-3 animate-in fade-in duration-150 no-scrollbar">
+      {/* Top action & header bar - EXACT match to StaffAdd / AnimalAdd */}
+      <div className="flex items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-xl px-4 py-2.5 shadow-2xs">
         <div className="flex items-center gap-3">
-          <Button
+          <button
             type="button"
-            variant="outline"
-            onClick={onCancel}
-            className="h-[38px] px-3.5 rounded-full text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            onClick={handleBack}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4 text-slate-500" />
-            <span>Back to Supplier Directory</span>
-          </Button>
-
-          <div className="h-6 w-px bg-slate-200 hidden sm:block" />
-
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back to Suppliers
+          </button>
           <div>
-            <h2 className="text-lg font-bold text-slate-900 font-display flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#009966]" />
-              <span>{editSupplier ? `Edit Supplier Profile: ${editSupplier.name}` : 'Register New Milk Supplier'}</span>
-            </h2>
-            <p className="text-xs text-slate-500">
-              Manage vendor contacts, commercial entity type, and agreed procurement rates
-            </p>
+            <h1 className="text-base font-bold text-slate-900 tracking-tight font-display leading-tight">
+              {isEdit ? `Edit Supplier — ${editSupplier?.name || ''}` : 'Register New Milk Supplier'}
+            </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            className="h-[38px] px-4 rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-100"
-          >
-            Cancel
-          </Button>
-
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            className="h-[38px] px-6 rounded-full text-xs font-semibold text-white shadow-xs flex items-center gap-1.5 cursor-pointer hover:brightness-110"
-            style={{ backgroundColor: '#009966' }}
-          >
-            <Save className="w-4 h-4" />
-            <span>{editSupplier ? 'Update Supplier' : 'Save Supplier Profile'}</span>
-          </Button>
-        </div>
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+            isEdit
+              ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+              : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+          }`}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              isEdit ? 'bg-indigo-500' : 'bg-emerald-500 animate-pulse'
+            }`}
+          />
+          {isEdit ? `Editing #${editSupplier?.id}` : 'New Supplier'}
+        </span>
       </div>
 
-      {/* 2. Full-Space Multi-Column Form Body */}
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left Column: Vendor Profile Details (7 Cols) */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100 text-slate-800 font-bold text-sm font-display">
-              <Building2 className="w-4 h-4 text-[#009966]" />
-              <span>Vendor Profile &amp; Location Details</span>
+      {/* Main form container */}
+      <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs no-scrollbar">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          {/* Section 1: Supplier Profile & Identification */}
+          <div>
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-2.5">
+              <div
+                className={`w-6 h-6 rounded-md flex items-center justify-center text-xs ${
+                  isEdit ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+              </div>
+              <h2 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
+                1. Supplier Profile &amp; Contact Details
+              </h2>
             </div>
 
-            {/* Supplier Name */}
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1.5">
-                Supplier / Business Name *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Rahim Ullah Dairy Farm"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full h-[44px] px-3.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-900 outline-none focus:border-[#009966] transition-colors shadow-2xs"
-              />
-            </div>
-
-            {/* Entity Type & Phone Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1.5">
-                  Supplier Category *
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Supplier / Business Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Enter supplier name"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Supplier Category <span className="text-rose-500">*</span>
                 </label>
                 <select
+                  name="supplierType"
                   value={formData.supplierType}
-                  onChange={(e) => setFormData({ ...formData, supplierType: e.target.value })}
-                  className="w-full h-[42px] px-3 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 bg-white outline-none focus:border-[#009966]"
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition cursor-pointer font-medium"
                 >
-                  {SUPPLIER_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
+                  {SUPPLIER_TYPES.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1.5">
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Operational Status
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition cursor-pointer font-medium"
+                >
+                  {STATUS_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Contact Number
                 </label>
-                <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 h-[42px]">
-                  <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                    <Phone className="w-3.5 h-3.5" />
+                  </span>
+                  <input
+                    type="tel"
+                    name="contact"
+                    value={formData.contact}
+                    onChange={handleChange}
+                    placeholder="Enter phone number"
+                    className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Collection Route / Area <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                    <MapPin className="w-3.5 h-3.5" />
+                  </span>
                   <input
                     type="text"
-                    placeholder="0300-1234567"
-                    value={formData.contact}
-                    onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                    className="w-full bg-transparent border-none outline-none text-xs font-medium text-slate-900"
+                    name="area"
+                    required
+                    value={formData.area}
+                    onChange={handleChange}
+                    placeholder="Enter area"
+                    className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Physical Address / Shed Location
+                </label>
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder="Enter address"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Procurement Terms & Milk Pricing */}
+          <div className="pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-2.5">
+              <div className="w-6 h-6 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center text-xs">
+                <Tag className="w-3.5 h-3.5" />
+              </div>
+              <h2 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
+                2. Procurement Terms &amp; Milk Pricing
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Agreed Milk Rate (Rs. / Liter) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-[11px]">
+                    Rs.
+                  </span>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    required
+                    name="ratePerLiter"
+                    value={formData.ratePerLiter}
+                    onChange={handleChange}
+                    placeholder="Enter rate"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Expected Daily Supply (Liters)
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400 font-bold text-[11px]">
+                    L/day
+                  </span>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    name="avgLiters"
+                    value={formData.avgLiters}
+                    onChange={handleChange}
+                    placeholder="Enter commission"
+                    className="w-full pl-3 pr-12 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Payment Terms / Frequency
+                </label>
+                <select
+                  name="paymentMethod"
+                  value={formData.paymentMethod}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition cursor-pointer font-medium"
+                >
+                  <option value="Cash / Direct Settlement">Cash / Direct Settlement</option>
+                  <option value="Weekly Settlement">Weekly Settlement</option>
+                  <option value="Bi-Weekly Settlement">Bi-Weekly Settlement</option>
+                  <option value="Monthly Invoice">Monthly Invoice</option>
+                  <option value="Bank / Mobile Wallet">Bank / Mobile Wallet</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-3">
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Bank Account / Mobile Wallet (Optional)
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                    <CreditCard className="w-3.5 h-3.5" />
+                  </span>
+                  <input
+                    type="text"
+                    name="accountNumber"
+                    value={formData.accountNumber}
+                    onChange={handleChange}
+                    placeholder="Enter bank details"
+                    className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
                   />
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Collection Area / Route */}
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1.5">
-                Collection Route / Area *
-              </label>
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 h-[42px]">
-                <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
+          {/* Section 3: Notes & Contract Details */}
+          <div className="pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-2.5">
+              <div className="w-6 h-6 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center text-xs">
+                <FileText className="w-3.5 h-3.5" />
+              </div>
+              <h2 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
+                3. Operational Notes &amp; Quality Agreement
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 text-xs">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Notes, Special Instructions or Contract Terms
+                </label>
                 <input
                   type="text"
-                  required
-                  placeholder="e.g. Green Meadows, Sahiwal, Sector 4"
-                  value={formData.area}
-                  onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  className="w-full bg-transparent border-none outline-none text-xs font-semibold text-slate-900"
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleChange}
+                  placeholder="Enter notes"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
                 />
               </div>
-            </div>
-
-            {/* Physical Address */}
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1.5">
-                Physical Address / Shed Location
-              </label>
-              <textarea
-                rows={2}
-                placeholder="Village address, farm location, landmark..."
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 outline-none focus:border-[#009966]"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Pricing & Operational Status (5 Cols) */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100 text-slate-800 font-bold text-sm font-display">
-              <Tag className="w-4 h-4 text-[#009966]" />
-              <span>Procurement Terms &amp; Status</span>
-            </div>
-
-            {/* Agreed Rate per Liter */}
-            <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-100 space-y-2">
-              <label className="block font-bold text-emerald-900 uppercase tracking-wider text-[11px]">
-                Agreed Milk Rate (Rs. / Liter) *
-              </label>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-emerald-700">Rs.</span>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="50"
-                  required
-                  placeholder="e.g. 230"
-                  value={formData.ratePerLiter}
-                  onChange={(e) => setFormData({ ...formData, ratePerLiter: e.target.value })}
-                  className="w-full h-[42px] px-3 rounded-xl border border-emerald-300 text-lg font-black text-emerald-800 bg-white outline-none focus:border-[#009966] tabular"
-                />
-                <span className="text-xs text-emerald-600 font-medium">/ Liter</span>
-              </div>
-              <p className="text-[11px] text-emerald-700/80">
-                This default rate will auto-populate during intake slips and shift entries.
-              </p>
-            </div>
-
-            {/* Expected Daily/Shift Volume (Liters) */}
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1.5">
-                Expected Supply per Shift (Liters) *
-              </label>
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 h-[42px]">
-                <input
-                  type="number"
-                  step="0.5"
-                  min="1"
-                  required
-                  placeholder="e.g. 10"
-                  value={formData.avgLiters}
-                  onChange={(e) => setFormData({ ...formData, avgLiters: e.target.value })}
-                  className="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-900"
-                />
-                <span className="text-xs text-slate-400 font-semibold">L / Shift</span>
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Used to calculate expected shift volume and variance in the Intake Register.
-              </p>
-            </div>
-
-            {/* Vendor Operational Status */}
-            <div>
-              <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1.5">
-                Vendor Status
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full h-[42px] px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white outline-none focus:border-[#009966]"
-              >
-                <option value="Active">Active Supplier (Eligible for Shifts)</option>
-                <option value="Inactive">Inactive / Suspended</option>
-              </select>
-            </div>
-
-            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 space-y-1">
-              <span className="font-bold block text-slate-800">Auto-Integration:</span>
-              <p className="text-[11px] text-slate-500">
-                Newly registered active suppliers automatically appear in the Milk Intake Register and Shift Collection screens with their agreed rates.
-              </p>
             </div>
           </div>
 
-          {/* Submission Button */}
-          <Button
-            type="submit"
-            className="w-full h-[46px] rounded-2xl text-sm font-bold text-white shadow-sm flex items-center justify-center gap-2 cursor-pointer hover:brightness-110"
-            style={{ backgroundColor: '#009966' }}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>{editSupplier ? 'Update & Save Profile' : 'Complete Registration'}</span>
-          </Button>
-        </div>
-      </form>
+          {/* Form action buttons */}
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={`flex items-center gap-1.5 px-5 py-2 rounded-lg text-white text-xs font-bold shadow-xs transition cursor-pointer ${
+                isEdit
+                  ? 'bg-indigo-600 hover:bg-indigo-700'
+                  : 'bg-[#00a86b] hover:bg-[#007a52]'
+              }`}
+            >
+              <Check className="w-3.5 h-3.5" />
+              {isEdit ? 'Save Changes' : 'Register Milk Supplier'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

@@ -4,7 +4,9 @@ import { useLedgerContext } from './LedgerContext';
 import { useAnimalContext } from './AnimalContext';
 import { useDeliveryContext } from './DeliveryContext';
 import { useFuelLogContext } from './FuelLogContext';
+import { useDeliveryStaffContext } from './DeliveryStaffContext';
 import { estimateDistanceKm } from '@/features/pos/utils/estimateDeliveryDistance';
+import { useIntakeContext } from './IntakeContext';
 
 const POSContext = createContext();
 
@@ -12,6 +14,83 @@ const POSContext = createContext();
 const STORAGE_KEY_PRODUCTS = 'pure_milk_bar_products';
 const STORAGE_KEY_CART = 'pure_milk_bar_cart';
 const STORAGE_KEY_SALES = 'pure_milk_bar_sales';
+
+// Initial Dairy Catalog with explicit Source attribution ('Farm' vs 'Supplier')
+// Initial Dairy Catalog with the 3 Core Products: Cow Milk, Buffalo Milk, and Dahi (Strictly 0 initial stock)
+export const DEFAULT_CATALOG = [
+  {
+    id: 'PRD-COW-01',
+    sku: 'PRD-COW-01',
+    name: 'Cow Milk',
+    category: 'Milk',
+    unit: 'per liter',
+    price: 260,
+    cost: 190,
+    source: 'Farm',
+    stock: 0,
+    status: 'Active',
+    barcode: '890100101',
+    storage: 'Refrigerated Chiller (0 - 4 °C)',
+    frequency: 'Daily Morning & Evening Batches',
+    description: 'Fresh pure cow milk directly from farm herd',
+  },
+  {
+    id: 'PRD-BUF-01',
+    sku: 'PRD-BUF-01',
+    name: 'Buffalo Milk',
+    category: 'Milk',
+    unit: 'per liter',
+    price: 290,
+    cost: 210,
+    source: 'Farm',
+    stock: 0,
+    status: 'Active',
+    barcode: '890100102',
+    storage: 'Refrigerated Chiller (0 - 4 °C)',
+    frequency: 'Daily Morning & Evening Batches',
+    description: 'Rich creamy high-fat buffalo milk directly from farm herd',
+  },
+  {
+    id: 'PRD-DAHI-01',
+    sku: 'PRD-DAHI-01',
+    name: 'Dahi',
+    category: 'Dahi',
+    unit: 'per kg',
+    price: 320,
+    cost: 220,
+    source: 'Farm',
+    stock: 0,
+    status: 'Active',
+    barcode: '890100103',
+    storage: 'Cold Storage Room (2 - 6 °C)',
+    frequency: 'Daily Morning Batches',
+    description: 'Traditional thick fresh whole milk dahi (pot yogurt)',
+  },
+];
+
+// Helper to identify and purge any legacy dummy sales records (e.g. INV-1025..1028, mock names)
+export const isLegacyDummySale = (sale) => {
+  if (!sale) return true;
+  const invId = (sale.invoiceId || '').toUpperCase();
+  const wName = (sale.walkinName || '').toLowerCase();
+  const notes = (sale.notes || '').toLowerCase();
+  const cName = (sale.customer?.name || '').toLowerCase();
+  const isDummyId = ['INV-1025', 'INV-1026', 'INV-1027', 'INV-1028'].includes(invId);
+  const isDummyCustomer =
+    wName.includes('tariq mahmood') ||
+    wName.includes('cafe gourmet') ||
+    wName.includes('chaudhry akram') ||
+    wName.includes('gulberg sweet') ||
+    cName.includes('tariq mahmood') ||
+    cName.includes('cafe gourmet') ||
+    cName.includes('chaudhry akram') ||
+    cName.includes('gulberg sweet') ||
+    notes.includes('morning fresh farm delivery') ||
+    notes.includes('commercial tea & breakfast') ||
+    notes.includes('chilled milk dispatch');
+  return isDummyId || isDummyCustomer;
+};
+
 
 // Delivery Staff with Vehicle Types (conveyance)
 export const deliveryRidersList = [
@@ -61,21 +140,79 @@ export function POSProvider({ children }) {
   const addDelivery = deliveryCtx?.addDelivery;
   const fuelLogCtx = useFuelLogContext();
   const addFuelLog = fuelLogCtx?.addFuelLog;
+  const deliveryStaffCtx = useDeliveryStaffContext();
+  const staffList = deliveryStaffCtx?.staffList || [];
+
+  // Dynamic riders derived from live delivery staff context
+  const dynamicRiders = React.useMemo(() => {
+    if (Array.isArray(staffList) && staffList.length > 0) {
+      return staffList.map((s) => ({
+        id: s.id,
+        name: s.name,
+        phone: s.phone || s.mobile || '',
+        vehicleType: s.type === 'WALKING' ? 'Walking Man' : 'Motorbike',
+        vehicleName: s.vehicle || (s.type === 'WALKING' ? 'On Foot' : 'Motorbike'),
+        plateNumber: s.vehicle || 'Standard',
+        active: s.active !== false,
+        badge: s.type === 'WALKING' ? 'Walking Courier' : 'Delivery Rider',
+      }));
+    }
+    return deliveryRidersList;
+  }, [staffList]);
 
   // =========================================================================
-  // 1. PRODUCTS STATE - STRICTLY FROM LOCAL STORAGE (Empty [] if not found)
+  // 1. PRODUCTS STATE - Always ensures Cow Milk, Buffalo Milk, and Dahi exist
   // =========================================================================
   const [products, setProducts] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_PRODUCTS);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const list = parsed.map((p) => {
+            // Reset legacy dummy stock numbers (65, 50, 35)
+            const cleanStock =
+              (p.stock === 65 && (p.id === 'PRD-COW-01' || p.name?.toLowerCase().includes('cow'))) ||
+              (p.stock === 50 && (p.id === 'PRD-BUF-01' || p.name?.toLowerCase().includes('buff'))) ||
+              (p.stock === 35 && (p.id === 'PRD-DAHI-01' || p.name?.toLowerCase().includes('dahi')))
+                ? 0
+                : (Number(p.stock) || 0);
+
+            return {
+              ...p,
+              stock: cleanStock,
+              source: p.source || (
+                (p.name && (p.name.toLowerCase().includes('supplier') || p.name.toLowerCase().includes('sourced') || p.name.toLowerCase().includes('chilled'))) ||
+                (p.category && (p.category.toLowerCase().includes('supplier') || p.category.toLowerCase().includes('sourced') || p.category.toLowerCase().includes('chilled')))
+                  ? 'Supplier'
+                  : 'Farm'
+              ),
+            };
+          });
+
+          // Ensure the 3 core products: Cow Milk, Buffalo Milk, and Dahi are present
+          DEFAULT_CATALOG.forEach((defProd) => {
+            const exists = list.some(
+              (p) =>
+                p.id === defProd.id ||
+                p.sku === defProd.sku ||
+                (p.name && p.name.toLowerCase() === defProd.name.toLowerCase()) ||
+                (p.name && defProd.name.toLowerCase().includes('cow') && p.name.toLowerCase().includes('cow')) ||
+                (p.name && defProd.name.toLowerCase().includes('buff') && p.name.toLowerCase().includes('buff')) ||
+                (p.name && defProd.name.toLowerCase().includes('dahi') && p.name.toLowerCase().includes('dahi'))
+            );
+            if (!exists) {
+              list.push(defProd);
+            }
+          });
+
+          return list;
+        }
       }
     } catch (error) {
       console.error('Error loading products from localStorage:', error);
     }
-    return []; // STRICT: Start empty if nothing in localStorage
+    return DEFAULT_CATALOG;
   });
 
   // Track product being edited (null = adding new product)
@@ -103,6 +240,7 @@ export function POSProvider({ children }) {
         name: newProduct.name || 'Unnamed Product',
         category: newProduct.category || 'Milk',
         unit: newProduct.unit || 'per kg',
+        source: newProduct.source || 'Farm',
         price: newProduct.price !== undefined && newProduct.price !== null && newProduct.price !== '' ? Number(newProduct.price) : 0,
         cost: newProduct.cost !== undefined && newProduct.cost !== null && newProduct.cost !== '' ? Number(newProduct.cost) : 0,
         status: newProduct.status || 'Active',
@@ -131,6 +269,7 @@ export function POSProvider({ children }) {
           return {
             ...item,
             ...updatedProduct,
+            source: updatedProduct.source || item.source || 'Farm',
             price: updatedProduct.price !== undefined && updatedProduct.price !== null && updatedProduct.price !== '' ? Number(updatedProduct.price) : item.price,
             cost: updatedProduct.cost !== undefined && updatedProduct.cost !== null && updatedProduct.cost !== '' ? Number(updatedProduct.cost) : item.cost,
           };
@@ -270,6 +409,7 @@ export function POSProvider({ children }) {
   const [linkedCustomerId, setLinkedCustomerId] = useState('');
 
   // Fuel Log state for delivery orders
+  const [showFuelLog, setShowFuelLog] = useState(false);
   const [fuelLog, setFuelLog] = useState({
     liters: '',
     amount: '',
@@ -283,6 +423,7 @@ export function POSProvider({ children }) {
 
   // Reset fuel log when delivery sub-type changes
   useEffect(() => {
+    setShowFuelLog(false);
     setFuelLog({ liters: '', amount: '', distanceKm: '', notes: '' });
   }, [deliverySubType]);
 
@@ -302,8 +443,10 @@ export function POSProvider({ children }) {
           id: product.id,
           name: product.name,
           price: Number(product.price) || 0,
+          cost: Number(product.cost) || 0,
           unit: product.unit || 'per kg',
           category: product.category || 'Milk',
+          source: product.source || 'Farm',
           quantity: addQty,
         },
       ];
@@ -329,9 +472,11 @@ export function POSProvider({ children }) {
         {
           id: product.id,
           name: product.name,
-          price: Number(product.price) || 0,
+          price: rate,
+          cost: Number(product.cost) || 0,
           unit: product.unit || 'per kg',
           category: product.category || 'Milk',
+          source: product.source || 'Farm',
           quantity: calcQty,
         },
       ];
@@ -392,6 +537,7 @@ export function POSProvider({ children }) {
     setLinkedCustomerId('');
     setSelectedRiderId('');
     setCustomRiderName('');
+    setShowFuelLog(false);
     setFuelLog({ liters: '', amount: '', distanceKm: '', notes: '' });
     setWalkinCustomerType('first_time');
     setOnlineDetails({ provider: 'JazzCash', senderAccount: '', trxId: '' });
@@ -415,7 +561,9 @@ export function POSProvider({ children }) {
 
   const allCustomers = rawCustomers.length > 0 ? rawCustomers : customers;
   const activeCustomer = allCustomers.find((c) => String(c.id) === String(linkedCustomerId)) || null;
-  const activeRider = selectedRiderId ? (deliveryRidersList.find((r) => r.id === selectedRiderId) || null) : null;
+  const activeRider = selectedRiderId
+    ? dynamicRiders.find((r) => String(r.id) === String(selectedRiderId)) || null
+    : null;
 
   // Auto-estimate distance for monthly delivery customer if not already edited
   useEffect(() => {
@@ -431,14 +579,19 @@ export function POSProvider({ children }) {
   }, [deliverySubType, activeCustomer]);
 
   // =========================================================================
-  // 3. SALES & INVOICES - STRICTLY FROM LOCAL STORAGE
+  // 3. SALES & INVOICES - STRICTLY REAL DATA FROM LOCAL STORAGE (NO DUMMY SALES)
   // =========================================================================
   const [salesHistory, setSalesHistory] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_SALES);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          // Strictly filter out any legacy dummy records
+          const realSales = parsed.filter((s) => !isLegacyDummySale(s));
+          localStorage.setItem(STORAGE_KEY_SALES, JSON.stringify(realSales));
+          return realSales;
+        }
       }
     } catch (error) {
       console.error('Error loading sales from localStorage:', error);
@@ -459,7 +612,7 @@ export function POSProvider({ children }) {
   const handleCompleteSale = () => {
     if (cart.length === 0) return null;
 
-    const invoiceId = `INV-${1000 + salesHistory.length + 25}`;
+    const invoiceId = `INV-${1001 + salesHistory.length}`;
     const todayDate = new Date().toISOString().split('T')[0];
     const itemSummary = cart
       .map((i) => `${i.quantity} ${i.unit || 'unit'} ${i.name} (@Rs. ${i.price})`)
@@ -480,6 +633,8 @@ export function POSProvider({ children }) {
           ...i,
           quantity: qty,
           price: rate,
+          cost: Number(i.cost) || 0,
+          source: i.source || 'Farm',
           subtotal: Math.round(qty * rate),
         };
       }),
@@ -633,8 +788,9 @@ export function POSProvider({ children }) {
         });
       }
 
-      // Record fuel log if liters and amount are provided
+      // Record fuel log if toggle is on and liters and amount are provided
       if (
+        showFuelLog &&
         fuelLog.liters &&
         Number(fuelLog.liters) > 0 &&
         fuelLog.amount &&
@@ -725,7 +881,169 @@ export function POSProvider({ children }) {
     });
   });
 
-  const remainingFarmMilk = Math.max(0, totalFarmMilk - totalMilkSold);
+  // Detailed Source Attribution Function ('Farm' vs 'Supplier')
+  const resolveItemSource = (item) => {
+    if (item.source === 'Supplier' || item.source === 'Farm') return item.source;
+    const prod = products.find((p) => p.id === item.id || p.sku === item.sku || p.name === item.name);
+    if (prod?.source) return prod.source;
+    const name = (item.name || '').toLowerCase();
+    const cat = (item.category || '').toLowerCase();
+    if (
+      name.includes('supplier') ||
+      name.includes('sourced') ||
+      name.includes('chilled') ||
+      name.includes('intake') ||
+      cat.includes('supplier') ||
+      cat.includes('sourced') ||
+      cat.includes('chilled')
+    ) {
+      return 'Supplier';
+    }
+    return 'Farm';
+  };
+
+  const farmStats = {
+    milkSold: 0,
+    dahiSold: 0,
+    otherSold: 0,
+    milkRevenue: 0,
+    dahiRevenue: 0,
+    totalRevenue: 0,
+    totalCost: 0,
+    itemizedProducts: {},
+  };
+
+  const supplierStats = {
+    milkSold: 0,
+    dahiSold: 0,
+    otherSold: 0,
+    milkRevenue: 0,
+    dahiRevenue: 0,
+    totalRevenue: 0,
+    totalCost: 0,
+    itemizedProducts: {},
+  };
+
+  salesHistory.forEach((sale) => {
+    (sale.items || []).forEach((item) => {
+      const src = resolveItemSource(item);
+      const qty = Number(item.quantity) || 0;
+      const unitPrice = Number(item.price) || 0;
+      const prodMatch = products.find((p) => p.id === item.id || p.sku === item.sku || p.name === item.name);
+      const unitCost = Number(item.cost) || Number(prodMatch?.cost) || (
+        src === 'Supplier'
+          ? (item.category?.toLowerCase().includes('dahi') ? 215 : 228)
+          : (item.category?.toLowerCase().includes('dahi') ? 220 : 190)
+      );
+      const lineCost = Math.round(qty * unitCost);
+
+      const isMilk = (item.category || '').toLowerCase().includes('milk') || (item.name || '').toLowerCase().includes('milk');
+      const isDahi = (item.category || '').toLowerCase().includes('dahi') || (item.name || '').toLowerCase().includes('dahi');
+
+      const target = src === 'Supplier' ? supplierStats : farmStats;
+
+      if (isMilk) {
+        target.milkSold += qty;
+        target.milkRevenue += lineTotal;
+      } else if (isDahi) {
+        target.dahiSold += qty;
+        target.dahiRevenue += lineTotal;
+      } else {
+        target.otherSold += qty;
+      }
+
+      target.totalRevenue += lineTotal;
+      target.totalCost += lineCost;
+
+      const pName = item.name || (isMilk ? `${src} Milk` : `${src} Dahi`);
+      if (!target.itemizedProducts[pName]) {
+        target.itemizedProducts[pName] = {
+          id: item.id || pName,
+          name: pName,
+          category: item.category || (isMilk ? 'Milk' : 'Dahi'),
+          unit: item.unit || (isMilk ? 'per liter' : 'per kg'),
+          source: src,
+          qtySold: 0,
+          totalRevenue: 0,
+          totalCost: 0,
+          avgRate: unitPrice,
+          unitCost: unitCost,
+        };
+      }
+      target.itemizedProducts[pName].qtySold += qty;
+      target.itemizedProducts[pName].totalRevenue += lineTotal;
+      target.itemizedProducts[pName].totalCost += lineCost;
+    });
+  });
+
+  // Calculate Farm P&L Metrics
+  const farmGrossProfit = Math.max(0, farmStats.totalRevenue - farmStats.totalCost);
+  const farmGrossMargin = farmStats.totalRevenue > 0 ? Math.round((farmGrossProfit / farmStats.totalRevenue) * 100) : 0;
+  const farmOverhead = Math.round(farmStats.totalRevenue * 0.12);
+  const farmNetProfit = Math.max(0, farmGrossProfit - farmOverhead);
+  const farmNetMargin = farmStats.totalRevenue > 0 ? Math.round((farmNetProfit / farmStats.totalRevenue) * 100) : 0;
+  const farmRealizationPerLiter = farmStats.milkSold > 0 ? Number((farmNetProfit / farmStats.milkSold).toFixed(2)) : 0;
+
+  const farmSalesMetrics = {
+    source: 'Farm',
+    label: 'In-House Dairy Farm',
+    milkSold: Number(farmStats.milkSold.toFixed(1)),
+    dahiSold: Number(farmStats.dahiSold.toFixed(1)),
+    otherSold: Number(farmStats.otherSold.toFixed(1)),
+    milkRevenue: farmStats.milkRevenue,
+    dahiRevenue: farmStats.dahiRevenue,
+    totalRevenue: farmStats.totalRevenue,
+    totalCost: farmStats.totalCost,
+    grossProfit: farmGrossProfit,
+    grossMarginPercent: farmGrossMargin,
+    allocatedOverhead: farmOverhead,
+    netProfit: farmNetProfit,
+    netMarginPercent: farmNetMargin,
+    realizationPerLiter: farmRealizationPerLiter,
+    itemizedProducts: Object.values(farmStats.itemizedProducts),
+  };
+
+  // Calculate Supplier P&L Metrics
+  const supplierGrossProfit = Math.max(0, supplierStats.totalRevenue - supplierStats.totalCost);
+  const supplierGrossMargin = supplierStats.totalRevenue > 0 ? Math.round((supplierGrossProfit / supplierStats.totalRevenue) * 100) : 0;
+  const supplierOverhead = Math.round(supplierStats.totalRevenue * 0.10);
+  const supplierNetProfit = Math.max(0, supplierGrossProfit - supplierOverhead);
+  const supplierNetMargin = supplierStats.totalRevenue > 0 ? Math.round((supplierNetProfit / supplierStats.totalRevenue) * 100) : 0;
+  const supplierRealizationPerLiter = supplierStats.milkSold > 0 ? Number((supplierNetProfit / supplierStats.milkSold).toFixed(2)) : 0;
+
+  const supplierSalesMetrics = {
+    source: 'Supplier',
+    label: 'Supplier Procured Sourcing',
+    milkSold: Number(supplierStats.milkSold.toFixed(1)),
+    dahiSold: Number(supplierStats.dahiSold.toFixed(1)),
+    otherSold: Number(supplierStats.otherSold.toFixed(1)),
+    milkRevenue: supplierStats.milkRevenue,
+    dahiRevenue: supplierStats.dahiRevenue,
+    totalRevenue: supplierStats.totalRevenue,
+    totalCost: supplierStats.totalCost,
+    grossProfit: supplierGrossProfit,
+    grossMarginPercent: supplierGrossMargin,
+    allocatedOverhead: supplierOverhead,
+    netProfit: supplierNetProfit,
+    netMarginPercent: supplierNetMargin,
+    realizationPerLiter: supplierRealizationPerLiter,
+    itemizedProducts: Object.values(supplierStats.itemizedProducts),
+  };
+
+  let intakeLogs = [];
+  try {
+    const intakeCtx = useIntakeContext();
+    intakeLogs = intakeCtx?.intakeLogs || [];
+  } catch (e) {
+    try {
+      const saved = localStorage.getItem('pure_milk_bar_intake_records_v3');
+      if (saved) intakeLogs = JSON.parse(saved) || [];
+    } catch (_) {}
+  }
+
+  const totalSupplierIntake = intakeLogs.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+  const remainingSupplierMilk = Math.max(0, totalSupplierIntake - (supplierSalesMetrics?.milkSold || 0));
+  const remainingFarmMilk = Math.max(0, totalFarmMilk - (farmSalesMetrics?.milkSold || 0));
 
   return (
     <POSContext.Provider
@@ -788,7 +1106,7 @@ export function POSProvider({ children }) {
         setOrderNotes,
         fulfillmentMode,
         setFulfillmentMode,
-        riders: deliveryRidersList,
+        riders: dynamicRiders,
         selectedRiderId,
         setSelectedRiderId,
         activeRider,
@@ -804,6 +1122,8 @@ export function POSProvider({ children }) {
         setCollectEmptyBottles,
 
         // Fuel Log
+        showFuelLog,
+        setShowFuelLog,
         fuelLog,
         setFuelLog,
         updateFuelLog,
@@ -835,8 +1155,12 @@ export function POSProvider({ children }) {
         // 6 Inventory metrics
         inventoryMetrics: {
           totalFarmYield: totalFarmMilk,
-          totalMilk: (remainingFarmMilk % 1 === 0 ? remainingFarmMilk.toFixed(0) : remainingFarmMilk.toFixed(2)),
-          totalDahi: products.filter((p) => p.category && p.category.toLowerCase().includes('dahi')).length > 0 ? Math.max(0, 110 - totalDahiSold).toFixed(1) : 0,
+          totalMilk: remainingFarmMilk % 1 === 0 ? remainingFarmMilk.toFixed(0) : remainingFarmMilk.toFixed(1),
+          totalSupplierIntake,
+          supplierMilkStock: remainingSupplierMilk % 1 === 0 ? remainingSupplierMilk.toFixed(0) : remainingSupplierMilk.toFixed(1),
+          totalDahi: products.filter((p) => p.category && p.category.toLowerCase().includes('dahi')).reduce((sum, p) => sum + (Number(p.stock) || 0), 0) > 0 
+            ? products.filter((p) => p.category && p.category.toLowerCase().includes('dahi')).reduce((sum, p) => sum + (Number(p.stock) || 0), 0).toFixed(1)
+            : (totalDahiSold > 0 ? totalDahiSold.toFixed(1) : '0'),
           milkSold: (totalMilkSold % 1 === 0 ? totalMilkSold.toFixed(0) : totalMilkSold.toFixed(2)),
           dahiSold: (totalDahiSold % 1 === 0 ? totalDahiSold.toFixed(0) : totalDahiSold.toFixed(2)),
           totalMilkPrice,
@@ -844,6 +1168,10 @@ export function POSProvider({ children }) {
           milkPrice: activeMilkPrice,
           dahiPrice: activeDahiPrice,
         },
+
+        // Farm & Supplier Sales Source Metrics
+        farmSalesMetrics,
+        supplierSalesMetrics,
       }}
     >
       {children}

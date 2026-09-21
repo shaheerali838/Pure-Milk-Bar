@@ -68,7 +68,7 @@ export default function PhysicalStockCheckCard({
               type="number"
               min="0"
               step="0.5"
-              placeholder="e.g. 140"
+              placeholder="Enter value"
               value={physicalStock}
               onChange={(e) => onPhysicalStockChange(e.target.value)}
               className="pr-12 text-sm font-bold text-slate-900 bg-slate-50/50 border-slate-200 focus:bg-white tabular"

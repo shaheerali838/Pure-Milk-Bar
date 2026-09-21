@@ -14,6 +14,7 @@ import POSCardOverflow from './POSCardOverflow';
 import POSSale from './POSSale';
 import POSReceiptModal from './POSReceiptModal';
 import ProductDetailModal from '@/features/inventory/components/ProductDetailModal';
+import POSSalesSourceDetail from './POSSalesSourceDetail';
 
 export default function POSDashboard() {
   const {
@@ -31,6 +32,9 @@ export default function POSDashboard() {
 
   // Product detail view state
   const [productForDetail, setProductForDetail] = useState(null);
+
+  // Sales source P&L detail view state ('farm' | 'supplier' | 'all' | null)
+  const [selectedSalesSource, setSelectedSalesSource] = useState(null);
 
   // Filter products by search & category
   const filteredProducts = products.filter((item) => {
@@ -72,6 +76,16 @@ export default function POSDashboard() {
     );
   }
 
+  // 1. SALES SOURCE DETAIL PAGE VIEW (opens full profile layout like SupplierDetail)
+  if (selectedSalesSource) {
+    return (
+      <POSSalesSourceDetail
+        source={selectedSalesSource}
+        onBack={() => setSelectedSalesSource(null)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-3 py-2">
@@ -102,7 +116,9 @@ export default function POSDashboard() {
         </div>
       </div>
 
-      <POSCardOverflow />
+      <POSCardOverflow onSelectSource={setSelectedSalesSource} />
+
+
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
         <div className="lg:col-span-7 space-y-2 ">
@@ -112,7 +128,7 @@ export default function POSDashboard() {
                 <Search className="w-4 h-4 text-slate-400 shrink-0" />
                 <input
                   type="text"
-                  placeholder="Search by tag or animal name..."
+                  placeholder="Search milk or dairy items..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full bg-transparent border-none outline-none text-slate-800 placeholder-slate-400 text-xs sm:text-sm font-medium"

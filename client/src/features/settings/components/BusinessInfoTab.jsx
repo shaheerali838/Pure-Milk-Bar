@@ -46,7 +46,7 @@ export default function BusinessInfoTab({ data = {}, onChange }) {
               </Label>
               <Input
                 type="text"
-                placeholder="e.g. Pure Milk Bar & Dairy Farm"
+                placeholder="Enter business name"
                 value={data.businessName || ''}
                 onChange={(e) => handleChange('businessName', e.target.value)}
                 className="h-9 text-xs"
@@ -59,7 +59,7 @@ export default function BusinessInfoTab({ data = {}, onChange }) {
               <Label className="text-xs font-semibold text-slate-700">Owner / Proprietor Name</Label>
               <Input
                 type="text"
-                placeholder="e.g. Haji Muhammad Aslam"
+                placeholder="Enter name"
                 value={data.ownerName || ''}
                 onChange={(e) => handleChange('ownerName', e.target.value)}
                 className="h-9 text-xs"
@@ -73,7 +73,7 @@ export default function BusinessInfoTab({ data = {}, onChange }) {
                 <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <Input
                   type="text"
-                  placeholder="e.g. 0300-1234567"
+                  placeholder="Enter value"
                   value={data.phone || ''}
                   onChange={(e) => handleChange('phone', e.target.value)}
                   className="pl-9 h-9 text-xs font-mono"
@@ -88,7 +88,7 @@ export default function BusinessInfoTab({ data = {}, onChange }) {
                 <MapPin className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <Input
                   type="text"
-                  placeholder="e.g. Plot 14-B, Dairy Complex, Bedian Road"
+                  placeholder="Enter address"
                   value={data.address1 || ''}
                   onChange={(e) => handleChange('address1', e.target.value)}
                   className="pl-9 h-9 text-xs"
@@ -101,7 +101,7 @@ export default function BusinessInfoTab({ data = {}, onChange }) {
               <Label className="text-xs font-semibold text-slate-700">City</Label>
               <Input
                 type="text"
-                placeholder="e.g. Lahore"
+                placeholder="Enter city"
                 value={data.city || ''}
                 onChange={(e) => handleChange('city', e.target.value)}
                 className="h-9 text-xs"
@@ -115,7 +115,7 @@ export default function BusinessInfoTab({ data = {}, onChange }) {
                 <CreditCard className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <Input
                   type="text"
-                  placeholder="e.g. 7812903-4"
+                  placeholder="Enter ID"
                   value={data.ntn || ''}
                   onChange={(e) => handleChange('ntn', e.target.value)}
                   className="pl-9 h-9 text-xs font-mono"

@@ -714,7 +714,7 @@ export default function FarmPL() {
   }
 
   return (
-    <div className="flex flex-col gap-5 pb-16 animate-in fade-in duration-200">
+    <div className="flex flex-col gap-2 pb-16 animate-in fade-in duration-200">
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
         <div>
           <div className="flex items-center gap-2">

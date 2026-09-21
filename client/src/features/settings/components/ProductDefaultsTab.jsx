@@ -98,7 +98,7 @@ export default function ProductDefaultsTab({ data = {}, onChange }) {
                   type="number"
                   min="0"
                   step="any"
-                  placeholder="e.g. 50"
+                  placeholder="Enter quantity"
                   value={data.lowStockThreshold !== undefined && data.lowStockThreshold !== null ? data.lowStockThreshold : ''}
                   onChange={(e) => handleChange('lowStockThreshold', e.target.value === '' ? '' : Number(e.target.value))}
                   className="pl-9 h-9 text-xs font-mono"
@@ -117,7 +117,7 @@ export default function ProductDefaultsTab({ data = {}, onChange }) {
                   min="0"
                   max="100"
                   step="any"
-                  placeholder="e.g. 2.5"
+                  placeholder="Enter value"
                   value={data.wastageAllowance !== undefined && data.wastageAllowance !== null ? data.wastageAllowance : ''}
                   onChange={(e) => handleChange('wastageAllowance', e.target.value === '' ? '' : Number(e.target.value))}
                   className="pl-9 h-9 text-xs font-mono"

@@ -32,8 +32,8 @@ export default function ExpenseDetailPage() {
   };
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <div className="p-4 bg-slate-50 min-h-screen">
+      <div className="max-w-3xl mx-auto space-y-2">
 
         <div className="flex items-center space-x-4 mb-8">
           <Button variant="ghost" onClick={() => navigate('/farm/expenses')} className="p-2 h-auto rounded-full hover:bg-slate-200">

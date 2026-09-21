@@ -67,7 +67,7 @@ export default function AddDebitModal({ customer, isOpen, onClose }) {
               required
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="e.g. Delivery - 3 kg Cow + 1 kg Dahi"
+              placeholder="Enter value"
               className="w-full h-8.5 px-2.5 bg-white border border-slate-200 rounded-lg focus-visible:border-rose-500 focus-visible:ring-0 text-slate-800 font-medium"
             />
           </div>
@@ -81,7 +81,7 @@ export default function AddDebitModal({ customer, isOpen, onClose }) {
                 min="1"
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                placeholder="e.g. 790"
+                placeholder="Enter value"
                 className="w-full h-8.5 px-2.5 bg-white border border-slate-200 rounded-lg focus-visible:border-rose-500 focus-visible:ring-0 text-slate-800 font-bold tabular"
               />
             </div>

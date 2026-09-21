@@ -15,14 +15,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-/**
- * SupplierCardDetailModal
- * Renders a rich, interactive drilldown modal when clicking any summary card in Supplier Directory:
- * 1. 'vendors'  -> Registered Vendors Breakdown
- * 2. 'sourced'  -> Total Procured Milk Volume Breakdown
- * 3. 'payouts'  -> Disbursed Supplier Payouts Breakdown
- * 4. 'balances' -> Outstanding Supplier Balances Due (with 1-click settle)
- */
+// Modal dialog for supplier directory summary card drilldown
 export default function SupplierCardDetailModal({
   cardType,
   onClose,
@@ -57,12 +50,19 @@ export default function SupplierCardDetailModal({
 
   // Modal configuration based on cardType
   const config = {
-    vendors: {
+    suppliers: {
       title: 'Registered Supplier Directory Breakdown',
-      subtitle: `Viewing all ${totals.totalVendors || suppliers.length} registered dairy farmers & collection centers`,
+      subtitle: `Viewing all ${totals.totalSuppliers || totals.totalVendors || suppliers.length} registered dairy farmers & collection centers`,
       icon: Users,
       color: '#009966',
-      badge: 'Total Vendors',
+      badge: 'Total Suppliers',
+    },
+    vendors: {
+      title: 'Registered Supplier Directory Breakdown',
+      subtitle: `Viewing all ${totals.totalSuppliers || totals.totalVendors || suppliers.length} registered dairy farmers & collection centers`,
+      icon: Users,
+      color: '#009966',
+      badge: 'Total Suppliers',
     },
     sourced: {
       title: 'Procured Milk Volume Analysis',
@@ -146,19 +146,19 @@ export default function SupplierCardDetailModal({
 
         {/* 2. Top Summary KPI Pill Row */}
         <div className="p-4 bg-white border-b border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {cardType === 'vendors' && (
+          {(cardType === 'suppliers' || cardType === 'vendors') && (
             <>
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                <span className="text-[11px] text-slate-500 font-medium block">Total Vendors</span>
-                <span className="text-lg font-bold text-slate-900">{totals.totalVendors}</span>
+                <span className="text-[11px] text-slate-500 font-medium block">Total Suppliers</span>
+                <span className="text-lg font-bold text-slate-900">{totals.totalSuppliers ?? totals.totalVendors}</span>
               </div>
               <div className="bg-emerald-50/50 p-2.5 rounded-xl border border-emerald-100">
                 <span className="text-[11px] text-emerald-700 font-medium block">Active</span>
-                <span className="text-lg font-bold text-emerald-700">{totals.activeVendors}</span>
+                <span className="text-lg font-bold text-emerald-700">{totals.activeSuppliers ?? totals.activeVendors}</span>
               </div>
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                 <span className="text-[11px] text-slate-500 font-medium block">Inactive</span>
-                <span className="text-lg font-bold text-slate-600">{totals.inactiveVendors}</span>
+                <span className="text-lg font-bold text-slate-600">{totals.inactiveSuppliers ?? totals.inactiveVendors}</span>
               </div>
               <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
                 <span className="text-[11px] text-blue-700 font-medium block">Avg Rate</span>
@@ -370,7 +370,7 @@ export default function SupplierCardDetailModal({
                     {/* Right: Metrics & Actions */}
                     <div className="flex items-center justify-between sm:justify-end gap-3.5 border-t sm:border-t-0 pt-2 sm:pt-0">
                       {/* Card Specific Numbers */}
-                      {cardType === 'vendors' && (
+                      {(cardType === 'suppliers' || cardType === 'vendors') && (
                         <div className="text-right">
                           <span className="text-[10px] text-slate-400 font-medium block">
                             Procured Volume
@@ -475,7 +475,7 @@ export default function SupplierCardDetailModal({
         <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
           <span>
             Showing <strong className="text-slate-800">{filteredSuppliers.length}</strong> of{' '}
-            {suppliers.length} vendors
+            {suppliers.length} suppliers
           </span>
           <button
             type="button"

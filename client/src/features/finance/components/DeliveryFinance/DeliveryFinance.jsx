@@ -24,8 +24,6 @@ import {
 import DeliveryFinanceStats from './DeliveryFinanceStats';
 import CustomerDeliveryBreakdownTable from './CustomerDeliveryBreakdownTable';
 import CustomerDropPointsDetailView from './CustomerDropPointsDetailView';
-import RiderPerformanceTable from './RiderPerformanceTable';
-import RiderPerformanceDetailView from './RiderPerformanceDetailView';
 import RiderSalaryPayrollTable from './RiderSalaryPayrollTable';
 import PaySalaryView from './PaySalaryView';
 
@@ -44,19 +42,16 @@ export default function DeliveryFinance() {
   const [customStartDate, setCustomStartDate] = useState(todayStr);
   const [customEndDate, setCustomEndDate] = useState(todayStr);
 
-  // Sub-tab inside Delivery Finance: 'customers' | 'riders' | 'payroll'
+  // Sub-tab inside Delivery Finance: 'customers' | 'payroll'
   const [subTab, setSubTab] = useState('customers');
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState('');
 
   // Sub-views state
-  const [currentView, setCurrentView] = useState('main'); // 'main' | 'customerDetail' | 'riderDetail' | 'paySalary'
+  const [currentView, setCurrentView] = useState('main'); // 'main' | 'customerDetail' | 'paySalary'
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedCustomerDeliveries, setSelectedCustomerDeliveries] = useState([]);
-  const [selectedRider, setSelectedRider] = useState(null);
-  const [selectedRiderDeliveries, setSelectedRiderDeliveries] = useState([]);
-  const [selectedRiderFuelLogs, setSelectedRiderFuelLogs] = useState([]);
   const [salaryPaymentState, setSalaryPaymentState] = useState(null);
 
   // Helper to check if a date string falls in the selected time range
@@ -148,22 +143,7 @@ export default function DeliveryFinance() {
     );
   }
 
-  if (currentView === 'riderDetail' && selectedRider) {
-    return (
-      <RiderPerformanceDetailView
-        staff={selectedRider}
-        deliveries={selectedRiderDeliveries}
-        fuelLogs={selectedRiderFuelLogs}
-        timeRangeLabel={getTimeRangeLabel()}
-        onBack={() => {
-          setSelectedRider(null);
-          setSelectedRiderDeliveries([]);
-          setSelectedRiderFuelLogs([]);
-          setCurrentView('main');
-        }}
-      />
-    );
-  }
+
 
   if (currentView === 'paySalary' && salaryPaymentState) {
     return (
@@ -209,18 +189,7 @@ export default function DeliveryFinance() {
             Customer Drop Points
           </button>
 
-          <button
-            type="button"
-            onClick={() => setSubTab('riders')}
-            className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all border ${
-              subTab === 'riders'
-                ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
-                : 'bg-purple-50/80 text-purple-800 border-purple-200/80 hover:bg-purple-100'
-            }`}
-          >
-            <Bike className="w-3.5 h-3.5" />
-            Rider Performance & Fuel
-          </button>
+
 
           <button
             type="button"
@@ -327,19 +296,7 @@ export default function DeliveryFinance() {
         />
       )}
 
-      {subTab === 'riders' && (
-        <RiderPerformanceTable
-          staffList={searchedStaff}
-          filteredDeliveries={filteredDeliveries}
-          filteredFuelLogs={filteredFuelLogs}
-          onViewRiderDetail={(st, stDelvs, stFuels) => {
-            setSelectedRider(st);
-            setSelectedRiderDeliveries(stDelvs);
-            setSelectedRiderFuelLogs(stFuels);
-            setCurrentView('riderDetail');
-          }}
-        />
-      )}
+
 
       {subTab === 'payroll' && (
         <RiderSalaryPayrollTable

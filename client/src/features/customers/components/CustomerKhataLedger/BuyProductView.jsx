@@ -385,7 +385,7 @@ export default function BuyProductView({ customer, onBack }) {
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Leave at door in can"
+              placeholder="Enter value"
               className="w-full h-8.5 bg-slate-50/50 border-slate-200 rounded-lg text-xs text-slate-800 font-medium"
             />
           </div>
@@ -471,7 +471,7 @@ export default function BuyProductView({ customer, onBack }) {
                 max={grandTotal}
                 value={partialPaidAmount}
                 onChange={(e) => setPartialPaidAmount(e.target.value)}
-                placeholder="e.g. 500"
+                placeholder="Enter value"
                 className="w-full h-8.5 bg-white border border-amber-300 rounded-lg text-xs font-bold text-slate-800 tabular"
               />
             </div>

@@ -11,7 +11,7 @@ export default function CommandCenterBanner() {
   });
 
   return (
-    <div className="bg-[#1e293b] text-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-700/60 flex flex-col md:flex-row md:items-center justify-between gap-3">
+    <div className="bg-[#1e293b] text-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-700/60 flex flex-col md:flex-row md:items-center justify-between gap-2">
       <div className="space-y-1">
         <div className="flex items-center gap-2 flex-wrap">
           <h1 className="text-base sm:text-lg font-bold font-display tracking-tight text-white">

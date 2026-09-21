@@ -41,6 +41,7 @@ export function StaffProvider({ children }) {
       email: (data.email || '').trim(),
       shift: data.shift || 'Morning',
       monthlySalary: Number(data.monthlySalary) || 0,
+      dailySalary: Math.round((Number(data.monthlySalary) || 0) / 30),
       cnic: (data.cnic || '').trim(),
       route: (data.route || '').trim() || 'Not Assigned',
       status: 'Active',
@@ -56,18 +57,27 @@ export function StaffProvider({ children }) {
   // 3. Update Existing Staff Member
   const updateStaff = (id, data) => {
     const updated = staffList.map((member) => {
-      if (member.id === id) {
+      const isMatch =
+        String(member.id) === String(id) ||
+        (data.name && member.name && member.name.toLowerCase().trim() === data.name.toLowerCase().trim());
+
+      if (isMatch) {
+        const nextSalary = data.monthlySalary !== undefined ? Number(data.monthlySalary) : Number(member.monthlySalary || 0);
         return {
           ...member,
           ...data,
-          name: (data.name ?? member.name).trim(),
-          role: data.role ?? member.role,
-          mobile: (data.mobile ?? member.mobile).trim(),
-          email: (data.email ?? member.email).trim(),
-          shift: data.shift ?? member.shift,
-          monthlySalary: Number(data.monthlySalary ?? member.monthlySalary) || 0,
-          cnic: (data.cnic ?? member.cnic).trim(),
-          route: (data.route ?? member.route).trim() || 'Not Assigned',
+          ...(data.name !== undefined && { name: (data.name || member.name).trim() }),
+          ...(data.role !== undefined && { role: data.role ?? member.role }),
+          ...(data.mobile !== undefined && { mobile: (data.mobile ?? member.mobile).trim() }),
+          ...(data.email !== undefined && { email: (data.email ?? member.email).trim() }),
+          ...(data.shift !== undefined && { shift: data.shift ?? member.shift }),
+          ...(data.monthlySalary !== undefined && {
+            monthlySalary: nextSalary,
+            dailySalary: Math.round(nextSalary / 30),
+          }),
+          ...(data.cnic !== undefined && { cnic: (data.cnic ?? member.cnic).trim() }),
+          ...(data.route !== undefined && { route: (data.route ?? member.route).trim() || 'Not Assigned' }),
+          ...(data.status !== undefined && { status: data.status }),
         };
       }
       return member;
@@ -76,13 +86,33 @@ export function StaffProvider({ children }) {
     setStaffList(updated);
   };
 
-  // 4. Delete Staff Member
+  // 4. Toggle Staff Duty Status
+  const toggleStaffStatus = (id) => {
+    setStaffList((prev) =>
+      prev.map((member) => {
+        if (String(member.id) === String(id)) {
+          const currentIsActive =
+            member.status !== 'Inactive' &&
+            member.status !== 'Off Duty' &&
+            member.active !== false;
+          return {
+            ...member,
+            status: currentIsActive ? 'Inactive' : 'Active',
+            active: !currentIsActive,
+          };
+        }
+        return member;
+      })
+    );
+  };
+
+  // 5. Delete Staff Member
   const deleteStaff = (id) => {
     const updated = staffList.filter((member) => member.id !== id);
     setStaffList(updated);
   };
 
-  // 5. Computed Metrics for Dashboard Cards
+  // 6. Computed Metrics for Dashboard Cards
   const totalStaff = staffList.length;
   const monthlySalaries = staffList.reduce(
     (sum, member) => sum + (Number(member.monthlySalary) || 0),
@@ -118,6 +148,7 @@ export function StaffProvider({ children }) {
         staffList,
         addStaff,
         updateStaff,
+        toggleStaffStatus,
         deleteStaff,
         metrics,
       }}

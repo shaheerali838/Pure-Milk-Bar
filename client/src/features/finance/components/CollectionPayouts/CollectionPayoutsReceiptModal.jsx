@@ -32,7 +32,7 @@ export default function CollectionPayoutsReceiptModal({ customer, entry, isOpen,
           </Button>
         </div>
 
-        <div className="p-4 space-y-3 text-xs text-slate-700">
+        <div className="p-4 space-y-2 text-xs text-slate-700">
           <div className="p-3.5 bg-emerald-950 text-white rounded-xl shadow-xs space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">

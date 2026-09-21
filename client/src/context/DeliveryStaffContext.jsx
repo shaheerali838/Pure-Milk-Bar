@@ -170,10 +170,17 @@ export function DeliveryStaffProvider({ children }) {
       const newActive = target ? !target.active : true;
 
       setDeliveryStaffList((prev) => {
-        const exists = prev.some((s) => String(s.id) === String(id));
+        const exists = prev.some(
+          (s) =>
+            String(s.id) === String(id) ||
+            (target?.name && s.name && s.name.toLowerCase().trim() === target.name.toLowerCase().trim())
+        );
         if (exists) {
           return prev.map((s) =>
-            String(s.id) === String(id) ? { ...s, active: newActive } : s
+            String(s.id) === String(id) ||
+            (target?.name && s.name && s.name.toLowerCase().trim() === target.name.toLowerCase().trim())
+              ? { ...s, active: newActive }
+              : s
           );
         } else if (target) {
           return [{ ...target, active: newActive }, ...prev];
@@ -183,6 +190,7 @@ export function DeliveryStaffProvider({ children }) {
 
       if (staffContext?.updateStaff && target) {
         staffContext.updateStaff(id, {
+          name: target.name,
           status: newActive ? 'Active' : 'Inactive',
         });
       }

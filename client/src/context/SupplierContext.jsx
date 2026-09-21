@@ -12,6 +12,7 @@ export function SupplierProvider({ children }) {
   let intakeLogs = [];
   let updateBatchSettlement = null;
   let settleAllBatchesForSupplier = null;
+  let settleBatchesWithAmount = null;
 
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -20,6 +21,7 @@ export function SupplierProvider({ children }) {
       intakeLogs = intakeCtx.intakeLogs || [];
       updateBatchSettlement = intakeCtx.updateBatchSettlement;
       settleAllBatchesForSupplier = intakeCtx.settleAllBatchesForSupplier;
+      settleBatchesWithAmount = intakeCtx.settleBatchesWithAmount;
     }
   } catch (err) {
     console.warn('IntakeContext not available in SupplierProvider:', err);
@@ -96,6 +98,7 @@ export function SupplierProvider({ children }) {
       totalSourced: parseFloat(newSupplierData.totalSourced) || 0,
       totalPayout: parseFloat(newSupplierData.totalPayout) || 0,
       balanceDue: parseFloat(newSupplierData.balanceDue) || 0,
+      initialBalanceDue: parseFloat(newSupplierData.balanceDue) || 0,
       status: newSupplierData.status || 'Active',
       createdAt: new Date().toISOString().split('T')[0],
     };
@@ -156,31 +159,45 @@ export function SupplierProvider({ children }) {
     setDirectPayouts([]);
   };
 
-  // 8. Settle Outstanding Balance for a Supplier
-  const settleSupplierBalance = (supplierId) => {
-    const target = suppliers.find((s) => s.id === supplierId);
+  // 8. Settle Outstanding Balance for a Supplier (Partial or Full)
+  const settleSupplierBalance = (supplierId, customAmount = null) => {
+    const target = enrichedSuppliers.find((s) => s.id === supplierId) || suppliers.find((s) => s.id === supplierId);
     if (!target) return;
 
+    const totalDue = target.balanceDue || 0;
+    const payAmt = customAmount !== null && customAmount !== undefined
+      ? Math.min(totalDue, Math.max(0, parseFloat(customAmount) || 0))
+      : totalDue;
+
+    if (payAmt <= 0) return;
+
+    const isFull = payAmt >= totalDue;
+
     // Settle pending intake slips
-    if (settleAllBatchesForSupplier) {
+    if (isFull && settleAllBatchesForSupplier) {
       settleAllBatchesForSupplier(target.id, target.name);
+    } else if (settleBatchesWithAmount) {
+      settleBatchesWithAmount(target.id, target.name, payAmt);
     }
 
-    // Also record a clearance payout record
+    // Record payout history
     const payoutRecord = {
       id: `PAY-${Date.now()}`,
       supplierId: target.id,
       supplierName: target.name,
-      amount: target.balanceDue || 0,
+      amount: payAmt,
       date: new Date().toISOString().split('T')[0],
-      method: 'Cash / Clearance',
-      notes: `Balance cleared for ${target.name}`,
+      method: 'Cash / Settlement',
+      notes: isFull
+        ? `Full balance cleared for ${target.name}`
+        : `Partial payment of Rs. ${payAmt.toLocaleString()} disbursed for ${target.name}`,
+      isBatchSettlement: true,
     };
     setDirectPayouts((prev) => [payoutRecord, ...prev]);
   };
 
   // 9. Record a Direct Supplier Payout
-  const recordSupplierPayout = (supplierId, amount, note = '') => {
+  const recordSupplierPayout = (supplierId, amount, note = '', isBatchSettlement = false) => {
     const target = suppliers.find((s) => s.id === supplierId);
     if (!target) return;
     const numAmount = parseFloat(amount) || 0;
@@ -194,12 +211,9 @@ export function SupplierProvider({ children }) {
       date: new Date().toISOString().split('T')[0],
       method: 'Cash / Settlement',
       notes: note || `Disbursed payout of Rs. ${numAmount.toLocaleString()}`,
+      isBatchSettlement: !!isBatchSettlement,
     };
     setDirectPayouts((prev) => [payoutRecord, ...prev]);
-
-    if (settleAllBatchesForSupplier) {
-      settleAllBatchesForSupplier(target.id, target.name);
-    }
   };
 
   // 10. DYNAMIC ENRICHMENT: Calculate Live Sourced, Payout, and Balance Due per Supplier
@@ -223,9 +237,9 @@ export function SupplierProvider({ children }) {
 
       const supRate = parseFloat(sup.ratePerLiter) || 220;
 
-      // Sum of any direct manual payouts recorded for this supplier
+      // Sum of any direct manual payouts recorded for this supplier (excluding batch settlements to prevent double counting)
       const manualPaid = directPayouts
-        .filter((p) => p.supplierId === sup.id)
+        .filter((p) => p.supplierId === sup.id && !p.isBatchSettlement)
         .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
 
       // If no batches exist yet in intake register for this supplier
@@ -259,19 +273,27 @@ export function SupplierProvider({ children }) {
         return sum + (parseFloat(b.totalCost) || (qty * rate));
       }, 0);
 
-      // Paid slips value
+      // Paid slips value using actual paidAmount
       const slipsPaid = matchedBatches.reduce((sum, b) => {
         const qty = parseFloat(b.quantity) || 0;
         const rate = parseFloat(b.ratePerLiter) || supRate;
         const cost = parseFloat(b.totalCost) || (qty * rate);
+        if (b.paidAmount !== undefined && b.paidAmount !== '') {
+          return sum + Math.min(cost, Math.max(0, parseFloat(b.paidAmount) || 0));
+        }
         if (b.settlement === 'Paid') return sum + cost;
         if (b.settlement === 'Partial') return sum + (cost * 0.5);
         return sum;
       }, 0);
 
-      const pendingBatches = matchedBatches.filter((b) => b.settlement !== 'Paid');
+      const pendingBatches = matchedBatches.filter((b) => {
+        if (b.pendingAmount !== undefined) return parseFloat(b.pendingAmount) > 0;
+        return b.settlement !== 'Paid';
+      });
+
+      const initialDue = parseFloat(sup.initialBalanceDue || 0);
       const totalPayout = Math.round(slipsPaid + manualPaid);
-      const balanceDue = Math.max(0, Math.round(grossProcuredValue - totalPayout));
+      const balanceDue = Math.max(0, Math.round(initialDue + grossProcuredValue - totalPayout));
 
       return {
         ...sup,
@@ -288,17 +310,20 @@ export function SupplierProvider({ children }) {
 
   // 11. Dynamic Summary Totals
   const totals = useMemo(() => {
-    const totalVendors = enrichedSuppliers.length;
-    const activeVendors = enrichedSuppliers.filter((s) => s.status === 'Active').length;
-    const inactiveVendors = enrichedSuppliers.filter((s) => s.status === 'Inactive').length;
+    const totalSuppliers = enrichedSuppliers.length;
+    const activeSuppliers = enrichedSuppliers.filter((s) => s.status === 'Active').length;
+    const inactiveSuppliers = enrichedSuppliers.filter((s) => s.status === 'Inactive').length;
     const totalSourcedLiters = enrichedSuppliers.reduce((sum, s) => sum + (s.totalSourced || 0), 0);
     const totalPayouts = enrichedSuppliers.reduce((sum, s) => sum + (s.totalPayout || 0), 0);
     const outstandingBalances = enrichedSuppliers.reduce((sum, s) => sum + (s.balanceDue || 0), 0);
 
     return {
-      totalVendors,
-      activeVendors,
-      inactiveVendors,
+      totalSuppliers,
+      activeSuppliers,
+      inactiveSuppliers,
+      totalVendors: totalSuppliers,
+      activeVendors: activeSuppliers,
+      inactiveVendors: inactiveSuppliers,
       totalSourcedLiters: parseFloat(totalSourcedLiters.toFixed(1)),
       totalPayouts: Math.round(totalPayouts),
       outstandingBalances: Math.round(outstandingBalances),

@@ -3,7 +3,7 @@ import DeliveryFinance from '../components/DeliveryFinance/DeliveryFinance';
 
 export default function RiderDeliveryFinancePage() {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <DeliveryFinance />
     </div>
   );

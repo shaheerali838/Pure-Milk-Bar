@@ -52,9 +52,9 @@ export default function RecentRecoveriesTable() {
   const recentList = allRecoveries.slice(0, 6);
 
   return (
-    <Card className="p-4 bg-white border border-slate-200/90 rounded-2xl shadow-xs flex flex-col justify-between">
+    <Card className=" bg-white border border-slate-200/90 rounded-2xl shadow-xs flex flex-col justify-between">
       <div>
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="flex items-center justify-between border-b border-slate-100">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
               <TrendingUp className="w-4 h-4" />
