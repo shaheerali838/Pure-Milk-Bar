@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Search,
   Eye,
-  Trash2,
   Plus,
   RotateCcw,
   ShoppingBag,
@@ -55,14 +54,6 @@ export default function POSDashboard() {
   const handleViewDetail = (e, product) => {
     e.stopPropagation();
     setProductForDetail(product);
-  };
-
-  // Handler for Delete
-  const handleDelete = (e, product) => {
-    e.stopPropagation();
-    if (window.confirm(`Are you sure you want to remove "${product.name}" from catalog?`)) {
-      deleteProduct(product.id);
-    }
   };
 
   // 0. PRODUCT DETAIL PAGE VIEW (opens on the right side of the fixed sidebar)
@@ -205,17 +196,9 @@ export default function POSDashboard() {
                             type="button"
                             onClick={(e) => handleViewDetail(e, product)}
                             title="View Product Specifications"
-                            className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-white rounded transition"
+                            className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-white rounded transition cursor-pointer"
                           >
                             <Eye className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => handleDelete(e, product)}
-                            title="Delete Product"
-                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-white rounded transition"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>

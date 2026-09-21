@@ -850,6 +850,7 @@ export function POSProvider({ children }) {
       const src = resolveItemSource(item);
       const qty = Number(item.quantity) || 0;
       const unitPrice = Number(item.price) || 0;
+      const lineTotal = Number(item.subtotal) || (qty * unitPrice);
       const prodMatch = products.find((p) => p.id === item.id || p.sku === item.sku || p.name === item.name);
       const unitCost = Number(item.cost) || Number(prodMatch?.cost) || (
         src === 'Supplier'
@@ -965,6 +966,7 @@ export function POSProvider({ children }) {
   const totalSupplierIntake = intakeLogs.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
   const remainingSupplierMilk = Math.max(0, totalSupplierIntake - (supplierSalesMetrics?.milkSold || 0));
   const remainingFarmMilk = Math.max(0, totalFarmMilk - (farmSalesMetrics?.milkSold || 0));
+  const remainingTotalMilk = remainingFarmMilk + remainingSupplierMilk;
 
   return (
     <POSContext.Provider
@@ -1069,7 +1071,9 @@ export function POSProvider({ children }) {
         // 6 Inventory metrics
         inventoryMetrics: {
           totalFarmYield: totalFarmMilk,
-          totalMilk: remainingFarmMilk % 1 === 0 ? remainingFarmMilk.toFixed(0) : remainingFarmMilk.toFixed(1),
+          farmMilkStock: remainingFarmMilk % 1 === 0 ? remainingFarmMilk.toFixed(0) : remainingFarmMilk.toFixed(1),
+          totalMilk: remainingTotalMilk % 1 === 0 ? remainingTotalMilk.toFixed(0) : remainingTotalMilk.toFixed(1),
+          totalMilkStock: remainingTotalMilk % 1 === 0 ? remainingTotalMilk.toFixed(0) : remainingTotalMilk.toFixed(1),
           totalSupplierIntake,
           supplierMilkStock: remainingSupplierMilk % 1 === 0 ? remainingSupplierMilk.toFixed(0) : remainingSupplierMilk.toFixed(1),
           totalDahi: products.filter((p) => p.category && p.category.toLowerCase().includes('dahi')).reduce((sum, p) => sum + (Number(p.stock) || 0), 0) > 0 
