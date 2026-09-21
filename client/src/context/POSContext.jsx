@@ -4,6 +4,9 @@ import { useLedgerContext } from './LedgerContext';
 import { useAnimalContext } from './AnimalContext';
 import { useDeliveryContext } from './DeliveryContext';
 import { useIntakeContext } from './IntakeContext';
+import { useFuelLogContext } from './FuelLogContext';
+import { useDeliveryStaffContext } from './DeliveryStaffContext';
+import { estimateDistanceKm } from '@/features/pos/utils/estimateDeliveryDistance';
 
 const POSContext = createContext();
 
@@ -135,6 +138,27 @@ export function POSProvider({ children }) {
   const { animals = [] } = useAnimalContext();
   const deliveryCtx = useDeliveryContext();
   const addDelivery = deliveryCtx?.addDelivery;
+  const fuelLogCtx = useFuelLogContext();
+  const addFuelLog = fuelLogCtx?.addFuelLog;
+  const deliveryStaffCtx = useDeliveryStaffContext();
+  const staffList = deliveryStaffCtx?.staffList || [];
+
+  // Dynamic riders derived from live delivery staff context
+  const dynamicRiders = React.useMemo(() => {
+    if (Array.isArray(staffList) && staffList.length > 0) {
+      return staffList.map((s) => ({
+        id: s.id,
+        name: s.name,
+        phone: s.phone || s.mobile || '',
+        vehicleType: s.type === 'WALKING' ? 'Walking Man' : 'Motorbike',
+        vehicleName: s.vehicle || (s.type === 'WALKING' ? 'On Foot' : 'Motorbike'),
+        plateNumber: s.vehicle || 'Standard',
+        active: s.active !== false,
+        badge: s.type === 'WALKING' ? 'Walking Courier' : 'Delivery Rider',
+      }));
+    }
+    return deliveryRidersList;
+  }, [staffList]);
 
   // =========================================================================
   // 1. PRODUCTS STATE - Always ensures Cow Milk, Buffalo Milk, and Dahi exist
@@ -384,6 +408,25 @@ export function POSProvider({ children }) {
   const [collectEmptyBottles, setCollectEmptyBottles] = useState(false);
   const [linkedCustomerId, setLinkedCustomerId] = useState('');
 
+  // Fuel Log state for delivery orders
+  const [showFuelLog, setShowFuelLog] = useState(false);
+  const [fuelLog, setFuelLog] = useState({
+    liters: '',
+    amount: '',
+    distanceKm: '',
+    notes: '',
+  });
+
+  const updateFuelLog = (field, value) => {
+    setFuelLog((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Reset fuel log when delivery sub-type changes
+  useEffect(() => {
+    setShowFuelLog(false);
+    setFuelLog({ liters: '', amount: '', distanceKm: '', notes: '' });
+  }, [deliverySubType]);
+
   // Cart operations
   const handleAddToCart = (product, initialQty = 1) => {
     const addQty = typeof initialQty === 'number' && initialQty > 0 ? initialQty : 1;
@@ -494,6 +537,8 @@ export function POSProvider({ children }) {
     setLinkedCustomerId('');
     setSelectedRiderId('');
     setCustomRiderName('');
+    setShowFuelLog(false);
+    setFuelLog({ liters: '', amount: '', distanceKm: '', notes: '' });
     setWalkinCustomerType('first_time');
     setOnlineDetails({ provider: 'JazzCash', senderAccount: '', trxId: '' });
   };
@@ -516,7 +561,22 @@ export function POSProvider({ children }) {
 
   const allCustomers = rawCustomers.length > 0 ? rawCustomers : customers;
   const activeCustomer = allCustomers.find((c) => String(c.id) === String(linkedCustomerId)) || null;
-  const activeRider = selectedRiderId ? (deliveryRidersList.find((r) => r.id === selectedRiderId) || null) : null;
+  const activeRider = selectedRiderId
+    ? dynamicRiders.find((r) => String(r.id) === String(selectedRiderId)) || null
+    : null;
+
+  // Auto-estimate distance for monthly delivery customer if not already edited
+  useEffect(() => {
+    if (deliverySubType === 'monthly' && activeCustomer) {
+      setFuelLog((prev) => {
+        if (!prev.distanceKm) {
+          const estimated = estimateDistanceKm(activeCustomer);
+          return { ...prev, distanceKm: String(estimated) };
+        }
+        return prev;
+      });
+    }
+  }, [deliverySubType, activeCustomer]);
 
   // =========================================================================
   // 3. SALES & INVOICES - STRICTLY REAL DATA FROM LOCAL STORAGE (NO DUMMY SALES)
@@ -725,6 +785,25 @@ export function POSProvider({ children }) {
           paymentMode: paymentMethod.toUpperCase(),
           codAmountToCollect: paymentMethod === 'cod' || paymentMethod === 'cash' ? netPayable : 0,
           bottlesReturned: 0,
+        });
+      }
+
+      // Record fuel log if toggle is on and liters and amount are provided
+      if (
+        showFuelLog &&
+        fuelLog.liters &&
+        Number(fuelLog.liters) > 0 &&
+        fuelLog.amount &&
+        Number(fuelLog.amount) > 0 &&
+        typeof addFuelLog === 'function'
+      ) {
+        addFuelLog({
+          staffName: activeRider?.name || customRiderName || 'Unassigned',
+          date: todayDate,
+          liters: Number(fuelLog.liters),
+          amount: Number(fuelLog.amount),
+          distanceKm: Number(fuelLog.distanceKm) || 0,
+          notes: fuelLog.notes ? fuelLog.notes.trim() : '',
         });
       }
     } else if (paymentMethod === 'khata' && activeCustomer) {
@@ -1029,7 +1108,7 @@ export function POSProvider({ children }) {
         setOrderNotes,
         fulfillmentMode,
         setFulfillmentMode,
-        riders: deliveryRidersList,
+        riders: dynamicRiders,
         selectedRiderId,
         setSelectedRiderId,
         activeRider,
@@ -1043,6 +1122,13 @@ export function POSProvider({ children }) {
         setDropAddress,
         collectEmptyBottles,
         setCollectEmptyBottles,
+
+        // Fuel Log
+        showFuelLog,
+        setShowFuelLog,
+        fuelLog,
+        setFuelLog,
+        updateFuelLog,
 
         // Payment
         paymentMethod,

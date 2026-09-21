@@ -36,6 +36,7 @@ export default function GlobalSettings() {
   const updateCreditLimitBatch = customerCtx?.updateCreditLimitBatch;
 
   const [activeTab, setActiveTab] = useState('business');
+  const [showSavedAlert, setShowSavedAlert] = useState(false);
 
   // Local draft state for draft/save pattern
   const [draft, setDraft] = useState(() => ({
@@ -190,11 +191,34 @@ export default function GlobalSettings() {
     }
 
     // 4. Trigger notification
-    toast.success('Global settings saved and actual prices updated successfully!');
+    setShowSavedAlert(true);
+    setTimeout(() => setShowSavedAlert(false), 4000);
+    toast.success('Changes saved! Global settings & configurations updated successfully.');
   };
 
   return (
     <div className="space-y-3 pb-6">
+      {/* Success Notification Banner */}
+      {showSavedAlert && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center justify-between text-emerald-900 text-xs font-semibold animate-in fade-in slide-in-from-top-2 duration-200 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs shrink-0">
+              <Check className="w-3.5 h-3.5 stroke-[3]" />
+            </div>
+            <span>
+              <strong>Changes Saved:</strong> Global configurations and prices have been saved and applied across the entire system.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowSavedAlert(false)}
+            className="text-emerald-700 hover:text-emerald-900 text-xs font-bold px-2 py-0.5 rounded cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Settings Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-2.5 border-b border-slate-200/80">
         <div className="space-y-0.5">

@@ -1,24 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
 import { useFuelLogContext } from '@/context/FuelLogContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import FuelLogForm from './FuelLogForm';
 
 export default function LogFuelView({ onBack, onComplete }) {
   const { staffList = [] } = useDeliveryStaffContext();
   const { addFuelLog } = useFuelLogContext();
 
   const todayStr = new Date().toISOString().split('T')[0];
-
   const defaultStaff = staffList.length > 0 ? staffList[0].name : '';
 
   const [formData, setFormData] = useState({
@@ -30,7 +21,17 @@ export default function LogFuelView({ onBack, onComplete }) {
     notes: '',
   });
 
+  useEffect(() => {
+    if (!formData.staffName && staffList.length > 0) {
+      setFormData((prev) => ({ ...prev, staffName: staffList[0].name }));
+    }
+  }, [staffList]);
+
   const [error, setError] = useState('');
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -96,113 +97,12 @@ export default function LogFuelView({ onBack, onComplete }) {
       )}
 
       <form onSubmit={handleSubmit} className="bg-white border border-slate-200/90 rounded-xl p-3.5 shadow-2xs space-y-3 max-w-2xl">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div className="space-y-1 sm:col-span-2">
-            <Label className="text-xs font-semibold text-slate-700">
-              Staff Member / Rider <span className="text-rose-500">*</span>
-            </Label>
-            {staffList.length === 0 ? (
-              <div className="p-2 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-xs">
-                No delivery staff registered yet — please add a staff member in Fleet & Staff first.
-              </div>
-            ) : (
-              <Select
-                value={formData.staffName}
-                onValueChange={(val) =>
-                  setFormData((prev) => ({ ...prev, staffName: val }))
-                }
-              >
-                <SelectTrigger className="w-full text-xs h-8">
-                  <SelectValue placeholder="Select delivery staff" />
-                </SelectTrigger>
-                <SelectContent>
-                  {staffList.map((s) => (
-                    <SelectItem key={s.id} value={s.name} className="text-xs">
-                      {s.name} ({s.type === 'RIDER' ? 'Rider' : 'Walking'} · {s.vehicle || s.route || 'Fleet'})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-
-          <div className="space-y-1 sm:col-span-2">
-            <Label className="text-xs font-semibold text-slate-700">Receipt Date</Label>
-            <Input
-              type="date"
-              value={formData.date}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, date: e.target.value }))
-              }
-              className="text-xs tabular h-8"
-              required
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-xs font-semibold text-slate-700">
-              Fuel Liters <span className="text-rose-500">*</span>
-            </Label>
-            <Input
-              type="number"
-              step="0.1"
-              min="0.1"
-              placeholder="3.0"
-              value={formData.liters}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, liters: e.target.value }))
-              }
-              className="text-xs tabular h-8"
-              required
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-xs font-semibold text-slate-700">
-              Amount Paid (Rs.) <span className="text-rose-500">*</span>
-            </Label>
-            <Input
-              type="number"
-              min="1"
-              placeholder="840"
-              value={formData.amount}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, amount: e.target.value }))
-              }
-              className="text-xs tabular h-8"
-              required
-            />
-          </div>
-
-          <div className="space-y-1 sm:col-span-2">
-            <Label className="text-xs font-semibold text-slate-700">
-              Distance Covered (KM)
-            </Label>
-            <Input
-              type="number"
-              min="0"
-              placeholder="Enter value"
-              value={formData.distanceKm}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, distanceKm: e.target.value }))
-              }
-              className="text-xs tabular h-8"
-            />
-          </div>
-
-          <div className="space-y-1 sm:col-span-2">
-            <Label className="text-xs font-semibold text-slate-700">Notes / Fuel Station Info</Label>
-            <Input
-              type="text"
-              placeholder="Enter details"
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, notes: e.target.value }))
-              }
-              className="text-xs h-8"
-            />
-          </div>
-        </div>
+        <FuelLogForm
+          staffList={staffList}
+          values={formData}
+          onChange={handleChange}
+          compact={false}
+        />
 
         <div className="pt-2.5 border-t border-slate-100 flex items-center justify-end gap-2">
           <Button

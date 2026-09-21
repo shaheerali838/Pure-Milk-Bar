@@ -3,14 +3,14 @@ import { CustomerProvider } from "./CustomerContext";
 import { LedgerProvider } from "./LedgerContext";
 import { AnimalProvider } from "./AnimalContext";
 import { ExpenseProvider } from "./ExpenseContext";
-import { POSProvider } from "./POSContext";
-import { DeliveryProvider } from "./DeliveryContext";
+import { StaffProvider } from "./StaffContext";
 import { DeliveryStaffProvider } from "./DeliveryStaffContext";
 import { FuelLogProvider } from "./FuelLogContext";
 import { RiderSalaryProvider } from "./RiderSalaryContext";
-import { StaffProvider } from "./StaffContext";
+import { DeliveryProvider } from "./DeliveryContext";
 import { SupplierProvider } from "./SupplierContext";
 import { IntakeProvider } from "./IntakeContext";
+import { POSProvider } from "./POSContext";
 import { PayrollProvider } from "./PayrollContext";
 import { TransactionProvider } from "./TransactionContext";
 import { AuditProvider } from "./AuditContext";
@@ -22,14 +22,14 @@ const providers = [
   LedgerProvider,
   AnimalProvider,
   ExpenseProvider,
+  StaffProvider,
   DeliveryStaffProvider,
   FuelLogProvider,
   RiderSalaryProvider,
   DeliveryProvider,
-  POSProvider,
-  StaffProvider,
-  IntakeProvider,
   SupplierProvider,
+  IntakeProvider,
+  POSProvider,
   PayrollProvider,
   TransactionProvider,
   AuditProvider,

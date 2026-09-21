@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, User, MapPin, PackageOpen } from 'lucide-react';
+import { Eye, User, MapPin, PackageOpen, Bike } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -35,9 +35,12 @@ export default function CustomerDeliveryBreakdownTable({
       (sum, d) => sum + (Number(d.codAmountToCollect) || 0),
       0
     );
-    const totalBottles = custDeliveries.reduce(
-      (sum, d) => sum + (Number(d.bottlesReturned) || 0),
-      0
+    const riderNames = Array.from(
+      new Set(
+        custDeliveries
+          .map((d) => d.riderNameSnapshot?.trim())
+          .filter((name) => name && name.toLowerCase() !== 'unassigned')
+      )
     );
 
     return {
@@ -46,7 +49,7 @@ export default function CustomerDeliveryBreakdownTable({
       totalRuns,
       totalLiters,
       totalCodCollected,
-      totalBottles,
+      riderNames,
     };
   });
 
@@ -59,7 +62,7 @@ export default function CustomerDeliveryBreakdownTable({
             <TableHead className="min-w-[100px] py-1.5 text-xs">Drop Runs</TableHead>
             <TableHead className="min-w-[110px] py-1.5 text-xs">Milk Delivered</TableHead>
             <TableHead className="min-w-[120px] py-1.5 text-xs">COD Collected</TableHead>
-            <TableHead className="min-w-[110px] py-1.5 text-xs">Bottles Returned</TableHead>
+            <TableHead className="min-w-[130px] py-1.5 text-xs">Delivered By (Rider)</TableHead>
             <TableHead className="w-[100px] py-1.5 text-xs">Khata Balance</TableHead>
             <TableHead className="w-[80px] text-right py-1.5 text-xs">Action</TableHead>
           </TableRow>
@@ -88,7 +91,7 @@ export default function CustomerDeliveryBreakdownTable({
                 totalRuns,
                 totalLiters,
                 totalCodCollected,
-                totalBottles,
+                riderNames,
               }) => {
                 const khataBal = Number(customer.khataBalance) || 0;
 
@@ -135,9 +138,27 @@ export default function CustomerDeliveryBreakdownTable({
                     </TableCell>
 
                     <TableCell className="align-top py-2">
-                      <span className="text-xs font-medium text-slate-700 tabular">
-                        {totalBottles}
-                      </span>
+                      {custDeliveries.length === 0 ? (
+                        <span className="text-[11px] text-slate-400 italic">No delivery</span>
+                      ) : riderNames.length === 0 ? (
+                        <span className="text-[11px] text-slate-400 italic">Unassigned</span>
+                      ) : (
+                        <div className="flex flex-col gap-1">
+                          {riderNames.map((name) => (
+                            <div key={name} className="flex items-center gap-1.5">
+                              <div className="w-5 h-5 rounded bg-purple-50 border border-purple-200/80 text-purple-700 flex items-center justify-center shrink-0">
+                                <Bike className="w-3 h-3" />
+                              </div>
+                              <span
+                                className="text-xs font-semibold text-slate-800 truncate max-w-[130px]"
+                                title={name}
+                              >
+                                {name}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </TableCell>
 
                     <TableCell className="align-top py-2">

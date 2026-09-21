@@ -6,8 +6,10 @@ import {
   Banknote,
   Smartphone,
   CreditCard,
+  Fuel,
 } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
+import FuelLogForm from '@/features/deliveries/components/FuelLogForm';
 
 export default function POSDeliverySection() {
   const {
@@ -20,14 +22,17 @@ export default function POSDeliverySection() {
     setCustomRiderName,
     dropAddress,
     setDropAddress,
-    collectEmptyBottles,
-    setCollectEmptyBottles,
+    showFuelLog,
+    setShowFuelLog,
     linkedCustomerId,
     setLinkedCustomerId,
     activeCustomer,
     registeredCustomers = [],
     paymentMethod = 'cod',
     setPaymentMethod,
+    fuelLog,
+    setFuelLog,
+    updateFuelLog,
   } = usePOSContext();
 
   return (
@@ -71,9 +76,10 @@ export default function POSDeliverySection() {
                   onChange={(e) => setSelectedRiderId(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 pr-7 appearance-none"
                 >
+                  <option value="">— No Rider (Optional) —</option>
                   {riders.map((r) => (
                     <option key={r.id} value={r.id}>
-                      {r.vehicleType === 'Motorbike' ? '🛵' : '🚲'} {r.name} ({r.phone})
+                      {r.vehicleType === 'Motorbike' ? '🛵' : '🚲'} {r.name} ({r.phone || 'No phone'}){r.active === false ? ' • [OFF DUTY]' : ''}
                     </option>
                   ))}
                 </select>
@@ -103,17 +109,39 @@ export default function POSDeliverySection() {
             />
           </div>
 
-          <div className="flex items-center justify-between pt-1">
-            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-600 font-medium">
+          <div className="pt-0.5">
+            <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 select-none hover:text-blue-700 transition">
               <input
                 type="checkbox"
-                checked={collectEmptyBottles}
-                onChange={(e) => setCollectEmptyBottles(e.target.checked)}
-                className="rounded text-blue-600 focus:ring-blue-500"
+                checked={showFuelLog}
+                onChange={(e) => {
+                  setShowFuelLog(e.target.checked);
+                  if (!e.target.checked && setFuelLog) {
+                    setFuelLog({ liters: '', amount: '', distanceKm: '', notes: '' });
+                  }
+                }}
+                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
-              <span>Collect empty bottles upon delivery</span>
+              <span className="flex items-center gap-1.5">
+                <Fuel className="w-3.5 h-3.5 text-amber-600" />
+                <span>Fuel Log (Optional)</span>
+                <span className="text-[10px] font-normal text-slate-400">(Record vehicle fuel / distance)</span>
+              </span>
             </label>
           </div>
+
+          {showFuelLog && (
+            <div className="p-2.5 bg-white rounded-lg border border-slate-200/90 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider flex items-center gap-1">
+                  <Fuel className="w-3 h-3 text-amber-600" />
+                  Fuel Log Details
+                </span>
+                <span className="text-[10px] text-slate-400">Record vehicle expense</span>
+              </div>
+              <FuelLogForm compact values={fuelLog} onChange={updateFuelLog} />
+            </div>
+          )}
         </div>
       )}
 
@@ -157,20 +185,62 @@ export default function POSDeliverySection() {
 
           <div>
             <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-              Assigned Rider:
+              Assigned Rider (Optional):
             </label>
-            <select
-              value={selectedRiderId}
-              onChange={(e) => setSelectedRiderId(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500"
-            >
-              {riders.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.vehicleType === 'Motorbike' ? '🛵' : '🚲'} {r.name} ({r.phone})
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={selectedRiderId}
+                onChange={(e) => setSelectedRiderId(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 pr-7 appearance-none"
+              >
+                <option value="">— No Rider (Optional) —</option>
+                {riders.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.vehicleType === 'Motorbike' ? '🛵' : '🚲'} {r.name} ({r.phone || 'No phone'}){r.active === false ? ' • [OFF DUTY]' : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-2.5 pointer-events-none" />
+            </div>
           </div>
+
+          <div className="pt-0.5">
+            <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-blue-900 select-none hover:text-blue-700 transition">
+              <input
+                type="checkbox"
+                checked={showFuelLog}
+                onChange={(e) => {
+                  setShowFuelLog(e.target.checked);
+                  if (!e.target.checked && setFuelLog) {
+                    setFuelLog({ liters: '', amount: '', distanceKm: '', notes: '' });
+                  }
+                }}
+                className="w-4 h-4 rounded border-blue-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+              <span className="flex items-center gap-1.5">
+                <Fuel className="w-3.5 h-3.5 text-amber-600" />
+                <span>Fuel Log (Optional)</span>
+                <span className="text-[10px] font-normal text-slate-500">(Record vehicle fuel / distance)</span>
+              </span>
+            </label>
+          </div>
+
+          {showFuelLog && (
+            <div className="p-2.5 bg-white rounded-lg border border-blue-100 space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase text-blue-900 tracking-wider flex items-center gap-1">
+                  <Fuel className="w-3 h-3 text-amber-600" />
+                  Fuel Log Details
+                </span>
+                {activeCustomer?.area && (
+                  <span className="text-[10px] text-slate-500">
+                    Estimated distance based on {activeCustomer.area} — adjust if needed
+                  </span>
+                )}
+              </div>
+              <FuelLogForm compact values={fuelLog} onChange={updateFuelLog} />
+            </div>
+          )}
         </div>
       )}
 
