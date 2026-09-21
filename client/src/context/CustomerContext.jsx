@@ -1,149 +1,126 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import customerService from '@/services/customerService';
 
 const CustomerContext = createContext();
-const STORAGE_KEY = 'pure_milk_bar_customers';
-
-const DEFAULT_CUSTOMERS = [
-  {
-    id: 1,
-    name: 'Haji Muhammad Aslam',
-    phone: '0300-1234567',
-    secondaryPhone: '0321-7654321',
-    onlineAccount: '0300-1234567',
-    cnicNumber: '35201-1234567-1',
-    idType: 'CNIC',
-    verificationStatus: 'Verified',
-    address: 'House #12, Street 4, Block B, Model Town, Lahore',
-    area: 'Model Town',
-    shift: 'Morning',
-    referenceName: 'Malik Tariq (Dairy Partner)',
-    subscription: '2 L Cow Milk',
-    creditLimit: 15000,
-    khataBalance: 3200,
-    openingBalance: 1000,
-    paymentMode: 'Khata',
-    status: 'Active',
-    createdAt: '2026-08-01',
-  },
-  {
-    id: 2,
-    name: 'Chaudhry Rashid Gujjar',
-    phone: '0301-9876543',
-    secondaryPhone: '',
-    onlineAccount: '0301-9876543',
-    cnicNumber: '35202-9876543-3',
-    idType: 'CNIC',
-    verificationStatus: 'Verified',
-    address: 'Kothi #88, Cavalry Ground, Lahore Cantt',
-    area: 'Cavalry Ground',
-    shift: 'Evening',
-    referenceName: 'Direct Walk-in Regular',
-    subscription: '3 L Buffalo Milk',
-    creditLimit: 20000,
-    khataBalance: 5800,
-    openingBalance: 2000,
-    paymentMode: 'Khata',
-    status: 'Active',
-    createdAt: '2026-08-10',
-  },
-  {
-    id: 3,
-    name: 'Dr. Tariq Mehmood',
-    phone: '0333-5554433',
-    secondaryPhone: '0345-1122334',
-    onlineAccount: '0333-5554433',
-    cnicNumber: '35201-5554433-5',
-    idType: 'CNIC',
-    verificationStatus: 'Verified',
-    address: 'Apartment 4B, Gulberg Heights, Gulberg III, Lahore',
-    area: 'Gulberg III',
-    shift: 'Morning',
-    referenceName: 'Dr. Farooq (Clinic)',
-    subscription: '1.5 L Cow Milk',
-    creditLimit: 10000,
-    khataBalance: 0,
-    openingBalance: 0,
-    paymentMode: 'Online Payment',
-    status: 'Active',
-    createdAt: '2026-08-15',
-  },
-  {
-    id: 4,
-    name: 'Mian Bilal Ahsan',
-    phone: '0322-4433221',
-    secondaryPhone: '',
-    onlineAccount: '0322-4433221',
-    cnicNumber: '35200-4433221-7',
-    idType: 'CNIC',
-    verificationStatus: 'Verified',
-    address: 'House #45, Sector F, DHA Phase 5, Lahore',
-    area: 'DHA Phase 5',
-    shift: 'Morning',
-    referenceName: 'Sheikh Imran',
-    subscription: '4 L Mixed Milk',
-    creditLimit: 25000,
-    khataBalance: 12400,
-    openingBalance: 5000,
-    paymentMode: 'Khata',
-    status: 'Active',
-    createdAt: '2026-08-20',
-  },
-];
 
 export function CustomerProvider({ children }) {
-  const [customers, setCustomers] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-      return DEFAULT_CUSTOMERS;
-    } catch (err) {
-      console.error('Failed to load customers from localStorage:', err);
-      return DEFAULT_CUSTOMERS;
-    }
-  });
-
+  const [customers, setCustomers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
 
-  useEffect(() => {
+  // Fetch live customer records from backend
+  const fetchCustomers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+      const data = await customerService.getCustomers();
+      const list = Array.isArray(data) ? data : data?.customers || [];
+      // Normalize _id to id if needed
+      const normalized = list.map((c) => ({
+        ...c,
+        id: c._id || c.id,
+      }));
+      setCustomers(normalized);
     } catch (err) {
-      console.error('Failed to save customers to localStorage:', err);
+      console.error('Failed to fetch live customers from API:', err);
+      setError(err.message || 'Failed to load customers');
+      setCustomers([]);
+    } finally {
+      setIsLoading(false);
     }
-  }, [customers]);
+  }, []);
 
-  const addCustomer = (newCust) => {
-    const customerId = Date.now();
-    const initialBalance = Number(newCust.khataBalance) || 0;
-    const today = new Date().toISOString().split('T')[0];
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
-    const customerToAdd = {
-      id: customerId,
-      status: 'Active',
-      paymentMode: newCust.paymentMode === 'EasyPaisa' || newCust.paymentMode === 'JazzCash' ? 'Online Payment' : newCust.paymentMode || 'Khata',
-      creditLimit: 10000,
-      khataBalance: initialBalance,
-      openingBalance: initialBalance,
-      createdAt: today,
-      ...newCust,
-    };
+  const addCustomer = async (newCust) => {
+    try {
+      const payload = {
+        name: newCust.name,
+        phone: newCust.phone,
+        secondaryPhone: newCust.secondaryPhone || '',
+        cnicNumber: newCust.cnicNumber || '',
+        address: newCust.address || '',
+        area: newCust.area || '',
+        shift: newCust.shift || 'Morning',
+        referenceName: newCust.referenceName || '',
+        subscription: newCust.subscription || '2 L Cow Milk',
+        creditLimit: Number(newCust.creditLimit) || 10000,
+        openingBalance: Number(newCust.openingBalance || newCust.khataBalance) || 0,
+        paymentMode:
+          newCust.paymentMode === 'EasyPaisa' || newCust.paymentMode === 'JazzCash'
+            ? 'Online Payment'
+            : newCust.paymentMode || 'Khata',
+        status: newCust.status || 'Active',
+      };
 
-    setCustomers((prev) => [customerToAdd, ...prev]);
+      const created = await customerService.createCustomer(payload);
+      const normalized = {
+        ...created,
+        id: created._id || created.id || Date.now(),
+      };
+      setCustomers((prev) => [normalized, ...prev]);
+      return normalized;
+    } catch (err) {
+      console.error('Failed to create customer via API:', err);
+      throw err;
+    }
   };
 
-  const updateCustomer = (updatedCust) => {
-    setCustomers((prev) =>
-      prev.map((c) => (c.id === updatedCust.id ? { ...c, ...updatedCust } : c))
-    );
+  const updateCustomer = async (updatedCust) => {
+    const id = updatedCust._id || updatedCust.id;
+    try {
+      await customerService.updateCustomer(id, updatedCust);
+      setCustomers((prev) =>
+        prev.map((c) => ((c._id || c.id) === id ? { ...c, ...updatedCust } : c))
+      );
+    } catch (err) {
+      console.error('Failed to update customer via API:', err);
+      throw err;
+    }
   };
 
-  const totalKhataReceivable = customers.reduce((acc, c) => acc + (Number(c.khataBalance) || 0), 0);
-  const activeAccountsCount = customers.filter((c) => c.status === 'Active').length;
-  const withKhataBalCount = customers.filter((c) => Number(c.khataBalance) > 0).length;
+  const deleteCustomer = async (id) => {
+    try {
+      await customerService.deleteCustomer(id);
+      setCustomers((prev) => prev.filter((c) => (c._id || c.id) !== id));
+    } catch (err) {
+      console.error('Failed to delete customer via API:', err);
+      throw err;
+    }
+  };
+
+  const updateCreditLimitBatch = async (newLimit) => {
+    if (!newLimit || isNaN(newLimit)) return;
+    try {
+      const promises = customers.map((c) =>
+        customerService.updateCreditLimit(c._id || c.id, Number(newLimit))
+      );
+      await Promise.allSettled(promises);
+      setCustomers((prev) =>
+        prev.map((c) => ({
+          ...c,
+          creditLimit: Number(newLimit),
+        }))
+      );
+    } catch (err) {
+      console.error('Failed to batch update credit limits:', err);
+    }
+  };
+
+  const totalKhataReceivable = customers.reduce(
+    (acc, c) => acc + (Number(c.khataBalance || c.currentBalance) || 0),
+    0
+  );
+  const activeAccountsCount = customers.filter(
+    (c) => (c.status || '').toLowerCase() === 'active'
+  ).length;
+  const withKhataBalCount = customers.filter(
+    (c) => Number(c.khataBalance || c.currentBalance) > 0
+  ).length;
 
   const filteredCustomers = customers.filter((c) => {
     const matchesSearch =
@@ -153,26 +130,20 @@ export function CustomerProvider({ children }) {
       (c.onlineAccount && c.onlineAccount.includes(searchTerm));
 
     const matchesStatus =
-      statusFilter === 'All Status' || (c.status && c.status.toLowerCase() === statusFilter.toLowerCase());
+      statusFilter === 'All Status' ||
+      (c.status && c.status.toLowerCase() === statusFilter.toLowerCase());
 
     return matchesSearch && matchesStatus;
   });
-
-  const updateCreditLimitBatch = (newLimit) => {
-    if (!newLimit || isNaN(newLimit)) return;
-    setCustomers((prev) =>
-      prev.map((c) => ({
-        ...c,
-        creditLimit: Number(newLimit),
-      }))
-    );
-  };
 
   return (
     <CustomerContext.Provider
       value={{
         customers: filteredCustomers,
         rawCustomers: customers,
+        isLoading,
+        error,
+        refreshCustomers: fetchCustomers,
         setCustomers,
         allCustomersCount: customers.length,
         activeAccountsCount,
@@ -184,6 +155,7 @@ export function CustomerProvider({ children }) {
         setStatusFilter,
         addCustomer,
         updateCustomer,
+        deleteCustomer,
         updateCreditLimitBatch,
       }}
     >
@@ -195,3 +167,5 @@ export function CustomerProvider({ children }) {
 export function useCustomerContext() {
   return useContext(CustomerContext);
 }
+
+export default CustomerContext;

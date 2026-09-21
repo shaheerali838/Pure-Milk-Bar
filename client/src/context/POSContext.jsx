@@ -7,6 +7,7 @@ import { useFuelLogContext } from './FuelLogContext';
 import { useDeliveryStaffContext } from './DeliveryStaffContext';
 import { estimateDistanceKm } from '@/features/pos/utils/estimateDeliveryDistance';
 import { useIntakeContext } from './IntakeContext';
+import posService from '@/services/posService';
 
 const POSContext = createContext();
 
@@ -821,6 +822,26 @@ export function POSProvider({ children }) {
     const updatedSales = [saleRecord, ...salesHistory];
     setSalesHistory(updatedSales);
     localStorage.setItem(STORAGE_KEY_SALES, JSON.stringify(updatedSales));
+
+    // Save order to live backend POS API
+    try {
+      posService.createOrder({
+        customerType: saleCategory === 'walkin' ? 'WALK_IN' : 'REGISTERED',
+        customerId: activeCustomer?._id || activeCustomer?.id,
+        items: cart.map((i) => ({
+          productId: i.id,
+          name: i.name,
+          quantity: Number(i.quantity) || 1,
+          unitPrice: Number(i.price) || 0,
+          totalPrice: (Number(i.quantity) || 1) * (Number(i.price) || 0),
+        })),
+        totalAmount: netPayable,
+        paymentMethod: (paymentMethod || 'CASH').toUpperCase(),
+        notes: orderNotes || '',
+      }).catch((err) => console.warn('Background POS order sync error:', err));
+    } catch (e) {
+      console.warn('POS API order sync error:', e);
+    }
 
     setCompletedSaleReceipt(saleRecord);
     handleClearCart();

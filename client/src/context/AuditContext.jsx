@@ -7,65 +7,38 @@ import { useExpense } from './ExpenseContext';
 import { usePOSContext } from './POSContext';
 import { useDeliveryContext } from './DeliveryContext';
 import { usePayrollContext } from './PayrollContext';
+import financeService from '@/services/financeService';
 
 const AuditContext = createContext();
 
-const STORAGE_KEY_AUDIT = 'pure_milk_bar_audit_log';
-const STORAGE_KEY_SEEN = 'pure_milk_bar_audit_log_seen';
-
 export function AuditProvider({ children }) {
-  // 1. Audit events list persisted in localStorage
-  const [auditEvents, setAuditEvents] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_AUDIT);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter((e) => e.user !== 'Allah Ditta' && !e.detail?.includes('Allah Ditta'));
-        }
-      }
-    } catch (e) {
-      console.error('Error loading audit log from localStorage:', e);
-    }
-    return [];
-  });
+  const [auditEvents, setAuditEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 2. Seen IDs index
-  const [seenIds, setSeenIds] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_SEEN);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return new Set(parsed);
+  // Fetch live audit logs from backend
+  useEffect(() => {
+    async function loadLogs() {
+      setIsLoading(true);
+      try {
+        const data = await financeService.getAuditLogs();
+        const list = Array.isArray(data) ? data : data?.logs || [];
+        setAuditEvents(list.map((e) => ({ ...e, id: e._id || e.id })));
+      } catch (err) {
+        console.warn('Audit logs API skipped or empty:', err.message);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (e) {
-      console.error('Error loading audit seen IDs from localStorage:', e);
     }
-    return new Set();
-  });
+    loadLogs();
+  }, []);
+
+  const [seenIds, setSeenIds] = useState(() => new Set());
 
   const eventsRef = useRef(auditEvents);
   eventsRef.current = auditEvents;
 
   const seenRef = useRef(seenIds);
   seenRef.current = seenIds;
-
-  // Persist on change
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_AUDIT, JSON.stringify(auditEvents));
-    } catch (e) {
-      console.error('Error saving audit log to localStorage:', e);
-    }
-  }, [auditEvents]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_SEEN, JSON.stringify(Array.from(seenIds)));
-    } catch (e) {
-      console.error('Error saving audit seen IDs to localStorage:', e);
-    }
-  }, [seenIds]);
 
   // Manual event logging function
   const logEvent = ({ user = 'System', action = 'Create', module = 'System', detail = '', ipAddress = '—' }) => {
@@ -82,6 +55,12 @@ export function AuditProvider({ children }) {
     };
 
     setAuditEvents((prev) => [newEvent, ...prev]);
+
+    // Dispatch to API
+    financeService.logAuditEvent(newEvent).catch((e) =>
+      console.warn('Failed to persist audit event via API:', e)
+    );
+
     return newEvent;
   };
 
