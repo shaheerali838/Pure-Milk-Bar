@@ -70,6 +70,11 @@ import {
   Globe,
   PlusCircle,
   Play,
+  CheckCircle,
+  Radio,
+  Plus,
+  Minus,
+  Trash2,
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -80,11 +85,51 @@ export default function LandingPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [categoriesOpen, setCategoriesOpen] = useState(false);
 
+  // Active Interactive ERP Preview Tab
+  const [activeScreenTab, setActiveScreenTab] = useState("dashboard");
+
   // Active Module Filter in System Showcase
   const [activeModuleFilter, setActiveModuleFilter] = useState("all");
 
   // Pricing toggle state (Monthly vs Annual)
   const [billingCycle, setBillingCycle] = useState("annual"); // "monthly" or "annual"
+
+  // Interactive Live POS Simulator State
+  const [posItems, setPosItems] = useState([
+    { id: "cow", name: "Pure Cow Milk", rate: 260, qty: 2, unit: "L" },
+    { id: "buff", name: "Pure Buffalo Milk", rate: 290, qty: 1, unit: "L" },
+    { id: "dahi", name: "Fresh Pot Dahi", rate: 320, qty: 1, unit: "KG" },
+  ]);
+  const [posPaymentMethod, setPosPaymentMethod] = useState("cash"); // "cash" | "khata" | "online"
+
+  const updatePosQty = (id, delta) => {
+    setPosItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item
+      )
+    );
+  };
+
+  const addPosItem = (itemToAdd) => {
+    setPosItems((prev) => {
+      const exists = prev.find((i) => i.id === itemToAdd.id);
+      if (exists) {
+        return prev.map((i) =>
+          i.id === itemToAdd.id ? { ...i, qty: i.qty + 1 } : i
+        );
+      }
+      return [...prev, { ...itemToAdd, qty: 1 }];
+    });
+  };
+
+  const removePosItem = (id) => {
+    setPosItems((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  const posSubtotal = posItems.reduce(
+    (acc, curr) => acc + curr.rate * curr.qty,
+    0
+  );
 
   // Simulator 1: Richmond SNF & Pricing Engine State
   const [fatValue, setFatValue] = useState(6.5);
@@ -92,7 +137,7 @@ export default function LandingPage() {
   const [baseMilkRate, setBaseMilkRate] = useState(180);
 
   // Richmond SNF Calculation: SNF% = (LR / 4) + (0.21 * FAT%) + 0.36
-  const calculatedSNF = ((lrValue / 4) + (0.21 * fatValue) + 0.36).toFixed(2);
+  const calculatedSNF = ((lrValue / 4) + 0.21 * fatValue + 0.36).toFixed(2);
   const priceMultiplier = fatValue / 6.0;
   const lrBonus = (lrValue - 28.0) * 1.5;
   const calculatedPricePerLiter = Math.max(
@@ -114,15 +159,6 @@ export default function LandingPage() {
   const massBalanceVariance = actualDipstick - calculatedExpectedStock;
   const isBalanceWithinTolerance = Math.abs(massBalanceVariance) <= 1.5;
 
-  // Simulator 3: Enterprise ROI & Shrinkage Savings Calculator
-  const [dailyVolume, setDailyVolume] = useState(5000);
-  const monthlyVolume = dailyVolume * 30;
-  const monthlyShrinkageSaved = Math.round(monthlyVolume * 0.025 * 180); // 2.5% shrinkage reduction
-  const monthlyKhataDebtRecovered = Math.round(monthlyVolume * 0.04 * 180 * 0.95); // 4% default prevention
-  const monthlyQualityTestingSavings = Math.round(monthlyVolume * 3.5); // PKR 3.5/L saved on precise FAT grading
-  const totalMonthlySavings =
-    monthlyShrinkageSaved + monthlyKhataDebtRecovered + monthlyQualityTestingSavings;
-
   // FAQ Accordion State
   const [openFaq, setOpenFaq] = useState(null);
 
@@ -139,17 +175,48 @@ export default function LandingPage() {
       const q = searchQuery.toLowerCase().trim();
       if (q.includes("pos") || q.includes("sale") || q.includes("counter")) {
         navigate("/pos");
-      } else if (q.includes("farm") || q.includes("cow") || q.includes("buff") || q.includes("herd") || q.includes("milk")) {
+      } else if (
+        q.includes("farm") ||
+        q.includes("cow") ||
+        q.includes("buff") ||
+        q.includes("herd") ||
+        q.includes("milk")
+      ) {
         navigate("/farm");
-      } else if (q.includes("suppl") || q.includes("intake") || q.includes("fat") || q.includes("snf") || q.includes("sourc")) {
+      } else if (
+        q.includes("suppl") ||
+        q.includes("intake") ||
+        q.includes("fat") ||
+        q.includes("snf") ||
+        q.includes("sourc")
+      ) {
         navigate("/supplier");
-      } else if (q.includes("deliv") || q.includes("rider") || q.includes("fuel") || q.includes("fleet")) {
+      } else if (
+        q.includes("deliv") ||
+        q.includes("rider") ||
+        q.includes("fuel") ||
+        q.includes("fleet")
+      ) {
         navigate("/delivery");
-      } else if (q.includes("khata") || q.includes("cust") || q.includes("ledger") || q.includes("credit")) {
+      } else if (
+        q.includes("khata") ||
+        q.includes("cust") ||
+        q.includes("ledger") ||
+        q.includes("credit")
+      ) {
         navigate("/customer-khata-ledger");
-      } else if (q.includes("clos") || q.includes("reconcil") || q.includes("profit") || q.includes("finance")) {
+      } else if (
+        q.includes("clos") ||
+        q.includes("reconcil") ||
+        q.includes("profit") ||
+        q.includes("finance")
+      ) {
         navigate("/finance/daily-closing");
-      } else if (q.includes("staff") || q.includes("pay") || q.includes("salary")) {
+      } else if (
+        q.includes("staff") ||
+        q.includes("pay") ||
+        q.includes("salary")
+      ) {
         navigate("/staff");
       } else {
         navigate("/dashboard");
@@ -157,40 +224,58 @@ export default function LandingPage() {
     }
   };
 
-  // All 8 Core ERP Modules with Complete Functional Details
+  // All 8 Core ERP Modules with Complete Functional Details & Actual Images
   const erpModules = [
     {
       id: "farm",
       category: "farm",
-      title: "Livestock & Herd Management",
-      badge: "Herd Intelligence",
-      route: "/farm",
-      image: "/landing-images/db-panel-wiring.png", // Sample asset from landing page
+      title: "Livestock & Cattle Herd Register",
+      badge: "RFID Herd Tracking",
+      route: "/farm/animals",
+      image: "/images/animals.webp",
       description:
-        "End-to-end cattle tracking: Cow & Buffalo registry, tagging, lactation lifecycle, daily automated milking yield, and feed expense audits.",
+        "Cattle profiles, ear-tag RFID codes, lactation status (Lactating/Dry/Pregnant), breed specifications, and individual yield curves.",
       features: [
-        "Individual Cow & Buffalo RFID profiles",
-        "Morning & Evening milking batch log",
-        "Automated bulk chiller tank integration",
-        "Feed & veterinary expense attribution",
+        "Individual Cow & Buffalo RFID records",
+        "Morning & Evening milking batch stats",
+        "Veterinary history & vaccination alarms",
+        "Cattle lifecycle & breeding records",
       ],
       kpi: "850 L/day Herd Yield",
-      kpiLabel: "Live Herd Avg",
+      kpiLabel: "Live Herd Average",
+    },
+    {
+      id: "milking",
+      category: "farm",
+      title: "Milking Shifts & Bulk Tank Log",
+      badge: "Morning/Evening Shifts",
+      route: "/farm/milking",
+      image: "/images/milking-register.jpeg",
+      description:
+        "Automated milking records with morning and evening batch breakdowns, chiller temperature logs (0-4°C), and automated tank additions.",
+      features: [
+        "Shift-wise batch volume reconciliation",
+        "Direct bulk chiller tank synchronization",
+        "Milker attribution & parlor performance",
+        "Daily herd production yield graphs",
+      ],
+      kpi: "2 Shifts Daily",
+      kpiLabel: "Milking Parlor",
     },
     {
       id: "supplier",
       category: "supplier",
-      title: "Milk Procurement & Dock Intake",
+      title: "Milk Procurement & Quality Lab",
       badge: "Richmond FAT & SNF Lab",
-      route: "/supplier",
-      image: "/landing-images/solar-inverter.png",
+      route: "/supplier/intake",
+      image: "/images/storage.webp",
       description:
-        "Precision milk dock station: Automated Richmond SNF% calculation, Lactometer (LR) grading, dipstick volume, and instant supplier debit/credit ledger.",
+        "Dock intake testing with automated Richmond formula SNF% grading, Lactometer (LR) density, and instant supplier debit/credit vouchers.",
       features: [
-        "Automatic Richmond formula grading (FAT + LR)",
+        "Instant Richmond SNF% & LR calculation",
         "Supplier directory & tiered pricing contracts",
-        "Dipstick vs Flowmeter volumetric validation",
-        "Instant supplier Khata voucher generation",
+        "Dipstick vs volumetric intake audits",
+        "Automated supplier Khata entries",
       ],
       kpi: "3,400 L/day Dock",
       kpiLabel: "Procured Intake",
@@ -198,17 +283,17 @@ export default function LandingPage() {
     {
       id: "processing",
       category: "inventory",
-      title: "Processing, Dahi & Inventory",
+      title: "Products, Dahi & Inventory",
       badge: "Cold-Chain & Batching",
-      route: "/proccessing",
-      image: "/landing-images/washing-machine-repair.png",
+      route: "/products",
+      image: "/images/inventory.jpeg",
       description:
-        "Maintain dairy cold-chain (0-4°C): Yogurt (Dahi) curdling batches, pasteurization logs, product SKU catalogs, and real-time inventory levels.",
+        "Maintain dairy cold-chain: Yogurt (Dahi) curdling batches, chilling rooms (0-4°C), SKU catalogs, and real-time inventory balances.",
       features: [
         "Fresh Pot Dahi yield & incubation batches",
         "Chiller room storage temperature logs",
-        "Stock balance sync across Cow/Buffalo/Dahi",
-        "Batch cost vs retail margin calculations",
+        "Real-time stock balance across Cow/Buff/Dahi",
+        "Cost-per-liter vs retail margin tracking",
       ],
       kpi: "320 Pots/day",
       kpiLabel: "Dahi Processing",
@@ -219,14 +304,14 @@ export default function LandingPage() {
       title: "High-Speed POS & Retail Counter",
       badge: "Sub-Second Checkout",
       route: "/pos",
-      image: "/landing-images/electrician-db-technician.png",
+      image: "/images/delivery.jpeg",
       description:
-        "Ultra-fast touch POS: Rupee-first quick sale (Rs. 50, 100, 500), Walk-in counter cash, instant thermal receipts, and registered customer Khata sync.",
+        "Ultra-fast touch POS: Rupee-first quick sale (Rs. 50, 100, 500), Walk-in counter cash, instant thermal slips, and customer Khata sync.",
       features: [
         "Rupee-amount auto conversion to liter qty",
-        "Cash, Online (JazzCash/Easypaisa), and Khata pay",
-        "Direct thermal printer invoice generation",
-        "1-click delivery dispatch with rider linkage",
+        "Cash, Online (JazzCash/Easypaisa), and Khata",
+        "Thermal printer invoice generation",
+        "Instant delivery dispatch with rider linkage",
       ],
       kpi: "Rs. 425K Daily",
       kpiLabel: "Counter Volume",
@@ -237,9 +322,9 @@ export default function LandingPage() {
       title: "Delivery Fleet, Routes & Fuel",
       badge: "Fleet & Logistics",
       route: "/delivery",
-      image: "/landing-images/ac-deep-wash-alt.png",
+      image: "/images/delivery.jpeg",
       description:
-        "Manage morning/evening neighborhood milk runs: Area route scheduling, bottle drop validation, empty bottle returns, and rider vehicle fuel logging.",
+        "Manage morning/evening neighborhood milk runs: Route drops (Model Town, Faisal Town), bottle return audits, and rider fuel KM logging.",
       features: [
         "Model Town & Faisal Town route scheduling",
         "Rider vehicle fuel (Liters, KM, Cost) logs",
@@ -252,12 +337,12 @@ export default function LandingPage() {
     {
       id: "khata",
       category: "finance",
-      title: "Customer Khata & Recovery Ledger",
+      title: "Customer Khata & Debt Recovery",
       badge: "100% Zero-Loss Ledger",
       route: "/customer-khata-ledger",
-      image: "/landing-images/water-tank-disinfection.png",
+      image: "/images/PnL.jpeg",
       description:
-        "Complete digital Khata ledger: Real-time debit/credit timelines, monthly subscription automated billing, partial cash payments, and instant WhatsApp receipts.",
+        "Complete digital Khata: Real-time debit/credit timelines, monthly delivery automated billing, partial cash payments, and WhatsApp receipts.",
       features: [
         "Automated monthly delivery subscription billing",
         "Live Khata balance with partial payment support",
@@ -270,12 +355,12 @@ export default function LandingPage() {
     {
       id: "closing",
       category: "finance",
-      title: "Daily Financial Closing & Mass Balance",
+      title: "Daily Closing & Mass Balance",
       badge: "Automated Reconciliation",
       route: "/finance/daily-closing",
-      image: null, // Leaves clean, elegant empty-space placeholder with stylized UI representation
+      image: "/images/feeding.jpeg",
       description:
-        "The heartbeat of dairy governance: Reconciles bulk tank dipsticks with POS counter sales, fleet deliveries, spillage loss, and cash drawer balances.",
+        "Reconciles bulk tank dipsticks with POS counter sales, fleet deliveries, spillage loss, and cash drawer balances for complete P&L.",
       features: [
         "Mass-balance dipstick vs sales tolerance audit",
         "Physical cash drawer vs system calculation",
@@ -284,24 +369,6 @@ export default function LandingPage() {
       ],
       kpi: "99.8% Accuracy",
       kpiLabel: "Mass Balance",
-    },
-    {
-      id: "audit",
-      category: "finance",
-      title: "Transaction Audit & Security Log",
-      badge: "Immutable Audit Trail",
-      route: "/finance/audit-log",
-      image: null, // Leaves clean, elegant empty-space placeholder
-      description:
-        "Enterprise compliance: Complete chronological log of every sale, Khata adjustment, supplier payout, stock edit, and staff wage disbursement.",
-      features: [
-        "Chronological tamper-proof event stream",
-        "User role & IP attribution for every action",
-        "Filtered search across invoices and vouchers",
-        "Exportable CSV audit logs for regulatory filing",
-      ],
-      kpi: "100% Traceable",
-      kpiLabel: "Audit Trail",
     },
   ];
 
@@ -322,13 +389,15 @@ export default function LandingPage() {
               <ShieldCheck className="w-3.5 h-3.5 mr-1 text-[#5BBB7B]" /> Verified Dairy ERP
             </span>
             <span className="text-slate-300">
-              Active Hubs: Lahore, Faisalabad, Twin Cities
+              Active Supply Hubs: Lahore, Faisalabad, Twin Cities
             </span>
           </div>
           <div className="flex items-center space-x-6 text-[11px] sm:text-xs text-slate-300">
             <span className="flex items-center gap-1">
-              Live Milk Index:{" "}
-              <strong className="text-white font-semibold">Rs. 260/L (Cow) · Rs. 290/L (Buff)</strong>
+              Live Milk Market:{" "}
+              <strong className="text-white font-semibold">
+                Rs. 260/L (Cow) · Rs. 290/L (Buff)
+              </strong>
             </span>
             <Link
               to="/dashboard"
@@ -344,7 +413,32 @@ export default function LandingPage() {
       </aside>
 
       {/* =========================================================================
-          2. STICKY MAIN NAVBAR (Deep Spruce with Emerald Highlights)
+          2. LIVE DAIRY ACTIVITY TICKER
+      ========================================================================= */}
+      <div className="bg-[#163E34] border-b border-emerald-800/40 text-emerald-200 text-[11px] py-1.5 px-4 overflow-hidden shadow-inner">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 shrink-0 font-bold text-white">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>LIVE DAIRY STREAM:</span>
+          </div>
+          <div className="truncate text-slate-200 font-medium flex items-center gap-4">
+            <span>• Morning Milking Batch: 850L (Tank #1 at 3.6°C)</span>
+            <span className="text-emerald-300">• Dock Intake: 450L from Baba Dairy (FAT 6.8%, LR 28.5)</span>
+            <span>• POS Counter: Sale Rs. 1,450 (Walk-in Customer)</span>
+            <span className="text-emerald-300">• Fleet: Rider Shahid dispatched on Model Town Route (14 Drops)</span>
+            <span>• Khata: Payment received Rs. 5,000 from Bilal Traders</span>
+          </div>
+          <Link
+            to="/dashboard"
+            className="text-[11px] font-bold text-emerald-300 hover:text-white shrink-0 underline"
+          >
+            Live Feed &rarr;
+          </Link>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          3. STICKY MAIN NAVBAR (Deep Spruce with Emerald Highlights)
       ========================================================================= */}
       <header className="bg-[#1F4B3F] border-b border-white/10 sticky top-0 z-50 backdrop-blur-md bg-opacity-95">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
@@ -437,8 +531,9 @@ export default function LandingPage() {
           <nav aria-label="Main Navigation" className="hidden xl:flex items-center space-x-7 text-sm font-semibold text-slate-200">
             <a href="#how-it-works" className="hover:text-white transition">How It Works</a>
             <a href="#modules" className="hover:text-white transition">All Modules</a>
+            <a href="#screen-preview" className="hover:text-white transition">Live UI Showcase</a>
             <a href="#simulators" className="hover:text-white transition">Live Simulators</a>
-            <a href="#team" className="hover:text-white transition">Operations Fleet</a>
+            <a href="#pos-sandbox" className="hover:text-white transition">POS Sandbox</a>
             <a href="#pricing" className="hover:text-white transition">SaaS Pricing</a>
           </nav>
 
@@ -462,33 +557,33 @@ export default function LandingPage() {
       </header>
 
       {/* =========================================================================
-          3. HERO SECTION (Freeio Arch Showcase + Search Pill + Live Metrics)
+          4. HERO SECTION (Freeio Arch Showcase + Search Pill + Real Dairy Assets)
       ========================================================================= */}
       <section
         id="home"
-        className="text-white min-h-[calc(100vh-114px)] flex items-center relative overflow-hidden py-12 lg:py-16"
+        className="text-white min-h-[calc(100vh-140px)] flex items-center relative overflow-hidden py-12 lg:py-16"
         style={{
           backgroundColor: "#1F4B3F",
           backgroundImage:
-            "radial-gradient(circle at 15% 25%, rgba(91, 187, 123, 0.12) 0%, transparent 45%), radial-gradient(circle at 85% 75%, rgba(0, 168, 107, 0.08) 0%, transparent 50%)",
+            "radial-gradient(circle at 15% 25%, rgba(91, 187, 123, 0.14) 0%, transparent 45%), radial-gradient(circle at 85% 75%, rgba(0, 168, 107, 0.1) 0%, transparent 50%)",
         }}
       >
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             {/* Left Hero Column */}
             <div className="lg:col-span-7 space-y-7">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-xs font-semibold text-emerald-200">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 border border-white/15 text-xs font-semibold text-emerald-200">
                 <Sparkles className="w-3.5 h-3.5 text-[#5BBB7B] animate-pulse" />
-                <span>Next-Gen Operating System for Commercial Dairies</span>
+                <span>Next-Gen Operating System for Commercial Dairy Farms & Milk Bars</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-white leading-[1.18]">
+              <h1 className="text-4xl sm:text-5xl lg:text-[52px] font-bold tracking-tight text-white leading-[1.18]">
                 From cow yield to doorstep delivery,{" "}
                 <span className="text-[#5BBB7B]">manage your entire dairy</span> in real-time.
               </h1>
 
               <p className="text-slate-200 text-base sm:text-lg max-w-xl font-normal leading-relaxed">
-                Automate milking logs, Richmond SNF & FAT testing, sub-second POS counter sales, rider fuel tracking, and daily mass-balance reconciliation.
+                Automate milking logs, Richmond SNF & FAT dock testing, sub-second POS counter sales, rider fuel tracking, and daily mass-balance reconciliation.
               </p>
 
               {/* Freeio Iconic Rounded Search / Quick Dispatch Pill */}
@@ -587,42 +682,42 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Right Freeio Arched Double Card Composition */}
+            {/* Right Freeio Arched Double Card Composition (Using Real Dairy Images) */}
             <div className="lg:col-span-5 relative flex justify-center items-center">
               <div className="relative w-full max-w-lg flex items-end justify-center gap-4">
-                {/* Left Foreground Arch: Master Herdsman / Operations Incharge */}
+                {/* Left Foreground Arch: Farm Dairy Operations Overview */}
                 <div
                   className="w-1/2 overflow-hidden shadow-2xl border-4 border-white/20 bg-slate-800 relative z-20 aspect-[3/4.6] group block cursor-pointer"
                   style={{ borderRadius: "180px 180px 32px 32px" }}
                 >
                   <img
-                    alt="Master Herdsman"
-                    className="w-full h-full object-cover object-top group-hover:scale-105 transition duration-500"
-                    src="/landing-images/tariq-mehmood-hero2.png"
+                    alt="Dairy Farm Operations"
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    src="/images/dairyfarm.jpeg"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                   <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <span className="text-xs font-bold text-[#5BBB7B]">Tariq Mehmood</span>
-                    <p className="text-[11px] text-slate-200">Milking & Chiller Supervisor</p>
+                    <span className="text-xs font-bold text-[#5BBB7B]">Pure Milk Bar Farm</span>
+                    <p className="text-[11px] text-slate-200">Livestock & Milking Station</p>
                     <p className="text-[10px] text-emerald-300 mt-0.5">Batch Yield: 850L · FAT 6.8%</p>
                   </div>
                 </div>
 
-                {/* Right Background Arch: Cold-Chain Fleet Manager */}
+                {/* Right Background Arch: Live ERP System UI Screen */}
                 <div
                   className="w-1/2 overflow-hidden shadow-2xl border-4 border-white/20 bg-slate-800 relative z-10 aspect-[3/5] -translate-y-8 group block cursor-pointer"
                   style={{ borderRadius: "220px 220px 32px 32px" }}
                 >
                   <img
-                    alt="Cold-Chain Quality Incharge"
+                    alt="ERP System Screen"
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                    src="/landing-images/maqsood-raza-hero.png"
+                    src="/images/screen.png"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                   <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <span className="text-xs font-bold text-[#5BBB7B]">Maqsood Raza</span>
-                    <p className="text-[11px] text-slate-200">Logistics & Dock Quality Lead</p>
-                    <p className="text-[10px] text-emerald-300 mt-0.5">Chiller Dispatch: 3.8°C</p>
+                    <span className="text-xs font-bold text-[#5BBB7B]">ERP Command Center</span>
+                    <p className="text-[11px] text-slate-200">Real-Time Operational UI</p>
+                    <p className="text-[10px] text-emerald-300 mt-0.5">Full Stack ERP Topology</p>
                   </div>
                 </div>
 
@@ -652,21 +747,15 @@ export default function LandingPage() {
                 <div className="absolute -bottom-4 left-6 z-30 bg-white/95 backdrop-blur border border-slate-100 text-slate-800 px-3.5 py-2 rounded-full shadow-2xl flex items-center space-x-2.5">
                   <span className="text-xs font-bold text-slate-900">500+ Active Routes</span>
                   <div className="flex -space-x-2 overflow-hidden">
-                    <img
-                      alt="pro"
-                      className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover"
-                      src="/landing-images/pro-avatar-1-alt.png"
-                    />
-                    <img
-                      alt="pro"
-                      className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover"
-                      src="/landing-images/pro-avatar-2-alt.png"
-                    />
-                    <img
-                      alt="pro"
-                      className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover"
-                      src="/landing-images/pro-avatar-3-alt.png"
-                    />
+                    <div className="w-6 h-6 rounded-full bg-emerald-700 text-white flex items-center justify-center text-[9px] font-bold ring-2 ring-white">
+                      LK
+                    </div>
+                    <div className="w-6 h-6 rounded-full bg-teal-700 text-white flex items-center justify-center text-[9px] font-bold ring-2 ring-white">
+                      MT
+                    </div>
+                    <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px] font-bold ring-2 ring-white">
+                      FT
+                    </div>
                     <div className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-[#00a86b] flex items-center justify-center text-[10px] font-bold text-white">
                       +
                     </div>
@@ -679,7 +768,7 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          4. "HOW IT WORKS" 4-STEP COMPLETE DAIRY LIFECYCLE
+          5. "HOW IT WORKS" 4-STEP COMPLETE DAIRY LIFECYCLE
       ========================================================================= */}
       <section className="py-16 bg-white border-b border-slate-200/80" id="how-it-works">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -701,11 +790,11 @@ export default function LandingPage() {
               to="/farm"
               className="border border-slate-200/80 rounded-2xl p-6 hover:shadow-xl hover:border-[#00a86b] transition-all bg-slate-50/50 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
             >
-              <div className="w-full h-40 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+              <div className="w-full h-40 rounded-xl overflow-hidden mb-4 group-hover:scale-105 transition-transform bg-slate-100">
                 <img
                   alt="Log Herd & Milk Intake"
-                  className="h-36 w-auto object-contain mix-blend-multiply"
-                  src="/landing-images/post-a-job.png"
+                  className="w-full h-full object-cover"
+                  src="/images/animals.webp"
                 />
               </div>
               <div className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#1F4B3F] text-[11px] font-bold mb-2">
@@ -725,11 +814,11 @@ export default function LandingPage() {
               to="/supplier"
               className="border border-slate-200/80 rounded-2xl p-6 hover:shadow-xl hover:border-[#00a86b] transition-all bg-slate-50/50 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
             >
-              <div className="w-full h-40 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+              <div className="w-full h-40 rounded-xl overflow-hidden mb-4 group-hover:scale-105 transition-transform bg-slate-100">
                 <img
                   alt="Quality Grade & Batching"
-                  className="h-36 w-auto object-contain mix-blend-multiply"
-                  src="/landing-images/choose-worker.png"
+                  className="w-full h-full object-cover"
+                  src="/images/storage.webp"
                 />
               </div>
               <div className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#1F4B3F] text-[11px] font-bold mb-2">
@@ -749,11 +838,11 @@ export default function LandingPage() {
               to="/pos"
               className="border border-slate-200/80 rounded-2xl p-6 hover:shadow-xl hover:border-[#00a86b] transition-all bg-slate-50/50 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
             >
-              <div className="w-full h-40 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+              <div className="w-full h-40 rounded-xl overflow-hidden mb-4 group-hover:scale-105 transition-transform bg-slate-100">
                 <img
                   alt="POS Retail & Delivery Dispatch"
-                  className="h-36 w-auto object-contain mix-blend-multiply"
-                  src="/landing-images/work-done.png"
+                  className="w-full h-full object-cover"
+                  src="/images/delivery.jpeg"
                 />
               </div>
               <div className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#1F4B3F] text-[11px] font-bold mb-2">
@@ -773,11 +862,11 @@ export default function LandingPage() {
               to="/finance/daily-closing"
               className="border border-slate-200/80 rounded-2xl p-6 hover:shadow-xl hover:border-[#00a86b] transition-all bg-slate-50/50 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
             >
-              <div className="w-full h-40 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+              <div className="w-full h-40 rounded-xl overflow-hidden mb-4 group-hover:scale-105 transition-transform bg-slate-100">
                 <img
                   alt="Reconcile & Settle Khata"
-                  className="h-36 w-auto object-contain mix-blend-multiply"
-                  src="/landing-images/pay-safely.png"
+                  className="w-full h-full object-cover"
+                  src="/images/PnL.jpeg"
                 />
               </div>
               <div className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#1F4B3F] text-[11px] font-bold mb-2">
@@ -796,7 +885,7 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          5. COMPLETE ERP SYSTEMS & MODULES SHOWCASE (Grid with Image & Empty-Space Handlers)
+          6. COMPLETE ERP SYSTEMS & MODULES SHOWCASE (Featuring Actual Dairy Images)
       ========================================================================= */}
       <section className="py-16 bg-slate-50" id="modules">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -845,33 +934,13 @@ export default function LandingPage() {
                 key={item.id}
                 className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl hover:border-emerald-500 transition-all duration-300 flex flex-col group"
               >
-                {/* Card Visual / Image Section (With Fallback Empty Space) */}
+                {/* Card Visual / Image Section */}
                 <div className="relative h-44 bg-gradient-to-br from-slate-900 via-slate-800 to-[#1F4B3F] overflow-hidden flex items-center justify-center">
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    /* Stylized Branded Empty Space Placeholder for modules awaiting screenshots */
-                    <div className="w-full h-full p-4 flex flex-col justify-between relative bg-gradient-to-br from-[#1B3B36] to-[#0B1C30] border-b border-emerald-500/20">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-400/30">
-                          Automated Core
-                        </span>
-                        <Milk className="w-5 h-5 text-emerald-400" />
-                      </div>
-                      <div className="text-left">
-                        <div className="text-white text-sm font-bold tracking-tight">
-                          {item.title}
-                        </div>
-                        <div className="text-[11px] text-emerald-200/80 font-mono">
-                          Live Reconciled Ledger Engine
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
 
                   {/* Top Floating Badge */}
                   <div className="absolute top-2.5 left-2.5 z-10">
@@ -933,7 +1002,329 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          6. LIVE INTERACTIVE SIMULATORS (Richmond SNF & Mass Balance Sandbox)
+          7. INTERACTIVE LIVE ERP SCREEN PREVIEW SECTION
+      ========================================================================= */}
+      <section className="py-16 bg-white border-b border-slate-200" id="screen-preview">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-10">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/60">
+              Interactive System UI
+            </span>
+            <h2 className="text-3xl font-bold text-slate-900 tracking-tight mt-2">
+              Preview Real ERP Modules in Action
+            </h2>
+            <p className="text-slate-500 text-sm mt-1">
+              Switch between tabs to see the actual operational interfaces driving our dairy ERP system.
+            </p>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+            {[
+              { id: "dashboard", label: "Executive Dashboard", icon: BarChart3 },
+              { id: "pos", label: "POS Sales Counter", icon: ShoppingCart },
+              { id: "farm", label: "Livestock & Milking", icon: Tractor },
+              { id: "supplier", label: "Procurement Dock", icon: Layers },
+              { id: "delivery", label: "Rider Fleet Logistics", icon: Truck },
+              { id: "closing", label: "Daily Mass-Balance", icon: Scale },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveScreenTab(tab.id)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition cursor-pointer ${
+                    activeScreenTab === tab.id
+                      ? "bg-[#1F4B3F] text-white shadow-md"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  <Icon className="w-4 h-4 text-[#5BBB7B]" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Interactive Screen Container */}
+          <div className="bg-slate-900 rounded-3xl p-3 sm:p-4 shadow-2xl border border-slate-800 relative overflow-hidden">
+            {/* Window Top Controls */}
+            <div className="flex items-center justify-between px-3 py-2 border-b border-slate-800 text-xs text-slate-400 mb-3">
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-rose-500"></span>
+                <span className="w-3 h-3 rounded-full bg-amber-500"></span>
+                <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
+                <span className="ml-2 font-mono text-[11px] text-slate-400">
+                  puremilkbar.local / {activeScreenTab}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] text-emerald-400 font-bold">● LIVE DEMO</span>
+                <Link
+                  to={
+                    activeScreenTab === "pos"
+                      ? "/pos"
+                      : activeScreenTab === "farm"
+                      ? "/farm"
+                      : activeScreenTab === "supplier"
+                      ? "/supplier"
+                      : activeScreenTab === "delivery"
+                      ? "/delivery"
+                      : activeScreenTab === "closing"
+                      ? "/finance/daily-closing"
+                      : "/dashboard"
+                  }
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-3 py-1 rounded-lg transition"
+                >
+                  Open in App &rarr;
+                </Link>
+              </div>
+            </div>
+
+            {/* Screen Image Display */}
+            <div className="relative rounded-2xl overflow-hidden bg-slate-950 aspect-[16/9] max-h-[560px]">
+              <img
+                src={
+                  activeScreenTab === "dashboard"
+                    ? "/images/screen.png"
+                    : activeScreenTab === "pos"
+                    ? "/images/delivery.jpeg"
+                    : activeScreenTab === "farm"
+                    ? "/images/animals.webp"
+                    : activeScreenTab === "supplier"
+                    ? "/images/storage.webp"
+                    : activeScreenTab === "delivery"
+                    ? "/images/delivery.jpeg"
+                    : "/images/PnL.jpeg"
+                }
+                alt="ERP Module Interface"
+                className="w-full h-full object-cover object-top"
+              />
+
+              {/* Floating Feature Highlighter Box */}
+              <div className="absolute bottom-4 left-4 right-4 bg-slate-900/90 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-white">
+                <div>
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#5BBB7B]" />
+                    {activeScreenTab === "dashboard" && "Executive Command Center — Live Real-Time KPIs"}
+                    {activeScreenTab === "pos" && "Point of Sale (POS) — Sub-Second Walk-in & Delivery Checkout"}
+                    {activeScreenTab === "farm" && "Livestock & Milking — RFID Herd Yield & Batch Chiller Sync"}
+                    {activeScreenTab === "supplier" && "Milk Procurement Dock — Richmond FAT/SNF Automatic Grading"}
+                    {activeScreenTab === "delivery" && "Fleet Logistics — Neighborhood Route Drops & Vehicle Fuel Log"}
+                    {activeScreenTab === "closing" && "Daily Closing — Mass Balance Dipstick & Cash Reconciliation"}
+                  </h4>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    100% offline-resilient with instant localStorage and reactive state synchronizers.
+                  </p>
+                </div>
+                <Link
+                  to={
+                    activeScreenTab === "pos"
+                      ? "/pos"
+                      : activeScreenTab === "farm"
+                      ? "/farm"
+                      : activeScreenTab === "supplier"
+                      ? "/supplier"
+                      : activeScreenTab === "delivery"
+                      ? "/delivery"
+                      : activeScreenTab === "closing"
+                      ? "/finance/daily-closing"
+                      : "/dashboard"
+                  }
+                  className="bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs font-bold px-4 py-2 rounded-xl shrink-0 transition"
+                >
+                  Launch This Module
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          8. INTERACTIVE LIVE POS QUICK-ORDER SANDBOX
+      ========================================================================= */}
+      <section className="py-16 bg-slate-50 border-b border-slate-200" id="pos-sandbox">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-10">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-3 py-1 rounded-full border border-emerald-200/60">
+              Interactive POS Sandbox
+            </span>
+            <h2 className="text-3xl font-bold text-slate-900 tracking-tight mt-2">
+              Try Out The Sub-Second Milk Bar Checkout
+            </h2>
+            <p className="text-slate-500 text-sm mt-1">
+              Add dairy items, adjust liter quantities, and see how fast sales and invoices are generated.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left: Product Catalog Grid */}
+            <div className="lg:col-span-7 space-y-4">
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                Click Products to Add to Cart:
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { id: "cow", name: "Cow Milk", rate: 260, unit: "per liter", icon: "🥛", source: "Farm Herd" },
+                  { id: "buff", name: "Buffalo Milk", rate: 290, unit: "per liter", icon: "🍶", source: "Farm Herd" },
+                  { id: "dahi", name: "Fresh Dahi", rate: 320, unit: "per kg", icon: "🥣", source: "Chilled Pot" },
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => addPosItem({ id: p.id, name: p.name, rate: p.rate, unit: p.unit.includes("kg") ? "KG" : "L" })}
+                    className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition text-left flex flex-col justify-between group cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-2xl">{p.icon}</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">
+                        {p.source}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-900 group-hover:text-[#00a86b]">
+                        {p.name}
+                      </h4>
+                      <p className="text-xs font-extrabold text-[#00a86b] mt-1">
+                        Rs. {p.rate} <span className="text-[10px] font-normal text-slate-400">/{p.unit}</span>
+                      </p>
+                    </div>
+                    <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-600">
+                      <span>+ Add Item</span>
+                      <Plus className="w-3.5 h-3.5 text-emerald-600" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Rupee-First Quick Add Pills */}
+              <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2">
+                <span className="text-xs font-bold text-slate-700 block">
+                  Quick Amount Presets (Instant Conversion):
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {[50, 100, 200, 500, 1000].map((amt) => (
+                    <button
+                      key={amt}
+                      onClick={() => addPosItem({ id: "cow", name: `Cow Milk (Rs. ${amt})`, rate: amt, unit: "Fix" })}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-xs font-bold text-slate-700 transition"
+                    >
+                      Rs. {amt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Live Cart & Invoice Simulator */}
+            <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-slate-200 shadow-md space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                    🧾
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-slate-900">Live POS Bill Checkout</h3>
+                    <p className="text-[11px] text-slate-400">Invoice #INV-DEMO-01</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setPosItems([])}
+                  className="text-xs font-semibold text-rose-500 hover:text-rose-700 flex items-center gap-1"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Clear
+                </button>
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {posItems.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-400">
+                    Cart is empty. Click a product on the left to add items.
+                  </div>
+                ) : (
+                  posItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-2.5 rounded-xl bg-slate-50 flex items-center justify-between text-xs"
+                    >
+                      <div>
+                        <div className="font-bold text-slate-800">{item.name}</div>
+                        <div className="text-[11px] text-slate-500">
+                          Rs. {item.rate} &times; {item.qty} {item.unit} = <strong className="text-slate-900">Rs. {item.rate * item.qty}</strong>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => updatePosQty(item.id, -1)}
+                          className="w-6 h-6 rounded bg-white border border-slate-200 flex items-center justify-center font-bold hover:bg-slate-100"
+                        >
+                          -
+                        </button>
+                        <span className="font-mono font-bold w-4 text-center">{item.qty}</span>
+                        <button
+                          onClick={() => updatePosQty(item.id, 1)}
+                          className="w-6 h-6 rounded bg-white border border-slate-200 flex items-center justify-center font-bold hover:bg-slate-100"
+                        >
+                          +
+                        </button>
+                        <button
+                          onClick={() => removePosItem(item.id)}
+                          className="text-slate-400 hover:text-rose-500 ml-1"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Payment Method Selector */}
+              <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">
+                  Payment Method:
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  {["cash", "khata", "online"].map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setPosPaymentMethod(m)}
+                      className={`py-1.5 rounded-lg text-xs font-bold capitalize transition ${
+                        posPaymentMethod === m
+                          ? "bg-[#00a86b] text-white"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      }`}
+                    >
+                      {m === "online" ? "JazzCash" : m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bill Summary */}
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                <div>
+                  <span className="text-xs text-emerald-800 font-semibold block">Total Payable</span>
+                  <span className="text-2xl font-extrabold text-[#00a86b] font-mono">
+                    Rs. {posSubtotal.toLocaleString()}
+                  </span>
+                </div>
+                <Link
+                  to="/pos"
+                  className="bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow transition flex items-center gap-1"
+                >
+                  <span>Open Full POS</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          9. LIVE INTERACTIVE SIMULATORS (Richmond SNF & Mass Balance Sandbox)
       ========================================================================= */}
       <section className="py-16 bg-white border-y border-slate-200/80" id="simulators">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1201,7 +1592,7 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          7. TOP OPERATIONS SPECIALISTS & FLEET MASTERS SHOWCASE
+          10. TOP OPERATIONS SPECIALISTS & FLEET MASTERS SHOWCASE (Using Staff Images)
       ========================================================================= */}
       <section className="py-16 bg-white" id="team">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1211,7 +1602,7 @@ export default function LandingPage() {
                 Verified Personnel
               </span>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-2">
-                Highest Rated Dairy Specialists & Fleet Masters
+                Operations Specialists & Fleet Team
               </h2>
               <p className="text-sm text-slate-500 mt-1">
                 Background-checked, CNIC verified, and specialized across milking, lab quality, and cold-chain logistics.
@@ -1232,7 +1623,7 @@ export default function LandingPage() {
               <img
                 alt="Ahmad Khan"
                 className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700 ease-out"
-                src="/landing-images/ahmad-khan-large-alt.png"
+                src="/images/staff.jpeg"
               />
               <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between z-10 pointer-events-none">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white text-[11px] font-semibold">
@@ -1278,7 +1669,7 @@ export default function LandingPage() {
               <img
                 alt="Tariq Mehmood"
                 className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700 ease-out"
-                src="/landing-images/tariq-mehmood-large-alt.png"
+                src="/images/staff-2.jpeg"
               />
               <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between z-10 pointer-events-none">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white text-[11px] font-semibold">
@@ -1324,7 +1715,7 @@ export default function LandingPage() {
               <img
                 alt="Rashid Minhas"
                 className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700 ease-out"
-                src="/landing-images/rashid-ali-large.png"
+                src="/images/staff.jpeg"
               />
               <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between z-10 pointer-events-none">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white text-[11px] font-semibold">
@@ -1370,7 +1761,7 @@ export default function LandingPage() {
               <img
                 alt="Shahid Bilal"
                 className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700 ease-out"
-                src="/landing-images/maqsood-raza-large.png"
+                src="/images/staff-2.jpeg"
               />
               <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between z-10 pointer-events-none">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white text-[11px] font-semibold">
@@ -1415,7 +1806,7 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          8. TRANSPARENT COMMERCIAL SAAS PRICING MATRIX
+          11. TRANSPARENT COMMERCIAL SAAS PRICING MATRIX
       ========================================================================= */}
       <section className="py-16 bg-slate-50 border-t border-slate-200/80" id="pricing">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1597,7 +1988,7 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          9. REAL FARM OWNER TESTIMONIALS & REVIEWS
+          12. REAL FARM OWNER TESTIMONIALS & REVIEWS
       ========================================================================= */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1672,7 +2063,7 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          10. FREQUENTLY ASKED QUESTIONS (Accordion)
+          13. FREQUENTLY ASKED QUESTIONS (Accordion)
       ========================================================================= */}
       <section className="py-16 bg-slate-50 border-t border-slate-200/80">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1732,7 +2123,7 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          11. HIGH-CONVERSION CALL TO ACTION BANNER
+          14. HIGH-CONVERSION CALL TO ACTION BANNER
       ========================================================================= */}
       <section className="py-16 bg-[#1F4B3F] text-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-6">
@@ -1765,7 +2156,7 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          12. COMPREHENSIVE MULTI-COLUMN FOOTER
+          15. COMPREHENSIVE MULTI-COLUMN FOOTER
       ========================================================================= */}
       <footer className="bg-[#163E34] text-slate-300 text-xs border-t border-[#2A4D47] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
