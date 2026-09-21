@@ -1053,16 +1053,19 @@ export function POSProvider({ children }) {
 
   let intakeLogs = [];
   try {
+    // Clear legacy mock intake records from older mock versions
+    localStorage.removeItem('pure_milk_bar_intake_records_v3');
+    localStorage.removeItem('pure_milk_bar_intake_records_v2');
+    localStorage.removeItem('pure_milk_bar_intake_records_v1');
+    localStorage.removeItem('pure_milk_bar_intake_records');
+
     const intakeCtx = useIntakeContext();
     intakeLogs = intakeCtx?.intakeLogs || [];
   } catch (e) {
-    try {
-      const saved = localStorage.getItem('pure_milk_bar_intake_records_v3');
-      if (saved) intakeLogs = JSON.parse(saved) || [];
-    } catch (_) {}
+    intakeLogs = [];
   }
 
-  const totalSupplierIntake = intakeLogs.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+  const totalSupplierIntake = intakeLogs.reduce((sum, item) => sum + (Number(item.quantity || item.quantityLiters) || 0), 0);
   const remainingSupplierMilk = Math.max(0, totalSupplierIntake - (supplierSalesMetrics?.milkSold || 0));
   const remainingFarmMilk = Math.max(0, totalFarmMilk - (farmSalesMetrics?.milkSold || 0));
 
