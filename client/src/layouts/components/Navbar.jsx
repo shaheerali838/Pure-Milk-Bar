@@ -303,30 +303,34 @@ export default function Navbar() {
 
         {/* User Profile / Status Indicator */}
         {user ? (
-          <div className="flex items-center gap-1.5 pl-1.5 border-l border-slate-200">
+          <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
             <Link
               to="/settings"
               className="flex items-center gap-1.5 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer group"
               title={`Logged in as ${user.name} (${user.roleLabel || user.role})`}
             >
-              <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center ring-1 ring-emerald-600/30 group-hover:ring-emerald-600">
+              <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center ring-1 ring-emerald-600/30 group-hover:ring-emerald-600 shadow-2xs">
                 {user.avatar || 'SA'}
               </div>
               <span className="hidden md:inline-block text-xs font-bold text-slate-700 max-w-24 truncate">
                 {user.name.split(' ')[0]}
               </span>
             </Link>
-            <button
+
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => {
                 logout();
                 navigate('/login');
               }}
-              className="h-6 w-6 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
-              title="Sign Out"
+              className="h-7 px-2.5 text-xs font-bold text-rose-700 border-rose-200 bg-rose-50/50 hover:bg-rose-100 hover:text-rose-800 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+              title="Sign Out of ERP"
             >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
+              <LogOut className="w-3.5 h-3.5 text-rose-600" />
+              <span>Logout</span>
+            </Button>
           </div>
         ) : (
           <Link to="/login">

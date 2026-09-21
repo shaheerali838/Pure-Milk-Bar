@@ -325,30 +325,31 @@ export default function Sidebar() {
       <div className="p-2.5 border-t border-slate-100 bg-slate-50/70 space-y-2">
         {/* Active Logged-in User Profile */}
         {user ? (
-          <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center shrink-0 shadow-2xs">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+              <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                 {user.avatar || 'SA'}
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-slate-900 truncate leading-tight">
                   {user.name}
                 </p>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 mt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                   <p className="text-[10px] font-semibold text-emerald-700 truncate">
-                    {user.role === 'ADMIN' ? 'Admin' : user.role === 'MANAGER' ? 'Manager' : user.role === 'CASHIER' ? 'Cashier' : 'Supervisor'}
+                    {user.role === 'ADMIN' ? 'Administrator' : user.role === 'MANAGER' ? 'Branch Manager' : user.role === 'CASHIER' ? 'POS Cashier' : 'Supervisor'}
                   </p>
                 </div>
               </div>
             </div>
+
             <button
               type="button"
               onClick={handleLogout}
-              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-              title="Sign Out / Change Account"
+              className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 hover:text-rose-800 border border-rose-200 transition-all cursor-pointer shadow-2xs"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-3.5 h-3.5 text-rose-600" />
+              <span>Sign Out / Logout</span>
             </button>
           </div>
         ) : (

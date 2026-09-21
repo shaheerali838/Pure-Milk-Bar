@@ -76,12 +76,13 @@ import {
   Minus,
   Trash2,
   User,
+  LogOut,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
 
   // Search & Navigation State
   const [searchQuery, setSearchQuery] = useState("");
@@ -523,7 +524,7 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   to="/dashboard"
-                  className="bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold px-3.5 py-1.5 rounded-full shadow-md shadow-emerald-900/30 transition-all duration-200 flex items-center gap-1.5 cursor-pointer"
+                  className="bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold px-3 py-1.5 rounded-full shadow-md shadow-emerald-900/30 transition-all duration-200 flex items-center gap-1.5 cursor-pointer"
                 >
                   <div className="w-4 h-4 rounded-full bg-white text-emerald-800 text-[9px] font-extrabold flex items-center justify-center">
                     {user.avatar || 'SA'}
@@ -531,6 +532,15 @@ export default function LandingPage() {
                   <span>Dashboard</span>
                   <ArrowRight className="w-2.5 h-2.5" />
                 </Link>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="flex items-center gap-1 text-[10.5px] font-bold text-rose-300 hover:text-white bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/50 px-2.5 py-1 rounded-full transition cursor-pointer"
+                  title="Sign Out of Session"
+                >
+                  <LogOut className="w-2.5 h-2.5 text-rose-400" />
+                  <span>Logout</span>
+                </button>
               </>
             ) : (
               <>
