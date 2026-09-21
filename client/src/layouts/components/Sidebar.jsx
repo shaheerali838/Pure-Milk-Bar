@@ -469,25 +469,6 @@ export default function Sidebar() {
             <span>Sign In to ERP</span>
           </NavLink>
         )}
-
-        <NavLink
-          to="/landing"
-          className={({ isActive }) =>
-            `w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all border ${
-              isActive
-                ? "bg-slate-900 text-emerald-400 border-slate-800 shadow-xs"
-                : "bg-white text-slate-700 hover:text-emerald-700 hover:bg-emerald-50/60 border-slate-200"
-            }`
-          }
-        >
-          <div className="flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Public Website</span>
-          </div>
-          <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
-            v2.4
-          </span>
-        </NavLink>
       </div>
 
       {/* Quick Change Password Modal */}
