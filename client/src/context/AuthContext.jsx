@@ -75,8 +75,7 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.error('Failed to parse saved auth session:', e);
     }
-    // Default to admin for seamless experience if session empty, or null
-    return DEMO_ACCOUNTS[0];
+    return null;
   });
 
   const [token, setToken] = useState(() => {
@@ -88,7 +87,7 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.error('Failed to parse saved auth token:', e);
     }
-    return 'pmb_live_jwt_' + btoa('admin_session_token');
+    return null;
   });
 
   const [isLoading, setIsLoading] = useState(false);

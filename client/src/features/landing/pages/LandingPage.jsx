@@ -75,10 +75,13 @@ import {
   Plus,
   Minus,
   Trash2,
+  User,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
 
   // Search & Navigation State
   const [searchQuery, setSearchQuery] = useState("");
@@ -510,19 +513,43 @@ export default function LandingPage() {
 
           {/* Right Action CTAs */}
           <div className="flex items-center space-x-2 shrink-0">
-            <Link
-              to="/pos"
-              className="hidden sm:flex items-center gap-1 text-[10.5px] font-bold text-[#5BBB7B] bg-[#5BBB7B]/15 hover:bg-[#5BBB7B]/25 border border-[#5BBB7B]/30 px-2.5 py-1 rounded-full transition"
-            >
-              <ShoppingCart className="w-2.5 h-2.5" /> POS
-            </Link>
-            <Link
-              to="/dashboard"
-              className="bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold px-3.5 py-1.5 rounded-full shadow-md shadow-emerald-900/30 transition-all duration-200 flex items-center gap-1.5 cursor-pointer"
-            >
-              <span>Launch ERP</span>
-              <ArrowRight className="w-2.5 h-2.5" />
-            </Link>
+            {isAuthenticated && user ? (
+              <>
+                <Link
+                  to="/pos"
+                  className="hidden sm:flex items-center gap-1 text-[10.5px] font-bold text-[#5BBB7B] bg-[#5BBB7B]/15 hover:bg-[#5BBB7B]/25 border border-[#5BBB7B]/30 px-2.5 py-1 rounded-full transition"
+                >
+                  <ShoppingCart className="w-2.5 h-2.5" /> POS
+                </Link>
+                <Link
+                  to="/dashboard"
+                  className="bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold px-3.5 py-1.5 rounded-full shadow-md shadow-emerald-900/30 transition-all duration-200 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <div className="w-4 h-4 rounded-full bg-white text-emerald-800 text-[9px] font-extrabold flex items-center justify-center">
+                    {user.avatar || 'SA'}
+                  </div>
+                  <span>Dashboard</span>
+                  <ArrowRight className="w-2.5 h-2.5" />
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="flex items-center gap-1 text-[11px] font-bold text-emerald-300 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 px-3 py-1.5 rounded-full transition cursor-pointer"
+                >
+                  <User className="w-3 h-3 text-[#5BBB7B]" />
+                  <span>Sign In</span>
+                </Link>
+                <Link
+                  to="/login"
+                  className="bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold px-3.5 py-1.5 rounded-full shadow-md shadow-emerald-900/30 transition-all duration-200 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>Launch ERP</span>
+                  <ArrowRight className="w-2.5 h-2.5" />
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
