@@ -31,6 +31,10 @@ export default function RegisterStaffView({ onBack, onComplete }) {
       setError('Staff member name is required.');
       return;
     }
+    if (!formData.route.trim()) {
+      setError('Assigned Route / Delivery Area is required.');
+      return;
+    }
 
     const created = addStaff({
       name: formData.name.trim(),

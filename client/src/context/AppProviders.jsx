@@ -4,6 +4,7 @@ import { LedgerProvider } from "./LedgerContext";
 import { AnimalProvider } from "./AnimalContext";
 import { ExpenseProvider } from "./ExpenseContext";
 import { StaffProvider } from "./StaffContext";
+import { StaffPayrollProvider } from "./StaffPayrollContext";
 import { DeliveryStaffProvider } from "./DeliveryStaffContext";
 import { FuelLogProvider } from "./FuelLogContext";
 import { RiderSalaryProvider } from "./RiderSalaryContext";
@@ -22,6 +23,7 @@ const providers = [
   LedgerProvider,
   AnimalProvider,
   ExpenseProvider,
+  StaffPayrollProvider,
   StaffProvider,
   DeliveryStaffProvider,
   FuelLogProvider,

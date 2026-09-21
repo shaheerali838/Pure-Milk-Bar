@@ -52,8 +52,13 @@ import RiderDeliveryFinancePage from "../features/finance/pages/RiderDeliveryFin
 import DailyClosing from "../features/finance/pages/DailyClosing";
 import TransactionAuditLog from "../features/audit/pages/TransactionAuditLog";
 
-// Staff Management
+// Staff Management Pages
 import StaffManagement from "../features/staff/pages/StaffManagement";
+import StaffDashboard from "../features/staff/pages/StaffDashboard";
+import ManageStaff from "../features/staff/pages/ManageStaff";
+import StaffAttendance from "../features/staff/pages/StaffAttendance";
+import StaffDailySheet from "../features/staff/pages/StaffDailySheet";
+import StaffAdd from "../features/staff/pages/StaffAdd";
 
 // Global Settings
 import GlobalSettings from "../features/settings/pages/GlobalSettings";
@@ -132,9 +137,19 @@ export function AppRouter() {
           <Route path="audit-log" element={<TransactionAuditLog />} />
           <Route path="audit" element={<TransactionAuditLog />} />
           <Route path="transactions" element={<TransactionAuditLog />} />
-          <Route path="finance/staff" element={<StaffManagement />} />
-          <Route path="staff" element={<StaffManagement />} />
-          <Route path="payroll" element={<StaffManagement />} />
+          <Route path="finance/staff" element={<Navigate to="/staff" replace />} />
+          <Route path="finance/staff/*" element={<Navigate to="/staff" replace />} />
+          <Route path="staff" element={<StaffManagement />}>
+            <Route index element={<StaffDashboard />} />
+            <Route path="dashboard" element={<StaffDashboard />} />
+            <Route path="manage" element={<ManageStaff />} />
+            <Route path="add" element={<StaffAdd />} />
+            <Route path="attendance" element={<StaffAttendance />} />
+            <Route path="dailysheet" element={<StaffDailySheet />} />
+            <Route path="daily-sheet" element={<StaffDailySheet />} />
+          </Route>
+          <Route path="payroll" element={<Navigate to="/staff" replace />} />
+          <Route path="payroll/*" element={<Navigate to="/staff" replace />} />
 
           <Route path="settings" element={<GlobalSettings />} />
           <Route path="global-settings" element={<GlobalSettings />} />

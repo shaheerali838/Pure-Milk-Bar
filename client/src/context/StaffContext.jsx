@@ -4,6 +4,31 @@ const StaffContext = createContext();
 
 const STORAGE_KEY_STAFF = 'pure_milk_bar_staff';
 
+export const generateDefaultAttendanceMap = (absentDays = 0, totalDays = 30) => {
+  const map = {};
+  const clampedAbsent = Math.max(0, Math.min(totalDays, Number(absentDays) || 0));
+  const todayNum = Math.min(totalDays, Math.max(1, new Date().getDate()));
+
+  for (let d = 1; d <= totalDays; d++) {
+    map[d] = 'present';
+  }
+
+  if (clampedAbsent > 0) {
+    let marked = 0;
+    // Mark today first if absent
+    map[todayNum] = 'absent';
+    marked++;
+    for (let d = totalDays; d >= 1 && marked < clampedAbsent; d--) {
+      if (d !== todayNum) {
+        map[d] = 'absent';
+        marked++;
+      }
+    }
+  }
+
+  return map;
+};
+
 export function StaffProvider({ children }) {
   // 1. Staff List State strictly synced with LocalStorage (NO dummy data)
   const [staffList, setStaffList] = useState(() => {
@@ -32,6 +57,7 @@ export function StaffProvider({ children }) {
   const addStaff = (data) => {
     const nextNum = staffList.length + 1;
     const staffId = `STF-${String(nextNum).padStart(3, '0')}`;
+    const absentDays = Number(data.absentDays) || 0;
 
     const newMember = {
       id: staffId,
@@ -44,9 +70,13 @@ export function StaffProvider({ children }) {
       dailySalary: Math.round((Number(data.monthlySalary) || 0) / 30),
       cnic: (data.cnic || '').trim(),
       route: (data.route || '').trim() || 'Not Assigned',
-      status: 'Active',
+      status: data.status || 'Active',
+      active: data.status ? data.status === 'Active' : true,
+      absentDays: absentDays,
+      presentDays: Math.max(0, 30 - absentDays),
       joinedDate: new Date().toISOString().split('T')[0],
       notes: (data.notes || '').trim(),
+      attendanceMap: data.attendanceMap || generateDefaultAttendanceMap(absentDays),
     };
 
     const updated = [newMember, ...staffList];
@@ -63,6 +93,9 @@ export function StaffProvider({ children }) {
 
       if (isMatch) {
         const nextSalary = data.monthlySalary !== undefined ? Number(data.monthlySalary) : Number(member.monthlySalary || 0);
+        const nextAbsent = data.absentDays !== undefined
+          ? Math.max(0, Math.min(30, Number(data.absentDays)))
+          : (member.absentDays !== undefined ? member.absentDays : (member.status === 'Inactive' ? 1 : 0));
         return {
           ...member,
           ...data,
@@ -77,7 +110,13 @@ export function StaffProvider({ children }) {
           }),
           ...(data.cnic !== undefined && { cnic: (data.cnic ?? member.cnic).trim() }),
           ...(data.route !== undefined && { route: (data.route ?? member.route).trim() || 'Not Assigned' }),
-          ...(data.status !== undefined && { status: data.status }),
+          ...(data.status !== undefined && {
+            status: data.status,
+            active: data.status === 'Active',
+          }),
+          ...(data.attendanceMap !== undefined && { attendanceMap: data.attendanceMap }),
+          absentDays: nextAbsent,
+          presentDays: Math.max(0, 30 - nextAbsent),
         };
       }
       return member;
@@ -86,7 +125,7 @@ export function StaffProvider({ children }) {
     setStaffList(updated);
   };
 
-  // 4. Toggle Staff Duty Status
+  // 4. Toggle Staff Duty Status (Active / Present vs Inactive / Absent)
   const toggleStaffStatus = (id) => {
     setStaffList((prev) =>
       prev.map((member) => {
@@ -95,10 +134,20 @@ export function StaffProvider({ children }) {
             member.status !== 'Inactive' &&
             member.status !== 'Off Duty' &&
             member.active !== false;
+          const nextStatus = currentIsActive ? 'Inactive' : 'Active';
+          const nextAbsent = currentIsActive ? Math.max(1, member.absentDays || 1) : 0;
+          const currentMap = member.attendanceMap && Object.keys(member.attendanceMap).length > 0
+            ? { ...member.attendanceMap }
+            : generateDefaultAttendanceMap(nextAbsent);
+          const todayNum = Math.min(30, Math.max(1, new Date().getDate()));
+          currentMap[todayNum] = nextStatus === 'Active' ? 'present' : 'absent';
           return {
             ...member,
-            status: currentIsActive ? 'Inactive' : 'Active',
+            status: nextStatus,
             active: !currentIsActive,
+            absentDays: nextAbsent,
+            presentDays: Math.max(0, 30 - nextAbsent),
+            attendanceMap: currentMap,
           };
         }
         return member;
@@ -106,18 +155,240 @@ export function StaffProvider({ children }) {
     );
   };
 
-  // 5. Delete Staff Member
+  // 5. Update Staff Attendance & Absent Days (Recalculates day-wise salary)
+  const setStaffAttendance = (id, { status, absentDays, attendanceMap }) => {
+    setStaffList((prev) =>
+      prev.map((member) => {
+        if (String(member.id) === String(id)) {
+          const newStatus = status !== undefined ? status : member.status;
+          let nextMap = attendanceMap;
+          let nextAbsent = absentDays;
+
+          if (nextMap) {
+            nextAbsent = Object.values(nextMap).filter((v) => v === 'absent').length;
+          } else {
+            const currentMap = member.attendanceMap && Object.keys(member.attendanceMap).length > 0
+              ? { ...member.attendanceMap }
+              : generateDefaultAttendanceMap(member.absentDays || 0);
+
+            const todayNum = Math.min(30, Math.max(1, new Date().getDate()));
+            if (status === 'Active') {
+              currentMap[todayNum] = 'present';
+              if (absentDays === 0) {
+                for (let d = 1; d <= 30; d++) currentMap[d] = 'present';
+                nextAbsent = 0;
+              } else if (absentDays !== undefined) {
+                nextAbsent = Math.max(0, Math.min(30, Number(absentDays)));
+              } else {
+                nextAbsent = Object.values(currentMap).filter((v) => v === 'absent').length;
+              }
+            } else if (status === 'Inactive') {
+              currentMap[todayNum] = 'absent';
+              nextAbsent = Object.values(currentMap).filter((v) => v === 'absent').length;
+              if (nextAbsent === 0) nextAbsent = 1;
+            } else if (absentDays !== undefined) {
+              nextAbsent = Math.max(0, Math.min(30, Number(absentDays)));
+              for (let d = 1; d <= 30; d++) {
+                currentMap[d] = d > 30 - nextAbsent ? 'absent' : 'present';
+              }
+            }
+            nextMap = currentMap;
+          }
+
+          nextAbsent = Math.max(0, Math.min(30, Number(nextAbsent ?? 0)));
+
+          return {
+            ...member,
+            status: newStatus,
+            active: newStatus === 'Active',
+            absentDays: nextAbsent,
+            presentDays: Math.max(0, 30 - nextAbsent),
+            attendanceMap: nextMap,
+          };
+        }
+        return member;
+      })
+    );
+  };
+
+  // 6. Toggle Attendance for a specific day (Day 1 to 30: present -> leave -> absent -> present)
+  const toggleDayAttendance = (id, dayNum) => {
+    setStaffList((prev) =>
+      prev.map((member) => {
+        if (String(member.id) === String(id)) {
+          const currentMap = member.attendanceMap && Object.keys(member.attendanceMap).length > 0
+            ? { ...member.attendanceMap }
+            : generateDefaultAttendanceMap(member.absentDays || 0);
+
+          const currentVal = currentMap[dayNum] || 'present';
+          let nextVal = 'present';
+          if (currentVal === 'present') nextVal = 'leave';
+          else if (currentVal === 'leave') nextVal = 'absent';
+          else nextVal = 'present';
+
+          currentMap[dayNum] = nextVal;
+
+          const absentCount = Object.values(currentMap).filter((v) => v === 'absent').length;
+          const leaveCount = Object.values(currentMap).filter((v) => v === 'leave').length;
+          const presentCount = Object.values(currentMap).filter((v) => v === 'present').length;
+
+          const todayNum = Math.min(30, Math.max(1, new Date().getDate()));
+          const todayStatus = currentMap[todayNum] || 'present';
+          const nextStatus = todayStatus === 'present' ? 'Active' : (todayStatus === 'leave' ? 'On Leave' : 'Inactive');
+
+          return {
+            ...member,
+            attendanceMap: currentMap,
+            absentDays: absentCount,
+            leaveDays: leaveCount,
+            presentDays: presentCount,
+            status: nextStatus,
+            active: todayStatus === 'present',
+          };
+        }
+        return member;
+      })
+    );
+  };
+
+  // Set specific attendance status for a day ('present' | 'leave' | 'absent')
+  const setDayAttendance = (id, dayNum, statusToSet = 'present') => {
+    setStaffList((prev) =>
+      prev.map((member) => {
+        if (String(member.id) === String(id)) {
+          const currentMap = member.attendanceMap && Object.keys(member.attendanceMap).length > 0
+            ? { ...member.attendanceMap }
+            : generateDefaultAttendanceMap(member.absentDays || 0);
+
+          currentMap[dayNum] = statusToSet;
+
+          const absentCount = Object.values(currentMap).filter((v) => v === 'absent').length;
+          const leaveCount = Object.values(currentMap).filter((v) => v === 'leave').length;
+          const presentCount = Object.values(currentMap).filter((v) => v === 'present').length;
+
+          const todayNum = Math.min(30, Math.max(1, new Date().getDate()));
+          const todayStatus = currentMap[todayNum] || 'present';
+          const nextStatus = todayStatus === 'present' ? 'Active' : (todayStatus === 'leave' ? 'On Leave' : 'Inactive');
+
+          return {
+            ...member,
+            attendanceMap: currentMap,
+            absentDays: absentCount,
+            leaveDays: leaveCount,
+            presentDays: presentCount,
+            status: nextStatus,
+            active: todayStatus === 'present',
+          };
+        }
+        return member;
+      })
+    );
+  };
+
+  // 7. Mark All Attendance for a staff member ('present' | 'leave' | 'absent')
+  const markAllAttendance = (id, statusToSet = 'present') => {
+    setStaffList((prev) =>
+      prev.map((member) => {
+        if (String(member.id) === String(id)) {
+          const newMap = {};
+          for (let d = 1; d <= 30; d++) {
+            newMap[d] = statusToSet;
+          }
+          const absentCount = statusToSet === 'absent' ? 30 : 0;
+          const leaveCount = statusToSet === 'leave' ? 30 : 0;
+          const presentCount = statusToSet === 'present' ? 30 : 0;
+          const nextStatus = statusToSet === 'present' ? 'Active' : (statusToSet === 'leave' ? 'On Leave' : 'Inactive');
+          return {
+            ...member,
+            attendanceMap: newMap,
+            absentDays: absentCount,
+            leaveDays: leaveCount,
+            presentDays: presentCount,
+            status: nextStatus,
+            active: statusToSet === 'present',
+          };
+        }
+        return member;
+      })
+    );
+  };
+
+  // 8. Mark Single Staff Member's attendance for Today ('present' | 'leave' | 'absent')
+  const markStaffToday = (id, statusToSet = 'present') => {
+    const todayNum = Math.min(30, Math.max(1, new Date().getDate()));
+    setStaffList((prev) =>
+      prev.map((member) => {
+        if (String(member.id) === String(id)) {
+          const currentMap = member.attendanceMap && Object.keys(member.attendanceMap).length > 0
+            ? { ...member.attendanceMap }
+            : generateDefaultAttendanceMap(member.absentDays || 0);
+
+          currentMap[todayNum] = statusToSet;
+          const absentCount = Object.values(currentMap).filter((v) => v === 'absent').length;
+          const leaveCount = Object.values(currentMap).filter((v) => v === 'leave').length;
+          const presentCount = Object.values(currentMap).filter((v) => v === 'present').length;
+          const nextStatus = statusToSet === 'present' ? 'Active' : (statusToSet === 'leave' ? 'On Leave' : 'Inactive');
+
+          return {
+            ...member,
+            attendanceMap: currentMap,
+            absentDays: absentCount,
+            leaveDays: leaveCount,
+            presentDays: presentCount,
+            status: nextStatus,
+            active: statusToSet === 'present',
+          };
+        }
+        return member;
+      })
+    );
+  };
+
+  // 9. Mark Entire Workforce for Today ('present' | 'leave' | 'absent')
+  const markEntireStaffToday = (statusToSet = 'present') => {
+    const todayNum = Math.min(30, Math.max(1, new Date().getDate()));
+    setStaffList((prev) =>
+      prev.map((member) => {
+        const currentMap = member.attendanceMap && Object.keys(member.attendanceMap).length > 0
+          ? { ...member.attendanceMap }
+          : generateDefaultAttendanceMap(member.absentDays || 0);
+
+        currentMap[todayNum] = statusToSet;
+        const absentCount = Object.values(currentMap).filter((v) => v === 'absent').length;
+        const leaveCount = Object.values(currentMap).filter((v) => v === 'leave').length;
+        const presentCount = Object.values(currentMap).filter((v) => v === 'present').length;
+        const nextStatus = statusToSet === 'present' ? 'Active' : (statusToSet === 'leave' ? 'On Leave' : 'Inactive');
+
+        return {
+          ...member,
+          attendanceMap: currentMap,
+          absentDays: absentCount,
+          leaveDays: leaveCount,
+          presentDays: presentCount,
+          status: nextStatus,
+          active: statusToSet === 'present',
+        };
+      })
+    );
+  };
+
+  // 10. Delete Staff Member
   const deleteStaff = (id) => {
     const updated = staffList.filter((member) => member.id !== id);
     setStaffList(updated);
   };
 
-  // 6. Computed Metrics for Dashboard Cards
+  // 7. Computed Metrics for Dashboard Cards
   const totalStaff = staffList.length;
   const monthlySalaries = staffList.reduce(
     (sum, member) => sum + (Number(member.monthlySalary) || 0),
     0
   );
+
+  const activeStaffCount = staffList.filter(
+    (s) => s.status !== 'Inactive' && s.status !== 'Off Duty' && s.active !== false
+  ).length;
+  const inactiveStaffCount = staffList.length - activeStaffCount;
 
   const totalDeliveryMen = staffList.filter((s) => {
     const role = (s.role || '').toLowerCase();
@@ -137,6 +408,8 @@ export function StaffProvider({ children }) {
   const metrics = {
     totalStaff,
     monthlySalaries,
+    activeStaffCount,
+    inactiveStaffCount,
     totalDeliveryMen,
     totalFarmWorkers,
     totalSecurityGuards,
@@ -149,6 +422,12 @@ export function StaffProvider({ children }) {
         addStaff,
         updateStaff,
         toggleStaffStatus,
+        setStaffAttendance,
+        toggleDayAttendance,
+        setDayAttendance,
+        markAllAttendance,
+        markStaffToday,
+        markEntireStaffToday,
         deleteStaff,
         metrics,
       }}
@@ -168,13 +447,19 @@ export function useStaffContext() {
       const totalFarmWorkers = staffList.filter((s) => (s.role || '').toLowerCase().includes('farm')).length;
       return {
         staffList,
-        metrics: { totalStaff, totalFarmWorkers },
+        metrics: { totalStaff, totalFarmWorkers, activeStaffCount: 0, inactiveStaffCount: 0 },
         addStaff: () => {},
         updateStaff: () => {},
+        toggleStaffStatus: () => {},
+        setStaffAttendance: () => {},
+        toggleDayAttendance: () => {},
+        markAllAttendance: () => {},
+        markStaffToday: () => {},
+        markEntireStaffToday: () => {},
         deleteStaff: () => {},
       };
     } catch {
-      return { staffList: [], metrics: { totalStaff: 0, totalFarmWorkers: 0 } };
+      return { staffList: [], metrics: { totalStaff: 0, totalFarmWorkers: 0, activeStaffCount: 0, inactiveStaffCount: 0 }, addStaff: () => {}, updateStaff: () => {}, toggleStaffStatus: () => {}, setStaffAttendance: () => {}, toggleDayAttendance: () => {}, markAllAttendance: () => {}, markStaffToday: () => {}, markEntireStaffToday: () => {}, deleteStaff: () => {} };
     }
   }
   return context;

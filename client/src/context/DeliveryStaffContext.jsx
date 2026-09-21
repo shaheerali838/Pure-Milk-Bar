@@ -6,19 +6,43 @@ const DeliveryStaffContext = createContext();
 const STORAGE_KEY = 'pure_milk_bar_delivery_staff';
 
 const isDeliveryRole = (role = '') => {
-  const r = (role || '').toLowerCase();
+  const r = (role || '').toLowerCase().trim();
+  if (!r) return false;
+  // Strictly exclude non-delivery roles
+  if (
+    r.includes('farm') ||
+    r.includes('security') ||
+    r.includes('cashier') ||
+    r.includes('accountant') ||
+    r.includes('manager') ||
+    r.includes('owner')
+  ) {
+    return false;
+  }
   return (
     r.includes('delivery') ||
     r.includes('rider') ||
     r.includes('driver') ||
     r.includes('courier') ||
     r.includes('fleet') ||
-    r.includes('boy') ||
-    r.includes('van') ||
-    r.includes('walk') ||
-    r.includes('distribut') ||
-    r.includes('loader') ||
-    r.includes('milkman')
+    r.includes('walking boy')
+  );
+};
+
+const isAssignedArea = (route = '') => {
+  if (!route || typeof route !== 'string') return false;
+  const r = route.trim().toLowerCase();
+  return (
+    r !== '' &&
+    r !== 'not assigned' &&
+    r !== 'unassigned' &&
+    r !== 'none' &&
+    r !== '-' &&
+    r !== '—' &&
+    r !== 'null' &&
+    r !== 'undefined' &&
+    r !== 'farm facility / general' &&
+    r !== 'general delivery area'
   );
 };
 
@@ -48,17 +72,36 @@ export function DeliveryStaffProvider({ children }) {
     }
   }, [deliveryStaffList]);
 
-  // Combined staff list: combines Staff & Payroll delivery staff + delivery-specific entries
+  // Combined staff list: ONLY delivery staff who have an assigned area/route ("arr Assigned")
+  // Excludes any other staff (Farm workers, Cashiers, etc.) and unassigned staff
   const staffList = useMemo(() => {
     const deliveryStaffFromMain = globalStaffList
-      .filter((s) => isDeliveryRole(s.role))
-      .map((s) => {
-        // Check if there is extra delivery metadata (e.g. vehicle, type) saved in deliveryStaffList
+      .filter((s) => {
+        // 1. Must be a delivery role (not other staff)
+        if (!isDeliveryRole(s.role)) return false;
+
+        // Check if route is assigned in main staff or local metadata
         const matchedLocal = deliveryStaffList.find(
           (d) =>
             String(d.id) === String(s.id) ||
             (d.name && s.name && d.name.toLowerCase().trim() === s.name.toLowerCase().trim())
         );
+
+        // 2. Must have an assigned route/area - NOT 'Not Assigned'
+        return isAssignedArea(s.route) || isAssignedArea(matchedLocal?.route);
+      })
+      .map((s) => {
+        const matchedLocal = deliveryStaffList.find(
+          (d) =>
+            String(d.id) === String(s.id) ||
+            (d.name && s.name && d.name.toLowerCase().trim() === s.name.toLowerCase().trim())
+        );
+
+        const assignedRoute = isAssignedArea(s.route)
+          ? s.route.trim()
+          : isAssignedArea(matchedLocal?.route)
+          ? matchedLocal.route.trim()
+          : '';
 
         const isWalking =
           (s.role || '').toLowerCase().includes('walk') || matchedLocal?.type === 'WALKING';
@@ -69,10 +112,7 @@ export function DeliveryStaffProvider({ children }) {
           phone: s.mobile || s.phone || matchedLocal?.phone || '',
           type: isWalking ? 'WALKING' : matchedLocal?.type || 'RIDER',
           vehicle: matchedLocal?.vehicle || (isWalking ? 'On Foot' : 'Motorbike'),
-          route:
-            s.route && s.route !== 'Not Assigned'
-              ? s.route
-              : matchedLocal?.route || 'General Delivery Area',
+          route: assignedRoute,
           active: s.status
             ? s.status === 'Active'
             : matchedLocal?.active !== undefined
@@ -87,15 +127,22 @@ export function DeliveryStaffProvider({ children }) {
         };
       });
 
-    // Also include any delivery staff registered only in local delivery storage (if not in main)
-    const extraLocal = deliveryStaffList.filter(
-      (d) =>
-        !deliveryStaffFromMain.some(
-          (m) =>
-            String(m.id) === String(d.id) ||
-            (m.name && d.name && m.name.toLowerCase().trim() === d.name.toLowerCase().trim())
-        )
-    );
+    // Also include any delivery staff registered only in local delivery storage (if not in main),
+    // strictly ensuring they are delivery staff AND have an assigned route/area
+    const extraLocal = deliveryStaffList.filter((d) => {
+      const inMain = deliveryStaffFromMain.some(
+        (m) =>
+          String(m.id) === String(d.id) ||
+          (m.name && d.name && m.name.toLowerCase().trim() === d.name.toLowerCase().trim())
+      );
+      if (inMain) return false;
+
+      // Must be delivery role
+      if (d.role && !isDeliveryRole(d.role)) return false;
+
+      // Must have an assigned route/area
+      return isAssignedArea(d.route);
+    });
 
     return [...deliveryStaffFromMain, ...extraLocal];
   }, [globalStaffList, deliveryStaffList]);
@@ -112,7 +159,7 @@ export function DeliveryStaffProvider({ children }) {
         type: data.type || 'RIDER',
         vehicle:
           data.vehicle ? data.vehicle.trim() : data.type === 'WALKING' ? 'On Foot' : 'Motorbike',
-        route: data.route ? data.route.trim() : 'General Delivery Area',
+        route: (data.route || '').trim(),
         active: data.active !== undefined ? data.active : true,
         createdAt: new Date().toISOString(),
         monthlySalary: Number(data.monthlySalary) || 0,

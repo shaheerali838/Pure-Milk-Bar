@@ -157,7 +157,7 @@ export function POSProvider({ children }) {
         badge: s.type === 'WALKING' ? 'Walking Courier' : 'Delivery Rider',
       }));
     }
-    return deliveryRidersList;
+    return [];
   }, [staffList]);
 
   // =========================================================================

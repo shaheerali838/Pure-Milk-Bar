@@ -22,12 +22,27 @@ export default function StaffJobCard({ staff }) {
             {staff.shift || 'Morning'}
           </span>
         </div>
-        <div className="flex justify-between items-center pt-2">
-          <span className="text-slate-500">Duty Location / Route:</span>
-          <span className="font-semibold text-slate-800">
-            {staff.route || 'Farm Base'}
-          </span>
-        </div>
+        {(() => {
+          const r = (staff.role || '').toLowerCase();
+          const isDelivery =
+            r.includes('delivery') ||
+            r.includes('rider') ||
+            r.includes('driver') ||
+            r.includes('courier');
+
+          if (!isDelivery) return null;
+
+          return (
+            <div className="flex justify-between items-center pt-2">
+              <span className="text-slate-500">Delivery Route:</span>
+              <span className="font-semibold text-slate-800">
+                {staff.route && staff.route.toLowerCase() !== 'not assigned'
+                  ? staff.route
+                  : 'Unassigned'}
+              </span>
+            </div>
+          );
+        })()}
         <div className="flex justify-between items-center pt-2">
           <span className="text-slate-500">Registration Date:</span>
           <span className="font-mono text-slate-700">
