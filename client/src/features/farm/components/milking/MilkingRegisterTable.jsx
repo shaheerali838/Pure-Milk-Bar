@@ -125,7 +125,7 @@ export default function MilkingRegisterTable() {
       return sum + (parseFloat(activeInputs[item.tag]) || 0);
     }, 0);
 
-    toast.success(`Successfully saved ${shift} shift entries (${newlySavedTotal.toFixed(1)} kg)!`);
+    toast.success(`Successfully saved ${shift} shift entries (${newlySavedTotal.toFixed(1)} L)!`);
   };
 
   return (
@@ -174,7 +174,7 @@ export default function MilkingRegisterTable() {
         <div className="flex items-center gap-6 sm:gap-8">
           <div className="flex flex-col items-center sm:items-end">
             <div className="text-2xl font-black text-indigo-600 tracking-tight">
-              {shiftEntered.toFixed(1)} <span className="text-lg font-bold">kg</span>
+              {shiftEntered.toFixed(1)} <span className="text-lg font-bold">L</span>
             </div>
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mt-0.5">
               ENTERED
@@ -183,7 +183,7 @@ export default function MilkingRegisterTable() {
 
           <div className="flex flex-col items-center sm:items-end">
             <div className="text-2xl font-black text-slate-500 tracking-tight">
-              {shiftExpected.toFixed(1)} <span className="text-lg font-bold">kg</span>
+              {shiftExpected.toFixed(1)} <span className="text-lg font-bold">L</span>
             </div>
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mt-0.5">
               EXPECTED
@@ -200,7 +200,7 @@ export default function MilkingRegisterTable() {
                   : "bg-rose-50 border-rose-200 text-rose-600"
               }`}
             >
-              {totalVariance > 0 ? `+${totalVariance.toFixed(1)}` : totalVariance.toFixed(1)} kg
+              {totalVariance > 0 ? `+${totalVariance.toFixed(1)}` : totalVariance.toFixed(1)} L
             </div>
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mt-1">
               TOTAL VARIANCE
@@ -217,8 +217,8 @@ export default function MilkingRegisterTable() {
                 <th className="px-5 py-3.5">TAG</th>
                 <th className="px-5 py-3.5">ANIMAL</th>
                 <th className="px-5 py-3.5">TYPE</th>
-                <th className="px-5 py-3.5">AVG {shift.toUpperCase()} (KG)</th>
-                <th className="px-5 py-3.5">ENTER (KG)</th>
+                <th className="px-5 py-3.5">AVG {shift.toUpperCase()} (L)</th>
+                <th className="px-5 py-3.5">ENTER (L)</th>
                 <th className="px-5 py-3.5 text-center">STATUS</th>
               </tr>
             </thead>
@@ -261,7 +261,7 @@ export default function MilkingRegisterTable() {
                         </span>
                       </td>
 
-                      <td className="px-5 py-3.5 font-semibold text-slate-500">{avgYield.toFixed(1)} kg</td>
+                      <td className="px-5 py-3.5 font-semibold text-slate-500">{avgYield.toFixed(1)} L</td>
 
                       <td className="px-5 py-3.5">
                         <input
@@ -312,7 +312,7 @@ export default function MilkingRegisterTable() {
             </button>
 
             <div className="text-sm font-bold text-slate-700">
-              {shift} Total: <span className="text-indigo-600 font-black text-base">{shiftEntered.toFixed(1)} kg</span>
+              {shift} Total: <span className="text-indigo-600 font-black text-base">{shiftEntered.toFixed(1)} L</span>
             </div>
 
             <button

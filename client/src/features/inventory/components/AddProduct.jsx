@@ -10,13 +10,13 @@ export default function AddProduct({ onBack, product = null }) {
   const isEditing = Boolean(product);
   const nextNumber = products.length + 1;
   const defaultSku = `PRD-${String(nextNumber).padStart(3, '0')}`;
-  const defaultUnit = settings?.productDefaults?.defaultUnit === 'liter' ? 'per liter' : 'per kg';
+  const defaultUnit = settings?.productDefaults?.defaultUnit === 'kg' ? 'per kg' : 'per liter';
 
   const [formData, setFormData] = useState({
     id: product ? product.id || product.sku || defaultSku : defaultSku,
     name: product ? product.name || '' : '',
     category: product ? product.category || 'Milk' : 'Milk',
-    unit: product ? product.unit || defaultUnit : defaultUnit,
+    unit: product ? product.unit || 'per liter' : 'per liter',
     source: product ? product.source || 'Farm' : 'Farm',
     price: product ? product.price ?? '' : '',
     cost: product ? product.cost ?? '' : '',
@@ -29,7 +29,7 @@ export default function AddProduct({ onBack, product = null }) {
         id: product.id || product.sku || '',
         name: product.name || '',
         category: product.category || 'Milk',
-        unit: product.unit || 'per kg',
+        unit: product.unit || (product.category?.toLowerCase().includes('milk') ? 'per liter' : 'per kg'),
         source: product.source || 'Farm',
         price: product.price ?? '',
         cost: product.cost ?? '',
