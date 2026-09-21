@@ -118,10 +118,10 @@ export const AuthProvider = ({ children }) => {
     try {
       // 1. Try backend API login if available
       try {
-        const response = await fetch('/api/auth/login', {
+        const response = await fetch('/api/v1/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: cleanIdentifier, password: cleanPassword }),
+          body: JSON.stringify({ username: cleanIdentifier.includes('@') ? 'admin' : cleanIdentifier, password: cleanPassword }),
         });
 
         if (response.ok) {

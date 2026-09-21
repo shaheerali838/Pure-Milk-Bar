@@ -141,11 +141,11 @@ export const updateProcurementSchema = Joi.object({
 export const getProcurementsQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
-  supplierId: objectId,
-  shift: Joi.string().valid(...SHIFTS),
-  status: Joi.string().valid(...STATUSES),
-  dateFrom: Joi.date().iso(),
-  dateTo: Joi.date().iso().min(Joi.ref('dateFrom')),
+  supplierId: Joi.alternatives().try(objectId, Joi.string().allow('', null)),
+  shift: Joi.string().valid(...SHIFTS).allow('', null),
+  status: Joi.string().valid(...STATUSES).allow('', null),
+  dateFrom: Joi.date().iso().allow('', null),
+  dateTo: Joi.date().iso().allow('', null),
 }).options({ stripUnknown: true });
 
 // ─── URL Params Schema ───────────────────────────────────────────────────────

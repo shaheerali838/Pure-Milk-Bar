@@ -3,14 +3,17 @@
  * Automatically manages Authorization headers, query strings, and normalized error responses.
  */
 
-const STORAGE_KEY = 'pmb_auth_session_v2';
-
 function getStoredToken() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
+    const raw =
+      localStorage.getItem('pmb_auth_session') ||
+      localStorage.getItem('pmb_auth_session_v2') ||
+      sessionStorage.getItem('pmb_auth_session') ||
+      sessionStorage.getItem('pmb_auth_session_v2');
+
     if (raw) {
       const parsed = JSON.parse(raw);
-      return parsed.token || null;
+      return parsed.token || parsed.accessToken || parsed.data?.accessToken || null;
     }
   } catch (e) {
     console.error('Failed to read auth token for API request:', e);
