@@ -627,116 +627,116 @@ export default function LandingPage() {
         </div>
       </section>
       {/* =========================================================================
-          4. "HOW IT WORKS" 4-STEP COMPLETE DAIRY LIFECYCLE (1-Screen Viewport Fit)
+          4. "HOW IT WORKS" 4-STEP COMPLETE DAIRY LIFECYCLE
       ========================================================================= */}
-      <section className="min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center py-4 lg:py-6 bg-white border-b border-slate-200/80 overflow-hidden" id="how-it-works">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto flex flex-col justify-center">
-          <div className="text-center max-w-3xl mx-auto mb-5 lg:mb-7">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+      <section className="py-10 lg:py-16 bg-white border-b border-slate-200/80" id="how-it-works">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="text-center max-w-3xl mx-auto mb-8 lg:mb-10">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/60">
               End-to-End Operational Workflow
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-tight mt-1 mb-1">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight leading-tight mt-2 mb-2">
               How Pure Milk Bar ERP Powers Your Daily Operations
             </h2>
-            <p className="text-slate-500 text-xs sm:text-sm leading-relaxed max-w-2xl mx-auto">
+            <p className="text-slate-500 text-xs sm:text-sm lg:text-base leading-relaxed max-w-2xl mx-auto">
               From morning herd milking to evening financial closing, every drop of milk is accounted for across 4 automated steps.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* Step 1: Log Herd & Intake */}
             <Link
               to="/farm"
-              className="border border-slate-200/80 rounded-2xl p-4 hover:shadow-lg hover:border-[#00a86b] transition-all bg-slate-50/50 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
+              className="border border-slate-200/90 rounded-2xl p-5 sm:p-6 hover:shadow-xl hover:border-[#00a86b] transition-all duration-300 bg-slate-50/70 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
             >
-              <div className="w-full h-28 sm:h-32 rounded-xl overflow-hidden mb-3 group-hover:scale-105 transition-transform bg-slate-100">
+              <div className="w-full h-36 sm:h-40 rounded-xl overflow-hidden mb-3.5 group-hover:scale-105 transition-transform bg-slate-100 shadow-xs">
                 <img
                   alt="Log Herd & Milk Intake"
                   className="w-full h-full object-cover"
                   src="/images/animals.webp"
                 />
               </div>
-              <div className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-[#1F4B3F] text-[10px] font-bold mb-1">
+              <div className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#1F4B3F] text-[11px] font-bold mb-1.5">
                 Step 1
               </div>
-              <h3 className="text-sm font-bold text-slate-900 mb-1">Log Herd &amp; Intake</h3>
-              <p className="text-slate-600 text-[11px] leading-relaxed font-normal line-clamp-2">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1.5 group-hover:text-[#00a86b] transition-colors">Log Herd &amp; Intake</h3>
+              <p className="text-slate-600 text-xs sm:text-[13px] leading-relaxed font-normal line-clamp-2">
                 Morning/evening yields and dock supplier deliveries with digital volume verification.
               </p>
-              <span className="mt-2.5 text-[11px] font-bold text-[#00a86b] flex items-center gap-1">
-                Open Farm &amp; Intake <ChevronRight className="w-3 h-3" />
+              <span className="mt-3 text-xs font-bold text-[#00a86b] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                Open Farm &amp; Intake <ChevronRight className="w-3.5 h-3.5" />
               </span>
             </Link>
 
             {/* Step 2: Quality Grade & Batching */}
             <Link
               to="/supplier"
-              className="border border-slate-200/80 rounded-2xl p-4 hover:shadow-lg hover:border-[#00a86b] transition-all bg-slate-50/50 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
+              className="border border-slate-200/90 rounded-2xl p-5 sm:p-6 hover:shadow-xl hover:border-[#00a86b] transition-all duration-300 bg-slate-50/70 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
             >
-              <div className="w-full h-28 sm:h-32 rounded-xl overflow-hidden mb-3 group-hover:scale-105 transition-transform bg-slate-100">
+              <div className="w-full h-36 sm:h-40 rounded-xl overflow-hidden mb-3.5 group-hover:scale-105 transition-transform bg-slate-100 shadow-xs">
                 <img
                   alt="Quality Grade & Batching"
                   className="w-full h-full object-cover"
                   src="/images/storage.webp"
                 />
               </div>
-              <div className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-[#1F4B3F] text-[10px] font-bold mb-1">
+              <div className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#1F4B3F] text-[11px] font-bold mb-1.5">
                 Step 2
               </div>
-              <h3 className="text-sm font-bold text-slate-900 mb-1">Grade &amp; Process Dahi</h3>
-              <p className="text-slate-600 text-[11px] leading-relaxed font-normal line-clamp-2">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1.5 group-hover:text-[#00a86b] transition-colors">Grade &amp; Process Dahi</h3>
+              <p className="text-slate-600 text-xs sm:text-[13px] leading-relaxed font-normal line-clamp-2">
                 Compute formula milk rates, route into chilled bulk tanks, and batch fresh pot Dahi.
               </p>
-              <span className="mt-2.5 text-[11px] font-bold text-[#00a86b] flex items-center gap-1">
-                Explore FAT Lab <ChevronRight className="w-3 h-3" />
+              <span className="mt-3 text-xs font-bold text-[#00a86b] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                Explore Milk Dock <ChevronRight className="w-3.5 h-3.5" />
               </span>
             </Link>
 
             {/* Step 3: POS Retail & Delivery Dispatch */}
             <Link
               to="/pos"
-              className="border border-slate-200/80 rounded-2xl p-4 hover:shadow-lg hover:border-[#00a86b] transition-all bg-slate-50/50 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
+              className="border border-slate-200/90 rounded-2xl p-5 sm:p-6 hover:shadow-xl hover:border-[#00a86b] transition-all duration-300 bg-slate-50/70 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
             >
-              <div className="w-full h-28 sm:h-32 rounded-xl overflow-hidden mb-3 group-hover:scale-105 transition-transform bg-slate-100">
+              <div className="w-full h-36 sm:h-40 rounded-xl overflow-hidden mb-3.5 group-hover:scale-105 transition-transform bg-slate-100 shadow-xs">
                 <img
                   alt="POS Retail & Delivery Dispatch"
                   className="w-full h-full object-cover"
                   src="/images/delivery.jpeg"
                 />
               </div>
-              <div className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-[#1F4B3F] text-[10px] font-bold mb-1">
+              <div className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#1F4B3F] text-[11px] font-bold mb-1.5">
                 Step 3
               </div>
-              <h3 className="text-sm font-bold text-slate-900 mb-1">Sell &amp; Dispatch Fleet</h3>
-              <p className="text-slate-600 text-[11px] leading-relaxed font-normal line-clamp-2">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1.5 group-hover:text-[#00a86b] transition-colors">Sell &amp; Dispatch Fleet</h3>
+              <p className="text-slate-600 text-xs sm:text-[13px] leading-relaxed font-normal line-clamp-2">
                 Sub-second walk-in sales, customer monthly delivery runs, and rider vehicle fuel logging.
               </p>
-              <span className="mt-2.5 text-[11px] font-bold text-[#00a86b] flex items-center gap-1">
-                Launch POS Counter <ChevronRight className="w-3 h-3" />
+              <span className="mt-3 text-xs font-bold text-[#00a86b] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                Launch POS Counter <ChevronRight className="w-3.5 h-3.5" />
               </span>
             </Link>
 
             {/* Step 4: Reconcile & Settle Khata */}
             <Link
               to="/finance/daily-closing"
-              className="border border-slate-200/80 rounded-2xl p-4 hover:shadow-lg hover:border-[#00a86b] transition-all bg-slate-50/50 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
+              className="border border-slate-200/90 rounded-2xl p-5 sm:p-6 hover:shadow-xl hover:border-[#00a86b] transition-all duration-300 bg-slate-50/70 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
             >
-              <div className="w-full h-28 sm:h-32 rounded-xl overflow-hidden mb-3 group-hover:scale-105 transition-transform bg-slate-100">
+              <div className="w-full h-36 sm:h-40 rounded-xl overflow-hidden mb-3.5 group-hover:scale-105 transition-transform bg-slate-100 shadow-xs">
                 <img
                   alt="Reconcile & Settle Khata"
                   className="w-full h-full object-cover"
                   src="/images/PnL.jpeg"
                 />
               </div>
-              <div className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-[#1F4B3F] text-[10px] font-bold mb-1">
+              <div className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#1F4B3F] text-[11px] font-bold mb-1.5">
                 Step 4
               </div>
-              <h3 className="text-sm font-bold text-slate-900 mb-1">Reconcile &amp; Settle</h3>
-              <p className="text-slate-600 text-[11px] leading-relaxed font-normal line-clamp-2">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1.5 group-hover:text-[#00a86b] transition-colors">Reconcile &amp; Settle</h3>
+              <p className="text-slate-600 text-xs sm:text-[13px] leading-relaxed font-normal line-clamp-2">
                 Auto-update Customer Khata balances, audit physical dipsticks, and generate daily P&amp;L closing.
               </p>
-              <span className="mt-2.5 text-[11px] font-bold text-[#00a86b] flex items-center gap-1">
-                View Daily Closing <ChevronRight className="w-3 h-3" />
+              <span className="mt-3 text-xs font-bold text-[#00a86b] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                View Daily Closing <ChevronRight className="w-3.5 h-3.5" />
               </span>
             </Link>
           </div>
@@ -744,25 +744,25 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          5. COMPLETE ERP SYSTEMS & MODULES SHOWCASE (1-Screen Viewport Fit)
+          5. COMPLETE ERP SYSTEMS & MODULES SHOWCASE
       ========================================================================= */}
-      <section className="min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center py-4 lg:py-6 bg-slate-50 border-b border-slate-200/80 overflow-hidden" id="modules">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto flex flex-col justify-center">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-4 lg:mb-6 gap-3">
+      <section className="py-10 lg:py-16 bg-slate-50 border-b border-slate-200/80" id="modules">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 lg:mb-8 gap-4">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-3 py-1 rounded-full border border-emerald-200/60">
                 Complete ERP Suite
               </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight mt-2">
                 Every System &amp; Module We Manage
               </h2>
-              <p className="text-xs sm:text-[13px] text-slate-500 mt-0.5">
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
                 Explore the 8 integrated functional pillars designed specifically for dairy business operations.
               </p>
             </div>
 
             {/* Category Filter Chips */}
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1.5">
               {[
                 { id: "all", label: "All Modules" },
                 { id: "farm", label: "Livestock & Herd" },
@@ -774,7 +774,7 @@ export default function LandingPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveModuleFilter(tab.id)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-bold transition cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
                     activeModuleFilter === tab.id
                       ? "bg-[#00a86b] text-white shadow-sm"
                       : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
@@ -786,15 +786,15 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Module Cards Grid (Compact 4-Card Presentation) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Module Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {filteredModules.slice(0, 4).map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-lg hover:border-emerald-500 transition-all duration-300 flex flex-col group"
+                className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl hover:border-emerald-500 transition-all duration-300 flex flex-col group"
               >
                 {/* Card Visual / Image Section */}
-                <div className="relative h-28 sm:h-32 bg-gradient-to-br from-slate-900 via-slate-800 to-[#1F4B3F] overflow-hidden flex items-center justify-center">
+                <div className="relative h-36 sm:h-44 bg-gradient-to-br from-slate-900 via-slate-800 to-[#1F4B3F] overflow-hidden flex items-center justify-center">
                   <img
                     src={item.image}
                     alt={item.title}
@@ -802,38 +802,38 @@ export default function LandingPage() {
                   />
 
                   {/* Top Floating Badge */}
-                  <div className="absolute top-2 left-2 z-10">
-                    <span className="inline-flex items-center px-2 py-0.2 rounded-full text-[9px] font-extrabold bg-slate-900/80 backdrop-blur-md text-emerald-300 border border-emerald-400/30">
+                  <div className="absolute top-2.5 left-2.5 z-10">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-900/80 backdrop-blur-md text-emerald-300 border border-emerald-400/30">
                       {item.badge}
                     </span>
                   </div>
 
                   {/* Top Right KPI */}
-                  <div className="absolute top-2 right-2 z-10">
-                    <span className="inline-flex items-center px-2 py-0.2 rounded-full text-[9px] font-extrabold bg-white/95 text-slate-900 shadow-md">
+                  <div className="absolute top-2.5 right-2.5 z-10">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-white/95 text-slate-900 shadow-md">
                       {item.kpi}
                     </span>
                   </div>
                 </div>
 
                 {/* Card Content Body */}
-                <div className="p-3.5 flex-1 flex flex-col justify-between space-y-2">
+                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 tracking-tight group-hover:text-[#00a86b] transition-colors line-clamp-1">
+                    <h3 className="text-base font-bold text-slate-900 tracking-tight group-hover:text-[#00a86b] transition-colors line-clamp-1">
                       {item.title}
                     </h3>
-                    <p className="text-[11px] text-slate-600 mt-1 leading-relaxed line-clamp-2">
+                    <p className="text-xs sm:text-[13px] text-slate-600 mt-1 leading-relaxed line-clamp-2">
                       {item.description}
                     </p>
 
                     {/* Bullet Highlights */}
-                    <ul className="mt-2 space-y-1">
+                    <ul className="mt-2.5 space-y-1.5">
                       {item.features.slice(0, 2).map((feat, idx) => (
                         <li
                           key={idx}
-                          className="flex items-start gap-1.5 text-[10.5px] text-slate-700 font-medium"
+                          className="flex items-start gap-1.5 text-xs text-slate-700 font-medium"
                         >
-                          <CheckCircle2 className="w-3 h-3 text-[#00a86b] shrink-0 mt-0.5" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#00a86b] shrink-0 mt-0.5" />
                           <span className="line-clamp-1">{feat}</span>
                         </li>
                       ))}
@@ -841,16 +841,16 @@ export default function LandingPage() {
                   </div>
 
                   {/* Card Action Link */}
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[10px] font-semibold text-slate-400">
+                  <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-400">
                       {item.kpiLabel}
                     </span>
                     <Link
                       to={item.route}
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#00a86b] hover:text-[#008f5b] group-hover:translate-x-0.5 transition-all"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-[#00a86b] hover:text-[#008f5b] group-hover:translate-x-0.5 transition-all"
                     >
                       <span>Open Module</span>
-                      <ArrowRight className="w-3 h-3" />
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
                 </div>
@@ -859,32 +859,30 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-
       {/* =========================================================================
-          7. INTERACTIVE LIVE POS QUICK-ORDER SANDBOX (1-Screen Viewport Fit)
+          7. INTERACTIVE LIVE POS QUICK-ORDER SANDBOX
       ========================================================================= */}
-      <section className="min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center py-4 lg:py-6 bg-slate-50 border-b border-slate-200 overflow-hidden" id="pos-sandbox">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto flex flex-col justify-center">
-          <div className="text-center max-w-3xl mx-auto mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+      <section className="py-10 lg:py-16 bg-slate-50 border-b border-slate-200" id="pos-sandbox">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="text-center max-w-3xl mx-auto mb-8">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-3 py-1 rounded-full border border-emerald-200/60">
               Interactive POS Sandbox
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight mt-2">
               Try Out The Sub-Second Milk Bar Checkout
             </h2>
-            <p className="text-slate-500 text-xs sm:text-[13px] mt-0.5">
+            <p className="text-slate-500 text-xs sm:text-sm mt-1">
               Add dairy items, adjust liter quantities, and see how fast sales and invoices are generated.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start max-w-6xl mx-auto w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start max-w-6xl mx-auto w-full">
             {/* Left: Product Catalog Grid */}
-            <div className="lg:col-span-7 space-y-3">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+            <div className="lg:col-span-7 space-y-4">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider">
                 Click Products to Add to Cart:
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 {[
                   { id: "cow", name: "Cow Milk", rate: 260, unit: "per liter", icon: "🥛", source: "Farm Herd" },
                   { id: "buff", name: "Buffalo Milk", rate: 290, unit: "per liter", icon: "🍶", source: "Farm Herd" },
@@ -893,41 +891,41 @@ export default function LandingPage() {
                   <button
                     key={p.id}
                     onClick={() => addPosItem({ id: p.id, name: p.name, rate: p.rate, unit: p.unit.includes("kg") ? "KG" : "L" })}
-                    className="p-3 bg-white rounded-xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition text-left flex flex-col justify-between group cursor-pointer"
+                    className="p-4 bg-white rounded-2xl border border-slate-200 hover:border-emerald-500 hover:shadow-lg transition-all text-left flex flex-col justify-between group cursor-pointer"
                   >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xl">{p.icon}</span>
-                      <span className="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-2xl">{p.icon}</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
                         {p.source}
                       </span>
                     </div>
                     <div>
-                      <h4 className="font-bold text-xs text-slate-900 group-hover:text-[#00a86b]">
+                      <h4 className="font-bold text-sm text-slate-900 group-hover:text-[#00a86b]">
                         {p.name}
                       </h4>
-                      <p className="text-[11px] font-extrabold text-[#00a86b] mt-0.5">
-                        Rs. {p.rate} <span className="text-[9.5px] font-normal text-slate-400">/{p.unit}</span>
+                      <p className="text-xs sm:text-sm font-extrabold text-[#00a86b] mt-0.5">
+                        Rs. {p.rate} <span className="text-[10px] font-normal text-slate-400">/{p.unit}</span>
                       </p>
                     </div>
-                    <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-slate-600">
+                    <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-600">
                       <span>+ Add Item</span>
-                      <Plus className="w-3 h-3 text-emerald-600" />
+                      <Plus className="w-3.5 h-3.5 text-emerald-600" />
                     </div>
                   </button>
                 ))}
               </div>
 
               {/* Rupee-First Quick Add Pills */}
-              <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1.5">
-                <span className="text-[11px] font-bold text-slate-700 block">
+              <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2">
+                <span className="text-xs sm:text-sm font-bold text-slate-700 block">
                   Quick Amount Presets (Instant Conversion):
                 </span>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {[50, 100, 200, 500, 1000].map((amt) => (
                     <button
                       key={amt}
                       onClick={() => addPosItem({ id: "cow", name: `Cow Milk (Rs. ${amt})`, rate: amt, unit: "Fix" })}
-                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-[11px] font-bold text-slate-700 transition"
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-xs font-bold text-slate-700 transition"
                     >
                       Rs. {amt}
                     </button>
@@ -937,60 +935,60 @@ export default function LandingPage() {
             </div>
 
             {/* Right: Live Cart & Invoice Simulator */}
-            <div className="lg:col-span-5 bg-white rounded-2xl p-4 border border-slate-200 shadow-md space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
+            <div className="lg:col-span-5 bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-lg space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">
                     🧾
                   </div>
                   <div>
-                    <h3 className="font-bold text-xs text-slate-900">Live POS Bill Checkout</h3>
-                    <p className="text-[10px] text-slate-400">Invoice #INV-DEMO-01</p>
+                    <h3 className="font-bold text-sm text-slate-900">Live POS Bill Checkout</h3>
+                    <p className="text-[10.5px] text-slate-400">Invoice #INV-DEMO-01</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setPosItems([])}
-                  className="text-[11px] font-semibold text-rose-500 hover:text-rose-700 flex items-center gap-1"
+                  className="text-xs font-semibold text-rose-500 hover:text-rose-700 flex items-center gap-1 cursor-pointer"
                 >
-                  <Trash2 className="w-3 h-3" /> Clear
+                  <Trash2 className="w-3.5 h-3.5" /> Clear
                 </button>
               </div>
 
               {/* Items List */}
-              <div className="space-y-1.5 max-h-28 overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
                 {posItems.length === 0 ? (
-                  <div className="py-4 text-center text-[11px] text-slate-400">
+                  <div className="py-6 text-center text-xs text-slate-400">
                     Cart is empty. Click a product on the left to add items.
                   </div>
                 ) : (
                   posItems.map((item) => (
                     <div
                       key={item.id}
-                      className="p-2 rounded-lg bg-slate-50 flex items-center justify-between text-[11px]"
+                      className="p-2.5 rounded-xl bg-slate-50 flex items-center justify-between text-xs"
                     >
                       <div>
                         <div className="font-bold text-slate-800">{item.name}</div>
-                        <div className="text-[10px] text-slate-500">
+                        <div className="text-[10.5px] text-slate-500">
                           Rs. {item.rate} &times; {item.qty} {item.unit} = <strong className="text-slate-900">Rs. {item.rate * item.qty}</strong>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => updatePosQty(item.id, -1)}
-                          className="w-5 h-5 rounded bg-white border border-slate-200 flex items-center justify-center font-bold hover:bg-slate-100 text-xs"
+                          className="w-6 h-6 rounded bg-white border border-slate-200 flex items-center justify-center font-bold hover:bg-slate-100 text-xs cursor-pointer"
                         >
                           -
                         </button>
-                        <span className="font-mono font-bold w-3 text-center text-xs">{item.qty}</span>
+                        <span className="font-mono font-bold w-4 text-center text-xs">{item.qty}</span>
                         <button
                           onClick={() => updatePosQty(item.id, 1)}
-                          className="w-5 h-5 rounded bg-white border border-slate-200 flex items-center justify-center font-bold hover:bg-slate-100 text-xs"
+                          className="w-6 h-6 rounded bg-white border border-slate-200 flex items-center justify-center font-bold hover:bg-slate-100 text-xs cursor-pointer"
                         >
                           +
                         </button>
                         <button
                           onClick={() => removePosItem(item.id)}
-                          className="text-slate-400 hover:text-rose-500 ml-1 text-xs"
+                          className="text-slate-400 hover:text-rose-500 ml-1.5 text-sm cursor-pointer"
                         >
                           &times;
                         </button>
@@ -1001,18 +999,18 @@ export default function LandingPage() {
               </div>
 
               {/* Payment Method Selector */}
-              <div className="space-y-1 pt-1.5 border-t border-slate-100">
-                <span className="text-[9.5px] font-bold text-slate-400 uppercase">
+              <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">
                   Payment Method:
                 </span>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-3 gap-2">
                   {["cash", "khata", "online"].map((m) => (
                     <button
                       key={m}
                       onClick={() => setPosPaymentMethod(m)}
-                      className={`py-1 rounded-lg text-[11px] font-bold capitalize transition ${
+                      className={`py-1.5 rounded-xl text-xs font-bold capitalize transition cursor-pointer ${
                         posPaymentMethod === m
-                          ? "bg-[#00a86b] text-white"
+                          ? "bg-[#00a86b] text-white shadow-sm"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                     >
@@ -1023,19 +1021,19 @@ export default function LandingPage() {
               </div>
 
               {/* Bill Summary */}
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] text-emerald-800 font-semibold block">Total Payable</span>
-                  <span className="text-xl font-extrabold text-[#00a86b] font-mono">
+                  <span className="text-[11px] text-emerald-800 font-semibold block">Total Payable</span>
+                  <span className="text-2xl font-extrabold text-[#00a86b] font-mono">
                     Rs. {posSubtotal.toLocaleString()}
                   </span>
                 </div>
                 <Link
                   to="/pos"
-                  className="bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold px-4 py-2 rounded-xl shadow transition flex items-center gap-1"
+                  className="bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl shadow-md transition flex items-center gap-1.5"
                 >
                   <span>Open Full POS</span>
-                  <ArrowRight className="w-3 h-3" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
@@ -1044,51 +1042,51 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          8. LIVE INTERACTIVE SIMULATORS (1-Screen Viewport Fit)
+          8. LIVE INTERACTIVE SIMULATORS
       ========================================================================= */}
-      <section className="min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center py-4 lg:py-6 bg-white border-y border-slate-200/80 overflow-hidden" id="simulators">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto flex flex-col justify-center">
-          <div className="text-center max-w-3xl mx-auto mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+      <section className="py-10 lg:py-16 bg-white border-y border-slate-200/80" id="simulators">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="text-center max-w-3xl mx-auto mb-8">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/60">
               Interactive Mathematical Domain Engine
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight mt-2">
               Test Our Real-Time Dairy Calculation Engines
             </h2>
-            <p className="text-slate-500 text-xs sm:text-[13px] leading-relaxed max-w-2xl mx-auto">
+            <p className="text-slate-500 text-xs sm:text-sm leading-relaxed max-w-2xl mx-auto mt-1">
               Experience the algorithms running inside Pure Milk Bar ERP: herd profit &amp; yield projection and mass-balance tank audit.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-6xl mx-auto w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto w-full">
             {/* Simulator 1: Herd Yield & Profit Calculator */}
-            <div className="bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div className="bg-slate-50 rounded-2xl p-5 sm:p-7 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition">
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">
                       📈
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-slate-900">
+                      <h3 className="text-base font-bold text-slate-900">
                         Herd Yield &amp; Profit Engine
                       </h3>
-                      <p className="text-[10px] text-slate-500">
+                      <p className="text-[11px] text-slate-500">
                         Net Profit = (Daily Liters × Milk Rate) - Total Feed Cost
                       </p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
                     Live Profit Engine
                   </span>
                 </div>
 
-                <div className="space-y-3 mt-3">
+                <div className="space-y-4 mt-4">
                   {/* Daily Yield Slider */}
                   <div>
-                    <div className="flex justify-between text-[11px] font-bold text-slate-700 mb-1">
-                      <span>Daily Farm Herd Milk Yield (Liters):</span>
-                      <span className="text-emerald-700 font-mono text-xs">{dailyYieldLiters.toLocaleString()} L</span>
+                    <div className="flex justify-between text-xs sm:text-[13px] font-bold text-slate-700 mb-1.5">
+                      <span>Daily Farm Herd Milk Yield:</span>
+                      <span className="text-emerald-700 font-mono text-sm">{dailyYieldLiters.toLocaleString()} L</span>
                     </div>
                     <input
                       type="range"
@@ -1097,15 +1095,15 @@ export default function LandingPage() {
                       step="50"
                       value={dailyYieldLiters}
                       onChange={(e) => setDailyYieldLiters(parseInt(e.target.value))}
-                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00a86b]"
+                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00a86b]"
                     />
                   </div>
 
                   {/* Selling Rate Slider */}
                   <div>
-                    <div className="flex justify-between text-[11px] font-bold text-slate-700 mb-1">
-                      <span>Market Selling Rate (PKR / Liter):</span>
-                      <span className="text-emerald-700 font-mono text-xs">Rs. {sellingRatePerLiter}</span>
+                    <div className="flex justify-between text-xs sm:text-[13px] font-bold text-slate-700 mb-1.5">
+                      <span>Market Selling Rate:</span>
+                      <span className="text-emerald-700 font-mono text-sm">Rs. {sellingRatePerLiter} / L</span>
                     </div>
                     <input
                       type="range"
@@ -1114,15 +1112,15 @@ export default function LandingPage() {
                       step="5"
                       value={sellingRatePerLiter}
                       onChange={(e) => setSellingRatePerLiter(parseInt(e.target.value))}
-                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00a86b]"
+                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00a86b]"
                     />
                   </div>
 
                   {/* Daily Feed Cost Slider */}
                   <div>
-                    <div className="flex justify-between text-[11px] font-bold text-slate-700 mb-1">
-                      <span>Daily Total Feed &amp; Fodder Cost (PKR):</span>
-                      <span className="text-emerald-700 font-mono text-xs">Rs. {dailyFeedCost.toLocaleString()}</span>
+                    <div className="flex justify-between text-xs sm:text-[13px] font-bold text-slate-700 mb-1.5">
+                      <span>Daily Total Feed &amp; Fodder Cost:</span>
+                      <span className="text-emerald-700 font-mono text-sm">Rs. {dailyFeedCost.toLocaleString()}</span>
                     </div>
                     <input
                       type="range"
@@ -1131,44 +1129,44 @@ export default function LandingPage() {
                       step="2500"
                       value={dailyFeedCost}
                       onChange={(e) => setDailyFeedCost(parseInt(e.target.value))}
-                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00a86b]"
+                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00a86b]"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Calculation Output Box */}
-              <div className="mt-3 p-3 rounded-xl bg-white border border-emerald-200 shadow-xs grid grid-cols-3 gap-2 text-center">
+              <div className="mt-5 p-4 sm:p-5 rounded-2xl bg-white border border-emerald-200 shadow-xs grid grid-cols-3 gap-3 text-center">
                 <div>
-                  <span className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider block">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                     Daily Revenue
                   </span>
-                  <span className="text-sm sm:text-base font-extrabold text-slate-900 font-mono">
+                  <span className="text-base sm:text-lg font-extrabold text-slate-900 font-mono">
                     Rs. {calculatedDailyRevenue.toLocaleString()}
                   </span>
-                  <span className="block text-[9px] text-slate-500">
+                  <span className="block text-[10px] text-slate-500 mt-0.5">
                     Gross Inflow
                   </span>
                 </div>
                 <div className="border-x border-slate-100 px-1">
-                  <span className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider block">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                     Daily Net Profit
                   </span>
-                  <span className={`text-sm sm:text-base font-extrabold font-mono ${calculatedDailyNetProfit >= 0 ? "text-[#00a86b]" : "text-rose-600"}`}>
+                  <span className={`text-base sm:text-lg font-extrabold font-mono ${calculatedDailyNetProfit >= 0 ? "text-[#00a86b]" : "text-rose-600"}`}>
                     Rs. {calculatedDailyNetProfit.toLocaleString()}
                   </span>
-                  <span className="block text-[9px] text-emerald-600 font-semibold">
+                  <span className="block text-[10px] text-emerald-600 font-semibold mt-0.5">
                     {calculatedDailyNetProfit >= 0 ? "✓ Positive" : "⚠ Negative"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider block">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                     30-Day Forecast
                   </span>
-                  <span className={`text-sm sm:text-base font-extrabold font-mono ${calculatedMonthlyProjected >= 0 ? "text-[#00a86b]" : "text-rose-600"}`}>
+                  <span className={`text-base sm:text-lg font-extrabold font-mono ${calculatedMonthlyProjected >= 0 ? "text-[#00a86b]" : "text-rose-600"}`}>
                     Rs. {calculatedMonthlyProjected.toLocaleString()}
                   </span>
-                  <span className="block text-[9px] text-slate-500">
+                  <span className="block text-[10px] text-slate-500 mt-0.5">
                     Monthly Net
                   </span>
                 </div>
@@ -1176,125 +1174,125 @@ export default function LandingPage() {
             </div>
 
             {/* Simulator 2: Mass Balance Reconciliation Simulator */}
-            <div className="bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div className="bg-slate-50 rounded-2xl p-5 sm:p-7 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition">
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
                       ⚖️
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-slate-900">
+                      <h3 className="text-base font-bold text-slate-900">
                         Mass-Balance Dipstick Audit
                       </h3>
-                      <p className="text-[10px] text-slate-500">
+                      <p className="text-[11px] text-slate-500">
                         Tank Opening + Inflow - Outflow = Dipstick
                       </p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
                     Zero Shrinkage
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-xs mt-3">
-                  <div className="p-2 bg-white rounded-lg border border-slate-200">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase block">Opening Tank</label>
+                <div className="grid grid-cols-3 gap-2.5 text-xs mt-4">
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                    <label className="text-[9.5px] font-bold text-slate-400 uppercase block">Opening Tank</label>
                     <input
                       type="number"
                       value={openingTank}
                       onChange={(e) => setOpeningTank(Number(e.target.value) || 0)}
-                      className="w-full mt-0.5 font-bold text-slate-800 bg-transparent border-0 p-0 text-xs focus:ring-0 outline-none"
+                      className="w-full mt-1 font-bold text-slate-800 bg-transparent border-0 p-0 text-sm focus:ring-0 outline-none"
                     />
-                    <span className="text-[9px] text-slate-400">Liters</span>
+                    <span className="text-[9.5px] text-slate-400">Liters</span>
                   </div>
 
-                  <div className="p-2 bg-white rounded-lg border border-slate-200">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase block">+ Herd Yield</label>
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                    <label className="text-[9.5px] font-bold text-slate-400 uppercase block">+ Herd Yield</label>
                     <input
                       type="number"
                       value={herdYield}
                       onChange={(e) => setHerdYield(Number(e.target.value) || 0)}
-                      className="w-full mt-0.5 font-bold text-emerald-600 bg-transparent border-0 p-0 text-xs focus:ring-0 outline-none"
+                      className="w-full mt-1 font-bold text-emerald-600 bg-transparent border-0 p-0 text-sm focus:ring-0 outline-none"
                     />
-                    <span className="text-[9px] text-slate-400">Liters</span>
+                    <span className="text-[9.5px] text-slate-400">Liters</span>
                   </div>
 
-                  <div className="p-2 bg-white rounded-lg border border-slate-200">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase block">+ Sourcer Dock</label>
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                    <label className="text-[9.5px] font-bold text-slate-400 uppercase block">+ Sourcer Dock</label>
                     <input
                       type="number"
                       value={sourcerIntake}
                       onChange={(e) => setSourcerIntake(Number(e.target.value) || 0)}
-                      className="w-full mt-0.5 font-bold text-emerald-600 bg-transparent border-0 p-0 text-xs focus:ring-0 outline-none"
+                      className="w-full mt-1 font-bold text-emerald-600 bg-transparent border-0 p-0 text-sm focus:ring-0 outline-none"
                     />
-                    <span className="text-[9px] text-slate-400">Liters</span>
+                    <span className="text-[9.5px] text-slate-400">Liters</span>
                   </div>
 
-                  <div className="p-2 bg-white rounded-lg border border-slate-200">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase block">- POS Sales</label>
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                    <label className="text-[9.5px] font-bold text-slate-400 uppercase block">- POS Sales</label>
                     <input
                       type="number"
                       value={retailSales}
                       onChange={(e) => setRetailSales(Number(e.target.value) || 0)}
-                      className="w-full mt-0.5 font-bold text-rose-600 bg-transparent border-0 p-0 text-xs focus:ring-0 outline-none"
+                      className="w-full mt-1 font-bold text-rose-600 bg-transparent border-0 p-0 text-sm focus:ring-0 outline-none"
                     />
-                    <span className="text-[9px] text-slate-400">Liters</span>
+                    <span className="text-[9.5px] text-slate-400">Liters</span>
                   </div>
 
-                  <div className="p-2 bg-white rounded-lg border border-slate-200">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase block">- Deliveries</label>
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                    <label className="text-[9.5px] font-bold text-slate-400 uppercase block">- Deliveries</label>
                     <input
                       type="number"
                       value={deliveriesTotal}
                       onChange={(e) => setDeliveriesTotal(Number(e.target.value) || 0)}
-                      className="w-full mt-0.5 font-bold text-rose-600 bg-transparent border-0 p-0 text-xs focus:ring-0 outline-none"
+                      className="w-full mt-1 font-bold text-rose-600 bg-transparent border-0 p-0 text-sm focus:ring-0 outline-none"
                     />
-                    <span className="text-[9px] text-slate-400">Liters</span>
+                    <span className="text-[9.5px] text-slate-400">Liters</span>
                   </div>
 
-                  <div className="p-2 bg-white rounded-lg border border-slate-200">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase block">Dipstick</label>
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                    <label className="text-[9.5px] font-bold text-slate-400 uppercase block">Physical Dipstick</label>
                     <input
                       type="number"
                       value={actualDipstick}
                       onChange={(e) => setActualDipstick(Number(e.target.value) || 0)}
-                      className="w-full mt-0.5 font-bold text-slate-900 bg-transparent border-0 p-0 text-xs focus:ring-0 outline-none"
+                      className="w-full mt-1 font-bold text-slate-900 bg-transparent border-0 p-0 text-sm focus:ring-0 outline-none"
                     />
-                    <span className="text-[9px] text-slate-400">Liters</span>
+                    <span className="text-[9.5px] text-slate-400">Liters</span>
                   </div>
                 </div>
               </div>
 
               {/* Reconciliation Status Alert Box */}
               <div
-                className={`mt-3 p-3 rounded-xl border text-center transition-all ${
+                className={`mt-5 p-4 rounded-2xl border text-center transition-all ${
                   isBalanceWithinTolerance
                     ? "bg-emerald-50 border-emerald-200 text-emerald-950"
                     : "bg-rose-50 border-rose-200 text-rose-950"
                 }`}
               >
-                <div className="flex items-center justify-center gap-1.5">
+                <div className="flex items-center justify-center gap-2">
                   {isBalanceWithinTolerance ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   ) : (
-                    <AlertTriangle className="w-4 h-4 text-rose-600" />
+                    <AlertTriangle className="w-5 h-5 text-rose-600" />
                   )}
-                  <span className="font-bold text-xs">
+                  <span className="font-bold text-sm">
                     {isBalanceWithinTolerance
                       ? "Mass-Balance Reconciled (Within Tolerance)"
                       : "Discrepancy Detected (Audit Shrinkage)"}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 mt-1.5 text-[11px]">
+                <div className="grid grid-cols-2 gap-3 mt-2 text-xs sm:text-sm">
                   <div>
-                    <span className="text-slate-500 block">Expected:</span>
-                    <strong className="font-mono text-xs">{calculatedExpectedStock} L</strong>
+                    <span className="text-slate-500 block text-xs">Expected Stock:</span>
+                    <strong className="font-mono text-sm sm:text-base">{calculatedExpectedStock} L</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">Variance:</span>
+                    <span className="text-slate-500 block text-xs">Variance:</span>
                     <strong
-                      className={`font-mono text-xs ${
+                      className={`font-mono text-sm sm:text-base ${
                         massBalanceVariance === 0
                           ? "text-emerald-700"
                           : massBalanceVariance > 0
@@ -1313,200 +1311,200 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          9. ENROLLED COMMERCIAL FARMS & PRODUCER HUBS (1-Screen Viewport Fit)
+          9. ENROLLED COMMERCIAL FARMS & PRODUCER HUBS
       ========================================================================= */}
-      <section className="min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center py-4 lg:py-6 bg-slate-50 border-b border-slate-200 overflow-hidden" id="farms">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto flex flex-col justify-center">
-          <div className="flex items-center justify-between mb-4">
+      <section className="py-10 lg:py-16 bg-slate-50 border-b border-slate-200" id="farms">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-3 py-1 rounded-full border border-emerald-200/60">
                 Verified Dairy Producers
               </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight mt-2">
                 Commercial Farms Enrolled With Pure Milk Bar ERP
               </h2>
-              <p className="text-xs sm:text-[13px] text-slate-500 mt-0.5">
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
                 Leading dairy farms and commercial milk producers managing daily herd milking, bulk chiller procurement, and distribution.
               </p>
             </div>
             <Link
               to="/farm"
-              className="text-xs font-bold text-slate-700 hover:text-[#00a86b] flex items-center gap-1 transition cursor-pointer"
+              className="text-xs sm:text-sm font-bold text-slate-700 hover:text-[#00a86b] flex items-center gap-1.5 transition cursor-pointer shrink-0"
             >
               <span>Explore Farm Module</span>
-              <ArrowRight className="w-3 h-3" />
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* Farm 1: Al-Noor Dairy & Cattle Farm */}
-            <div className="relative h-[270px] sm:h-[310px] lg:h-[340px] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group bg-slate-900 border border-slate-200/80 cursor-pointer">
+            <div className="relative h-[330px] sm:h-[370px] lg:h-[400px] rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 group bg-slate-900 border border-slate-200/80 cursor-pointer">
               <img
                 alt="Al-Noor Dairy Farm"
                 className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
                 src="/images/dairyfarm.jpeg"
               />
-              <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10 pointer-events-none">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white text-[9.5px] font-semibold">
+              <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/70 backdrop-blur-md border border-white/20 text-white text-[10px] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   Active ERP Node
                 </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold shadow-md">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10.5px] font-bold shadow-md">
                   ★ 4.98
                 </span>
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity duration-300 group-hover:opacity-0 pointer-events-none"></div>
-              <div className="absolute bottom-3 left-3 right-3 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
-                <h3 className="text-sm font-bold text-white tracking-tight">Al-Noor Dairy &amp; Cattle Farm</h3>
-                <p className="text-[11px] text-slate-200 font-medium">Sahiwal &amp; HF Cattle Herd • Lahore</p>
-                <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/15 text-[10px] text-slate-300">
+              <div className="absolute bottom-4 left-4 right-4 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
+                <h3 className="text-base font-bold text-white tracking-tight">Al-Noor Dairy &amp; Cattle Farm</h3>
+                <p className="text-xs text-slate-200 font-medium mt-0.5">Sahiwal &amp; HF Cattle Herd • Lahore</p>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/15 text-[11px] text-slate-300">
                   <span>180 Head Herd</span>
                   <span className="text-emerald-300 font-semibold">3,200 L Daily Yield</span>
                 </div>
               </div>
-              <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-3.5 text-white">
-                <span className="text-[8.5px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-1.5 py-0.2 rounded-full border border-[#5BBB7B]/30 w-fit mb-1">
+              <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-5 text-white">
+                <span className="text-[9px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-2 py-0.5 rounded-full border border-[#5BBB7B]/30 w-fit mb-1.5">
                   Tier-1 Commercial Producer
                 </span>
-                <h3 className="text-sm font-bold text-white">Al-Noor Dairy Farm</h3>
-                <p className="text-[11px] text-emerald-100 font-medium leading-relaxed">
+                <h3 className="text-base font-bold text-white">Al-Noor Dairy Farm</h3>
+                <p className="text-xs text-emerald-100 font-medium leading-relaxed mt-1">
                   Automated milking parlor with direct refrigerated chiller tank transfer and batch lactation logs.
                 </p>
                 <Link
                   to="/farm/animals"
-                  className="mt-2.5 w-full py-2 rounded-lg bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-lg"
+                  className="mt-3.5 w-full py-2.5 rounded-xl bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg"
                 >
                   <span>View Farm Herd</span>
-                  <ArrowRight className="w-3 h-3" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
 
             {/* Farm 2: Green Pastures Dairy Complex */}
-            <div className="relative h-[270px] sm:h-[310px] lg:h-[340px] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group bg-slate-900 border border-slate-200/80 cursor-pointer">
+            <div className="relative h-[330px] sm:h-[370px] lg:h-[400px] rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 group bg-slate-900 border border-slate-200/80 cursor-pointer">
               <img
                 alt="Green Pastures Dairy Complex"
                 className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
                 src="/images/animals.webp"
               />
-              <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10 pointer-events-none">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white text-[9.5px] font-semibold">
+              <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/70 backdrop-blur-md border border-white/20 text-white text-[10px] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   Live Inflow Dock
                 </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold shadow-md">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10.5px] font-bold shadow-md">
                   ★ 4.95
                 </span>
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity duration-300 group-hover:opacity-0 pointer-events-none"></div>
-              <div className="absolute bottom-3 left-3 right-3 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
-                <h3 className="text-sm font-bold text-white tracking-tight">Green Pastures Dairy Complex</h3>
-                <p className="text-[11px] text-slate-200 font-medium">Nili-Ravi Buffalo &amp; Cow Unit • Faisalabad</p>
-                <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/15 text-[10px] text-slate-300">
+              <div className="absolute bottom-4 left-4 right-4 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
+                <h3 className="text-base font-bold text-white tracking-tight">Green Pastures Dairy Complex</h3>
+                <p className="text-xs text-slate-200 font-medium mt-0.5">Nili-Ravi Buffalo &amp; Cow Unit • Faisalabad</p>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/15 text-[11px] text-slate-300">
                   <span>240 Head Herd</span>
                   <span className="text-emerald-300 font-semibold">4,500 L Daily Yield</span>
                 </div>
               </div>
-              <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-3.5 text-white">
-                <span className="text-[8.5px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-1.5 py-0.2 rounded-full border border-[#5BBB7B]/30 w-fit mb-1">
+              <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-5 text-white">
+                <span className="text-[9px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-2 py-0.5 rounded-full border border-[#5BBB7B]/30 w-fit mb-1.5">
                   High-Volume Unit
                 </span>
-                <h3 className="text-sm font-bold text-white">Green Pastures Complex</h3>
-                <p className="text-[11px] text-emerald-100 font-medium leading-relaxed">
+                <h3 className="text-base font-bold text-white">Green Pastures Complex</h3>
+                <p className="text-xs text-emerald-100 font-medium leading-relaxed mt-1">
                   High-yield lactation logs with 100% automated feed formula allocation and veterinary schedules.
                 </p>
                 <Link
                   to="/farm/feeding"
-                  className="mt-2.5 w-full py-2 rounded-lg bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-lg"
+                  className="mt-3.5 w-full py-2.5 rounded-xl bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg"
                 >
                   <span>View Feed Formulations</span>
-                  <ArrowRight className="w-3 h-3" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
 
             {/* Farm 3: Bismillah Organic Milk Farm */}
-            <div className="relative h-[270px] sm:h-[310px] lg:h-[340px] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group bg-slate-900 border border-slate-200/80 cursor-pointer">
+            <div className="relative h-[330px] sm:h-[370px] lg:h-[400px] rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 group bg-slate-900 border border-slate-200/80 cursor-pointer">
               <img
                 alt="Bismillah Milk Farm"
                 className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
                 src="/images/milking-register.jpeg"
               />
-              <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10 pointer-events-none">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white text-[9.5px] font-semibold">
+              <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/70 backdrop-blur-md border border-white/20 text-white text-[10px] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   Chiller Dock Hub
                 </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold shadow-md">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10.5px] font-bold shadow-md">
                   ★ 4.99
                 </span>
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity duration-300 group-hover:opacity-0 pointer-events-none"></div>
-              <div className="absolute bottom-3 left-3 right-3 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
-                <h3 className="text-sm font-bold text-white tracking-tight">Bismillah Organic Milk Farm</h3>
-                <p className="text-[11px] text-slate-200 font-medium">Raw Milk Chilling Station • Sahiwal</p>
-                <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/15 text-[10px] text-slate-300">
+              <div className="absolute bottom-4 left-4 right-4 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
+                <h3 className="text-base font-bold text-white tracking-tight">Bismillah Organic Milk Farm</h3>
+                <p className="text-xs text-slate-200 font-medium mt-0.5">Raw Milk Chilling Station • Sahiwal</p>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/15 text-[11px] text-slate-300">
                   <span>120 Head Herd</span>
                   <span className="text-emerald-300 font-semibold">2,800 L Daily Yield</span>
                 </div>
               </div>
-              <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-3.5 text-white">
-                <span className="text-[8.5px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-1.5 py-0.2 rounded-full border border-[#5BBB7B]/30 w-fit mb-1">
+              <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-5 text-white">
+                <span className="text-[9px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-2 py-0.5 rounded-full border border-[#5BBB7B]/30 w-fit mb-1.5">
                   Bulk Supplier Hub
                 </span>
-                <h3 className="text-sm font-bold text-white">Bismillah Milk Farm</h3>
-                <p className="text-[11px] text-emerald-100 font-medium leading-relaxed">
+                <h3 className="text-base font-bold text-white">Bismillah Milk Farm</h3>
+                <p className="text-xs text-emerald-100 font-medium leading-relaxed mt-1">
                   Zero-shrinkage mass-balance tank audit and automated supplier khata payout settlement.
                 </p>
                 <Link
                   to="/supplier"
-                  className="mt-2.5 w-full py-2 rounded-lg bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-lg"
+                  className="mt-3.5 w-full py-2.5 rounded-xl bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg"
                 >
                   <span>View Milk Procurement</span>
-                  <ArrowRight className="w-3 h-3" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
 
             {/* Farm 4: Royal Fresh Dairy Estate */}
-            <div className="relative h-[270px] sm:h-[310px] lg:h-[340px] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group bg-slate-900 border border-slate-200/80 cursor-pointer">
+            <div className="relative h-[330px] sm:h-[370px] lg:h-[400px] rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 group bg-slate-900 border border-slate-200/80 cursor-pointer">
               <img
                 alt="Royal Fresh Dairy Estate"
                 className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
                 src="/images/storage.webp"
               />
-              <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10 pointer-events-none">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-white text-[9.5px] font-semibold">
+              <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/70 backdrop-blur-md border border-white/20 text-white text-[10px] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   Cold-Chain Certified
                 </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10px] font-bold shadow-md">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md text-slate-900 text-[10.5px] font-bold shadow-md">
                   ★ 4.96
                 </span>
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity duration-300 group-hover:opacity-0 pointer-events-none"></div>
-              <div className="absolute bottom-3 left-3 right-3 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
-                <h3 className="text-sm font-bold text-white tracking-tight">Royal Fresh Dairy Estate</h3>
-                <p className="text-[11px] text-slate-200 font-medium">Pasteurization &amp; Chilling • Multan</p>
-                <div className="flex items-center justify-between mt-1 pt-1 border-t border-white/15 text-[10px] text-slate-300">
+              <div className="absolute bottom-4 left-4 right-4 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
+                <h3 className="text-base font-bold text-white tracking-tight">Royal Fresh Dairy Estate</h3>
+                <p className="text-xs text-slate-200 font-medium mt-0.5">Pasteurization &amp; Chilling • Multan</p>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/15 text-[11px] text-slate-300">
                   <span>310 Head Herd</span>
                   <span className="text-emerald-300 font-semibold">6,200 L Daily Yield</span>
                 </div>
               </div>
-              <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-3.5 text-white">
-                <span className="text-[8.5px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-1.5 py-0.2 rounded-full border border-[#5BBB7B]/30 w-fit mb-1">
+              <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-5 text-white">
+                <span className="text-[9px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-2 py-0.5 rounded-full border border-[#5BBB7B]/30 w-fit mb-1.5">
                   Integrated Estate
                 </span>
-                <h3 className="text-sm font-bold text-white">Royal Fresh Estate</h3>
-                <p className="text-[11px] text-emerald-100 font-medium leading-relaxed">
+                <h3 className="text-base font-bold text-white">Royal Fresh Estate</h3>
+                <p className="text-xs text-emerald-100 font-medium leading-relaxed mt-1">
                   Direct farm-to-counter distribution with real-time route fleet tracking and automated closing balances.
                 </p>
                 <Link
                   to="/delivery"
-                  className="mt-2.5 w-full py-2 rounded-lg bg-[#00a86b] hover:bg-[#008f5b] text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1 shadow-lg"
+                  className="mt-3.5 w-full py-2.5 rounded-xl bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg"
                 >
                   <span>View Delivery Fleet</span>
-                  <ArrowRight className="w-3 h-3" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
@@ -1515,18 +1513,18 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          10. TRANSPARENT COMMERCIAL SAAS PRICING MATRIX (1-Screen Viewport Fit)
+          10. TRANSPARENT COMMERCIAL SAAS PRICING MATRIX
       ========================================================================= */}
-      <section className="min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center py-4 lg:py-6 bg-white border-t border-slate-200/80 overflow-hidden" id="pricing">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto flex flex-col justify-center">
-          <div className="text-center max-w-3xl mx-auto mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+      <section className="py-10 lg:py-16 bg-white border-t border-slate-200/80" id="pricing">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="text-center max-w-3xl mx-auto mb-8">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-3 py-1 rounded-full border border-emerald-200/60">
               Transparent Pricing
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight mt-2">
               Simple, Predictable Plans For Every Dairy Scale
             </h2>
-            <p className="text-slate-500 text-xs sm:text-[13px] leading-relaxed mb-3">
+            <p className="text-slate-500 text-xs sm:text-sm leading-relaxed mb-4 mt-1">
               All plans include complete offline localStorage resilience and automated supplier procurement.
             </p>
 
@@ -1535,7 +1533,7 @@ export default function LandingPage() {
               <button
                 type="button"
                 onClick={() => setBillingCycle("monthly")}
-                className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition cursor-pointer ${
+                className={`px-4 py-2 rounded-full text-xs font-bold transition cursor-pointer ${
                   billingCycle === "monthly"
                     ? "bg-[#1F4B3F] text-white shadow-sm"
                     : "text-slate-600 hover:text-slate-900"
@@ -1546,127 +1544,127 @@ export default function LandingPage() {
               <button
                 type="button"
                 onClick={() => setBillingCycle("annual")}
-                className={`px-4 py-1.5 rounded-full text-[11px] font-bold transition flex items-center gap-1 cursor-pointer ${
+                className={`px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                   billingCycle === "annual"
                     ? "bg-[#00a86b] text-white shadow-sm"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 <span>Annual Billing</span>
-                <span className="bg-white/20 text-white text-[9px] px-1.5 py-0.2 rounded-full font-bold">
+                <span className="bg-white/20 text-white text-[9.5px] px-2 py-0.5 rounded-full font-bold">
                   Save 25%
                 </span>
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 max-w-6xl mx-auto w-full items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto w-full items-stretch">
             {/* Plan 1: Starter Dairy */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-lg transition">
+            <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-xl transition-all duration-300">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Small Dairy / Single Shop
                 </span>
-                <h3 className="text-lg font-bold text-slate-900 mt-0.5">Starter Farm</h3>
-                <div className="mt-2 mb-3">
-                  <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+                <h3 className="text-xl font-bold text-slate-900 mt-1">Starter Farm</h3>
+                <div className="mt-3 mb-4">
+                  <span className="text-3xl sm:text-4xl font-extrabold text-slate-900">
                     Rs. {billingCycle === "annual" ? "7,500" : "9,999"}
                   </span>
-                  <span className="text-xs text-slate-500"> / mo</span>
+                  <span className="text-xs sm:text-sm text-slate-500"> / mo</span>
                 </div>
-                <ul className="space-y-1.5 text-xs text-slate-700">
+                <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700">
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#00a86b]" /> Up to 50 Registered Cattle
+                    <CheckCircle2 className="w-4 h-4 text-[#00a86b]" /> Up to 50 Registered Cattle
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#00a86b]" /> Touch POS Counter Sales
+                    <CheckCircle2 className="w-4 h-4 text-[#00a86b]" /> Touch POS Counter Sales
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#00a86b]" /> Customer Khata Ledger
+                    <CheckCircle2 className="w-4 h-4 text-[#00a86b]" /> Customer Khata Ledger
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#00a86b]" /> Mass-Balance Closing
+                    <CheckCircle2 className="w-4 h-4 text-[#00a86b]" /> Mass-Balance Closing
                   </li>
                 </ul>
               </div>
               <Link
                 to="/dashboard"
-                className="mt-4 w-full py-2.5 rounded-xl border border-slate-300 text-slate-800 text-xs font-bold hover:bg-slate-50 transition text-center block"
+                className="mt-6 w-full py-3 rounded-xl border border-slate-300 text-slate-800 text-xs sm:text-sm font-bold hover:bg-slate-50 transition text-center block"
               >
                 Start 14-Day Trial
               </Link>
             </div>
 
             {/* Plan 2: Commercial Station (Featured) */}
-            <div className="bg-[#1F4B3F] text-white rounded-2xl p-5 border-2 border-[#00a86b] shadow-xl relative flex flex-col justify-between">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#00a86b] text-white text-[9px] font-extrabold uppercase tracking-wider px-3 py-0.5 rounded-full shadow-md">
+            <div className="bg-[#1F4B3F] text-white rounded-2xl p-6 sm:p-7 border-2 border-[#00a86b] shadow-2xl relative flex flex-col justify-between hover:scale-[1.02] transition-transform duration-300">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#00a86b] text-white text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md">
                 Most Popular
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">
                   Commercial Milk Station
                 </span>
-                <h3 className="text-lg font-bold text-white mt-0.5">Commercial Pro</h3>
-                <div className="mt-2 mb-3">
-                  <span className="text-2xl sm:text-3xl font-extrabold text-white">
+                <h3 className="text-xl font-bold text-white mt-1">Commercial Pro</h3>
+                <div className="mt-3 mb-4">
+                  <span className="text-3xl sm:text-4xl font-extrabold text-white">
                     Rs. {billingCycle === "annual" ? "14,500" : "18,999"}
                   </span>
-                  <span className="text-xs text-emerald-200"> / mo</span>
+                  <span className="text-xs sm:text-sm text-emerald-200"> / mo</span>
                 </div>
-                <ul className="space-y-1.5 text-xs text-slate-100">
+                <ul className="space-y-2.5 text-xs sm:text-sm text-slate-100">
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#5BBB7B]" /> Unlimited Cattle Herd
+                    <CheckCircle2 className="w-4 h-4 text-[#5BBB7B]" /> Unlimited Cattle Herd
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#5BBB7B]" /> Milk Intake &amp; Dock Procurement
+                    <CheckCircle2 className="w-4 h-4 text-[#5BBB7B]" /> Milk Intake &amp; Dock Procurement
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#5BBB7B]" /> 15 Delivery Riders &amp; Fuel Tracking
+                    <CheckCircle2 className="w-4 h-4 text-[#5BBB7B]" /> 15 Delivery Riders &amp; Fuel Tracking
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#5BBB7B]" /> WhatsApp Khata Statements
+                    <CheckCircle2 className="w-4 h-4 text-[#5BBB7B]" /> WhatsApp Khata Statements
                   </li>
                 </ul>
               </div>
               <Link
                 to="/dashboard"
-                className="mt-4 w-full py-2.5 rounded-xl bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs font-bold transition text-center shadow-lg block cursor-pointer"
+                className="mt-6 w-full py-3 rounded-xl bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs sm:text-sm font-bold transition text-center shadow-lg block cursor-pointer"
               >
                 Get Started Now
               </Link>
             </div>
 
             {/* Plan 3: Enterprise Multi-Branch */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-lg transition">
+            <div className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-xl transition-all duration-300">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                   Multi-Branch Dairy Chains
                 </span>
-                <h3 className="text-lg font-bold text-slate-900 mt-0.5">Enterprise Multi-Branch</h3>
-                <div className="mt-2 mb-3">
-                  <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+                <h3 className="text-xl font-bold text-slate-900 mt-1">Enterprise Multi-Branch</h3>
+                <div className="mt-3 mb-4">
+                  <span className="text-3xl sm:text-4xl font-extrabold text-slate-900">
                     Rs. {billingCycle === "annual" ? "28,000" : "34,999"}
                   </span>
-                  <span className="text-xs text-slate-500"> / mo</span>
+                  <span className="text-xs sm:text-sm text-slate-500"> / mo</span>
                 </div>
-                <ul className="space-y-1.5 text-xs text-slate-700">
+                <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700">
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#00a86b]" /> Multi-Branch Centralized Hub
+                    <CheckCircle2 className="w-4 h-4 text-[#00a86b]" /> Multi-Branch Centralized Hub
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#00a86b]" /> Unlimited Fleet Riders
+                    <CheckCircle2 className="w-4 h-4 text-[#00a86b]" /> Unlimited Fleet Riders
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#00a86b]" /> Tamper-Proof Audit Trail
+                    <CheckCircle2 className="w-4 h-4 text-[#00a86b]" /> Tamper-Proof Audit Trail
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#00a86b]" /> 24/7 Dedicated Support
+                    <CheckCircle2 className="w-4 h-4 text-[#00a86b]" /> 24/7 Dedicated Support
                   </li>
                 </ul>
               </div>
               <Link
                 to="/dashboard"
-                className="mt-4 w-full py-2.5 rounded-xl border border-slate-300 text-slate-800 text-xs font-bold hover:bg-slate-50 transition text-center block"
+                className="mt-6 w-full py-3 rounded-xl border border-slate-300 text-slate-800 text-xs sm:text-sm font-bold hover:bg-slate-50 transition text-center block"
               >
                 Contact Sales
               </Link>
@@ -1676,58 +1674,58 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          11. TESTIMONIALS & FAQ SPLIT-SCREEN (1-Screen Viewport Fit)
+          11. TESTIMONIALS & FAQ SPLIT-SCREEN
       ========================================================================= */}
-      <section className="min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center py-4 lg:py-6 bg-slate-50 border-t border-slate-200/80 overflow-hidden" id="faq">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto flex flex-col justify-center">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+      <section className="py-10 lg:py-16 bg-slate-50 border-t border-slate-200/80" id="faq">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left: Testimonials Column */}
-            <div className="lg:col-span-6 space-y-3">
+            <div className="lg:col-span-6 space-y-4">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-3 py-1 rounded-full border border-emerald-200/60">
                   Customer Success
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-2">
                   Trusted by Dairy Owners
                 </h2>
-                <p className="text-xs sm:text-[13px] text-slate-500 mt-0.5">
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">
                   Over 40+ commercial dairy operations eliminated shrinkage and automated Khata.
                 </p>
               </div>
 
-              <div className="space-y-2.5">
-                <div className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-2 shadow-xs">
-                  <div className="flex items-center gap-1 text-amber-500 text-xs">
+              <div className="space-y-3.5">
+                <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200 space-y-2.5 shadow-xs hover:shadow-md transition">
+                  <div className="flex items-center gap-1 text-amber-500 text-xs sm:text-sm">
                     {"★★★★★"}
                   </div>
-                  <p className="text-[11.5px] text-slate-700 leading-relaxed italic">
+                  <p className="text-xs sm:text-sm text-slate-700 leading-relaxed italic">
                     "Pure Milk Bar's mass-balance audit brought our 30L daily shrinkage down to zero within the first week."
                   </p>
-                  <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-[9px]">
+                  <div className="pt-2.5 border-t border-slate-100 flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-[10px]">
                       MA
                     </div>
                     <div>
-                      <h4 className="text-[11px] font-bold text-slate-900">Malik Asif Dairy Farm</h4>
-                      <p className="text-[9.5px] text-slate-500">Model Town, Lahore</p>
+                      <h4 className="text-xs font-bold text-slate-900">Malik Asif Dairy Farm</h4>
+                      <p className="text-[10px] text-slate-500">Model Town, Lahore</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-2 shadow-xs">
-                  <div className="flex items-center gap-1 text-amber-500 text-xs">
+                <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200 space-y-2.5 shadow-xs hover:shadow-md transition">
+                  <div className="flex items-center gap-1 text-amber-500 text-xs sm:text-sm">
                     {"★★★★★"}
                   </div>
-                  <p className="text-[11.5px] text-slate-700 leading-relaxed italic">
+                  <p className="text-xs sm:text-sm text-slate-700 leading-relaxed italic">
                     "The automated supplier milk pricing and instant voucher calculation saved us thousands in billing errors and WhatsApp Khata ended all ledger disputes."
                   </p>
-                  <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-[9px]">
+                  <div className="pt-2.5 border-t border-slate-100 flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-[10px]">
                       CK
                     </div>
                     <div>
-                      <h4 className="text-[11px] font-bold text-slate-900">Chaudhry Kamran Milk Bar</h4>
-                      <p className="text-[9.5px] text-slate-500">Faisalabad</p>
+                      <h4 className="text-xs font-bold text-slate-900">Chaudhry Kamran Milk Bar</h4>
+                      <p className="text-[10px] text-slate-500">Faisalabad</p>
                     </div>
                   </div>
                 </div>
@@ -1735,17 +1733,17 @@ export default function LandingPage() {
             </div>
 
             {/* Right: FAQ Accordion Column */}
-            <div className="lg:col-span-6 space-y-3">
+            <div className="lg:col-span-6 space-y-4">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-3 py-1 rounded-full border border-emerald-200/60">
                   Got Questions?
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1">
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-2">
                   Frequently Asked Questions
                 </h2>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {[
                   {
                     q: "Does Pure Milk Bar ERP work offline when internet is down?",
@@ -1766,22 +1764,22 @@ export default function LandingPage() {
                 ].map((faq, idx) => (
                   <div
                     key={idx}
-                    className="bg-white rounded-xl border border-slate-200 overflow-hidden"
+                    className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs"
                   >
                     <button
                       type="button"
                       onClick={() => toggleFaq(idx)}
-                      className="w-full px-3.5 py-2.5 text-left font-bold text-xs text-slate-900 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer"
+                      className="w-full px-4 py-3.5 text-left font-bold text-xs sm:text-sm text-slate-900 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer"
                     >
                       <span>{faq.q}</span>
                       {openFaq === idx ? (
-                        <ChevronUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <ChevronUp className="w-4 h-4 text-emerald-600 shrink-0" />
                       ) : (
-                        <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
                       )}
                     </button>
                     {openFaq === idx && (
-                      <div className="px-3.5 pb-2.5 text-[11px] text-slate-600 leading-relaxed border-t border-slate-100 pt-2">
+                      <div className="px-4 pb-3.5 text-xs sm:text-[13px] text-slate-600 leading-relaxed border-t border-slate-100 pt-2.5">
                         {faq.a}
                       </div>
                     )}
@@ -1794,75 +1792,75 @@ export default function LandingPage() {
       </section>
 
       {/* =========================================================================
-          12. HIGH-CONVERSION CTA BANNER + COMPACT FOOTER (1-Screen Viewport Fit)
+          12. HIGH-CONVERSION CTA BANNER + COMPACT FOOTER
       ========================================================================= */}
-      <section className="min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-between py-6 bg-[#163E34] text-slate-300 overflow-hidden" id="contact">
+      <section className="py-12 lg:py-16 bg-[#163E34] text-slate-300" id="contact">
         {/* Top CTA Banner */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto text-center space-y-4">
-          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10.5px] font-semibold text-emerald-200">
-            <Sparkles className="w-3 h-3 text-[#5BBB7B]" /> Live Operating System Ready
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-center space-y-4 mb-10">
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-semibold text-emerald-200">
+            <Sparkles className="w-3.5 h-3.5 text-[#5BBB7B]" /> Live Operating System Ready
           </span>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white max-w-2xl mx-auto leading-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white max-w-2xl mx-auto leading-tight">
             Ready to streamline your dairy operations with zero shrinkage?
           </h2>
-          <p className="text-slate-200 text-xs sm:text-sm max-w-lg mx-auto">
+          <p className="text-slate-200 text-xs sm:text-sm lg:text-base max-w-lg mx-auto">
             Launch the live ERP dashboard right now. No lengthy setup required—all core dairy modules are pre-configured.
           </p>
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-3.5">
             <Link
               to="/dashboard"
-              className="w-full sm:w-auto bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs font-bold px-6 py-2.5 rounded-full shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs sm:text-sm font-bold px-7 py-3 rounded-full shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>Launch Live ERP Dashboard</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               to="/pos"
-              className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold px-6 py-2.5 rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs sm:text-sm font-bold px-7 py-3 rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <ShoppingCart className="w-3.5 h-3.5 text-[#5BBB7B]" />
+              <ShoppingCart className="w-4 h-4 text-[#5BBB7B]" />
               <span>Open POS Counter</span>
             </Link>
           </div>
         </div>
 
         {/* Bottom Clean Footer Links */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-4 border-t border-[#2A4D47]/80 shrink-0">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-[11px]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-8 border-t border-[#2A4D47]/80">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6 text-xs sm:text-[13px]">
             <div>
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <div className="w-5 h-5 rounded-md bg-[#00a86b] flex items-center justify-center text-white">
-                  <Milk className="w-3 h-3" />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 rounded-lg bg-[#00a86b] flex items-center justify-center text-white">
+                  <Milk className="w-3.5 h-3.5" />
                 </div>
-                <span className="font-bold text-white">Pure Milk Bar</span>
+                <span className="font-bold text-white text-sm sm:text-base">Pure Milk Bar</span>
               </div>
-              <p className="text-[10px] text-slate-400">Next-gen dairy farm &amp; milk bar ERP.</p>
+              <p className="text-xs text-slate-400">Next-gen dairy farm &amp; milk bar ERP.</p>
             </div>
             <div>
-              <h4 className="text-white font-bold mb-1 text-[10px] uppercase">Farm &amp; Dock</h4>
-              <ul className="space-y-1 text-slate-400">
+              <h4 className="text-white font-bold mb-2 text-xs uppercase tracking-wider">Farm &amp; Dock</h4>
+              <ul className="space-y-1.5 text-slate-400">
                 <li><Link to="/farm/animals" className="hover:text-white">Cattle Herd Register</Link></li>
                 <li><Link to="/supplier/intake" className="hover:text-white">Milk Intake Register</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-bold mb-1 text-[10px] uppercase">POS &amp; Fleet</h4>
-              <ul className="space-y-1 text-slate-400">
+              <h4 className="text-white font-bold mb-2 text-xs uppercase tracking-wider">POS &amp; Fleet</h4>
+              <ul className="space-y-1.5 text-slate-400">
                 <li><Link to="/pos" className="hover:text-white">Touch POS Sales</Link></li>
                 <li><Link to="/delivery" className="hover:text-white">Rider Fleet Logistics</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-bold mb-1 text-[10px] uppercase">Finance</h4>
-              <ul className="space-y-1 text-slate-400">
+              <h4 className="text-white font-bold mb-2 text-xs uppercase tracking-wider">Finance</h4>
+              <ul className="space-y-1.5 text-slate-400">
                 <li><Link to="/customer-khata-ledger" className="hover:text-white">Khata Ledger</Link></li>
                 <li><Link to="/finance/daily-closing" className="hover:text-white">Daily Mass-Balance</Link></li>
               </ul>
             </div>
           </div>
-          <div className="pt-2 border-t border-[#2A4D47]/40 flex flex-col sm:flex-row items-center justify-between text-[10px] text-slate-400 gap-1">
+          <div className="pt-4 border-t border-[#2A4D47]/40 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
             <div>&copy; {new Date().getFullYear()} Pure Milk Bar Dairy ERP SaaS. All rights reserved.</div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
               <Link to="/dashboard" className="hover:text-white">Dashboard</Link>
               <Link to="/pos" className="hover:text-white">POS</Link>
               <Link to="/farm" className="hover:text-white">Farm</Link>
