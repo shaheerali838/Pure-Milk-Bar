@@ -61,77 +61,83 @@ import StaffManagement from "../features/staff/pages/StaffManagement";
 // Global Settings
 import GlobalSettings from "../features/settings/pages/GlobalSettings";
 
+import ProtectedRoute from "./ProtectedRoute";
+
 export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/landing" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
 
-        <Route element={<Layout />}>
-          <Route path="dashboard" element={<Dashboard />} />
+        {/* Protected Enterprise ERP Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout />}>
+            <Route path="dashboard" element={<Dashboard />} />
 
-          <Route path="farm" element={<Farm />}>
-            <Route index element={<FarmDashboard />} />
-            <Route path="animals" element={<AnimalsHerd />} />
-            <Route path="animals/detail/:id" element={<AnimalDetailPage />} />
-            <Route path="milking" element={<MilkingRegister />} />
-            <Route path="processing" element={<DahiProcessing />} />
-            <Route path="expenses" element={<ExpenseLayout />}>
-              <Route index element={<FarmExpenses />} />
-              <Route path="new" element={<RecordFarmExpensePage />} />
-              <Route path="edit/:id" element={<RecordFarmExpensePage />} />
-              <Route path="detail/:id" element={<ExpenseDetailPage />} />
+            <Route path="farm" element={<Farm />}>
+              <Route index element={<FarmDashboard />} />
+              <Route path="animals" element={<AnimalsHerd />} />
+              <Route path="animals/detail/:id" element={<AnimalDetailPage />} />
+              <Route path="milking" element={<MilkingRegister />} />
+              <Route path="processing" element={<DahiProcessing />} />
+              <Route path="expenses" element={<ExpenseLayout />}>
+                <Route index element={<FarmExpenses />} />
+                <Route path="new" element={<RecordFarmExpensePage />} />
+                <Route path="edit/:id" element={<RecordFarmExpensePage />} />
+                <Route path="detail/:id" element={<ExpenseDetailPage />} />
+              </Route>
+              <Route path="pl" element={<FarmPL />} />
+              <Route path="dailysheet" element={<DailySheet />} />
+              <Route path="daily-sheet" element={<DailySheet />} />
             </Route>
-            <Route path="pl" element={<FarmPL />} />
-            <Route path="dailysheet" element={<DailySheet />} />
-            <Route path="daily-sheet" element={<DailySheet />} />
+
+            <Route path="supplier" element={<Supplier />}>
+              <Route index element={<SupplierDashboard />} />
+              <Route path="dashboard" element={<SupplierDashboard />} />
+              <Route path="directory" element={<SupplierDirectory />} />
+              <Route path="intake" element={<IntakeRegister />} />
+              <Route path="expenses" element={<SourceExpense />} />
+              <Route path="pl" element={<SupplierPL />} />
+              <Route path="procurement" element={<ProcurementSheet />} />
+              <Route path="procurementsheet" element={<ProcurementSheet />} />
+              <Route path="procurement-sheet" element={<ProcurementSheet />} />
+            </Route>
+            <Route path="proccessing" element={<Proccessing />} />
+            <Route path="products" element={<Products />} />
+
+            <Route path="pos" element={<Pos />} />
+
+            <Route path="delivery" element={<Delivery />} />
+
+            <Route path="customer" element={<CustomerManagement />} />
+            <Route path="customer-khata-ledger" element={<CustomerKhataLedger />} />
+
+            <Route path="dailysheet" element={<Navigate to="/farm/dailysheet" replace />} />
+            <Route path="daily-sheet" element={<Navigate to="/farm/dailysheet" replace />} />
+            <Route path="procurement" element={<Navigate to="/supplier/procurement" replace />} />
+            <Route path="procurementsheet" element={<Navigate to="/supplier/procurement" replace />} />
+            <Route path="procurement-sheet" element={<Navigate to="/supplier/procurement" replace />} />
+
+            <Route path="finance/customer" element={<CustomerFinance />} />
+            <Route path="finance/delivery" element={<RiderDeliveryFinancePage />} />
+            <Route path="finance/daily-closing" element={<DailyClosing />} />
+            <Route path="daily-closing" element={<DailyClosing />} />
+            <Route path="finance/audit-log" element={<TransactionAuditLog />} />
+            <Route path="audit-log" element={<TransactionAuditLog />} />
+            <Route path="audit" element={<TransactionAuditLog />} />
+            <Route path="transactions" element={<TransactionAuditLog />} />
+            <Route path="finance/staff" element={<StaffManagement />} />
+            <Route path="staff" element={<StaffManagement />} />
+            <Route path="payroll" element={<StaffManagement />} />
+
+            <Route path="settings" element={<GlobalSettings />} />
+            <Route path="global-settings" element={<GlobalSettings />} />
+
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
-
-          <Route path="supplier" element={<Supplier />}>
-            <Route index element={<SupplierDashboard />} />
-            <Route path="dashboard" element={<SupplierDashboard />} />
-            <Route path="directory" element={<SupplierDirectory />} />
-            <Route path="intake" element={<IntakeRegister />} />
-            <Route path="expenses" element={<SourceExpense />} />
-            <Route path="pl" element={<SupplierPL />} />
-            <Route path="procurement" element={<ProcurementSheet />} />
-            <Route path="procurementsheet" element={<ProcurementSheet />} />
-            <Route path="procurement-sheet" element={<ProcurementSheet />} />
-          </Route>
-          <Route path="proccessing" element={<Proccessing />} />
-          <Route path="products" element={<Products />} />
-
-          <Route path="pos" element={<Pos />} />
-
-          <Route path="delivery" element={<Delivery />} />
-
-          <Route path="customer" element={<CustomerManagement />} />
-          <Route path="customer-khata-ledger" element={<CustomerKhataLedger />} />
-
-          <Route path="dailysheet" element={<Navigate to="/farm/dailysheet" replace />} />
-          <Route path="daily-sheet" element={<Navigate to="/farm/dailysheet" replace />} />
-          <Route path="procurement" element={<Navigate to="/supplier/procurement" replace />} />
-          <Route path="procurementsheet" element={<Navigate to="/supplier/procurement" replace />} />
-          <Route path="procurement-sheet" element={<Navigate to="/supplier/procurement" replace />} />
-
-          <Route path="finance/customer" element={<CustomerFinance />} />
-          <Route path="finance/delivery" element={<RiderDeliveryFinancePage />} />
-          <Route path="finance/daily-closing" element={<DailyClosing />} />
-          <Route path="daily-closing" element={<DailyClosing />} />
-          <Route path="finance/audit-log" element={<TransactionAuditLog />} />
-          <Route path="audit-log" element={<TransactionAuditLog />} />
-          <Route path="audit" element={<TransactionAuditLog />} />
-          <Route path="transactions" element={<TransactionAuditLog />} />
-          <Route path="finance/staff" element={<StaffManagement />} />
-          <Route path="staff" element={<StaffManagement />} />
-          <Route path="payroll" element={<StaffManagement />} />
-
-          <Route path="settings" element={<GlobalSettings />} />
-          <Route path="global-settings" element={<GlobalSettings />} />
-
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>
     </BrowserRouter>
