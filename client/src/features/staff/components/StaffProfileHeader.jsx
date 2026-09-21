@@ -72,8 +72,11 @@ export default function StaffProfileHeader({ staff }) {
           <Typography variant="overline" className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
             MONTHLY NET COMPENSATION
           </Typography>
-          <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono tabular">
+          <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono tabular block">
             Rs. {Number(staff.monthlySalary || 0).toLocaleString()}
+          </span>
+          <span className="text-[11px] font-semibold text-emerald-700 block">
+            Rs. {Math.round(Number(staff.monthlySalary || 0) / 30).toLocaleString()} / day
           </span>
         </div>
       </div>

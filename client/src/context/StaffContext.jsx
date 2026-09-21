@@ -41,6 +41,7 @@ export function StaffProvider({ children }) {
       email: (data.email || '').trim(),
       shift: data.shift || 'Morning',
       monthlySalary: Number(data.monthlySalary) || 0,
+      dailySalary: Math.round((Number(data.monthlySalary) || 0) / 30),
       cnic: (data.cnic || '').trim(),
       route: (data.route || '').trim() || 'Not Assigned',
       status: 'Active',
@@ -61,6 +62,7 @@ export function StaffProvider({ children }) {
         (data.name && member.name && member.name.toLowerCase().trim() === data.name.toLowerCase().trim());
 
       if (isMatch) {
+        const nextSalary = data.monthlySalary !== undefined ? Number(data.monthlySalary) : Number(member.monthlySalary || 0);
         return {
           ...member,
           ...data,
@@ -70,7 +72,8 @@ export function StaffProvider({ children }) {
           ...(data.email !== undefined && { email: (data.email ?? member.email).trim() }),
           ...(data.shift !== undefined && { shift: data.shift ?? member.shift }),
           ...(data.monthlySalary !== undefined && {
-            monthlySalary: Number(data.monthlySalary ?? member.monthlySalary) || 0,
+            monthlySalary: nextSalary,
+            dailySalary: Math.round(nextSalary / 30),
           }),
           ...(data.cnic !== undefined && { cnic: (data.cnic ?? member.cnic).trim() }),
           ...(data.route !== undefined && { route: (data.route ?? member.route).trim() || 'Not Assigned' }),
