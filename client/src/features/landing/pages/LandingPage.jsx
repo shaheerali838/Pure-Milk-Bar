@@ -131,19 +131,14 @@ export default function LandingPage() {
     0
   );
 
-  // Simulator 1: Richmond SNF & Pricing Engine State
-  const [fatValue, setFatValue] = useState(6.5);
-  const [lrValue, setLrValue] = useState(28.0);
-  const [baseMilkRate, setBaseMilkRate] = useState(180);
+  // Simulator 1: Daily Milk Yield & Revenue Profit Engine State
+  const [dailyYieldLiters, setDailyYieldLiters] = useState(850);
+  const [sellingRatePerLiter, setSellingRatePerLiter] = useState(260);
+  const [dailyFeedCost, setDailyFeedCost] = useState(65000);
 
-  // Richmond SNF Calculation: SNF% = (LR / 4) + (0.21 * FAT%) + 0.36
-  const calculatedSNF = ((lrValue / 4) + 0.21 * fatValue + 0.36).toFixed(2);
-  const priceMultiplier = fatValue / 6.0;
-  const lrBonus = (lrValue - 28.0) * 1.5;
-  const calculatedPricePerLiter = Math.max(
-    100,
-    Math.round(baseMilkRate * priceMultiplier + lrBonus)
-  );
+  const calculatedDailyRevenue = dailyYieldLiters * sellingRatePerLiter;
+  const calculatedDailyNetProfit = calculatedDailyRevenue - dailyFeedCost;
+  const calculatedMonthlyProjected = calculatedDailyNetProfit * 30;
 
   // Simulator 2: Mass Balance Reconciliation State
   const [openingTank, setOpeningTank] = useState(1200);
@@ -265,14 +260,14 @@ export default function LandingPage() {
     {
       id: "supplier",
       category: "supplier",
-      title: "Milk Procurement & Quality Lab",
-      badge: "Richmond FAT & SNF Lab",
+      title: "Milk Procurement & Quality Dock",
+      badge: "Milk Procurement Dock",
       route: "/supplier/intake",
       image: "/images/storage.webp",
       description:
-        "Dock intake testing with automated Richmond formula SNF% grading, Lactometer (LR) density, and instant supplier debit/credit vouchers.",
+        "Direct milk intake reception with density testing, batch volume logging, and instant supplier debit/credit vouchers.",
       features: [
-        "Instant Richmond SNF% & LR calculation",
+        "Supplier volume intake & density logs",
         "Supplier directory & tiered pricing contracts",
         "Dipstick vs volumetric intake audits",
         "Automated supplier Khata entries",
@@ -536,206 +531,99 @@ export default function LandingPage() {
       </header>
 
       {/* =========================================================================
-          3. HERO SECTION (Strict 1-Screen Viewport Fit with dairyfarm.jpeg Backdrop)
+          3. HERO SECTION (Strict 1-Screen Viewport Fit - Centered Hero with Background)
       ========================================================================= */}
       <section
         id="home"
-        className="text-white min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center relative overflow-hidden py-2 sm:py-3 bg-cover bg-center"
+        className="text-white min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center relative overflow-hidden py-4 sm:py-6 bg-cover bg-center"
         style={{
           backgroundImage:
-            "linear-gradient(to right, rgba(15, 38, 33, 0.93) 0%, rgba(27, 62, 53, 0.86) 45%, rgba(16, 43, 37, 0.82) 100%), url('/images/dairyfarm.jpeg')",
+            "linear-gradient(to bottom, rgba(15, 38, 33, 0.90) 0%, rgba(20, 51, 45, 0.85) 50%, rgba(15, 38, 33, 0.92) 100%), url('/images/dairyfarm.jpeg')",
         }}
       >
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex-1 flex flex-col justify-center my-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-center">
-            {/* Left Hero Column */}
-            <div className="lg:col-span-7 space-y-2.5 lg:space-y-3">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-semibold text-emerald-200">
-                <Sparkles className="w-2.5 h-2.5 text-[#5BBB7B] animate-pulse" />
-                <span>Next-Gen Operating System for Commercial Dairy Farms &amp; Milk Bars</span>
-              </div>
-
-              <h1 className="text-2xl sm:text-3xl lg:text-[34px] xl:text-[40px] font-bold tracking-tight text-white leading-[1.12]">
-                From cow yield to doorstep delivery,{" "}
-                <span className="text-[#5BBB7B]">manage your entire dairy</span> in real-time.
-              </h1>
-
-              <p className="text-slate-200 text-xs sm:text-[13px] max-w-lg font-normal leading-relaxed line-clamp-2">
-                Automate milking logs, Richmond SNF &amp; FAT dock testing, sub-second POS counter sales, rider fuel tracking, and daily mass-balance reconciliation.
-              </p>
-
-              {/* Freeio Iconic Rounded Search / Quick Dispatch Pill */}
-              <form
-                onSubmit={handleSearchSubmit}
-                className="bg-white p-1 rounded-2xl sm:rounded-full shadow-lg flex flex-col sm:flex-row items-center gap-1 max-w-lg border border-white/20"
-              >
-                {/* Keyword Input */}
-                <div className="flex items-center w-full px-2.5 py-0.5">
-                  <Search className="w-3.5 h-3.5 text-slate-400 mr-2 shrink-0" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search module (e.g., POS, Cow Milk, FAT Lab...)"
-                    className="w-full bg-transparent border-0 text-slate-800 placeholder-slate-400 text-xs focus:ring-0 p-0 font-medium outline-none"
-                  />
-                </div>
-
-                {/* Divider */}
-                <div className="hidden sm:block w-px h-5 bg-slate-200"></div>
-
-                {/* Module Selector */}
-                <div className="flex items-center w-full sm:w-auto px-2.5 py-0.5">
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full sm:w-36 bg-transparent border-0 text-slate-700 text-xs focus:ring-0 p-0 font-medium cursor-pointer outline-none"
-                  >
-                    <option value="">Jump to Module</option>
-                    <option value="/pos">POS Sales Counter</option>
-                    <option value="/farm">Herd &amp; Milking Log</option>
-                    <option value="/supplier">Milk Intake &amp; FAT Lab</option>
-                    <option value="/delivery">Fleet &amp; Rider Logistics</option>
-                    <option value="/customer-khata-ledger">Customer Khata Ledger</option>
-                    <option value="/finance/daily-closing">Daily Closing P&amp;L</option>
-                  </select>
-                </div>
-
-                {/* Search Button */}
-                <button
-                  type="submit"
-                  className="w-full sm:w-auto bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs font-bold px-4 py-1.5 rounded-xl sm:rounded-full transition-all duration-200 shrink-0 flex items-center justify-center shadow-md cursor-pointer"
-                >
-                  Explore
-                </button>
-              </form>
-
-              {/* Popular Tags Pill Row */}
-              <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-300">
-                <span className="font-semibold text-white">Popular:</span>
-                <Link
-                  to="/pos"
-                  className="px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-emerald-200 border border-white/10 transition"
-                >
-                  ⚡ Touch POS
-                </Link>
-                <Link
-                  to="/supplier"
-                  className="px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-emerald-200 border border-white/10 transition"
-                >
-                  🧪 FAT / SNF Calculator
-                </Link>
-                <Link
-                  to="/customer-khata-ledger"
-                  className="px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-emerald-200 border border-white/10 transition"
-                >
-                  📒 Customer Khata
-                </Link>
-                <Link
-                  to="/finance/daily-closing"
-                  className="px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-emerald-200 border border-white/10 transition"
-                >
-                  ⚖️ Mass Balance Closing
-                </Link>
-              </div>
-
-              {/* 4-Counter Metrics Row (Compact & Always in View) */}
-              <div className="pt-2 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg border-t border-white/15">
-                <div>
-                  <div className="text-lg sm:text-xl font-extrabold text-white">1.2M+</div>
-                  <div className="text-[9.5px] text-slate-300 font-normal">Liters Reconciled</div>
-                </div>
-                <div>
-                  <div className="text-lg sm:text-xl font-extrabold text-[#5BBB7B]">99.8%</div>
-                  <div className="text-[9.5px] text-slate-300 font-normal">Mass Balance Acc.</div>
-                </div>
-                <div>
-                  <div className="text-lg sm:text-xl font-extrabold text-white">100%</div>
-                  <div className="text-[9.5px] text-slate-300 font-normal">Zero-Loss Khata</div>
-                </div>
-                <div>
-                  <div className="text-lg sm:text-xl font-extrabold text-[#5BBB7B]">4.95 ★</div>
-                  <div className="text-[9.5px] text-slate-300 font-normal">Operator Rating</div>
-                </div>
-              </div>
+        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex-1 flex flex-col justify-center my-auto text-center items-center">
+          <div className="space-y-3.5 sm:space-y-4 max-w-3xl mx-auto flex flex-col items-center">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[10.5px] font-semibold text-emerald-200 backdrop-blur-md">
+              <Sparkles className="w-3 h-3 text-[#5BBB7B] animate-pulse" />
+              <span>Next-Gen Operating System for Commercial Dairy Farms &amp; Milk Bars</span>
             </div>
 
-            {/* Right Freeio Arched Double Card Composition (Fitted to Screen Height) */}
-            <div className="lg:col-span-5 relative flex justify-center items-center">
-              <div className="relative w-full max-w-sm flex items-end justify-center gap-2.5">
-                {/* Left Foreground Arch: Farm Dairy Milking Overview */}
-                <div
-                  className="w-1/2 h-[200px] sm:h-[230px] xl:h-[250px] overflow-hidden shadow-2xl border-2 border-white/20 bg-slate-800 relative z-20 group block cursor-pointer shrink-0"
-                  style={{ borderRadius: "100px 100px 20px 20px" }}
-                >
-                  <img
-                    alt="Dairy Milking Log"
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                    src="/images/milking-register.jpeg"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                  <div className="absolute bottom-2.5 left-2.5 right-2.5 text-white">
-                    <span className="text-[10px] font-bold text-[#5BBB7B]">Pure Milk Bar Farm</span>
-                    <p className="text-[9px] text-slate-200 leading-tight">Livestock &amp; Milking Station</p>
-                    <p className="text-[8.5px] text-emerald-300 mt-0.5">Yield: 850L · FAT 6.8%</p>
-                  </div>
-                </div>
+            {/* Centered Heading */}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-[1.12]">
+              From cow yield to doorstep delivery,{" "}
+              <span className="text-[#5BBB7B]">manage your entire dairy</span> in real-time.
+            </h1>
 
-                {/* Right Background Arch: Live ERP System UI Screen */}
-                <div
-                  className="w-1/2 h-[220px] sm:h-[250px] xl:h-[270px] overflow-hidden shadow-2xl border-2 border-white/20 bg-slate-800 relative z-10 -translate-y-3.5 group block cursor-pointer shrink-0"
-                  style={{ borderRadius: "110px 110px 20px 20px" }}
-                >
-                  <img
-                    alt="ERP System Screen"
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                    src="/images/screen.png"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                  <div className="absolute bottom-2.5 left-2.5 right-2.5 text-white">
-                    <span className="text-[10px] font-bold text-[#5BBB7B]">ERP Command Center</span>
-                    <p className="text-[9px] text-slate-200 leading-tight">Real-Time Operational UI</p>
-                    <p className="text-[8.5px] text-emerald-300 mt-0.5">Full Stack Topology</p>
-                  </div>
-                </div>
+            {/* Centered Subtitle */}
+            <p className="text-slate-200 text-xs sm:text-sm max-w-2xl font-normal leading-relaxed">
+              Automate herd logs, bulk milk procurement intake, sub-second POS counter sales, rider fleet fuel tracking, and daily mass-balance reconciliation.
+            </p>
 
-                {/* Top-Left Floating Badge: Proof of Quality */}
-                <div className="absolute -top-2.5 -left-2.5 z-30 bg-white/95 backdrop-blur text-slate-800 px-2.5 py-1 rounded-xl shadow-lg border border-slate-100 flex items-center space-x-1.5">
-                  <div className="w-6 h-6 rounded-full bg-emerald-100 text-[#00a86b] flex items-center justify-center shrink-0">
-                    <Award className="w-3 h-3 text-[#00a86b]" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold text-slate-900 leading-tight">100% Pure Milk</p>
-                    <p className="text-[8px] text-slate-500">FAT &amp; SNF Tested</p>
-                  </div>
-                </div>
+            {/* Clean Centered CTAs (Replaced Searchbar) */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
+              <Link
+                to="/dashboard"
+                className="w-full sm:w-auto bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs sm:text-sm font-bold px-6 py-2.5 rounded-full shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Launch Live ERP Dashboard</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <Link
+                to="/pos"
+                className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs sm:text-sm font-bold px-6 py-2.5 rounded-full backdrop-blur-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <ShoppingCart className="w-3.5 h-3.5 text-[#5BBB7B]" />
+                <span>Open POS Counter</span>
+              </Link>
+            </div>
 
-                {/* Bottom-Right Floating Badge: Zero Shrinkage */}
-                <div className="absolute -bottom-2.5 -right-2 z-30 bg-white/95 backdrop-blur text-slate-800 px-2.5 py-1 rounded-xl shadow-lg border border-slate-100 flex items-center space-x-1.5">
-                  <div className="w-6 h-6 rounded-full bg-teal-50 text-[#1F4B3F] flex items-center justify-center shrink-0">
-                    <Scale className="w-3 h-3 text-[#1F4B3F]" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold text-slate-900 leading-tight">Zero Shrinkage</p>
-                    <p className="text-[8px] text-slate-500">Mass-Balance Audit</p>
-                  </div>
-                </div>
+            {/* Centered Popular Quick Links */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10.5px] text-slate-300 pt-1">
+              <span className="font-semibold text-white">Popular Modules:</span>
+              <Link
+                to="/pos"
+                className="px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-emerald-200 border border-white/10 transition"
+              >
+                ⚡ Touch POS
+              </Link>
+              <Link
+                to="/farm"
+                className="px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-emerald-200 border border-white/10 transition"
+              >
+                🐄 Herd &amp; Milking Log
+              </Link>
+              <Link
+                to="/customer-khata-ledger"
+                className="px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-emerald-200 border border-white/10 transition"
+              >
+                📒 Customer Khata
+              </Link>
+              <Link
+                to="/finance/daily-closing"
+                className="px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-emerald-200 border border-white/10 transition"
+              >
+                ⚖️ Mass Balance Closing
+              </Link>
+            </div>
 
-                {/* Bottom Floating Active Routes Pill */}
-                <div className="absolute -bottom-2 left-3 z-30 bg-white/95 backdrop-blur border border-slate-100 text-slate-800 px-2 py-0.5 rounded-full shadow-lg flex items-center space-x-1.5">
-                  <span className="text-[9px] font-bold text-slate-900">500+ Routes</span>
-                  <div className="flex -space-x-1 overflow-hidden">
-                    <div className="w-4 h-4 rounded-full bg-emerald-700 text-white flex items-center justify-center text-[7px] font-bold ring-1 ring-white">
-                      LK
-                    </div>
-                    <div className="w-4 h-4 rounded-full bg-teal-700 text-white flex items-center justify-center text-[7px] font-bold ring-1 ring-white">
-                      MT
-                    </div>
-                    <div className="w-4 h-4 rounded-full bg-[#00a86b] text-white flex items-center justify-center text-[7px] font-bold ring-1 ring-white">
-                      +
-                    </div>
-                  </div>
-                </div>
+            {/* Centered 4-Counter Metrics Row */}
+            <div className="pt-3 grid grid-cols-2 sm:grid-cols-4 gap-6 w-full max-w-2xl border-t border-white/15 text-center">
+              <div>
+                <div className="text-xl sm:text-2xl font-extrabold text-white">1.2M+</div>
+                <div className="text-[10px] text-slate-300 font-normal">Liters Reconciled</div>
+              </div>
+              <div>
+                <div className="text-xl sm:text-2xl font-extrabold text-[#5BBB7B]">99.8%</div>
+                <div className="text-[10px] text-slate-300 font-normal">Mass Balance Acc.</div>
+              </div>
+              <div>
+                <div className="text-xl sm:text-2xl font-extrabold text-white">100%</div>
+                <div className="text-[10px] text-slate-300 font-normal">Zero-Loss Khata</div>
+              </div>
+              <div>
+                <div className="text-xl sm:text-2xl font-extrabold text-[#5BBB7B]">4.95 ★</div>
+                <div className="text-[10px] text-slate-300 font-normal">Operator Rating</div>
               </div>
             </div>
           </div>
@@ -776,7 +664,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-sm font-bold text-slate-900 mb-1">Log Herd &amp; Intake</h3>
               <p className="text-slate-600 text-[11px] leading-relaxed font-normal line-clamp-2">
-                Morning/evening yields and dock supplier deliveries with Richmond FAT% testing.
+                Morning/evening yields and dock supplier deliveries with digital volume verification.
               </p>
               <span className="mt-2.5 text-[11px] font-bold text-[#00a86b] flex items-center gap-1">
                 Open Farm &amp; Intake <ChevronRight className="w-3 h-3" />
@@ -1083,7 +971,7 @@ export default function LandingPage() {
                     {activeScreenTab === "dashboard" && "Executive Command Center — Live Real-Time KPIs"}
                     {activeScreenTab === "pos" && "Point of Sale (POS) — Sub-Second Walk-in & Delivery Checkout"}
                     {activeScreenTab === "farm" && "Livestock & Milking — RFID Herd Yield & Batch Chiller Sync"}
-                    {activeScreenTab === "supplier" && "Milk Procurement Dock — Richmond FAT/SNF Automatic Grading"}
+                    {activeScreenTab === "supplier" && "Milk Procurement Dock — Direct Supplier Intake & Chiller Transfer"}
                     {activeScreenTab === "delivery" && "Fleet Logistics — Neighborhood Route Drops & Vehicle Fuel Log"}
                     {activeScreenTab === "closing" && "Daily Closing — Mass Balance Dipstick & Cash Reconciliation"}
                   </h4>
@@ -1310,81 +1198,81 @@ export default function LandingPage() {
               Test Our Real-Time Dairy Calculation Engines
             </h2>
             <p className="text-slate-500 text-xs sm:text-[13px] leading-relaxed max-w-2xl mx-auto">
-              Experience the algorithms running inside Pure Milk Bar ERP: Richmond SNF% formula and mass-balance tank audit.
+              Experience the algorithms running inside Pure Milk Bar ERP: herd profit &amp; yield projection and mass-balance tank audit.
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 max-w-6xl mx-auto w-full">
-            {/* Simulator 1: Richmond SNF & Pricing Calculator */}
+            {/* Simulator 1: Herd Yield & Profit Calculator */}
             <div className="bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
-                      🧪
+                      📈
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-slate-900">
-                        Richmond SNF &amp; Pricing Engine
+                        Herd Yield &amp; Profit Engine
                       </h3>
                       <p className="text-[10px] text-slate-500">
-                        SNF% = (LR / 4) + (0.21 × FAT%) + 0.36
+                        Net Profit = (Daily Liters × Milk Rate) - Total Feed Cost
                       </p>
                     </div>
                   </div>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                    Live Formula
+                    Live Profit Engine
                   </span>
                 </div>
 
                 <div className="space-y-3 mt-3">
-                  {/* FAT Slider */}
+                  {/* Daily Yield Slider */}
                   <div>
                     <div className="flex justify-between text-[11px] font-bold text-slate-700 mb-1">
-                      <span>Milk FAT Content (%):</span>
-                      <span className="text-emerald-700 font-mono text-xs">{fatValue}%</span>
+                      <span>Daily Farm Herd Milk Yield (Liters):</span>
+                      <span className="text-emerald-700 font-mono text-xs">{dailyYieldLiters.toLocaleString()} L</span>
                     </div>
                     <input
                       type="range"
-                      min="3.0"
-                      max="10.0"
-                      step="0.1"
-                      value={fatValue}
-                      onChange={(e) => setFatValue(parseFloat(e.target.value))}
+                      min="100"
+                      max="3000"
+                      step="50"
+                      value={dailyYieldLiters}
+                      onChange={(e) => setDailyYieldLiters(parseInt(e.target.value))}
                       className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00a86b]"
                     />
                   </div>
 
-                  {/* LR Slider */}
+                  {/* Selling Rate Slider */}
                   <div>
                     <div className="flex justify-between text-[11px] font-bold text-slate-700 mb-1">
-                      <span>Lactometer Reading (LR at 20°C):</span>
-                      <span className="text-emerald-700 font-mono text-xs">{lrValue}</span>
+                      <span>Market Selling Rate (PKR / Liter):</span>
+                      <span className="text-emerald-700 font-mono text-xs">Rs. {sellingRatePerLiter}</span>
                     </div>
                     <input
                       type="range"
-                      min="20.0"
-                      max="34.0"
-                      step="0.5"
-                      value={lrValue}
-                      onChange={(e) => setLrValue(parseFloat(e.target.value))}
-                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00a86b]"
-                    />
-                  </div>
-
-                  {/* Base Rate Slider */}
-                  <div>
-                    <div className="flex justify-between text-[11px] font-bold text-slate-700 mb-1">
-                      <span>Base Milk Rate (PKR / Liter):</span>
-                      <span className="text-emerald-700 font-mono text-xs">Rs. {baseMilkRate}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="140"
-                      max="240"
+                      min="180"
+                      max="350"
                       step="5"
-                      value={baseMilkRate}
-                      onChange={(e) => setBaseMilkRate(parseInt(e.target.value))}
+                      value={sellingRatePerLiter}
+                      onChange={(e) => setSellingRatePerLiter(parseInt(e.target.value))}
+                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00a86b]"
+                    />
+                  </div>
+
+                  {/* Daily Feed Cost Slider */}
+                  <div>
+                    <div className="flex justify-between text-[11px] font-bold text-slate-700 mb-1">
+                      <span>Daily Total Feed &amp; Fodder Cost (PKR):</span>
+                      <span className="text-emerald-700 font-mono text-xs">Rs. {dailyFeedCost.toLocaleString()}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="10000"
+                      max="200000"
+                      step="2500"
+                      value={dailyFeedCost}
+                      onChange={(e) => setDailyFeedCost(parseInt(e.target.value))}
                       className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#00a86b]"
                     />
                   </div>
@@ -1392,27 +1280,38 @@ export default function LandingPage() {
               </div>
 
               {/* Calculation Output Box */}
-              <div className="mt-3 p-3 rounded-xl bg-white border border-emerald-200 shadow-xs grid grid-cols-2 gap-2 text-center">
+              <div className="mt-3 p-3 rounded-xl bg-white border border-emerald-200 shadow-xs grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                    Calculated SNF%
+                  <span className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider block">
+                    Daily Revenue
                   </span>
-                  <span className="text-xl font-extrabold text-slate-900 font-mono">
-                    {calculatedSNF}%
+                  <span className="text-sm sm:text-base font-extrabold text-slate-900 font-mono">
+                    Rs. {calculatedDailyRevenue.toLocaleString()}
                   </span>
-                  <span className="block text-[9.5px] text-emerald-600 font-semibold">
-                    {calculatedSNF >= 8.5 ? "✓ Grade A Premium" : "⚠ Below Standard"}
+                  <span className="block text-[9px] text-slate-500">
+                    Gross Inflow
                   </span>
                 </div>
-                <div className="border-l border-slate-100 pl-2">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                    Dynamic Purchase Rate
+                <div className="border-x border-slate-100 px-1">
+                  <span className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider block">
+                    Daily Net Profit
                   </span>
-                  <span className="text-xl font-extrabold text-[#00a86b] font-mono">
-                    Rs. {calculatedPricePerLiter}
+                  <span className={`text-sm sm:text-base font-extrabold font-mono ${calculatedDailyNetProfit >= 0 ? "text-[#00a86b]" : "text-rose-600"}`}>
+                    Rs. {calculatedDailyNetProfit.toLocaleString()}
                   </span>
-                  <span className="block text-[9.5px] text-slate-500">
-                    per liter payout
+                  <span className="block text-[9px] text-emerald-600 font-semibold">
+                    {calculatedDailyNetProfit >= 0 ? "✓ Positive" : "⚠ Negative"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider block">
+                    30-Day Forecast
+                  </span>
+                  <span className={`text-sm sm:text-base font-extrabold font-mono ${calculatedMonthlyProjected >= 0 ? "text-[#00a86b]" : "text-rose-600"}`}>
+                    Rs. {calculatedMonthlyProjected.toLocaleString()}
+                  </span>
+                  <span className="block text-[9px] text-slate-500">
+                    Monthly Net
                   </span>
                 </div>
               </div>
@@ -1762,7 +1661,7 @@ export default function LandingPage() {
               Simple, Predictable Plans For Every Dairy Scale
             </h2>
             <p className="text-slate-500 text-xs sm:text-[13px] leading-relaxed mb-3">
-              All plans include complete offline localStorage resilience and Richmond SNF &amp; FAT testing lab.
+              All plans include complete offline localStorage resilience and automated supplier procurement.
             </p>
 
             {/* Billing Toggle (Monthly vs Annual) */}
@@ -1853,7 +1752,7 @@ export default function LandingPage() {
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#5BBB7B]" /> Unlimited Cattle Herd
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#5BBB7B]" /> Milk Intake &amp; Richmond FAT/SNF
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#5BBB7B]" /> Milk Intake &amp; Dock Procurement
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#5BBB7B]" /> 15 Delivery Riders &amp; Fuel Tracking
@@ -1954,7 +1853,7 @@ export default function LandingPage() {
                     {"★★★★★"}
                   </div>
                   <p className="text-[11.5px] text-slate-700 leading-relaxed italic">
-                    "The Richmond formula grading saved thousands in wrongful milk pricing and WhatsApp Khata ended all ledger disputes."
+                    "The automated supplier milk pricing and instant voucher calculation saved us thousands in billing errors and WhatsApp Khata ended all ledger disputes."
                   </p>
                   <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-[9px]">
@@ -1987,8 +1886,8 @@ export default function LandingPage() {
                     a: "Yes! The system is built with client-side localStorage persistence so POS counter sales, milk intake, and Khata updates work seamlessly offline.",
                   },
                   {
-                    q: "How does the Richmond SNF & FAT calculation work?",
-                    a: "It runs the industry formula: SNF% = (LR / 4) + (0.21 × FAT%) + 0.36 to calculate purchase rates in milliseconds based on your configured base rate.",
+                    q: "How does the Milk Procurement & Intake Dock work?",
+                    a: "Log supplier delivery volumes, track supplier khata ledgers instantly, and route fresh milk directly to bulk chilling tanks or POS retail counters.",
                   },
                   {
                     q: "Can we print thermal receipts and WhatsApp bills?",
@@ -2077,7 +1976,7 @@ export default function LandingPage() {
               <h4 className="text-white font-bold mb-1 text-[10px] uppercase">Farm &amp; Dock</h4>
               <ul className="space-y-1 text-slate-400">
                 <li><Link to="/farm/animals" className="hover:text-white">Cattle Herd Register</Link></li>
-                <li><Link to="/supplier/intake" className="hover:text-white">FAT &amp; SNF Lab</Link></li>
+                <li><Link to="/supplier/intake" className="hover:text-white">Milk Intake Register</Link></li>
               </ul>
             </div>
             <div>
