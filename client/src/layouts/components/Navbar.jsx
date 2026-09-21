@@ -1,19 +1,16 @@
 import React, { useState } from 'react';
-import { useLocation, Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, Milk, Search, Download, ShoppingCart, Bell, LogOut, User } from 'lucide-react';
+import { useLocation, Link } from 'react-router-dom';
+import { ChevronRight, Milk, Search, Download, ShoppingCart, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
-import { useAuth } from '@/context/AuthContext';
 import ExportCSVModal from '@/components/common/ExportCSVModal';
 
 export default function Navbar() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const { user, logout } = useAuth();
 
   const { animals = [] } = useAnimalContext() || {};
   const { deliveries = [] } = useDeliveryContext() || {};
@@ -300,50 +297,6 @@ export default function Navbar() {
           <Bell className="w-3.5 h-3.5" />
           <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
         </Button>
-
-        {/* User Profile / Status Indicator */}
-        {user ? (
-          <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-            <Link
-              to="/settings"
-              className="flex items-center gap-1.5 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer group"
-              title={`Logged in as ${user.name} (${user.roleLabel || user.role})`}
-            >
-              <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center ring-1 ring-emerald-600/30 group-hover:ring-emerald-600 shadow-2xs">
-                {user.avatar || 'SA'}
-              </div>
-              <span className="hidden md:inline-block text-xs font-bold text-slate-700 max-w-24 truncate">
-                {user.name.split(' ')[0]}
-              </span>
-            </Link>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                logout();
-                navigate('/login');
-              }}
-              className="h-7 px-2.5 text-xs font-bold text-rose-700 border-rose-200 bg-rose-50/50 hover:bg-rose-100 hover:text-rose-800 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
-              title="Sign Out of ERP"
-            >
-              <LogOut className="w-3.5 h-3.5 text-rose-600" />
-              <span>Logout</span>
-            </Button>
-          </div>
-        ) : (
-          <Link to="/login">
-            <Button
-              type="button"
-              size="sm"
-              className="h-7 px-2.5 text-xs font-semibold bg-[#00a86b] hover:bg-[#008f5b] text-white cursor-pointer"
-            >
-              <User className="w-3 h-3" />
-              <span>Login</span>
-            </Button>
-          </Link>
-        )}
       </div>
 
       <ExportCSVModal
