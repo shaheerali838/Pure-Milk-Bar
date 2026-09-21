@@ -62,6 +62,13 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                     {product.status || 'Active'}
                   </span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                    product.source === 'Supplier'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  }`}>
+                    {product.source === 'Supplier' ? '🚚 Supplier Sourced' : '🌾 Farm In-House'}
+                  </span>
                 </div>
               </div>
             </div>

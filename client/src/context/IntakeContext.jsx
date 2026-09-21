@@ -3,153 +3,14 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 const IntakeContext = createContext(null);
 
 const STORAGE_KEY = 'pure_milk_bar_intake_records_v3';
-
-// 7 Default Intake Slips matching reference screenshot "Intake History (7)"
-const DEFAULT_INTAKE_RECORDS = [
-  {
-    id: 'INT-901',
-    date: '2026-09-17',
-    time: '06:30 AM',
-    supplierId: 'SUP-A',
-    supplierName: 'Supplier A (Ahmad Farms)',
-    area: 'Sahiwal',
-    shift: 'Morning',
-    quantity: 45.0,
-    ratePerLiter: 230,
-    totalCost: 10350,
-    paidAmount: 10350,
-    pendingAmount: 0,
-    fat: 6.8,
-    lr: 29.5,
-    snf: 9.07,
-    settlement: 'Paid',
-    receivedBy: 'Farhan (Lab Incharge)',
-    notes: 'Pure buffalo milk, excellent density',
-  },
-  {
-    id: 'INT-902',
-    date: '2026-09-17',
-    time: '06:45 AM',
-    supplierId: 'SUP-B',
-    supplierName: 'Supplier B (Chaudhry Dairy)',
-    area: 'Gujranwala',
-    shift: 'Morning',
-    quantity: 65.0,
-    ratePerLiter: 225,
-    totalCost: 14625,
-    paidAmount: 0,
-    pendingAmount: 14625,
-    fat: 4.2,
-    lr: 28.5,
-    snf: 8.52,
-    settlement: 'Pending',
-    receivedBy: 'Farhan (Lab Incharge)',
-    notes: 'Cow milk batch, tested pure',
-  },
-  {
-    id: 'INT-903',
-    date: '2026-09-17',
-    time: '07:10 AM',
-    supplierId: 'SUP-C',
-    supplierName: 'Supplier C (Bismillah Agro)',
-    area: 'Faisalabad',
-    shift: 'Morning',
-    quantity: 50.0,
-    ratePerLiter: 228,
-    totalCost: 11400,
-    paidAmount: 11400,
-    pendingAmount: 0,
-    fat: 5.1,
-    lr: 29.0,
-    snf: 8.87,
-    settlement: 'Paid',
-    receivedBy: 'Tariq (Supervisor)',
-    notes: 'Chilled delivery in insulated van',
-  },
-  {
-    id: 'INT-904',
-    date: '2026-09-16',
-    time: '05:30 PM',
-    supplierId: 'SUP-A',
-    supplierName: 'Supplier A (Ahmad Farms)',
-    area: 'Sahiwal',
-    shift: 'Evening',
-    quantity: 40.0,
-    ratePerLiter: 230,
-    totalCost: 9200,
-    paidAmount: 9200,
-    pendingAmount: 0,
-    fat: 6.7,
-    lr: 29.2,
-    snf: 8.97,
-    settlement: 'Paid',
-    receivedBy: 'Bilal (Shift Tech)',
-    notes: 'Evening session collection',
-  },
-  {
-    id: 'INT-905',
-    date: '2026-09-16',
-    time: '06:00 PM',
-    supplierId: 'SUP-B',
-    supplierName: 'Supplier B (Chaudhry Dairy)',
-    area: 'Gujranwala',
-    shift: 'Evening',
-    quantity: 55.0,
-    ratePerLiter: 225,
-    totalCost: 12375,
-    paidAmount: 0,
-    pendingAmount: 12375,
-    fat: 4.3,
-    lr: 28.8,
-    snf: 8.62,
-    settlement: 'Pending',
-    receivedBy: 'Bilal (Shift Tech)',
-    notes: 'Gate inspection cleared',
-  },
-  {
-    id: 'INT-906',
-    date: '2026-09-15',
-    time: '06:15 AM',
-    supplierId: 'SUP-C',
-    supplierName: 'Supplier C (Bismillah Agro)',
-    area: 'Faisalabad',
-    shift: 'Morning',
-    quantity: 48.0,
-    ratePerLiter: 228,
-    totalCost: 10944,
-    paidAmount: 10944,
-    pendingAmount: 0,
-    fat: 5.0,
-    lr: 29.1,
-    snf: 8.88,
-    settlement: 'Paid',
-    receivedBy: 'Tariq (Supervisor)',
-    notes: 'Direct morning supply',
-  },
-  {
-    id: 'INT-907',
-    date: '2026-09-15',
-    time: '05:45 PM',
-    supplierId: 'SUP-A',
-    supplierName: 'Supplier A (Ahmad Farms)',
-    area: 'Sahiwal',
-    shift: 'Evening',
-    quantity: 42.0,
-    ratePerLiter: 230,
-    totalCost: 9660,
-    paidAmount: 4830,
-    pendingAmount: 4830,
-    fat: 6.6,
-    lr: 29.0,
-    snf: 8.90,
-    settlement: 'Partial',
-    receivedBy: 'Farhan (Lab Incharge)',
-    notes: 'Quality inspection verified',
-  },
+const LEGACY_STORAGE_KEYS = [
+  'pure_milk_bar_intake_records_v2',
+  'pure_milk_bar_intake_records_v1',
+  'pure_milk_bar_intake_records',
 ];
 
 export function IntakeProvider({ children }) {
-  // Load from LocalStorage or fall back to DEFAULT_INTAKE_RECORDS
+  // Load from LocalStorage - STRICT: Always preserve all saved user intake logs
   const [intakeLogs, setIntakeLogs] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -159,10 +20,22 @@ export function IntakeProvider({ children }) {
           return parsed;
         }
       }
+
+      // Check legacy keys in case logs were stored in an earlier version
+      for (const legacyKey of LEGACY_STORAGE_KEYS) {
+        const legacySaved = localStorage.getItem(legacyKey);
+        if (legacySaved) {
+          const parsed = JSON.parse(legacySaved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+            return parsed;
+          }
+        }
+      }
     } catch (err) {
       console.error('Error loading intake logs from localStorage:', err);
     }
-    return DEFAULT_INTAKE_RECORDS;
+    return [];
   });
 
   // Sync to LocalStorage whenever intakeLogs updates
@@ -176,7 +49,11 @@ export function IntakeProvider({ children }) {
 
   // 1. Add Single Intake Record
   const addIntake = (newRecord) => {
-    const nextId = `INT-${900 + intakeLogs.length + 1}`;
+    const existingIds = intakeLogs
+      .map((l) => parseInt(String(l.id).replace(/\D/g, ''), 10))
+      .filter((n) => !isNaN(n));
+    const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 900;
+    const nextId = `INT-${maxId + 1}`;
     const qty = parseFloat(newRecord.quantity) || 0;
     const rate = parseFloat(newRecord.ratePerLiter) || 220;
     const cost = parseFloat((qty * rate).toFixed(2));
@@ -233,9 +110,14 @@ export function IntakeProvider({ children }) {
   const addBatchIntake = (batchRecords) => {
     if (!Array.isArray(batchRecords) || batchRecords.length === 0) return;
 
-    let counter = intakeLogs.length + 1;
+    const existingIds = intakeLogs
+      .map((l) => parseInt(String(l.id).replace(/\D/g, ''), 10))
+      .filter((n) => !isNaN(n));
+    let currentMax = existingIds.length > 0 ? Math.max(...existingIds) : 900;
+
     const formattedBatch = batchRecords.map((rec) => {
-      const nextId = `INT-${900 + counter++}`;
+      currentMax += 1;
+      const nextId = `INT-${currentMax}`;
       const qty = parseFloat(rec.quantity) || 0;
       const rate = parseFloat(rec.ratePerLiter) || 220;
       const cost = parseFloat((qty * rate).toFixed(2));
@@ -399,6 +281,69 @@ export function IntakeProvider({ children }) {
     );
   };
 
+  // 5b. Settle pending batches for a supplier up to a specific amount (FIFO: partial or full)
+  const settleBatchesWithAmount = (supplierId, supplierName, amount) => {
+    let remainingToPay = parseFloat(amount) || 0;
+    if (remainingToPay <= 0) return;
+
+    setIntakeLogs((prev) =>
+      prev.map((item) => {
+        if (remainingToPay <= 0) return item;
+
+        const matchesId = supplierId && item.supplierId === supplierId;
+        const matchesName =
+          supplierName &&
+          item.supplierName &&
+          (item.supplierName.toLowerCase() === supplierName.toLowerCase() ||
+            item.supplierName.toLowerCase().includes(supplierName.toLowerCase()) ||
+            supplierName.toLowerCase().includes(item.supplierName.toLowerCase()));
+
+        if ((matchesId || matchesName) && item.settlement !== 'Paid') {
+          const qty = parseFloat(item.quantity) || 0;
+          const rate = parseFloat(item.ratePerLiter) || 0;
+          const cost = parseFloat(item.totalCost) || (qty * rate);
+          const currentPaid =
+            item.paidAmount !== undefined && item.paidAmount !== ''
+              ? parseFloat(item.paidAmount) || 0
+              : item.settlement === 'Partial'
+              ? cost * 0.5
+              : 0;
+          const pending = Math.max(0, cost - currentPaid);
+
+          if (pending <= 0) {
+            return {
+              ...item,
+              settlement: 'Paid',
+              paidAmount: cost,
+              pendingAmount: 0,
+            };
+          }
+
+          if (remainingToPay >= pending) {
+            remainingToPay -= pending;
+            return {
+              ...item,
+              settlement: 'Paid',
+              paidAmount: cost,
+              pendingAmount: 0,
+            };
+          } else {
+            const newPaid = parseFloat((currentPaid + remainingToPay).toFixed(2));
+            const newPending = Math.max(0, parseFloat((cost - newPaid).toFixed(2)));
+            remainingToPay = 0;
+            return {
+              ...item,
+              settlement: 'Partial',
+              paidAmount: newPaid,
+              pendingAmount: newPending,
+            };
+          }
+        }
+        return item;
+      })
+    );
+  };
+
   // 6. Delete Intake Record
   const deleteIntake = (id) => {
     setIntakeLogs((prev) => prev.filter((item) => item.id !== id));
@@ -411,7 +356,7 @@ export function IntakeProvider({ children }) {
     } catch (e) {
       console.error(e);
     }
-    setIntakeLogs(DEFAULT_INTAKE_RECORDS);
+    setIntakeLogs([]);
   };
 
   // 8. Dynamic Summary Calculations
@@ -455,6 +400,7 @@ export function IntakeProvider({ children }) {
     updateIntake,
     updateBatchSettlement,
     settleAllBatchesForSupplier,
+    settleBatchesWithAmount,
     deleteIntake,
     resetIntakeToDefault,
   };

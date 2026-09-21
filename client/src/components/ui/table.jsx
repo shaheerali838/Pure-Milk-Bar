@@ -1,5 +1,8 @@
 import * as React from "react"
-import { cn } from "@/utils/cn"
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+const cn = (...inputs) => twMerge(clsx(inputs));
 
 const Table = React.forwardRef(({ className, ...props }, ref) => (
   <div className="relative w-full overflow-auto">

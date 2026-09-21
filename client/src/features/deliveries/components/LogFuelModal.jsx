@@ -188,7 +188,7 @@ export default function LogFuelModal({ isOpen, onClose }) {
             <Input
               type="number"
               min="0"
-              placeholder="e.g. 25"
+              placeholder="Enter value"
               value={formData.distanceKm}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, distanceKm: e.target.value }))
@@ -201,7 +201,7 @@ export default function LogFuelModal({ isOpen, onClose }) {
             <Label className="text-xs font-semibold text-slate-700">Notes / Remarks</Label>
             <Input
               type="text"
-              placeholder="e.g. Morning route fill-up at PSO pump"
+              placeholder="Enter details"
               value={formData.notes}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, notes: e.target.value }))

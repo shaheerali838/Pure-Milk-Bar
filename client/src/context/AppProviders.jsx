@@ -15,6 +15,7 @@ import { AuditProvider } from "./AuditContext";
 import { SettingsProvider } from "./SettingsContext";
 import { SupplierProvider } from "./SupplierContext";
 import { IntakeProvider } from "./IntakeContext";
+import { SourcExpenseProvider } from "./SourcExpenseContext";
 
 const providers = [
   CustomerProvider,
@@ -27,12 +28,13 @@ const providers = [
   RiderSalaryProvider,
   DeliveryProvider,
   POSProvider,
+  SupplierProvider,
+  IntakeProvider,
+  SourcExpenseProvider,
   PayrollProvider,
   TransactionProvider,
   AuditProvider,
   SettingsProvider,
-  IntakeProvider,
-  SupplierProvider,
 ];
 
 export const AppProviders = ({ children }) => {

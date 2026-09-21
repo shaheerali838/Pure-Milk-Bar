@@ -135,7 +135,7 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
               <div className="space-y-2 md:col-span-2">
                 <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Description <span className="text-rose-500">*</span></label>
                 <Input
-                  placeholder="E.g., Bought 20 bags of wanda..."
+                  placeholder="Enter details"
                   required
                   className="h-11 bg-white border-slate-300 focus-visible:ring-emerald-500 rounded-xl text-slate-900 font-medium"
                   value={formData.description}
@@ -172,7 +172,7 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
               <div className="space-y-2 md:col-span-2">
                 <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Authorized / Recorded By <span className="text-slate-400 font-medium lowercase">(optional)</span></label>
                 <Input
-                  placeholder="e.g. Allah Ditta"
+                  placeholder="Enter name"
                   className="h-11 bg-white border-slate-300 focus-visible:ring-emerald-500 rounded-xl text-slate-900 font-medium"
                   value={formData.authorizedBy}
                   onChange={(e) => setFormData({ ...formData, authorizedBy: e.target.value })}

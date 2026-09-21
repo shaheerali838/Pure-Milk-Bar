@@ -144,7 +144,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Ali Hassan"
+                  placeholder="Enter name"
                   className="h-8 px-2.5 py-1 text-xs"
                 />
               </div>
@@ -170,7 +170,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                   type="text"
                   value={formData.onlineAccount}
                   onChange={(e) => setFormData({ ...formData, onlineAccount: e.target.value })}
-                  placeholder="e.g. 0300-1111111"
+                  placeholder="Enter value"
                   className="h-8 px-2.5 py-1 text-xs"
                 />
               </div>
@@ -182,7 +182,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                   type="text"
                   value={formData.secondaryPhone}
                   onChange={(e) => setFormData({ ...formData, secondaryPhone: e.target.value })}
-                  placeholder="0321-7654321"
+                  placeholder="Enter secondary number"
                   className="h-8 px-2.5 py-1 text-xs"
                 />
               </div>
@@ -204,7 +204,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                   type="text"
                   value={formData.cnicNumber}
                   onChange={(e) => setFormData({ ...formData, cnicNumber: e.target.value })}
-                  placeholder="35202-1234567-1"
+                  placeholder="Enter ID number"
                   className="h-8 px-2.5 py-1 text-xs font-mono"
                 />
               </div>
@@ -246,7 +246,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                   type="text"
                   value={formData.referenceName}
                   onChange={(e) => setFormData({ ...formData, referenceName: e.target.value })}
-                  placeholder="Reference person name"
+                  placeholder="Enter reference"
                   className="h-8 px-2.5 py-1 text-xs"
                 />
               </div>
@@ -266,7 +266,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                   type="text"
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  placeholder="e.g. Model Town"
+                  placeholder="Enter area"
                   className="h-8 px-2.5 py-1 text-xs"
                 />
               </div>
@@ -300,7 +300,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                   min="0"
                   value={subQty}
                   onChange={(e) => setSubQty(e.target.value)}
-                  placeholder="e.g. 2, 3, 5.3"
+                  placeholder="Enter quantity"
                   className="h-8 px-2.5 py-1 text-xs font-bold"
                 />
               </div>
@@ -360,7 +360,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                 type="text"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="e.g. House #45, Block C"
+                placeholder="Enter address"
                 className="h-8 px-2.5 py-1 text-xs"
               />
             </div>

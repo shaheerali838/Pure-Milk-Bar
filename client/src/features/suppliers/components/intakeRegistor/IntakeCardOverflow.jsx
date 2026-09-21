@@ -48,7 +48,7 @@ export default function IntakeCardOverflow({ onViewBatch }) {
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 mb-3">
         {statCards.map(({ id, label, value, sub, icon: Icon, color, badge }) => (
           <div
             key={id}
@@ -61,38 +61,33 @@ export default function IntakeCardOverflow({ onViewBatch }) {
                 setActiveModalCard(id);
               }
             }}
-            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:border-slate-300 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 cursor-pointer select-none group"
-            style={{ borderTop: `4px solid ${color}` }}
+            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 cursor-pointer hover:shadow-md hover:scale-[1.01] hover:border-slate-300"
+            style={{ borderTop: `3.5px solid ${color}` }}
             title={`Click to view detailed ${label} breakdown`}
           >
             {/* Top Row: Icon Container, Badge & Arrow */}
-            <div className="flex items-start justify-between mb-2">
+            <div className="flex items-start justify-between mb-1.5">
               <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
+                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
                 style={{ background: `${color}15` }}
               >
-                <Icon style={{ width: 16, height: 16, color }} />
+                <Icon style={{ width: 15, height: 15, color }} />
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
+                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
                   {badge}
                 </span>
-                <ChevronRight className="w-3 h-3 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight className="w-3 h-3 text-slate-400" />
               </div>
             </div>
 
             {/* Bottom Row: Value, Label, and Subtitle */}
             <div>
-              <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 font-display tabular">
+              <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
                 {value}
               </p>
-              <p className="text-xs font-bold text-slate-700">{label}</p>
-              <div className="flex items-center justify-between mt-0.5">
-                <p className="text-[11px] font-medium text-slate-400">{sub}</p>
-                <span className="text-[10px] font-bold text-slate-400 group-hover:text-blue-600 transition-colors">
-                  View Detail &rarr;
-                </span>
-              </div>
+              <p className="text-xs font-bold text-slate-800">{label}</p>
+              <p className="text-[10px] font-medium text-slate-400 line-clamp-1">{sub}</p>
             </div>
           </div>
         ))}

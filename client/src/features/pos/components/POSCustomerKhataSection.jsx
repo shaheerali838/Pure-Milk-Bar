@@ -154,7 +154,7 @@ export default function POSCustomerKhataSection() {
                   max={netPayable}
                   value={partialPaidAmount}
                   onChange={(e) => setPartialPaidAmount(e.target.value)}
-                  placeholder="e.g. 500"
+                  placeholder="Enter value"
                   className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 tabular"
                 />
               </div>

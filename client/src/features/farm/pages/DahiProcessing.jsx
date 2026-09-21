@@ -30,7 +30,7 @@ export default function DahiProcessing() {
   const filtered = batches.filter(b => b.product.toLowerCase().includes(search.toLowerCase()) || b.id.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-display text-base font-bold text-slate-800 mb-0.5">Dahi & Processing</h3>

@@ -283,7 +283,7 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
                   type="text"
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  placeholder="e.g. Model Town"
+                  placeholder="Enter area"
                   className="h-8 px-2.5 py-1 text-xs"
                 />
               </div>
@@ -317,7 +317,7 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
                   min="0"
                   value={subQty}
                   onChange={(e) => setSubQty(e.target.value)}
-                  placeholder="e.g. 2, 3, 5.3"
+                  placeholder="Enter quantity"
                   className="h-8 px-2.5 py-1 text-xs font-bold"
                 />
               </div>
@@ -377,7 +377,7 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
                 type="text"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="e.g. House #45, Block C"
+                placeholder="Enter address"
                 className="h-8 px-2.5 py-1 text-xs"
               />
             </div>

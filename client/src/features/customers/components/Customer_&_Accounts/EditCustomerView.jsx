@@ -173,7 +173,7 @@ export default function EditCustomerView({ customer, onBack }) {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Ali Hassan"
+                  placeholder="Enter name"
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white"
                 />
               </div>
@@ -187,7 +187,7 @@ export default function EditCustomerView({ customer, onBack }) {
                   required
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="0300-1234567"
+                  placeholder="Enter phone number"
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-mono"
                 />
               </div>
@@ -200,7 +200,7 @@ export default function EditCustomerView({ customer, onBack }) {
                   type="text"
                   value={formData.onlineAccount}
                   onChange={(e) => setFormData({ ...formData, onlineAccount: e.target.value })}
-                  placeholder="EasyPaisa / JazzCash"
+                  placeholder="Enter payment method"
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-mono"
                 />
               </div>
@@ -213,7 +213,7 @@ export default function EditCustomerView({ customer, onBack }) {
                   type="text"
                   value={formData.secondaryPhone}
                   onChange={(e) => setFormData({ ...formData, secondaryPhone: e.target.value })}
-                  placeholder="0321-7654321"
+                  placeholder="Enter secondary number"
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-mono"
                 />
               </div>
@@ -257,7 +257,7 @@ export default function EditCustomerView({ customer, onBack }) {
                   type="text"
                   value={formData.cnicNumber}
                   onChange={(e) => setFormData({ ...formData, cnicNumber: e.target.value })}
-                  placeholder="35202-1234567-1"
+                  placeholder="Enter ID number"
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-mono"
                 />
               </div>
@@ -286,7 +286,7 @@ export default function EditCustomerView({ customer, onBack }) {
                   type="text"
                   value={formData.referenceName}
                   onChange={(e) => setFormData({ ...formData, referenceName: e.target.value })}
-                  placeholder="Reference person name"
+                  placeholder="Enter reference"
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white"
                 />
               </div>
@@ -312,7 +312,7 @@ export default function EditCustomerView({ customer, onBack }) {
                   type="text"
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  placeholder="e.g. Model Town"
+                  placeholder="Enter area"
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white"
                 />
               </div>
@@ -325,7 +325,7 @@ export default function EditCustomerView({ customer, onBack }) {
                   type="text"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="e.g. House #45, Block C"
+                  placeholder="Enter address"
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white"
                 />
               </div>
@@ -361,7 +361,7 @@ export default function EditCustomerView({ customer, onBack }) {
                   min="0"
                   value={subQty}
                   onChange={(e) => setSubQty(e.target.value)}
-                  placeholder="e.g. 2, 3, 5.3"
+                  placeholder="Enter quantity"
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-bold"
                 />
               </div>
@@ -441,7 +441,7 @@ export default function EditCustomerView({ customer, onBack }) {
                   type="number"
                   value={formData.creditLimit}
                   onChange={(e) => setFormData({ ...formData, creditLimit: e.target.value })}
-                  placeholder="10000"
+                  placeholder="Enter credit limit"
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-bold tabular"
                 />
               </div>
@@ -454,7 +454,7 @@ export default function EditCustomerView({ customer, onBack }) {
                   type="number"
                   value={formData.khataBalance}
                   onChange={(e) => setFormData({ ...formData, khataBalance: e.target.value })}
-                  placeholder="0"
+                  placeholder="Enter value"
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-bold tabular"
                 />
               </div>

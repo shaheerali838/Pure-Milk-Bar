@@ -12,14 +12,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-/**
- * IntakeCardDetailModal
- * Renders a rich drilldown modal when clicking any summary card in Milk Intake Register:
- * 1. 'volume'  -> Procured Volume (Morning vs Evening Shift breakdown)
- * 2. 'spend'   -> Total Intake Spend (Gross Procurement Values)
- * 3. 'rate'    -> Avg Purchase Rate & Gerber Quality (Fat, LR, SNF analysis)
- * 4. 'pending' -> Pending Settlements (Unsettled slips with 1-click settlement)
- */
+// Drilldown modal for milk intake summary metrics
 export default function IntakeCardDetailModal({
   cardType,
   onClose,

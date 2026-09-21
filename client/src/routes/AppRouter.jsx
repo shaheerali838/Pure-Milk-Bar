@@ -99,6 +99,7 @@ export function AppRouter() {
             </Route>
             <Route path="pl" element={<FarmPL />} />
             <Route path="dailysheet" element={<DailySheet />} />
+            <Route path="daily-sheet" element={<DailySheet />} />
           </Route>
 
           <Route path="supplier" element={<Supplier />}>
@@ -109,6 +110,8 @@ export function AppRouter() {
             <Route path="expenses" element={<SourceExpense />} />
             <Route path="pl" element={<SupplierPL />} />
             <Route path="procurement" element={<ProcurementSheet />} />
+            <Route path="procurementsheet" element={<ProcurementSheet />} />
+            <Route path="procurement-sheet" element={<ProcurementSheet />} />
           </Route>
           <Route path="proccessing" element={<Proccessing />} />
           <Route path="products" element={<Products />} />
@@ -119,6 +122,12 @@ export function AppRouter() {
 
           <Route path="customer" element={<CustomerManagement />} />
           <Route path="customer-khata-ledger" element={<CustomerKhataLedger />} />
+
+          <Route path="dailysheet" element={<Navigate to="/farm/dailysheet" replace />} />
+          <Route path="daily-sheet" element={<Navigate to="/farm/dailysheet" replace />} />
+          <Route path="procurement" element={<Navigate to="/supplier/procurement" replace />} />
+          <Route path="procurementsheet" element={<Navigate to="/supplier/procurement" replace />} />
+          <Route path="procurement-sheet" element={<Navigate to="/supplier/procurement" replace />} />
 
           <Route path="finance/customer" element={<CustomerFinance />} />
           <Route path="finance/delivery" element={<RiderDeliveryFinancePage />} />

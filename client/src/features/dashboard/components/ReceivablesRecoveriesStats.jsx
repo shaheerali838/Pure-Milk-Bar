@@ -65,7 +65,7 @@ export default function ReceivablesRecoveriesStats() {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
       {kpis.map((kpi) => {
         const Icon = kpi.icon;
         return (

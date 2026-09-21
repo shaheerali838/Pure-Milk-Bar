@@ -45,7 +45,7 @@ export default function PricingTab({ data = {}, onChange }) {
                   type="number"
                   min="0"
                   step="any"
-                  placeholder="e.g. 180"
+                  placeholder="Enter value"
                   value={data.defaultCowMilkRate !== undefined && data.defaultCowMilkRate !== null ? data.defaultCowMilkRate : ''}
                   onChange={(e) => handleChange('defaultCowMilkRate', e.target.value === '' ? '' : Number(e.target.value))}
                   className="pl-10 h-9 text-xs font-mono font-bold text-slate-800"
@@ -68,7 +68,7 @@ export default function PricingTab({ data = {}, onChange }) {
                   type="number"
                   min="0"
                   step="any"
-                  placeholder="e.g. 220"
+                  placeholder="Enter value"
                   value={data.defaultBuffaloMilkRate !== undefined && data.defaultBuffaloMilkRate !== null ? data.defaultBuffaloMilkRate : ''}
                   onChange={(e) => handleChange('defaultBuffaloMilkRate', e.target.value === '' ? '' : Number(e.target.value))}
                   className="pl-10 h-9 text-xs font-mono font-bold text-slate-800"
@@ -86,7 +86,7 @@ export default function PricingTab({ data = {}, onChange }) {
                 <Input
                   type="number"
                   min="0"
-                  placeholder="e.g. 10000"
+                  placeholder="Enter value"
                   value={data.maxCustomerCreditLimit !== undefined && data.maxCustomerCreditLimit !== null ? data.maxCustomerCreditLimit : ''}
                   onChange={(e) => handleChange('maxCustomerCreditLimit', e.target.value === '' ? '' : Number(e.target.value))}
                   className="pl-9 h-9 text-xs font-mono text-slate-800"
@@ -103,7 +103,7 @@ export default function PricingTab({ data = {}, onChange }) {
                 <Input
                   type="number"
                   min="0"
-                  placeholder="e.g. 30"
+                  placeholder="Enter value"
                   value={data.paymentGracePeriod !== undefined && data.paymentGracePeriod !== null ? data.paymentGracePeriod : ''}
                   onChange={(e) => handleChange('paymentGracePeriod', e.target.value === '' ? '' : Number(e.target.value))}
                   className="pl-9 h-9 text-xs font-mono text-slate-800"
