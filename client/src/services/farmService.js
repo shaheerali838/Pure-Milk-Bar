@@ -3,17 +3,17 @@ import api from './api';
 export const farmService = {
   // Animals / Herd
   getAnimals: async (params = {}) => {
-    const res = await api.get('/api/farm/animals', params);
-    return res.data || res.animals || res;
+    const res = await api.get('/api/farm/animals', params, { fallback: [] });
+    return res.data || res.animals || res || [];
   },
 
   getAnimalStats: async () => {
-    const res = await api.get('/api/farm/animals/stats');
-    return res.data || res.stats || res;
+    const res = await api.get('/api/farm/animals/stats', null, { fallback: {} });
+    return res.data || res.stats || res || {};
   },
 
   getAnimalById: async (id) => {
-    const res = await api.get(`/api/farm/animals/${id}`);
+    const res = await api.get(`/api/farm/animals/${id}`, null, { fallback: null });
     return res.data || res.animal || res;
   },
 
@@ -34,17 +34,17 @@ export const farmService = {
 
   // Milking Yield Logs
   getMilkingLogs: async (params = {}) => {
-    const res = await api.get('/api/farm/milking-logs', params);
-    return res.data || res.logs || res;
+    const res = await api.get('/api/farm/milking-logs', params, { fallback: [] });
+    return res.data || res.logs || res || [];
   },
 
   getDailyYieldSummary: async (date) => {
-    const res = await api.get('/api/farm/milking-logs/daily-summary', { date });
-    return res.data || res.summary || res;
+    const res = await api.get('/api/farm/milking-logs/daily-summary', { date }, { fallback: {} });
+    return res.data || res.summary || res || {};
   },
 
   getMilkingLogById: async (id) => {
-    const res = await api.get(`/api/farm/milking-logs/${id}`);
+    const res = await api.get(`/api/farm/milking-logs/${id}`, null, { fallback: null });
     return res.data || res.log || res;
   },
 

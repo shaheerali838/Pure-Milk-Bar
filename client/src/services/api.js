@@ -92,6 +92,12 @@ async function request(endpoint, options = {}) {
 
     return data;
   } catch (error) {
+    if (options.fallback !== undefined) {
+      if (import.meta.env.DEV) {
+        console.warn(`[API ${method}] ${url} unavailable (${error.message}). Using fallback.`);
+      }
+      return options.fallback;
+    }
     // Log in development
     if (import.meta.env.DEV) {
       console.warn(`[API ${method}] ${url} failed:`, error.message);

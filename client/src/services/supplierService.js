@@ -3,17 +3,17 @@ import api from './api';
 export const supplierService = {
   // Suppliers
   getSuppliers: async (params = {}) => {
-    const res = await api.get('/api/v1/suppliers', params);
-    return res.data || res.suppliers || res;
+    const res = await api.get('/api/v1/suppliers', params, { fallback: [] });
+    return res.data || res.suppliers || res || [];
   },
 
   getSupplierStats: async () => {
-    const res = await api.get('/api/v1/suppliers/stats');
-    return res.data || res.stats || res;
+    const res = await api.get('/api/v1/suppliers/stats', null, { fallback: {} });
+    return res.data || res.stats || res || {};
   },
 
   getSupplierById: async (id) => {
-    const res = await api.get(`/api/v1/suppliers/${id}`);
+    const res = await api.get(`/api/v1/suppliers/${id}`, null, { fallback: null });
     return res.data || res.supplier || res;
   },
 
@@ -34,17 +34,17 @@ export const supplierService = {
 
   // Procurements / Milk Intake
   getProcurements: async (params = {}) => {
-    const res = await api.get('/api/v1/suppliers/procurements', params);
-    return res.data || res.procurements || res;
+    const res = await api.get('/api/v1/suppliers/procurements', params, { fallback: [] });
+    return res.data || res.procurements || res || [];
   },
 
   getDailySummary: async (date) => {
-    const res = await api.get('/api/v1/suppliers/procurements/daily-summary', { date });
-    return res.data || res.summary || res;
+    const res = await api.get('/api/v1/suppliers/procurements/daily-summary', { date }, { fallback: {} });
+    return res.data || res.summary || res || {};
   },
 
   getProcurementById: async (id) => {
-    const res = await api.get(`/api/v1/suppliers/procurements/${id}`);
+    const res = await api.get(`/api/v1/suppliers/procurements/${id}`, null, { fallback: null });
     return res.data || res.procurement || res;
   },
 

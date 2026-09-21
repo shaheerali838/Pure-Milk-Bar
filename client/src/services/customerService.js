@@ -3,19 +3,19 @@ import api from './api';
 export const customerService = {
   // Get all customers with search, status, and pagination options
   getCustomers: async (params = {}) => {
-    const res = await api.get('/api/v1/customers', params);
-    return res.data || res.customers || res;
+    const res = await api.get('/api/v1/customers', params, { fallback: [] });
+    return res.data || res.customers || res || [];
   },
 
   // Quick search
   searchCustomers: async (term) => {
-    const res = await api.get('/api/v1/customers/search', { q: term });
-    return res.data || res.customers || res;
+    const res = await api.get('/api/v1/customers/search', { q: term }, { fallback: [] });
+    return res.data || res.customers || res || [];
   },
 
   // Get customer by ID
   getCustomerById: async (id) => {
-    const res = await api.get(`/api/v1/customers/${id}`);
+    const res = await api.get(`/api/v1/customers/${id}`, null, { fallback: null });
     return res.data || res.customer || res;
   },
 
@@ -51,13 +51,13 @@ export const customerService = {
 
   // Get balance & transactions
   getBalance: async (id) => {
-    const res = await api.get(`/api/v1/customers/${id}/balance`);
+    const res = await api.get(`/api/v1/customers/${id}/balance`, null, { fallback: { balance: 0 } });
     return res.data || res;
   },
 
   getTransactions: async (id, params = {}) => {
-    const res = await api.get(`/api/v1/customers/${id}/transactions`, params);
-    return res.data || res.transactions || res;
+    const res = await api.get(`/api/v1/customers/${id}/transactions`, params, { fallback: [] });
+    return res.data || res.transactions || res || [];
   },
 };
 
