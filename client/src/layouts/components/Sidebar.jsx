@@ -436,8 +436,17 @@ export default function Sidebar() {
                     {user.name}
                   </p>
                   <p className="text-[11px] font-semibold text-[#008f5b] truncate flex items-center gap-1 mt-0.5">
-                    <GraduationCap className="w-3.5 h-3.5 shrink-0" />
-                    <span>{user.role === 'ADMIN' ? 'Student (321897)' : `${user.roleLabel || user.role} (${user.id?.slice(-6) || '321897'})`}</span>
+                    <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      {user.roleLabel ||
+                        (user.role === 'ADMIN'
+                          ? 'System Administrator'
+                          : user.role === 'MANAGER'
+                          ? 'Branch Manager'
+                          : user.role === 'CASHIER'
+                          ? 'POS Cashier'
+                          : 'Farm Supervisor')}
+                    </span>
                   </p>
                 </div>
               </div>
