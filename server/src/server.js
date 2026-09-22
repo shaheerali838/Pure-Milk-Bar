@@ -11,7 +11,7 @@ const startServer = async () => {
         await seedAdmin();
 
         app.listen(PORT, () => {
-            console.log(`🚀 Pure Milk Bar API running on port ${PORT}`);
+            console.log(` Pure Milk Bar API running on port ${PORT}`);
         });
     } catch (error) {
         console.error('Server startup failed:', error);
