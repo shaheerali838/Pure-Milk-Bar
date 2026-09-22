@@ -18,6 +18,7 @@ import dailyClosingRoutes from "./modules/dailyClosing/routes/dailyClosing.route
 import auditLogRoutes from "./modules/auditLog/routes/auditLog.routes.js";
 import inventoryRoutes from "./modules/inventory/routes/inventory.routes.js";
 import posRoutes from "./modules/pos/routes/pos.routes.js";
+import staffRoutes from "./modules/staff/routes/staff.routes.js";
 
 const app = express();
 
@@ -74,6 +75,7 @@ app.use("/api/v1/deliveries", deliveryRoutes);
 app.use("/api/v1/finance", financeRoutes);
 app.use("/api/v1/daily-closings", dailyClosingRoutes);
 app.use("/api/v1/audit-logs", auditLogRoutes);
+app.use("/api/v1/staff", staffRoutes);
 
 // Root route
 app.get("/", (req, res) => {
