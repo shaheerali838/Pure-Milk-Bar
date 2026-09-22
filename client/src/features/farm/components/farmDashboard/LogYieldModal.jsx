@@ -10,8 +10,6 @@ export default function LogYieldModal({ isOpen, onClose }) {
     tag: animals[0]?.tag || "",
     morning: "8.5",
     evening: "7.0",
-    fat: "4.4",
-    snf: "8.9",
     milker: "Allah Ditta",
   });
 
@@ -83,23 +81,6 @@ export default function LogYieldModal({ isOpen, onClose }) {
               value={formData.evening}
               onChange={(val) => handleChange("evening", val)}
               placeholder="7.0"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <InputField
-              label="Fat %"
-              type="number"
-              value={formData.fat}
-              onChange={(val) => handleChange("fat", val)}
-              placeholder="4.4"
-            />
-            <InputField
-              label="SNF %"
-              type="number"
-              value={formData.snf}
-              onChange={(val) => handleChange("snf", val)}
-              placeholder="8.9"
             />
           </div>
 
