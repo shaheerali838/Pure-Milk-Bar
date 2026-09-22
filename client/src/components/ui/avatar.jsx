@@ -1,6 +1,9 @@
 import * as React from "react"
 import * as AvatarPrimitive from "@radix-ui/react-avatar"
-import { cn } from "@/utils/cn"
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+const cn = (...inputs) => twMerge(clsx(inputs));
 
 const Avatar = React.forwardRef(({ className, ...props }, ref) => (
   <AvatarPrimitive.Root

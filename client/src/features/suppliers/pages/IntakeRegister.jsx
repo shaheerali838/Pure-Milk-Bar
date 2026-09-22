@@ -48,9 +48,10 @@ export default function IntakeRegister() {
     setViewMode('form');
   };
 
-  // Open Detail View in modal dialog matching user screenshot
+  // Open Detail View in full space matching SupplierDetail / ExpenseVoucherDetail
   const handleView = (item) => {
     setViewingItem(item);
+    setViewMode('detail');
   };
 
   // Export CSV of current intake records
@@ -137,19 +138,30 @@ export default function IntakeRegister() {
     );
   }
 
+  // 3. FULL SPACE: Intake Detail View (Matching ExpenseVoucherDetail / SupplierDetail)
+  if (viewMode === 'detail' && viewingItem) {
+    return (
+      <IntakeDetail
+        item={viewingItem}
+        onBack={() => {
+          setViewMode('history');
+          setViewingItem(null);
+        }}
+        onEdit={(item) => handleEdit(item)}
+        onPaySupplier={(slip) => handleOpenPay(slip)}
+      />
+    );
+  }
+
   // 3. MAIN REGISTER: History or Shift View
   return (
-    <div className="space-y-4 animate-in fade-in duration-150">
+    <div className="space-y-2 animate-in fade-in duration-150">
       {/* 1. Page Header with Action Controls & View Switcher */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2">
         <div>
           <h2 className="text-xl font-bold text-slate-900 font-display flex items-center gap-2">
-            <Droplets className="w-5 h-5 text-[#155dfc]" />
             Supplier Milk Intake Register
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Daily morning &amp; evening collection shifts, Gerber test quality, and supplier payments
-          </p>
         </div>
 
         {/* Action Controls & View Switcher */}
@@ -228,15 +240,6 @@ export default function IntakeRegister() {
         <IntakeShifting onSaveSuccess={() => setViewMode('history')} />
       ) : (
         <IntakeHistory onView={handleView} onEdit={handleEdit} onPaySupplier={handleOpenPay} />
-      )}
-
-      {/* 4. Intake Batch Detail Modal */}
-      {viewingItem && (
-        <IntakeDetail
-          item={viewingItem}
-          onClose={() => setViewingItem(null)}
-          onEdit={handleEdit}
-        />
       )}
     </div>
   );

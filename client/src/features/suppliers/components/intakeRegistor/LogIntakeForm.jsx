@@ -13,13 +13,7 @@ import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { Button } from '@/components/ui/button';
 
-/**
- * LogIntakeForm Component
- * Streamlined milk intake collection form:
- * - Records supplier, date, shift (Morning/Evening), quantity, and procurement rate
- * - Quality inspection (Fat %, LR, SNF)
- * - Automatically defaults to Pending settlement (payments are managed via 'Pay Supplier')
- */
+// Form to log or edit single supplier milk intake entries
 export default function LogIntakeForm({ onCancel, editItem = null }) {
   const { addIntake, updateIntake } = useIntakeContext();
   const { suppliers = [] } = useSupplierContext();
@@ -261,7 +255,7 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
                 step="0.5"
                 min="0.1"
                 required
-                placeholder="e.g. 50"
+                placeholder="Enter quantity"
                 value={formData.quantity}
                 onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                 className="w-full h-[40px] px-3.5 rounded-xl border border-slate-200 text-sm font-black text-slate-900 outline-none focus:border-blue-600 shadow-2xs tabular"
@@ -276,7 +270,7 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
                 type="number"
                 step="0.5"
                 required
-                placeholder="e.g. 230"
+                placeholder="Enter rate"
                 value={formData.ratePerLiter}
                 onChange={(e) => setFormData({ ...formData, ratePerLiter: e.target.value })}
                 className="w-full h-[40px] px-3.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-900 outline-none focus:border-blue-600 shadow-2xs tabular"
@@ -289,7 +283,7 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
               </label>
               <input
                 type="text"
-                placeholder="Staff receiver name"
+                placeholder="Enter receiver name"
                 value={formData.receivedBy}
                 onChange={(e) => setFormData({ ...formData, receivedBy: e.target.value })}
                 className="w-full h-[40px] px-3.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 outline-none focus:border-blue-600"
@@ -302,7 +296,7 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
               </label>
               <input
                 type="text"
-                placeholder="Optional delivery notes..."
+                placeholder="Enter notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 className="w-full h-[40px] px-3.5 rounded-xl border border-slate-200 text-xs text-slate-800 outline-none focus:border-blue-600"

@@ -150,7 +150,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
                   required
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="e.g. Rahim Ullah Dairy Farm"
+                  placeholder="Enter supplier name"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
                 />
               </div>
@@ -204,7 +204,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
                     name="contact"
                     value={formData.contact}
                     onChange={handleChange}
-                    placeholder="0300-1234567"
+                    placeholder="Enter phone number"
                     className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
                   />
                 </div>
@@ -224,7 +224,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
                     required
                     value={formData.area}
                     onChange={handleChange}
-                    placeholder="e.g. Green Meadows, Sahiwal"
+                    placeholder="Enter area"
                     className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
                   />
                 </div>
@@ -239,7 +239,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
-                  placeholder="Village, Tehsil or Road address"
+                  placeholder="Enter address"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
                 />
               </div>
@@ -274,7 +274,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
                     name="ratePerLiter"
                     value={formData.ratePerLiter}
                     onChange={handleChange}
-                    placeholder="228"
+                    placeholder="Enter rate"
                     className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
                   />
                 </div>
@@ -295,7 +295,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
                     name="avgLiters"
                     value={formData.avgLiters}
                     onChange={handleChange}
-                    placeholder="10"
+                    placeholder="Enter commission"
                     className="w-full pl-3 pr-12 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
                   />
                 </div>
@@ -332,7 +332,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
                     name="accountNumber"
                     value={formData.accountNumber}
                     onChange={handleChange}
-                    placeholder="JazzCash, EasyPaisa, or Bank IBAN details for payments"
+                    placeholder="Enter bank details"
                     className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
                   />
                 </div>
@@ -361,7 +361,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
                   name="notes"
                   value={formData.notes}
                   onChange={handleChange}
-                  placeholder="e.g. Morning delivery by 7:00 AM, Gerber test minimum 4.2% Fat..."
+                  placeholder="Enter notes"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
                 />
               </div>

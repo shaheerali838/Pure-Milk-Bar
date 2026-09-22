@@ -1,17 +1,20 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useIntakeContext } from './IntakeContext';
+import supplierService from '@/services/supplierService';
 
 const SupplierContext = createContext(null);
 
-// Storage keys
-const STORAGE_KEY = 'pure_milk_bar_suppliers_v4';
-const PAYOUTS_KEY = 'pure_milk_bar_supplier_payouts_v2';
-
 export function SupplierProvider({ children }) {
-  // 1. Consume intakeLogs and batch settlement methods from IntakeContext
+  const [suppliers, setSuppliers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [directPayouts, setDirectPayouts] = useState([]);
+
+  // Consume intakeLogs from IntakeContext
   let intakeLogs = [];
   let updateBatchSettlement = null;
   let settleAllBatchesForSupplier = null;
+  let settleBatchesWithAmount = null;
 
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -20,220 +23,151 @@ export function SupplierProvider({ children }) {
       intakeLogs = intakeCtx.intakeLogs || [];
       updateBatchSettlement = intakeCtx.updateBatchSettlement;
       settleAllBatchesForSupplier = intakeCtx.settleAllBatchesForSupplier;
+      settleBatchesWithAmount = intakeCtx.settleBatchesWithAmount;
     }
   } catch (err) {
     console.warn('IntakeContext not available in SupplierProvider:', err);
   }
 
-  // 2. Load suppliers from LocalStorage (defaults to empty [] so no dummy suppliers are shown)
-  const [suppliers, setSuppliers] = useState(() => {
+  // Fetch live suppliers from API
+  const fetchSuppliers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      localStorage.removeItem('pure_milk_bar_suppliers_v3');
-      localStorage.removeItem('pure_milk_bar_suppliers_v1');
-
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
-      }
+      const data = await supplierService.getSuppliers();
+      const list = Array.isArray(data) ? data : data?.suppliers || [];
+      setSuppliers(list);
     } catch (err) {
-      console.error('Error loading suppliers from localStorage:', err);
+      console.error('Failed to fetch suppliers from API:', err);
+      setError(err.message || 'Failed to load suppliers');
+      setSuppliers([]);
+    } finally {
+      setIsLoading(false);
     }
-    return [];
-  });
+  }, []);
 
-  // 3. Direct payouts / settlements state
-  const [directPayouts, setDirectPayouts] = useState(() => {
-    try {
-      const saved = localStorage.getItem(PAYOUTS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.error('Error loading supplier payouts:', e);
-    }
-    return [];
-  });
-
-  // Sync suppliers to LocalStorage
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(suppliers));
-    } catch (err) {
-      console.error('Error saving suppliers to localStorage:', err);
-    }
-  }, [suppliers]);
+    fetchSuppliers();
+  }, [fetchSuppliers]);
 
-  // Sync payouts to LocalStorage
-  useEffect(() => {
+  // Add Supplier via API
+  const addSupplier = async (newSupplierData) => {
     try {
-      localStorage.setItem(PAYOUTS_KEY, JSON.stringify(directPayouts));
-    } catch (err) {
-      console.error('Error saving supplier payouts to localStorage:', err);
-    }
-  }, [directPayouts]);
+      const payload = {
+        name: newSupplierData.name?.trim() || 'New Supplier',
+        supplierType: newSupplierData.supplierType || 'Individual Farmer',
+        area: newSupplierData.area?.trim() || 'Central',
+        phone: newSupplierData.contact?.trim() || newSupplierData.phone || '',
+        address: newSupplierData.address?.trim() || '',
+        baseRate: parseFloat(newSupplierData.ratePerLiter) || 220,
+        expectedDailyQuantity: parseFloat(newSupplierData.avgLiters) || 10,
+        status: newSupplierData.status || 'Active',
+      };
 
-  // 4. Add Supplier
-  const addSupplier = (newSupplierData) => {
-    const nextNum = suppliers.length + 101;
-    const avg = parseFloat(newSupplierData.avgLiters) || 10;
-    const createdSupplier = {
-      id: `SUP-${nextNum}`,
-      name: newSupplierData.name?.trim() || 'New Supplier',
-      supplierType: newSupplierData.supplierType || 'Individual Farmer',
-      area: newSupplierData.area?.trim() || 'Central',
-      contact: newSupplierData.contact?.trim() || '',
-      address: newSupplierData.address?.trim() || '',
-      ratePerLiter: parseFloat(newSupplierData.ratePerLiter) || 220,
-      avgLiters: avg,
-      avgMorning: parseFloat(newSupplierData.avgMorning) || avg,
-      avgEvening: parseFloat(newSupplierData.avgEvening) || avg,
-      totalSourced: parseFloat(newSupplierData.totalSourced) || 0,
-      totalPayout: parseFloat(newSupplierData.totalPayout) || 0,
-      balanceDue: parseFloat(newSupplierData.balanceDue) || 0,
-      initialBalanceDue: parseFloat(newSupplierData.balanceDue) || 0,
-      status: newSupplierData.status || 'Active',
-      createdAt: new Date().toISOString().split('T')[0],
+      const created = await supplierService.createSupplier(payload);
+      const normalized = {
+        ...created,
+        id: created._id || created.id || `SUP-${Date.now()}`,
+        contact: created.phone || newSupplierData.contact,
+        ratePerLiter: created.baseRate || newSupplierData.ratePerLiter || 220,
+        avgLiters: created.expectedDailyQuantity || newSupplierData.avgLiters || 10,
+      };
+
+      setSuppliers((prev) => [normalized, ...prev]);
+      return normalized;
+    } catch (err) {
+      console.error('Failed to create supplier via API:', err);
+      throw err;
+    }
+  };
+
+  // Update Supplier via API
+  const updateSupplier = async (id, updatedData) => {
+    try {
+      await supplierService.updateSupplier(id, updatedData);
+      setSuppliers((prev) =>
+        prev.map((s) => ((s._id || s.id) === id ? { ...s, ...updatedData } : s))
+      );
+    } catch (err) {
+      console.error('Failed to update supplier via API:', err);
+      throw err;
+    }
+  };
+
+  // Delete Supplier via API
+  const deleteSupplier = async (id) => {
+    try {
+      await supplierService.deleteSupplier(id);
+      setSuppliers((prev) => prev.filter((s) => (s._id || s.id) !== id));
+    } catch (err) {
+      console.error('Failed to delete supplier via API:', err);
+      throw err;
+    }
+  };
+
+  const recordSupplierPayout = (payoutData) => {
+    const payoutRecord = {
+      id: `PAY-${Date.now()}`,
+      supplierId: payoutData.supplierId,
+      amount: parseFloat(payoutData.amount) || 0,
+      method: payoutData.method || 'Cash',
+      notes: payoutData.notes || '',
+      date: payoutData.date || new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString(),
     };
-
-    setSuppliers((prev) => [createdSupplier, ...prev]);
-    return createdSupplier;
+    setDirectPayouts((prev) => [payoutRecord, ...prev]);
+    return payoutRecord;
   };
 
-  // 5. Edit / Update Supplier
-  const updateSupplier = (id, updatedFields) => {
-    setSuppliers((prev) =>
-      prev.map((sup) => {
-        if (sup.id === id) {
-          return {
-            ...sup,
-            ...updatedFields,
-            ratePerLiter:
-              updatedFields.ratePerLiter !== undefined
-                ? parseFloat(updatedFields.ratePerLiter) || sup.ratePerLiter
-                : sup.ratePerLiter,
-            totalSourced:
-              updatedFields.totalSourced !== undefined
-                ? parseFloat(updatedFields.totalSourced) || sup.totalSourced
-                : sup.totalSourced,
-            totalPayout:
-              updatedFields.totalPayout !== undefined
-                ? parseFloat(updatedFields.totalPayout) || sup.totalPayout
-                : sup.totalPayout,
-            balanceDue:
-              updatedFields.balanceDue !== undefined
-                ? parseFloat(updatedFields.balanceDue) || 0
-                : sup.balanceDue,
-          };
-        }
-        return sup;
-      })
-    );
+  const settleSupplierBalance = (supplierId, amount = null, paymentMethod = 'Cash', notes = '') => {
+    const targetSup = suppliers.find((s) => (s._id || s.id) === supplierId);
+    if (!targetSup) return false;
+
+    if (amount === null || amount === undefined) {
+      if (settleAllBatchesForSupplier) {
+        settleAllBatchesForSupplier(supplierId, paymentMethod, notes);
+      }
+    } else {
+      if (settleBatchesWithAmount) {
+        settleBatchesWithAmount(supplierId, amount, paymentMethod, notes);
+      }
+    }
+    return true;
   };
 
-  // 6. Delete Supplier
-  const deleteSupplier = (id) => {
-    setSuppliers((prev) => prev.filter((sup) => sup.id !== id));
-  };
-
-  // 7. Reset Suppliers to clean default
   const resetToDefault = () => {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(PAYOUTS_KEY);
-      localStorage.removeItem('pure_milk_bar_suppliers_v3');
-      localStorage.removeItem('pure_milk_bar_suppliers_v1');
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-      localStorage.setItem(PAYOUTS_KEY, JSON.stringify([]));
-    } catch (e) {
-      console.error('Failed to reset suppliers in localStorage:', e);
-    }
-    setSuppliers([]);
-    setDirectPayouts([]);
+    fetchSuppliers();
   };
 
-  // 8. Settle Outstanding Balance for a Supplier
-  const settleSupplierBalance = (supplierId) => {
-    const target = suppliers.find((s) => s.id === supplierId);
-    if (!target) return;
-
-    // Settle pending intake slips
-    if (settleAllBatchesForSupplier) {
-      settleAllBatchesForSupplier(target.id, target.name);
-    }
-
-    // Also record a clearance payout record
-    const payoutRecord = {
-      id: `PAY-${Date.now()}`,
-      supplierId: target.id,
-      supplierName: target.name,
-      amount: target.balanceDue || 0,
-      date: new Date().toISOString().split('T')[0],
-      method: 'Cash / Clearance',
-      notes: `Balance cleared for ${target.name}`,
-    };
-    setDirectPayouts((prev) => [payoutRecord, ...prev]);
-  };
-
-  // 9. Record a Direct Supplier Payout
-  const recordSupplierPayout = (supplierId, amount, note = '') => {
-    const target = suppliers.find((s) => s.id === supplierId);
-    if (!target) return;
-    const numAmount = parseFloat(amount) || 0;
-    if (numAmount <= 0) return;
-
-    const payoutRecord = {
-      id: `PAY-${Date.now()}`,
-      supplierId: target.id,
-      supplierName: target.name,
-      amount: numAmount,
-      date: new Date().toISOString().split('T')[0],
-      method: 'Cash / Settlement',
-      notes: note || `Disbursed payout of Rs. ${numAmount.toLocaleString()}`,
-    };
-    setDirectPayouts((prev) => [payoutRecord, ...prev]);
-  };
-
-  // 10. DYNAMIC ENRICHMENT: Calculate Live Sourced, Payout, and Balance Due per Supplier
+  // Enriched live suppliers with dynamic intake reconciliations
   const enrichedSuppliers = useMemo(() => {
     return suppliers.map((sup) => {
-      // Find all batches in intakeLogs matching this supplier
-      const matchedBatches = (intakeLogs || []).filter((b) => {
-        if (!b || !sup) return false;
-        if (b.supplierId && sup.id && b.supplierId.trim().toLowerCase() === sup.id.trim().toLowerCase()) {
-          return true;
-        }
-        if (b.supplierName && sup.name) {
-          const bName = b.supplierName.trim().toLowerCase();
-          const sName = sup.name.trim().toLowerCase();
-          if (bName === sName) return true;
-          // Partial name matching e.g. "Supplier A (Ahmad Farms)" matches "Ahmad Farms"
-          if (bName.includes(sName) || sName.includes(bName)) return true;
-        }
-        return false;
+      const supId = sup._id || sup.id;
+      const supName = (sup.name || '').trim().toLowerCase();
+      const supRate = parseFloat(sup.ratePerLiter || sup.baseRate) || 220;
+
+      const matchedBatches = (intakeLogs || []).filter((batch) => {
+        const bSupId = batch.supplierId;
+        const bSupName = (batch.supplierName || '').trim().toLowerCase();
+        return (
+          (bSupId && String(bSupId) === String(supId)) ||
+          (bSupName && supName && bSupName === supName)
+        );
       });
 
-      const supRate = parseFloat(sup.ratePerLiter) || 220;
-
-      // Sum of any direct manual payouts recorded for this supplier
-      const manualPaid = directPayouts
-        .filter((p) => p.supplierId === sup.id)
+      const manualPaid = (directPayouts || [])
+        .filter((p) => String(p.supplierId) === String(supId))
         .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
 
-      // If no batches exist yet in intake register for this supplier
       if (matchedBatches.length === 0) {
         const totalSourced = parseFloat(sup.totalSourced) || 0;
-        const initialGross = totalSourced * supRate;
-        const totalPayout = (parseFloat(sup.totalPayout) || 0) + manualPaid;
+        const totalPayout = parseFloat(sup.totalPayout || 0) + manualPaid;
+        const initialGross = Math.round(totalSourced * supRate);
         const balanceDue = Math.max(0, (parseFloat(sup.balanceDue) || 0) - manualPaid);
 
         return {
           ...sup,
+          id: supId,
           ratePerLiter: supRate,
           totalSourced,
           grossProcuredValue: initialGross,
@@ -244,28 +178,26 @@ export function SupplierProvider({ children }) {
         };
       }
 
-      // Dynamic calculation from real intake slips
       const totalSourced = matchedBatches.reduce(
-        (sum, b) => sum + (parseFloat(b.quantity) || 0),
+        (sum, b) => sum + (parseFloat(b.quantity || b.quantityLiters) || 0),
         0
       );
 
       const grossProcuredValue = matchedBatches.reduce((sum, b) => {
-        const qty = parseFloat(b.quantity) || 0;
+        const qty = parseFloat(b.quantity || b.quantityLiters) || 0;
         const rate = parseFloat(b.ratePerLiter) || supRate;
-        return sum + (parseFloat(b.totalCost) || (qty * rate));
+        return sum + (parseFloat(b.totalCost || b.totalAmount) || qty * rate);
       }, 0);
 
-      // Paid slips value using actual paidAmount
       const slipsPaid = matchedBatches.reduce((sum, b) => {
-        const qty = parseFloat(b.quantity) || 0;
+        const qty = parseFloat(b.quantity || b.quantityLiters) || 0;
         const rate = parseFloat(b.ratePerLiter) || supRate;
-        const cost = parseFloat(b.totalCost) || (qty * rate);
+        const cost = parseFloat(b.totalCost || b.totalAmount) || qty * rate;
         if (b.paidAmount !== undefined && b.paidAmount !== '') {
           return sum + Math.min(cost, Math.max(0, parseFloat(b.paidAmount) || 0));
         }
         if (b.settlement === 'Paid') return sum + cost;
-        if (b.settlement === 'Partial') return sum + (cost * 0.5);
+        if (b.settlement === 'Partial') return sum + cost * 0.5;
         return sum;
       }, 0);
 
@@ -280,6 +212,7 @@ export function SupplierProvider({ children }) {
 
       return {
         ...sup,
+        id: supId,
         ratePerLiter: supRate,
         totalSourced: parseFloat(totalSourced.toFixed(1)),
         grossProcuredValue: Math.round(grossProcuredValue),
@@ -291,7 +224,6 @@ export function SupplierProvider({ children }) {
     });
   }, [suppliers, intakeLogs, directPayouts]);
 
-  // 11. Dynamic Summary Totals
   const totals = useMemo(() => {
     const totalSuppliers = enrichedSuppliers.length;
     const activeSuppliers = enrichedSuppliers.filter((s) => s.status === 'Active').length;
@@ -316,6 +248,9 @@ export function SupplierProvider({ children }) {
   const value = {
     suppliers: enrichedSuppliers,
     rawSuppliers: suppliers,
+    isLoading,
+    error,
+    refreshSuppliers: fetchSuppliers,
     totals,
     directPayouts,
     addSupplier,
@@ -326,11 +261,7 @@ export function SupplierProvider({ children }) {
     recordSupplierPayout,
   };
 
-  return (
-    <SupplierContext.Provider value={value}>
-      {children}
-    </SupplierContext.Provider>
-  );
+  return <SupplierContext.Provider value={value}>{children}</SupplierContext.Provider>;
 }
 
 export function useSupplierContext() {

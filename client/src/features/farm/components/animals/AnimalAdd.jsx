@@ -183,7 +183,7 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="e.g. Sahiwal Queen"
+                  placeholder="Enter name"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
                 />
               </div>
@@ -386,7 +386,7 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
                     name="notes"
                     value={formData.notes}
                     onChange={handleChange}
-                    placeholder="e.g. Vaccinated for FMD, white patch on forehead..."
+                    placeholder="Enter details"
                     className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
                   />
                 </div>

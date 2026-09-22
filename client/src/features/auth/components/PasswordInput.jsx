@@ -48,7 +48,7 @@ const PasswordInput = ({
           required={required}
           disabled={disabled}
           autoComplete={autoComplete}
-          className={`block w-full rounded-lg border bg-white py-2.5 pl-10 pr-11 text-sm text-slate-900 placeholder:text-slate-400 transition-all duration-200 focus:outline-none ${
+          className={`block w-full rounded-lg border bg-white py-2 pl-9 pr-10 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 transition-all duration-200 focus:outline-none ${
             error
               ? 'border-rose-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
               : 'border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 hover:border-slate-400'

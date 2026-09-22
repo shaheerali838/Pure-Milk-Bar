@@ -28,7 +28,7 @@ export default function NetLiquidFlowSummary({
       <div className="absolute right-0 top-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 relative z-10">
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="p-1 rounded-md bg-emerald-800/80 text-emerald-300">
               <Sparkles className="w-3.5 h-3.5" />

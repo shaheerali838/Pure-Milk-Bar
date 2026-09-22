@@ -29,9 +29,9 @@ export default function MainDashboard() {
   });
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-200 pb-8">
+    <div className="space-y-2 animate-in fade-in duration-200 ">
       {/* 1. Header Bar with Business Title & Quick Action Shortcuts */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-4 sm:px-6 sm:py-4 shadow-2xs">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 font-display tracking-tight">
@@ -43,10 +43,7 @@ export default function MainDashboard() {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span>Operational Day: <strong className="text-slate-800">{todayFormatted}</strong></span>
-            <span className="text-slate-300">•</span>
-            <span>Real-time Dairy Farm, Intake &amp; POS Telemetry</span>
+            <span>Day: <strong className="text-slate-800">{todayFormatted}</strong></span>
           </p>
         </div>
 

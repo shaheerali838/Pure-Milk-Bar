@@ -62,17 +62,14 @@ export default function SupplierDirectory() {
 
   // 3. MAIN DIRECTORY: Summary Cards & Supplier Table View
   return (
-    <div className="space-y-4 animate-in fade-in duration-150">
+    <div className="space-y-2 animate-in fade-in duration-150">
       {/* 1. Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h2 className="text-xl font-bold text-slate-900 font-display flex items-center gap-2">
-            <Users className="w-5 h-5 text-[#009966]" />
             Supplier Profiles &amp; Directory
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Manage registered dairy farmers, agreed rates, procurement volumes, and settlement balances.
-          </p>
+          
         </div>
 
         <div className="flex items-center gap-2">

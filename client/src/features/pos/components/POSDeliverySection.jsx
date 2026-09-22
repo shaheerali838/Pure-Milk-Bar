@@ -102,7 +102,7 @@ export default function POSDeliverySection() {
             </label>
             <input
               type="text"
-              placeholder="e.g. House 14-B, Street 3 (Near Main Park)"
+              placeholder="Enter address"
               value={dropAddress}
               onChange={(e) => setDropAddress(e.target.value)}
               className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"

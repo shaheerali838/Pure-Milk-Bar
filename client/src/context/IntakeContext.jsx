@@ -1,469 +1,187 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import supplierService from '@/services/supplierService';
 
 const IntakeContext = createContext(null);
 
-const STORAGE_KEY = 'pure_milk_bar_intake_records_v3';
-
-// 7 Default Intake Slips matching reference screenshot "Intake History (7)"
-const DEFAULT_INTAKE_RECORDS = [
-  {
-    id: 'INT-901',
-    date: '2026-09-17',
-    time: '06:30 AM',
-    supplierId: 'SUP-A',
-    supplierName: 'Supplier A (Ahmad Farms)',
-    area: 'Sahiwal',
-    shift: 'Morning',
-    quantity: 45.0,
-    ratePerLiter: 230,
-    totalCost: 10350,
-    paidAmount: 10350,
-    pendingAmount: 0,
-    fat: 6.8,
-    lr: 29.5,
-    snf: 9.07,
-    settlement: 'Paid',
-    receivedBy: 'Farhan (Lab Incharge)',
-    notes: 'Pure buffalo milk, excellent density',
-  },
-  {
-    id: 'INT-902',
-    date: '2026-09-17',
-    time: '06:45 AM',
-    supplierId: 'SUP-B',
-    supplierName: 'Supplier B (Chaudhry Dairy)',
-    area: 'Gujranwala',
-    shift: 'Morning',
-    quantity: 65.0,
-    ratePerLiter: 225,
-    totalCost: 14625,
-    paidAmount: 0,
-    pendingAmount: 14625,
-    fat: 4.2,
-    lr: 28.5,
-    snf: 8.52,
-    settlement: 'Pending',
-    receivedBy: 'Farhan (Lab Incharge)',
-    notes: 'Cow milk batch, tested pure',
-  },
-  {
-    id: 'INT-903',
-    date: '2026-09-17',
-    time: '07:10 AM',
-    supplierId: 'SUP-C',
-    supplierName: 'Supplier C (Bismillah Agro)',
-    area: 'Faisalabad',
-    shift: 'Morning',
-    quantity: 50.0,
-    ratePerLiter: 228,
-    totalCost: 11400,
-    paidAmount: 11400,
-    pendingAmount: 0,
-    fat: 5.1,
-    lr: 29.0,
-    snf: 8.87,
-    settlement: 'Paid',
-    receivedBy: 'Tariq (Supervisor)',
-    notes: 'Chilled delivery in insulated van',
-  },
-  {
-    id: 'INT-904',
-    date: '2026-09-16',
-    time: '05:30 PM',
-    supplierId: 'SUP-A',
-    supplierName: 'Supplier A (Ahmad Farms)',
-    area: 'Sahiwal',
-    shift: 'Evening',
-    quantity: 40.0,
-    ratePerLiter: 230,
-    totalCost: 9200,
-    paidAmount: 9200,
-    pendingAmount: 0,
-    fat: 6.7,
-    lr: 29.2,
-    snf: 8.97,
-    settlement: 'Paid',
-    receivedBy: 'Bilal (Shift Tech)',
-    notes: 'Evening session collection',
-  },
-  {
-    id: 'INT-905',
-    date: '2026-09-16',
-    time: '06:00 PM',
-    supplierId: 'SUP-B',
-    supplierName: 'Supplier B (Chaudhry Dairy)',
-    area: 'Gujranwala',
-    shift: 'Evening',
-    quantity: 55.0,
-    ratePerLiter: 225,
-    totalCost: 12375,
-    paidAmount: 0,
-    pendingAmount: 12375,
-    fat: 4.3,
-    lr: 28.8,
-    snf: 8.62,
-    settlement: 'Pending',
-    receivedBy: 'Bilal (Shift Tech)',
-    notes: 'Gate inspection cleared',
-  },
-  {
-    id: 'INT-906',
-    date: '2026-09-15',
-    time: '06:15 AM',
-    supplierId: 'SUP-C',
-    supplierName: 'Supplier C (Bismillah Agro)',
-    area: 'Faisalabad',
-    shift: 'Morning',
-    quantity: 48.0,
-    ratePerLiter: 228,
-    totalCost: 10944,
-    paidAmount: 10944,
-    pendingAmount: 0,
-    fat: 5.0,
-    lr: 29.1,
-    snf: 8.88,
-    settlement: 'Paid',
-    receivedBy: 'Tariq (Supervisor)',
-    notes: 'Direct morning supply',
-  },
-  {
-    id: 'INT-907',
-    date: '2026-09-15',
-    time: '05:45 PM',
-    supplierId: 'SUP-A',
-    supplierName: 'Supplier A (Ahmad Farms)',
-    area: 'Sahiwal',
-    shift: 'Evening',
-    quantity: 42.0,
-    ratePerLiter: 230,
-    totalCost: 9660,
-    paidAmount: 4830,
-    pendingAmount: 4830,
-    fat: 6.6,
-    lr: 29.0,
-    snf: 8.90,
-    settlement: 'Partial',
-    receivedBy: 'Farhan (Lab Incharge)',
-    notes: 'Quality inspection verified',
-  },
-];
-
 export function IntakeProvider({ children }) {
-  // Load from LocalStorage or fall back to DEFAULT_INTAKE_RECORDS
-  const [intakeLogs, setIntakeLogs] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (err) {
-      console.error('Error loading intake logs from localStorage:', err);
-    }
-    return DEFAULT_INTAKE_RECORDS;
-  });
+  const [intakeLogs, setIntakeLogs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Sync to LocalStorage whenever intakeLogs updates
+  // Fetch live procurements from API
+  const fetchIntakes = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await supplierService.getProcurements();
+      const list = Array.isArray(data) ? data : data?.procurements || [];
+      const normalized = list.map((p) => {
+        const qty = parseFloat(p.quantityLiters || p.quantity || 0);
+        const rate = parseFloat(p.ratePerLiter || 220);
+        const cost = parseFloat(p.totalAmount || p.totalCost || qty * rate);
+        const paid = parseFloat(p.paidAmount || (p.paymentStatus === 'PAID' ? cost : 0));
+        const pending = Math.max(0, cost - paid);
+
+        return {
+          ...p,
+          id: p._id || p.id || `INT-${Date.now()}`,
+          date: p.date ? new Date(p.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          time: p.time || p.shift || 'Morning',
+          supplierId: p.supplierId?._id || p.supplierId || '',
+          supplierName: p.supplierId?.name || p.supplierName || 'Supplier',
+          quantity: qty,
+          ratePerLiter: rate,
+          totalCost: cost,
+          paidAmount: paid,
+          pendingAmount: pending,
+          settlement: p.paymentStatus === 'PAID' ? 'Paid' : p.paymentStatus === 'PARTIAL' ? 'Partial' : 'Pending',
+          fat: p.fatPercentage || p.fat || 4.5,
+          snf: p.snfPercentage || p.snf || 8.5,
+          lr: p.lactometerReading || p.lr || 28.0,
+          shift: p.shift || 'Morning',
+          chiller: p.chiller || 'Chiller-1',
+          status: p.qualityGrade === 'REJECTED' ? 'Rejected' : 'Accepted',
+        };
+      });
+      setIntakeLogs(normalized);
+    } catch (err) {
+      console.error('Failed to fetch procurements from API:', err);
+      setError(err.message || 'Failed to load intake records');
+      setIntakeLogs([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
+    fetchIntakes();
+  }, [fetchIntakes]);
+
+  // Add Single Intake Record via API
+  const addIntake = async (newRecord) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(intakeLogs));
-    } catch (err) {
-      console.error('Error saving intake logs to localStorage:', err);
-    }
-  }, [intakeLogs]);
-
-  // 1. Add Single Intake Record
-  const addIntake = (newRecord) => {
-    const nextId = `INT-${900 + intakeLogs.length + 1}`;
-    const qty = parseFloat(newRecord.quantity) || 0;
-    const rate = parseFloat(newRecord.ratePerLiter) || 220;
-    const cost = parseFloat((qty * rate).toFixed(2));
-    const fatVal = parseFloat(newRecord.fat) || 4.5;
-    const lrVal = parseFloat(newRecord.lr) || 28.0;
-    const snfVal = parseFloat(((lrVal / 4) + (0.25 * fatVal) + 0.35).toFixed(2));
-
-    let paid = 0;
-    if (newRecord.paidAmount !== undefined && newRecord.paidAmount !== '') {
-      paid = parseFloat(newRecord.paidAmount) || 0;
-    } else if (newRecord.settlement === 'Paid') {
-      paid = cost;
-    } else if (newRecord.settlement === 'Partial') {
-      paid = parseFloat((cost * 0.5).toFixed(2));
-    }
-    paid = Math.min(cost, Math.max(0, paid));
-    const pending = parseFloat(Math.max(0, cost - paid).toFixed(2));
-
-    let settlement = newRecord.settlement || 'Pending';
-    if (cost > 0 && pending <= 0) {
-      settlement = 'Paid';
-    } else if (paid > 0 && pending > 0) {
-      settlement = 'Partial';
-    } else if (paid === 0) {
-      settlement = 'Pending';
-    }
-
-    const entry = {
-      id: nextId,
-      date: newRecord.date || new Date().toISOString().split('T')[0],
-      time: newRecord.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      supplierId: newRecord.supplierId || '',
-      supplierName: newRecord.supplierName || 'Unknown Supplier',
-      area: newRecord.area || '',
-      shift: newRecord.shift || 'Morning',
-      quantity: qty,
-      ratePerLiter: rate,
-      totalCost: cost,
-      paidAmount: paid,
-      pendingAmount: pending,
-      fat: fatVal,
-      lr: lrVal,
-      snf: snfVal,
-      settlement,
-      receivedBy: newRecord.receivedBy || 'Staff Receiver',
-      notes: newRecord.notes || '',
-    };
-
-    setIntakeLogs((prev) => [entry, ...prev]);
-    return entry;
-  };
-
-  // 2. Add Batch Shift Intake Records
-  const addBatchIntake = (batchRecords) => {
-    if (!Array.isArray(batchRecords) || batchRecords.length === 0) return;
-
-    let counter = intakeLogs.length + 1;
-    const formattedBatch = batchRecords.map((rec) => {
-      const nextId = `INT-${900 + counter++}`;
-      const qty = parseFloat(rec.quantity) || 0;
-      const rate = parseFloat(rec.ratePerLiter) || 220;
+      const qty = parseFloat(newRecord.quantity) || 0;
+      const rate = parseFloat(newRecord.ratePerLiter) || 220;
       const cost = parseFloat((qty * rate).toFixed(2));
-      const fatVal = parseFloat(rec.fat) || 4.5;
-      const lrVal = parseFloat(rec.lr) || 28.0;
-      const snfVal = parseFloat(((lrVal / 4) + (0.25 * fatVal) + 0.35).toFixed(2));
+      const fatVal = parseFloat(newRecord.fat) || 4.5;
+      const lrVal = parseFloat(newRecord.lr) || 28.0;
+      const snfVal = parseFloat(((lrVal / 4) + 0.25 * fatVal + 0.35).toFixed(2));
 
-      let paid = 0;
-      if (rec.paidAmount !== undefined && rec.paidAmount !== '') {
-        paid = parseFloat(rec.paidAmount) || 0;
-      } else if (rec.settlement === 'Paid') {
-        paid = cost;
-      } else if (rec.settlement === 'Partial') {
-        paid = parseFloat((cost * 0.5).toFixed(2));
-      }
-      paid = Math.min(cost, Math.max(0, paid));
-      const pending = parseFloat(Math.max(0, cost - paid).toFixed(2));
+      const payload = {
+        supplierId: newRecord.supplierId,
+        date: newRecord.date || new Date().toISOString().split('T')[0],
+        shift: (newRecord.shift || 'Morning').toUpperCase(),
+        milkType: (newRecord.milkType || 'COW').toUpperCase(),
+        quantityLiters: qty,
+        fatPercentage: fatVal,
+        snfPercentage: snfVal,
+        lactometerReading: lrVal,
+        ratePerLiter: rate,
+        totalAmount: cost,
+        paymentStatus: newRecord.settlement === 'Paid' ? 'PAID' : newRecord.settlement === 'Partial' ? 'PARTIAL' : 'PENDING',
+        paidAmount: parseFloat(newRecord.paidAmount) || 0,
+      };
 
-      let settlement = rec.settlement || 'Pending';
-      if (cost > 0 && pending <= 0) {
-        settlement = 'Paid';
-      } else if (paid > 0 && pending > 0) {
-        settlement = 'Partial';
-      } else if (paid === 0) {
-        settlement = 'Pending';
-      }
-
-      return {
-        id: nextId,
-        date: rec.date || new Date().toISOString().split('T')[0],
-        time: rec.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        supplierId: rec.supplierId || '',
-        supplierName: rec.supplierName || 'Supplier',
-        area: rec.area || '',
-        shift: rec.shift || 'Morning',
+      const created = await supplierService.createProcurement(payload);
+      const normalized = {
+        ...created,
+        id: created._id || created.id || `INT-${Date.now()}`,
+        date: payload.date,
+        time: newRecord.time || '10:00 AM',
+        supplierId: newRecord.supplierId,
+        supplierName: newRecord.supplierName || 'Supplier',
         quantity: qty,
         ratePerLiter: rate,
         totalCost: cost,
-        paidAmount: paid,
-        pendingAmount: pending,
+        paidAmount: payload.paidAmount,
+        pendingAmount: Math.max(0, cost - payload.paidAmount),
+        settlement: newRecord.settlement || 'Pending',
         fat: fatVal,
-        lr: lrVal,
         snf: snfVal,
-        settlement,
-        receivedBy: rec.receivedBy || 'Shift Supervisor',
-        notes: rec.notes || 'Bulk shift entry',
+        lr: lrVal,
+        shift: newRecord.shift || 'Morning',
+        chiller: newRecord.chiller || 'Chiller-1',
+        status: 'Accepted',
       };
-    });
 
-    setIntakeLogs((prev) => [...formattedBatch, ...prev]);
-  };
-
-  // 3. Update Existing Intake Record
-  const updateIntake = (id, updatedFields) => {
-    setIntakeLogs((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          const qty =
-            updatedFields.quantity !== undefined
-              ? parseFloat(updatedFields.quantity) || 0
-              : item.quantity;
-          const rate =
-            updatedFields.ratePerLiter !== undefined
-              ? parseFloat(updatedFields.ratePerLiter) || 0
-              : item.ratePerLiter;
-          const cost = parseFloat((qty * rate).toFixed(2));
-          const fatVal =
-            updatedFields.fat !== undefined
-              ? parseFloat(updatedFields.fat) || item.fat
-              : item.fat;
-          const lrVal =
-            updatedFields.lr !== undefined
-              ? parseFloat(updatedFields.lr) || item.lr
-              : item.lr;
-          const snfVal = parseFloat(((lrVal / 4) + (0.25 * fatVal) + 0.35).toFixed(2));
-
-          let paid = item.paidAmount !== undefined ? item.paidAmount : (item.settlement === 'Paid' ? cost : item.settlement === 'Partial' ? cost * 0.5 : 0);
-          if (updatedFields.paidAmount !== undefined && updatedFields.paidAmount !== '') {
-            paid = parseFloat(updatedFields.paidAmount) || 0;
-          } else if (updatedFields.settlement === 'Paid') {
-            paid = cost;
-          } else if (updatedFields.settlement === 'Pending') {
-            paid = 0;
-          } else if (updatedFields.settlement === 'Partial' && paid === 0) {
-            paid = parseFloat((cost * 0.5).toFixed(2));
-          }
-          paid = Math.min(cost, Math.max(0, paid));
-          const pending = parseFloat(Math.max(0, cost - paid).toFixed(2));
-
-          let settlement = updatedFields.settlement || item.settlement || 'Pending';
-          if (cost > 0 && pending <= 0) {
-            settlement = 'Paid';
-          } else if (paid > 0 && pending > 0) {
-            settlement = 'Partial';
-          } else if (paid === 0) {
-            settlement = 'Pending';
-          }
-
-          return {
-            ...item,
-            ...updatedFields,
-            quantity: qty,
-            ratePerLiter: rate,
-            totalCost: cost,
-            paidAmount: paid,
-            pendingAmount: pending,
-            settlement,
-            fat: fatVal,
-            lr: lrVal,
-            snf: snfVal,
-          };
-        }
-        return item;
-      })
-    );
-  };
-
-  // 4. Update settlement status for a single batch ('Paid' | 'Pending' | 'Partial')
-  const updateBatchSettlement = (id, newStatus) => {
-    setIntakeLogs((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          const cost = item.totalCost || 0;
-          const paid = newStatus === 'Paid' ? cost : newStatus === 'Partial' ? cost * 0.5 : 0;
-          const pending = Math.max(0, cost - paid);
-          return {
-            ...item,
-            settlement: newStatus,
-            paidAmount: paid,
-            pendingAmount: pending,
-          };
-        }
-        return item;
-      })
-    );
-  };
-
-  // 5. Settle all pending batches for a specific supplier
-  const settleAllBatchesForSupplier = (supplierId, supplierName) => {
-    setIntakeLogs((prev) =>
-      prev.map((item) => {
-        const matchesId = supplierId && item.supplierId === supplierId;
-        const matchesName =
-          supplierName &&
-          item.supplierName &&
-          (item.supplierName.toLowerCase() === supplierName.toLowerCase() ||
-            item.supplierName.toLowerCase().includes(supplierName.toLowerCase()) ||
-            supplierName.toLowerCase().includes(item.supplierName.toLowerCase()));
-
-        if ((matchesId || matchesName) && item.settlement !== 'Paid') {
-          const cost = item.totalCost || 0;
-          return {
-            ...item,
-            settlement: 'Paid',
-            paidAmount: cost,
-            pendingAmount: 0,
-          };
-        }
-        return item;
-      })
-    );
-  };
-
-  // 6. Delete Intake Record
-  const deleteIntake = (id) => {
-    setIntakeLogs((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  // 7. Reset Intake Data
-  const resetIntakeToDefault = () => {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch (e) {
-      console.error(e);
+      setIntakeLogs((prev) => [normalized, ...prev]);
+      return normalized;
+    } catch (err) {
+      console.error('Failed to create procurement via API:', err);
+      throw err;
     }
-    setIntakeLogs(DEFAULT_INTAKE_RECORDS);
   };
 
-  // 8. Dynamic Summary Calculations
+  // Add Bulk Intakes
+  const addBulkIntakes = async (recordsArray) => {
+    try {
+      const promises = recordsArray.map((r) => addIntake(r));
+      await Promise.allSettled(promises);
+      fetchIntakes();
+    } catch (err) {
+      console.error('Failed to create bulk intakes:', err);
+    }
+  };
+
+  // Update Batch Settlement via API
+  const updateBatchSettlement = async (intakeId, newSettlement, paidAmt = null, method = 'Cash', notes = '') => {
+    try {
+      await supplierService.updateProcurement(intakeId, {
+        paymentStatus: newSettlement.toUpperCase(),
+        paidAmount: paidAmt,
+      });
+
+      setIntakeLogs((prev) =>
+        prev.map((log) => {
+          if (log.id === intakeId || log._id === intakeId) {
+            const cost = parseFloat(log.totalCost) || 0;
+            const paid = paidAmt !== null ? parseFloat(paidAmt) : newSettlement === 'Paid' ? cost : cost * 0.5;
+            return {
+              ...log,
+              settlement: newSettlement,
+              paidAmount: paid,
+              pendingAmount: Math.max(0, cost - paid),
+            };
+          }
+          return log;
+        })
+      );
+    } catch (err) {
+      console.error('Failed to update procurement settlement:', err);
+    }
+  };
+
   const totals = useMemo(() => {
-    const totalRecords = intakeLogs.length;
-    const totalProcuredVolume = intakeLogs.reduce((sum, item) => sum + (item.quantity || 0), 0);
-    const totalIntakeSpend = intakeLogs.reduce((sum, item) => sum + (item.totalCost || 0), 0);
-    const avgPurchaseRate = totalProcuredVolume > 0 ? totalIntakeSpend / totalProcuredVolume : 0;
-    const pendingSettlements = intakeLogs
-      .reduce((sum, item) => {
-        if (item.pendingAmount !== undefined) {
-          return sum + (parseFloat(item.pendingAmount) || 0);
-        }
-        if (item.settlement === 'Paid') return sum;
-        if (item.settlement === 'Partial') return sum + ((item.totalCost || 0) * 0.5);
-        return sum + (item.totalCost || 0);
-      }, 0);
-    const morningVolume = intakeLogs
-      .filter((item) => item.shift === 'Morning')
-      .reduce((sum, item) => sum + (item.quantity || 0), 0);
-    const eveningVolume = intakeLogs
-      .filter((item) => item.shift === 'Evening')
-      .reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const totalVolume = intakeLogs.reduce((acc, log) => acc + (parseFloat(log.quantity) || 0), 0);
+    const totalExpenditure = intakeLogs.reduce((acc, log) => acc + (parseFloat(log.totalCost) || 0), 0);
+    const totalPaid = intakeLogs.reduce((acc, log) => acc + (parseFloat(log.paidAmount) || 0), 0);
+    const totalPending = intakeLogs.reduce((acc, log) => acc + (parseFloat(log.pendingAmount) || 0), 0);
+    const avgFat = intakeLogs.length > 0 ? (intakeLogs.reduce((acc, log) => acc + (parseFloat(log.fat) || 0), 0) / intakeLogs.length).toFixed(1) : 0;
+    const avgSnf = intakeLogs.length > 0 ? (intakeLogs.reduce((acc, log) => acc + (parseFloat(log.snf) || 0), 0) / intakeLogs.length).toFixed(1) : 0;
 
     return {
-      totalRecords,
-      totalProcuredVolume,
-      totalIntakeSpend,
-      avgPurchaseRate,
-      pendingSettlements,
-      morningVolume,
-      eveningVolume,
+      totalBatches: intakeLogs.length,
+      totalVolume: parseFloat(totalVolume.toFixed(1)),
+      totalExpenditure: Math.round(totalExpenditure),
+      totalPaid: Math.round(totalPaid),
+      totalPending: Math.round(totalPending),
+      avgFat,
+      avgSnf,
     };
   }, [intakeLogs]);
 
   const value = {
     intakeLogs,
+    isLoading,
+    error,
+    refreshIntakes: fetchIntakes,
     totals,
     addIntake,
-    addBatchIntake,
-    updateIntake,
+    addBulkIntakes,
     updateBatchSettlement,
-    settleAllBatchesForSupplier,
-    deleteIntake,
-    resetIntakeToDefault,
   };
 
-  return (
-    <IntakeContext.Provider value={value}>
-      {children}
-    </IntakeContext.Provider>
-  );
+  return <IntakeContext.Provider value={value}>{children}</IntakeContext.Provider>;
 }
 
 export function useIntakeContext() {

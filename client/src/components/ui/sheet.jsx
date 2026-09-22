@@ -2,7 +2,10 @@ import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { cva } from "class-variance-authority"
 import { X } from "lucide-react"
-import { cn } from "@/utils/cn"
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+const cn = (...inputs) => twMerge(clsx(inputs));
 
 const Sheet = DialogPrimitive.Root
 

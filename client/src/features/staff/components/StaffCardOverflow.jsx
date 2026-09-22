@@ -3,14 +3,20 @@ import { Users, Banknote, Bike, Tractor, ShieldCheck } from 'lucide-react';
 import { useStaffContext } from '@/context/StaffContext';
 
 export default function StaffCardOverflow() {
-  const { metrics } = useStaffContext();
+  const { metrics = {} } = useStaffContext() || {};
+
+  const totalStaff = metrics?.totalStaff ?? 0;
+  const monthlySalaries = metrics?.monthlySalaries ?? 0;
+  const totalDeliveryMen = metrics?.totalDeliveryMen ?? 0;
+  const totalFarmWorkers = metrics?.totalFarmWorkers ?? 0;
+  const totalSecurityGuards = metrics?.totalSecurityGuards ?? 0;
 
   const statCards = [
     {
       id: 'total_staff',
       label: 'Total Staff',
-      value: `${metrics.totalStaff}`,
-      sub: metrics.totalStaff === 1 ? '1 Registered Member' : `${metrics.totalStaff} Registered Members`,
+      value: `${totalStaff}`,
+      sub: totalStaff === 1 ? '1 Registered Member' : `${totalStaff} Registered Members`,
       icon: Users,
       color: '#009966',
       badge: 'Active Team',
@@ -18,7 +24,7 @@ export default function StaffCardOverflow() {
     {
       id: 'monthly_salaries',
       label: 'Monthly Salaries',
-      value: `Rs. ${metrics.monthlySalaries.toLocaleString()}`,
+      value: `Rs. ${monthlySalaries.toLocaleString()}`,
       sub: 'Total monthly payroll',
       icon: Banknote,
       color: '#155dfc',
@@ -27,7 +33,7 @@ export default function StaffCardOverflow() {
     {
       id: 'delivery_men',
       label: 'Total Delivery Men',
-      value: `${metrics.totalDeliveryMen}`,
+      value: `${totalDeliveryMen}`,
       sub: 'Milk delivery riders',
       icon: Bike,
       color: '#f59e0b',
@@ -36,7 +42,7 @@ export default function StaffCardOverflow() {
     {
       id: 'farm_workers',
       label: 'Total Farm Workers',
-      value: `${metrics.totalFarmWorkers}`,
+      value: `${totalFarmWorkers}`,
       sub: 'Herdsmen & milkers',
       icon: Tractor,
       color: '#8b5cf6',
@@ -45,7 +51,7 @@ export default function StaffCardOverflow() {
     {
       id: 'security_guards',
       label: 'Total Security Guards',
-      value: `${metrics.totalSecurityGuards}`,
+      value: `${totalSecurityGuards}`,
       sub: 'Facility & gate security',
       icon: ShieldCheck,
       color: '#e11d48',

@@ -11,15 +11,7 @@ import {
   Receipt,
 } from 'lucide-react';
 
-/**
- * SupplierIntakePaymentSection
- * Inside the Milk Intake Form, provides live financial settlement tracking:
- * - Displays selected supplier name and previous unpaid balance
- * - Displays delivery shift (Morning/Evening), liters delivered, and total procurement cost
- * - Quick payment settlement buttons: Full (100%), Half (50%), Unpaid (0%)
- * - Interactive numeric input for custom amount paid now
- * - Live balance projection showing how supplier's pending balance will increase/decrease
- */
+// Payment settlement section for the milk intake form
 export default function SupplierIntakePaymentSection({
   supplierName = '',
   supplierId = '',
@@ -227,7 +219,7 @@ export default function SupplierIntakePaymentSection({
               step="1"
               value={paidAmount}
               onChange={(e) => onPaidAmountChange && onPaidAmountChange(e.target.value)}
-              placeholder="Enter amount paid to supplier..."
+              placeholder="Enter amount"
               className="w-full h-[44px] pl-13 pr-3.5 rounded-xl border border-slate-200 text-base font-black text-slate-900 outline-none focus:border-emerald-600 shadow-2xs tabular"
             />
           </div>

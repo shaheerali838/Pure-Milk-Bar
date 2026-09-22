@@ -15,7 +15,7 @@ export default function CollectionPayoutsReceiptView({ customer, entry, onBack }
   };
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-200 pb-4">
+    <div className="space-y-2 animate-in fade-in duration-200 pb-4">
       <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-200">
         <div className="flex items-center gap-3">
           <Button

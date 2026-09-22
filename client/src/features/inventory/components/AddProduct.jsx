@@ -10,13 +10,14 @@ export default function AddProduct({ onBack, product = null }) {
   const isEditing = Boolean(product);
   const nextNumber = products.length + 1;
   const defaultSku = `PRD-${String(nextNumber).padStart(3, '0')}`;
-  const defaultUnit = settings?.productDefaults?.defaultUnit === 'liter' ? 'per liter' : 'per kg';
+  const defaultUnit = settings?.productDefaults?.defaultUnit === 'kg' ? 'per kg' : 'per liter';
 
   const [formData, setFormData] = useState({
     id: product ? product.id || product.sku || defaultSku : defaultSku,
     name: product ? product.name || '' : '',
     category: product ? product.category || 'Milk' : 'Milk',
-    unit: product ? product.unit || defaultUnit : defaultUnit,
+    unit: product ? product.unit || 'per liter' : 'per liter',
+    source: product ? product.source || 'Farm' : 'Farm',
     price: product ? product.price ?? '' : '',
     cost: product ? product.cost ?? '' : '',
     description: product ? product.description || '' : '',
@@ -28,7 +29,8 @@ export default function AddProduct({ onBack, product = null }) {
         id: product.id || product.sku || '',
         name: product.name || '',
         category: product.category || 'Milk',
-        unit: product.unit || 'per kg',
+        unit: product.unit || (product.category?.toLowerCase().includes('milk') ? 'per liter' : 'per kg'),
+        source: product.source || 'Farm',
         price: product.price ?? '',
         cost: product.cost ?? '',
         description: product.description || '',
@@ -46,6 +48,7 @@ export default function AddProduct({ onBack, product = null }) {
         name: formData.name.trim(),
         category: formData.category,
         unit: formData.unit,
+        source: formData.source || 'Farm',
         price: Number(formData.price) || 0,
         cost: Number(formData.cost) || 0,
         description: formData.description.trim(),
@@ -57,6 +60,7 @@ export default function AddProduct({ onBack, product = null }) {
         name: formData.name.trim(),
         category: formData.category,
         unit: formData.unit,
+        source: formData.source || 'Farm',
         price: Number(formData.price) || 0,
         cost: Number(formData.cost) || 0,
         description: formData.description.trim(),
@@ -133,7 +137,7 @@ export default function AddProduct({ onBack, product = null }) {
                 type="text"
                 value={formData.id}
                 onChange={(e) => setFormData({ ...formData, id: e.target.value })}
-                placeholder="e.g. PRD-001"
+                placeholder="Enter code"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
               />
               <p className="text-[10px] text-slate-400 mt-1">Unique barcode identifier</p>
@@ -148,7 +152,7 @@ export default function AddProduct({ onBack, product = null }) {
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g. Fresh Buffalo Milk"
+                placeholder="Enter name"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
               />
               <p className="text-[10px] text-slate-400 mt-1">Display title on POS screen and receipts</p>
@@ -170,6 +174,24 @@ export default function AddProduct({ onBack, product = null }) {
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Source Origin <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  value={formData.source || 'Farm'}
+                  onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                  className="w-full appearance-none px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition cursor-pointer pr-10"
+                >
+                  <option value="Farm">🌾 Farm (In-House Herd)</option>
+                  <option value="Supplier">🚚 Supplier (Procured Sourcing)</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1">Designates P&amp;L attribution &amp; sales card tracking</p>
             </div>
 
             <div>

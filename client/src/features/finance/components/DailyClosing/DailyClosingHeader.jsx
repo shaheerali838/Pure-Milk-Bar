@@ -39,7 +39,7 @@ export default function DailyClosingHeader({
     : formattedDate;
 
   return (
-    <div className="space-y-3 pb-4 border-b border-slate-200/80">
+    <div className="space-y-2 pb-4 border-b border-slate-200/80">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2.5 flex-wrap">

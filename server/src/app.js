@@ -45,7 +45,8 @@ if (process.env.NODE_ENV === "development") {
 // Global Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 Minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === "development" ? 10000 : 500, // Limit each IP per windowMs
+  skip: () => process.env.NODE_ENV === "development",
   message: {
     success: false,
     message:

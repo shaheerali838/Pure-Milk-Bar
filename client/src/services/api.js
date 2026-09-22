@@ -1,0 +1,131 @@
+/**
+ * Pure Milk Bar Enterprise ERP - Centralized API Client
+ * Automatically manages Authorization headers, query strings, and normalized error responses.
+ */
+
+function getStoredToken() {
+  try {
+    const raw =
+      localStorage.getItem('pmb_auth_session') ||
+      localStorage.getItem('pmb_auth_session_v2') ||
+      sessionStorage.getItem('pmb_auth_session') ||
+      sessionStorage.getItem('pmb_auth_session_v2');
+
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return parsed.token || parsed.accessToken || parsed.data?.accessToken || null;
+    }
+  } catch (e) {
+    console.error('Failed to read auth token for API request:', e);
+  }
+  return null;
+}
+
+async function request(endpoint, options = {}) {
+  const {
+    method = 'GET',
+    body = null,
+    params = null,
+    headers = {},
+    ...customConfig
+  } = options;
+
+  let url = endpoint.startsWith('http') ? endpoint : endpoint;
+
+  if (params && typeof params === 'object') {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== '') {
+        query.append(key, val);
+      }
+    });
+    const queryString = query.toString();
+    if (queryString) {
+      url += (url.includes('?') ? '&' : '?') + queryString;
+    }
+  }
+
+  const token = getStoredToken();
+
+  const reqHeaders = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    ...headers,
+  };
+
+  if (token) {
+    reqHeaders['Authorization'] = `Bearer ${token}`;
+  }
+
+  const config = {
+    method,
+    headers: reqHeaders,
+    ...customConfig,
+  };
+
+  if (body) {
+    config.body = typeof body === 'string' ? body : JSON.stringify(body);
+  }
+
+  try {
+    const response = await fetch(url, config);
+
+    // If 204 No Content
+    if (response.status === 204) {
+      return { success: true };
+    }
+
+    let data;
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
+
+    if (!response.ok) {
+      let errorMsg = `Request failed with status ${response.status}`;
+      if (typeof data === 'object' && data !== null) {
+        if (typeof data.message === 'string') {
+          errorMsg = data.message;
+        } else if (typeof data.error === 'string') {
+          errorMsg = data.error;
+        } else if (typeof data.error?.message === 'string') {
+          errorMsg = data.error.message;
+        } else {
+          errorMsg = JSON.stringify(data);
+        }
+      } else if (typeof data === 'string' && data) {
+        errorMsg = data;
+      }
+      const error = new Error(errorMsg);
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    if (options.fallback !== undefined) {
+      if (import.meta.env.DEV) {
+        console.warn(`[API ${method}] ${url} unavailable (${error.message}). Using fallback.`);
+      }
+      return options.fallback;
+    }
+    // Log in development
+    if (import.meta.env.DEV) {
+      console.warn(`[API ${method}] ${url} failed:`, error.message);
+    }
+    throw error;
+  }
+}
+
+export const api = {
+  get: (url, params = null, options = {}) => request(url, { method: 'GET', params, ...options }),
+  post: (url, body = null, options = {}) => request(url, { method: 'POST', body, ...options }),
+  put: (url, body = null, options = {}) => request(url, { method: 'PUT', body, ...options }),
+  patch: (url, body = null, options = {}) => request(url, { method: 'PATCH', body, ...options }),
+  delete: (url, options = {}) => request(url, { method: 'DELETE', ...options }),
+};
+
+export default api;

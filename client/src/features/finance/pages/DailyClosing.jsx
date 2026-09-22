@@ -115,7 +115,7 @@ export default function DailyClosing() {
   };
 
   return (
-    <div className="space-y-4 pb-8">
+    <div className="space-y-2 pb-4">
       <DailyClosingHeader
         period={period}
         onPeriodChange={setPeriod}

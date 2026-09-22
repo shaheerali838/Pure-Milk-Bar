@@ -44,8 +44,8 @@ const AuthInput = ({
           required={required}
           disabled={disabled}
           autoComplete={autoComplete}
-          className={`block w-full rounded-lg border bg-white py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition-all duration-200 focus:outline-none ${
-            Icon ? 'pl-10 pr-3.5' : 'px-3.5'
+          className={`block w-full rounded-lg border bg-white py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 transition-all duration-200 focus:outline-none ${
+            Icon ? 'pl-9 pr-3' : 'px-3'
           } ${
             error
               ? 'border-rose-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'

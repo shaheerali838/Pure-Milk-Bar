@@ -35,7 +35,7 @@ export default function PricingTab({ data = {}, onChange }) {
             {/* Cow Milk Rate */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700">
-                Default Cow Milk Rate (Rs. / liter or kg) <span className="text-rose-500">*</span>
+                Default Cow Milk Rate (Rs. / Liter) <span className="text-rose-500">*</span>
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 font-mono">
@@ -45,7 +45,7 @@ export default function PricingTab({ data = {}, onChange }) {
                   type="number"
                   min="0"
                   step="any"
-                  placeholder="e.g. 180"
+                  placeholder="Enter value"
                   value={data.defaultCowMilkRate !== undefined && data.defaultCowMilkRate !== null ? data.defaultCowMilkRate : ''}
                   onChange={(e) => handleChange('defaultCowMilkRate', e.target.value === '' ? '' : Number(e.target.value))}
                   className="pl-10 h-9 text-xs font-mono font-bold text-slate-800"
@@ -58,7 +58,7 @@ export default function PricingTab({ data = {}, onChange }) {
             {/* Buffalo Milk Rate */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700">
-                Default Buffalo Milk Rate (Rs. / liter or kg) <span className="text-rose-500">*</span>
+                Default Buffalo Milk Rate (Rs. / Liter) <span className="text-rose-500">*</span>
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 font-mono">
@@ -68,7 +68,7 @@ export default function PricingTab({ data = {}, onChange }) {
                   type="number"
                   min="0"
                   step="any"
-                  placeholder="e.g. 220"
+                  placeholder="Enter value"
                   value={data.defaultBuffaloMilkRate !== undefined && data.defaultBuffaloMilkRate !== null ? data.defaultBuffaloMilkRate : ''}
                   onChange={(e) => handleChange('defaultBuffaloMilkRate', e.target.value === '' ? '' : Number(e.target.value))}
                   className="pl-10 h-9 text-xs font-mono font-bold text-slate-800"
@@ -86,7 +86,7 @@ export default function PricingTab({ data = {}, onChange }) {
                 <Input
                   type="number"
                   min="0"
-                  placeholder="e.g. 10000"
+                  placeholder="Enter value"
                   value={data.maxCustomerCreditLimit !== undefined && data.maxCustomerCreditLimit !== null ? data.maxCustomerCreditLimit : ''}
                   onChange={(e) => handleChange('maxCustomerCreditLimit', e.target.value === '' ? '' : Number(e.target.value))}
                   className="pl-9 h-9 text-xs font-mono text-slate-800"
@@ -103,7 +103,7 @@ export default function PricingTab({ data = {}, onChange }) {
                 <Input
                   type="number"
                   min="0"
-                  placeholder="e.g. 30"
+                  placeholder="Enter value"
                   value={data.paymentGracePeriod !== undefined && data.paymentGracePeriod !== null ? data.paymentGracePeriod : ''}
                   onChange={(e) => handleChange('paymentGracePeriod', e.target.value === '' ? '' : Number(e.target.value))}
                   className="pl-9 h-9 text-xs font-mono text-slate-800"

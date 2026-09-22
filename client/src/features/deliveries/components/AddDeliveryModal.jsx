@@ -208,7 +208,7 @@ export default function AddDeliveryModal({ isOpen, onClose }) {
             </Label>
             <Input
               type="text"
-              placeholder="e.g. House 12, Street 4, Block B"
+              placeholder="Enter address"
               value={formData.deliveryAddress}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, deliveryAddress: e.target.value }))
@@ -275,7 +275,7 @@ export default function AddDeliveryModal({ isOpen, onClose }) {
               <Label className="text-xs font-semibold text-slate-700">Assigned Route</Label>
               <Input
                 type="text"
-                placeholder="e.g. Model Town & Faisal Town"
+                placeholder="Enter route"
                 value={formData.route}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, route: e.target.value }))
@@ -305,7 +305,7 @@ export default function AddDeliveryModal({ isOpen, onClose }) {
               ) : (
                 <Input
                   type="text"
-                  placeholder="e.g. Shahid Rider"
+                  placeholder="Enter rider name"
                   value={formData.riderNameSnapshot}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -324,7 +324,7 @@ export default function AddDeliveryModal({ isOpen, onClose }) {
               <Label className="text-xs font-semibold text-slate-700">Item Description</Label>
               <Input
                 type="text"
-                placeholder="e.g. 2 L Cow Milk"
+                placeholder="Enter subscription"
                 value={formData.itemDescription}
                 onChange={(e) =>
                   setFormData((prev) => ({

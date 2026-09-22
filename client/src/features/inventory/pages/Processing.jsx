@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 
 export default function Processing() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       <div>
         <h3 className="font-display text-xl font-bold text-slate-800">Dahi & Milk Processing</h3>
         <p className="text-sm text-slate-500">Processing operations, batch tracking and quality control</p>
