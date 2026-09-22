@@ -3,9 +3,20 @@ import { useIntakeContext } from './IntakeContext';
 import supplierService from '@/services/supplierService';
 
 const SupplierContext = createContext(null);
+const STORAGE_KEY_SUPPLIERS = 'pure_milk_bar_suppliers';
+
+const getStoredSuppliers = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_SUPPLIERS);
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_) {
+    return [];
+  }
+};
 
 export function SupplierProvider({ children }) {
-  const [suppliers, setSuppliers] = useState([]);
+  const [suppliers, setSuppliers] = useState(getStoredSuppliers);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [directPayouts, setDirectPayouts] = useState([]);
@@ -36,11 +47,13 @@ export function SupplierProvider({ children }) {
     try {
       const data = await supplierService.getSuppliers();
       const list = Array.isArray(data) ? data : data?.suppliers || [];
-      setSuppliers(list);
+      if (list.length > 0 || getStoredSuppliers().length === 0) {
+        setSuppliers(list);
+      }
     } catch (err) {
       console.error('Failed to fetch suppliers from API:', err);
       setError(err.message || 'Failed to load suppliers');
-      setSuppliers([]);
+      setSuppliers(getStoredSuppliers());
     } finally {
       setIsLoading(false);
     }
@@ -49,6 +62,12 @@ export function SupplierProvider({ children }) {
   useEffect(() => {
     fetchSuppliers();
   }, [fetchSuppliers]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_SUPPLIERS, JSON.stringify(suppliers));
+    } catch (_) {}
+  }, [suppliers]);
 
   // Add Supplier via API
   const addSupplier = async (newSupplierData) => {
@@ -68,7 +87,13 @@ export function SupplierProvider({ children }) {
         status: newSupplierData.status || 'Active',
       };
 
-      const created = await supplierService.createSupplier(payload);
+      let created;
+      try {
+        created = await supplierService.createSupplier(payload);
+      } catch (err) {
+        created = { ...payload, id: `local-${Date.now()}` };
+        console.warn('Supplier API unavailable, saving locally:', err.message);
+      }
       const normalized = {
         ...created,
         id: created._id || created.id || `SUP-${Date.now()}`,
@@ -77,7 +102,7 @@ export function SupplierProvider({ children }) {
         avgLiters: created.expectedDailyQuantity || newSupplierData.avgLiters || 10,
       };
 
-      setSuppliers((prev) => [normalized, ...prev]);
+      setSuppliers((prev) => [normalized, ...prev.filter((supplier) => supplier.code !== normalized.code)]);
       return normalized;
     } catch (err) {
       console.error('Failed to create supplier via API:', err);
@@ -88,9 +113,13 @@ export function SupplierProvider({ children }) {
   // Update Supplier via API
   const updateSupplier = async (id, updatedData) => {
     try {
-      await supplierService.updateSupplier(id, updatedData);
+      try {
+        await supplierService.updateSupplier(id, updatedData);
+      } catch (err) {
+        console.warn('Supplier API unavailable, updating locally:', err.message);
+      }
       setSuppliers((prev) =>
-        prev.map((s) => ((s._id || s.id) === id ? { ...s, ...updatedData } : s))
+        prev.map((s) => (String(s._id || s.id) === String(id) ? { ...s, ...updatedData } : s))
       );
     } catch (err) {
       console.error('Failed to update supplier via API:', err);
@@ -101,8 +130,12 @@ export function SupplierProvider({ children }) {
   // Delete Supplier via API
   const deleteSupplier = async (id) => {
     try {
-      await supplierService.deleteSupplier(id);
-      setSuppliers((prev) => prev.filter((s) => (s._id || s.id) !== id));
+      try {
+        await supplierService.deleteSupplier(id);
+      } catch (err) {
+        console.warn('Supplier API unavailable, deleting locally:', err.message);
+      }
+      setSuppliers((prev) => prev.filter((s) => String(s._id || s.id) !== String(id)));
     } catch (err) {
       console.error('Failed to delete supplier via API:', err);
       throw err;

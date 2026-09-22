@@ -13,6 +13,9 @@ export default function FinanceNav({ activeTab, onTabChange }) {
   }
 
   const isCustomer = activeTab === 'customer';
+  const isFarm = activeTab === 'report-farm';
+  const isSupplier = activeTab === 'report-supplier';
+  const isDahi = activeTab === 'report-dahi';
 
   return (
     <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between gap-3">
@@ -31,6 +34,21 @@ export default function FinanceNav({ activeTab, onTabChange }) {
             <>
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
               <span>Customer Finance</span>
+            </>
+          ) : isFarm ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-emerald-600" />
+              <span>Farm Daily Report</span>
+            </>
+          ) : isSupplier ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              <span>Supplier Daily Report</span>
+            </>
+          ) : isDahi ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-indigo-500" />
+              <span>Dahi Daily Report</span>
             </>
           ) : (
             <>

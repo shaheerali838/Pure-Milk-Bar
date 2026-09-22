@@ -8,6 +8,7 @@ import { useFuelLogContext } from './FuelLogContext';
 import { useDeliveryStaffContext } from './DeliveryStaffContext';
 import { estimateDistanceKm } from '@/features/pos/utils/estimateDeliveryDistance';
 import posService from '@/services/posService';
+import { toast } from 'sonner';
 
 const POSContext = createContext();
 
@@ -449,6 +450,10 @@ export function POSProvider({ children }) {
 
   // Cart operations
   const handleAddToCart = (product, initialQty = 1) => {
+    if (Number(product.stock) <= 0) {
+      toast.error(`Out of Stock: You currently have 0 available stock for ${product.name}. Please produce or procure more before selling.`);
+      return;
+    }
     const addQty = typeof initialQty === 'number' && initialQty > 0 ? initialQty : 1;
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
@@ -475,6 +480,10 @@ export function POSProvider({ children }) {
 
   // Add or set item by rupee amount (e.g. Rs 50, 100, 500)
   const handleAddToCartByRupees = (product, rupees) => {
+    if (Number(product.stock) <= 0) {
+      toast.error(`Out of Stock: You currently have 0 available stock for ${product.name}. Please produce or procure more before selling.`);
+      return;
+    }
     const numRupees = parseFloat(rupees);
     if (isNaN(numRupees) || numRupees <= 0) return;
     const rate = Number(product.price) || 200;

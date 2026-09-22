@@ -2,9 +2,36 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import farmService from '@/services/farmService';
 
 const AnimalContext = createContext();
+const STORAGE_KEY_ANIMALS = 'pure_milk_bar_animals';
+
+const normalizeAnimal = (animal, history = []) => {
+  const morning = parseFloat(animal.morningYield || animal.avgMorningYield || 0);
+  const evening = parseFloat(animal.eveningYield || animal.avgEveningYield || 0);
+
+  return {
+    ...animal,
+    id: animal._id || animal.id,
+    tag: animal.tag || animal.tagNumber,
+    species: animal.species || animal.breed || 'Cow',
+    lactationStatus: animal.lactationStatus || animal.status || 'Milking',
+    morningYield: `${morning.toFixed(1)} L`,
+    eveningYield: `${evening.toFixed(1)} L`,
+    totalDailyYield: `${(morning + evening).toFixed(1)} L`,
+    history: history.length ? history : animal.history || [],
+  };
+};
+
+const getStoredAnimals = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_ANIMALS);
+    return stored ? JSON.parse(stored) : [];
+  } catch (_) {
+    return [];
+  }
+};
 
 export function AnimalProvider({ children }) {
-  const [animals, setAnimals] = useState([]);
+  const [animals, setAnimals] = useState(getStoredAnimals);
   const [milkingLogs, setMilkingLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,31 +61,28 @@ export function AnimalProvider({ children }) {
             : logsData.value?.logs || []
           : [];
 
-      // Normalize animal records
-      const normalized = animalList.map((a) => {
-        const morning = parseFloat(a.morningYield || a.avgMorningYield || 0);
-        const evening = parseFloat(a.eveningYield || a.avgEveningYield || 0);
-        const total = (morning + evening).toFixed(1);
+      const historyByAnimal = logList.reduce((history, log) => {
+        const key = String(log.animalId?._id || log.animalId || log.animalTag || '');
+        if (!key) return history;
+        if (!history[key]) history[key] = [];
+        history[key].push({
+          date: log.date || log.createdAt,
+          morning: log.shift === 'MORNING' ? Number(log.yieldLiters) || 0 : 0,
+          evening: log.shift === 'EVENING' ? Number(log.yieldLiters) || 0 : 0,
+        });
+        return history;
+      }, {});
 
-        return {
-          ...a,
-          id: a._id || a.id,
-          tag: a.tag || a.tagNumber,
-          species: a.species || a.breed || 'Cow',
-          lactationStatus: a.lactationStatus || a.status || 'Milking',
-          morningYield: `${morning.toFixed(1)} L`,
-          eveningYield: `${evening.toFixed(1)} L`,
-          totalDailyYield: `${total} L`,
-          history: a.history || [],
-        };
-      });
+      const normalized = animalList.map((animal) =>
+        normalizeAnimal(animal, historyByAnimal[String(animal._id || animal.id || animal.tagNumber)] || [])
+      );
 
       setAnimals(normalized);
       setMilkingLogs(logList);
     } catch (err) {
       console.error('Failed to fetch farm data from API:', err);
       setError(err.message || 'Failed to load herd animals');
-      setAnimals([]);
+      setAnimals(getStoredAnimals());
     } finally {
       setIsLoading(false);
     }
@@ -67,6 +91,12 @@ export function AnimalProvider({ children }) {
   useEffect(() => {
     fetchAnimalsAndLogs();
   }, [fetchAnimalsAndLogs]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_ANIMALS, JSON.stringify(animals));
+    } catch (_) {}
+  }, [animals]);
 
   // Add Animal via API
   const addAnimal = async (formData) => {
@@ -90,20 +120,16 @@ export function AnimalProvider({ children }) {
         acquisitionDate: formData.acquisitionDate || new Date().toISOString().split('T')[0],
       };
 
-      const created = await farmService.createAnimal(payload);
-      const normalized = {
-        ...created,
-        id: created._id || created.id || Date.now(),
-        tag: created.tagNumber || payload.tagNumber,
-        species: created.species,
-        lactationStatus: created.lactationStage || 'Milking',
-        morningYield: `${morning.toFixed(1)} L`,
-        eveningYield: `${evening.toFixed(1)} L`,
-        totalDailyYield: `${(morning + evening).toFixed(1)} L`,
-        history: [],
-      };
+      let created;
+      try {
+        created = await farmService.createAnimal(payload);
+      } catch (err) {
+        created = { ...payload, id: `local-${Date.now()}` };
+        console.warn('Animal API unavailable, saving locally:', err.message);
+      }
+      const normalized = normalizeAnimal(created || payload);
 
-      setAnimals((prev) => [normalized, ...prev]);
+      setAnimals((prev) => [normalized, ...prev.filter((animal) => animal.tag !== normalized.tag)]);
       return normalized;
     } catch (err) {
       console.error('Failed to create animal via API:', err);
@@ -120,14 +146,8 @@ export function AnimalProvider({ children }) {
       await farmService.updateAnimal(id, formData);
       setAnimals((prev) =>
         prev.map((a) => {
-          if ((a._id || a.id) === id) {
-            return {
-              ...a,
-              ...formData,
-              morningYield: `${morning.toFixed(1)} L`,
-              eveningYield: `${evening.toFixed(1)} L`,
-              totalDailyYield: `${(morning + evening).toFixed(1)} L`,
-            };
+          if (String(a._id || a.id) === String(id)) {
+            return normalizeAnimal({ ...a, ...formData, tagNumber: formData.tag || a.tagNumber });
           }
           return a;
         })

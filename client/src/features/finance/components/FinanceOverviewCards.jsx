@@ -17,7 +17,7 @@ import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
 import { useRiderSalaryContext } from '@/context/RiderSalaryContext';
 
-export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelectRiderFinance }) {
+export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelectRiderFinance, onSelectFarmReport, onSelectSupplierReport, onSelectDahiReport }) {
   const {
     totalKhataReceivable = 0,
     activeAccountsCount = 0,
@@ -172,6 +172,87 @@ export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelect
             <span className="font-bold text-blue-700 group-hover:underline flex items-center gap-1">
               View Payroll <ArrowRight className="w-3 h-3" />
             </span>
+          </div>
+        </Card>
+
+        {/* CARD 3: Farm Daily Report */}
+        <Card
+          onClick={onSelectFarmReport}
+          className="group relative bg-white border border-slate-200/90 hover:border-emerald-500 shadow-2xs hover:shadow-md transition-all duration-200 rounded-xl cursor-pointer p-4 hover:-translate-y-0.5"
+        >
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-200">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
+                    Farm Daily Report
+                  </h2>
+                </div>
+                <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                  Farm Milking Yield & Liquid Sales
+                </p>
+              </div>
+            </div>
+            <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 group-hover:bg-emerald-600 group-hover:text-white flex items-center justify-center shrink-0 transition-all duration-200">
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </div>
+        </Card>
+
+        {/* CARD 4: Supplier Daily Report */}
+        <Card
+          onClick={onSelectSupplierReport}
+          className="group relative bg-white border border-slate-200/90 hover:border-blue-500 shadow-2xs hover:shadow-md transition-all duration-200 rounded-xl cursor-pointer p-4 hover:-translate-y-0.5"
+        >
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200/80 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-200">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                    Supplier Daily Report
+                  </h2>
+                </div>
+                <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                  Supplier Intakes & Procurement
+                </p>
+              </div>
+            </div>
+            <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center shrink-0 transition-all duration-200">
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </div>
+        </Card>
+
+        {/* CARD 5: Dahi Daily Report */}
+        <Card
+          onClick={onSelectDahiReport}
+          className="group relative bg-white border border-slate-200/90 hover:border-indigo-500 shadow-2xs hover:shadow-md transition-all duration-200 rounded-xl cursor-pointer p-4 hover:-translate-y-0.5"
+        >
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-200">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">
+                    Dahi Daily Report
+                  </h2>
+                </div>
+                <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                  Conversions and POS Dahi Sales
+                </p>
+              </div>
+            </div>
+            <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 group-hover:bg-indigo-600 group-hover:text-white flex items-center justify-center shrink-0 transition-all duration-200">
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </div>
           </div>
         </Card>
       </div>

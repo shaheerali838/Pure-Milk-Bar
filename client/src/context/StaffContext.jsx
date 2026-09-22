@@ -84,9 +84,7 @@ export function StaffProvider({ children }) {
 
   useEffect(() => {
     try {
-      if (staffList.length > 0) {
-        localStorage.setItem(STORAGE_KEY_STAFF, JSON.stringify(staffList));
-      }
+      localStorage.setItem(STORAGE_KEY_STAFF, JSON.stringify(staffList));
     } catch (error) {
       console.error('Error saving staff to localStorage:', error);
     }
@@ -191,7 +189,7 @@ export function StaffProvider({ children }) {
     } catch (err) {
       console.warn('Backend API deleteStaff error, deleting locally:', err.message);
     }
-    setStaffList((prev) => prev.filter((m) => (m._id || m.id) !== id && m.id !== id));
+    setStaffList((prev) => prev.filter((m) => String(m._id || m.id) !== String(id)));
   };
 
   // 4. Toggle Staff Duty Status (Active / Present vs Inactive / Absent)

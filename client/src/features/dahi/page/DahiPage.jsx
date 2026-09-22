@@ -12,6 +12,7 @@ import DahiBatchTable from '../component/DahiBatchTable';
 import DahiProfitCalculator from '../component/DahiProfitCalculator';
 import AddDahiBatchModal from '../component/AddDahiBatchModal';
 import DahiBatchDetail from '../component/DahiBatchDetail';
+import DahiDailyReport from '../component/DahiDailyReport';
 import { useDahiContext } from '@/context/DahiContext';
 
 export default function DahiPage() {
@@ -118,6 +119,20 @@ export default function DahiPage() {
             <span>All Batch History ({batches.length})</span>
           </button>
 
+          {/* Tab 3: End-to-End Daily Report */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('report')}
+            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs ${
+              activeTab === 'report'
+                ? 'bg-slate-900 text-white'
+                : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/90'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5 text-slate-500" />
+            <span>Daily Report</span>
+          </button>
+
           {/* Tab 3: Simple Profit Calculator */}
           <button
             type="button"
@@ -162,6 +177,8 @@ export default function DahiPage() {
           <DahiBatchTable batches={batches} onDeleteBatch={deleteBatch} onViewDetail={setSelectedBatchId} />
         </div>
       )}
+
+      {activeTab === 'report' && <DahiDailyReport />}
 
       {activeTab === 'calculator' && <DahiProfitCalculator />}
     </div>

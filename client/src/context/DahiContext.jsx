@@ -346,7 +346,7 @@ export function DahiProvider({ children }) {
   const moveToChiller = useCallback((batchId) => {
     setBatches((prev) =>
       prev.map((b) => {
-        if (b.id !== batchId) return b;
+        if (b.id !== batchId || b.stage !== 'incubating') return b;
         const rateNum = parseFloat(String(b.posRate || '').replace(/[^\d.]/g, '')) || 320;
         const profit = Math.round((b.outputVal || 0) * Math.max(0, rateNum - 220));
         return {
@@ -365,7 +365,7 @@ export function DahiProvider({ children }) {
     let batchOut = 0;
     setBatches((prev) =>
       prev.map((b) => {
-        if (b.id !== batchId) return b;
+        if (b.id !== batchId || b.stage !== 'chilled') return b;
         batchOut = Number(b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
         const rateNum = parseFloat(String(b.posRate || '').replace(/[^\d.]/g, '')) || 320;
         const rev = Math.round((b.outputVal || 0) * rateNum);
@@ -398,7 +398,7 @@ export function DahiProvider({ children }) {
   const markSoldOut = useCallback((batchId) => {
     setBatches((prev) =>
       prev.map((b) =>
-        b.id === batchId
+        b.id === batchId && b.stage === 'pos'
           ? {
               ...b,
               stage: 'sold_out',

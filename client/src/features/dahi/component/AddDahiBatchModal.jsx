@@ -3,7 +3,7 @@ import { Layers, X, Droplets, AlertCircle, ArrowLeft, Check, Milk } from 'lucide
 import { Button } from '@/components/ui/button';
 import { useDahiContext } from '@/context/DahiContext';
 
-export default function AddDahiBatchModal({ isOpen, onClose, onAddBatch }) {
+export default function AddDahiBatchModal({ onClose, onAddBatch }) {
   const { metrics = {} } = useDahiContext();
 
   const availFarm = Number(metrics.remainingFarmMilk ?? metrics.farmSourced ?? 0);
@@ -21,8 +21,6 @@ export default function AddDahiBatchModal({ isOpen, onClose, onAddBatch }) {
     status: 'In Progress',
     posRate: 'Rs. 320 / kg',
   });
-
-  if (!isOpen) return null;
 
   // Maximum allowed for current source
   const currentMax =
