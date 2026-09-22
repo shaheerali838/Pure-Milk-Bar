@@ -1053,7 +1053,6 @@ export function POSProvider({ children }) {
           : (item.category?.toLowerCase().includes('dahi') ? 220 : 190)
       );
       const lineCost = Math.round(qty * unitCost);
-      const lineTotal = Number(item.total) || Math.round(qty * unitPrice);
 
       const isMilk = (item.category || '').toLowerCase().includes('milk') || (item.name || '').toLowerCase().includes('milk');
       const isDahi = (item.category || '').toLowerCase().includes('dahi') || (item.name || '').toLowerCase().includes('dahi');
