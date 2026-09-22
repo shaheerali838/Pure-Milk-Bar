@@ -41,26 +41,6 @@ export const createMilkingYieldLogSchema = Joi.object({
       'number.max': 'Yield exceeds realistic single-animal threshold (50L)',
     }),
 
-  fatPercentage: Joi.number()
-    .min(0)
-    .max(15)
-    .allow(null)
-    .default(null)
-    .messages({
-      'number.min': 'FAT % cannot be negative',
-      'number.max': 'FAT % exceeds realistic threshold',
-    }),
-
-  snfPercentage: Joi.number()
-    .min(0)
-    .max(20)
-    .allow(null)
-    .default(null)
-    .messages({
-      'number.min': 'SNF % cannot be negative',
-      'number.max': 'SNF % exceeds realistic threshold',
-    }),
-
   notes: Joi.string()
     .trim()
     .max(500)
@@ -88,16 +68,6 @@ export const updateMilkingYieldLogSchema = Joi.object({
       'number.min': 'Yield cannot be negative',
       'number.max': 'Yield exceeds realistic single-animal threshold (50L)',
     }),
-
-  fatPercentage: Joi.number()
-    .min(0)
-    .max(15)
-    .allow(null),
-
-  snfPercentage: Joi.number()
-    .min(0)
-    .max(20)
-    .allow(null),
 
   notes: Joi.string()
     .trim()

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { NavLink, useNavigate, Link } from "react-router-dom";
+import { NavLink, useNavigate, Link, useLocation } from "react-router-dom";
 import {
   Milk,
   Users,
@@ -27,6 +27,7 @@ import { reconciliationLinks } from '@/components/common/Reconciliation_links';
 import { useAuth } from '@/context/AuthContext';
 
 export default function Sidebar() {
+  const { pathname } = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -54,6 +55,7 @@ export default function Sidebar() {
     logout();
     navigate('/login');
   };
+
   // 1. Operations Command
   const operationsLinks = [
     {
@@ -125,16 +127,10 @@ export default function Sidebar() {
   // 6. Finance
   const financeLinks = [
     {
-      id: "customer-finance",
-      name: "Customer Finance",
+      id: "finance",
+      name: "Finance",
       icon: Wallet,
-      path: "/finance/customer",
-    },
-    {
-      id: "rider-delivery-finance",
-      name: "Rider & Delivery Finance",
-      icon: Bike,
-      path: "/finance/delivery",
+      path: "/finance",
     },
   ];
 
@@ -304,13 +300,14 @@ export default function Sidebar() {
                 <NavLink
                   key={link.id}
                   to={link.path}
-                  className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                      isActive
+                  className={({ isActive }) => {
+                    const isFinanceActive = isActive || pathname.startsWith("/finance");
+                    return `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                      isFinanceActive
                         ? "bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20"
                         : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`
-                  }
+                    }`;
+                  }}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
                   <span className="truncate">{link.name}</span>

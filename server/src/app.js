@@ -18,6 +18,8 @@ import dailyClosingRoutes from "./modules/dailyClosing/routes/dailyClosing.route
 import auditLogRoutes from "./modules/auditLog/routes/auditLog.routes.js";
 import inventoryRoutes from "./modules/inventory/routes/inventory.routes.js";
 import posRoutes from "./modules/pos/routes/pos.routes.js";
+import staffRoutes from "./modules/staff/routes/staff.routes.js";
+import processingRoutes from "./modules/processing/routes/processing.routes.js";
 
 const app = express();
 
@@ -74,6 +76,8 @@ app.use("/api/v1/deliveries", deliveryRoutes);
 app.use("/api/v1/finance", financeRoutes);
 app.use("/api/v1/daily-closings", dailyClosingRoutes);
 app.use("/api/v1/audit-logs", auditLogRoutes);
+app.use("/api/v1/staff", staffRoutes);
+app.use("/api/v1/processing", processingRoutes);
 
 // Root route
 app.get("/", (req, res) => {
@@ -87,7 +91,9 @@ app.get("/", (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 //  MODULE ROUTES
 // ═══════════════════════════════════════════════════════════════════════════
+app.use("/api/farm/processing", processingRoutes);
 app.use("/api/farm", farmRoutes);
+app.use("/api/v1/farm", farmRoutes);
 app.use("/api/v1/suppliers", supplierRoutes);
 app.use("/api/v1/inventory", inventoryRoutes);
 app.use("/api/v1/pos", posRoutes);

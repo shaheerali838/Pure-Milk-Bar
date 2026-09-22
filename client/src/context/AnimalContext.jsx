@@ -74,17 +74,19 @@ export function AnimalProvider({ children }) {
       const morning = parseFloat(formData.morningYield || 0);
       const evening = parseFloat(formData.eveningYield || 0);
 
+      const animalType = (formData.species || formData.type || 'Cow').toUpperCase() === 'BUFFALO' ? 'BUFFALO' : 'COW';
       const payload = {
         tagNumber: formData.tag?.trim() || `TAG-${Date.now().toString().slice(-4)}`,
         name: formData.name?.trim() || '',
-        species: formData.species || 'Cow',
-        breed: formData.breed || formData.species || '',
-        lactationStage: formData.lactationStatus || 'Milking',
+        type: animalType,
+        species: formData.species || (animalType === 'BUFFALO' ? 'Buffalo' : 'Cow'),
+        breed: formData.breed || formData.species || 'Sahiwal',
+        lactationStage: formData.lactationStatus || 'EARLY',
         purchasePrice: parseFloat(formData.purchasePrice) || 0,
         expectedDailyYield: morning + evening,
         morningYield: morning,
         eveningYield: evening,
-        healthStatus: formData.healthStatus || 'Healthy',
+        healthStatus: formData.healthStatus || 'HEALTHY',
         acquisitionDate: formData.acquisitionDate || new Date().toISOString().split('T')[0],
       };
 

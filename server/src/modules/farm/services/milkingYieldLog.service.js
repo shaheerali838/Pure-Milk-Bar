@@ -140,8 +140,6 @@ class MilkingYieldLogService {
               $group: {
                 _id: '$shift',
                 totalLiters: { $sum: '$yieldLiters' },
-                avgFat: { $avg: '$fatPercentage' },
-                avgSnf: { $avg: '$snfPercentage' },
                 entryCount: { $sum: 1 },
               },
             },
@@ -161,8 +159,6 @@ class MilkingYieldLogService {
                 _id: null,
                 totalLiters: { $sum: '$yieldLiters' },
                 totalEntries: { $sum: 1 },
-                avgFat: { $avg: '$fatPercentage' },
-                avgSnf: { $avg: '$snfPercentage' },
               },
             },
           ],
@@ -175,8 +171,6 @@ class MilkingYieldLogService {
       byShift: (summary?.byShift || []).reduce((acc, item) => {
         acc[item._id] = {
           totalLiters: Number(item.totalLiters.toFixed(2)),
-          avgFat: item.avgFat ? Number(item.avgFat.toFixed(2)) : null,
-          avgSnf: item.avgSnf ? Number(item.avgSnf.toFixed(2)) : null,
           entryCount: item.entryCount,
         };
         return acc;
@@ -191,12 +185,6 @@ class MilkingYieldLogService {
       grandTotal: {
         totalLiters: Number((summary?.grandTotal[0]?.totalLiters || 0).toFixed(2)),
         totalEntries: summary?.grandTotal[0]?.totalEntries || 0,
-        avgFat: summary?.grandTotal[0]?.avgFat
-          ? Number(summary.grandTotal[0].avgFat.toFixed(2))
-          : null,
-        avgSnf: summary?.grandTotal[0]?.avgSnf
-          ? Number(summary.grandTotal[0].avgSnf.toFixed(2))
-          : null,
       },
     };
   }

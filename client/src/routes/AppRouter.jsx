@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // Layout
@@ -51,6 +51,7 @@ import CustomerManagement from "../features/customers/pages/CustomerManagement";
 import CustomerKhataLedger from "../features/customers/pages/CustomerKhataLedger";
 
 // Finance, Reconciliation & Daily Closing
+import FinancePage from "../features/finance/pages/FinancePage";
 import CustomerFinance from "../features/finance/pages/CustomerFinance";
 import RiderDeliveryFinancePage from "../features/finance/pages/RiderDeliveryFinancePage";
 import DailyClosing from "../features/finance/pages/DailyClosing";
@@ -129,8 +130,9 @@ export function AppRouter() {
             <Route path="procurementsheet" element={<Navigate to="/supplier/procurement" replace />} />
             <Route path="procurement-sheet" element={<Navigate to="/supplier/procurement" replace />} />
 
-            <Route path="finance/customer" element={<CustomerFinance />} />
-            <Route path="finance/delivery" element={<RiderDeliveryFinancePage />} />
+            <Route path="finance" element={<FinancePage />} />
+            <Route path="finance/customer" element={<FinancePage initialTab="customer" />} />
+            <Route path="finance/delivery" element={<FinancePage initialTab="delivery" />} />
             <Route path="finance/daily-closing" element={<DailyClosing />} />
             <Route path="daily-closing" element={<DailyClosing />} />
             <Route path="finance/audit-log" element={<TransactionAuditLog />} />

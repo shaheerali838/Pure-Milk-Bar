@@ -1,101 +1,96 @@
 import Joi from 'joi';
 
-// ─── Shared Constants ───────────────────────────────────────────────────────
-const ANIMAL_TYPES = ['COW', 'BUFFALO'];
-const LACTATION_STAGES = ['EARLY', 'MID', 'LATE', 'DRY'];
-const HEALTH_STATUSES = ['HEALTHY', 'UNDER_TREATMENT', 'QUARANTINE', 'SICK'];
-
-// ─── Reusable ObjectId Validator ────────────────────────────────────────────
-const objectId = Joi.string().regex(/^[0-9a-fA-F]{24}$/, 'MongoDB ObjectId');
-
 // ─── CREATE Animal Schema ───────────────────────────────────────────────────
 export const createAnimalSchema = Joi.object({
   tagNumber: Joi.string()
     .trim()
-    .min(1)
-    .max(20)
     .uppercase()
-    .required()
-    .messages({
-      'any.required': 'Ear tag number is required',
-      'string.empty': 'Tag number cannot be empty',
-      'string.max': 'Tag number cannot exceed 20 characters',
-    }),
+    .max(50)
+    .allow('', null)
+    .optional(),
+
+  tag: Joi.string().trim().allow('', null),
 
   name: Joi.string()
     .trim()
-    .max(50)
+    .max(100)
     .allow(null, '')
-    .default(null)
-    .messages({
-      'string.max': 'Name cannot exceed 50 characters',
-    }),
+    .default(null),
 
   type: Joi.string()
-    .valid(...ANIMAL_TYPES)
-    .required()
-    .messages({
-      'any.required': 'Animal type is required',
-      'any.only': `Animal type must be one of: ${ANIMAL_TYPES.join(', ')}`,
-    }),
+    .trim()
+    .uppercase()
+    .default('COW'),
+
+  species: Joi.string()
+    .trim()
+    .allow('', null),
 
   breed: Joi.string()
     .trim()
-    .min(1)
-    .max(50)
-    .required()
-    .messages({
-      'any.required': 'Breed is required',
-      'string.empty': 'Breed cannot be empty',
-      'string.max': 'Breed cannot exceed 50 characters',
-    }),
+    .max(100)
+    .allow('', null)
+    .default('Sahiwal'),
 
   dob: Joi.date()
     .iso()
     .allow(null)
-    .default(null)
-    .messages({
-      'date.format': 'DOB must be a valid ISO 8601 date',
-    }),
+    .default(null),
 
   lactationStage: Joi.string()
-    .valid(...LACTATION_STAGES)
-    .default('EARLY')
-    .messages({
-      'any.only': `Lactation stage must be one of: ${LACTATION_STAGES.join(', ')}`,
-    }),
+    .trim()
+    .allow('', null)
+    .default('EARLY'),
+
+  lactationStatus: Joi.string()
+    .trim()
+    .allow('', null)
+    .default('Milking'),
 
   lactationCycle: Joi.number()
     .integer()
     .min(1)
-    .default(1)
-    .messages({
-      'number.integer': 'Lactation cycle must be a whole number',
-      'number.min': 'Lactation cycle must be at least 1',
-    }),
+    .default(1),
 
   dailyAvgYield: Joi.number()
     .min(0)
-    .default(0)
-    .messages({
-      'number.min': 'Daily average yield cannot be negative',
-    }),
+    .default(0),
+
+  morningYield: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
+  eveningYield: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
+  expectedDailyYield: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
+  expectedYield: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
+  purchasePrice: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
+  acquisitionDate: Joi.string()
+    .allow(null, ''),
 
   healthStatus: Joi.string()
-    .valid(...HEALTH_STATUSES)
-    .default('HEALTHY')
-    .messages({
-      'any.only': `Health status must be one of: ${HEALTH_STATUSES.join(', ')}`,
-    }),
+    .trim()
+    .allow('', null)
+    .default('HEALTHY'),
 
   notes: Joi.string()
     .trim()
-    .max(500)
+    .max(1000)
     .allow(null, '')
-    .default(null)
-    .messages({
-      'string.max': 'Notes cannot exceed 500 characters',
-    }),
+    .default(null),
+
+  isActive: Joi.boolean().default(true),
 }).options({ stripUnknown: true });
 
 // ─── UPDATE Animal Schema ───────────────────────────────────────────────────
@@ -103,35 +98,40 @@ export const updateAnimalSchema = Joi.object({
   tagNumber: Joi.string()
     .trim()
     .min(1)
-    .max(20)
-    .uppercase()
-    .messages({
-      'string.empty': 'Tag number cannot be empty',
-      'string.max': 'Tag number cannot exceed 20 characters',
-    }),
+    .max(50)
+    .uppercase(),
+
+  tag: Joi.string().trim().allow('', null),
 
   name: Joi.string()
     .trim()
-    .max(50)
+    .max(100)
     .allow(null, ''),
 
   type: Joi.string()
-    .valid(...ANIMAL_TYPES)
-    .messages({
-      'any.only': `Animal type must be one of: ${ANIMAL_TYPES.join(', ')}`,
-    }),
+    .trim()
+    .uppercase(),
+
+  species: Joi.string()
+    .trim()
+    .allow('', null),
 
   breed: Joi.string()
     .trim()
-    .min(1)
-    .max(50),
+    .max(100)
+    .allow('', null),
 
   dob: Joi.date()
     .iso()
     .allow(null),
 
   lactationStage: Joi.string()
-    .valid(...LACTATION_STAGES),
+    .trim()
+    .allow('', null),
+
+  lactationStatus: Joi.string()
+    .trim()
+    .allow('', null),
 
   lactationCycle: Joi.number()
     .integer()
@@ -140,34 +140,53 @@ export const updateAnimalSchema = Joi.object({
   dailyAvgYield: Joi.number()
     .min(0),
 
+  morningYield: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
+  eveningYield: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
+  expectedDailyYield: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
+  expectedYield: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
+  purchasePrice: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
+  acquisitionDate: Joi.string()
+    .allow(null, ''),
+
   healthStatus: Joi.string()
-    .valid(...HEALTH_STATUSES),
+    .trim()
+    .allow('', null),
 
   notes: Joi.string()
     .trim()
-    .max(500)
+    .max(1000)
     .allow(null, ''),
 
   isActive: Joi.boolean(),
-}).options({ stripUnknown: true }).min(1).messages({
-  'object.min': 'At least one field must be provided for update',
-});
+}).options({ stripUnknown: true }).min(1);
 
 // ─── QUERY Params Schema ────────────────────────────────────────────────────
 export const getAnimalsQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
-  type: Joi.string().valid(...ANIMAL_TYPES),
-  healthStatus: Joi.string().valid(...HEALTH_STATUSES),
-  lactationStage: Joi.string().valid(...LACTATION_STAGES),
+  limit: Joi.number().integer().min(1).max(200).default(100),
+  type: Joi.string(),
+  healthStatus: Joi.string(),
+  lactationStage: Joi.string(),
   isActive: Joi.boolean(),
-  search: Joi.string().trim().max(50),
+  search: Joi.string().trim().max(100).allow('', null),
 }).options({ stripUnknown: true });
 
 // ─── URL Params Schema ─────────────────────────────────────────────────────
 export const animalIdParamSchema = Joi.object({
-  id: objectId.required().messages({
-    'string.pattern.name': 'Invalid MongoDB ObjectId format',
-    'any.required': 'Animal ID is required',
-  }),
+  id: Joi.string().required(),
 }).options({ stripUnknown: true });

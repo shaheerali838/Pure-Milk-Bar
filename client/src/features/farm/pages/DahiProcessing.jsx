@@ -11,6 +11,9 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
+import farmService from "@/services/farmService";
+import { toast } from "sonner";
+
 const STORAGE_KEY = "pure_milk_bar_processing_batches_v2";
 
 const statusStyle = {
@@ -20,19 +23,8 @@ const statusStyle = {
 };
 
 export default function DahiProcessing() {
-  const [batches, setBatches] = useState(() => {
-    try {
-      localStorage.removeItem("pure_milk_bar_processing_batches");
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch (e) {
-      console.error("Failed to load processing batches:", e);
-    }
-    return [];
-  });
+  const [batches, setBatches] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,30 +37,81 @@ export default function DahiProcessing() {
     status: "Completed",
   });
 
-  useEffect(() => {
+  const fetchBatches = async () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(batches));
+      setIsLoading(true);
+      const data = await farmService.getProcessingBatches();
+      const list = Array.isArray(data) ? data : data?.batches || [];
+      if (list.length > 0) {
+        setBatches(list);
+      } else {
+        // Fallback to local storage if API returned empty
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) setBatches(parsed);
+        }
+      }
     } catch (e) {
-      console.error("Failed to save processing batches:", e);
+      console.warn("Failed to fetch processing batches from API:", e);
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) setBatches(parsed);
+        } catch (_) {}
+      }
+    } finally {
+      setIsLoading(false);
     }
-  }, [batches]);
+  };
 
-  const handleAddBatch = (e) => {
+  useEffect(() => {
+    fetchBatches();
+  }, []);
+
+  const handleAddBatch = async (e) => {
     e.preventDefault();
-    const nextNum = batches.length + 2201;
-    const batchId = `DAH-${nextNum}`;
 
-    const record = {
-      id: batchId,
+    const payload = {
       product: newBatch.product,
-      milkUsed: `${newBatch.milkUsed || 0} L`,
+      milkUsed: Number(newBatch.milkUsed) || 0,
+      milkUsedLiters: Number(newBatch.milkUsed) || 0,
       output: newBatch.output || `${Math.round((parseFloat(newBatch.milkUsed) || 0) * 0.9)} kg`,
-      fat: `${newBatch.fat || 4.5}%`,
+      fat: Number(newBatch.fat) || 4.5,
+      fatPercentage: Number(newBatch.fat) || 4.5,
       date: newBatch.date || new Date().toISOString().split("T")[0],
       status: newBatch.status || "Completed",
     };
 
-    setBatches([record, ...batches]);
+    try {
+      const created = await farmService.createProcessingBatch(payload);
+      const normalized = {
+        ...created,
+        id: created.batchNumber || created.id || created._id || `DAH-${Date.now()}`,
+        milkUsed: `${payload.milkUsed} L`,
+        output: payload.output,
+        fat: `${payload.fat}%`,
+        date: payload.date,
+        status: payload.status,
+      };
+
+      setBatches((prev) => [normalized, ...prev]);
+      toast.success(`Processing batch for ${payload.product} created successfully!`);
+    } catch (err) {
+      console.error("Failed to create batch via API:", err);
+      // Local fallback
+      const nextNum = batches.length + 2201;
+      const localBatch = {
+        id: `DAH-${nextNum}`,
+        ...payload,
+        milkUsed: `${payload.milkUsed} L`,
+        fat: `${payload.fat}%`,
+      };
+      setBatches((prev) => [localBatch, ...prev]);
+      toast.success(`Batch saved locally!`);
+    }
+
     setIsModalOpen(false);
     setNewBatch({
       product: "Dahi (Plain)",
