@@ -27,18 +27,6 @@ const milkingYieldLogSchema = new Schema(
       required: [true, 'Yield in liters is required'],
       min: [0, 'Yield cannot be negative'],
     },
-    fatPercentage: {
-      type: Number,
-      min: [0, 'FAT % cannot be negative'],
-      max: [15, 'FAT % exceeds realistic threshold'],
-      default: null,
-    },
-    snfPercentage: {
-      type: Number,
-      min: [0, 'SNF % cannot be negative'],
-      max: [20, 'SNF % exceeds realistic threshold'],
-      default: null,
-    },
     operatorId: {
       type: Schema.Types.ObjectId,
       ref: 'User',

@@ -478,7 +478,7 @@ export const getDailyClosingReportService = async (id) => {
 
   // Fetch breakdown logs for complete report
   const [yieldLogs, procurementLogs, posOrders, deliveryRuns, expenseLogs] = await Promise.all([
-    MilkingYieldLog.find({ date: { $gte: startOfDay, $lte: endOfDay } }).select('shift yieldLiters fatPercentage snfPercentage'),
+    MilkingYieldLog.find({ date: { $gte: startOfDay, $lte: endOfDay } }).select('shift yieldLiters'),
     MilkProcurement.find({ date: { $gte: startOfDay, $lte: endOfDay }, status: 'ACCEPTED' }).select('batchNumber quantityLiters ratePerLiter totalAmount amountPaid'),
     Order.find({ date: { $gte: startOfDay, $lte: endOfDay } }).select('receiptNumber paymentMethod grandTotal amountReceived changeGiven'),
     DeliveryRun.find({ date: { $gte: startOfDay, $lte: endOfDay }, status: 'DELIVERED' }).select('runCode route qtyLiters paymentMode codAmountToCollect'),
