@@ -92,7 +92,7 @@ export default function Sidebar() {
       id: "processing",
       name: "Dahi & Milk Processing",
       icon: Layers,
-      path: "/proccessing",
+      path: "/dahi",
     },
     {
       id: "products",

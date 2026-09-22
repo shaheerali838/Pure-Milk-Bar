@@ -24,14 +24,6 @@ const statusStyle = {
   "Calf": "bg-blue-100 text-blue-700 hover:bg-blue-100",
 };
 
-// Default Farm Workers list for the Workers Tab
-const mockWorkers = [
-  { id: 1, name: "Muhammad Ali", role: "Head Herdsman", shift: "Morning & Evening", phone: "+92 300 1234567" },
-  { id: 2, name: "Tariq Mahmood", role: "Senior Milker", shift: "Morning", phone: "+92 301 7654321" },
-  { id: 3, name: "Rashid Khan", role: "Milker & Feed Care", shift: "Evening", phone: "+92 302 9876543" },
-  { id: 4, name: "Usman Ghani", role: "Veterinary Technician", shift: "Full-Time", phone: "+92 303 4567890" },
-];
-
 export default function AnimalCardOverflow() {
   const {
     animals = [],
@@ -45,7 +37,7 @@ export default function AnimalCardOverflow() {
 
   const navigate = useNavigate();
   const { staffList = [] } = useStaffContext();
-  const displayWorkers = staffList.length > 0 ? staffList : mockWorkers;
+  const displayWorkers = staffList;
   const [activeTab, setActiveTab] = useState("registry"); // 'registry' or 'workers'
   const [searchTerm, setSearchTerm] = useState("");
   const [speciesFilter, setSpeciesFilter] = useState("all");
@@ -279,23 +271,35 @@ export default function AnimalCardOverflow() {
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-slate-100">
-              {displayWorkers.map((w) => (
-                <TableRow key={w.id} className="hover:bg-slate-50/60 transition-colors">
-                  <TableCell className="px-6 py-4 font-bold text-slate-800 flex items-center gap-2">
-                    <UserCheck className="w-4 h-4 text-emerald-600" />
-                    {w.name}
-                  </TableCell>
-                  <TableCell className="px-6 py-4 font-semibold text-slate-600">{w.role}</TableCell>
-                  <TableCell className="px-6 py-4">
-                    <Badge variant="outline" className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                      {w.shift}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="px-6 py-4 text-slate-600 font-mono text-xs tabular">
-                    {w.mobile || w.phone || '—'}
+              {displayWorkers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="px-6 py-12 text-center text-slate-400 text-xs font-medium">
+                    <div className="flex flex-col items-center justify-center gap-1.5">
+                      <Users className="w-8 h-8 text-slate-300" />
+                      <p className="font-semibold text-slate-600">No Farm Workers Registered</p>
+                      <p className="text-slate-400 text-[11px]">Add staff members from the Staff module to track worker shifts.</p>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                displayWorkers.map((w) => (
+                  <TableRow key={w.id} className="hover:bg-slate-50/60 transition-colors">
+                    <TableCell className="px-6 py-4 font-bold text-slate-800 flex items-center gap-2">
+                      <UserCheck className="w-4 h-4 text-emerald-600" />
+                      {w.name}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 font-semibold text-slate-600">{w.role}</TableCell>
+                    <TableCell className="px-6 py-4">
+                      <Badge variant="outline" className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                        {w.shift}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-slate-600 font-mono text-xs tabular">
+                      {w.mobile || w.phone || '—'}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>

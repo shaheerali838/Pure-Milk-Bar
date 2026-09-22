@@ -26,6 +26,8 @@ export default function MilkingRegisterTable() {
   useEffect(() => {
     try {
       localStorage.setItem("pure_milk_bar_milking_saved_entries", JSON.stringify(savedEntries));
+      window.dispatchEvent(new Event("pure_milk_bar_milking_updated"));
+      window.dispatchEvent(new Event("storage"));
     } catch (e) {
       console.error(e);
     }

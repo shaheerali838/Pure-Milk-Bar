@@ -13,6 +13,7 @@ import { DeliveryProvider } from "./DeliveryContext";
 import { SupplierProvider } from "./SupplierContext";
 import { IntakeProvider } from "./IntakeContext";
 import { POSProvider } from "./POSContext";
+import { DahiProvider } from "./DahiContext";
 import { SourcExpenseProvider } from "./SourcExpenseContext";
 import { PayrollProvider } from "./PayrollContext";
 import { TransactionProvider } from "./TransactionContext";
@@ -34,6 +35,7 @@ const providers = [
   SupplierProvider,
   IntakeProvider,
   POSProvider,
+  DahiProvider,
   SourcExpenseProvider,
   PayrollProvider,
   TransactionProvider,

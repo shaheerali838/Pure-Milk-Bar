@@ -136,13 +136,32 @@ export const deliveryRidersList = [
 export function POSProvider({ children }) {
   const { rawCustomers = [], customers = [] } = useCustomerContext();
   const { addLedgerEntry } = useLedgerContext();
-  const { animals = [] } = useAnimalContext();
+  const animalCtx = useAnimalContext();
+  const animals = animalCtx?.animals || [];
+  const milkingLogs = animalCtx?.milkingLogs || [];
   const deliveryCtx = useDeliveryContext();
   const addDelivery = deliveryCtx?.addDelivery;
   const fuelLogCtx = useFuelLogContext();
   const addFuelLog = fuelLogCtx?.addFuelLog;
   const deliveryStaffCtx = useDeliveryStaffContext();
   const staffList = deliveryStaffCtx?.staffList || [];
+
+  // Version counter to trigger re-renders on local storage events
+  const [posSyncVersion, setPosSyncVersion] = useState(0);
+
+  useEffect(() => {
+    const handleSync = () => setPosSyncVersion((v) => v + 1);
+    window.addEventListener('pure_milk_bar_milking_updated', handleSync);
+    window.addEventListener('pure_milk_bar_dahi_updated', handleSync);
+    window.addEventListener('pure_milk_bar_sales_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('pure_milk_bar_milking_updated', handleSync);
+      window.removeEventListener('pure_milk_bar_dahi_updated', handleSync);
+      window.removeEventListener('pure_milk_bar_sales_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
 
   // Dynamic riders derived from live delivery staff context
   const dynamicRiders = React.useMemo(() => {
@@ -843,8 +862,25 @@ export function POSProvider({ children }) {
       console.warn('POS API order sync error:', e);
     }
 
+    // Deduct sold quantities from active products stock
+    setProducts((prevProducts) =>
+      prevProducts.map((prod) => {
+        const soldInCart = cart.find((i) => i.id === prod.id || i.sku === prod.sku);
+        if (soldInCart) {
+          const qty = Number(soldInCart.quantity) || 0;
+          return {
+            ...prod,
+            stock: Math.max(0, Number(((prod.stock || 0) - qty).toFixed(2))),
+          };
+        }
+        return prod;
+      })
+    );
+
     setCompletedSaleReceipt(saleRecord);
     handleClearCart();
+    window.dispatchEvent(new Event('pure_milk_bar_sales_updated'));
+    window.dispatchEvent(new Event('storage'));
     return saleRecord;
   };
 
@@ -868,9 +904,49 @@ export function POSProvider({ children }) {
   };
 
   // =========================================================================
-  // 5. INVENTORY OVERVIEW CALCULATIONS (from localStorage data)
+  // 5. INVENTORY OVERVIEW CALCULATIONS (from localStorage & API data)
   // =========================================================================
-  const totalFarmMilk = animals.reduce((sum, a) => sum + (parseFloat(a.totalDailyYield) || 0), 0);
+  // Real farm yield from Milking Register, logs, or active herd baseline
+  const totalFarmMilk = React.useMemo(() => {
+    let registerSum = 0;
+    try {
+      const savedRaw = localStorage.getItem('pure_milk_bar_milking_saved_entries');
+      if (savedRaw) {
+        const parsed = JSON.parse(savedRaw);
+        if (parsed) {
+          ['Morning', 'Evening'].forEach((shift) => {
+            if (parsed[shift] && typeof parsed[shift] === 'object') {
+              Object.values(parsed[shift]).forEach((val) => {
+                const num = parseFloat(val);
+                if (!isNaN(num) && num > 0) registerSum += num;
+              });
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Error reading milking register in POSContext:', e);
+    }
+
+    let logSum = 0;
+    if (Array.isArray(milkingLogs) && milkingLogs.length > 0) {
+      logSum = milkingLogs.reduce((acc, log) => acc + (parseFloat(log.yieldLiters || log.yield) || 0), 0);
+    }
+
+    let baselineSum = 0;
+    if (Array.isArray(animals) && animals.length > 0) {
+      baselineSum = animals.reduce((acc, a) => {
+        const totalDaily = parseFloat(a.totalDailyYield || 0);
+        if (totalDaily > 0) return acc + totalDaily;
+        const morning = parseFloat(a.morningYield || 0);
+        const evening = parseFloat(a.eveningYield || 0);
+        return acc + (morning + evening);
+      }, 0);
+    }
+
+    const resolved = registerSum > 0 ? registerSum : (logSum > 0 ? logSum : baselineSum);
+    return Number(resolved.toFixed(1));
+  }, [animals, milkingLogs, posSyncVersion]);
 
   const milkProducts = products.filter((p) => p.category && p.category.toLowerCase().includes('milk'));
   const dahiProducts = products.filter((p) => p.category && p.category.toLowerCase().includes('dahi'));
@@ -1067,9 +1143,65 @@ export function POSProvider({ children }) {
   }
 
   const totalSupplierIntake = intakeLogs.reduce((sum, item) => sum + (Number(item.quantity || item.quantityLiters) || 0), 0);
-  const remainingSupplierMilk = Math.max(0, totalSupplierIntake - (supplierSalesMetrics?.milkSold || 0));
-  const remainingFarmMilk = Math.max(0, totalFarmMilk - (farmSalesMetrics?.milkSold || 0));
-  const remainingTotalMilk = remainingFarmMilk + remainingSupplierMilk;
+
+  // Dahi batches for milk converted to Dahi and transferred to POS
+  let farmMilkConvertedToDahi = 0;
+  let supplierMilkConvertedToDahi = 0;
+  let totalDahiTransferredToPOS = 0;
+
+  try {
+    const dahiSaved = localStorage.getItem('pure_milk_bar_dahi_batches_v5');
+    if (dahiSaved) {
+      const parsedBatches = JSON.parse(dahiSaved);
+      if (Array.isArray(parsedBatches)) {
+        parsedBatches.forEach((b) => {
+          const numUsed = Number(b.milkUsedVal) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0;
+          if (b.farmMilkUsed !== undefined && b.supplierMilkUsed !== undefined) {
+            farmMilkConvertedToDahi += Number(b.farmMilkUsed) || 0;
+            supplierMilkConvertedToDahi += Number(b.supplierMilkUsed) || 0;
+          } else {
+            const src = (b.source || '').toLowerCase();
+            if (src.includes('farm') && !src.includes('supplier') && !src.includes('mix')) {
+              farmMilkConvertedToDahi += numUsed;
+            } else if (src.includes('supplier') && !src.includes('farm') && !src.includes('mix')) {
+              supplierMilkConvertedToDahi += numUsed;
+            } else {
+              const totalSourced = totalFarmMilk + totalSupplierIntake;
+              const ratio = totalSourced > 0 ? totalFarmMilk / totalSourced : 0.5;
+              const fPortion = Math.round(numUsed * ratio);
+              farmMilkConvertedToDahi += fPortion;
+              supplierMilkConvertedToDahi += Math.max(0, numUsed - fPortion);
+            }
+          }
+
+          if (b.stage === 'pos') {
+            const outNum = Number(b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
+            totalDahiTransferredToPOS += outNum;
+          }
+        });
+      }
+    }
+  } catch (e) {
+    farmMilkConvertedToDahi = 0;
+    supplierMilkConvertedToDahi = 0;
+    totalDahiTransferredToPOS = 0;
+  }
+
+  // Remaining liquid milk after BOTH POS sales AND Dahi conversion:
+  const remainingFarmMilk = Math.max(0, Number((totalFarmMilk - (farmSalesMetrics?.milkSold || 0) - farmMilkConvertedToDahi).toFixed(1)));
+  const remainingSupplierMilk = Math.max(0, Number((totalSupplierIntake - (supplierSalesMetrics?.milkSold || 0) - supplierMilkConvertedToDahi).toFixed(1)));
+  const remainingTotalMilk = Number((remainingFarmMilk + remainingSupplierMilk).toFixed(1));
+
+  // Available live Dahi stock at POS Counter (transferred minus sold)
+  const availableDahiStock = Math.max(0, Number((totalDahiTransferredToPOS - totalDahiSold).toFixed(1)));
+
+  // Dahi Extra Profit Calculation:
+  // Liquid Milk retail price: activeMilkPrice (approx Rs. 260/L)
+  // Dahi retail price: activeDahiPrice (approx Rs. 320/kg)
+  // Extra profit per kg = activeDahiPrice - activeMilkPrice (approx Rs. 60/kg value-add uplift)
+  const dahiExtraMarginPerKg = Math.max(0, (activeDahiPrice || 320) - (activeMilkPrice || 260));
+  const dahiRealizedExtraProfit = Math.round(totalDahiSold * dahiExtraMarginPerKg);
+  const dahiTotalExtraProfit = Math.round(totalDahiTransferredToPOS * dahiExtraMarginPerKg);
 
   return (
     <POSContext.Provider
@@ -1178,7 +1310,7 @@ export function POSProvider({ children }) {
         // Direct Khata
         executeKhataPayment,
 
-        // 6 Inventory metrics
+        // Inventory & Sales metrics (Live Milk & Dahi)
         inventoryMetrics: {
           totalFarmYield: totalFarmMilk,
           farmMilkStock: remainingFarmMilk % 1 === 0 ? remainingFarmMilk.toFixed(0) : remainingFarmMilk.toFixed(1),
@@ -1186,13 +1318,15 @@ export function POSProvider({ children }) {
           totalMilkStock: remainingTotalMilk % 1 === 0 ? remainingTotalMilk.toFixed(0) : remainingTotalMilk.toFixed(1),
           totalSupplierIntake,
           supplierMilkStock: remainingSupplierMilk % 1 === 0 ? remainingSupplierMilk.toFixed(0) : remainingSupplierMilk.toFixed(1),
-          totalDahi: products.filter((p) => p.category && p.category.toLowerCase().includes('dahi')).reduce((sum, p) => sum + (Number(p.stock) || 0), 0) > 0 
-            ? products.filter((p) => p.category && p.category.toLowerCase().includes('dahi')).reduce((sum, p) => sum + (Number(p.stock) || 0), 0).toFixed(1)
-            : (totalDahiSold > 0 ? totalDahiSold.toFixed(1) : '0'),
+          totalDahi: availableDahiStock % 1 === 0 ? availableDahiStock.toFixed(0) : availableDahiStock.toFixed(1),
+          totalDahiStock: availableDahiStock % 1 === 0 ? availableDahiStock.toFixed(0) : availableDahiStock.toFixed(1),
+          totalDahiTransferred: totalDahiTransferredToPOS % 1 === 0 ? totalDahiTransferredToPOS.toFixed(0) : totalDahiTransferredToPOS.toFixed(1),
           milkSold: (totalMilkSold % 1 === 0 ? totalMilkSold.toFixed(0) : totalMilkSold.toFixed(2)),
           dahiSold: (totalDahiSold % 1 === 0 ? totalDahiSold.toFixed(0) : totalDahiSold.toFixed(2)),
           totalMilkPrice,
           totalDahiPrice,
+          dahiExtraProfit: dahiRealizedExtraProfit,
+          dahiTotalPotentialExtraProfit: dahiTotalExtraProfit,
           milkPrice: activeMilkPrice,
           dahiPrice: activeDahiPrice,
         },

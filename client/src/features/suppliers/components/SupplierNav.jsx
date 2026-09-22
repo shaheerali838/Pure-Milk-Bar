@@ -59,7 +59,7 @@ export default function SupplierNav() {
   const { pathname } = useLocation();
 
   return (
-    <div className="flex flex-col gap-1.5 pb-2">
+    <div className="flex flex-col gap-1.5 ">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 min-w-[680px] lg:min-w-full">
         {SUPPLIER_TABS.map(({ to, label, icon: Icon, color }) => {
           const isActive =

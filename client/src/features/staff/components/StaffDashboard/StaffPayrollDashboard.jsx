@@ -49,6 +49,90 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
     }
   }, [currentView]);
 
+  const handleNavigate = (tab) => {
+    if (typeof onNavigateTab === 'function') {
+      onNavigateTab(tab);
+    } else {
+      if (tab === 'manage') navigate('/staff/manage');
+      else if (tab === 'attendance') navigate('/staff/attendance');
+      else if (tab === 'daily-sheet' || tab === 'dailysheet') navigate('/staff/dailysheet');
+      else navigate('/staff');
+    }
+  };
+
+  const getRoleBadgeStyle = (role) => {
+    const r = (role || '').toLowerCase();
+    if (r.includes('delivery') || r.includes('rider')) return 'bg-amber-50 text-amber-800 border-amber-200';
+    if (r.includes('farm') || r.includes('milk')) return 'bg-emerald-50 text-emerald-800 border-emerald-200';
+    if (r.includes('security')) return 'bg-rose-50 text-rose-800 border-rose-200';
+    if (r.includes('cashier')) return 'bg-blue-50 text-blue-800 border-blue-200';
+    if (r.includes('manager')) return 'bg-purple-50 text-purple-800 border-purple-200';
+    return 'bg-slate-100 text-slate-800 border-slate-200';
+  };
+
+  const handleDeleteStaff = (e, staff) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to remove "${staff.name}" (${staff.id})?`)) {
+      deleteStaff(staff.id);
+    }
+  };
+
+  const handleSelectStaff = (staff) => {
+    if (!staff) return;
+    setSelectedStaff(staff);
+    setCurrentView('detail');
+    try {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    } catch {
+      window.scrollTo(0, 0);
+    }
+  };
+
+  const handleEditStaff = (e, staff) => {
+    e.stopPropagation();
+    setEditStaff(staff);
+    setCurrentView('edit');
+  };
+
+  // Filtered staff list for the table (Declared unconditionally before any early return)
+  const filteredStaff = useMemo(() => {
+    return staffList.filter((staff) => {
+      const q = searchTerm.toLowerCase().trim();
+      const matchesQuery =
+        !q ||
+        (staff.name || '').toLowerCase().includes(q) ||
+        (staff.id || '').toLowerCase().includes(q) ||
+        (staff.role || '').toLowerCase().includes(q) ||
+        (staff.mobile || '').toLowerCase().includes(q) ||
+        (staff.cnic || '').toLowerCase().includes(q) ||
+        (staff.route || '').toLowerCase().includes(q);
+
+      const matchesRole =
+        roleFilter === 'all' ||
+        (staff.role || '').toLowerCase().includes(roleFilter.toLowerCase());
+
+      const matchesShift =
+        shiftFilter === 'all' ||
+        (staff.shift || '').toLowerCase() === shiftFilter.toLowerCase();
+
+      return matchesQuery && matchesRole && matchesShift;
+    });
+  }, [staffList, searchTerm, roleFilter, shiftFilter]);
+
+  // Role Breakdown
+  const roleGroups = staffList.reduce((acc, staff) => {
+    const role = staff.role || 'Other';
+    acc[role] = (acc[role] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Shift Breakdown
+  const shiftGroups = staffList.reduce((acc, staff) => {
+    const shift = staff.shift || 'Morning';
+    acc[shift] = (acc[shift] || 0) + 1;
+    return acc;
+  }, {});
+
   // Full-space Staff Detail View (Exact Livestock / Manage Staff Detail Design Match)
   if (currentView === 'detail' && selectedStaff) {
     return (
@@ -102,90 +186,6 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
       />
     );
   }
-
-  const handleNavigate = (tab) => {
-    if (typeof onNavigateTab === 'function') {
-      onNavigateTab(tab);
-    } else {
-      if (tab === 'manage') navigate('/staff/manage');
-      else if (tab === 'attendance') navigate('/staff/attendance');
-      else if (tab === 'daily-sheet' || tab === 'dailysheet') navigate('/staff/dailysheet');
-      else navigate('/staff');
-    }
-  };
-
-  const getRoleBadgeStyle = (role) => {
-    const r = (role || '').toLowerCase();
-    if (r.includes('delivery') || r.includes('rider')) return 'bg-amber-50 text-amber-800 border-amber-200';
-    if (r.includes('farm') || r.includes('milk')) return 'bg-emerald-50 text-emerald-800 border-emerald-200';
-    if (r.includes('security')) return 'bg-rose-50 text-rose-800 border-rose-200';
-    if (r.includes('cashier')) return 'bg-blue-50 text-blue-800 border-blue-200';
-    if (r.includes('manager')) return 'bg-purple-50 text-purple-800 border-purple-200';
-    return 'bg-slate-100 text-slate-800 border-slate-200';
-  };
-
-  const handleDeleteStaff = (e, staff) => {
-    e.stopPropagation();
-    if (window.confirm(`Are you sure you want to remove "${staff.name}" (${staff.id})?`)) {
-      deleteStaff(staff.id);
-    }
-  };
-
-  const handleSelectStaff = (staff) => {
-    if (!staff) return;
-    setSelectedStaff(staff);
-    setCurrentView('detail');
-    try {
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    } catch {
-      window.scrollTo(0, 0);
-    }
-  };
-
-  const handleEditStaff = (e, staff) => {
-    e.stopPropagation();
-    setEditStaff(staff);
-    setCurrentView('edit');
-  };
-
-  // Filtered staff list for the table
-  const filteredStaff = useMemo(() => {
-    return staffList.filter((staff) => {
-      const q = searchTerm.toLowerCase().trim();
-      const matchesQuery =
-        !q ||
-        (staff.name || '').toLowerCase().includes(q) ||
-        (staff.id || '').toLowerCase().includes(q) ||
-        (staff.role || '').toLowerCase().includes(q) ||
-        (staff.mobile || '').toLowerCase().includes(q) ||
-        (staff.cnic || '').toLowerCase().includes(q) ||
-        (staff.route || '').toLowerCase().includes(q);
-
-      const matchesRole =
-        roleFilter === 'all' ||
-        (staff.role || '').toLowerCase().includes(roleFilter.toLowerCase());
-
-      const matchesShift =
-        shiftFilter === 'all' ||
-        (staff.shift || '').toLowerCase() === shiftFilter.toLowerCase();
-
-      return matchesQuery && matchesRole && matchesShift;
-    });
-  }, [staffList, searchTerm, roleFilter, shiftFilter]);
-
-  // Role Breakdown
-  const roleGroups = staffList.reduce((acc, staff) => {
-    const role = staff.role || 'Other';
-    acc[role] = (acc[role] || 0) + 1;
-    return acc;
-  }, {});
-
-  // Shift Breakdown
-  const shiftGroups = staffList.reduce((acc, staff) => {
-    const shift = staff.shift || 'Morning';
-    acc[shift] = (acc[shift] || 0) + 1;
-    return acc;
-  }, {});
 
   return (
     <div className="space-y-2 animate-in fade-in duration-150">

@@ -20,6 +20,7 @@ import AnimalsHerd from "../features/farm/pages/AnimalsHerd";
 import AnimalDetailPage from "../features/farm/pages/AnimalDetailPage";
 import MilkingRegister from "../features/farm/pages/MilkingRegister";
 import DahiProcessing from "../features/farm/pages/DahiProcessing";
+import DahiPage from "../features/dahi/page/DahiPage";
 import ExpenseLayout from "../features/farm/pages/ExpenseLayout";
 import FarmExpenses from "../features/farm/pages/FarmExpenses";
 import RecordFarmExpensePage from "../features/farm/pages/RecordFarmExpensePage";
@@ -87,7 +88,7 @@ export function AppRouter() {
               <Route path="animals" element={<AnimalsHerd />} />
               <Route path="animals/detail/:id" element={<AnimalDetailPage />} />
               <Route path="milking" element={<MilkingRegister />} />
-              <Route path="processing" element={<DahiProcessing />} />
+              <Route path="processing" element={<DahiPage />} />
               <Route path="expenses" element={<ExpenseLayout />}>
                 <Route index element={<FarmExpenses />} />
                 <Route path="new" element={<RecordFarmExpensePage />} />
@@ -110,7 +111,9 @@ export function AppRouter() {
               <Route path="procurementsheet" element={<ProcurementSheet />} />
               <Route path="procurement-sheet" element={<ProcurementSheet />} />
             </Route>
-            <Route path="proccessing" element={<Proccessing />} />
+            <Route path="dahi" element={<DahiPage />} />
+            <Route path="processing" element={<DahiPage />} />
+            <Route path="proccessing" element={<DahiPage />} />
             <Route path="products" element={<Products />} />
 
             <Route path="pos" element={<Pos />} />
