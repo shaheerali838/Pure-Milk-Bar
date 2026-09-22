@@ -11,14 +11,11 @@ import farmRoutes from './modules/farm/routes/farm.routes.js';
 import supplierRoutes from './modules/suppliers/routes/supplier.routes.js';
 import customerRoutes from './modules/customers/routes/customer.routes.js';
 import deliveryRoutes from './modules/deliveries/routes/delivery.routes.js';
-<<<<<<< HEAD
 import inventoryRoutes from './modules/inventory/routes/inventory.routes.js';
 import posRoutes from './modules/pos/routes/pos.routes.js';
-=======
 import financeRoutes from './modules/finance/routes/finance.routes.js';
 import dailyClosingRoutes from './modules/dailyClosing/routes/dailyClosing.routes.js';
 import auditLogRoutes from './modules/auditLog/routes/auditLog.routes.js';
->>>>>>> origin/Nabeel-Ahmad
 
 const app = express();
 
