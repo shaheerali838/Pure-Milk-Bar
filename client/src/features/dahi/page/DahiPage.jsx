@@ -11,6 +11,7 @@ import DahiKitchenPipeline from '../component/DahiKitchenPipeline';
 import DahiBatchTable from '../component/DahiBatchTable';
 import DahiProfitCalculator from '../component/DahiProfitCalculator';
 import AddDahiBatchModal from '../component/AddDahiBatchModal';
+import DahiBatchDetail from '../component/DahiBatchDetail';
 import { useDahiContext } from '@/context/DahiContext';
 
 export default function DahiPage() {
@@ -26,10 +27,31 @@ export default function DahiPage() {
 
   const [activeTab, setActiveTab] = useState('pipeline'); // 'pipeline' | 'history' | 'calculator'
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBatchId, setSelectedBatchId] = useState(null);
 
   const activePipelineCount = batches.filter(
     (b) => b.stage === 'incubating' || b.stage === 'chilled' || b.stage === 'pos'
   ).length;
+
+  // Render Full-Screen Add Batch View
+  if (isModalOpen) {
+    return (
+      <AddDahiBatchModal
+        onClose={() => setIsModalOpen(false)}
+        onAddBatch={addBatch}
+      />
+    );
+  }
+
+  // Render Full-Screen Detail View
+  if (selectedBatchId) {
+    return (
+      <DahiBatchDetail
+        batchId={selectedBatchId}
+        onBack={() => setSelectedBatchId(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-2.5">
@@ -137,18 +159,11 @@ export default function DahiPage() {
               </p>
             </div>
           </div>
-          <DahiBatchTable batches={batches} onDeleteBatch={deleteBatch} />
+          <DahiBatchTable batches={batches} onDeleteBatch={deleteBatch} onViewDetail={setSelectedBatchId} />
         </div>
       )}
 
       {activeTab === 'calculator' && <DahiProfitCalculator />}
-
-      {/* 4. Add Batch Modal */}
-      <AddDahiBatchModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onAddBatch={addBatch}
-      />
     </div>
   );
 }
