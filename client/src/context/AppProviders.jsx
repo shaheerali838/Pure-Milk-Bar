@@ -1,4 +1,5 @@
 import React from "react";
+import { AuthProvider } from "./AuthContext";
 import { CustomerProvider } from "./CustomerContext";
 import { LedgerProvider } from "./LedgerContext";
 import { AnimalProvider } from "./AnimalContext";
@@ -12,13 +13,14 @@ import { DeliveryProvider } from "./DeliveryContext";
 import { SupplierProvider } from "./SupplierContext";
 import { IntakeProvider } from "./IntakeContext";
 import { POSProvider } from "./POSContext";
+import { SourcExpenseProvider } from "./SourcExpenseContext";
 import { PayrollProvider } from "./PayrollContext";
 import { TransactionProvider } from "./TransactionContext";
 import { AuditProvider } from "./AuditContext";
 import { SettingsProvider } from "./SettingsContext";
-import { SourcExpenseProvider } from "./SourcExpenseContext";
 
 const providers = [
+  AuthProvider,
   CustomerProvider,
   LedgerProvider,
   AnimalProvider,
@@ -32,11 +34,11 @@ const providers = [
   SupplierProvider,
   IntakeProvider,
   POSProvider,
+  SourcExpenseProvider,
   PayrollProvider,
   TransactionProvider,
   AuditProvider,
   SettingsProvider,
-  SourcExpenseProvider,
 ];
 
 export const AppProviders = ({ children }) => {
@@ -44,7 +46,7 @@ export const AppProviders = ({ children }) => {
     (accumulatedProviders, CurrentProvider) => (
       <CurrentProvider>{accumulatedProviders}</CurrentProvider>
     ),
-    children
+    children,
   );
 };
 

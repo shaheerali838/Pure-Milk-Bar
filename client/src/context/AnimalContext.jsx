@@ -1,266 +1,173 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import farmService from '@/services/farmService';
 
 const AnimalContext = createContext();
 
-const STORAGE_KEY = 'pure_milk_bar_animals_register_v4';
-
-const defaultAnimals = [
-  {
-    id: 1,
-    tag: 'COW-A',
-    species: 'Cow (Sahiwal)',
-    lactationStatus: 'Milking',
-    acquisitionDate: '2024-01-15',
-    morningYield: '8.5 L',
-    eveningYield: '7.2 L',
-    totalDailyYield: '15.7 L',
-    history: [
-      { date: '18 Aug', morning: 8.2, evening: 7.0 },
-      { date: '19 Aug', morning: 8.8, evening: 7.3 },
-      { date: '20 Aug', morning: 8.0, evening: 6.8 },
-      { date: '21 Aug', morning: 9.1, evening: 7.5 },
-      { date: '22 Aug', morning: 8.5, evening: 7.2 },
-      { date: '23 Aug', morning: 8.9, evening: 7.4 },
-      { date: '24 Aug', morning: 8.5, evening: 7.2 },
-    ]
-  },
-  {
-    id: 2,
-    tag: 'COW-B',
-    species: 'Cow (Cholistani)',
-    lactationStatus: 'Milking',
-    acquisitionDate: '2024-02-10',
-    morningYield: '9.0 L',
-    eveningYield: '8.5 L',
-    totalDailyYield: '17.5 L',
-    history: [
-      { date: '18 Aug', morning: 8.5, evening: 7.5 },
-      { date: '19 Aug', morning: 9.0, evening: 7.8 },
-      { date: '20 Aug', morning: 9.2, evening: 8.1 },
-      { date: '21 Aug', morning: 8.8, evening: 7.9 },
-      { date: '22 Aug', morning: 9.0, evening: 8.0 },
-      { date: '23 Aug', morning: 9.3, evening: 8.2 },
-      { date: '24 Aug', morning: 9.0, evening: 8.5 },
-    ]
-  },
-  {
-    id: 3,
-    tag: 'BUF-A',
-    species: 'Buffalo (Nili Ravi)',
-    lactationStatus: 'Milking',
-    acquisitionDate: '2023-11-20',
-    morningYield: '6.5 L',
-    eveningYield: '6.0 L',
-    totalDailyYield: '12.5 L',
-    history: [
-      { date: '18 Aug', morning: 6.0, evening: 5.8 },
-      { date: '19 Aug', morning: 6.2, evening: 6.0 },
-      { date: '20 Aug', morning: 6.5, evening: 6.1 },
-      { date: '21 Aug', morning: 6.3, evening: 5.9 },
-      { date: '22 Aug', morning: 6.6, evening: 6.0 },
-      { date: '23 Aug', morning: 6.4, evening: 6.2 },
-      { date: '24 Aug', morning: 6.5, evening: 6.0 },
-    ]
-  },
-  {
-    id: 4,
-    tag: 'BUF-B',
-    species: 'Buffalo (Nili Ravi)',
-    lactationStatus: 'Milking',
-    acquisitionDate: '2023-12-05',
-    morningYield: '7.0 L',
-    eveningYield: '6.5 L',
-    totalDailyYield: '13.5 L',
-    history: [
-      { date: '18 Aug', morning: 6.8, evening: 6.2 },
-      { date: '19 Aug', morning: 7.1, evening: 6.4 },
-      { date: '20 Aug', morning: 7.0, evening: 6.5 },
-      { date: '21 Aug', morning: 6.9, evening: 6.3 },
-      { date: '22 Aug', morning: 7.2, evening: 6.6 },
-      { date: '23 Aug', morning: 7.0, evening: 6.5 },
-      { date: '24 Aug', morning: 7.0, evening: 6.5 },
-    ]
-  },
-  {
-    id: 5,
-    tag: 'BUF-C',
-    species: 'Buffalo (Kundi)',
-    lactationStatus: 'Milking',
-    acquisitionDate: '2024-03-01',
-    morningYield: '5.5 L',
-    eveningYield: '5.0 L',
-    totalDailyYield: '10.5 L',
-    history: [
-      { date: '18 Aug', morning: 5.2, evening: 4.8 },
-      { date: '19 Aug', morning: 5.4, evening: 5.0 },
-      { date: '20 Aug', morning: 5.6, evening: 5.1 },
-      { date: '21 Aug', morning: 5.3, evening: 4.9 },
-      { date: '22 Aug', morning: 5.5, evening: 5.0 },
-      { date: '23 Aug', morning: 5.7, evening: 5.2 },
-      { date: '24 Aug', morning: 5.5, evening: 5.0 },
-    ]
-  },
-  {
-    id: 6,
-    tag: 'COW-D',
-    species: 'Cow (Sahiwal)',
-    lactationStatus: 'Milking',
-    acquisitionDate: '2024-04-12',
-    morningYield: '7.5 L',
-    eveningYield: '7.0 L',
-    totalDailyYield: '14.5 L',
-    history: [
-      { date: '18 Aug', morning: 7.2, evening: 6.8 },
-      { date: '19 Aug', morning: 7.6, evening: 7.1 },
-      { date: '20 Aug', morning: 7.4, evening: 6.9 },
-      { date: '21 Aug', morning: 7.5, evening: 7.0 },
-      { date: '22 Aug', morning: 7.7, evening: 7.2 },
-      { date: '23 Aug', morning: 7.3, evening: 6.9 },
-      { date: '24 Aug', morning: 7.5, evening: 7.0 },
-    ]
-  }
-];
-
 export function AnimalProvider({ children }) {
-  // Load animals from localStorage (default to defaultAnimals)
-  const [animals, setAnimals] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-      return defaultAnimals;
-    } catch (err) {
-      return defaultAnimals;
-    }
-  });
-
+  const [animals, setAnimals] = useState([]);
+  const [milkingLogs, setMilkingLogs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Save animals to localStorage on change
-  useEffect(() => {
+  // Fetch live herd animals and milking logs from API
+  const fetchAnimalsAndLogs = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(animals));
+      const [animalsData, logsData] = await Promise.allSettled([
+        farmService.getAnimals(),
+        farmService.getMilkingLogs(),
+      ]);
+
+      const animalList =
+        animalsData.status === 'fulfilled'
+          ? Array.isArray(animalsData.value)
+            ? animalsData.value
+            : animalsData.value?.animals || []
+          : [];
+
+      const logList =
+        logsData.status === 'fulfilled'
+          ? Array.isArray(logsData.value)
+            ? logsData.value
+            : logsData.value?.logs || []
+          : [];
+
+      // Normalize animal records
+      const normalized = animalList.map((a) => {
+        const morning = parseFloat(a.morningYield || a.avgMorningYield || 0);
+        const evening = parseFloat(a.eveningYield || a.avgEveningYield || 0);
+        const total = (morning + evening).toFixed(1);
+
+        return {
+          ...a,
+          id: a._id || a.id,
+          tag: a.tag || a.tagNumber,
+          species: a.species || a.breed || 'Cow',
+          lactationStatus: a.lactationStatus || a.status || 'Milking',
+          morningYield: `${morning.toFixed(1)} L`,
+          eveningYield: `${evening.toFixed(1)} L`,
+          totalDailyYield: `${total} L`,
+          history: a.history || [],
+        };
+      });
+
+      setAnimals(normalized);
+      setMilkingLogs(logList);
     } catch (err) {
-      console.error('Failed to save to localStorage:', err);
+      console.error('Failed to fetch farm data from API:', err);
+      setError(err.message || 'Failed to load herd animals');
+      setAnimals([]);
+    } finally {
+      setIsLoading(false);
     }
-  }, [animals]);
+  }, []);
 
-  // Generate default 7-day history for new/edited animals
-  const generateHistory = (mYield, eYield) => {
-    const dates = ['18 Aug', '19 Aug', '20 Aug', '21 Aug', '22 Aug', '23 Aug', '24 Aug'];
-    return dates.map((date) => {
-      const mVar = (Math.random() * 0.6 - 0.3);
-      const eVar = (Math.random() * 0.6 - 0.3);
-      return {
-        date,
-        morning: Math.max(0, parseFloat((mYield + mVar).toFixed(1))),
-        evening: Math.max(0, parseFloat((eYield + eVar).toFixed(1))),
+  useEffect(() => {
+    fetchAnimalsAndLogs();
+  }, [fetchAnimalsAndLogs]);
+
+  // Add Animal via API
+  const addAnimal = async (formData) => {
+    try {
+      const morning = parseFloat(formData.morningYield || 0);
+      const evening = parseFloat(formData.eveningYield || 0);
+
+      const payload = {
+        tagNumber: formData.tag?.trim() || `TAG-${Date.now().toString().slice(-4)}`,
+        name: formData.name?.trim() || '',
+        species: formData.species || 'Cow',
+        breed: formData.breed || formData.species || '',
+        lactationStage: formData.lactationStatus || 'Milking',
+        purchasePrice: parseFloat(formData.purchasePrice) || 0,
+        expectedDailyYield: morning + evening,
+        morningYield: morning,
+        eveningYield: evening,
+        healthStatus: formData.healthStatus || 'Healthy',
+        acquisitionDate: formData.acquisitionDate || new Date().toISOString().split('T')[0],
       };
-    });
+
+      const created = await farmService.createAnimal(payload);
+      const normalized = {
+        ...created,
+        id: created._id || created.id || Date.now(),
+        tag: created.tagNumber || payload.tagNumber,
+        species: created.species,
+        lactationStatus: created.lactationStage || 'Milking',
+        morningYield: `${morning.toFixed(1)} L`,
+        eveningYield: `${evening.toFixed(1)} L`,
+        totalDailyYield: `${(morning + evening).toFixed(1)} L`,
+        history: [],
+      };
+
+      setAnimals((prev) => [normalized, ...prev]);
+      return normalized;
+    } catch (err) {
+      console.error('Failed to create animal via API:', err);
+      throw err;
+    }
   };
 
-  // Register new animal
-  const addAnimal = (formData) => {
-    const morning = parseFloat(formData.morningYield || 0);
-    const evening = parseFloat(formData.eveningYield || 0);
-    const total = (morning + evening).toFixed(1);
+  // Update Animal via API
+  const updateAnimal = async (id, formData) => {
+    try {
+      const morning = parseFloat(formData.morningYield || 0);
+      const evening = parseFloat(formData.eveningYield || 0);
 
-    const isBuff = formData.species && formData.species.toLowerCase().includes("buffalo");
-    const prefix = isBuff ? "BUF" : "COW";
-    const autoTag = `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const finalTag = formData.tag && formData.tag.trim() !== "" ? formData.tag.trim() : autoTag;
-    const finalName = formData.name && formData.name.trim() !== "" ? formData.name.trim() : finalTag;
-
-    const priceVal = formData.purchasePrice ? `Rs ${parseFloat(formData.purchasePrice).toLocaleString()}` : 'Rs 200,000';
-    const expVal = formData.expectedYield ? `${parseFloat(formData.expectedYield).toFixed(1)} L` : `${(morning + evening || 15.0).toFixed(1)} L`;
-
-    const newAnimal = {
-      id: Date.now(),
-      tag: finalTag,
-      name: finalName,
-      species: formData.species || 'Cow (Sahiwal)',
-      lactationStatus: formData.lactationStatus || 'Milking',
-      acquisitionDate: formData.acquisitionDate || new Date().toISOString().split('T')[0],
-      purchasePrice: priceVal,
-      expectedYield: expVal,
-      morningYield: morning.toFixed(1) + ' L',
-      eveningYield: evening.toFixed(1) + ' L',
-      totalDailyYield: total + ' L',
-      healthStatus: formData.healthStatus || 'Healthy & Vaccinated',
-      history: generateHistory(morning, evening),
-    };
-
-    setAnimals((prev) => [newAnimal, ...prev]);
+      await farmService.updateAnimal(id, formData);
+      setAnimals((prev) =>
+        prev.map((a) => {
+          if ((a._id || a.id) === id) {
+            return {
+              ...a,
+              ...formData,
+              morningYield: `${morning.toFixed(1)} L`,
+              eveningYield: `${evening.toFixed(1)} L`,
+              totalDailyYield: `${(morning + evening).toFixed(1)} L`,
+            };
+          }
+          return a;
+        })
+      );
+    } catch (err) {
+      console.error('Failed to update animal via API:', err);
+      throw err;
+    }
   };
 
-  // Update existing animal
-  const updateAnimal = (id, formData) => {
-    const morning = parseFloat(formData.morningYield || 0);
-    const evening = parseFloat(formData.eveningYield || 0);
-    const total = (morning + evening).toFixed(1);
-
-    setAnimals((prev) =>
-      prev.map((a) => {
-        if (a.id === id) {
-          return {
-            ...a,
-            tag: formData.tag && formData.tag.trim() !== "" ? formData.tag.trim() : a.tag,
-            name: formData.name && formData.name.trim() !== "" ? formData.name.trim() : a.name,
-            species: formData.species || a.species,
-            lactationStatus: formData.lactationStatus || a.lactationStatus,
-            acquisitionDate: formData.acquisitionDate || a.acquisitionDate,
-            purchasePrice: formData.purchasePrice ? `Rs ${parseFloat(formData.purchasePrice).toLocaleString()}` : a.purchasePrice,
-            expectedYield: formData.expectedYield ? `${parseFloat(formData.expectedYield).toFixed(1)} L` : a.expectedYield,
-            morningYield: morning.toFixed(1) + ' L',
-            eveningYield: evening.toFixed(1) + ' L',
-            totalDailyYield: total + ' L',
-            healthStatus: formData.healthStatus || a.healthStatus,
-            history: generateHistory(morning, evening),
-          };
-        }
-        return a;
-      })
-    );
+  // Delete Animal via API
+  const deleteAnimal = async (id) => {
+    try {
+      await farmService.deleteAnimal(id);
+      setAnimals((prev) => prev.filter((a) => (a._id || a.id) !== id));
+    } catch (err) {
+      console.error('Failed to delete animal via API:', err);
+      throw err;
+    }
   };
 
+  // Save Milking Shift to backend
+  const saveMilkingShift = async (shiftName, shiftDate, shiftEntries) => {
+    try {
+      const promises = Object.entries(shiftEntries).map(([tag, yieldVal]) => {
+        const val = parseFloat(yieldVal);
+        if (isNaN(val) || val <= 0) return null;
+        const animal = animals.find((a) => a.tag === tag);
+        return farmService.createMilkingLog({
+          animalId: animal?._id || animal?.id,
+          animalTag: tag,
+          shift: shiftName.toUpperCase(),
+          date: shiftDate || new Date().toISOString().split('T')[0],
+          yieldLiters: val,
+        });
+      });
 
-  // Save milking shift entries to record shift log history without mutating registered baseline averages
-  const saveMilkingShift = (shiftName, shiftDate, shiftEntries) => {
-    setAnimals((prev) =>
-      prev.map((animal) => {
-        const enteredVal = shiftEntries[animal.tag];
-        if (enteredVal !== undefined && enteredVal !== "" && !isNaN(parseFloat(enteredVal))) {
-          const numVal = parseFloat(enteredVal);
-
-          const updatedHistory = (animal.history || []).map((h) => {
-            if (h.date === '24 Aug') {
-              return {
-                ...h,
-                morning: shiftName === 'Morning' ? numVal : h.morning,
-                evening: shiftName === 'Evening' ? numVal : h.evening,
-              };
-            }
-            return h;
-          });
-
-          return {
-            ...animal,
-            // Preserve registered morningYield and eveningYield baselines!
-            history: updatedHistory,
-          };
-        }
-        return animal;
-      })
-    );
-  };
-
-
-  // Delete animal by ID
-  const deleteAnimal = (id) => {
-    setAnimals((prev) => prev.filter((a) => a.id !== id));
+      await Promise.allSettled(promises.filter(Boolean));
+      fetchAnimalsAndLogs();
+    } catch (err) {
+      console.error('Failed to save milking shift:', err);
+    }
   };
 
   const openModal = () => setIsModalOpen(true);
@@ -270,6 +177,10 @@ export function AnimalProvider({ children }) {
     <AnimalContext.Provider
       value={{
         animals,
+        milkingLogs,
+        isLoading,
+        error,
+        refreshAnimals: fetchAnimalsAndLogs,
         addAnimal,
         updateAnimal,
         saveMilkingShift,
@@ -288,5 +199,4 @@ export function useAnimalContext() {
   return useContext(AnimalContext);
 }
 
-
-
+export default AnimalContext;

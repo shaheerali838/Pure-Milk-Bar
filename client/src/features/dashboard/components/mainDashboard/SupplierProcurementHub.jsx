@@ -75,14 +75,14 @@ export default function SupplierProcurementHub() {
           <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium">Procured Milk Volume:</span>
             <span className="font-mono font-bold text-slate-900 tabular">
-              {procuredVolume.toFixed(1)} kg ({activeSuppliersCount} Active Suppliers)
+              {procuredVolume.toFixed(1)} L ({activeSuppliersCount} Active Suppliers)
             </span>
           </div>
 
           <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium">Milk Purchase Direct Cost:</span>
             <span className="font-mono font-bold text-slate-900 tabular">
-              Rs. {directCost.toLocaleString()} (@ Rs. {Math.round(avgProcurementRate)}/kg)
+              Rs. {directCost.toLocaleString()} (@ Rs. {Math.round(avgProcurementRate)}/L)
             </span>
           </div>
 

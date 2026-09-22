@@ -36,11 +36,26 @@ router.route('/users')
   .post(validateCreateUser, createUser) // Create a new user
   .get(getUsers); // Get all users
 
+router.route('/staff')
+  .post(createUser)
+  .get(getUsers);
+
 // Manage a specific user by their ID
 router.route('/users/:id')
   .get(getUserById) // Get user details by ID
   .put(validateUpdateUser, updateUser) // Update user information
   .delete(deleteUser); // Delete a user
+
+router.route('/staff/:id')
+  .get(getUserById)
+  .put(updateUser)
+  .patch(updateUser)
+  .delete(deleteUser);
+
+// Settings routes
+router.route('/settings')
+  .get((req, res) => res.json({ success: true, data: {} }))
+  .put((req, res) => res.json({ success: true, data: req.body }));
 
 // Change the user's account status (active/inactive)
 router.patch(

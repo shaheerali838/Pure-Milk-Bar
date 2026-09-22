@@ -1,100 +1,110 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import deliveryService from '@/services/deliveryService';
 
 const DeliveryContext = createContext();
 
-const STORAGE_KEY = 'pure_milk_bar_deliveries';
-
-const defaultDeliveries = [];
-
 export function DeliveryProvider({ children }) {
-  const [deliveries, setDeliveries] = useState(() => {
+  const [deliveries, setDeliveries] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchDeliveries = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-      return defaultDeliveries;
+      const data = await deliveryService.getDeliveries();
+      const list = Array.isArray(data) ? data : data?.deliveries || [];
+      const normalized = list.map((d) => ({
+        ...d,
+        id: d._id || d.id,
+      }));
+      setDeliveries(normalized);
     } catch (err) {
-      console.error('Failed to load deliveries from localStorage:', err);
-      return defaultDeliveries;
+      console.error('Failed to fetch deliveries from API:', err);
+      setError(err.message || 'Failed to load deliveries');
+      setDeliveries([]);
+    } finally {
+      setIsLoading(false);
     }
-  });
+  }, []);
 
   useEffect(() => {
+    fetchDeliveries();
+  }, [fetchDeliveries]);
+
+  const addDelivery = async (data) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(deliveries));
+      const todayISO = new Date().toISOString().split('T')[0];
+      const payload = {
+        date: data.date || todayISO,
+        shift: data.shift || 'MORNING',
+        route: data.route ? data.route.trim() : '',
+        riderNameSnapshot: data.riderNameSnapshot ? data.riderNameSnapshot.trim() : '',
+        staffType: data.staffType || 'MOTORCYCLE_RIDER',
+        customerId: data.customerId,
+        customerName: data.customerName ? data.customerName.trim() : '',
+        deliveryAddress: data.deliveryAddress ? data.deliveryAddress.trim() : '',
+        itemDescription: data.itemDescription ? data.itemDescription.trim() : 'Fresh Milk',
+        qtyLiters: Number(data.qtyLiters) || 1,
+        paymentMode: data.paymentMode || 'CASH',
+        codAmountToCollect:
+          data.paymentMode === 'CASH' || data.paymentMode === 'ONLINE'
+            ? Number(data.codAmountToCollect) || 0
+            : 0,
+        status: data.status || 'PENDING',
+        bottlesReturned: Number(data.bottlesReturned) || 0,
+      };
+
+      const created = await deliveryService.createDelivery(payload);
+      const normalized = {
+        ...created,
+        id: created._id || created.id || Date.now(),
+      };
+      setDeliveries((prev) => [normalized, ...prev]);
+      return normalized;
     } catch (err) {
-      console.error('Failed to save deliveries to localStorage:', err);
+      console.error('Failed to create delivery via API:', err);
+      throw err;
     }
-  }, [deliveries]);
-
-  const addDelivery = (data) => {
-    const nextNumericId =
-      deliveries.length > 0
-        ? Math.max(...deliveries.map((d) => Number(d.id) || 0)) + 1
-        : 1;
-
-    const runCode = `RUN-${String(nextNumericId).padStart(4, '0')}`;
-    const todayISO = new Date().toISOString().split('T')[0];
-
-    const newDelivery = {
-      id: nextNumericId,
-      runCode,
-      date: data.date || todayISO,
-      shift: data.shift || 'MORNING',
-      route: data.route ? data.route.trim() : '',
-      riderNameSnapshot: data.riderNameSnapshot ? data.riderNameSnapshot.trim() : '',
-      staffType: data.staffType || 'MOTORCYCLE_RIDER',
-      customerId: data.customerId,
-      customerName: data.customerName ? data.customerName.trim() : '',
-      deliveryAddress: data.deliveryAddress ? data.deliveryAddress.trim() : '',
-      itemDescription: data.itemDescription ? data.itemDescription.trim() : 'Fresh Milk',
-      qtyLiters: Number(data.qtyLiters) || 1,
-      paymentMode: data.paymentMode || 'CASH',
-      codAmountToCollect:
-        data.paymentMode === 'CASH' || data.paymentMode === 'ONLINE'
-          ? Number(data.codAmountToCollect) || 0
-          : 0,
-      status: 'PENDING',
-      deliveredAt: null,
-      bottlesReturned: Number(data.bottlesReturned) || 0,
-      createdAt: new Date().toISOString(),
-    };
-
-    setDeliveries((prev) => [newDelivery, ...prev]);
-    return newDelivery;
   };
 
-  const updateDelivery = (id, data) => {
+  const updateDelivery = async (id, data) => {
     setDeliveries((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, ...data } : d))
+      prev.map((d) => ((d._id || d.id) === id ? { ...d, ...data } : d))
     );
   };
 
-  const updateDeliveryStatus = (id, status) => {
-    const isDelivered = status === 'DELIVERED';
-    setDeliveries((prev) =>
-      prev.map((d) =>
-        d.id === id
-          ? {
-              ...d,
-              status,
-              deliveredAt: isDelivered ? new Date().toISOString() : null,
-            }
-          : d
-      )
-    );
+  const updateDeliveryStatus = async (id, status) => {
+    try {
+      await deliveryService.updateDeliveryStatus(id, status);
+      const isDelivered = status === 'DELIVERED';
+      setDeliveries((prev) =>
+        prev.map((d) =>
+          (d._id || d.id) === id
+            ? {
+                ...d,
+                status,
+                deliveredAt: isDelivered ? new Date().toISOString() : null,
+              }
+            : d
+        )
+      );
+    } catch (err) {
+      console.error('Failed to update delivery status:', err);
+    }
   };
 
   const deleteDelivery = (id) => {
-    setDeliveries((prev) => prev.filter((d) => d.id !== id));
+    setDeliveries((prev) => prev.filter((d) => (d._id || d.id) !== id));
   };
 
   return (
     <DeliveryContext.Provider
       value={{
         deliveries,
+        isLoading,
+        error,
+        refreshDeliveries: fetchDeliveries,
         addDelivery,
         updateDelivery,
         updateDeliveryStatus,
@@ -113,3 +123,5 @@ export function useDeliveryContext() {
   }
   return context;
 }
+
+export default DeliveryContext;

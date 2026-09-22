@@ -66,7 +66,7 @@ export default function FarmYieldHub() {
           <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium">Milk Yield Today:</span>
             <span className="font-mono font-bold text-slate-900 tabular">
-              {totalFarmYield.toFixed(1)} kg ({milkingAnimals.length} In-Milk Cows &amp; Buffaloes)
+              {totalFarmYield.toFixed(1)} L ({milkingAnimals.length} In-Milk Cows &amp; Buffaloes)
             </span>
           </div>
 

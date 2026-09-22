@@ -35,7 +35,7 @@ export default function PricingTab({ data = {}, onChange }) {
             {/* Cow Milk Rate */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700">
-                Default Cow Milk Rate (Rs. / liter or kg) <span className="text-rose-500">*</span>
+                Default Cow Milk Rate (Rs. / Liter) <span className="text-rose-500">*</span>
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 font-mono">
@@ -58,7 +58,7 @@ export default function PricingTab({ data = {}, onChange }) {
             {/* Buffalo Milk Rate */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-slate-700">
-                Default Buffalo Milk Rate (Rs. / liter or kg) <span className="text-rose-500">*</span>
+                Default Buffalo Milk Rate (Rs. / Liter) <span className="text-rose-500">*</span>
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 font-mono">

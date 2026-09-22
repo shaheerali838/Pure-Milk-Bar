@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import adminService from '@/services/adminService';
 
 const SettingsContext = createContext();
-
-const STORAGE_KEY_SETTINGS = 'pure_milk_bar_global_settings';
 
 const defaultSettings = {
   business: {
@@ -36,36 +35,31 @@ const defaultSettings = {
 };
 
 export function SettingsProvider({ children }) {
-  const [settings, setSettings] = useState(() => {
+  const [settings, setSettings] = useState(defaultSettings);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchSettings = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_SETTINGS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object') {
-          return {
-            business: { ...defaultSettings.business, ...(parsed.business || {}) },
-            productDefaults: { ...defaultSettings.productDefaults, ...(parsed.productDefaults || {}) },
-            pricing: { ...defaultSettings.pricing, ...(parsed.pricing || {}) },
-            notifs: { ...defaultSettings.notifs, ...(parsed.notifs || {}) },
-          };
-        }
+      const data = await adminService.getSettings();
+      if (data && typeof data === 'object') {
+        setSettings((prev) => ({
+          ...prev,
+          ...(data.settings || data),
+        }));
       }
-    } catch (e) {
-      console.error('Error loading settings from localStorage:', e);
+    } catch (err) {
+      console.warn('Using default settings, API fetch skipped:', err.message);
+    } finally {
+      setIsLoading(false);
     }
-    return defaultSettings;
-  });
+  }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
-    } catch (e) {
-      console.error('Error saving settings to localStorage:', e);
-    }
-  }, [settings]);
+    fetchSettings();
+  }, [fetchSettings]);
 
-  // Update a single section by merge-updating it
-  const updateSettingsSection = (section, partialData) => {
+  const updateSettingsSection = async (section, partialData) => {
     setSettings((prev) => {
       const updatedSection = {
         ...(prev[section] || {}),
@@ -75,6 +69,12 @@ export function SettingsProvider({ children }) {
         ...prev,
         [section]: updatedSection,
       };
+
+      // Save to backend API asynchronously
+      adminService.updateSettings({ [section]: updatedSection }).catch((e) =>
+        console.warn('Failed to persist settings via API:', e)
+      );
+
       return newSettings;
     });
   };
@@ -83,7 +83,9 @@ export function SettingsProvider({ children }) {
     <SettingsContext.Provider
       value={{
         settings,
+        isLoading,
         updateSettingsSection,
+        refreshSettings: fetchSettings,
       }}
     >
       {children}
@@ -94,19 +96,10 @@ export function SettingsProvider({ children }) {
 export function useSettingsContext() {
   const context = useContext(SettingsContext);
   if (!context) {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_SETTINGS);
-      const parsed = saved ? JSON.parse(saved) : defaultSettings;
-      return {
-        settings: parsed || defaultSettings,
-        updateSettingsSection: () => {},
-      };
-    } catch {
-      return {
-        settings: defaultSettings,
-        updateSettingsSection: () => {},
-      };
-    }
+    return {
+      settings: defaultSettings,
+      updateSettingsSection: () => {},
+    };
   }
   return context;
 }
