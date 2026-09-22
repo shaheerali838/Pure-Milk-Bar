@@ -57,7 +57,6 @@ class AnimalService {
   }
 
   async updateAnimal(id, data) {
-    // If tagNumber is being changed, check for duplicates
     if (data.tagNumber) {
       const existingAnimal = await Animal.findOne({
         tagNumber: data.tagNumber,
