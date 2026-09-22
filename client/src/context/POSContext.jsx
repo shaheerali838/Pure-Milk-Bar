@@ -825,18 +825,37 @@ export function POSProvider({ children }) {
 
     // Save order to live backend POS API
     try {
+      const isObjectId = (val) => typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val);
+      const validCustomerId = isObjectId(activeCustomer?._id || activeCustomer?.id)
+        ? (activeCustomer?._id || activeCustomer?.id)
+        : null;
+
       posService.createOrder({
-        customerType: saleCategory === 'walkin' ? 'WALK_IN' : 'REGISTERED',
-        customerId: activeCustomer?._id || activeCustomer?.id,
-        items: cart.map((i) => ({
-          productId: i.id,
-          name: i.name,
-          quantity: Number(i.quantity) || 1,
-          unitPrice: Number(i.price) || 0,
-          totalPrice: (Number(i.quantity) || 1) * (Number(i.price) || 0),
-        })),
-        totalAmount: netPayable,
-        paymentMethod: (paymentMethod || 'CASH').toUpperCase(),
+        customerId: validCustomerId,
+        customerNameSnapshot: activeCustomer?.name || (saleCategory === 'walkin' ? 'Walk-in Customer' : 'Customer'),
+        fulfillmentType: 'COUNTER',
+        items: cart.map((i) => {
+          const qty = Number(i.quantity) || 1;
+          const price = Number(i.price) || 0;
+          return {
+            productId: isObjectId(i.id) ? i.id : null,
+            name: i.name || 'Product',
+            sku: i.sku || null,
+            unit: String(i.unit || 'PIECE').toUpperCase().includes('L') ? 'LITER' : String(i.unit || 'PIECE').toUpperCase().includes('KG') ? 'KG' : 'PIECE',
+            quantity: qty,
+            unitPrice: price,
+            subtotal: qty * price,
+          };
+        }),
+        subtotal: subTotal,
+        discountAmount: discountVal || 0,
+        deliveryFee: 0,
+        grandTotal: netPayable,
+        amountReceived: netPayable,
+        changeGiven: 0,
+        paymentMethod: ['CASH', 'KHATA', 'ONLINE', 'SPLIT'].includes(String(paymentMethod).toUpperCase())
+          ? String(paymentMethod).toUpperCase()
+          : 'CASH',
         notes: orderNotes || '',
       }).catch((err) => console.warn('Background POS order sync error:', err));
     } catch (e) {
@@ -958,6 +977,7 @@ export function POSProvider({ children }) {
           : (item.category?.toLowerCase().includes('dahi') ? 220 : 190)
       );
       const lineCost = Math.round(qty * unitCost);
+      const lineTotal = Number(item.total) || Math.round(qty * unitPrice);
 
       const isMilk = (item.category || '').toLowerCase().includes('milk') || (item.name || '').toLowerCase().includes('milk');
       const isDahi = (item.category || '').toLowerCase().includes('dahi') || (item.name || '').toLowerCase().includes('dahi');
