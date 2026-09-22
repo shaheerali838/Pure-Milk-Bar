@@ -93,45 +93,8 @@ export const isLegacyDummySale = (sale) => {
 };
 
 
-// Delivery Staff with Vehicle Types (conveyance)
-export const deliveryRidersList = [
-  {
-    id: 'RDR-01',
-    name: 'Shahid Rider',
-    vehicleType: 'Motorbike',
-    vehicleName: 'Honda CD 70',
-    plateNumber: 'LER-4521',
-    phone: '0304-9988771',
-    badge: 'Motorbike Rider',
-  },
-  {
-    id: 'RDR-02',
-    name: 'Rashid Minhas',
-    vehicleType: 'Motorbike',
-    vehicleName: 'Honda 125',
-    plateNumber: 'LEK-9122',
-    phone: '0301-4455223',
-    badge: 'Motorbike Rider',
-  },
-  {
-    id: 'RDR-03',
-    name: 'Aslam Cycle Boy',
-    vehicleType: 'Bicycle',
-    vehicleName: 'Heavy Delivery Bicycle',
-    plateNumber: 'Carrier Cycle',
-    phone: '0321-7788990',
-    badge: 'Bicycle Delivery',
-  },
-  {
-    id: 'RDR-04',
-    name: 'Babu Lal',
-    vehicleType: 'Walking Man',
-    vehicleName: 'Foot Delivery (Neighbourhood)',
-    plateNumber: 'Walk-in',
-    phone: '0333-8822114',
-    badge: 'Walking Delivery Man',
-  },
-];
+// Delivery Staff with Vehicle Types (Dynamically populated from real staff)
+export const deliveryRidersList = [];
 
 export function POSProvider({ children }) {
   const { rawCustomers = [], customers = [] } = useCustomerContext();
@@ -599,33 +562,57 @@ export function POSProvider({ children }) {
   }, [deliverySubType, activeCustomer]);
 
   // =========================================================================
-  // 3. SALES & INVOICES - STRICTLY REAL DATA FROM LOCAL STORAGE (NO DUMMY SALES)
+  // 3. SALES & INVOICES - STRICTLY REAL DATA FROM API / DATABASE
   // =========================================================================
-  const [salesHistory, setSalesHistory] = useState(() => {
+  const [salesHistory, setSalesHistory] = useState([]);
+
+  // Fetch live orders from backend API on mount
+  const fetchOrders = React.useCallback(async () => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_SALES);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          // Strictly filter out any legacy dummy records
-          const realSales = parsed.filter((s) => !isLegacyDummySale(s));
-          localStorage.setItem(STORAGE_KEY_SALES, JSON.stringify(realSales));
-          return realSales;
-        }
-      }
-    } catch (error) {
-      console.error('Error loading sales from localStorage:', error);
+      const data = await posService.getOrders();
+      const list = Array.isArray(data) ? data : data?.orders || [];
+      const normalized = list.map((order) => {
+        const items = (order.items || []).map((i) => ({
+          ...i,
+          id: i.productId || i._id || i.id,
+          name: i.name,
+          quantity: Number(i.quantity) || 0,
+          price: Number(i.unitPrice || i.price) || 0,
+          cost: Number(i.cost) || 0,
+          source: i.source || 'Farm',
+          subtotal: Number(i.subtotal) || ((Number(i.quantity) || 0) * (Number(i.unitPrice || i.price) || 0)),
+        }));
+        return {
+          invoiceId: order.receiptNumber || order.orderNumber || `INV-${String(order._id).slice(-4)}`,
+          id: order._id || order.id,
+          timestamp: order.createdAt || new Date().toISOString(),
+          formattedTime: order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+          formattedDate: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '',
+          items,
+          itemCount: items.reduce((c, i) => c + (Number(i.quantity) || 0), 0),
+          subtotal: Number(order.subtotal) || 0,
+          deliveryCharge: Number(order.deliveryFee) || 0,
+          discount: Number(order.discountAmount) || 0,
+          netPayable: Number(order.grandTotal) || 0,
+          saleCategory: order.fulfillmentType === 'DOORSTEP' ? 'delivery' : 'walkin',
+          paymentMethod: (order.paymentMethod || 'cash').toLowerCase(),
+          customer: order.customerId ? { id: order.customerId?._id || order.customerId, name: order.customerNameSnapshot } : null,
+          walkinCustomer: !order.customerId ? { name: order.customerNameSnapshot || 'Walk-in Customer' } : null,
+          notes: order.notes || '',
+        };
+      });
+      setSalesHistory(normalized);
+      localStorage.setItem(STORAGE_KEY_SALES, JSON.stringify(normalized));
+    } catch (err) {
+      console.warn('POS live order fetch notice:', err.message);
+      setSalesHistory([]);
+      localStorage.setItem(STORAGE_KEY_SALES, '[]');
     }
-    return [];
-  });
+  }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_SALES, JSON.stringify(salesHistory));
-    } catch (error) {
-      console.error('Error saving sales to localStorage:', error);
-    }
-  }, [salesHistory]);
+    fetchOrders();
+  }, [fetchOrders]);
 
   const [completedSaleReceipt, setCompletedSaleReceipt] = useState(null);
 

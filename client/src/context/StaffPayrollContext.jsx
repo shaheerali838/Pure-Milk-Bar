@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import adminService from '@/services/adminService';
 
 const StaffPayrollContext = createContext(null);
 
@@ -11,7 +12,7 @@ const STORAGE_KEYS = {
 // Safe JSON parser for localStorage
 const loadStorage = (key, fallback) => {
   try {
-    const saved = localStorage.getItem(key) || (key === 'pure_milk_bar_staff' ? localStorage.getItem('puremilkbar_staff_list') : null);
+    const saved = localStorage.getItem(key);
     if (!saved) return fallback;
     const parsed = JSON.parse(saved);
     return parsed !== null && parsed !== undefined ? parsed : fallback;
@@ -39,10 +40,11 @@ export const formatDateKey = (d) => {
 };
 
 export function StaffPayrollProvider({ children }) {
-  // 1. Staff List (Starts empty as requested: no dummy data, pure user/localStorage management)
+  // 1. Staff List (Starts empty, synced with live API / MongoDB database)
   const [staffList, setStaffList] = useState(() =>
     loadStorage(STORAGE_KEYS.STAFF_LIST, [])
   );
+  const [isLoading, setIsLoading] = useState(true);
 
   // 2. Attendance Map: { [dateString 'YYYY-MM-DD']: { [staffId]: 'present' | 'absent' | 'leave' } }
   const [attendanceRecords, setAttendanceRecords] = useState(() =>
@@ -53,6 +55,36 @@ export function StaffPayrollProvider({ children }) {
   const [dailySheets, setDailySheets] = useState(() =>
     loadStorage(STORAGE_KEYS.DAILY_SHEETS, {})
   );
+
+  // Fetch real staff list from backend
+  const fetchStaff = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await adminService.getStaff();
+      const list = Array.isArray(data) ? data : data?.staff || [];
+      const normalized = list.map((m) => {
+        const monthly = Number(m.monthlySalary || m.salary) || 0;
+        return {
+          ...m,
+          id: m._id || m.id,
+          monthlySalary: monthly,
+          dailySalary: Number(m.dailySalary) || Math.round(monthly / 30),
+          status: m.status || (m.active !== false ? 'Active' : 'Inactive'),
+          joinedDate: m.joinedDate || m.createdAt ? new Date(m.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        };
+      });
+      setStaffList(normalized);
+      localStorage.setItem(STORAGE_KEYS.STAFF_LIST, JSON.stringify(normalized));
+    } catch (err) {
+      console.warn('Live staff fetch notice:', err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStaff();
+  }, [fetchStaff]);
 
   // Sync to LocalStorage whenever state changes
   useEffect(() => {
@@ -93,28 +125,39 @@ export function StaffPayrollProvider({ children }) {
   };
 
   // Add a new staff member
-  const addStaff = (data) => {
+  const addStaff = async (data) => {
     const monthlySalary = parseFloat(data.monthlySalary) || 0;
     const dailySalary =
       data.dailySalary !== undefined && data.dailySalary !== null
         ? parseFloat(data.dailySalary)
         : Math.round(monthlySalary / 30);
 
-    const newStaff = {
-      id: data.id?.trim() || generateStaffId(),
+    const payload = {
       name: data.name?.trim() || 'New Staff',
       role: data.role || 'Farm Worker',
       shift: data.shift || 'Morning',
-      mobile: data.mobile?.trim() || '',
+      mobile: data.mobile?.trim() || data.phone?.trim() || '',
       cnic: data.cnic?.trim() || '',
       monthlySalary,
       dailySalary,
       route: data.route?.trim() || (data.role?.toLowerCase().includes('delivery') ? 'Unassigned' : 'N/A'),
-      status: data.status || 'Active', // 'Active' | 'Inactive' | 'On Leave'
+      status: data.status || 'Active',
       joinedDate: data.joinedDate || new Date().toISOString().split('T')[0],
       address: data.address?.trim() || '',
       emergencyContact: data.emergencyContact?.trim() || '',
       notes: data.notes?.trim() || '',
+    };
+
+    let created = null;
+    try {
+      created = await adminService.createStaff(payload);
+    } catch (err) {
+      console.warn('Create staff API notice:', err.message);
+    }
+
+    const newStaff = {
+      ...payload,
+      id: created?._id || created?.id || data.id?.trim() || generateStaffId(),
       createdAt: new Date().toISOString(),
     };
 
@@ -123,10 +166,16 @@ export function StaffPayrollProvider({ children }) {
   };
 
   // Update existing staff member
-  const updateStaff = (id, updatedFields) => {
+  const updateStaff = async (id, updatedFields) => {
+    try {
+      await adminService.updateStaff(id, updatedFields);
+    } catch (err) {
+      console.warn('Update staff API notice:', err.message);
+    }
+
     setStaffList((prev) =>
       prev.map((staff) => {
-        if (String(staff.id) !== String(id)) return staff;
+        if (String(staff.id) !== String(id) && String(staff._id) !== String(id)) return staff;
         const monthly =
           updatedFields.monthlySalary !== undefined
             ? parseFloat(updatedFields.monthlySalary) || 0
@@ -148,8 +197,13 @@ export function StaffPayrollProvider({ children }) {
   };
 
   // Delete staff member
-  const deleteStaff = (id) => {
-    setStaffList((prev) => prev.filter((staff) => String(staff.id) !== String(id)));
+  const deleteStaff = async (id) => {
+    try {
+      await adminService.deleteStaff(id);
+    } catch (err) {
+      console.warn('Delete staff API notice:', err.message);
+    }
+    setStaffList((prev) => prev.filter((staff) => String(staff.id) !== String(id) && String(staff._id) !== String(id)));
   };
 
   // Mark single staff member attendance for a specific date
