@@ -2,17 +2,9 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 import { useAnimalContext } from './AnimalContext';
 import { useIntakeContext } from './IntakeContext';
 import { usePOSContext } from './POSContext';
+import farmService from '@/services/farmService';
 
 const DahiContext = createContext(null);
-
-const STORAGE_KEY_DAHI = 'pure_milk_bar_dahi_batches_v5';
-
-// Helper to filter out any mock/legacy dummy batches
-const isLegacyDummyBatch = (b) => {
-  if (!b) return true;
-  const id = String(b.id || '').toUpperCase();
-  return id.startsWith('BATCH-20260824') || id.includes('MOCK') || id.includes('DEMO');
-};
 
 export function DahiProvider({ children }) {
   // Live herd animals and milking logs from AnimalContext (Real data from API / database)
@@ -26,84 +18,40 @@ export function DahiProvider({ children }) {
 
   // POS products and inventory from POSContext
   const posCtx = usePOSContext();
-  const products = posCtx?.products || [];
 
-  // Version counter to trigger re-renders on local storage events
-  const [syncVersion, setSyncVersion] = useState(0);
+  const [batches, setBatches] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const handleSync = () => setSyncVersion((v) => v + 1);
-    window.addEventListener('pure_milk_bar_milking_updated', handleSync);
-    window.addEventListener('pure_milk_bar_sales_updated', handleSync);
-    window.addEventListener('pure_milk_bar_dahi_updated', handleSync);
-    window.addEventListener('storage', handleSync);
-    return () => {
-      window.removeEventListener('pure_milk_bar_milking_updated', handleSync);
-      window.removeEventListener('pure_milk_bar_sales_updated', handleSync);
-      window.removeEventListener('pure_milk_bar_dahi_updated', handleSync);
-      window.removeEventListener('storage', handleSync);
-    };
+  // Fetch batches directly from backend database
+  const fetchBatches = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await farmService.getProcessingBatches();
+      const list = Array.isArray(data) ? data : data?.batches || [];
+      const normalized = list.map((b) => ({
+        ...b,
+        id: b._id || b.id || b.batchNumber,
+        batchNumber: b.batchNumber || b.id,
+        outputVal: Number(b.outputQuantity || b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0,
+        milkUsedVal: Number(b.milkUsedQuantity || b.milkUsedVal) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0,
+      }));
+      setBatches(normalized);
+    } catch (err) {
+      console.warn('Failed to fetch processing batches from database API:', err.message);
+      setBatches([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  // Batches state persisted in LocalStorage - STRICTLY REAL DATA (No dummy batches)
-  const [batches, setBatches] = useState(() => {
-    try {
-      // Clear older version mock storage keys if any
-      localStorage.removeItem('pure_milk_bar_dahi_batches_v1');
-      localStorage.removeItem('pure_milk_bar_dahi_batches_v2');
-      localStorage.removeItem('pure_milk_bar_dahi_batches_v3');
-      localStorage.removeItem('pure_milk_bar_dahi_batches_v4');
-
-      const saved = localStorage.getItem(STORAGE_KEY_DAHI);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          const cleanBatches = parsed.filter((b) => !isLegacyDummyBatch(b));
-          localStorage.setItem(STORAGE_KEY_DAHI, JSON.stringify(cleanBatches));
-          return cleanBatches;
-        }
-      }
-    } catch (e) {
-      console.error('Error loading Dahi batches from localStorage:', e);
-    }
-    return []; // Starts with 0 batches by default
-  });
-
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_DAHI, JSON.stringify(batches));
-      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
-      window.dispatchEvent(new Event('storage'));
-    } catch (e) {
-      console.error('Error saving Dahi batches to localStorage:', e);
-    }
-  }, [batches]);
+    fetchBatches();
+  }, [fetchBatches]);
 
   // =========================================================================
-  // 1. LIVE SOURCING NUMBERS (Milking Register + Logs + Baseline & Supplier Intakes)
+  // 1. LIVE SOURCING NUMBERS (Milking Logs + Herd Yield + Supplier Intakes)
   // =========================================================================
-  // Real farm yield from Milking Register, logs, or active herd baseline
   const realFarmYield = useMemo(() => {
-    let registerSum = 0;
-    try {
-      const savedRaw = localStorage.getItem('pure_milk_bar_milking_saved_entries');
-      if (savedRaw) {
-        const parsed = JSON.parse(savedRaw);
-        if (parsed) {
-          ['Morning', 'Evening'].forEach((shift) => {
-            if (parsed[shift] && typeof parsed[shift] === 'object') {
-              Object.values(parsed[shift]).forEach((val) => {
-                const num = parseFloat(val);
-                if (!isNaN(num) && num > 0) registerSum += num;
-              });
-            }
-          });
-        }
-      }
-    } catch (e) {
-      console.error('Error reading milking register in DahiContext:', e);
-    }
-
     let logSum = 0;
     if (Array.isArray(milkingLogs) && milkingLogs.length > 0) {
       logSum = milkingLogs.reduce((acc, log) => acc + (parseFloat(log.yieldLiters || log.yield) || 0), 0);
@@ -120,9 +68,9 @@ export function DahiProvider({ children }) {
       }, 0);
     }
 
-    const resolved = registerSum > 0 ? registerSum : (logSum > 0 ? logSum : baselineSum);
+    const resolved = logSum > 0 ? logSum : baselineSum;
     return Number(resolved.toFixed(1));
-  }, [animals, milkingLogs, syncVersion]);
+  }, [animals, milkingLogs]);
 
   // Real supplier procurement intake
   const realSupplierIntake = useMemo(() => {
@@ -159,7 +107,6 @@ export function DahiProvider({ children }) {
         } else if (src.includes('supplier') && !src.includes('farm') && !src.includes('mix')) {
           supplierConverted += numUsed;
         } else {
-          // Proportionally split based on available sourcing
           const totalSourced = realFarmYield + realSupplierIntake;
           const ratio = totalSourced > 0 ? realFarmYield / totalSourced : 0.5;
           const fPortion = Math.round(numUsed * ratio);
@@ -200,7 +147,7 @@ export function DahiProvider({ children }) {
       remainingTotal,
       netProfitValue,
     };
-  }, [batches, realFarmYield, realSupplierIntake, farmMilkSold, supplierMilkSold, syncVersion]);
+  }, [batches, realFarmYield, realSupplierIntake, farmMilkSold, supplierMilkSold]);
 
   // Read live POS sales history for Dahi sales & extra profit tracking
   const salesHistory = posCtx?.salesHistory || [];
@@ -227,9 +174,6 @@ export function DahiProvider({ children }) {
       if (saleHasDahi) salesCount++;
     });
 
-    // Real Extra Profit from Dahi Sales (Value-Add over liquid milk):
-    // Average Liquid milk price = Rs. 260 / kg. Average Dahi price = Rs. 320 / kg.
-    // Extra margin = Rs. 60 / kg.
     const extraProfitMargin = 60;
     const extraProfitFromSales = Math.round(soldKg * extraProfitMargin);
 
@@ -249,7 +193,7 @@ export function DahiProvider({ children }) {
 
   const liveDahiPOSStock = Math.max(0, Number((dahiTransferredToPOS - dahiSalesData.soldKg).toFixed(1)));
 
-  // Unified metrics for top KPI cards & widgets (Pure Real Data + Live POS Sales)
+  // Unified metrics for top KPI cards & widgets
   const metrics = useMemo(() => {
     const totalSourced = Number((realFarmYield + realSupplierIntake).toFixed(1));
     const potentialExtraProfit = Math.round(conversionData.totalOutputProduced * 60);
@@ -279,14 +223,12 @@ export function DahiProvider({ children }) {
   }, [realFarmYield, realSupplierIntake, conversionData, dahiSalesData, dahiTransferredToPOS, liveDahiPOSStock]);
 
   // =========================================================================
-  // 3. PIPELINE ACTIONS
+  // 3. PIPELINE ACTIONS (Synced with database)
   // =========================================================================
-  // Add new batch (deducts from milk and adds to kitchen pipeline)
-  const addBatch = useCallback((formData) => {
+  const addBatch = useCallback(async (formData) => {
     const rawMilkNum = parseFloat(formData.milkUsed) || 0;
-    const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const count = batches.length + 1;
-    const batchId = `BATCH-${today}-${String(count).padStart(2, '0')}`;
+    const batchId = `BATCH-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${String(count).padStart(2, '0')}`;
     const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     let farmPortion = 0;
@@ -319,22 +261,36 @@ export function DahiProvider({ children }) {
     const profitPerKg = Math.max(0, rateNum - 220);
     const expectedProfitVal = Math.round(numOutput * profitPerKg);
 
-    const newRecord = {
-      id: batchId,
-      time: timeNow,
-      date: formData.date || new Date().toISOString().split('T')[0],
-      product: formData.product || 'Fresh Dahi (Yogurt)',
+    const payload = {
+      product: formData.product || 'Dahi (Plain)',
+      milkUsed: rawMilkNum,
+      milkUsedQuantity: rawMilkNum,
       source: formData.source || 'Farm & Supplier Mix',
-      milkUsed: `${rawMilkNum} kg (${formData.source === 'Farm Milk' ? 'Farm' : formData.source === 'Supplier Milk' ? 'Supplier' : 'Mixed'})`,
-      milkUsedVal: rawMilkNum,
       farmMilkUsed: farmPortion,
       supplierMilkUsed: supPortion,
       output: calculatedOutput,
+      outputQuantity: numOutput,
+      fat: formData.fat ? String(formData.fat).replace('%', '') : '4.5',
+      date: formData.date || new Date().toISOString().split('T')[0],
+      status: 'Completed',
+    };
+
+    let createdRecord = null;
+    try {
+      const backendRes = await farmService.createProcessingBatch(payload);
+      createdRecord = backendRes?.batch || backendRes?.data || backendRes;
+    } catch (e) {
+      console.warn('Backend API createProcessingBatch error:', e.message);
+    }
+
+    const newRecord = {
+      ...payload,
+      id: createdRecord?._id || createdRecord?.id || batchId,
+      time: timeNow,
       outputVal: numOutput,
-      fat: formData.fat ? (String(formData.fat).includes('%') ? formData.fat : `${formData.fat}%`) : '4.5%',
+      milkUsedVal: rawMilkNum,
       stage: 'incubating',
-      status: 'In Progress',
-      posRate: formData.posRate ? (String(formData.posRate).includes('Rs.') ? formData.posRate : `Rs. ${formData.posRate} / kg`) : `Rs. ${rateNum} / kg`,
+      posRate: formData.posRate ? `Rs. ${rateNum} / kg` : `Rs. ${rateNum} / kg`,
       expectedProfit: `+Rs. ${expectedProfitVal.toLocaleString()}`,
     };
 
@@ -343,10 +299,10 @@ export function DahiProvider({ children }) {
   }, [batches.length, realFarmYield, realSupplierIntake]);
 
   // Stage transition 1 -> 2: Move from Incubating to Chilled Storage
-  const moveToChiller = useCallback((batchId) => {
+  const moveToChiller = useCallback(async (batchId) => {
     setBatches((prev) =>
       prev.map((b) => {
-        if (b.id !== batchId) return b;
+        if (b.id !== batchId && b._id !== batchId) return b;
         const rateNum = parseFloat(String(b.posRate || '').replace(/[^\d.]/g, '')) || 320;
         const profit = Math.round((b.outputVal || 0) * Math.max(0, rateNum - 220));
         return {
@@ -357,6 +313,12 @@ export function DahiProvider({ children }) {
         };
       })
     );
+
+    try {
+      await farmService.updateProcessingBatch(batchId, { status: 'Completed' });
+    } catch (e) {
+      console.warn('Backend API updateProcessingBatch error:', e.message);
+    }
   }, []);
 
   // Stage transition 2 -> 3: Send Chilled Dahi to Active Shop POS Counter
@@ -365,7 +327,7 @@ export function DahiProvider({ children }) {
     let batchOut = 0;
     setBatches((prev) =>
       prev.map((b) => {
-        if (b.id !== batchId) return b;
+        if (b.id !== batchId && b._id !== batchId) return b;
         batchOut = Number(b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
         const rateNum = parseFloat(String(b.posRate || '').replace(/[^\d.]/g, '')) || 320;
         const rev = Math.round((b.outputVal || 0) * rateNum);
@@ -398,7 +360,7 @@ export function DahiProvider({ children }) {
   const markSoldOut = useCallback((batchId) => {
     setBatches((prev) =>
       prev.map((b) =>
-        b.id === batchId
+        b.id === batchId || b._id === batchId
           ? {
               ...b,
               stage: 'sold_out',
@@ -410,21 +372,26 @@ export function DahiProvider({ children }) {
   }, []);
 
   // Delete batch (restores milk to sourcing inventory)
-  const deleteBatch = useCallback((batchId) => {
-    setBatches((prev) => prev.filter((b) => b.id !== batchId));
+  const deleteBatch = useCallback(async (batchId) => {
+    try {
+      await farmService.deleteProcessingBatch(batchId);
+    } catch (e) {
+      console.warn('Backend API deleteProcessingBatch error:', e.message);
+    }
+    setBatches((prev) => prev.filter((b) => b.id !== batchId && b._id !== batchId));
   }, []);
 
-  // Clear batches
   const clearBatches = useCallback(() => {
     setBatches([]);
-    localStorage.removeItem(STORAGE_KEY_DAHI);
   }, []);
 
   return (
     <DahiContext.Provider
       value={{
         batches,
+        isLoading,
         metrics,
+        refreshBatches: fetchBatches,
         addBatch,
         moveToChiller,
         sendToPOS,

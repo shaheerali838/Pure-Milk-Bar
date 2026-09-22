@@ -14,14 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import farmService from "@/services/farmService";
 import { toast } from "sonner";
 
-const STORAGE_KEY = "pure_milk_bar_processing_batches_v2";
-
-const statusStyle = {
-  Completed: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
-  "In Progress": "bg-amber-100 text-amber-700 hover:bg-amber-100",
-  Failed: "bg-red-100 text-red-700 hover:bg-red-100",
-};
-
 export default function DahiProcessing() {
   const [batches, setBatches] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,25 +34,10 @@ export default function DahiProcessing() {
       setIsLoading(true);
       const data = await farmService.getProcessingBatches();
       const list = Array.isArray(data) ? data : data?.batches || [];
-      if (list.length > 0) {
-        setBatches(list);
-      } else {
-        // Fallback to local storage if API returned empty
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) setBatches(parsed);
-        }
-      }
+      setBatches(list);
     } catch (e) {
       console.warn("Failed to fetch processing batches from API:", e);
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) setBatches(parsed);
-        } catch (_) {}
-      }
+      setBatches([]);
     } finally {
       setIsLoading(false);
     }

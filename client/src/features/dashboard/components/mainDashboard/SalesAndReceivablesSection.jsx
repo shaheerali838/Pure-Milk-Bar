@@ -69,7 +69,7 @@ export default function SalesAndReceivablesSection() {
       return entries.slice(-6);
     }
 
-    // When no sales exist yet in localStorage, show real 0s across past 6 days
+    // When no sales exist yet in database, show real 0s across past 6 days
     const fallbackDays = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date();

@@ -34,6 +34,16 @@ export function AnimalProvider({ children }) {
             : logsData.value?.logs || []
           : [];
 
+      const normalizedLogs = logList.map((log) => ({
+        ...log,
+        id: log._id || log.id || `LOG-${Date.now()}`,
+        animalTag: log.animalTag || log.tag || log.animal?.tag || log.animalId?.tagNumber || log.animalId?.tag || 'COW-01',
+        shift: log.shift ? (log.shift.charAt(0).toUpperCase() + log.shift.slice(1).toLowerCase()) : 'Morning',
+        yieldLiters: parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0,
+        yield: parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0,
+        date: log.date ? log.date.split('T')[0] : new Date().toISOString().split('T')[0],
+      }));
+
       // Normalize animal records
       const normalized = animalList.map((a) => {
         const morning = parseFloat(a.morningYield || a.avgMorningYield || 0);
@@ -54,7 +64,7 @@ export function AnimalProvider({ children }) {
       });
 
       setAnimals(normalized);
-      setMilkingLogs(logList);
+      setMilkingLogs(normalizedLogs);
     } catch (err) {
       console.error('Failed to fetch farm data from API:', err);
       setError(err.message || 'Failed to load herd animals');
@@ -150,8 +160,11 @@ export function AnimalProvider({ children }) {
   };
 
   // Save Milking Shift to backend
-  const saveMilkingShift = async (shiftName, shiftDate, shiftEntries) => {
+  const saveMilkingShift = async (shiftName, arg2, arg3) => {
     try {
+      const shiftDate = typeof arg2 === 'string' ? arg2 : typeof arg3 === 'string' ? arg3 : new Date().toISOString().split('T')[0];
+      const shiftEntries = (typeof arg2 === 'object' && arg2 !== null) ? arg2 : (typeof arg3 === 'object' && arg3 !== null) ? arg3 : {};
+
       const promises = Object.entries(shiftEntries).map(([tag, yieldVal]) => {
         const val = parseFloat(yieldVal);
         if (isNaN(val) || val <= 0) return null;
@@ -159,7 +172,7 @@ export function AnimalProvider({ children }) {
         return farmService.createMilkingLog({
           animalId: animal?._id || animal?.id,
           animalTag: tag,
-          shift: shiftName.toUpperCase(),
+          shift: (shiftName || 'Morning').toUpperCase(),
           date: shiftDate || new Date().toISOString().split('T')[0],
           yieldLiters: val,
         });

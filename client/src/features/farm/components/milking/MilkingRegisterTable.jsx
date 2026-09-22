@@ -4,34 +4,39 @@ import { toast } from "sonner";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 
 export default function MilkingRegisterTable() {
-  const { animals = [], saveMilkingShift } = useAnimalContext();
+  const { animals = [], milkingLogs = [], saveMilkingShift } = useAnimalContext();
 
-  const [selectedDate, setSelectedDate] = useState("2026-08-24");
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [shift, setShift] = useState("Morning"); // 'Morning' or 'Evening'
 
   // Draft inputs while typing
   const [inputValues, setInputValues] = useState({ Morning: {}, Evening: {} });
 
-  // Confirmed saved entries (updated ONLY on Save click)
-  const [savedEntries, setSavedEntries] = useState(() => {
-    try {
-      const saved = localStorage.getItem("pure_milk_bar_milking_saved_entries");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
-    }
-    return { Morning: {}, Evening: {} };
-  });
+  // Confirmed saved entries in memory / context
+  const [savedEntries, setSavedEntries] = useState({ Morning: {}, Evening: {} });
 
+  // Sync saved entries from backend milkingLogs when date changes
   useEffect(() => {
-    try {
-      localStorage.setItem("pure_milk_bar_milking_saved_entries", JSON.stringify(savedEntries));
-      window.dispatchEvent(new Event("pure_milk_bar_milking_updated"));
-      window.dispatchEvent(new Event("storage"));
-    } catch (e) {
-      console.error(e);
+    if (Array.isArray(milkingLogs) && milkingLogs.length > 0) {
+      const morningMap = {};
+      const eveningMap = {};
+      milkingLogs.forEach((log) => {
+        const logDate = log.date ? log.date.split("T")[0] : "";
+        if (!selectedDate || logDate === selectedDate) {
+          const s = (log.shift || "").toLowerCase();
+          const tag = log.animalTag || log.tag || log.animal?.tag;
+          const y = parseFloat(log.yieldLiters || log.yield) || 0;
+          if (tag && y > 0) {
+            if (s === "morning") morningMap[tag] = y.toString();
+            else if (s === "evening") eveningMap[tag] = y.toString();
+          }
+        }
+      });
+      if (Object.keys(morningMap).length > 0 || Object.keys(eveningMap).length > 0) {
+        setSavedEntries({ Morning: morningMap, Evening: eveningMap });
+      }
     }
-  }, [savedEntries]);
+  }, [milkingLogs, selectedDate]);
 
   // Process registered animals from context
   const cattleList = animals.map((a, idx) => {

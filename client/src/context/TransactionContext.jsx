@@ -8,30 +8,8 @@ import { usePayrollContext } from './PayrollContext';
 
 const TransactionContext = createContext();
 
-const STORAGE_KEY_TRANSACTIONS = 'pure_milk_bar_transactions';
-
 export function TransactionProvider({ children }) {
-  const [transactions, setTransactions] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_TRANSACTIONS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch (e) {
-      console.error('Error loading transactions from localStorage:', e);
-    }
-    return [];
-  });
-
-  // Save to localStorage on change
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_TRANSACTIONS, JSON.stringify(transactions));
-    } catch (e) {
-      console.error('Error saving transactions to localStorage:', e);
-    }
-  }, [transactions]);
+  const [transactions, setTransactions] = useState([]);
 
   // Read external contexts
   const posCtx = usePOSContext();
@@ -182,21 +160,11 @@ export function TransactionProvider({ children }) {
 export function useTransactionContext() {
   const context = useContext(TransactionContext);
   if (!context) {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_TRANSACTIONS);
-      const transactions = saved ? JSON.parse(saved) : [];
-      return {
-        transactions,
-        metrics: { totalTransactions: transactions.length, totalVolume: 0, totalInflow: 0, totalOutflow: 0, netBalance: 0 },
-        logTransaction: () => {},
-      };
-    } catch {
-      return {
-        transactions: [],
-        metrics: { totalTransactions: 0, totalVolume: 0, totalInflow: 0, totalOutflow: 0, netBalance: 0 },
-        logTransaction: () => {},
-      };
-    }
+    return {
+      transactions: [],
+      metrics: { totalTransactions: 0, totalVolume: 0, totalInflow: 0, totalOutflow: 0, netBalance: 0 },
+      logTransaction: () => {},
+    };
   }
   return context;
 }

@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import api from '@/services/api';
 
 const ExpenseContext = createContext();
-
-const STORAGE_KEY = 'pure_milk_bar_farm_expenses_v1';
 
 export function useExpense() {
     const context = useContext(ExpenseContext);
@@ -13,34 +12,62 @@ export function useExpense() {
 }
 
 export function ExpenseProvider({ children }) {
-    const [expenses, setExpenses] = useState(() => {
+    const [expenses, setExpenses] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Fetch live farm expenses from database API
+    const fetchExpenses = useCallback(async () => {
+        setIsLoading(true);
         try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved !== null) {
-                const parsed = JSON.parse(saved);
-                if (Array.isArray(parsed)) {
-                    // Filter out any legacy dummy data with id 1 or Allah Ditta
-                    return parsed.filter((exp) => exp.id !== '1' && exp.authorizedBy !== 'Allah Ditta');
-                }
-            }
-            return [];
+            const res = await api.finance.getExpenses({ scope: 'FARM' });
+            const list = Array.isArray(res) ? res : res?.expenses || res?.data || [];
+            const normalized = list.map((exp) => ({
+                ...exp,
+                id: exp._id || exp.id || `EXP-${Date.now()}`,
+                category: exp.category || 'General Expense',
+                amount: Number(exp.amount) || 0,
+                date: exp.date ? exp.date.split('T')[0] : new Date().toISOString().split('T')[0],
+                description: exp.description || exp.notes || '',
+                authorizedBy: exp.authorizedBy || 'Admin',
+            }));
+            setExpenses(normalized);
         } catch (err) {
-            console.error('Failed to load expenses from localStorage:', err);
-            return [];
+            console.warn('Failed to load farm expenses from database API:', err.message);
+            setExpenses([]);
+        } finally {
+            setIsLoading(false);
         }
-    });
+    }, []);
 
     useEffect(() => {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
-        } catch (err) {
-            console.error('Failed to save expenses to localStorage:', err);
-        }
-    }, [expenses]);
+        fetchExpenses();
+    }, [fetchExpenses]);
 
-    const addExpense = (expense) => {
-        const newExpense = { ...expense, id: Date.now().toString() };
+    const addExpense = async (expense) => {
+        const newExpense = {
+            ...expense,
+            id: expense.id || `EXP-${Date.now()}`,
+            date: expense.date || new Date().toISOString().split('T')[0],
+            amount: Number(expense.amount) || 0,
+        };
         setExpenses(prev => [newExpense, ...prev]);
+
+        // Sync to backend database
+        try {
+            await api.finance.createExpense({
+                scope: 'FARM',
+                category: expense.category || 'FARM_OPERATION',
+                amount: Number(expense.amount) || 0,
+                date: expense.date || new Date().toISOString().split('T')[0],
+                description: expense.description || expense.category || '',
+                paymentMethod: ['CASH', 'ONLINE', 'BANK_TRANSFER'].includes(String(expense.paymentMethod).toUpperCase())
+                    ? String(expense.paymentMethod).toUpperCase()
+                    : 'CASH',
+                authorizedBy: expense.authorizedBy || 'Admin',
+            });
+        } catch (e) {
+            console.warn('Expense API backend sync skipped:', e.message);
+        }
     };
 
     const editExpense = (id, updatedExpense) => {

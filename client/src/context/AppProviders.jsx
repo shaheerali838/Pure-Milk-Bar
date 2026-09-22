@@ -22,25 +22,25 @@ import { SettingsProvider } from "./SettingsContext";
 
 const providers = [
   AuthProvider,
+  SettingsProvider,
+  AuditProvider,
   CustomerProvider,
   LedgerProvider,
   AnimalProvider,
   ExpenseProvider,
-  StaffPayrollProvider,
+  SourcExpenseProvider,
   StaffProvider,
+  StaffPayrollProvider,
   DeliveryStaffProvider,
   FuelLogProvider,
   RiderSalaryProvider,
   DeliveryProvider,
-  SupplierProvider,
   IntakeProvider,
+  SupplierProvider,
   POSProvider,
   DahiProvider,
-  SourcExpenseProvider,
   PayrollProvider,
   TransactionProvider,
-  AuditProvider,
-  SettingsProvider,
 ];
 
 export const AppProviders = ({ children }) => {

@@ -82,7 +82,7 @@ export default function SupplierDirectory() {
               }
             }}
             className="flex items-center gap-1.5 px-3 h-[38px] rounded-full text-xs font-semibold text-slate-600 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer"
-            title="Reset supplier records in localStorage to defaults"
+            title="Reset supplier records to defaults"
           >
             <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
             <span>Reset Data</span>

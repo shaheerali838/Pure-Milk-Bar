@@ -36,7 +36,21 @@ export function SupplierProvider({ children }) {
     try {
       const data = await supplierService.getSuppliers();
       const list = Array.isArray(data) ? data : data?.suppliers || [];
-      setSuppliers(list);
+      const normalized = list.map((s) => ({
+        ...s,
+        id: s._id || s.id,
+        _id: s._id || s.id,
+        code: s.code || `SUP-${String(s._id || s.id).slice(-4)}`,
+        name: s.name || 'Supplier',
+        phone: s.phone || s.contact || '',
+        contact: s.phone || s.contact || '',
+        area: s.villageOrLocation || s.area || 'Central',
+        ratePerLiter: Number(s.baseRatePerLiter || s.baseRate || s.ratePerLiter) || 220,
+        baseRate: Number(s.baseRatePerLiter || s.baseRate || s.ratePerLiter) || 220,
+        avgLiters: Number(s.expectedDailyQuantity || s.avgLiters) || 10,
+        status: s.status || 'Active',
+      }));
+      setSuppliers(normalized);
     } catch (err) {
       console.error('Failed to fetch suppliers from API:', err);
       setError(err.message || 'Failed to load suppliers');

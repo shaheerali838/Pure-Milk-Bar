@@ -139,7 +139,7 @@ export default function ProcurementSheet() {
         weightedFat,
         rate,
         grossDue: g.totalCost,
-        advanceDeduction: 0, // Mock for now, you could fetch from ledgers
+        advanceDeduction: 0,
         netPayable: g.totalCost,
         dispatchStatus: 'Completed',
       };
