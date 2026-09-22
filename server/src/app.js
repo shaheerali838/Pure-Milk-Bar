@@ -93,6 +93,7 @@ app.get("/", (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 app.use("/api/farm/processing", processingRoutes);
 app.use("/api/farm", farmRoutes);
+app.use("/api/v1/farm", farmRoutes);
 app.use("/api/v1/suppliers", supplierRoutes);
 app.use("/api/v1/inventory", inventoryRoutes);
 app.use("/api/v1/pos", posRoutes);
