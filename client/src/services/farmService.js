@@ -62,6 +62,37 @@ export const farmService = {
     const res = await api.delete(`/api/farm/milking-logs/${id}`);
     return res.data || res;
   },
+
+  // Dahi & Dairy Value-Add Processing Batches
+  getProcessingBatches: async (params = {}) => {
+    const res = await api.get('/api/v1/processing', params, { fallback: [] });
+    return res.data || res.batches || res || [];
+  },
+
+  getProcessingStats: async () => {
+    const res = await api.get('/api/v1/processing/stats', null, { fallback: {} });
+    return res.data || res.stats || res || {};
+  },
+
+  getProcessingBatchById: async (id) => {
+    const res = await api.get(`/api/v1/processing/${id}`, null, { fallback: null });
+    return res.data || res.batch || res;
+  },
+
+  createProcessingBatch: async (data) => {
+    const res = await api.post('/api/v1/processing', data);
+    return res.data || res.batch || res;
+  },
+
+  updateProcessingBatch: async (id, data) => {
+    const res = await api.patch(`/api/v1/processing/${id}`, data);
+    return res.data || res.batch || res;
+  },
+
+  deleteProcessingBatch: async (id) => {
+    const res = await api.delete(`/api/v1/processing/${id}`);
+    return res.data || res;
+  },
 };
 
 export default farmService;
