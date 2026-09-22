@@ -32,7 +32,7 @@ export default function FarmNav() {
             <NavLink
               key={to}
               to={to}
-              className="flex items-center justify-center gap-1.5 px-3.5 h-[38px] rounded-full whitespace-nowrap transition-all duration-150 hover:brightness-110 hover:-translate-y-px active:translate-y-0 cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-4 h-[42px] rounded-full whitespace-nowrap transition-all duration-150 hover:brightness-110 hover:-translate-y-px active:translate-y-0 cursor-pointer"
               style={{
                 background: isActive ? color : `${color}dd`,
                 boxShadow: isActive ? `0 4px 16px ${color}55` : 'none',

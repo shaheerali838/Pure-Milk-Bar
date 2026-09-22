@@ -29,7 +29,19 @@ export const generateDefaultAttendanceMap = (absentDays = 0, totalDays = 30) => 
 };
 
 export function StaffProvider({ children }) {
-  const [staffList, setStaffList] = useState([]);
+  const [staffList, setStaffList] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_STAFF);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (error) {
+      console.error('Error loading staff from localStorage:', error);
+    }
+    return [];
+  });
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -39,21 +51,24 @@ export function StaffProvider({ children }) {
     try {
       const data = await adminService.getStaff();
       const list = Array.isArray(data) ? data : data?.staff || [];
-      const normalized = list.map((m) => {
-        const absent = Number(m.absentDays) || 0;
-        return {
-          ...m,
-          id: m._id || m.id,
-          absentDays: absent,
-          presentDays: m.presentDays !== undefined ? m.presentDays : Math.max(0, 30 - absent),
-          attendanceMap: m.attendanceMap && Object.keys(m.attendanceMap).length > 0
-            ? m.attendanceMap
-            : generateDefaultAttendanceMap(absent),
-        };
-      });
-      setStaffList(normalized);
+      if (list.length > 0) {
+        const normalized = list.map((m) => {
+          const absent = Number(m.absentDays) || 0;
+          return {
+            ...m,
+            id: m._id || m.id,
+            dailySalary: Math.round((Number(m.monthlySalary || m.salary) || 0) / 30),
+            absentDays: absent,
+            presentDays: m.presentDays !== undefined ? Number(m.presentDays) : Math.max(0, 30 - absent),
+            attendanceMap: m.attendanceMap && Object.keys(m.attendanceMap).length > 0
+              ? m.attendanceMap
+              : generateDefaultAttendanceMap(absent),
+          };
+        });
+        setStaffList(normalized);
+      }
     } catch (err) {
-      console.warn('Failed to fetch staff from API, using fallback:', err.message);
+      console.warn('Failed to fetch staff from API, using local storage fallback:', err.message);
       try {
         const saved = localStorage.getItem(STORAGE_KEY_STAFF);
         if (saved) setStaffList(JSON.parse(saved));
@@ -72,75 +87,94 @@ export function StaffProvider({ children }) {
       if (staffList.length > 0) {
         localStorage.setItem(STORAGE_KEY_STAFF, JSON.stringify(staffList));
       }
-    } catch (_) {}
+    } catch (error) {
+      console.error('Error saving staff to localStorage:', error);
+    }
   }, [staffList]);
 
-  // Add Staff Member
+  // 1. Add New Staff Member
   const addStaff = async (data) => {
+    const nextNum = staffList.length + 1;
+    const staffId = `STF-${String(nextNum).padStart(3, '0')}`;
+    const absentDays = Number(data.absentDays) || 0;
+    const monthlySalary = Number(data.monthlySalary || data.salary) || 0;
+
+    const payload = {
+      name: (data.name || '').trim(),
+      role: data.role || 'Farm Work Man',
+      mobile: (data.mobile || data.phone || '').trim(),
+      email: (data.email || '').trim(),
+      shift: data.shift || 'Morning',
+      monthlySalary,
+      cnic: (data.cnic || '').trim(),
+      route: (data.route || '').trim() || 'Not Assigned',
+      status: data.status || 'Active',
+    };
+
+    let backendStaff = null;
     try {
-      const absentDays = Number(data.absentDays) || 0;
-      const payload = {
-        name: (data.name || '').trim(),
-        role: data.role || 'Farm Work Man',
-        mobile: (data.mobile || data.phone || '').trim(),
-        email: (data.email || '').trim(),
-        shift: data.shift || 'Morning',
-        monthlySalary: Number(data.monthlySalary) || 0,
-        cnic: (data.cnic || '').trim(),
-        route: (data.route || '').trim() || 'Not Assigned',
-        status: data.status || 'Active',
-      };
-
-      const created = await adminService.createStaff(payload);
-      const normalized = {
-        ...created,
-        id: created._id || created.id || `STF-${Date.now()}`,
-        dailySalary: Math.round((Number(payload.monthlySalary) || 0) / 30),
-        absentDays: absentDays,
-        presentDays: Math.max(0, 30 - absentDays),
-        attendanceMap: data.attendanceMap || generateDefaultAttendanceMap(absentDays),
-      };
-
-      setStaffList((prev) => [normalized, ...prev]);
-      return normalized;
+      backendStaff = await adminService.createStaff(payload);
     } catch (err) {
-      console.error('Failed to create staff via API, saving locally:', err);
-      const nextNum = staffList.length + 1;
-      const staffId = `STF-${String(nextNum).padStart(3, '0')}`;
-      const absentDays = Number(data.absentDays) || 0;
-      const localMember = {
-        id: staffId,
-        ...data,
-        dailySalary: Math.round((Number(data.monthlySalary) || 0) / 30),
-        absentDays,
-        presentDays: Math.max(0, 30 - absentDays),
-        attendanceMap: data.attendanceMap || generateDefaultAttendanceMap(absentDays),
-      };
-      setStaffList((prev) => [localMember, ...prev]);
-      return localMember;
+      console.warn('Backend API createStaff error, saving locally:', err.message);
     }
+
+    const newMember = {
+      ...payload,
+      id: backendStaff?._id || backendStaff?.id || staffId,
+      dailySalary: Math.round(monthlySalary / 30),
+      active: data.status ? data.status === 'Active' : true,
+      absentDays: absentDays,
+      presentDays: Math.max(0, 30 - absentDays),
+      joinedDate: data.joinedDate || new Date().toISOString().split('T')[0],
+      notes: (data.notes || '').trim(),
+      attendanceMap: data.attendanceMap || generateDefaultAttendanceMap(absentDays),
+    };
+
+    const updated = [newMember, ...staffList];
+    setStaffList(updated);
+    return newMember;
   };
 
-  // Update Staff Member
+  // 2. Update Existing Staff Member
   const updateStaff = async (id, data) => {
     try {
       await adminService.updateStaff(id, data);
     } catch (err) {
-      console.warn('API update failed, applying local update:', err.message);
+      console.warn('Backend API updateStaff error, updating locally:', err.message);
     }
 
     setStaffList((prev) =>
       prev.map((member) => {
-        if (String(member.id) === String(id) || String(member._id) === String(id)) {
+        const isMatch =
+          String(member.id) === String(id) ||
+          String(member._id) === String(id) ||
+          (data.name && member.name && member.name.toLowerCase().trim() === data.name.toLowerCase().trim());
+
+        if (isMatch) {
           const nextSalary = data.monthlySalary !== undefined ? Number(data.monthlySalary) : Number(member.monthlySalary || 0);
           const nextAbsent = data.absentDays !== undefined
             ? Math.max(0, Math.min(30, Number(data.absentDays)))
-            : (member.absentDays !== undefined ? member.absentDays : 0);
+            : (member.absentDays !== undefined ? member.absentDays : (member.status === 'Inactive' ? 1 : 0));
+
           return {
             ...member,
             ...data,
-            monthlySalary: nextSalary,
-            dailySalary: Math.round(nextSalary / 30),
+            ...(data.name !== undefined && { name: (data.name || member.name).trim() }),
+            ...(data.role !== undefined && { role: data.role ?? member.role }),
+            ...(data.mobile !== undefined && { mobile: (data.mobile ?? member.mobile).trim() }),
+            ...(data.email !== undefined && { email: (data.email ?? member.email).trim() }),
+            ...(data.shift !== undefined && { shift: data.shift ?? member.shift }),
+            ...(data.monthlySalary !== undefined && {
+              monthlySalary: nextSalary,
+              dailySalary: Math.round(nextSalary / 30),
+            }),
+            ...(data.cnic !== undefined && { cnic: (data.cnic ?? member.cnic).trim() }),
+            ...(data.route !== undefined && { route: (data.route ?? member.route).trim() || 'Not Assigned' }),
+            ...(data.status !== undefined && {
+              status: data.status,
+              active: data.status === 'Active',
+            }),
+            ...(data.attendanceMap !== undefined && { attendanceMap: data.attendanceMap }),
             absentDays: nextAbsent,
             presentDays: Math.max(0, 30 - nextAbsent),
           };
@@ -150,17 +184,17 @@ export function StaffProvider({ children }) {
     );
   };
 
-  // Delete Staff Member
+  // 3. Delete Staff Member
   const deleteStaff = async (id) => {
     try {
       await adminService.deleteStaff(id);
     } catch (err) {
-      console.warn('API delete failed, applying local delete:', err.message);
+      console.warn('Backend API deleteStaff error, deleting locally:', err.message);
     }
     setStaffList((prev) => prev.filter((m) => (m._id || m.id) !== id && m.id !== id));
   };
 
-  // Toggle Staff Duty Status
+  // 4. Toggle Staff Duty Status (Active / Present vs Inactive / Absent)
   const toggleStaffStatus = (id) => {
     setStaffList((prev) =>
       prev.map((member) => {
@@ -190,7 +224,7 @@ export function StaffProvider({ children }) {
     );
   };
 
-  // Set Attendance for specific staff
+  // 5. Update Staff Attendance & Absent Days
   const setStaffAttendance = (id, { status, absentDays, attendanceMap }) => {
     setStaffList((prev) =>
       prev.map((member) => {
@@ -246,6 +280,7 @@ export function StaffProvider({ children }) {
     );
   };
 
+  // 6. Toggle Attendance for a specific day
   const toggleDayAttendance = (id, dayNum) => {
     setStaffList((prev) =>
       prev.map((member) => {
@@ -285,6 +320,7 @@ export function StaffProvider({ children }) {
     );
   };
 
+  // 7. Set specific attendance status for a day ('present' | 'leave' | 'absent')
   const setDayAttendance = (id, dayNum, statusToSet = 'present') => {
     setStaffList((prev) =>
       prev.map((member) => {
@@ -318,6 +354,7 @@ export function StaffProvider({ children }) {
     );
   };
 
+  // 8. Mark all days for a staff member
   const markAllAttendance = (id, statusToSet = 'present') => {
     setStaffList((prev) =>
       prev.map((member) => {
@@ -345,6 +382,7 @@ export function StaffProvider({ children }) {
     );
   };
 
+  // 9. Mark staff today
   const markStaffToday = (id, statusToSet = 'present') => {
     const todayNum = Math.min(30, Math.max(1, new Date().getDate()));
     setStaffList((prev) =>
@@ -375,6 +413,7 @@ export function StaffProvider({ children }) {
     );
   };
 
+  // 10. Mark entire staff today
   const markEntireStaffToday = (statusToSet = 'present') => {
     const todayNum = Math.min(30, Math.max(1, new Date().getDate()));
     setStaffList((prev) =>
@@ -402,31 +441,32 @@ export function StaffProvider({ children }) {
     );
   };
 
-  // Metrics
+  // 11. Computed Metrics for Dashboard Cards
   const metrics = useMemo(() => {
     const totalStaff = staffList.length;
     const monthlySalaries = staffList.reduce(
-      (sum, s) => sum + (Number(s.monthlySalary || s.salary) || 0),
+      (sum, member) => sum + (Number(member.monthlySalary || member.salary) || 0),
       0
     );
+
     const activeStaffCount = staffList.filter(
       (s) => s.status !== 'Inactive' && s.status !== 'Off Duty' && s.active !== false
     ).length;
     const inactiveStaffCount = staffList.length - activeStaffCount;
 
     const totalDeliveryMen = staffList.filter((s) => {
-      const r = (s.role || '').toLowerCase();
-      return r.includes('delivery') || r.includes('rider');
+      const role = (s.role || '').toLowerCase();
+      return role.includes('delivery') || role.includes('rider');
     }).length;
 
     const totalFarmWorkers = staffList.filter((s) => {
-      const r = (s.role || '').toLowerCase();
-      return r.includes('farm') || r.includes('milker') || r.includes('herd') || r.includes('work');
+      const role = (s.role || '').toLowerCase();
+      return role.includes('farm') || role.includes('milker') || role.includes('herd') || role.includes('work');
     }).length;
 
     const totalSecurityGuards = staffList.filter((s) => {
-      const r = (s.role || '').toLowerCase();
-      return r.includes('guard') || r.includes('security');
+      const role = (s.role || '').toLowerCase();
+      return role.includes('guard') || role.includes('security');
     }).length;
 
     return {
@@ -488,10 +528,23 @@ export function useStaffContext() {
         markEntireStaffToday: () => {},
       };
     } catch {
-      return { staffList: [], metrics: { totalStaff: 0, totalFarmWorkers: 0, activeStaffCount: 0, inactiveStaffCount: 0 }, addStaff: () => {}, updateStaff: () => {}, deleteStaff: () => {} };
+      return {
+        staffList: [],
+        metrics: { totalStaff: 0, totalFarmWorkers: 0, activeStaffCount: 0, inactiveStaffCount: 0 },
+        addStaff: () => {},
+        updateStaff: () => {},
+        toggleStaffStatus: () => {},
+        setStaffAttendance: () => {},
+        toggleDayAttendance: () => {},
+        markAllAttendance: () => {},
+        markStaffToday: () => {},
+        markEntireStaffToday: () => {},
+        deleteStaff: () => {},
+      };
     }
   }
   return context;
 }
 
-export default StaffContext;
+export { StaffContext };
+export default StaffProvider;

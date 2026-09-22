@@ -82,7 +82,7 @@ export default function SupplierDashboardCharts({
   return (
     <>
       {/* Top 2 Graphs */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-2">
         {/* Graph 1: Procurement Volume Trend */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4">
@@ -193,7 +193,7 @@ export default function SupplierDashboardCharts({
       </div>
 
       {/* Row 3: Expenses and P&L */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 mt-2">
         {/* Left: Procurement Expenses List */}
         <div className="lg:col-span-4 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between">
           <div>

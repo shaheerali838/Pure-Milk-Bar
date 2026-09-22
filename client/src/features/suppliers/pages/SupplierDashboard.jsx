@@ -66,7 +66,7 @@ export default function SupplierDashboard() {
   return (
     <div className="relative min-h-screen bg-slate-50/50 pb-10">
       {/* Dynamic Header */}
-      <div className="flex items-center justify-between mb-6 pt-2">
+      <div className="flex items-center justify-between mb-4 pt-2">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
             <LayoutDashboard className="w-5 h-5" />

@@ -13,11 +13,12 @@ import { DeliveryProvider } from "./DeliveryContext";
 import { SupplierProvider } from "./SupplierContext";
 import { IntakeProvider } from "./IntakeContext";
 import { POSProvider } from "./POSContext";
+import { DahiProvider } from "./DahiContext";
+import { SourcExpenseProvider } from "./SourcExpenseContext";
 import { PayrollProvider } from "./PayrollContext";
 import { TransactionProvider } from "./TransactionContext";
 import { AuditProvider } from "./AuditContext";
 import { SettingsProvider } from "./SettingsContext";
-import { SourcExpenseProvider } from "./SourcExpenseContext";
 
 const providers = [
   AuthProvider,
@@ -34,11 +35,12 @@ const providers = [
   SupplierProvider,
   IntakeProvider,
   POSProvider,
+  DahiProvider,
+  SourcExpenseProvider,
   PayrollProvider,
   TransactionProvider,
   AuditProvider,
   SettingsProvider,
-  SourcExpenseProvider,
 ];
 
 export const AppProviders = ({ children }) => {

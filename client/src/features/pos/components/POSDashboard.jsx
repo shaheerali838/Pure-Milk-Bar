@@ -219,7 +219,9 @@ export default function POSDashboard() {
                           <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition line-clamp-1">
                             {product.name}
                           </h4>
-                          
+                          <p className={`text-[10px] font-semibold mt-0.5 ${Number(product.stock) > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                            {Number(product.stock) > 0 ? `Stock: ${product.stock} ${product.unit?.replace('per ', '') || 'kg'}` : '0 in stock'}
+                          </p>
                         </div>
                       </div>
 
