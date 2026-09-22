@@ -12,6 +12,16 @@ import {
   getAdminStats,
 } from '../controllers/admin.controller.js';
 
+import {
+  createStaff,
+  getAllStaff,
+  getStaffById,
+  updateStaff,
+  setStaffStatus,
+  deleteStaff,
+  getStaffStats,
+} from '../../staff/controllers/staff.controller.js';
+
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize } from '../../../middlewares/authorize.js';
 
@@ -22,6 +32,13 @@ import {
   validateSetRole,
   validateResetPassword,
 } from '../validators/admin.validator.js';
+
+import {
+  validateCreateStaff,
+  validateUpdateStaff,
+  validateSetStatus as validateStaffSetStatus,
+  validateStaffQuery,
+} from '../../staff/validators/staff.validator.js';
 
 const router = Router();
 
@@ -36,21 +53,26 @@ router.route('/users')
   .post(validateCreateUser, createUser) // Create a new user
   .get(getUsers); // Get all users
 
-router.route('/staff')
-  .post(createUser)
-  .get(getUsers);
-
 // Manage a specific user by their ID
 router.route('/users/:id')
-  .get(getUserById) // Get user details by ID
-  .put(validateUpdateUser, updateUser) // Update user information
-  .delete(deleteUser); // Delete a user
+  .get(getUserById)
+  .put(validateUpdateUser, updateUser)
+  .delete(deleteUser);
+
+// Dedicated Staff routes
+router.route('/staff')
+  .post(validateCreateStaff, createStaff)
+  .get(validateStaffQuery, getAllStaff);
+
+router.get('/staff/stats', getStaffStats);
 
 router.route('/staff/:id')
-  .get(getUserById)
-  .put(updateUser)
-  .patch(updateUser)
-  .delete(deleteUser);
+  .get(getStaffById)
+  .put(validateUpdateStaff, updateStaff)
+  .patch(validateUpdateStaff, updateStaff)
+  .delete(deleteStaff);
+
+router.patch('/staff/:id/status', validateStaffSetStatus, setStaffStatus);
 
 // Settings routes
 router.route('/settings')
