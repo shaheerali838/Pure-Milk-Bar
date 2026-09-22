@@ -3,32 +3,48 @@ import AppError from '../../../utils/AppError.js';
 
 class SupplierService {
   async createSupplier(data) {
+    const count = await Supplier.countDocuments();
+    const code = data.code || `SUP-${count + 1001}`;
+    const villageOrLocation = data.villageOrLocation || data.area || data.address || 'Central Location';
+    const baseRatePerLiter = parseFloat(data.baseRatePerLiter || data.baseRate || data.ratePerLiter || 220);
+    const milkType = ['COW', 'BUFFALO', 'MIXED'].includes(String(data.milkType).toUpperCase())
+      ? String(data.milkType).toUpperCase()
+      : 'BUFFALO';
+
+    const normalizedData = {
+      ...data,
+      code,
+      villageOrLocation,
+      baseRatePerLiter,
+      milkType,
+    };
+
     // Check for duplicate code
-    const existingCode = await Supplier.findOne({ code: data.code });
+    const existingCode = await Supplier.findOne({ code: normalizedData.code });
     if (existingCode) {
-      throw new AppError(
-        `Supplier with code '${data.code}' already exists`,
-        409,
-        'DUPLICATE_SUPPLIER_CODE'
-      );
+      normalizedData.code = `SUP-${Date.now().toString().slice(-6)}`;
     }
 
     // Check for duplicate phone
-    const existingPhone = await Supplier.findOne({ phone: data.phone });
+    const existingPhone = await Supplier.findOne({ phone: normalizedData.phone });
     if (existingPhone) {
       throw new AppError(
-        `Supplier with phone '${data.phone}' already exists`,
+        `Supplier with phone '${normalizedData.phone}' already exists`,
         409,
         'DUPLICATE_SUPPLIER_PHONE'
       );
     }
 
-    const supplier = await Supplier.create(data);
+    const supplier = await Supplier.create(normalizedData);
     return supplier;
   }
 
-  async getAllSuppliers(query) {
+  async getAllSuppliers(query = {}) {
     const { page, limit, milkType, isActive, search } = query;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, parseInt(limit, 10) || 100);
+    const skip = (pageNum - 1) * limitNum;
 
     const filter = {};
 
@@ -45,14 +61,12 @@ class SupplierService {
       ];
     }
 
-    const skip = (page - 1) * limit;
-
     const [suppliers, total] = await Promise.all([
-      Supplier.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Supplier.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limitNum).lean(),
       Supplier.countDocuments(filter),
     ]);
 
-    return { suppliers, total, page, limit };
+    return { suppliers, total, page: pageNum, limit: limitNum };
   }
 
   async getSupplierById(id) {

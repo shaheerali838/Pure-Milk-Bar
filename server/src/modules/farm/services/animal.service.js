@@ -3,22 +3,37 @@ import AppError from '../../../utils/AppError.js';
 
 class AnimalService {
   async createAnimal(data) {
+    let tagNumber = data.tagNumber || data.tag || `TAG-${Date.now().toString().slice(-4)}`;
+    const isBuffalo = String(data.species || data.type || '').toLowerCase().includes('buffalo');
+    const type = isBuffalo ? 'BUFFALO' : (String(data.type || 'COW').toUpperCase());
+
     // Check for duplicate tag number
-    const existingAnimal = await Animal.findOne({ tagNumber: data.tagNumber });
+    let existingAnimal = await Animal.findOne({ tagNumber });
     if (existingAnimal) {
-      throw new AppError(
-        `Animal with tag number '${data.tagNumber}' already exists`,
-        409,
-        'DUPLICATE_TAG_NUMBER'
-      );
+      tagNumber = `${tagNumber}-${Date.now().toString().slice(-3)}`;
     }
 
-    const animal = await Animal.create(data);
+    const payload = {
+      ...data,
+      tagNumber,
+      type,
+      species: data.species || (isBuffalo ? 'Buffalo (Nili Ravi)' : 'Cow (Sahiwal)'),
+      breed: data.breed || (isBuffalo ? 'Nili Ravi' : 'Sahiwal'),
+      lactationStatus: data.lactationStatus || data.lactationStage || 'Milking',
+      lactationStage: data.lactationStage || 'EARLY',
+      healthStatus: data.healthStatus || 'HEALTHY',
+    };
+
+    const animal = await Animal.create(payload);
     return animal;
   }
 
-  async getAllAnimals(query) {
+  async getAllAnimals(query = {}) {
     const { page, limit, type, healthStatus, lactationStage, isActive, search } = query;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, parseInt(limit, 10) || 100);
+    const skip = (pageNum - 1) * limitNum;
 
     // Build filter object
     const filter = {};
@@ -36,14 +51,12 @@ class AnimalService {
       ];
     }
 
-    const skip = (page - 1) * limit;
-
     const [animals, total] = await Promise.all([
-      Animal.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Animal.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limitNum).lean(),
       Animal.countDocuments(filter),
     ]);
 
-    return { animals, total, page, limit };
+    return { animals, total, page: pageNum, limit: limitNum };
   }
 
   async getAnimalById(id) {

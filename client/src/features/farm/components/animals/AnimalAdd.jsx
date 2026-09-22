@@ -87,17 +87,22 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (isEdit && editingAnimal) {
-      updateAnimal(editingAnimal.id, formData);
-    } else {
-      addAnimal(formData);
-    }
+    try {
+      if (isEdit && editingAnimal) {
+        await updateAnimal(editingAnimal._id || editingAnimal.id, formData);
+      } else {
+        await addAnimal(formData);
+      }
 
-    if (onSuccess) onSuccess();
-    if (handleBack) handleBack();
+      if (onSuccess) onSuccess();
+      if (handleBack) handleBack();
+    } catch (err) {
+      console.error("Failed to save animal:", err);
+      alert(err.message || "Failed to save livestock record");
+    }
   };
 
   return (
