@@ -62,9 +62,32 @@ export default function ProcurementSheet() {
   const { suppliers } = useSupplierContext();
   const { expenses } = useSourcExpenseContext();
 
+  const handlePrevDay = () => {
+    const parts = (date || '').split('-').map(Number);
+    const cur = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
+    cur.setDate(cur.getDate() - 1);
+    const y = cur.getFullYear();
+    const m = String(cur.getMonth() + 1).padStart(2, '0');
+    const d = String(cur.getDate()).padStart(2, '0');
+    setDate(`${y}-${m}-${d}`);
+  };
+
+  const handleNextDay = () => {
+    const parts = (date || '').split('-').map(Number);
+    const cur = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
+    cur.setDate(cur.getDate() + 1);
+    const y = cur.getFullYear();
+    const m = String(cur.getMonth() + 1).padStart(2, '0');
+    const d = String(cur.getDate()).padStart(2, '0');
+    setDate(`${y}-${m}-${d}`);
+  };
+
   // Dynamic Data Aggregation
   const { rows, routeSummaries, totals } = useMemo(() => {
-    const dayLogs = (intakeLogs || []).filter((log) => log.date === date);
+    const dayLogs = (intakeLogs || []).filter((log) => {
+      const lDate = (log.date || '').slice(0, 10);
+      return lDate === date || log.date === date;
+    });
 
     const supplierGroups = {};
     dayLogs.forEach((log) => {
@@ -199,15 +222,35 @@ export default function ProcurementSheet() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-3.5 h-[38px] text-xs font-semibold text-slate-700 shadow-xs">
-            <Calendar className="w-3.5 h-3.5 text-amber-600" />
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="border-none outline-none bg-transparent cursor-pointer"
-            />
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handlePrevDay}
+              className="px-2.5 h-[38px] rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer shadow-xs"
+              title="Previous Day"
+            >
+              &larr; Prev
+            </button>
+
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-3.5 h-[38px] text-xs font-semibold text-slate-700 shadow-xs">
+              <Calendar className="w-3.5 h-3.5 text-amber-600" />
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="border-none outline-none bg-transparent cursor-pointer font-bold text-xs"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleNextDay}
+              className="px-2.5 h-[38px] rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer shadow-xs"
+              title="Next Day"
+            >
+              Next &rarr;
+            </button>
           </div>
 
           <Button

@@ -4,18 +4,19 @@ import { CustomerProvider } from "./CustomerContext";
 import { LedgerProvider } from "./LedgerContext";
 import { AnimalProvider } from "./AnimalContext";
 import { ExpenseProvider } from "./ExpenseContext";
-import { POSProvider } from "./POSContext";
-import { DeliveryProvider } from "./DeliveryContext";
+import { StaffProvider } from "./StaffContext";
+import { StaffPayrollProvider } from "./StaffPayrollContext";
 import { DeliveryStaffProvider } from "./DeliveryStaffContext";
 import { FuelLogProvider } from "./FuelLogContext";
 import { RiderSalaryProvider } from "./RiderSalaryContext";
-import { StaffProvider } from "./StaffContext";
+import { DeliveryProvider } from "./DeliveryContext";
+import { SupplierProvider } from "./SupplierContext";
+import { IntakeProvider } from "./IntakeContext";
+import { POSProvider } from "./POSContext";
 import { PayrollProvider } from "./PayrollContext";
 import { TransactionProvider } from "./TransactionContext";
 import { AuditProvider } from "./AuditContext";
 import { SettingsProvider } from "./SettingsContext";
-import { SupplierProvider } from "./SupplierContext";
-import { IntakeProvider } from "./IntakeContext";
 import { SourcExpenseProvider } from "./SourcExpenseContext";
 
 const providers = [
@@ -24,19 +25,20 @@ const providers = [
   LedgerProvider,
   AnimalProvider,
   ExpenseProvider,
+  StaffPayrollProvider,
   StaffProvider,
   DeliveryStaffProvider,
   FuelLogProvider,
   RiderSalaryProvider,
   DeliveryProvider,
-  POSProvider,
-  IntakeProvider,
   SupplierProvider,
-  SourcExpenseProvider,
+  IntakeProvider,
+  POSProvider,
   PayrollProvider,
   TransactionProvider,
   AuditProvider,
   SettingsProvider,
+  SourcExpenseProvider,
 ];
 
 export const AppProviders = ({ children }) => {

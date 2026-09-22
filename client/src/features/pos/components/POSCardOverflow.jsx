@@ -1,91 +1,59 @@
 import React from 'react';
-import { Droplets, Layers, CheckCircle2, ShoppingBag, Truck, ChevronRight } from 'lucide-react';
+import { Droplets, CheckCircle2, ChevronRight } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 
 export default function POSCardOverflow({ onSelectSource }) {
-  const { inventoryMetrics, farmSalesMetrics, supplierSalesMetrics } = usePOSContext();
+  const { inventoryMetrics, farmSalesMetrics } = usePOSContext();
 
   const cards = [
     {
-      id: 'farm_sales',
-      title: 'Farm Milk Sales',
-      amount: `Rs. ${(farmSalesMetrics?.totalRevenue || 0).toLocaleString()}`,
-      sub: `${farmSalesMetrics?.milkSold || 0} L Milk • ${farmSalesMetrics?.dahiSold || 0} kg Dahi`,
+      id: 'total_milk',
+      title: 'Total Milk Stock',
+      amount: `${inventoryMetrics?.totalMilk ?? 0} L`,
+      sub: inventoryMetrics?.totalFarmYield ? `Barn Yield: ${Number(inventoryMetrics.totalFarmYield).toFixed(1)} L` : 'In Farm Chiller Storage',
       icon: Droplets,
-      color: '#009966',
-      badge: 'Farm Milk',
+      color: '#009689',
+      badge: 'Milk Stock',
       clickable: true,
       onClick: () => onSelectSource && onSelectSource('farm'),
-    },
-    {
-      id: 'supplier_sales',
-      title: 'Supplier Milk Sales',
-      amount: `Rs. ${(supplierSalesMetrics?.totalRevenue || 0).toLocaleString()}`,
-      sub: `${supplierSalesMetrics?.milkSold || 0} L Milk • ${supplierSalesMetrics?.dahiSold || 0} kg Dahi`,
-      icon: Truck,
-      color: '#155dfc',
-      badge: 'Supplier Milk',
-      clickable: true,
-      onClick: () => onSelectSource && onSelectSource('supplier'),
     },
     {
       id: 'milk_sold',
       title: 'Total Milk Sold',
-      amount: `${inventoryMetrics.milkSold} L`,
-      sub: `Rs. ${(Number(inventoryMetrics.totalMilkPrice) || 0).toLocaleString()} Total Sales`,
+      amount: `${inventoryMetrics?.milkSold ?? 0} L`,
+      sub: 'Daily Counter & Delivery Sales',
       icon: CheckCircle2,
-      color: '#4f39f6',
+      color: '#155dfc',
       badge: 'Milk Sold',
-      clickable: true,
-      onClick: () => onSelectSource && onSelectSource('all'),
-    },
-    {
-      id: 'dahi_sold',
-      title: 'Total Dahi Sold',
-      amount: `${inventoryMetrics.dahiSold} kg`,
-      sub: `Rs. ${(Number(inventoryMetrics.totalDahiPrice) || 0).toLocaleString()} Total Sales`,
-      icon: ShoppingBag,
-      color: '#8b5cf6',
-      badge: 'Dahi Sold',
-      clickable: true,
-      onClick: () => onSelectSource && onSelectSource('all'),
-    },
-    {
-      id: 'total_milk',
-      title: 'Farm Milk Stock',
-      amount: `${inventoryMetrics?.totalMilk ?? 0} L`,
-      sub: inventoryMetrics?.totalFarmYield ? `Barn Yield: ${Number(inventoryMetrics.totalFarmYield).toFixed(1)}L` : 'Remaining in Farm Barn',
-      icon: Droplets,
-      color: '#009689',
-      badge: 'Farm Stock',
       clickable: true,
       onClick: () => onSelectSource && onSelectSource('farm'),
     },
     {
-      id: 'total_supplier_milk',
-      title: 'Supplier Milk Stock',
-      amount: `${inventoryMetrics?.supplierMilkStock ?? 0} L`,
-      sub: inventoryMetrics?.totalSupplierIntake ? `Chiller Intake: ${Number(inventoryMetrics.totalSupplierIntake).toFixed(1)}L` : 'Remaining in Chiller',
-      icon: Truck,
-      color: '#0284c7',
-      badge: 'Supplier Stock',
+      id: 'milk_sales_income',
+      title: 'Total Milk Sale Income',
+      amount: `Rs. ${(Number(inventoryMetrics?.totalMilkPrice) || 0).toLocaleString()}`,
+      sub: `${inventoryMetrics?.milkSold || 0} L Total Milk Sold`,
+      icon: CheckCircle2,
+      color: '#4f39f6',
+      badge: 'Milk Income',
       clickable: true,
-      onClick: () => onSelectSource && onSelectSource('supplier'),
+      onClick: () => onSelectSource && onSelectSource('farm'),
     },
     {
-      id: 'total_dahi',
-      title: 'Total Dahi Stock',
-      amount: `${inventoryMetrics?.totalDahi ?? 0} kg`,
-      sub: `In Cold Storage`,
-      icon: Layers,
-      color: '#f59e0b',
-      badge: 'Dahi Stock',
-      clickable: false,
+      id: 'farm_sales',
+      title: 'Farm Milk Sales',
+      amount: `Rs. ${(farmSalesMetrics?.totalRevenue || 0).toLocaleString()}`,
+      sub: `${farmSalesMetrics?.milkSold || 0} L Farm Milk Sold`,
+      icon: Droplets,
+      color: '#009966',
+      badge: 'Farm Sales',
+      clickable: true,
+      onClick: () => onSelectSource && onSelectSource('farm'),
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-2.5">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
       {cards.map(({ id, title, amount, sub, icon: Icon, color, badge, clickable, onClick }) => (
         <div
           key={id}
@@ -120,7 +88,7 @@ export default function POSCardOverflow({ onSelectSource }) {
               {amount}
             </p>
             <p className="text-xs font-bold text-slate-800">{title}</p>
-            <p className="text-[10px] font-medium text-slate-400 line-clamp-1">{sub}</p>
+            <p className="text-[10px] font-medium text-slate-400 line-clamp-1" title={sub}>{sub}</p>
           </div>
         </div>
       ))}

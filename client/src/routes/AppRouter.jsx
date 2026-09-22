@@ -56,8 +56,13 @@ import RiderDeliveryFinancePage from "../features/finance/pages/RiderDeliveryFin
 import DailyClosing from "../features/finance/pages/DailyClosing";
 import TransactionAuditLog from "../features/audit/pages/TransactionAuditLog";
 
-// Staff Management
+// Staff Management Pages
 import StaffManagement from "../features/staff/pages/StaffManagement";
+import StaffDashboard from "../features/staff/pages/StaffDashboard";
+import ManageStaff from "../features/staff/pages/ManageStaff";
+import StaffAttendance from "../features/staff/pages/StaffAttendance";
+import StaffDailySheet from "../features/staff/pages/StaffDailySheet";
+import StaffAdd from "../features/staff/pages/StaffAdd";
 
 // Global Settings
 import GlobalSettings from "../features/settings/pages/GlobalSettings";

@@ -52,6 +52,10 @@ export default function RegisterStaffModal({ isOpen, onClose }) {
       setError('Staff member name is required.');
       return;
     }
+    if (!formData.route.trim()) {
+      setError('Assigned Route / Delivery Area is required.');
+      return;
+    }
 
     addStaff({
       name: formData.name.trim(),
