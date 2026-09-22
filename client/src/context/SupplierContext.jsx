@@ -54,12 +54,16 @@ export function SupplierProvider({ children }) {
   const addSupplier = async (newSupplierData) => {
     try {
       const payload = {
+        code: newSupplierData.code || `SUP-${Date.now().toString().slice(-4)}`,
         name: newSupplierData.name?.trim() || 'New Supplier',
         supplierType: newSupplierData.supplierType || 'Individual Farmer',
+        villageOrLocation: newSupplierData.area?.trim() || newSupplierData.address?.trim() || 'Central Location',
         area: newSupplierData.area?.trim() || 'Central',
-        phone: newSupplierData.contact?.trim() || newSupplierData.phone || '',
+        phone: newSupplierData.contact?.trim() || newSupplierData.phone || '03001234567',
         address: newSupplierData.address?.trim() || '',
-        baseRate: parseFloat(newSupplierData.ratePerLiter) || 220,
+        milkType: (newSupplierData.milkType || 'BUFFALO').toUpperCase(),
+        baseRatePerLiter: parseFloat(newSupplierData.ratePerLiter || newSupplierData.baseRate) || 220,
+        baseRate: parseFloat(newSupplierData.ratePerLiter || newSupplierData.baseRate) || 220,
         expectedDailyQuantity: parseFloat(newSupplierData.avgLiters) || 10,
         status: newSupplierData.status || 'Active',
       };
@@ -69,7 +73,7 @@ export function SupplierProvider({ children }) {
         ...created,
         id: created._id || created.id || `SUP-${Date.now()}`,
         contact: created.phone || newSupplierData.contact,
-        ratePerLiter: created.baseRate || newSupplierData.ratePerLiter || 220,
+        ratePerLiter: created.baseRatePerLiter || created.baseRate || newSupplierData.ratePerLiter || 220,
         avgLiters: created.expectedDailyQuantity || newSupplierData.avgLiters || 10,
       };
 

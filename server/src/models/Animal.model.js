@@ -22,11 +22,16 @@ const animalSchema = new Schema(
       required: [true, 'Animal type is required'],
       enum: ['COW', 'BUFFALO'],
       uppercase: true,
+      default: 'COW',
       index: true,
+    },
+    species: {
+      type: String,
+      default: 'Cow (Sahiwal)',
     },
     breed: {
       type: String,
-      required: [true, 'Breed is required'],
+      default: 'Sahiwal',
       trim: true,
     },
     dob: {
@@ -35,9 +40,12 @@ const animalSchema = new Schema(
     },
     lactationStage: {
       type: String,
-      enum: ['EARLY', 'MID', 'LATE', 'DRY'],
       default: 'EARLY',
       index: true,
+    },
+    lactationStatus: {
+      type: String,
+      default: 'Milking',
     },
     lactationCycle: {
       type: Number,
@@ -49,9 +57,28 @@ const animalSchema = new Schema(
       default: 0,
       min: 0,
     },
+    morningYield: {
+      type: Number,
+      default: 0,
+    },
+    eveningYield: {
+      type: Number,
+      default: 0,
+    },
+    expectedDailyYield: {
+      type: Number,
+      default: 0,
+    },
+    purchasePrice: {
+      type: Number,
+      default: 0,
+    },
+    acquisitionDate: {
+      type: String,
+      default: null,
+    },
     healthStatus: {
       type: String,
-      enum: ['HEALTHY', 'UNDER_TREATMENT', 'QUARANTINE', 'SICK'],
       default: 'HEALTHY',
       index: true,
     },
@@ -67,6 +94,7 @@ const animalSchema = new Schema(
   },
   {
     timestamps: true,
+    strict: false,
     toJSON: {
       transform: (doc, ret) => {
         delete ret.__v;
