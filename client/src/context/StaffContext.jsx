@@ -54,7 +54,6 @@ export function StaffProvider({ children }) {
         };
       });
       setStaffList(normalized);
-      localStorage.setItem(STORAGE_KEY_STAFF, JSON.stringify(normalized));
     } catch (err) {
       console.warn('Failed to fetch staff from API:', err.message);
       setStaffList([]);
@@ -66,6 +65,7 @@ export function StaffProvider({ children }) {
   useEffect(() => {
     fetchStaff();
   }, [fetchStaff]);
+
 
   // 1. Add New Staff Member
   const addStaff = async (data) => {
@@ -166,7 +166,7 @@ export function StaffProvider({ children }) {
     } catch (err) {
       console.warn('Backend API deleteStaff error, deleting locally:', err.message);
     }
-    setStaffList((prev) => prev.filter((m) => (m._id || m.id) !== id && m.id !== id));
+    setStaffList((prev) => prev.filter((m) => String(m._id || m.id) !== String(id)));
   };
 
   // 4. Toggle Staff Duty Status (Active / Present vs Inactive / Absent)

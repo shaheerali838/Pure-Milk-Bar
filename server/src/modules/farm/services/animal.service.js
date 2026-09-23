@@ -97,11 +97,7 @@ class AnimalService {
   }
 
   async deleteAnimal(id) {
-    const animal = await Animal.findByIdAndUpdate(
-      id,
-      { isActive: false },
-      { new: true }
-    ).lean();
+    const animal = await Animal.findByIdAndDelete(id).lean();
 
     if (!animal) {
       throw new AppError('Animal not found', 404, 'ANIMAL_NOT_FOUND');

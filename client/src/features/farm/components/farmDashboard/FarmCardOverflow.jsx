@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Beef, Droplets, Activity, DollarSign, IndianRupee } from 'lucide-react';
 import { useExpense } from '../../../../context/ExpenseContext';
+import { usePOSContext } from '../../../../context/POSContext';
 
 export default function FarmCardOverflow({ 
   totalAnimals = 0, 
@@ -14,6 +15,8 @@ export default function FarmCardOverflow({
 }) {
   const navigate = useNavigate();
   const { totals, expenses = [] } = useExpense();
+  const posCtx = usePOSContext?.();
+  const farmMilkStock = posCtx?.inventoryMetrics?.farmMilkStock ?? (totalFarmYield > 0 ? totalFarmYield.toFixed(1) : '0');
   const totalFarmExpense = totals?.totalFarmExpense ?? 0;
 
   const statCards = [
@@ -34,6 +37,15 @@ export default function FarmCardOverflow({
       color: "#155dfc",
       badge: "Today's Milk",
       path: "/farm/milking"
+    },
+    {
+      label: "Available Farm Stock",
+      value: `${farmMilkStock} L`,
+      sub: "In farm cold room",
+      icon: Droplets,
+      color: "#059669",
+      badge: "Chiller Stock",
+      path: "/pos"
     },
     {
       label: "Average Animal Yield",
@@ -64,7 +76,7 @@ export default function FarmCardOverflow({
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-2">
       {statCards.map(({ label, value, sub, icon: Icon, color, badge, path }) => (
         <div
           key={label}

@@ -5,6 +5,8 @@ import {
   createExpenseService,
   getExpensesService,
   getExpenseSummaryService,
+  updateExpenseService,
+  deleteExpenseService,
 } from '../services/finance.service.js';
 
 
@@ -87,3 +89,30 @@ export const getExpenseSummary = async (req, res, next) => {
     next(error);
   }
 };
+
+export const updateExpense = async (req, res, next) => {
+  try {
+    const expense = await updateExpenseService(req.params.id, req.body);
+    res.status(200).json({
+      success: true,
+      message: 'Expense updated successfully',
+      data: expense,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteExpense = async (req, res, next) => {
+  try {
+    const result = await deleteExpenseService(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result.expense,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

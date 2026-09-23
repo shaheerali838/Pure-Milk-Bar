@@ -26,7 +26,15 @@ export function ExpenseProvider({ children }) {
         setIsLoading(true);
         try {
             const res = await api.finance.getExpenses({ scope: 'FARM' });
-            const list = Array.isArray(res) ? res : res?.data?.expenses || res?.expenses || (Array.isArray(res?.data) ? res.data : []);
+            const list = Array.isArray(res)
+                ? res
+                : Array.isArray(res?.data?.expenses)
+                ? res.data.expenses
+                : Array.isArray(res?.expenses)
+                ? res.expenses
+                : Array.isArray(res?.data)
+                ? res.data
+                : [];
             const normalized = list.map((exp) => ({
                 ...exp,
                 id: exp._id || exp.id || `EXP-${Date.now()}`,
@@ -76,12 +84,26 @@ export function ExpenseProvider({ children }) {
         }
     };
 
-    const editExpense = (id, updatedExpense) => {
-        setExpenses(prev => prev.map(exp => (exp.id === id ? { ...updatedExpense, id } : exp)));
+    const editExpense = async (id, updatedExpense) => {
+        setExpenses(prev => prev.map(exp => ((exp._id || exp.id) === id || exp.id === id ? { ...updatedExpense, id } : exp)));
+        try {
+            await api.finance.updateExpense(id, {
+                amountRupees: Number(updatedExpense.amount),
+                category: updatedExpense.category,
+                notes: updatedExpense.description || updatedExpense.notes,
+            });
+        } catch (e) {
+            console.warn('Expense edit API sync skipped:', e.message);
+        }
     };
 
-    const deleteExpense = (id) => {
-        setExpenses(prev => prev.filter(exp => exp.id !== id));
+    const deleteExpense = async (id) => {
+        setExpenses(prev => prev.filter(exp => (exp._id || exp.id) !== id && exp.id !== id));
+        try {
+            await api.finance.deleteExpense(id);
+        } catch (e) {
+            console.warn('Expense delete API sync skipped:', e.message);
+        }
     };
 
     const totals = useMemo(() => {
@@ -93,23 +115,28 @@ export function ExpenseProvider({ children }) {
         expenses.forEach(exp => {
             const amt = Number(exp.amount) || 0;
             totalFarmExpense += amt;
+            
+            const cat = exp.category || '';
 
             if (
-                exp.category.startsWith('Feed') ||
-                exp.category.startsWith('Seed cost') ||
-                exp.category.startsWith('Farming')
+                cat.includes('Feed') ||
+                cat.includes('Seed') ||
+                cat.includes('Veterinary') ||
+                cat.includes('Livestock') ||
+                cat.includes('Dairy')
             ) {
                 feedSeedFarming += amt;
             } else if (
-                exp.category.startsWith('Fuel cost') ||
-                exp.category.startsWith('Transportation') ||
-                exp.category.startsWith('Repair Bill') ||
-                exp.category.startsWith('Electrical work')
+                cat.includes('Fuel') ||
+                cat.includes('Machinery') ||
+                cat.includes('Electricity') ||
+                cat.includes('Shed') ||
+                cat.includes('Hardware')
             ) {
                 fuelTransportRepairs += amt;
             } else if (
-                exp.category.startsWith('Salaries Expense') ||
-                exp.category.startsWith('Kitchen Expense')
+                cat.includes('Salaries') ||
+                cat.includes('Kitchen')
             ) {
                 salariesKitchenMess += amt;
             }

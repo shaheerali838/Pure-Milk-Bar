@@ -45,7 +45,7 @@ export function getStoredToken() {
 
   for (const key of AUTH_STORAGE_KEYS) {
     try {
-      const raw = localStorage.getItem(key) || sessionStorage.getItem(key);
+      const raw = sessionStorage.getItem(key) || localStorage.getItem(key);
       if (raw) {
         if (raw.startsWith('{') || raw.startsWith('[')) {
           const parsed = JSON.parse(raw);
@@ -73,7 +73,7 @@ export function setStoredSession(token, user = null) {
   const sessionData = JSON.stringify({ token, accessToken: token, user });
   AUTH_STORAGE_KEYS.forEach((key) => {
     try {
-      localStorage.setItem(key, sessionData);
+      sessionStorage.setItem(key, sessionData);
     } catch (_) {}
   });
 }
@@ -85,8 +85,8 @@ export function clearStoredSession() {
   if (typeof window === 'undefined') return;
   AUTH_STORAGE_KEYS.forEach((key) => {
     try {
-      localStorage.removeItem(key);
       sessionStorage.removeItem(key);
+      localStorage.removeItem(key);
     } catch (_) {}
   });
 }
@@ -386,6 +386,8 @@ export const api = {
     getExpenses: (params = {}) => api.get('/api/v1/finance/expenses', params, { fallback: [] }),
     getExpenseSummary: (params = {}) => api.get('/api/v1/finance/expenses/summary', params, { fallback: {} }),
     createExpense: (data) => api.post('/api/v1/finance/expenses', data),
+    updateExpense: (id, data) => api.patch(`/api/v1/finance/expenses/${id}`, data),
+    deleteExpense: (id) => api.delete(`/api/v1/finance/expenses/${id}`),
 
     // Financial Overview
     getFinancialSummary: (params = {}) => api.get('/api/v1/finance/summary', params, { fallback: {} }),

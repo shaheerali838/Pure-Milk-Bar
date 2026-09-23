@@ -30,7 +30,15 @@ export function SourcExpenseProvider({ children }) {
     setIsLoading(true);
     try {
       const res = await api.finance.getExpenses({ scope: 'SUPPLIER' });
-      const list = Array.isArray(res) ? res : res?.data?.expenses || res?.expenses || (Array.isArray(res?.data) ? res.data : []);
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data?.expenses)
+        ? res.data.expenses
+        : Array.isArray(res?.expenses)
+        ? res.expenses
+        : Array.isArray(res?.data)
+        ? res.data
+        : [];
       const normalized = list.map((exp) => ({
         ...exp,
         id: exp._id || exp.id || `EXP-SRC-${Date.now()}`,
@@ -97,10 +105,10 @@ export function SourcExpenseProvider({ children }) {
   };
 
   // Edit / Update Expense
-  const updateExpense = (id, updatedData) => {
+  const updateExpense = async (id, updatedData) => {
     setExpenses((prev) =>
       prev.map((item) =>
-        item.id === id
+        (item._id || item.id) === id || item.id === id
           ? {
               ...item,
               ...updatedData,
@@ -109,11 +117,25 @@ export function SourcExpenseProvider({ children }) {
           : item
       )
     );
+    try {
+      await api.finance.updateExpense(id, {
+        amountRupees: Number(updatedData.amount),
+        category: updatedData.category,
+        notes: updatedData.description || updatedData.notes,
+      });
+    } catch (e) {
+      console.warn('Sourcing expense update API sync skipped:', e.message);
+    }
   };
 
   // Delete Expense
-  const deleteExpense = (id) => {
-    setExpenses((prev) => prev.filter((item) => item.id !== id));
+  const deleteExpense = async (id) => {
+    setExpenses((prev) => prev.filter((item) => (item._id || item.id) !== id && item.id !== id));
+    try {
+      await api.finance.deleteExpense(id);
+    } catch (e) {
+      console.warn('Sourcing expense delete API sync skipped:', e.message);
+    }
   };
 
   // Dynamic summary metrics

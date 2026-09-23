@@ -108,11 +108,7 @@ class SupplierService {
   }
 
   async deleteSupplier(id) {
-    const supplier = await Supplier.findByIdAndUpdate(
-      id,
-      { isActive: false },
-      { new: true }
-    ).lean();
+    const supplier = await Supplier.findByIdAndDelete(id).lean();
 
     if (!supplier) {
       throw new AppError('Supplier not found', 404, 'SUPPLIER_NOT_FOUND');

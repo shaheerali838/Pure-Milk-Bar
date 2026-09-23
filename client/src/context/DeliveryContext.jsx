@@ -72,6 +72,11 @@ export function DeliveryProvider({ children }) {
     setDeliveries((prev) =>
       prev.map((d) => ((d._id || d.id) === id ? { ...d, ...data } : d))
     );
+    try {
+      await deliveryService.updateDelivery(id, data);
+    } catch (err) {
+      console.warn('Failed to update delivery on API:', err.message);
+    }
   };
 
   const updateDeliveryStatus = async (id, status) => {
@@ -94,8 +99,13 @@ export function DeliveryProvider({ children }) {
     }
   };
 
-  const deleteDelivery = (id) => {
-    setDeliveries((prev) => prev.filter((d) => (d._id || d.id) !== id));
+  const deleteDelivery = async (id) => {
+    setDeliveries((prev) => prev.filter((d) => (d._id || d.id) !== id && d.id !== id));
+    try {
+      await deliveryService.deleteDelivery(id);
+    } catch (err) {
+      console.warn('Failed to delete delivery on API:', err.message);
+    }
   };
 
   return (

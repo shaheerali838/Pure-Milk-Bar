@@ -89,7 +89,7 @@ export default function GlobalSettings() {
 
   // Save changes handler with real Pricing → Products sync
   const handleSaveChanges = () => {
-    // 1. Persist draft sections to SettingsContext & LocalStorage
+    // 1. Persist draft sections to SettingsContext & Database Backend
     updateSettingsSection('business', draft.business);
     updateSettingsSection('productDefaults', draft.productDefaults);
     updateSettingsSection('pricing', draft.pricing);

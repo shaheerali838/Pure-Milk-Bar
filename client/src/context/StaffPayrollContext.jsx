@@ -3,25 +3,6 @@ import adminService from '@/services/adminService';
 
 const StaffPayrollContext = createContext(null);
 
-const STORAGE_KEYS = {
-  STAFF_LIST: 'pure_milk_bar_staff',
-  ATTENDANCE: 'puremilkbar_staff_attendance',
-  DAILY_SHEETS: 'puremilkbar_staff_daily_sheets',
-};
-
-// Safe JSON parser for localStorage
-const loadStorage = (key, fallback) => {
-  try {
-    const saved = localStorage.getItem(key);
-    if (!saved) return fallback;
-    const parsed = JSON.parse(saved);
-    return parsed !== null && parsed !== undefined ? parsed : fallback;
-  } catch (err) {
-    console.error(`Error loading ${key} from localStorage:`, err);
-    return fallback;
-  }
-};
-
 // Safe Date String Formatter (YYYY-MM-DD) avoiding timezone shifts
 export const formatDateKey = (d) => {
   if (!d) return new Date().toISOString().split('T')[0];
@@ -40,19 +21,15 @@ export const formatDateKey = (d) => {
 };
 
 export function StaffPayrollProvider({ children }) {
-  // 1. Staff List (Starts empty or from cache, synced with live API / MongoDB database)
-  const [staffList, setStaffList] = useState(() =>
-    loadStorage(STORAGE_KEYS.STAFF_LIST, [])
-  );
+  // 1. Staff List (Starts empty, synced with live API / MongoDB database)
+  const [staffList, setStaffList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // 2. Attendance Map: { [dateString 'YYYY-MM-DD']: { [staffId]: 'present' | 'absent' | 'leave' } }
   const [attendanceRecords, setAttendanceRecords] = useState({});
 
   // 3. Daily Sheets Map: { [dateString 'YYYY-MM-DD']: { [staffId]: { shift, hours, assignment, notes } } }
-  const [dailySheets, setDailySheets] = useState(() =>
-    loadStorage(STORAGE_KEYS.DAILY_SHEETS, {})
-  );
+  const [dailySheets, setDailySheets] = useState({});
 
   // Fetch real staff list from backend
   const fetchStaff = useCallback(async () => {
@@ -72,7 +49,6 @@ export function StaffPayrollProvider({ children }) {
         };
       });
       setStaffList(normalized);
-      localStorage.setItem(STORAGE_KEYS.STAFF_LIST, JSON.stringify(normalized));
     } catch (err) {
       console.warn('Live staff fetch notice:', err.message);
     } finally {
@@ -83,32 +59,6 @@ export function StaffPayrollProvider({ children }) {
   useEffect(() => {
     fetchStaff();
   }, [fetchStaff]);
-
-  // Sync to LocalStorage whenever state changes
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.STAFF_LIST, JSON.stringify(staffList));
-    } catch (err) {
-      console.error('Error saving staffList to localStorage:', err);
-    }
-  }, [staffList]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(attendanceRecords));
-    } catch (err) {
-      console.error('Error saving attendanceRecords to localStorage:', err);
-    }
-  }, [attendanceRecords]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.DAILY_SHEETS, JSON.stringify(dailySheets));
-    } catch (err) {
-      console.error('Error saving dailySheets to localStorage:', err);
-    }
-  }, [dailySheets]);
-
   // Helper to generate next Staff ID like STF-001, STF-002
   const generateStaffId = () => {
     if (!staffList || staffList.length === 0) return 'STF-001';

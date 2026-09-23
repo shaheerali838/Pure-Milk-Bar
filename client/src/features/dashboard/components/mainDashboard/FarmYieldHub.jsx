@@ -78,6 +78,13 @@ export default function FarmYieldHub() {
           </div>
 
           <div className="flex items-center justify-between">
+            <span className="text-slate-500 font-medium">Available Farm Milk Stock:</span>
+            <span className="font-mono font-bold text-emerald-700 tabular">
+              {inventoryMetrics?.farmMilkStock || 0} L (In Farm Chiller)
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium">Feed, Silage &amp; Barn Expenses:</span>
             <span className="font-mono font-bold text-rose-500 tabular">
               Rs. {feedExpenses.toLocaleString()}

@@ -22,6 +22,16 @@ export const deliveryService = {
     return res.data || res;
   },
 
+  updateDelivery: async (id, data) => {
+    const res = await api.put(`/api/v1/deliveries/${id}`, data);
+    return res.data || res.delivery || res;
+  },
+
+  deleteDelivery: async (id) => {
+    const res = await api.delete(`/api/v1/deliveries/${id}`);
+    return res.data || res;
+  },
+
   // Fleet Staff / Riders
   getStaff: async (params = {}) => {
     const res = await api.get('/api/v1/deliveries/staff', params, { fallback: [] });
@@ -38,6 +48,17 @@ export const deliveryService = {
     const res = await api.post('/api/v1/deliveries/fuel-logs', data);
     return res.data || res.log || res;
   },
+
+  updateFuelLog: async (id, data) => {
+    const res = await api.put(`/api/v1/deliveries/fuel-logs/${id}`, data);
+    return res.data || res.log || res;
+  },
+
+  deleteFuelLog: async (id) => {
+    const res = await api.delete(`/api/v1/deliveries/fuel-logs/${id}`);
+    return res.data || res;
+  },
 };
 
 export default deliveryService;
+
