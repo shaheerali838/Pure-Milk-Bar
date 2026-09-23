@@ -45,7 +45,7 @@ export function getStoredToken() {
 
   for (const key of AUTH_STORAGE_KEYS) {
     try {
-      const raw = localStorage.getItem(key) || sessionStorage.getItem(key);
+      const raw = sessionStorage.getItem(key) || localStorage.getItem(key);
       if (raw) {
         if (raw.startsWith('{') || raw.startsWith('[')) {
           const parsed = JSON.parse(raw);
@@ -73,7 +73,7 @@ export function setStoredSession(token, user = null) {
   const sessionData = JSON.stringify({ token, accessToken: token, user });
   AUTH_STORAGE_KEYS.forEach((key) => {
     try {
-      localStorage.setItem(key, sessionData);
+      sessionStorage.setItem(key, sessionData);
     } catch (_) {}
   });
 }
@@ -85,8 +85,8 @@ export function clearStoredSession() {
   if (typeof window === 'undefined') return;
   AUTH_STORAGE_KEYS.forEach((key) => {
     try {
-      localStorage.removeItem(key);
       sessionStorage.removeItem(key);
+      localStorage.removeItem(key);
     } catch (_) {}
   });
 }

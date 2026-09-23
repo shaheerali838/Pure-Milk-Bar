@@ -68,7 +68,7 @@ export const DEMO_ACCOUNTS = [
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
+      const saved = sessionStorage.getItem(STORAGE_KEY);
       if (saved) {
         return JSON.parse(saved).user || null;
       }
@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }) => {
 
   const [token, setToken] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
+      const saved = sessionStorage.getItem(STORAGE_KEY);
       if (saved) {
         return JSON.parse(saved).token || null;
       }
@@ -95,15 +95,9 @@ export const AuthProvider = ({ children }) => {
 
   const isAuthenticated = Boolean(user && token);
 
-  const saveSession = (userData, userToken, rememberMe = true) => {
+  const saveSession = (userData, userToken) => {
     const payload = JSON.stringify({ user: userData, token: userToken, savedAt: new Date().toISOString() });
-    if (rememberMe) {
-      localStorage.setItem(STORAGE_KEY, payload);
-      sessionStorage.removeItem(STORAGE_KEY);
-    } else {
-      sessionStorage.setItem(STORAGE_KEY, payload);
-      localStorage.removeItem(STORAGE_KEY);
-    }
+    sessionStorage.setItem(STORAGE_KEY, payload);
     setUser(userData);
     setToken(userToken);
   };
@@ -214,8 +208,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem(STORAGE_KEY);
     sessionStorage.removeItem(STORAGE_KEY);
+    try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
     setUser(null);
     setToken(null);
     setError(null);
@@ -225,15 +219,11 @@ export const AuthProvider = ({ children }) => {
     if (!user) return;
     const updated = { ...user, ...updates };
     setUser(updated);
-    const saved = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
+    const saved = sessionStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
       parsed.user = updated;
-      if (localStorage.getItem(STORAGE_KEY)) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-      } else {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-      }
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
     }
   };
 
