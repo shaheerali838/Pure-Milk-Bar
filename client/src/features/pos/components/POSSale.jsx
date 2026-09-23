@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import {
   ShoppingCart,
   Trash2,
@@ -123,7 +124,7 @@ export default function POSSale() {
     if (!target) return;
     const balance = target.khataBalance || 0;
     if (balance <= 0) {
-      alert(`Customer ${target.name} has no outstanding khata debt.`);
+      toast.info(`Customer ${target.name} has no outstanding khata debt.`);
       return;
     }
     if (
@@ -137,7 +138,7 @@ export default function POSSale() {
         paymentMethod: "Cash",
         notes: "Full Khata finished and cleared at POS register",
       });
-      alert(`Khata for ${target.name} has been finished.`);
+      toast.success(`Khata for ${target.name} has been settled and finished.`);
     }
   };
 
@@ -267,10 +268,10 @@ export default function POSSale() {
                       <button
                         type="button"
                         onClick={() => handleRemoveFromCart(item.id)}
-                        className="text-slate-300 hover:text-rose-500 transition p-1 cursor-pointer"
-                        title="Remove item"
+                        className="text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-md transition p-1.5 cursor-pointer"
+                        title="Delete item from cart"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3.5 h-3.5 text-rose-500" />
                       </button>
                     </div>
                   </div>
@@ -283,7 +284,7 @@ export default function POSSale() {
                           type="button"
                           onClick={() => {
                             const step = qty <= 1 ? 0.25 : 0.5;
-                            handleUpdateQuantity(item.id, Math.max(0.1, Number((qty - step).toFixed(2))));
+                            handleUpdateQuantity(item.id, Math.max(0, Number((qty - step).toFixed(2))));
                           }}
                           className="px-1.5 py-0.5 text-slate-500 hover:text-slate-800 transition text-xs font-bold cursor-pointer"
                           title="Reduce quantity"
@@ -293,8 +294,8 @@ export default function POSSale() {
                         <input
                           type="number"
                           step="0.05"
-                          min="0.05"
-                          value={qty}
+                          min="0"
+                          value={qty === 0 ? '0' : qty}
                           onChange={(e) => handleUpdateQuantity(item.id, e.target.value)}
                           className="w-12 text-center text-xs font-bold text-slate-800 outline-none tabular"
                           title="Type quantity in liters/kg"
@@ -318,9 +319,9 @@ export default function POSSale() {
                       <div className="flex items-center border border-indigo-200 bg-white rounded-lg shadow-2xs px-1.5 py-0.5">
                         <input
                           type="number"
-                          min="1"
+                          min="0"
                           step="1"
-                          value={lineTotal || ''}
+                          value={lineTotal === 0 ? '0' : (lineTotal || '')}
                           onChange={(e) => handleUpdateByRupees(item.id, e.target.value)}
                           placeholder="Enter value"
                           className="w-14 text-right text-xs font-bold text-indigo-700 outline-none tabular"

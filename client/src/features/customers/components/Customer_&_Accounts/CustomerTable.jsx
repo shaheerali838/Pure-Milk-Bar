@@ -57,9 +57,17 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                   >
                     <TableCell className="px-3.5 py-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs shrink-0">
-                          {initial}
-                        </div>
+                        {c.image ? (
+                          <img
+                            src={c.image}
+                            alt={c.name}
+                            className="w-7 h-7 rounded-lg object-cover shrink-0 border border-slate-200"
+                          />
+                        ) : (
+                          <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs shrink-0">
+                            {initial}
+                          </div>
+                        )}
                         <div>
                           <div className="font-bold text-slate-800 leading-tight">{c.name}</div>
                           <div className="text-[10px] text-slate-400 leading-tight">{c.area || 'Model Town'}</div>

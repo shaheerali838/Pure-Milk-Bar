@@ -16,6 +16,7 @@ const normalizeAnimal = (animal, history = []) => {
     morningYield: `${morning.toFixed(1)} L`,
     eveningYield: `${evening.toFixed(1)} L`,
     totalDailyYield: `${(morning + evening).toFixed(1)} L`,
+    image: animal.image || null,
     history: history.length ? history : animal.history || [],
   };
 };
@@ -112,6 +113,8 @@ export function AnimalProvider({ children }) {
         eveningYield: evening,
         healthStatus: formData.healthStatus || 'HEALTHY',
         acquisitionDate: formData.acquisitionDate || new Date().toISOString().split('T')[0],
+        notes: formData.notes || '',
+        image: formData.image || null,
       };
 
       let created;

@@ -86,6 +86,10 @@ const animalSchema = new Schema(
       type: String,
       default: null,
     },
+    image: {
+      type: String,
+      default: null,
+    },
     isActive: {
       type: Boolean,
       default: true,

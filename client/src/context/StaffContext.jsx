@@ -82,6 +82,7 @@ export function StaffProvider({ children }) {
       cnic: (data.cnic || '').trim(),
       route: (data.route || '').trim() || 'Not Assigned',
       status: data.status || 'Active',
+      image: data.image || null,
     };
 
     let backendStaff = null;

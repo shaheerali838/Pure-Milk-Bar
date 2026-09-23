@@ -229,9 +229,14 @@ export default function StaffDetailSidebar({ staff, isOpen, onClose }) {
                   <div>
                     <label className="text-xs font-bold text-slate-700 block mb-1">CNIC</label>
                     <input
-                      type="text"
+                      type="number"
                       value={formData.cnic}
-                      onChange={(e) => setFormData({ ...formData, cnic: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, cnic: e.target.value.replace(/\D/g, '') })}
+                      onKeyDown={(e) => {
+                        if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:border-emerald-600 font-medium"
                     />
                   </div>

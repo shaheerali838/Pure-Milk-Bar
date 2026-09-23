@@ -12,6 +12,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
+import ImageUpload from "@/components/common/ImageUpload";
 
 const SPECIES_OPTIONS = [
   "Cow (Sahiwal)",
@@ -45,6 +46,7 @@ const initialForm = {
   expectedYield: "",
   healthStatus: "Healthy & Vaccinated",
   notes: "",
+  image: "",
 };
 
 export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuccess }) {
@@ -76,6 +78,7 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
           : "",
         healthStatus: editingAnimal.healthStatus || "Healthy & Vaccinated",
         notes: editingAnimal.notes || "",
+        image: editingAnimal.image || "",
       });
     } else {
       setFormData(initialForm);
@@ -395,6 +398,15 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
                     className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
                   />
                 </div>
+              </div>
+
+              <div className="md:col-span-3 pt-2">
+                <ImageUpload
+                  label="Cattle Photograph / Identification Image"
+                  value={formData.image}
+                  onChange={(img) => setFormData((prev) => ({ ...prev, image: img }))}
+                  helpText="Upload pure breed cattle photograph (JPG, PNG)"
+                />
               </div>
             </div>
           </div>

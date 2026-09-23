@@ -104,7 +104,7 @@ export function IntakeProvider({ children }) {
         status: 'Accepted',
       };
 
-      setIntakeLogs((prev) => [normalized, ...prev]);
+      await fetchIntakes();
       return normalized;
     } catch (err) {
       console.error('Failed to create procurement via API:', err);

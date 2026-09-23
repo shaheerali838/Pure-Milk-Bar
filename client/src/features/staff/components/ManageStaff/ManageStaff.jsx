@@ -37,6 +37,33 @@ export default function ManageStaff() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [shiftFilter, setShiftFilter] = useState('all');
+  
+  const [selectedIds, setSelectedIds] = useState([]);
+  
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(filteredStaff.map(s => s.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectRow = (e, id) => {
+    e.stopPropagation();
+    if (e.target.checked) {
+      setSelectedIds(prev => [...prev, id]);
+    } else {
+      setSelectedIds(prev => prev.filter(i => i !== id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} staff members?`)) return;
+    for (const id of selectedIds) {
+      await deleteStaff(id);
+    }
+    setSelectedIds([]);
+  };
 
   // 1. Full-space Add Staff View (Exact AnimalAdd Design Match)
   if (currentView === 'add') {
@@ -305,15 +332,27 @@ export default function ManageStaff() {
             <option value="night">Night</option>
           </select>
 
-          {/* Right-Side 'Add Staff' Button (Opens StaffAdd full view) */}
-          <button
-            type="button"
-            onClick={() => setCurrentView('add')}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00a86b] hover:bg-[#008f5a] text-white text-xs font-bold shadow-xs transition cursor-pointer"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            Add Staff
-          </button>
+          {/* Right-Side Actions */}
+          <div className="flex items-center gap-2">
+            {selectedIds.length > 0 && (
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Selected ({selectedIds.length})
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setCurrentView('add')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00a86b] hover:bg-[#008f5a] text-white text-xs font-bold shadow-xs transition cursor-pointer"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              Add Staff
+            </button>
+          </div>
         </div>
       </div>
 
@@ -362,6 +401,9 @@ export default function ManageStaff() {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/70 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
+                  <th className="py-3 px-4">
+                    <input type="checkbox" checked={selectedIds.length === filteredStaff.length && filteredStaff.length > 0} onChange={handleSelectAll} className="cursor-pointer" />
+                  </th>
                   <th className="py-3 px-4">Staff ID</th>
                   <th className="py-3 px-4">Employee Name</th>
                   <th className="py-3 px-4">Role</th>
@@ -390,15 +432,31 @@ export default function ManageStaff() {
                       }}
                       className="hover:bg-emerald-50/40 transition duration-150 cursor-pointer group"
                     >
+                      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
+                        <input 
+                          type="checkbox" 
+                          checked={selectedIds.includes(staff.id)} 
+                          onChange={(e) => handleSelectRow(e, staff.id)} 
+                          className="cursor-pointer" 
+                        />
+                      </td>
                       <td className="py-3 px-4 font-mono font-bold text-slate-900">
                         #{staff.id}
                       </td>
 
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 font-display">
-                            {staff.name ? staff.name.charAt(0).toUpperCase() : 'S'}
-                          </div>
+                          {staff.image ? (
+                            <img
+                              src={staff.image}
+                              alt={staff.name}
+                              className="w-8 h-8 rounded-xl object-cover shrink-0 border border-slate-200"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 font-display">
+                              {staff.name ? staff.name.charAt(0).toUpperCase() : 'S'}
+                            </div>
+                          )}
                           <div>
                             <span className="font-bold text-slate-900 block group-hover:text-emerald-700 transition">
                               {staff.name}

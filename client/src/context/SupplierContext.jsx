@@ -37,6 +37,7 @@ export function SupplierProvider({ children }) {
         baseRate: Number(s.baseRatePerLiter || s.baseRate || s.ratePerLiter) || 220,
         avgLiters: Number(s.expectedDailyQuantity || s.avgLiters) || 10,
         status: s.status || 'Active',
+        image: s.image || null,
       }));
       setSuppliers(normalized);
     } catch (err) {
@@ -68,6 +69,7 @@ export function SupplierProvider({ children }) {
         baseRate: parseFloat(newSupplierData.ratePerLiter || newSupplierData.baseRate) || 220,
         expectedDailyQuantity: parseFloat(newSupplierData.avgLiters) || 10,
         status: newSupplierData.status || 'Active',
+        image: newSupplierData.image || null,
       };
 
       let created;
@@ -83,6 +85,7 @@ export function SupplierProvider({ children }) {
         contact: created.phone || newSupplierData.contact,
         ratePerLiter: created.baseRatePerLiter || created.baseRate || newSupplierData.ratePerLiter || 220,
         avgLiters: created.expectedDailyQuantity || newSupplierData.avgLiters || 10,
+        image: created.image || newSupplierData.image || null,
       };
 
       setSuppliers((prev) => [normalized, ...prev.filter((supplier) => supplier.code !== normalized.code)]);
