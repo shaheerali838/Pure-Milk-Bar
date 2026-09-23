@@ -21,8 +21,11 @@ import { AuditProvider } from "./AuditContext";
 import { SettingsProvider } from "./SettingsContext";
 
 const providers = [
+  // 1. Root & Base Configuration
   AuthProvider,
   SettingsProvider,
+
+  // 2. Base Domain Entities
   CustomerProvider,
   LedgerProvider,
   AnimalProvider,
@@ -36,10 +39,18 @@ const providers = [
   DeliveryProvider,
   IntakeProvider,
   SupplierProvider,
-  POSProvider,
-  DahiProvider,
   PayrollProvider,
+
+  // 3. POS Engine
+  POSProvider,
+
+  // 4. Dahi Processing (consumes POS, Intake, Animal)
+  DahiProvider,
+
+  // 5. Aggregate Transactions
   TransactionProvider,
+
+  // 6. Global Audit Logging
   AuditProvider,
 ];
 

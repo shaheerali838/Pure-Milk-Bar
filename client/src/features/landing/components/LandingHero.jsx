@@ -34,14 +34,14 @@ export default function LandingHero() {
           {/* Clean Centered CTAs */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
             <Link
-              to="/dashboard"
+              to="/login"
               className="w-full sm:w-auto bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs sm:text-sm font-bold px-6 py-2.5 rounded-full shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>Launch Live ERP Dashboard</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
             <Link
-              to="/pos"
+              to="/login"
               className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs sm:text-sm font-bold px-6 py-2.5 rounded-full backdrop-blur-md transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <ShoppingCart className="w-3.5 h-3.5 text-[#5BBB7B]" />
@@ -51,27 +51,27 @@ export default function LandingHero() {
 
           {/* Centered Popular Quick Links */}
           <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10.5px] text-slate-300 pt-1">
-            <span className="font-semibold text-white">Popular Modules:</span>
+            <span className="font-semibold text-white">Explore Modules:</span>
             <Link
-              to="/pos"
+              to="/login"
               className="px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-emerald-200 border border-white/10 transition"
             >
               ⚡ Touch POS
             </Link>
             <Link
-              to="/farm"
+              to="/login"
               className="px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-emerald-200 border border-white/10 transition"
             >
               🐄 Herd &amp; Milking Log
             </Link>
             <Link
-              to="/customer-khata-ledger"
+              to="/login"
               className="px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-emerald-200 border border-white/10 transition"
             >
               📒 Customer Khata
             </Link>
             <Link
-              to="/finance/daily-closing"
+              to="/login"
               className="px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-emerald-200 border border-white/10 transition"
             >
               ⚖️ Mass Balance Closing

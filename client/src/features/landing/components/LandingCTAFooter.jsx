@@ -18,14 +18,14 @@ export default function LandingCTAFooter() {
         </p>
         <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-3.5">
           <Link
-            to="/dashboard"
+            to="/login"
             className="w-full sm:w-auto bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs sm:text-sm font-bold px-7 py-3 rounded-full shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>Launch Live ERP Dashboard</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
-            to="/pos"
+            to="/login"
             className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs sm:text-sm font-bold px-7 py-3 rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <ShoppingCart className="w-4 h-4 text-[#5BBB7B]" />
@@ -49,32 +49,32 @@ export default function LandingCTAFooter() {
           <div>
             <h4 className="text-white font-bold mb-2 text-xs uppercase tracking-wider">Farm &amp; Dock</h4>
             <ul className="space-y-1.5 text-slate-400">
-              <li><Link to="/farm/animals" className="hover:text-white">Cattle Herd Register</Link></li>
-              <li><Link to="/supplier/intake" className="hover:text-white">Milk Intake Register</Link></li>
+              <li><Link to="/login" className="hover:text-white">Cattle Herd Register</Link></li>
+              <li><Link to="/login" className="hover:text-white">Milk Intake Register</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-bold mb-2 text-xs uppercase tracking-wider">POS &amp; Fleet</h4>
             <ul className="space-y-1.5 text-slate-400">
-              <li><Link to="/pos" className="hover:text-white">Touch POS Sales</Link></li>
-              <li><Link to="/delivery" className="hover:text-white">Rider Fleet Logistics</Link></li>
+              <li><Link to="/login" className="hover:text-white">Touch POS Sales</Link></li>
+              <li><Link to="/login" className="hover:text-white">Rider Fleet Logistics</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="text-white font-bold mb-2 text-xs uppercase tracking-wider">Finance</h4>
             <ul className="space-y-1.5 text-slate-400">
-              <li><Link to="/customer-khata-ledger" className="hover:text-white">Khata Ledger</Link></li>
-              <li><Link to="/finance/daily-closing" className="hover:text-white">Daily Mass-Balance</Link></li>
+              <li><Link to="/login" className="hover:text-white">Khata Ledger</Link></li>
+              <li><Link to="/login" className="hover:text-white">Daily Mass-Balance</Link></li>
             </ul>
           </div>
         </div>
         <div className="pt-4 border-t border-[#2A4D47]/40 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
           <div>&copy; {new Date().getFullYear()} Pure Milk Bar Dairy ERP SaaS. All rights reserved.</div>
           <div className="flex items-center space-x-4">
-            <Link to="/dashboard" className="hover:text-white">Dashboard</Link>
-            <Link to="/pos" className="hover:text-white">POS</Link>
-            <Link to="/farm" className="hover:text-white">Farm</Link>
-            <Link to="/settings" className="hover:text-white">Settings</Link>
+            <Link to="/login" className="hover:text-white">Dashboard</Link>
+            <Link to="/login" className="hover:text-white">POS</Link>
+            <Link to="/login" className="hover:text-white">Farm</Link>
+            <Link to="/login" className="hover:text-white">Settings</Link>
           </div>
         </div>
       </div>

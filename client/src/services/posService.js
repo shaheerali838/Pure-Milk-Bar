@@ -1,6 +1,12 @@
 import api from './api';
 
 export const posService = {
+  // Get Products list
+  getProducts: async (params = {}) => {
+    const res = await api.get('/api/v1/inventory/products', params, { fallback: [] });
+    return res.data?.products || res.products || (Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : []);
+  },
+
   // Create POS Order
   createOrder: async (orderData) => {
     const res = await api.post('/api/v1/pos/orders', orderData);

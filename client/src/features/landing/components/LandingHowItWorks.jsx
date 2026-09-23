@@ -21,7 +21,7 @@ export default function LandingHowItWorks() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Step 1: Log Herd & Intake */}
           <Link
-            to="/farm"
+            to="/login"
             className="border border-slate-200/90 rounded-2xl p-5 sm:p-6 hover:shadow-xl hover:border-[#00a86b] transition-all duration-300 bg-slate-50/70 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
           >
             <div className="w-full h-36 sm:h-40 rounded-xl overflow-hidden mb-3.5 group-hover:scale-105 transition-transform bg-slate-100 shadow-xs">
@@ -47,7 +47,7 @@ export default function LandingHowItWorks() {
 
           {/* Step 2: Quality Grade & Batching */}
           <Link
-            to="/supplier"
+            to="/login"
             className="border border-slate-200/90 rounded-2xl p-5 sm:p-6 hover:shadow-xl hover:border-[#00a86b] transition-all duration-300 bg-slate-50/70 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
           >
             <div className="w-full h-36 sm:h-40 rounded-xl overflow-hidden mb-3.5 group-hover:scale-105 transition-transform bg-slate-100 shadow-xs">
@@ -73,7 +73,7 @@ export default function LandingHowItWorks() {
 
           {/* Step 3: POS Retail & Delivery Dispatch */}
           <Link
-            to="/pos"
+            to="/login"
             className="border border-slate-200/90 rounded-2xl p-5 sm:p-6 hover:shadow-xl hover:border-[#00a86b] transition-all duration-300 bg-slate-50/70 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
           >
             <div className="w-full h-36 sm:h-40 rounded-xl overflow-hidden mb-3.5 group-hover:scale-105 transition-transform bg-slate-100 shadow-xs">
@@ -99,7 +99,7 @@ export default function LandingHowItWorks() {
 
           {/* Step 4: Reconcile & Settle Khata */}
           <Link
-            to="/finance/daily-closing"
+            to="/login"
             className="border border-slate-200/90 rounded-2xl p-5 sm:p-6 hover:shadow-xl hover:border-[#00a86b] transition-all duration-300 bg-slate-50/70 hover:bg-white text-center flex flex-col items-center group cursor-pointer"
           >
             <div className="w-full h-36 sm:h-40 rounded-xl overflow-hidden mb-3.5 group-hover:scale-105 transition-transform bg-slate-100 shadow-xs">

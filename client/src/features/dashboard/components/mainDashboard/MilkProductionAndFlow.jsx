@@ -158,7 +158,7 @@ export default function MilkProductionAndFlow() {
             </div>
           </div>
 
-          <div className="h-[260px] w-full pt-3">
+          <div className="h-65 w-full pt-3">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={productionChartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
