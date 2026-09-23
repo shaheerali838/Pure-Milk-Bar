@@ -498,6 +498,7 @@ export function POSProvider({ children }) {
   }, [deliverySubType, activeCustomer]);
 
   // =========================================================================
+  // =========================================================================
   // 3. SALES & INVOICES (Synced with live database)
   // =========================================================================
   const [salesHistory, setSalesHistory] = useState([]);

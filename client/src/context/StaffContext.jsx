@@ -38,22 +38,21 @@ export function StaffProvider({ children }) {
     try {
       const data = await adminService.getStaff();
       const list = Array.isArray(data) ? data : data?.staff || [];
-      if (list.length > 0) {
-        const normalized = list.map((m) => {
-          const absent = Number(m.absentDays) || 0;
-          return {
-            ...m,
-            id: m._id || m.id,
-            dailySalary: Math.round((Number(m.monthlySalary || m.salary) || 0) / 30),
-            absentDays: absent,
-            presentDays: m.presentDays !== undefined ? Number(m.presentDays) : Math.max(0, 30 - absent),
-            attendanceMap: m.attendanceMap && Object.keys(m.attendanceMap).length > 0
-              ? m.attendanceMap
-              : generateDefaultAttendanceMap(absent),
-          };
-        });
-        setStaffList(normalized);
-      }
+      const normalized = list.map((m) => {
+        const absent = Number(m.absentDays) || 0;
+        return {
+          ...m,
+          id: m._id || m.id,
+          dailySalary: Math.round((Number(m.monthlySalary || m.salary) || 0) / 30),
+          absentDays: absent,
+          presentDays: m.presentDays !== undefined ? Number(m.presentDays) : Math.max(0, 30 - absent),
+          attendanceMap: m.attendanceMap && Object.keys(m.attendanceMap).length > 0
+            ? m.attendanceMap
+            : generateDefaultAttendanceMap(absent),
+        };
+      });
+      setStaffList(normalized);
+      localStorage.setItem(STORAGE_KEY_STAFF, JSON.stringify(normalized));
     } catch (err) {
       console.warn('Failed to fetch staff from API:', err.message);
       setStaffList([]);
