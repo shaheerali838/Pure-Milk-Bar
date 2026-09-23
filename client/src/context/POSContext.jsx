@@ -8,13 +8,9 @@ import { useFuelLogContext } from './FuelLogContext';
 import { useDeliveryStaffContext } from './DeliveryStaffContext';
 import { estimateDistanceKm } from '@/features/pos/utils/estimateDeliveryDistance';
 import posService from '@/services/posService';
+import farmService from '@/services/farmService';
 
 const POSContext = createContext();
-
-// LocalStorage Keys - STRICT: No hardcoded dummy data
-const STORAGE_KEY_PRODUCTS = 'pure_milk_bar_products';
-const STORAGE_KEY_CART = 'pure_milk_bar_cart';
-const STORAGE_KEY_SALES = 'pure_milk_bar_sales';
 
 // Initial Dairy Catalog with explicit Source attribution ('Farm' vs 'Supplier')
 // Initial Dairy Catalog with the 3 Core Products: Cow Milk, Buffalo Milk, and Dahi (Strictly 0 initial stock)
@@ -93,7 +89,7 @@ export const isLegacyDummySale = (sale) => {
 };
 
 
-// Delivery Staff with Vehicle Types (Dynamically populated from real staff)
+// Delivery Staff with Vehicle Types (Dynamically populated from DeliveryStaffContext)
 export const deliveryRidersList = [];
 
 export function POSProvider({ children }) {
@@ -146,69 +142,51 @@ export function POSProvider({ children }) {
   // =========================================================================
   // 1. PRODUCTS STATE - Always ensures Cow Milk, Buffalo Milk, and Dahi exist
   // =========================================================================
-  const [products, setProducts] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_PRODUCTS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const list = parsed.map((p) => {
-            // Reset legacy dummy stock numbers (65, 50, 35)
-            const cleanStock =
-              (p.stock === 65 && (p.id === 'PRD-COW-01' || p.name?.toLowerCase().includes('cow'))) ||
-              (p.stock === 50 && (p.id === 'PRD-BUF-01' || p.name?.toLowerCase().includes('buff'))) ||
-              (p.stock === 35 && (p.id === 'PRD-DAHI-01' || p.name?.toLowerCase().includes('dahi')))
-                ? 0
-                : (Number(p.stock) || 0);
+  const [products, setProducts] = useState(DEFAULT_CATALOG);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
-            return {
-              ...p,
-              stock: cleanStock,
-              source: p.source || (
-                (p.name && (p.name.toLowerCase().includes('supplier') || p.name.toLowerCase().includes('sourced') || p.name.toLowerCase().includes('chilled'))) ||
-                (p.category && (p.category.toLowerCase().includes('supplier') || p.category.toLowerCase().includes('sourced') || p.category.toLowerCase().includes('chilled')))
-                  ? 'Supplier'
-                  : 'Farm'
-              ),
-            };
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        setIsLoadingProducts(true);
+        const res = await posService.getProducts();
+        const list = Array.isArray(res) ? res : res?.products || res?.data || [];
+        if (Array.isArray(list) && list.length > 0) {
+          setProducts((prev) => {
+            const combined = [...list];
+            DEFAULT_CATALOG.forEach((def) => {
+              if (!combined.some((p) => p.id === def.id || p.sku === def.sku)) {
+                combined.push(def);
+              }
+            });
+            return combined;
           });
-
-          // Ensure the 3 core products: Cow Milk, Buffalo Milk, and Dahi are present
-          DEFAULT_CATALOG.forEach((defProd) => {
-            const exists = list.some(
-              (p) =>
-                p.id === defProd.id ||
-                p.sku === defProd.sku ||
-                (p.name && p.name.toLowerCase() === defProd.name.toLowerCase()) ||
-                (p.name && defProd.name.toLowerCase().includes('cow') && p.name.toLowerCase().includes('cow')) ||
-                (p.name && defProd.name.toLowerCase().includes('buff') && p.name.toLowerCase().includes('buff')) ||
-                (p.name && defProd.name.toLowerCase().includes('dahi') && p.name.toLowerCase().includes('dahi'))
-            );
-            if (!exists) {
-              list.push(defProd);
-            }
-          });
-
-          return list;
         }
+      } catch (err) {
+        console.warn('POS live products API skipped:', err.message);
+      } finally {
+        setIsLoadingProducts(false);
       }
-    } catch (error) {
-      console.error('Error loading products from localStorage:', error);
     }
-    return DEFAULT_CATALOG;
-  });
+    loadProducts();
+  }, []);
+
+  const [processingBatches, setProcessingBatches] = useState([]);
+  useEffect(() => {
+    async function loadBatches() {
+      try {
+        const res = await farmService.getProcessingBatches();
+        const list = Array.isArray(res) ? res : res?.batches || [];
+        setProcessingBatches(list);
+      } catch (e) {
+        setProcessingBatches([]);
+      }
+    }
+    loadBatches();
+  }, []);
 
   // Track product being edited (null = adding new product)
   const [editingProduct, setEditingProduct] = useState(null);
-
-  // Sync products with localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(products));
-    } catch (error) {
-      console.error('Error saving products to localStorage:', error);
-    }
-  }, [products]);
 
   // A. Add Product
   const addProduct = (newProduct) => {
@@ -234,11 +212,6 @@ export function POSProvider({ children }) {
       };
 
       const updated = [createdItem, ...prevProducts];
-      try {
-        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updated));
-      } catch (err) {
-        console.error('Error saving products to localStorage:', err);
-      }
       return updated;
     });
     return createdItem;
@@ -259,12 +232,6 @@ export function POSProvider({ children }) {
         }
         return item;
       });
-
-      try {
-        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updated));
-      } catch (err) {
-        console.error('Error saving products to localStorage:', err);
-      }
       return updated;
     });
     setEditingProduct(null);
@@ -297,12 +264,6 @@ export function POSProvider({ children }) {
       } else {
         return prevProducts;
       }
-
-      try {
-        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updated));
-      } catch (err) {
-        console.error('Error saving products batch to localStorage:', err);
-      }
       return updated;
     });
   };
@@ -311,11 +272,6 @@ export function POSProvider({ children }) {
   const deleteProduct = (productId) => {
     setProducts((prevProducts) => {
       const updated = prevProducts.filter((item) => item.id !== productId);
-      try {
-        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(updated));
-      } catch (err) {
-        console.error('Error saving products to localStorage:', err);
-      }
       return updated;
     });
 
@@ -328,29 +284,9 @@ export function POSProvider({ children }) {
   };
 
   // =========================================================================
-  // 2. CART & CHECKOUT STATE - STRICTLY FROM LOCAL STORAGE
+  // 2. CART & CHECKOUT STATE
   // =========================================================================
-  const [cart, setCart] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_CART);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch (error) {
-      console.error('Error loading cart from localStorage:', error);
-    }
-    return []; // Empty cart
-  });
-
-  // Sync cart with localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_CART, JSON.stringify(cart));
-    } catch (error) {
-      console.error('Error saving cart to localStorage:', error);
-    }
-  }, [cart]);
+  const [cart, setCart] = useState([]);
 
   const [discount, setDiscount] = useState(0);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
@@ -562,15 +498,18 @@ export function POSProvider({ children }) {
   }, [deliverySubType, activeCustomer]);
 
   // =========================================================================
-  // 3. SALES & INVOICES - STRICTLY REAL DATA FROM API / DATABASE
+  // =========================================================================
+  // 3. SALES & INVOICES (Synced with live database)
   // =========================================================================
   const [salesHistory, setSalesHistory] = useState([]);
+  const [isLoadingSales, setIsLoadingSales] = useState(false);
 
   // Fetch live orders from backend API on mount
   const fetchOrders = React.useCallback(async () => {
     try {
+      setIsLoadingSales(true);
       const data = await posService.getOrders();
-      const list = Array.isArray(data) ? data : data?.orders || [];
+      const list = Array.isArray(data) ? data : data?.orders || data?.data || [];
       const normalized = list.map((order) => {
         const items = (order.items || []).map((i) => ({
           ...i,
@@ -583,7 +522,8 @@ export function POSProvider({ children }) {
           subtotal: Number(i.subtotal) || ((Number(i.quantity) || 0) * (Number(i.unitPrice || i.price) || 0)),
         }));
         return {
-          invoiceId: order.receiptNumber || order.orderNumber || `INV-${String(order._id).slice(-4)}`,
+          ...order,
+          invoiceId: order.receiptNumber || order.orderNumber || (order._id ? `INV-${String(order._id).slice(-4)}` : `INV-${Date.now()}`),
           id: order._id || order.id,
           timestamp: order.createdAt || new Date().toISOString(),
           formattedTime: order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
@@ -593,7 +533,7 @@ export function POSProvider({ children }) {
           subtotal: Number(order.subtotal) || 0,
           deliveryCharge: Number(order.deliveryFee) || 0,
           discount: Number(order.discountAmount) || 0,
-          netPayable: Number(order.grandTotal) || 0,
+          netPayable: Number(order.grandTotal || order.netPayable || 0),
           saleCategory: order.fulfillmentType === 'DOORSTEP' ? 'delivery' : 'walkin',
           paymentMethod: (order.paymentMethod || 'cash').toLowerCase(),
           customer: order.customerId ? { id: order.customerId?._id || order.customerId, name: order.customerNameSnapshot } : null,
@@ -602,11 +542,11 @@ export function POSProvider({ children }) {
         };
       });
       setSalesHistory(normalized);
-      localStorage.setItem(STORAGE_KEY_SALES, JSON.stringify(normalized));
     } catch (err) {
       console.warn('POS live order fetch notice:', err.message);
       setSalesHistory([]);
-      localStorage.setItem(STORAGE_KEY_SALES, '[]');
+    } finally {
+      setIsLoadingSales(false);
     }
   }, []);
 
@@ -827,7 +767,6 @@ export function POSProvider({ children }) {
 
     const updatedSales = [saleRecord, ...salesHistory];
     setSalesHistory(updatedSales);
-    localStorage.setItem(STORAGE_KEY_SALES, JSON.stringify(updatedSales));
 
     // Save order to live backend POS API
     try {
@@ -885,8 +824,6 @@ export function POSProvider({ children }) {
 
     setCompletedSaleReceipt(saleRecord);
     handleClearCart();
-    window.dispatchEvent(new Event('pure_milk_bar_sales_updated'));
-    window.dispatchEvent(new Event('storage'));
     return saleRecord;
   };
 
@@ -910,30 +847,10 @@ export function POSProvider({ children }) {
   };
 
   // =========================================================================
-  // 5. INVENTORY OVERVIEW CALCULATIONS (from localStorage & API data)
+  // 5. INVENTORY OVERVIEW CALCULATIONS (from live API data)
   // =========================================================================
-  // Real farm yield from Milking Register, logs, or active herd baseline
+  // Real farm yield from Milking Logs or active herd baseline
   const totalFarmMilk = React.useMemo(() => {
-    let registerSum = 0;
-    try {
-      const savedRaw = localStorage.getItem('pure_milk_bar_milking_saved_entries');
-      if (savedRaw) {
-        const parsed = JSON.parse(savedRaw);
-        if (parsed) {
-          ['Morning', 'Evening'].forEach((shift) => {
-            if (parsed[shift] && typeof parsed[shift] === 'object') {
-              Object.values(parsed[shift]).forEach((val) => {
-                const num = parseFloat(val);
-                if (!isNaN(num) && num > 0) registerSum += num;
-              });
-            }
-          });
-        }
-      }
-    } catch (e) {
-      console.error('Error reading milking register in POSContext:', e);
-    }
-
     let logSum = 0;
     if (Array.isArray(milkingLogs) && milkingLogs.length > 0) {
       logSum = milkingLogs.reduce((acc, log) => acc + (parseFloat(log.yieldLiters || log.yield) || 0), 0);
@@ -1136,12 +1053,6 @@ export function POSProvider({ children }) {
 
   let intakeLogs = [];
   try {
-    // Clear legacy mock intake records from older mock versions
-    localStorage.removeItem('pure_milk_bar_intake_records_v3');
-    localStorage.removeItem('pure_milk_bar_intake_records_v2');
-    localStorage.removeItem('pure_milk_bar_intake_records_v1');
-    localStorage.removeItem('pure_milk_bar_intake_records');
-
     const intakeCtx = useIntakeContext();
     intakeLogs = intakeCtx?.intakeLogs || [];
   } catch (e) {
@@ -1155,43 +1066,31 @@ export function POSProvider({ children }) {
   let supplierMilkConvertedToDahi = 0;
   let totalDahiTransferredToPOS = 0;
 
-  try {
-    const dahiSaved = localStorage.getItem('pure_milk_bar_dahi_batches_v5');
-    if (dahiSaved) {
-      const parsedBatches = JSON.parse(dahiSaved);
-      if (Array.isArray(parsedBatches)) {
-        parsedBatches.forEach((b) => {
-          const numUsed = Number(b.milkUsedVal) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0;
-          if (b.farmMilkUsed !== undefined && b.supplierMilkUsed !== undefined) {
-            farmMilkConvertedToDahi += Number(b.farmMilkUsed) || 0;
-            supplierMilkConvertedToDahi += Number(b.supplierMilkUsed) || 0;
-          } else {
-            const src = (b.source || '').toLowerCase();
-            if (src.includes('farm') && !src.includes('supplier') && !src.includes('mix')) {
-              farmMilkConvertedToDahi += numUsed;
-            } else if (src.includes('supplier') && !src.includes('farm') && !src.includes('mix')) {
-              supplierMilkConvertedToDahi += numUsed;
-            } else {
-              const totalSourced = totalFarmMilk + totalSupplierIntake;
-              const ratio = totalSourced > 0 ? totalFarmMilk / totalSourced : 0.5;
-              const fPortion = Math.round(numUsed * ratio);
-              farmMilkConvertedToDahi += fPortion;
-              supplierMilkConvertedToDahi += Math.max(0, numUsed - fPortion);
-            }
-          }
-
-          if (b.stage === 'pos') {
-            const outNum = Number(b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
-            totalDahiTransferredToPOS += outNum;
-          }
-        });
+  (processingBatches || []).forEach((b) => {
+    const numUsed = Number(b.milkUsedQuantity || b.milkUsedVal) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0;
+    if (b.farmMilkUsed !== undefined && b.supplierMilkUsed !== undefined) {
+      farmMilkConvertedToDahi += Number(b.farmMilkUsed) || 0;
+      supplierMilkConvertedToDahi += Number(b.supplierMilkUsed) || 0;
+    } else {
+      const src = (b.source || '').toLowerCase();
+      if (src.includes('farm') && !src.includes('supplier') && !src.includes('mix')) {
+        farmMilkConvertedToDahi += numUsed;
+      } else if (src.includes('supplier') && !src.includes('farm') && !src.includes('mix')) {
+        supplierMilkConvertedToDahi += numUsed;
+      } else {
+        const totalSourced = totalFarmMilk + totalSupplierIntake;
+        const ratio = totalSourced > 0 ? totalFarmMilk / totalSourced : 0.5;
+        const fPortion = Math.round(numUsed * ratio);
+        farmMilkConvertedToDahi += fPortion;
+        supplierMilkConvertedToDahi += Math.max(0, numUsed - fPortion);
       }
     }
-  } catch (e) {
-    farmMilkConvertedToDahi = 0;
-    supplierMilkConvertedToDahi = 0;
-    totalDahiTransferredToPOS = 0;
-  }
+
+    if (b.stage === 'pos' || b.status === 'COMPLETED' || b.status === 'READY_FOR_POS') {
+      const outNum = Number(b.outputQuantity || b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
+      totalDahiTransferredToPOS += outNum;
+    }
+  });
 
   // Remaining liquid milk after BOTH POS sales AND Dahi conversion:
   const remainingFarmMilk = Math.max(0, Number((totalFarmMilk - (farmSalesMetrics?.milkSold || 0) - farmMilkConvertedToDahi).toFixed(1)));

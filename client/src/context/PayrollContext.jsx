@@ -3,31 +3,10 @@ import { useStaffContext } from './StaffContext';
 
 const PayrollContext = createContext();
 
-const STORAGE_KEY_PAYROLL = 'pure_milk_bar_payroll';
-
 export function PayrollProvider({ children }) {
   const { staffList = [] } = useStaffContext();
 
-  const [payrollRecords, setPayrollRecords] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_PAYROLL);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch (e) {
-      console.error('Error loading payroll records from localStorage:', e);
-    }
-    return [];
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_PAYROLL, JSON.stringify(payrollRecords));
-    } catch (e) {
-      console.error('Error saving payroll records to localStorage:', e);
-    }
-  }, [payrollRecords]);
+  const [payrollRecords, setPayrollRecords] = useState([]);
 
   // Calculate salary slip breakdown for any staff member
   const calculateWageSlip = (staffMember, daysPresent = 30) => {

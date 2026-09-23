@@ -79,8 +79,8 @@ export default function LandingTestimonialsFAQ() {
             <div className="space-y-2.5">
               {[
                 {
-                  q: "Does Pure Milk Bar ERP work offline when internet is down?",
-                  a: "Yes! The system is built with client-side localStorage persistence so POS counter sales, milk intake, and Khata updates work seamlessly offline.",
+                  q: "Does Pure Milk Bar ERP sync in real-time with the database?",
+                  a: "Yes! The system is built with live cloud database synchronization so POS counter sales, milk intake, and Khata updates reflect across all devices instantly.",
                 },
                 {
                   q: "How does the Milk Procurement & Intake Dock work?",

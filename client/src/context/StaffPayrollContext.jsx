@@ -40,16 +40,14 @@ export const formatDateKey = (d) => {
 };
 
 export function StaffPayrollProvider({ children }) {
-  // 1. Staff List (Starts empty, synced with live API / MongoDB database)
+  // 1. Staff List (Starts empty or from cache, synced with live API / MongoDB database)
   const [staffList, setStaffList] = useState(() =>
     loadStorage(STORAGE_KEYS.STAFF_LIST, [])
   );
   const [isLoading, setIsLoading] = useState(true);
 
   // 2. Attendance Map: { [dateString 'YYYY-MM-DD']: { [staffId]: 'present' | 'absent' | 'leave' } }
-  const [attendanceRecords, setAttendanceRecords] = useState(() =>
-    loadStorage(STORAGE_KEYS.ATTENDANCE, {})
-  );
+  const [attendanceRecords, setAttendanceRecords] = useState({});
 
   // 3. Daily Sheets Map: { [dateString 'YYYY-MM-DD']: { [staffId]: { shift, hours, assignment, notes } } }
   const [dailySheets, setDailySheets] = useState(() =>
@@ -70,7 +68,7 @@ export function StaffPayrollProvider({ children }) {
           monthlySalary: monthly,
           dailySalary: Number(m.dailySalary) || Math.round(monthly / 30),
           status: m.status || (m.active !== false ? 'Active' : 'Inactive'),
-          joinedDate: m.joinedDate || m.createdAt ? new Date(m.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          joinedDate: m.joinedDate || (m.createdAt ? new Date(m.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
         };
       });
       setStaffList(normalized);

@@ -3,6 +3,7 @@ import { Layers, ArrowRight } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
+import { useDahiContext } from '@/context/DahiContext';
 import { Link, useNavigate } from 'react-router-dom';
 
 export default function DahiProcessingHub() {
@@ -10,20 +11,7 @@ export default function DahiProcessingHub() {
   const { products = [], inventoryMetrics = {} } = usePOSContext();
   const { animals = [] } = useAnimalContext();
   const { totals: intakeTotals = {} } = useIntakeContext();
-
-  // Load live processing batches from storage
-  const processingBatches = useMemo(() => {
-    try {
-      const saved = localStorage.getItem('pure_milk_bar_processing_batches_v2');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch (e) {
-      console.error('Failed to load processing batches for hub:', e);
-    }
-    return [];
-  }, []);
+  const { batches: processingBatches = [] } = useDahiContext() || {};
 
   const todayISO = new Date().toISOString().split('T')[0];
 

@@ -2,32 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const RiderSalaryContext = createContext();
 
-const STORAGE_KEY = 'pure_milk_bar_rider_salaries';
-
-const defaultSalaries = [];
-
 export function RiderSalaryProvider({ children }) {
-  const [salaries, setSalaries] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-      return defaultSalaries;
-    } catch (err) {
-      console.error('Failed to load rider salaries from localStorage:', err);
-      return defaultSalaries;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(salaries));
-    } catch (err) {
-      console.error('Failed to save rider salaries to localStorage:', err);
-    }
-  }, [salaries]);
+  const [salaries, setSalaries] = useState([]);
 
   // Get salary record for a specific staff member and month (YYYY-MM)
   const getSalaryRecord = (staffId, month) => {

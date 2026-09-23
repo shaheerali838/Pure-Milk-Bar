@@ -3,8 +3,6 @@ import { useStaffContext } from './StaffContext';
 
 const DeliveryStaffContext = createContext();
 
-const STORAGE_KEY = 'pure_milk_bar_delivery_staff';
-
 const isDeliveryRole = (role = '') => {
   const r = (role || '').toLowerCase().trim();
   if (!r) return false;
@@ -50,27 +48,7 @@ export function DeliveryStaffProvider({ children }) {
   const staffContext = useStaffContext();
   const globalStaffList = staffContext?.staffList || [];
 
-  const [deliveryStaffList, setDeliveryStaffList] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-      return [];
-    } catch (err) {
-      console.error('Failed to load delivery staff from localStorage:', err);
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(deliveryStaffList));
-    } catch (err) {
-      console.error('Failed to save delivery staff to localStorage:', err);
-    }
-  }, [deliveryStaffList]);
+  const [deliveryStaffList, setDeliveryStaffList] = useState([]);
 
   // Combined staff list: ONLY delivery staff who have an assigned area/route ("arr Assigned")
   // Excludes any other staff (Farm workers, Cashiers, etc.) and unassigned staff
