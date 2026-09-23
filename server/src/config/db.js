@@ -20,7 +20,16 @@ const connectDB = async () => {
     }
 
     if (!cached.promise) {
-      cached.promise = mongoose.connect(mongoUri).then((mongooseInstance) => {
+      const mongooseOptions = {
+        maxPoolSize: 25, // Maintain up to 25 socket connections
+        minPoolSize: 5,  // Keep at least 5 connections open to eliminate cold handshake latency
+        socketTimeoutMS: 45000,
+        connectTimeoutMS: 10000,
+        serverSelectionTimeoutMS: 5000,
+        family: 4, // Force IPv4 to prevent Windows IPv6 DNS lookup delays
+      };
+
+      cached.promise = mongoose.connect(mongoUri, mongooseOptions).then((mongooseInstance) => {
         console.log(`MongoDB connected: ${mongooseInstance.connection.host}`);
         return mongooseInstance;
       });

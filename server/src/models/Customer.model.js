@@ -62,5 +62,9 @@ const customerSchema = new Schema(
   }
 );
 
+customerSchema.index({ status: 1, createdAt: -1 });
+customerSchema.index({ deliveryRoute: 1, status: 1 });
+customerSchema.index({ name: 'text', phone: 'text' });
+
 export const Customer = model('Customer', customerSchema);
 export default Customer;

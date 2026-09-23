@@ -4,6 +4,7 @@ import LandingHero from "../components/LandingHero";
 import LandingTrustTicker from "../components/LandingTrustTicker";
 import LandingHowItWorks from "../components/LandingHowItWorks";
 import LandingModulesShowcase from "../components/LandingModulesShowcase";
+import LandingScreenshotsGallery from "../components/LandingScreenshotsGallery";
 import LandingPOSSandbox from "../components/LandingPOSSandbox";
 import LandingLiveSimulators from "../components/LandingLiveSimulators";
 import LandingEnrolledFarms from "../components/LandingEnrolledFarms";
@@ -28,7 +29,10 @@ export default function LandingPage() {
       {/* 5. Complete ERP Systems & Modules Showcase */}
       <LandingModulesShowcase />
 
-      {/* 6. Interactive Live POS Sandbox */}
+      {/* 6. Live Interface Previews & Screenshots Showcase */}
+      <LandingScreenshotsGallery />
+
+      {/* 7. Interactive Live POS Sandbox */}
       <LandingPOSSandbox />
 
       {/* 7. Live Interactive Simulators (Profit & Mass-Balance) */}

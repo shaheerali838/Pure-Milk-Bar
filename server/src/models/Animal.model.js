@@ -104,8 +104,11 @@ const animalSchema = new Schema(
   }
 );
 
-// Compound index per architecture spec: operational query path for tag + active status
+// Compound indexes for fast sort and filter queries
 animalSchema.index({ tagNumber: 1, isActive: 1 });
+animalSchema.index({ isActive: 1, createdAt: -1 });
+animalSchema.index({ type: 1, lactationStage: 1 });
+animalSchema.index({ createdAt: -1 });
 
 export const Animal = model('Animal', animalSchema);
 export default Animal;

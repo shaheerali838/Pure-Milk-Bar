@@ -51,7 +51,9 @@ app.use(
       const cleanOrigin = origin.replace(/\/$/, "");
       const isAllowed =
         allowedOrigins.some((o) => o.replace(/\/$/, "") === cleanOrigin) ||
-        /^https:\/\/pure-milk-bar(-[a-z0-9-]+)?\.vercel\.app$/.test(cleanOrigin);
+        /^https:\/\/pure-milk-bar(-[a-z0-9-]+)?\.vercel\.app$/.test(
+          cleanOrigin,
+        );
 
       if (isAllowed) {
         callback(null, true);
@@ -61,7 +63,12 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+    ],
   }),
 );
 

@@ -85,5 +85,9 @@ const milkProcurementSchema = new Schema(
   }
 );
 
+milkProcurementSchema.index({ supplierId: 1, date: -1 });
+milkProcurementSchema.index({ date: -1, shift: 1 });
+milkProcurementSchema.index({ createdAt: -1 });
+
 export const MilkProcurement = model('MilkProcurement', milkProcurementSchema);
 export default MilkProcurement;
