@@ -87,6 +87,13 @@ export default function SupplierProcurementHub() {
           </div>
 
           <div className="flex items-center justify-between">
+            <span className="text-slate-500 font-medium">Available Supplier Milk Stock:</span>
+            <span className="font-mono font-bold text-blue-700 tabular">
+              {inventoryMetrics?.supplierMilkStock || 0} L (In Dock Chiller)
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium">Collection Diesel &amp; Testing:</span>
             <span className="font-mono font-bold text-rose-500 tabular">
               Rs. {collectionDiesel.toLocaleString()}

@@ -1,44 +1,52 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import deliveryService from '@/services/deliveryService';
 
 const FuelLogContext = createContext();
 
-const STORAGE_KEY = 'pure_milk_bar_fuel_logs';
-
-const defaultFuelLogs = [];
-
 export function FuelLogProvider({ children }) {
-  const [fuelLogs, setFuelLogs] = useState(() => {
+  const [fuelLogs, setFuelLogs] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch live fuel logs from database API
+  const fetchFuelLogs = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-      return defaultFuelLogs;
+      const res = await deliveryService.getFuelLogs();
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.logs)
+        ? res.logs
+        : Array.isArray(res?.data)
+        ? res.data
+        : [];
+      const normalized = list.map((f) => ({
+        ...f,
+        id: f._id || f.id || Date.now(),
+        staffName: f.staffName || f.riderName || 'Unassigned',
+        date: f.date ? f.date.split('T')[0] : new Date().toISOString().split('T')[0],
+        liters: Number(f.liters || f.quantity) || 0,
+        amount: Number(f.amount || f.cost) || 0,
+        distanceKm: Number(f.distanceKm || f.mileage) || 0,
+        notes: f.notes || '',
+      }));
+      setFuelLogs(normalized);
     } catch (err) {
-      console.error('Failed to load fuel logs from localStorage:', err);
-      return defaultFuelLogs;
+      console.warn('Failed to load fuel logs from database API:', err.message);
+      setFuelLogs([]);
+    } finally {
+      setIsLoading(false);
     }
-  });
+  }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(fuelLogs));
-    } catch (err) {
-      console.error('Failed to save fuel logs to localStorage:', err);
-    }
-  }, [fuelLogs]);
+    fetchFuelLogs();
+  }, [fetchFuelLogs]);
 
-  const addFuelLog = (data) => {
-    const nextId =
-      fuelLogs.length > 0
-        ? Math.max(...fuelLogs.map((f) => Number(f.id) || 0)) + 1
-        : 1;
-
+  const addFuelLog = async (data) => {
     const todayISO = new Date().toISOString().split('T')[0];
 
     const newLog = {
-      id: nextId,
+      id: Date.now(),
       staffName: data.staffName ? data.staffName.trim() : 'Unassigned',
       date: data.date || todayISO,
       liters: Number(data.liters) || 0,
@@ -49,6 +57,21 @@ export function FuelLogProvider({ children }) {
     };
 
     setFuelLogs((prev) => [newLog, ...prev]);
+
+    // Sync to backend database
+    try {
+      await deliveryService.createFuelLog({
+        staffName: newLog.staffName,
+        date: newLog.date,
+        liters: newLog.liters,
+        amount: newLog.amount,
+        distanceKm: newLog.distanceKm,
+        notes: newLog.notes,
+      });
+    } catch (e) {
+      console.warn('Fuel log API sync skipped:', e.message);
+    }
+
     return newLog;
   };
 

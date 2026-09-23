@@ -190,7 +190,7 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
                   onChange={handleChange}
                   placeholder="Enter name"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
-                />
+                  required/>
               </div>
 
               <div>
@@ -202,7 +202,7 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
                   value={formData.species}
                   onChange={handleChange}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition cursor-pointer font-medium"
-                >
+                required>
                   {SPECIES_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
                       {opt}
@@ -220,7 +220,7 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
                   value={formData.lactationStatus}
                   onChange={handleChange}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition cursor-pointer font-medium"
-                >
+                required>
                   {LACTATION_STATUS_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
                       {opt}
@@ -353,7 +353,7 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
                     value={formData.purchasePrice}
                     onChange={handleChange}
                     placeholder="250000"
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
+                  required  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
                   />
                 </div>
               </div>

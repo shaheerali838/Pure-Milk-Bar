@@ -16,7 +16,7 @@ export default function LandingPricingMatrix() {
             Simple, Predictable Plans For Every Dairy Scale
           </h2>
           <p className="text-slate-500 text-xs sm:text-sm leading-relaxed mb-4 mt-1">
-            All plans include complete offline localStorage resilience and automated supplier procurement.
+            All plans include real-time database cloud sync and automated supplier procurement.
           </p>
 
           {/* Billing Toggle (Monthly vs Annual) */}

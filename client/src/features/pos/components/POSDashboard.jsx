@@ -50,6 +50,35 @@ export default function POSDashboard() {
     return matchesSearch && matchesCat;
   });
 
+  // Dynamically resolve real-time stock from live farm, supplier, and kitchen conversion metrics
+  const getProductDisplayStock = (prod) => {
+    const name = (prod.name || '').toLowerCase();
+    const cat = (prod.category || '').toLowerCase();
+    const src = (prod.source || '').toLowerCase();
+
+    if (cat.includes('dahi') || name.includes('dahi')) {
+      const liveDahi = Number(inventoryMetrics?.totalDahiStock);
+      if (!isNaN(liveDahi) && liveDahi >= 0) return liveDahi;
+      return Number(prod.stock) || 0;
+    }
+
+    if (cat.includes('milk') || name.includes('milk')) {
+      if (src.includes('supplier')) {
+        const liveSup = Number(inventoryMetrics?.supplierMilkStock);
+        if (!isNaN(liveSup) && liveSup >= 0) return liveSup;
+      }
+      if (src.includes('farm')) {
+        const liveFarm = Number(inventoryMetrics?.farmMilkStock);
+        if (!isNaN(liveFarm) && liveFarm >= 0) return liveFarm;
+      }
+      const liveTot = Number(inventoryMetrics?.totalMilkStock);
+      if (!isNaN(liveTot) && liveTot >= 0) return liveTot;
+      return Number(prod.stock) || 0;
+    }
+
+    return Number(prod.stock) || 0;
+  };
+
   // Handler for Detail (Eye) - Opens the detail page of the product
   const handleViewDetail = (e, product) => {
     e.stopPropagation();
@@ -169,6 +198,8 @@ export default function POSDashboard() {
                   const inCartQty = cartItem ? cartItem.quantity : 0;
                   const isMilk = product.category?.toLowerCase().includes('milk');
                   const isDahi = product.category?.toLowerCase().includes('dahi');
+                  const displayStock = getProductDisplayStock(product);
+                  const unitLabel = product.unit?.replace('per ', '') || (isMilk ? 'L' : 'kg');
 
                   return (
                     <div
@@ -219,8 +250,8 @@ export default function POSDashboard() {
                           <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition line-clamp-1">
                             {product.name}
                           </h4>
-                          <p className={`text-[10px] font-semibold mt-0.5 ${Number(product.stock) > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
-                            {Number(product.stock) > 0 ? `Stock: ${product.stock} ${product.unit?.replace('per ', '') || 'kg'}` : '0 in stock'}
+                          <p className={`text-[10px] font-semibold mt-0.5 ${displayStock > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                            {displayStock > 0 ? `Stock: ${displayStock} ${unitLabel}` : '0 in stock'}
                           </p>
                         </div>
                       </div>

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Typography } from '@/components/common/Typography';
 
 export default function RolesTab() {
-  const sampleRoles = [
+  const SYSTEM_ROLES = [
     {
       name: 'Farm Owner & Administrator',
       code: 'ADMIN',
@@ -75,7 +75,7 @@ export default function RolesTab() {
           </div>
         </CardHeader>
         <CardContent className="p-3.5 pt-1 divide-y divide-slate-100">
-          {sampleRoles.map((role) => (
+          {SYSTEM_ROLES.map((role) => (
             <div
               key={role.code}
               className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:bg-slate-50/50 px-2 rounded-xl transition"

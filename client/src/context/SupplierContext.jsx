@@ -3,42 +3,19 @@ import { useIntakeContext } from './IntakeContext';
 import supplierService from '@/services/supplierService';
 
 const SupplierContext = createContext(null);
-const STORAGE_KEY_SUPPLIERS = 'pure_milk_bar_suppliers';
-
-const getStoredSuppliers = () => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY_SUPPLIERS);
-    const parsed = saved ? JSON.parse(saved) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (_) {
-    return [];
-  }
-};
 
 export function SupplierProvider({ children }) {
-  const [suppliers, setSuppliers] = useState(getStoredSuppliers);
+  const [suppliers, setSuppliers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [directPayouts, setDirectPayouts] = useState([]);
 
-  // Consume intakeLogs from IntakeContext
-  let intakeLogs = [];
-  let updateBatchSettlement = null;
-  let settleAllBatchesForSupplier = null;
-  let settleBatchesWithAmount = null;
-
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const intakeCtx = useIntakeContext();
-    if (intakeCtx) {
-      intakeLogs = intakeCtx.intakeLogs || [];
-      updateBatchSettlement = intakeCtx.updateBatchSettlement;
-      settleAllBatchesForSupplier = intakeCtx.settleAllBatchesForSupplier;
-      settleBatchesWithAmount = intakeCtx.settleBatchesWithAmount;
-    }
-  } catch (err) {
-    console.warn('IntakeContext not available in SupplierProvider:', err);
-  }
+  // Consume intakeLogs from IntakeContext (proper top-level hook call)
+  const intakeCtx = useIntakeContext();
+  const intakeLogs = intakeCtx?.intakeLogs || [];
+  const updateBatchSettlement = intakeCtx?.updateBatchSettlement;
+  const settleAllBatchesForSupplier = intakeCtx?.settleAllBatchesForSupplier;
+  const settleBatchesWithAmount = intakeCtx?.settleBatchesWithAmount;
 
   // Fetch live suppliers from API
   const fetchSuppliers = useCallback(async () => {
@@ -47,13 +24,25 @@ export function SupplierProvider({ children }) {
     try {
       const data = await supplierService.getSuppliers();
       const list = Array.isArray(data) ? data : data?.suppliers || [];
-      if (list.length > 0 || getStoredSuppliers().length === 0) {
-        setSuppliers(list);
-      }
+      const normalized = list.map((s) => ({
+        ...s,
+        id: s._id || s.id,
+        _id: s._id || s.id,
+        code: s.code || `SUP-${String(s._id || s.id).slice(-4)}`,
+        name: s.name || 'Supplier',
+        phone: s.phone || s.contact || '',
+        contact: s.phone || s.contact || '',
+        area: s.villageOrLocation || s.area || 'Central',
+        ratePerLiter: Number(s.baseRatePerLiter || s.baseRate || s.ratePerLiter) || 220,
+        baseRate: Number(s.baseRatePerLiter || s.baseRate || s.ratePerLiter) || 220,
+        avgLiters: Number(s.expectedDailyQuantity || s.avgLiters) || 10,
+        status: s.status || 'Active',
+      }));
+      setSuppliers(normalized);
     } catch (err) {
       console.error('Failed to fetch suppliers from API:', err);
       setError(err.message || 'Failed to load suppliers');
-      setSuppliers(getStoredSuppliers());
+      setSuppliers([]);
     } finally {
       setIsLoading(false);
     }
@@ -62,12 +51,6 @@ export function SupplierProvider({ children }) {
   useEffect(() => {
     fetchSuppliers();
   }, [fetchSuppliers]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_SUPPLIERS, JSON.stringify(suppliers));
-    } catch (_) {}
-  }, [suppliers]);
 
   // Add Supplier via API
   const addSupplier = async (newSupplierData) => {

@@ -1,9 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import api from '@/services/api';
 
 const SourcExpenseContext = createContext(null);
-
-const STORAGE_KEY = 'pure_milk_bar_sourcing_expenses';
-
 
 export const CATEGORY_OPTIONS = [
   'Milk Collection Logistics',
@@ -24,41 +22,50 @@ export const PAYMENT_MODES = [
 ];
 
 export function SourcExpenseProvider({ children }) {
-  const [expenses, setExpenses] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          // Remove old seeded dummy expenses if present
-          const dummyIds = new Set([
-            'EXP-SRC-101',
-            'EXP-SRC-102',
-            'EXP-SRC-103',
-            'EXP-SRC-104',
-            'EXP-SRC-105',
-            'EXP-SRC-106',
-          ]);
-          return parsed.filter((item) => !dummyIds.has(item.id));
-        }
-      }
-    } catch (e) {
-      console.error('Failed to parse sourcing expenses from localStorage', e);
-    }
-    return [];
-  });
+  const [expenses, setExpenses] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Sync state to localStorage whenever it changes
-  useEffect(() => {
+  // Fetch live sourcing expenses from database API
+  const fetchExpenses = useCallback(async () => {
+    setIsLoading(true);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
-    } catch (e) {
-      console.error('Failed to save sourcing expenses to localStorage', e);
+      const res = await api.finance.getExpenses({ scope: 'SUPPLIER' });
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data?.expenses)
+        ? res.data.expenses
+        : Array.isArray(res?.expenses)
+        ? res.expenses
+        : Array.isArray(res?.data)
+        ? res.data
+        : [];
+      const normalized = list.map((exp) => ({
+        ...exp,
+        id: exp._id || exp.id || `EXP-SRC-${Date.now()}`,
+        date: exp.date ? exp.date.split('T')[0] : new Date().toISOString().split('T')[0],
+        category: exp.category || 'Other Sourcing Costs',
+        description: exp.description || exp.notes || '',
+        amount: Number(exp.amount) || 0,
+        paymentMode: exp.paymentMethod === 'ONLINE' ? 'Online Wallet / Easypaisa / JazzCash' : exp.paymentMethod === 'BANK_TRANSFER' ? 'Bank Transfer' : 'Cash on Hand',
+        voucherNo: exp.voucherNo || `VCH-${Date.now().toString().slice(-4)}`,
+        loggedBy: exp.authorizedBy || 'System Admin',
+        costAttribution: exp.costAttribution || '',
+      }));
+      setExpenses(normalized);
+    } catch (err) {
+      console.warn('Failed to load sourcing expenses from database API:', err.message);
+      setExpenses([]);
+    } finally {
+      setIsLoading(false);
     }
-  }, [expenses]);
+  }, []);
+
+  useEffect(() => {
+    fetchExpenses();
+  }, [fetchExpenses]);
 
   // Add Expense
-  const addExpense = (data) => {
+  const addExpense = async (data) => {
     const newExpense = {
       id: `EXP-SRC-${Date.now().toString().slice(-4)}`,
       date: data.date || new Date().toISOString().split('T')[0],
@@ -72,6 +79,28 @@ export function SourcExpenseProvider({ children }) {
     };
 
     setExpenses((prev) => [newExpense, ...prev]);
+
+    // Sync to backend database
+    try {
+      await api.finance.createExpense({
+        scope: 'SUPPLIER',
+        category: data.category || 'SUPPLIER_PROCUREMENT',
+        amount: Number(data.amount) || 0,
+        date: data.date || new Date().toISOString().split('T')[0],
+        description: data.description || data.category || '',
+        paymentMethod: ['Bank Transfer'].includes(data.paymentMode)
+          ? 'BANK_TRANSFER'
+          : ['Cheque'].includes(data.paymentMode)
+          ? 'CHEQUE'
+          : data.paymentMode?.includes('Online')
+          ? 'ONLINE'
+          : 'CASH',
+        authorizedBy: data.loggedBy || 'System Admin',
+      });
+    } catch (e) {
+      console.warn('Sourcing expense API backend sync skipped:', e.message);
+    }
+
     return newExpense;
   };
 

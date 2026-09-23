@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import farmService from '@/services/farmService';
 
 const AnimalContext = createContext();
-const STORAGE_KEY_ANIMALS = 'pure_milk_bar_animals';
 
 const normalizeAnimal = (animal, history = []) => {
   const morning = parseFloat(animal.morningYield || animal.avgMorningYield || 0);
@@ -21,17 +20,8 @@ const normalizeAnimal = (animal, history = []) => {
   };
 };
 
-const getStoredAnimals = () => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY_ANIMALS);
-    return stored ? JSON.parse(stored) : [];
-  } catch (_) {
-    return [];
-  }
-};
-
 export function AnimalProvider({ children }) {
-  const [animals, setAnimals] = useState(getStoredAnimals);
+  const [animals, setAnimals] = useState([]);
   const [milkingLogs, setMilkingLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -73,16 +63,26 @@ export function AnimalProvider({ children }) {
         return history;
       }, {});
 
+      const normalizedLogs = logList.map((log) => ({
+        ...log,
+        id: log._id || log.id || `LOG-${Date.now()}`,
+        animalTag: log.animalTag || log.tag || log.animal?.tag || log.animalId?.tagNumber || log.animalId?.tag || 'COW-01',
+        shift: log.shift ? (log.shift.charAt(0).toUpperCase() + log.shift.slice(1).toLowerCase()) : 'Morning',
+        yieldLiters: parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0,
+        yield: parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0,
+        date: log.date ? log.date.split('T')[0] : new Date().toISOString().split('T')[0],
+      }));
+
       const normalized = animalList.map((animal) =>
         normalizeAnimal(animal, historyByAnimal[String(animal._id || animal.id || animal.tagNumber)] || [])
       );
 
       setAnimals(normalized);
-      setMilkingLogs(logList);
+      setMilkingLogs(normalizedLogs);
     } catch (err) {
       console.error('Failed to fetch farm data from API:', err);
       setError(err.message || 'Failed to load herd animals');
-      setAnimals(getStoredAnimals());
+      setAnimals([]);
     } finally {
       setIsLoading(false);
     }
@@ -91,12 +91,6 @@ export function AnimalProvider({ children }) {
   useEffect(() => {
     fetchAnimalsAndLogs();
   }, [fetchAnimalsAndLogs]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_ANIMALS, JSON.stringify(animals));
-    } catch (_) {}
-  }, [animals]);
 
   // Add Animal via API
   const addAnimal = async (formData) => {
@@ -170,8 +164,11 @@ export function AnimalProvider({ children }) {
   };
 
   // Save Milking Shift to backend
-  const saveMilkingShift = async (shiftName, shiftDate, shiftEntries) => {
+  const saveMilkingShift = async (shiftName, arg2, arg3) => {
     try {
+      const shiftDate = typeof arg2 === 'string' ? arg2 : typeof arg3 === 'string' ? arg3 : new Date().toISOString().split('T')[0];
+      const shiftEntries = (typeof arg2 === 'object' && arg2 !== null) ? arg2 : (typeof arg3 === 'object' && arg3 !== null) ? arg3 : {};
+
       const promises = Object.entries(shiftEntries).map(([tag, yieldVal]) => {
         const val = parseFloat(yieldVal);
         if (isNaN(val) || val <= 0) return null;
@@ -179,7 +176,7 @@ export function AnimalProvider({ children }) {
         return farmService.createMilkingLog({
           animalId: animal?._id || animal?.id,
           animalTag: tag,
-          shift: shiftName.toUpperCase(),
+          shift: (shiftName || 'Morning').toUpperCase(),
           date: shiftDate || new Date().toISOString().split('T')[0],
           yieldLiters: val,
         });

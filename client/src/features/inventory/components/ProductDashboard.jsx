@@ -32,7 +32,7 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
     return matchesSearch && matchesCategory;
   });
 
-  // Calculate the 4 summary cards dynamically from localStorage data
+  // Calculate the 4 summary cards dynamically from product catalog data
   const totalProducts = products.length;
   const activeCount = products.filter((p) => p.status !== 'Inactive').length;
 

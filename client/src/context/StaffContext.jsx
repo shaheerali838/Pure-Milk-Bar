@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import adminService from '@/services/adminService';
 
 const StaffContext = createContext();
-const STORAGE_KEY_STAFF = 'pure_milk_bar_staff';
 
 export const generateDefaultAttendanceMap = (absentDays = 0, totalDays = 30) => {
   const map = {};
@@ -29,19 +28,7 @@ export const generateDefaultAttendanceMap = (absentDays = 0, totalDays = 30) => 
 };
 
 export function StaffProvider({ children }) {
-  const [staffList, setStaffList] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_STAFF);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch (error) {
-      console.error('Error loading staff from localStorage:', error);
-    }
-    return [];
-  });
-
+  const [staffList, setStaffList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -68,11 +55,8 @@ export function StaffProvider({ children }) {
         setStaffList(normalized);
       }
     } catch (err) {
-      console.warn('Failed to fetch staff from API, using local storage fallback:', err.message);
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY_STAFF);
-        if (saved) setStaffList(JSON.parse(saved));
-      } catch (_) {}
+      console.warn('Failed to fetch staff from API:', err.message);
+      setStaffList([]);
     } finally {
       setIsLoading(false);
     }
@@ -82,13 +66,6 @@ export function StaffProvider({ children }) {
     fetchStaff();
   }, [fetchStaff]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_STAFF, JSON.stringify(staffList));
-    } catch (error) {
-      console.error('Error saving staff to localStorage:', error);
-    }
-  }, [staffList]);
 
   // 1. Add New Staff Member
   const addStaff = async (data) => {
@@ -506,40 +483,19 @@ export function StaffProvider({ children }) {
 export function useStaffContext() {
   const context = useContext(StaffContext);
   if (!context) {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_STAFF);
-      const staffList = saved ? JSON.parse(saved) : [];
-      const totalStaff = staffList.length;
-      const totalFarmWorkers = staffList.filter((s) => (s.role || '').toLowerCase().includes('farm')).length;
-      return {
-        staffList,
-        metrics: { totalStaff, totalFarmWorkers, activeStaffCount: 0, inactiveStaffCount: 0 },
-        addStaff: () => {},
-        updateStaff: () => {},
-        deleteStaff: () => {},
-        toggleStaffStatus: () => {},
-        setStaffAttendance: () => {},
-        toggleDayAttendance: () => {},
-        setDayAttendance: () => {},
-        markAllAttendance: () => {},
-        markStaffToday: () => {},
-        markEntireStaffToday: () => {},
-      };
-    } catch {
-      return {
-        staffList: [],
-        metrics: { totalStaff: 0, totalFarmWorkers: 0, activeStaffCount: 0, inactiveStaffCount: 0 },
-        addStaff: () => {},
-        updateStaff: () => {},
-        toggleStaffStatus: () => {},
-        setStaffAttendance: () => {},
-        toggleDayAttendance: () => {},
-        markAllAttendance: () => {},
-        markStaffToday: () => {},
-        markEntireStaffToday: () => {},
-        deleteStaff: () => {},
-      };
-    }
+    return {
+      staffList: [],
+      metrics: { totalStaff: 0, totalFarmWorkers: 0, activeStaffCount: 0, inactiveStaffCount: 0 },
+      addStaff: () => {},
+      updateStaff: () => {},
+      toggleStaffStatus: () => {},
+      setStaffAttendance: () => {},
+      toggleDayAttendance: () => {},
+      markAllAttendance: () => {},
+      markStaffToday: () => {},
+      markEntireStaffToday: () => {},
+      deleteStaff: () => {},
+    };
   }
   return context;
 }

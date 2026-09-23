@@ -123,7 +123,7 @@ export default function AddProduct({ onBack, product = null }) {
                 Product Details &amp; Pricing Setup
               </h2>
               <p className="text-xs text-slate-400">
-                All changes immediately sync to localStorage and POS counter register
+                All changes immediately sync to the database and POS counter register
               </p>
             </div>
           </div>

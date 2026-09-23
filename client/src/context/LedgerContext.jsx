@@ -1,36 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useCustomerContext } from './CustomerContext';
+import api from '@/services/api';
 
 const LedgerContext = createContext();
-const LEDGER_STORAGE_KEY = 'pure_milk_bar_ledgers_v2';
 
 export function LedgerProvider({ children }) {
   const { customers = [], updateCustomer } = useCustomerContext() || {};
 
-  // Initialize with empty ledgers object — strictly no hardcoded mock data
-  const [ledgers, setLedgers] = useState(() => {
-    try {
-      localStorage.removeItem('pure_milk_bar_ledgers');
-      const saved = localStorage.getItem(LEDGER_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object') {
-          return parsed;
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load ledgers from localStorage:', err);
-    }
-    return {};
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(LEDGER_STORAGE_KEY, JSON.stringify(ledgers));
-    } catch (err) {
-      console.error('Failed to save ledgers to localStorage:', err);
-    }
-  }, [ledgers]);
+  // In-memory ledger entries synced with backend database
+  const [ledgers, setLedgers] = useState({});
 
   const addLedgerEntry = (
     customerId,
@@ -86,6 +64,26 @@ export function LedgerProvider({ children }) {
       ...prev,
       [custId]: updatedLedger,
     }));
+
+    // Sync Khata entry to database backend API
+    try {
+      const isObjectId = (val) => typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val);
+      const validId = isObjectId(customer?._id || customer?.id) ? (customer?._id || customer?.id) : null;
+      if (validId) {
+        api.finance.addKhataEntry({
+          customerId: validId,
+          type: numDebit > 0 ? 'DEBIT' : 'CREDIT',
+          amount: numDebit > 0 ? numDebit : numCredit,
+          description: description || 'Khata Transaction',
+          paymentMethod: ['CASH', 'ONLINE', 'BANK_TRANSFER', 'CHEQUE'].includes(String(method).toUpperCase())
+            ? String(method).toUpperCase()
+            : 'CASH',
+          referenceDate: date || new Date().toISOString().split('T')[0],
+        }).catch((err) => console.warn('Khata entry backend sync skipped:', err.message));
+      }
+    } catch (e) {
+      console.warn('Khata entry API call failed:', e);
+    }
 
     // Update customer's balance in CustomerContext
     if (customer && updateCustomer) {

@@ -23,18 +23,27 @@ import { useIntakeContext } from '@/context/IntakeContext';
 import { usePOSContext } from '@/context/POSContext';
 
 export default function MilkProductionAndFlow() {
-  const { animals = [] } = useAnimalContext();
+  const { animals = [], milkingLogs = [] } = useAnimalContext();
   const { intakeLogs = [], totals: intakeTotals = {} } = useIntakeContext();
   const { inventoryMetrics = {} } = usePOSContext();
 
   // 1. DYNAMIC 7-DAY MILK PRODUCTION (FARM VS PURCHASED)
   const productionChartData = useMemo(() => {
-    // Collect dates from real animal history and intake logs
+    // Collect dates from real animal history, milking logs, and intake logs
     const dateSet = new Set();
     animals.forEach((a) => {
       (a.history || []).forEach((h) => {
         if (h.date) dateSet.add(h.date);
       });
+    });
+    milkingLogs.forEach((l) => {
+      if (l.date) {
+        const d = new Date(l.date);
+        const label = !isNaN(d.getTime())
+          ? d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+          : l.date;
+        dateSet.add(label);
+      }
     });
     intakeLogs.forEach((l) => {
       if (l.date) {
@@ -58,14 +67,26 @@ export default function MilkProductionAndFlow() {
     }
 
     return days.map((day) => {
-      // Farm yield for this day from animal histories
+      // Farm yield for this day from milkingLogs and animal histories
       let farmDayYield = 0;
-      animals.forEach((animal) => {
-        const historyEntry = (animal.history || []).find((h) => h.date === day);
-        if (historyEntry) {
-          farmDayYield += (Number(historyEntry.morning) || 0) + (Number(historyEntry.evening) || 0);
+      milkingLogs.forEach((log) => {
+        const logDateObj = new Date(log.date);
+        const logLabel = !isNaN(logDateObj.getTime())
+          ? logDateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+          : log.date;
+        if (log.date === day || logLabel === day) {
+          farmDayYield += Number(log.yieldLiters || log.yield) || 0;
         }
       });
+
+      if (farmDayYield === 0) {
+        animals.forEach((animal) => {
+          const historyEntry = (animal.history || []).find((h) => h.date === day);
+          if (historyEntry) {
+            farmDayYield += (Number(historyEntry.morning) || 0) + (Number(historyEntry.evening) || 0);
+          }
+        });
+      }
 
       // Intake quantity for this day from intakeLogs
       let purchasedYield = 0;
@@ -86,7 +107,7 @@ export default function MilkProductionAndFlow() {
         total: parseFloat((farmDayYield + purchasedYield).toFixed(1)),
       };
     });
-  }, [animals, intakeLogs]);
+  }, [animals, milkingLogs, intakeLogs]);
 
   // 2. TODAY'S MILK FLOW STEP-BY-STEP CALCULATION
   const totalFarmMilk = animals.reduce(
