@@ -286,7 +286,7 @@ export default function MilkingRegisterTable() {
                         <div className="flex items-center justify-center">
                           {isSavedLogged ? (
                             <div className="w-5 h-5 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-xs animate-in zoom-in duration-150">
-                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              <Check className="w-3.5 h-3.5 stroke-3" />
                             </div>
                           ) : (
                             <div className="w-5 h-5 border-2 border-slate-300 rounded-full" />

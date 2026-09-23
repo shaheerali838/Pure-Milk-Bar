@@ -27,10 +27,42 @@ const app = express();
 app.use(helmet());
 
 // CORS Configuration
+const allowedOrigins = [
+  "https://pure-milk-bar.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:5174",
+  "http://127.0.0.1:5173",
+];
+
+if (process.env.CORS_ORIGIN) {
+  process.env.CORS_ORIGIN.split(",").forEach((origin) => {
+    const trimmed = origin.trim();
+    if (trimmed && !allowedOrigins.includes(trimmed)) {
+      allowedOrigins.push(trimmed);
+    }
+  });
+}
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: (origin, callback) => {
+      // allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      const cleanOrigin = origin.replace(/\/$/, "");
+      const isAllowed =
+        allowedOrigins.some((o) => o.replace(/\/$/, "") === cleanOrigin) ||
+        /^https:\/\/pure-milk-bar(-[a-z0-9-]+)?\.vercel\.app$/.test(cleanOrigin);
+
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(null, true);
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
   }),
 );
 

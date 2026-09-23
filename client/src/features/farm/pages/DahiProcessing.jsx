@@ -118,19 +118,19 @@ export default function DahiProcessing() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-full px-3 h-[34px] shadow-2xs">
+          <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-full px-3 h-8.5 shadow-2xs">
             <Search className="w-3.5 h-3.5 text-slate-400" />
             <input
               type="text"
               placeholder="Search batch or product..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="border-none outline-none bg-transparent text-[13px] text-slate-700 w-[180px]"
+              className="border-none outline-none bg-transparent text-[13px] text-slate-700 w-45"
             />
           </div>
           <Button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 h-[34px] rounded-full text-white text-[13px] font-semibold cursor-pointer shadow-xs hover:opacity-90 transition-all"
+            className="flex items-center gap-1.5 px-4 h-8.5 rounded-full text-white text-[13px] font-semibold cursor-pointer shadow-xs hover:opacity-90 transition-all"
             style={{ background: "#009689" }}
           >
             <Plus className="w-3.5 h-3.5" /> New Batch

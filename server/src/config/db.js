@@ -1,5 +1,11 @@
 import mongoose from "mongoose";
 
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
 const connectDB = async () => {
   try {
     const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
@@ -8,12 +14,27 @@ const connectDB = async () => {
         "Neither MONGODB_URI nor MONGO_URI is defined in environment variables.",
       );
     }
-    const connection = await mongoose.connect(mongoUri);
 
-    console.log(` MongoDB connected: ${connection.connection.host}`);
+    if (cached.conn) {
+      return cached.conn;
+    }
+
+    if (!cached.promise) {
+      cached.promise = mongoose.connect(mongoUri).then((mongooseInstance) => {
+        console.log(` MongoDB connected: ${mongooseInstance.connection.host}`);
+        return mongooseInstance;
+      });
+    }
+
+    cached.conn = await cached.promise;
+    return cached.conn;
   } catch (error) {
+    cached.promise = null;
     console.error(`MongoDB connection failed: ${error.message}`);
-    process.exit(1);
+    if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+      process.exit(1);
+    }
+    throw error;
   }
 };
 

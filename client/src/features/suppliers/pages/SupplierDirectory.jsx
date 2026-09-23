@@ -81,7 +81,7 @@ export default function SupplierDirectory() {
                 resetToDefault();
               }
             }}
-            className="flex items-center gap-1.5 px-3 h-[38px] rounded-full text-xs font-semibold text-slate-600 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 h-9.5 rounded-full text-xs font-semibold text-slate-600 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer"
             title="Reset supplier records to defaults"
           >
             <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
@@ -91,7 +91,7 @@ export default function SupplierDirectory() {
           <Button
             type="button"
             onClick={handleOpenAdd}
-            className="flex items-center gap-2 px-4 h-[38px] rounded-full text-white text-xs sm:text-sm font-semibold shadow-xs hover:brightness-110 active:translate-y-0 cursor-pointer"
+            className="flex items-center gap-2 px-4 h-9.5 rounded-full text-white text-xs sm:text-sm font-semibold shadow-xs hover:brightness-110 active:translate-y-0 cursor-pointer"
             style={{ backgroundColor: '#009966' }}
           >
             <Plus className="w-4 h-4" />

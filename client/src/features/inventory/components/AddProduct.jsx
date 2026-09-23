@@ -282,7 +282,7 @@ export default function AddProduct({ onBack, product = null }) {
                 isEditing ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-[#009966] hover:bg-[#008055]'
               }`}
             >
-              <Check className="w-4 h-4 stroke-[3]" />
+              <Check className="w-4 h-4 stroke-3" />
               {isEditing ? 'Update Product' : 'Save & Add Product'}
             </button>
           </div>
