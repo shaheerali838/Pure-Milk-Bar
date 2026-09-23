@@ -152,7 +152,7 @@ export function AnimalProvider({ children }) {
   const deleteAnimal = async (id) => {
     try {
       await farmService.deleteAnimal(id);
-      setAnimals((prev) => prev.filter((a) => (a._id || a.id) !== id));
+      setAnimals((prev) => prev.filter((a) => String(a._id || a.id) !== String(id) && String(a.id) !== String(id)));
     } catch (err) {
       console.error('Failed to delete animal via API:', err);
       throw err;

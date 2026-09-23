@@ -76,12 +76,26 @@ export function ExpenseProvider({ children }) {
         }
     };
 
-    const editExpense = (id, updatedExpense) => {
-        setExpenses(prev => prev.map(exp => (exp.id === id ? { ...updatedExpense, id } : exp)));
+    const editExpense = async (id, updatedExpense) => {
+        setExpenses(prev => prev.map(exp => ((exp._id || exp.id) === id || exp.id === id ? { ...updatedExpense, id } : exp)));
+        try {
+            await api.finance.updateExpense(id, {
+                amountRupees: Number(updatedExpense.amount),
+                category: updatedExpense.category,
+                notes: updatedExpense.description || updatedExpense.notes,
+            });
+        } catch (e) {
+            console.warn('Expense edit API sync skipped:', e.message);
+        }
     };
 
-    const deleteExpense = (id) => {
-        setExpenses(prev => prev.filter(exp => exp.id !== id));
+    const deleteExpense = async (id) => {
+        setExpenses(prev => prev.filter(exp => (exp._id || exp.id) !== id && exp.id !== id));
+        try {
+            await api.finance.deleteExpense(id);
+        } catch (e) {
+            console.warn('Expense delete API sync skipped:', e.message);
+        }
     };
 
     const totals = useMemo(() => {

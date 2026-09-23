@@ -69,8 +69,13 @@ export function FuelLogProvider({ children }) {
     return newLog;
   };
 
-  const deleteFuelLog = (id) => {
-    setFuelLogs((prev) => prev.filter((f) => f.id !== id));
+  const deleteFuelLog = async (id) => {
+    setFuelLogs((prev) => prev.filter((f) => (f._id || f.id) !== id && f.id !== id));
+    try {
+      await deliveryService.deleteFuelLog(id);
+    } catch (e) {
+      console.warn('Fuel log delete API sync skipped:', e.message);
+    }
   };
 
   return (

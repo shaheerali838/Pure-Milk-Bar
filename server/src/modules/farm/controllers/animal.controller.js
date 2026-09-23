@@ -66,7 +66,7 @@ class AnimalController {
       const params = req._validated?.params || req.params;
       const animal = await animalService.deleteAnimal(params.id);
 
-      return sendSuccess(res, 200, 'Animal deactivated successfully', animal);
+      return sendSuccess(res, 200, 'Animal deleted successfully', animal);
     } catch (error) {
       next(error);
     }

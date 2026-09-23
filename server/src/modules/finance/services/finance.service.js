@@ -372,3 +372,27 @@ export const getExpenseSummaryService = async (queryParams) => {
     })),
   };
 };
+
+export const updateExpenseService = async (expenseId, data) => {
+  const expense = await Expense.findByIdAndUpdate(expenseId, data, {
+    new: true,
+    runValidators: true,
+  }).lean();
+  if (!expense) {
+    const error = new Error('Expense not found');
+    error.statusCode = 404;
+    throw error;
+  }
+  return expense;
+};
+
+export const deleteExpenseService = async (expenseId) => {
+  const expense = await Expense.findByIdAndDelete(expenseId).lean();
+  if (!expense) {
+    const error = new Error('Expense not found');
+    error.statusCode = 404;
+    throw error;
+  }
+  return { message: 'Expense deleted successfully', expense };
+};
+

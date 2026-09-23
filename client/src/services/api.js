@@ -386,6 +386,8 @@ export const api = {
     getExpenses: (params = {}) => api.get('/api/v1/finance/expenses', params, { fallback: [] }),
     getExpenseSummary: (params = {}) => api.get('/api/v1/finance/expenses/summary', params, { fallback: {} }),
     createExpense: (data) => api.post('/api/v1/finance/expenses', data),
+    updateExpense: (id, data) => api.patch(`/api/v1/finance/expenses/${id}`, data),
+    deleteExpense: (id) => api.delete(`/api/v1/finance/expenses/${id}`),
 
     // Financial Overview
     getFinancialSummary: (params = {}) => api.get('/api/v1/finance/summary', params, { fallback: {} }),

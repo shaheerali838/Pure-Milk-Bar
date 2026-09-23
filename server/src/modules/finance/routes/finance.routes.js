@@ -8,6 +8,8 @@ import {
   createExpense,
   getExpenses,
   getExpenseSummary,
+  updateExpense,
+  deleteExpense,
 } from '../controllers/finance.controller.js';
 import {
   validateKhataEntryInput,
@@ -52,5 +54,11 @@ router.post(
 
 // List Expenses with Pagination & Filters (ADMIN, MANAGER)
 router.get('/expenses', authorize('ADMIN', 'MANAGER'), getExpenses);
+
+// Update Expense (ADMIN, MANAGER)
+router.patch('/expenses/:id', authorize('ADMIN', 'MANAGER'), updateExpense);
+
+// Delete Expense (ADMIN, MANAGER)
+router.delete('/expenses/:id', authorize('ADMIN', 'MANAGER'), deleteExpense);
 
 export default router;
