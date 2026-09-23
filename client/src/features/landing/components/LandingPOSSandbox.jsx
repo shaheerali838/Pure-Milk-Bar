@@ -207,7 +207,7 @@ export default function LandingPOSSandbox() {
                 </span>
               </div>
               <Link
-                to="/pos"
+                to="/login"
                 className="bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl shadow-md transition flex items-center gap-1.5"
               >
                 <span>Open Full POS</span>

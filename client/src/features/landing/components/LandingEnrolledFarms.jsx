@@ -19,7 +19,7 @@ export default function LandingEnrolledFarms() {
             </p>
           </div>
           <Link
-            to="/farm"
+            to="/login"
             className="text-xs sm:text-sm font-bold text-slate-700 hover:text-[#00a86b] flex items-center gap-1.5 transition cursor-pointer shrink-0"
           >
             <span>Explore Farm Module</span>
@@ -62,7 +62,7 @@ export default function LandingEnrolledFarms() {
                 Automated milking parlor with direct refrigerated chiller tank transfer and batch lactation logs.
               </p>
               <Link
-                to="/farm/animals"
+                to="/login"
                 className="mt-3.5 w-full py-2.5 rounded-xl bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg"
               >
                 <span>View Farm Herd</span>
@@ -105,7 +105,7 @@ export default function LandingEnrolledFarms() {
                 High-yield lactation logs with 100% automated feed formula allocation and veterinary schedules.
               </p>
               <Link
-                to="/farm/feeding"
+                to="/login"
                 className="mt-3.5 w-full py-2.5 rounded-xl bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg"
               >
                 <span>View Feed Formulations</span>
@@ -148,7 +148,7 @@ export default function LandingEnrolledFarms() {
                 Zero-shrinkage mass-balance tank audit and automated supplier khata payout settlement.
               </p>
               <Link
-                to="/supplier"
+                to="/login"
                 className="mt-3.5 w-full py-2.5 rounded-xl bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg"
               >
                 <span>View Milk Procurement</span>
@@ -191,7 +191,7 @@ export default function LandingEnrolledFarms() {
                 Direct farm-to-counter distribution with real-time route fleet tracking and automated closing balances.
               </p>
               <Link
-                to="/delivery"
+                to="/login"
                 className="mt-3.5 w-full py-2.5 rounded-xl bg-[#00a86b] hover:bg-[#008f5b] text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg"
               >
                 <span>View Delivery Fleet</span>

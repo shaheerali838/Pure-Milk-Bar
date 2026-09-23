@@ -840,7 +840,7 @@ export function POSProvider({ children }) {
       }, 0);
     }
 
-    const resolved = registerSum > 0 ? registerSum : (logSum > 0 ? logSum : baselineSum);
+    const resolved = logSum > 0 ? logSum : baselineSum;
     return Number(resolved.toFixed(1));
   }, [animals, milkingLogs, posSyncVersion]);
 

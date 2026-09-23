@@ -21,11 +21,12 @@ import { AuditProvider } from "./AuditContext";
 import { SettingsProvider } from "./SettingsContext";
 
 const providers = [
+  // 1. Root & Base Configuration
   AuthProvider,
   SettingsProvider,
-  AuditProvider,
+
+  // 2. Base Domain Entities
   CustomerProvider,
-  LedgerProvider,
   AnimalProvider,
   ExpenseProvider,
   SourcExpenseProvider,
@@ -36,11 +37,21 @@ const providers = [
   RiderSalaryProvider,
   DeliveryProvider,
   IntakeProvider,
-  SupplierProvider,
-  POSProvider,
   DahiProvider,
   PayrollProvider,
+
+  // 3. Dependent Domain Providers
+  LedgerProvider,
+  SupplierProvider,
+
+  // 4. POS Engine
+  POSProvider,
+
+  // 5. Aggregate Transactions
   TransactionProvider,
+
+  // 6. Global Audit Logging
+  AuditProvider,
 ];
 
 export const AppProviders = ({ children }) => {

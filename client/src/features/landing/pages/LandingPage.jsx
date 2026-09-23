@@ -7,7 +7,6 @@ import LandingModulesShowcase from "../components/LandingModulesShowcase";
 import LandingPOSSandbox from "../components/LandingPOSSandbox";
 import LandingLiveSimulators from "../components/LandingLiveSimulators";
 import LandingEnrolledFarms from "../components/LandingEnrolledFarms";
-import LandingPricingMatrix from "../components/LandingPricingMatrix";
 import LandingTestimonialsFAQ from "../components/LandingTestimonialsFAQ";
 import LandingCTAFooter from "../components/LandingCTAFooter";
 
@@ -38,13 +37,10 @@ export default function LandingPage() {
       {/* 8. Enrolled Commercial Farms & Producer Hubs */}
       <LandingEnrolledFarms />
 
-      {/* 9. SaaS Commercial Pricing Matrix */}
-      <LandingPricingMatrix />
-
-      {/* 10. Testimonials & FAQs Split-Screen */}
+      {/* 9. Testimonials & FAQs Split-Screen */}
       <LandingTestimonialsFAQ />
 
-      {/* 11. High-Conversion CTA & Compact Footer */}
+      {/* 10. High-Conversion CTA & Compact Footer */}
       <LandingCTAFooter />
     </div>
   );

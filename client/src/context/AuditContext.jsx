@@ -65,28 +65,28 @@ export function AuditProvider({ children }) {
   };
 
   // 3. Connect to all application contexts
-  const txCtx = useTransactionContext();
+  const txCtx = useTransactionContext() || {};
   const transactions = txCtx?.transactions || [];
 
-  const staffCtx = useStaffContext();
+  const staffCtx = useStaffContext() || {};
   const staffList = staffCtx?.staffList || [];
 
-  const customerCtx = useCustomerContext();
+  const customerCtx = useCustomerContext() || {};
   const customers = customerCtx?.rawCustomers || customerCtx?.customers || [];
 
-  const animalCtx = useAnimalContext();
+  const animalCtx = useAnimalContext() || {};
   const animals = animalCtx?.animals || [];
 
-  const expenseCtx = useExpense();
+  const expenseCtx = useExpense() || {};
   const expenses = expenseCtx?.expenses || [];
 
-  const posCtx = usePOSContext();
+  const posCtx = usePOSContext() || {};
   const salesHistory = posCtx?.salesHistory || [];
 
-  const deliveryCtx = useDeliveryContext();
+  const deliveryCtx = useDeliveryContext() || {};
   const deliveries = deliveryCtx?.deliveries || [];
 
-  const payrollCtx = usePayrollContext();
+  const payrollCtx = usePayrollContext() || {};
   const payrollRecords = payrollCtx?.payrollRecords || [];
 
   // Previous snapshots refs for diffing (Create, Update, Delete)

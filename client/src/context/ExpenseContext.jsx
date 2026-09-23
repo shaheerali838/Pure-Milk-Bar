@@ -6,7 +6,13 @@ const ExpenseContext = createContext();
 export function useExpense() {
     const context = useContext(ExpenseContext);
     if (!context) {
-        throw new Error('useExpense must be used within an ExpenseProvider');
+        return {
+            expenses: [],
+            addExpense: () => {},
+            editExpense: () => {},
+            deleteExpense: () => {},
+            totals: { totalFarmExpense: 0, feedSeedFarming: 0, fuelTransportRepairs: 0, salariesKitchenMess: 0 },
+        };
     }
     return context;
 }
