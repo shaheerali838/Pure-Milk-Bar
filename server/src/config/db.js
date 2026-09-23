@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
+import dns from "dns";
 
+dns.setDefaultResultOrder('ipv4first');
 let cached = global.mongoose;
 
 if (!cached) {
@@ -20,7 +22,7 @@ const connectDB = async () => {
     }
 
     if (!cached.promise) {
-      cached.promise = mongoose.connect(mongoUri).then((mongooseInstance) => {
+      cached.promise = mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000, family: 4 }).then((mongooseInstance) => {
         console.log(`MongoDB connected: ${mongooseInstance.connection.host}`);
         return mongooseInstance;
       });
