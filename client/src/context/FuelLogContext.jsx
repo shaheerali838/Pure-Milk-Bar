@@ -12,7 +12,15 @@ export function FuelLogProvider({ children }) {
     setIsLoading(true);
     try {
       const res = await deliveryService.getFuelLogs();
-      const list = Array.isArray(res) ? res : res?.logs || res?.data || [];
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.logs)
+        ? res.logs
+        : Array.isArray(res?.data?.logs)
+        ? res.data.logs
+        : Array.isArray(res?.data)
+        ? res.data
+        : [];
       const normalized = list.map((f) => ({
         ...f,
         id: f._id || f.id || Date.now(),

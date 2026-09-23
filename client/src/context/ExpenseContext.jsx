@@ -26,7 +26,15 @@ export function ExpenseProvider({ children }) {
         setIsLoading(true);
         try {
             const res = await api.finance.getExpenses({ scope: 'FARM' });
-            const list = Array.isArray(res) ? res : res?.expenses || res?.data || [];
+            const list = Array.isArray(res)
+                ? res
+                : Array.isArray(res?.data?.expenses)
+                ? res.data.expenses
+                : Array.isArray(res?.expenses)
+                ? res.expenses
+                : Array.isArray(res?.data)
+                ? res.data
+                : [];
             const normalized = list.map((exp) => ({
                 ...exp,
                 id: exp._id || exp.id || `EXP-${Date.now()}`,
