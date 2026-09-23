@@ -21,7 +21,7 @@ const connectDB = async () => {
 
     if (!cached.promise) {
       cached.promise = mongoose.connect(mongoUri).then((mongooseInstance) => {
-        console.log(` MongoDB connected: ${mongooseInstance.connection.host}`);
+        console.log(`MongoDB connected: ${mongooseInstance.connection.host}`);
         return mongooseInstance;
       });
     }

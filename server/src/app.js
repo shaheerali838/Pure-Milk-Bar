@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
@@ -70,11 +69,6 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
-// Logging (Development Only)
-if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev"));
-}
 
 // Global Rate Limiting
 const limiter = rateLimit({
