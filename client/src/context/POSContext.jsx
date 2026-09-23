@@ -8,6 +8,7 @@ import { useFuelLogContext } from './FuelLogContext';
 import { useDeliveryStaffContext } from './DeliveryStaffContext';
 import { estimateDistanceKm } from '@/features/pos/utils/estimateDeliveryDistance';
 import posService from '@/services/posService';
+import { toast } from 'sonner';
 import farmService from '@/services/farmService';
 
 const POSContext = createContext();
@@ -104,6 +105,8 @@ export function POSProvider({ children }) {
   const addFuelLog = fuelLogCtx?.addFuelLog;
   const deliveryStaffCtx = useDeliveryStaffContext();
   const staffList = deliveryStaffCtx?.staffList || [];
+  const intakeCtx = useIntakeContext();
+  const intakeLogs = intakeCtx?.intakeLogs || [];
 
   // Version counter to trigger re-renders on local storage events
   const [posSyncVersion, setPosSyncVersion] = useState(0);
@@ -150,7 +153,13 @@ export function POSProvider({ children }) {
       try {
         setIsLoadingProducts(true);
         const res = await posService.getProducts();
-        const list = Array.isArray(res) ? res : res?.products || res?.data || [];
+        const list = Array.isArray(res)
+          ? res
+          : Array.isArray(res?.products)
+          ? res.products
+          : Array.isArray(res?.data)
+          ? res.data
+          : [];
         if (Array.isArray(list) && list.length > 0) {
           setProducts((prev) => {
             const combined = [...list];
@@ -348,6 +357,10 @@ export function POSProvider({ children }) {
 
   // Cart operations
   const handleAddToCart = (product, initialQty = 1) => {
+    if (Number(product.stock) <= 0) {
+      toast.error(`Out of Stock: You currently have 0 available stock for ${product.name}. Please produce or procure more before selling.`);
+      return;
+    }
     const addQty = typeof initialQty === 'number' && initialQty > 0 ? initialQty : 1;
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
@@ -374,6 +387,10 @@ export function POSProvider({ children }) {
 
   // Add or set item by rupee amount (e.g. Rs 50, 100, 500)
   const handleAddToCartByRupees = (product, rupees) => {
+    if (Number(product.stock) <= 0) {
+      toast.error(`Out of Stock: You currently have 0 available stock for ${product.name}. Please produce or procure more before selling.`);
+      return;
+    }
     const numRupees = parseFloat(rupees);
     if (isNaN(numRupees) || numRupees <= 0) return;
     const rate = Number(product.price) || 200;
@@ -1025,14 +1042,6 @@ export function POSProvider({ children }) {
     itemizedProducts: Object.values(supplierStats.itemizedProducts),
   };
 
-  let intakeLogs = [];
-  try {
-    const intakeCtx = useIntakeContext();
-    intakeLogs = intakeCtx?.intakeLogs || [];
-  } catch (e) {
-    intakeLogs = [];
-  }
-
   const totalSupplierIntake = intakeLogs.reduce((sum, item) => sum + (Number(item.quantity || item.quantityLiters) || 0), 0);
 
   // Dahi batches for milk converted to Dahi and transferred to POS
@@ -1200,6 +1209,10 @@ export function POSProvider({ children }) {
           totalDahi: availableDahiStock % 1 === 0 ? availableDahiStock.toFixed(0) : availableDahiStock.toFixed(1),
           totalDahiStock: availableDahiStock % 1 === 0 ? availableDahiStock.toFixed(0) : availableDahiStock.toFixed(1),
           totalDahiTransferred: totalDahiTransferredToPOS % 1 === 0 ? totalDahiTransferredToPOS.toFixed(0) : totalDahiTransferredToPOS.toFixed(1),
+          rawFarmMilkStock: remainingFarmMilk,
+          rawSupplierMilkStock: remainingSupplierMilk,
+          rawTotalMilkStock: remainingTotalMilk,
+          rawDahiStock: availableDahiStock,
           milkSold: (totalMilkSold % 1 === 0 ? totalMilkSold.toFixed(0) : totalMilkSold.toFixed(2)),
           dahiSold: (totalDahiSold % 1 === 0 ? totalDahiSold.toFixed(0) : totalDahiSold.toFixed(2)),
           totalMilkPrice,

@@ -115,23 +115,28 @@ export function ExpenseProvider({ children }) {
         expenses.forEach(exp => {
             const amt = Number(exp.amount) || 0;
             totalFarmExpense += amt;
+            
+            const cat = exp.category || '';
 
             if (
-                exp.category.startsWith('Feed') ||
-                exp.category.startsWith('Seed cost') ||
-                exp.category.startsWith('Farming')
+                cat.includes('Feed') ||
+                cat.includes('Seed') ||
+                cat.includes('Veterinary') ||
+                cat.includes('Livestock') ||
+                cat.includes('Dairy')
             ) {
                 feedSeedFarming += amt;
             } else if (
-                exp.category.startsWith('Fuel cost') ||
-                exp.category.startsWith('Transportation') ||
-                exp.category.startsWith('Repair Bill') ||
-                exp.category.startsWith('Electrical work')
+                cat.includes('Fuel') ||
+                cat.includes('Machinery') ||
+                cat.includes('Electricity') ||
+                cat.includes('Shed') ||
+                cat.includes('Hardware')
             ) {
                 fuelTransportRepairs += amt;
             } else if (
-                exp.category.startsWith('Salaries Expense') ||
-                exp.category.startsWith('Kitchen Expense')
+                cat.includes('Salaries') ||
+                cat.includes('Kitchen')
             ) {
                 salariesKitchenMess += amt;
             }

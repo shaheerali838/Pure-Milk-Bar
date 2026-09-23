@@ -72,7 +72,32 @@ export default function TopSummaryCards() {
     });
   });
 
+  const totalMilkStock = inventoryMetrics?.totalMilkStock ?? '0';
+  const farmMilkStock = inventoryMetrics?.farmMilkStock ?? '0';
+  const supplierMilkStock = inventoryMetrics?.supplierMilkStock ?? '0';
+  const totalDahiStock = inventoryMetrics?.totalDahiStock ?? '0';
+
   const cards = [
+    {
+      id: 'available-milk-stock',
+      title: 'Available Milk Stock',
+      value: `${totalMilkStock} L`,
+      subtitle: `Farm: ${farmMilkStock}L • Sup: ${supplierMilkStock}L`,
+      icon: Droplets,
+      color: '#059669',
+      tag: 'Chiller Stock',
+      to: '/pos',
+    },
+    {
+      id: 'available-dahi-stock',
+      title: 'Available Dahi Stock',
+      value: `${totalDahiStock} kg`,
+      subtitle: 'Ready at POS counter',
+      icon: Layers,
+      color: '#0284c7',
+      tag: 'Counter Stock',
+      to: '/farm/processing',
+    },
     {
       id: 'total-sourced',
       title: 'Total Milk Sourced',
@@ -136,7 +161,7 @@ export default function TopSummaryCards() {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       {cards.map((card) => {
         const Icon = card.icon;
         return (

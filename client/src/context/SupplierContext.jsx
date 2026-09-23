@@ -10,24 +10,12 @@ export function SupplierProvider({ children }) {
   const [error, setError] = useState(null);
   const [directPayouts, setDirectPayouts] = useState([]);
 
-  // Consume intakeLogs from IntakeContext
-  let intakeLogs = [];
-  let updateBatchSettlement = null;
-  let settleAllBatchesForSupplier = null;
-  let settleBatchesWithAmount = null;
-
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const intakeCtx = useIntakeContext();
-    if (intakeCtx) {
-      intakeLogs = intakeCtx.intakeLogs || [];
-      updateBatchSettlement = intakeCtx.updateBatchSettlement;
-      settleAllBatchesForSupplier = intakeCtx.settleAllBatchesForSupplier;
-      settleBatchesWithAmount = intakeCtx.settleBatchesWithAmount;
-    }
-  } catch (err) {
-    console.warn('IntakeContext not available in SupplierProvider:', err);
-  }
+  // Consume intakeLogs from IntakeContext (proper top-level hook call)
+  const intakeCtx = useIntakeContext();
+  const intakeLogs = intakeCtx?.intakeLogs || [];
+  const updateBatchSettlement = intakeCtx?.updateBatchSettlement;
+  const settleAllBatchesForSupplier = intakeCtx?.settleAllBatchesForSupplier;
+  const settleBatchesWithAmount = intakeCtx?.settleBatchesWithAmount;
 
   // Fetch live suppliers from API
   const fetchSuppliers = useCallback(async () => {
@@ -82,7 +70,13 @@ export function SupplierProvider({ children }) {
         status: newSupplierData.status || 'Active',
       };
 
-      const created = await supplierService.createSupplier(payload);
+      let created;
+      try {
+        created = await supplierService.createSupplier(payload);
+      } catch (err) {
+        created = { ...payload, id: `local-${Date.now()}` };
+        console.warn('Supplier API unavailable, saving locally:', err.message);
+      }
       const normalized = {
         ...created,
         id: created._id || created.id || `SUP-${Date.now()}`,
@@ -91,7 +85,7 @@ export function SupplierProvider({ children }) {
         avgLiters: created.expectedDailyQuantity || newSupplierData.avgLiters || 10,
       };
 
-      setSuppliers((prev) => [normalized, ...prev]);
+      setSuppliers((prev) => [normalized, ...prev.filter((supplier) => supplier.code !== normalized.code)]);
       return normalized;
     } catch (err) {
       console.error('Failed to create supplier via API:', err);
@@ -102,9 +96,13 @@ export function SupplierProvider({ children }) {
   // Update Supplier via API
   const updateSupplier = async (id, updatedData) => {
     try {
-      await supplierService.updateSupplier(id, updatedData);
+      try {
+        await supplierService.updateSupplier(id, updatedData);
+      } catch (err) {
+        console.warn('Supplier API unavailable, updating locally:', err.message);
+      }
       setSuppliers((prev) =>
-        prev.map((s) => ((s._id || s.id) === id ? { ...s, ...updatedData } : s))
+        prev.map((s) => (String(s._id || s.id) === String(id) ? { ...s, ...updatedData } : s))
       );
     } catch (err) {
       console.error('Failed to update supplier via API:', err);
@@ -115,8 +113,12 @@ export function SupplierProvider({ children }) {
   // Delete Supplier via API
   const deleteSupplier = async (id) => {
     try {
-      await supplierService.deleteSupplier(id);
-      setSuppliers((prev) => prev.filter((s) => (s._id || s.id) !== id));
+      try {
+        await supplierService.deleteSupplier(id);
+      } catch (err) {
+        console.warn('Supplier API unavailable, deleting locally:', err.message);
+      }
+      setSuppliers((prev) => prev.filter((s) => String(s._id || s.id) !== String(id)));
     } catch (err) {
       console.error('Failed to delete supplier via API:', err);
       throw err;

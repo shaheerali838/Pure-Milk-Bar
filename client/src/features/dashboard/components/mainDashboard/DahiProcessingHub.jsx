@@ -111,6 +111,13 @@ export default function DahiProcessingHub() {
           </div>
 
           <div className="flex items-center justify-between">
+            <span className="text-slate-500 font-medium">Available Dahi Stock (POS):</span>
+            <span className="font-mono font-bold text-cyan-700 tabular">
+              {inventoryMetrics?.totalDahiStock || 0} kg (At Counter Ready)
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between">
             <span className="text-slate-500 font-medium">Active Batches Lifecycle:</span>
             <span className="font-mono font-bold text-slate-900 tabular">
               {inProgressCount} In Progress • {completedCount} Completed

@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Droplets, DollarSign, TrendingUp, Clock, ChevronRight } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
+import { usePOSContext } from '@/context/POSContext';
 import IntakeCardDetailModal from './IntakeCardDetailModal';
 
 export default function IntakeCardOverflow({ onViewBatch }) {
   const { totals, intakeLogs, updateBatchSettlement } = useIntakeContext();
+  const posCtx = usePOSContext?.();
+  const supplierMilkStock = posCtx?.inventoryMetrics?.supplierMilkStock ?? (totals.totalProcuredVolume > 0 ? totals.totalProcuredVolume.toFixed(1) : '0');
   const [activeModalCard, setActiveModalCard] = useState(null);
 
   const statCards = [
@@ -16,6 +19,15 @@ export default function IntakeCardOverflow({ onViewBatch }) {
       icon: Droplets,
       color: '#155dfc',
       badge: 'Total Liters',
+    },
+    {
+      id: 'available_stock',
+      label: 'Available Supplier Stock',
+      value: `${supplierMilkStock} L`,
+      sub: 'In dock chiller storage',
+      icon: Droplets,
+      color: '#0284c7',
+      badge: 'Chiller Stock',
     },
     {
       id: 'spend',
@@ -48,7 +60,7 @@ export default function IntakeCardOverflow({ onViewBatch }) {
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 mb-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mb-3">
         {statCards.map(({ id, label, value, sub, icon: Icon, color, badge }) => (
           <div
             key={id}

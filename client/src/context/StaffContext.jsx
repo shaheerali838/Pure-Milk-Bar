@@ -65,6 +65,7 @@ export function StaffProvider({ children }) {
     fetchStaff();
   }, [fetchStaff]);
 
+
   // 1. Add New Staff Member
   const addStaff = async (data) => {
     const nextNum = staffList.length + 1;
@@ -164,7 +165,7 @@ export function StaffProvider({ children }) {
     } catch (err) {
       console.warn('Backend API deleteStaff error, deleting locally:', err.message);
     }
-    setStaffList((prev) => prev.filter((m) => (m._id || m.id) !== id && m.id !== id));
+    setStaffList((prev) => prev.filter((m) => String(m._id || m.id) !== String(id)));
   };
 
   // 4. Toggle Staff Duty Status (Active / Present vs Inactive / Absent)

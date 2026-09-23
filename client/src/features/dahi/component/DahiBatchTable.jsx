@@ -16,7 +16,7 @@ const statusStyle = {
   Failed: 'bg-red-100 text-red-700 hover:bg-red-100',
 };
 
-export default function DahiBatchTable({ batches = [], onDeleteBatch }) {
+export default function DahiBatchTable({ batches = [], onDeleteBatch, onViewDetail }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -94,7 +94,8 @@ export default function DahiBatchTable({ batches = [], onDeleteBatch }) {
               filtered.map((b) => (
                 <TableRow
                   key={b.id}
-                  className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/70 transition-colors"
+                  onClick={() => onViewDetail && onViewDetail(b.id)}
+                  className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/70 transition-colors cursor-pointer"
                 >
                   <TableCell className="px-3.5 py-3">
                     <span className="flex items-center gap-1.5 font-mono text-[12px] font-bold text-slate-800 tabular">

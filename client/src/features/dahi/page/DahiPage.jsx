@@ -11,6 +11,8 @@ import DahiKitchenPipeline from '../component/DahiKitchenPipeline';
 import DahiBatchTable from '../component/DahiBatchTable';
 import DahiProfitCalculator from '../component/DahiProfitCalculator';
 import AddDahiBatchModal from '../component/AddDahiBatchModal';
+import DahiBatchDetail from '../component/DahiBatchDetail';
+import DahiDailyReport from '../component/DahiDailyReport';
 import { useDahiContext } from '@/context/DahiContext';
 
 export default function DahiPage() {
@@ -26,10 +28,31 @@ export default function DahiPage() {
 
   const [activeTab, setActiveTab] = useState('pipeline'); // 'pipeline' | 'history' | 'calculator'
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBatchId, setSelectedBatchId] = useState(null);
 
   const activePipelineCount = batches.filter(
     (b) => b.stage === 'incubating' || b.stage === 'chilled' || b.stage === 'pos'
   ).length;
+
+  // Render Full-Screen Add Batch View
+  if (isModalOpen) {
+    return (
+      <AddDahiBatchModal
+        onClose={() => setIsModalOpen(false)}
+        onAddBatch={addBatch}
+      />
+    );
+  }
+
+  // Render Full-Screen Detail View
+  if (selectedBatchId) {
+    return (
+      <DahiBatchDetail
+        batchId={selectedBatchId}
+        onBack={() => setSelectedBatchId(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-2.5">
@@ -96,6 +119,20 @@ export default function DahiPage() {
             <span>All Batch History ({batches.length})</span>
           </button>
 
+          {/* Tab 3: End-to-End Daily Report */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('report')}
+            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs ${
+              activeTab === 'report'
+                ? 'bg-slate-900 text-white'
+                : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/90'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5 text-slate-500" />
+            <span>Daily Report</span>
+          </button>
+
           {/* Tab 3: Simple Profit Calculator */}
           <button
             type="button"
@@ -137,18 +174,13 @@ export default function DahiPage() {
               </p>
             </div>
           </div>
-          <DahiBatchTable batches={batches} onDeleteBatch={deleteBatch} />
+          <DahiBatchTable batches={batches} onDeleteBatch={deleteBatch} onViewDetail={setSelectedBatchId} />
         </div>
       )}
 
-      {activeTab === 'calculator' && <DahiProfitCalculator />}
+      {activeTab === 'report' && <DahiDailyReport />}
 
-      {/* 4. Add Batch Modal */}
-      <AddDahiBatchModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onAddBatch={addBatch}
-      />
+      {activeTab === 'calculator' && <DahiProfitCalculator />}
     </div>
   );
 }
