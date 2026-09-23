@@ -52,7 +52,6 @@ export function StaffProvider({ children }) {
         };
       });
       setStaffList(normalized);
-      localStorage.setItem(STORAGE_KEY_STAFF, JSON.stringify(normalized));
     } catch (err) {
       console.warn('Failed to fetch staff from API:', err.message);
       setStaffList([]);
