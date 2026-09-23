@@ -23,7 +23,6 @@ import { SettingsProvider } from "./SettingsContext";
 const providers = [
   AuthProvider,
   SettingsProvider,
-  AuditProvider,
   CustomerProvider,
   LedgerProvider,
   AnimalProvider,
@@ -41,6 +40,7 @@ const providers = [
   DahiProvider,
   PayrollProvider,
   TransactionProvider,
+  AuditProvider,
 ];
 
 export const AppProviders = ({ children }) => {
