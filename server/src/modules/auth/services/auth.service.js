@@ -21,8 +21,11 @@ const generateRefreshToken = (userId) => {
 
 //  Login Service 
 export const loginUser = async (username, password) => {
-  // 1. Find user by username
-  const user = await User.findOne({ username: username.toLowerCase().trim() });
+  const cleanIdentifier = String(username || '').toLowerCase().trim();
+  // 1. Find user by username OR email
+  const user = await User.findOne({
+    $or: [{ username: cleanIdentifier }, { email: cleanIdentifier }],
+  });
 
   if (!user) {
     const error = new Error('Invalid username or password.');
