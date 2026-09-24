@@ -59,8 +59,8 @@ export default function SupplierNav() {
   const { pathname } = useLocation();
 
   return (
-    <div className="flex flex-col gap-1.5 ">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 min-w-[680px] lg:min-w-full">
+    <div className="w-full overflow-x-auto no-scrollbar py-1">
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-max">
         {SUPPLIER_TABS.map(({ to, label, icon: Icon, color }) => {
           const isActive =
             to === '/supplier'
@@ -73,14 +73,13 @@ export default function SupplierNav() {
             <NavLink
               key={to}
               to={to}
-              className="flex items-center justify-center gap-2 px-4 h-[42px] rounded-full whitespace-nowrap transition-all duration-200 cursor-pointer font-semibold text-xs sm:text-sm text-white select-none hover:brightness-110 hover:-translate-y-0.5 active:translate-y-0"
+              className="flex items-center justify-center gap-2 px-4 h-[38px] sm:h-[40px] rounded-full whitespace-nowrap shrink-0 transition-all duration-200 cursor-pointer font-bold text-xs sm:text-[13px] text-white select-none hover:brightness-110 hover:-translate-y-px active:translate-y-0 shadow-xs"
               style={{
                 backgroundColor: isActive ? color : `${color}dd`,
-                boxShadow: isActive ? `0 6px 20px ${color}66` : 'none',
+                boxShadow: isActive ? `0 4px 14px ${color}66` : 'none',
                 border: isActive
                   ? '2px solid rgba(255, 255, 255, 0.45)'
                   : '2px solid transparent',
-                transform: isActive ? 'translateY(-2px)' : 'none',
               }}
             >
               <Icon className="w-4 h-4 shrink-0 text-white" />

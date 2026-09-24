@@ -8,11 +8,15 @@ import {
   Layers,
   CheckCircle,
   TrendingUp,
-  Tag,
 } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
+import { useAuth } from '@/context/AuthContext';
+import { ROLES } from '@/config/rbac.config';
 
 export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === ROLES.ADMIN;
+
   const { products = [], deleteProduct } = usePOSContext();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,25 +59,18 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
   const handleAddClick = () => {
     if (onAdd) {
       onAdd();
-    } else {
-      setIsAddModalOpen(true);
     }
   };
 
   const handleDetailClick = (product) => {
     if (onDetail) {
       onDetail(product);
-    } else {
-      setSelectedProductForDetail(product);
     }
   };
 
   const handleEditClick = (product) => {
     if (onEdit) {
       onEdit(product);
-    } else {
-      setProductToEdit(product);
-      setIsEditModalOpen(true);
     }
   };
 
@@ -89,14 +86,16 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleAddClick}
-          className="flex items-center gap-1.5 px-4 py-2 bg-[#009966] hover:bg-[#008055] text-white rounded-full text-xs font-bold shadow-xs cursor-pointer transition"
-        >
-          <Plus className="w-4 h-4" />
-          + Add Product
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={handleAddClick}
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#009966] hover:bg-[#008055] text-white rounded-full text-xs font-bold shadow-xs cursor-pointer transition"
+          >
+            <Plus className="w-4 h-4" />
+            + Add Product
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -166,8 +165,8 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
         ))}
       </div>
 
-      <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-sm text-slate-700 w-full sm:w-72 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
+      <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-3.5 py-1.5 text-sm text-slate-700 w-full sm:w-72 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input
             type="text"
@@ -178,7 +177,7 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
           />
         </div>
 
-        <div className="block bg-slate-100 rounded-full px-2 py-2">
+        <div className="flex items-center gap-1 bg-slate-100 rounded-full p-1 overflow-x-auto no-scrollbar">
           {[
             { id: 'all', label: 'All Items' },
             { id: 'milk', label: 'Milk' },
@@ -189,10 +188,10 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
               key={tab.id}
               type="button"
               onClick={() => setCategoryFilter(tab.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              className={`px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer ${
                 categoryFilter === tab.id
                   ? 'bg-slate-900 text-white shadow-2xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
               {tab.label}
@@ -299,7 +298,7 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
                       </div>
                     </div>
 
-                    {costPrice > 0 && (
+                    {isAdmin && costPrice > 0 && (
                       <div className="flex items-center justify-between text-[10px] pt-1 border-t border-slate-200/60">
                         <span className="text-slate-400 font-medium">Cost: Rs. {costPrice.toLocaleString()}</span>
                         <span className={`font-bold ${profitMargin >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
@@ -323,25 +322,27 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
                     <span>Specs</span>
                   </button>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => handleEditClick(p)}
-                      title="Edit Product"
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition cursor-pointer"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
+                  {isAdmin && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleEditClick(p)}
+                        title="Edit Product"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition cursor-pointer"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteProduct(p.id, p.name)}
-                      title="Delete Product"
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProduct(p.id, p.name)}
+                        title="Delete Product"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );

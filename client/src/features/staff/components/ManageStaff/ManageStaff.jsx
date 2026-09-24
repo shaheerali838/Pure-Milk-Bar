@@ -19,10 +19,15 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
+import { useAuth } from '@/context/AuthContext';
+import { ROLES } from '@/config/rbac.config';
 import StaffAdd from './StaffAdd';
 import StaffDetail from './StaffDetail';
 
 export default function ManageStaff() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === ROLES.ADMIN;
+
   const {
     staffList = [],
     metrics,
@@ -259,34 +264,64 @@ export default function ManageStaff() {
           </div>
         </div>
 
-        {/* 4. Monthly Budget */}
-        <div
-          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #3b82f6' }}
-        >
-          <div className="flex items-start justify-between mb-2">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
-              style={{ background: '#3b82f615' }}
-            >
-              <DollarSign style={{ width: 16, height: 16, color: '#3b82f6' }} />
+        {/* 4. Monthly Budget / Operational Duty Card */}
+        {isAdmin ? (
+          <div
+            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
+            style={{ borderTop: '4px solid #3b82f6' }}
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                style={{ background: '#3b82f615' }}
+              >
+                <DollarSign style={{ width: 16, height: 16, color: '#3b82f6' }} />
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-blue-700 bg-blue-50 border border-blue-200">
+                Payroll
+              </span>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-blue-700 bg-blue-50 border border-blue-200">
-              Payroll
-            </span>
+            <div>
+              <p className="font-display text-2xl font-black text-blue-700 leading-tight tracking-tight mb-0.5 tabular font-mono truncate">
+                Rs. {metrics.totalMonthlyPayroll.toLocaleString()}
+              </p>
+              <p className="text-xs font-bold text-slate-700 font-display">
+                Monthly Base Payroll
+              </p>
+              <p className="text-[11px] text-slate-400 font-medium truncate">
+                Base salary obligation
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="font-display text-2xl font-black text-blue-700 leading-tight tracking-tight mb-0.5 tabular font-mono truncate">
-              Rs. {metrics.totalMonthlyPayroll.toLocaleString()}
-            </p>
-            <p className="text-xs font-bold text-slate-700 font-display">
-              Monthly Base Payroll
-            </p>
-            <p className="text-[11px] text-slate-400 font-medium truncate">
-              Base salary obligation
-            </p>
+        ) : (
+          <div
+            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
+            style={{ borderTop: '4px solid #00a86b' }}
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                style={{ background: '#00a86b15' }}
+              >
+                <Users style={{ width: 16, height: 16, color: '#00a86b' }} />
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-emerald-700 bg-emerald-50 border border-emerald-200">
+                Operations
+              </span>
+            </div>
+            <div>
+              <p className="font-display text-2xl font-black text-[#00a86b] leading-tight tracking-tight mb-0.5 tabular font-mono truncate">
+                {metrics.activeStaffCount} / {metrics.totalStaff}
+              </p>
+              <p className="text-xs font-bold text-slate-700 font-display">
+                Workforce Active
+              </p>
+              <p className="text-[11px] text-slate-400 font-medium truncate">
+                Roster operational status
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 2. Controls & Search Toolbar with 'Add Staff' Button */}
@@ -334,7 +369,7 @@ export default function ManageStaff() {
 
           {/* Right-Side Actions */}
           <div className="flex items-center gap-2">
-            {selectedIds.length > 0 && (
+            {isAdmin && selectedIds.length > 0 && (
               <button
                 type="button"
                 onClick={handleBulkDelete}
@@ -410,7 +445,7 @@ export default function ManageStaff() {
                   <th className="py-3 px-4">Shift</th>
                   <th className="py-3 px-4">Contact</th>
                   <th className="py-3 px-4">CNIC</th>
-                  <th className="py-3 px-4">Monthly Salary</th>
+                  {isAdmin && <th className="py-3 px-4">Monthly Salary</th>}
                   <th className="py-3 px-4">Assigned Route</th>
                   <th className="py-3 px-4 text-center">Duty Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
@@ -493,14 +528,16 @@ export default function ManageStaff() {
                         {staff.cnic || '—'}
                       </td>
 
-                      <td className="py-3 px-4 font-mono tabular">
-                        <span className="font-black text-slate-900">
-                          Rs. {Number(staff.monthlySalary || 0).toLocaleString()}
-                        </span>
-                        <span className="text-[10px] text-slate-400 block font-normal">
-                          (~Rs. {staff.dailySalary || Math.round((staff.monthlySalary || 0) / 30)}/d)
-                        </span>
-                      </td>
+                      {isAdmin && (
+                        <td className="py-3 px-4 font-mono tabular">
+                          <span className="font-black text-slate-900">
+                            Rs. {Number(staff.monthlySalary || 0).toLocaleString()}
+                          </span>
+                          <span className="text-[10px] text-slate-400 block font-normal">
+                            (~Rs. {staff.dailySalary || Math.round((staff.monthlySalary || 0) / 30)}/d)
+                          </span>
+                        </td>
+                      )}
 
                       <td className="py-3 px-4">
                         {isDelivery ? (
@@ -550,14 +587,16 @@ export default function ManageStaff() {
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            type="button"
-                            onClick={(e) => handleDeleteStaff(e, staff)}
-                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition cursor-pointer"
-                            title="Delete Staff"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteStaff(e, staff)}
+                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition cursor-pointer"
+                              title="Delete Staff"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

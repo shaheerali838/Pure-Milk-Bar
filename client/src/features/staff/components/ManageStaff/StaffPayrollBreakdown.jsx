@@ -1,9 +1,30 @@
 import React from 'react';
-import { DollarSign, CreditCard, Building2, Calendar, FileText, CheckCircle2 } from 'lucide-react';
+import { DollarSign, CreditCard, Building2, Calendar, FileText, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { Typography } from '@/components/common/Typography';
+import { useAuth } from '@/context/AuthContext';
+import { ROLES } from '@/config/rbac.config';
 
 export default function StaffPayrollBreakdown({ staff }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === ROLES.ADMIN;
+
   if (!staff) return null;
+
+  if (!isAdmin) {
+    return (
+      <div className="p-8 rounded-2xl border border-slate-200 bg-slate-50/70 text-center space-y-2 shadow-2xs">
+        <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto mb-2">
+          <ShieldCheck className="w-5 h-5" />
+        </div>
+        <h4 className="text-xs font-bold text-slate-900">
+          Payroll &amp; Compensation Data is Protected
+        </h4>
+        <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+          Staff salary structures, wage rates, and financial disbursements are confidential and accessible exclusively by the Owner/Admin.
+        </p>
+      </div>
+    );
+  }
 
   const monthlySalary = Number(staff.monthlySalary || 0);
   const dailyRate = Math.round(monthlySalary / 30);

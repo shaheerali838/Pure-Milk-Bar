@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import validate from '../../../middlewares/validate.js';
+import { authenticate } from '../../../middlewares/authenticate.js';
+import { authorize } from '../../../middlewares/authorize.js';
 
 // Controllers
 import animalController from '../controllers/animal.controller.js';
@@ -23,53 +25,50 @@ import {
 
 const router = Router();
 
+// Protect all Farm routes
+router.use(authenticate);
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  ANIMAL ROUTES — /api/farm/animals
 // ═══════════════════════════════════════════════════════════════════════════
 
 router.get(
   '/animals/stats',
-  // authenticate,
-  // authorize(['ADMIN', 'MANAGER', 'FARM_SUPERVISOR']),
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR'),
   animalController.getAnimalStats
 );
 
 router.post(
   '/animals',
-  // authenticate,
-  // authorize(['ADMIN', 'MANAGER', 'FARM_SUPERVISOR']),
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR'),
   validate({ body: createAnimalSchema }),
   animalController.createAnimal
 );
 
 router.get(
   '/animals',
-  // authenticate,
-  // authorize(['ADMIN', 'MANAGER', 'FARM_SUPERVISOR', 'CASHIER']),
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR'),
   validate({ query: getAnimalsQuerySchema }),
   animalController.getAllAnimals
 );
 
 router.get(
   '/animals/:id',
-  // authenticate,
-  // authorize(['ADMIN', 'MANAGER', 'FARM_SUPERVISOR']),
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR'),
   validate({ params: animalIdParamSchema }),
   animalController.getAnimalById
 );
 
 router.patch(
   '/animals/:id',
-  // authenticate,
-  // authorize(['ADMIN', 'MANAGER', 'FARM_SUPERVISOR']),
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR'),
   validate({ params: animalIdParamSchema, body: updateAnimalSchema }),
   animalController.updateAnimal
 );
 
 router.delete(
   '/animals/:id',
-  // authenticate,
-  // authorize(['ADMIN', 'MANAGER']),
+  authorize('ADMIN', 'MANAGER'),
   validate({ params: animalIdParamSchema }),
   animalController.deleteAnimal
 );
@@ -80,47 +79,41 @@ router.delete(
 
 router.get(
   '/milking-logs/daily-summary',
-  // authenticate,
-  // authorize(['ADMIN', 'MANAGER', 'FARM_SUPERVISOR']),
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR'),
   milkingYieldLogController.getDailyYieldSummary
 );
 
 router.post(
   '/milking-logs',
-  // authenticate,
-  // authorize(['ADMIN', 'MANAGER', 'FARM_SUPERVISOR']),
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR'),
   validate({ body: createMilkingYieldLogSchema }),
   milkingYieldLogController.createMilkingYieldLog
 );
 
 router.get(
   '/milking-logs',
-  // authenticate,
-  // authorize(['ADMIN', 'MANAGER', 'FARM_SUPERVISOR', 'CASHIER']),
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR'),
   validate({ query: getMilkingYieldLogsQuerySchema }),
   milkingYieldLogController.getAllMilkingYieldLogs
 );
 
 router.get(
   '/milking-logs/:id',
-  // authenticate,
-  // authorize(['ADMIN', 'MANAGER', 'FARM_SUPERVISOR']),
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR'),
   validate({ params: milkingYieldLogIdParamSchema }),
   milkingYieldLogController.getMilkingYieldLogById
 );
 
 router.patch(
   '/milking-logs/:id',
-  // authenticate,
-  // authorize(['ADMIN', 'MANAGER', 'FARM_SUPERVISOR']),
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR'),
   validate({ params: milkingYieldLogIdParamSchema, body: updateMilkingYieldLogSchema }),
   milkingYieldLogController.updateMilkingYieldLog
 );
 
 router.delete(
   '/milking-logs/:id',
-  // authenticate,
-  // authorize(['ADMIN', 'MANAGER']),
+  authorize('ADMIN', 'MANAGER'),
   validate({ params: milkingYieldLogIdParamSchema }),
   milkingYieldLogController.deleteMilkingYieldLog
 );

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { NavLink, useNavigate, Link, useLocation } from "react-router-dom";
 import {
   Milk,
@@ -23,16 +23,19 @@ import {
   GraduationCap,
 } from "lucide-react";
 
-import { reconciliationLinks } from '@/components/common/Reconciliation_links';
+import { reconciliationLinks as rawReconciliationLinks } from '@/components/common/Reconciliation_links';
 import { useAuth } from '@/context/AuthContext';
+import { ROLES } from '@/config/rbac.config';
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen = false, onClose }) {
   const { pathname } = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const profileMenuRef = useRef(null);
+
+  const currentRole = user?.role || ROLES.ADMIN;
 
   // Close popup when clicking outside
   useEffect(() => {
@@ -54,308 +57,349 @@ export default function Sidebar() {
     setIsProfileOpen(false);
     logout();
     navigate('/login');
+    if (onClose) onClose();
   };
 
-  // 1. Operations Command
-  const operationsLinks = [
-    {
-      id: "Dashboard",
-      name: "Main Dashboard",
-      icon: LayoutGrid,
-      path: "/dashboard",
-    },
-    {
-      id: "Farm",
-      name: "Farm Dashboard",
-      icon: Tractor,
-      path: "/farm",
-    },
-    {
-      id: "Supplier",
-      name: "Supplier Dashboard",
-      icon: Truck,
-      path: "/supplier",
-    },
-  ];
+  const handleLinkClick = () => {
+    if (onClose) onClose();
+  };
 
-  // 2. Sales
-  const salesLinks = [
-    {
-      id: "pos",
-      name: "Counter POS & Sales",
-      icon: ShoppingCart,
-      path: "/pos",
-    },
-  ];
+  // 1. Operations Command Links
+  const operationsLinks = useMemo(() => {
+    const all = [
+      { id: "Dashboard", name: "Main Dashboard", icon: LayoutGrid, path: "/dashboard", roles: [ROLES.ADMIN, ROLES.MANAGER] },
+      { id: "Farm", name: "Farm Dashboard", icon: Tractor, path: "/farm", roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.FARM_SUPERVISOR] },
+      { id: "Supplier", name: "Supplier Dashboard", icon: Truck, path: "/supplier", roles: [ROLES.ADMIN, ROLES.MANAGER] },
+    ];
+    return all.filter((l) => l.roles.includes(currentRole));
+  }, [currentRole]);
 
-  // 3. Production
-  const productionLinks = [
-    {
-      id: "processing",
-      name: "Dahi & Milk Processing",
-      icon: Layers,
-      path: "/dahi",
-    },
-    {
-      id: "products",
-      name: "Products & Pricing",
-      icon: Milk,
-      path: "/products",
-    },
-  ];
+  // 2. Sales Links
+  const salesLinks = useMemo(() => {
+    const all = [
+      { id: "pos", name: "Counter POS & Sales", icon: ShoppingCart, path: "/pos", roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.CASHIER] },
+    ];
+    return all.filter((l) => l.roles.includes(currentRole));
+  }, [currentRole]);
 
-  // 4. Delivery
-  const deliveryLinks = [
-    {
-      id: "doorstep-delivery",
-      name: "Doorstep Deliveries",
-      icon: Truck,
-      path: "/delivery",
-    },
-  ];
+  // 3. Production Links
+  const productionLinks = useMemo(() => {
+    const all = [
+      { id: "processing", name: "Dahi & Milk Processing", icon: Layers, path: "/dahi", roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.FARM_SUPERVISOR] },
+      { id: "products", name: "Products & Pricing", icon: Milk, path: "/products", roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.FARM_SUPERVISOR] },
+    ];
+    return all.filter((l) => l.roles.includes(currentRole));
+  }, [currentRole]);
 
-  // 5. Customers
-  const customerLinks = [
-    {
-      id: "customer",
-      name: "Customer & Accounts",
-      icon: Users,
-      path: "/customer",
-    },
-  ];
+  // 4. Delivery Links
+  const deliveryLinks = useMemo(() => {
+    const all = [
+      { id: "doorstep-delivery", name: "Doorstep Deliveries", icon: Truck, path: "/delivery", roles: [ROLES.ADMIN, ROLES.MANAGER] },
+    ];
+    return all.filter((l) => l.roles.includes(currentRole));
+  }, [currentRole]);
 
-  // 6. Finance
-  const financeLinks = [
-    {
-      id: "finance",
-      name: "Finance",
-      icon: Wallet,
-      path: "/finance",
-    },
-  ];
+  // 5. Customers Links
+  const customerLinks = useMemo(() => {
+    const all = [
+      { id: "customer", name: "Customer & Accounts", icon: Users, path: "/customer", roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.CASHIER] },
+    ];
+    return all.filter((l) => l.roles.includes(currentRole));
+  }, [currentRole]);
+
+  // 6. Finance Links
+  const financeLinks = useMemo(() => {
+    const all = [
+      { id: "finance", name: "Finance", icon: Wallet, path: "/finance", roles: [ROLES.ADMIN] },
+    ];
+    return all.filter((l) => l.roles.includes(currentRole));
+  }, [currentRole]);
+
+  // 7. Reconciliation & Management Links
+  const reconciliationLinks = useMemo(() => {
+    return rawReconciliationLinks.filter((l) => {
+      if (currentRole === ROLES.ADMIN) return true;
+      if (currentRole === ROLES.MANAGER) return l.id !== 'global-settings';
+      if (currentRole === ROLES.CASHIER) return l.id === 'daily-closing';
+      return false; // FARM_SUPERVISOR has no direct reconciliation tabs
+    });
+  }, [currentRole]);
 
   return (
-    <aside className="w-64 bg-white h-screen sticky top-0 flex flex-col border-r border-slate-200/80 shadow-xs shrink-0 select-none z-30">
-      <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-[#00a86b] text-white flex items-center justify-center font-bold shadow-xs shrink-0">
-          <Milk className="w-5 h-5" />
-        </div>
-        <div>
-          <div className="flex items-center gap-1.5">
-            <h1 className="text-sm font-bold text-slate-900 leading-tight">
-              Pure Milk Bar
-            </h1>
-            <span className="px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
-              ERP
-            </span>
-          </div>
-          <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-            Dairy Operations Engine
-          </p>
-        </div>
-      </div>
+    <>
+      {/* Mobile Drawer Backdrop Overlay */}
+      {isOpen && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 lg:hidden transition-opacity duration-300 animate-in fade-in"
+        />
+      )}
 
-      <div className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
-        <div>
-          <nav className="space-y-0.5">
-            {operationsLinks.map((link) => {
-              const Icon = link.icon;
-              return (
-                <NavLink
-                  key={link.id}
-                  to={link.path}
-                  className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                      isActive
-                        ? "bg-[#00a86b] text-white shadow-xs"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`
-                  }
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{link.name}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div>
-          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-            SALES
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white h-screen flex flex-col border-r border-slate-200/80 shadow-2xl lg:shadow-xs shrink-0 select-none transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full bg-[#00a86b] text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+              <Milk className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-sm font-bold text-slate-900 leading-tight">
+                  Pure Milk Bar
+                </h1>
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+                  ERP
+                </span>
+              </div>
+              <p className="text-[10.5px] text-emerald-600 font-semibold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                Dairy Operations Engine
+              </p>
+            </div>
           </div>
-          <nav className="space-y-0.5">
-            {salesLinks.map((link) => {
-              const Icon = link.icon;
-              return (
-                <NavLink
-                  key={link.id}
-                  to={link.path}
-                  className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                      isActive
-                        ? "bg-[#00a86b] text-white shadow-xs"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`
-                  }
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{link.name}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
+
+          {/* Mobile Drawer Close Button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            title="Close Menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        <div>
-          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-            PRODUCTION
+        <div className="flex-1 px-3 py-3 space-y-4 overflow-y-auto">
+        {/* Operations Section */}
+        {operationsLinks.length > 0 && (
+          <div>
+            <nav className="space-y-0.5">
+              {operationsLinks.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <NavLink
+                    key={link.id}
+                    to={link.path}
+                    onClick={handleLinkClick}
+                    className={({ isActive }) =>
+                      `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                        isActive
+                          ? "bg-[#00a86b] text-white shadow-xs"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      }`
+                    }
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{link.name}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
           </div>
-          <nav className="space-y-0.5">
-            {productionLinks.map((link) => {
-              const Icon = link.icon;
-              return (
-                <NavLink
-                  key={link.id}
-                  to={link.path}
-                  className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                      isActive
-                        ? "bg-[#00a86b] text-white shadow-xs"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`
-                  }
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{link.name}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
-        </div>
+        )}
 
-        <div>
-          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-            DELIVERY
+        {/* Sales Section */}
+        {salesLinks.length > 0 && (
+          <div>
+            <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+              SALES
+            </div>
+            <nav className="space-y-0.5">
+              {salesLinks.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <NavLink
+                    key={link.id}
+                    to={link.path}
+                    onClick={handleLinkClick}
+                    className={({ isActive }) =>
+                      `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                        isActive
+                          ? "bg-[#00a86b] text-white shadow-xs"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      }`
+                    }
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{link.name}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
           </div>
-          <nav className="space-y-0.5">
-            {deliveryLinks.map((link) => {
-              const Icon = link.icon;
-              return (
-                <NavLink
-                  key={link.id}
-                  to={link.path}
-                  className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                      isActive
-                        ? "bg-[#00a86b] text-white shadow-xs"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`
-                  }
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{link.name}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
-        </div>
+        )}
 
-        <div>
-          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-            CUSTOMERS
+        {/* Production Section */}
+        {productionLinks.length > 0 && (
+          <div>
+            <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+              PRODUCTION
+            </div>
+            <nav className="space-y-0.5">
+              {productionLinks.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <NavLink
+                    key={link.id}
+                    to={link.path}
+                    onClick={handleLinkClick}
+                    className={({ isActive }) =>
+                      `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                        isActive
+                          ? "bg-[#00a86b] text-white shadow-xs"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      }`
+                    }
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{link.name}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
           </div>
-          <nav className="space-y-0.5">
-            {customerLinks.map((link) => {
-              const Icon = link.icon;
-              return (
-                <NavLink
-                  key={link.id}
-                  to={link.path}
-                  className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                      isActive
-                        ? "bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`
-                  }
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{link.name}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
-        </div>
+        )}
 
-        <div>
-          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-            FINANCE
+        {/* Delivery Section */}
+        {deliveryLinks.length > 0 && (
+          <div>
+            <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+              DELIVERY
+            </div>
+            <nav className="space-y-0.5">
+              {deliveryLinks.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <NavLink
+                    key={link.id}
+                    to={link.path}
+                    onClick={handleLinkClick}
+                    className={({ isActive }) =>
+                      `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                        isActive
+                          ? "bg-[#00a86b] text-white shadow-xs"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      }`
+                    }
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{link.name}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
           </div>
-          <nav className="space-y-0.5">
-            {financeLinks.map((link) => {
-              const Icon = link.icon;
-              return (
-                <NavLink
-                  key={link.id}
-                  to={link.path}
-                  className={({ isActive }) => {
-                    const isFinanceActive =
-                      (isActive || pathname.startsWith("/finance")) &&
-                      !pathname.startsWith("/finance/daily-closing") &&
-                      !pathname.startsWith("/finance/audit-log") &&
-                      pathname !== "/daily-closing" &&
-                      pathname !== "/dailyclosing" &&
-                      pathname !== "/audit-log" &&
-                      pathname !== "/audit" &&
-                      pathname !== "/transactions";
-                    return `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                      isFinanceActive
-                        ? "bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`;
-                  }}
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{link.name}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
-        </div>
+        )}
 
-        <div>
-          <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-            RECONCILIATION & MANAGEMENT
+        {/* Customers Section */}
+        {customerLinks.length > 0 && (
+          <div>
+            <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+              CUSTOMERS
+            </div>
+            <nav className="space-y-0.5">
+              {customerLinks.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <NavLink
+                    key={link.id}
+                    to={link.path}
+                    onClick={handleLinkClick}
+                    className={({ isActive }) =>
+                      `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                        isActive
+                          ? "bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      }`
+                    }
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{link.name}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
           </div>
-          <nav className="space-y-0.5">
-            {reconciliationLinks.map((link) => {
-              const Icon = link.icon;
-              return (
-                <NavLink
-                  key={link.id}
-                  to={link.path}
-                  className={({ isActive }) => {
-                    const isCurrentActive =
-                      isActive ||
-                      pathname === link.path ||
-                      (link.path === '/finance/daily-closing' && (pathname === '/daily-closing' || pathname === '/dailyclosing')) ||
-                      (link.path === '/finance/audit-log' && (pathname === '/audit-log' || pathname === '/audit' || pathname === '/transactions'));
-                    return `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                      isCurrentActive
-                        ? 'bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                    }`;
-                  }}
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{link.name}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
-        </div>
+        )}
+
+        {/* Finance Section */}
+        {financeLinks.length > 0 && (
+          <div>
+            <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+              FINANCE
+            </div>
+            <nav className="space-y-0.5">
+              {financeLinks.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <NavLink
+                    key={link.id}
+                    to={link.path}
+                    onClick={handleLinkClick}
+                    className={({ isActive }) => {
+                      const isFinanceActive =
+                        (isActive || pathname.startsWith("/finance")) &&
+                        !pathname.startsWith("/finance/daily-closing") &&
+                        !pathname.startsWith("/finance/audit-log") &&
+                        pathname !== "/daily-closing" &&
+                        pathname !== "/dailyclosing" &&
+                        pathname !== "/audit-log" &&
+                        pathname !== "/audit" &&
+                        pathname !== "/transactions";
+                      return `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                        isFinanceActive
+                          ? "bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      }`;
+                    }}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{link.name}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
+          </div>
+        )}
+
+        {/* Reconciliation & Management Section */}
+        {reconciliationLinks.length > 0 && (
+          <div>
+            <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
+              RECONCILIATION & MANAGEMENT
+            </div>
+            <nav className="space-y-0.5">
+              {reconciliationLinks.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <NavLink
+                    key={link.id}
+                    to={link.path}
+                    onClick={handleLinkClick}
+                    className={({ isActive }) => {
+                      const isCurrentActive =
+                        isActive ||
+                        pathname === link.path ||
+                        (link.path === '/finance/daily-closing' && (pathname === '/daily-closing' || pathname === '/dailyclosing')) ||
+                        (link.path === '/finance/audit-log' && (pathname === '/audit-log' || pathname === '/audit' || pathname === '/transactions'));
+                      return `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                        isCurrentActive
+                          ? 'bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      }`;
+                    }}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{link.name}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
+          </div>
+        )}
       </div>
 
       <div className="p-2 border-t border-slate-100 bg-slate-50/70 space-y-1.5">
@@ -394,14 +438,16 @@ export default function Sidebar() {
 
                 {/* Popover Action Links */}
                 <div className="space-y-0.5">
-                  <Link
-                    to="/settings"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <UserIcon className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                    <span>My Profile &amp; Settings</span>
-                  </Link>
+                  {currentRole === ROLES.ADMIN && (
+                    <Link
+                      to="/settings"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
+                    >
+                      <UserIcon className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                      <span>My Profile &amp; Settings</span>
+                    </Link>
+                  )}
 
                   <button
                     type="button"
@@ -449,11 +495,11 @@ export default function Sidebar() {
                     <ShieldCheck className="w-3 h-3 shrink-0" />
                     <span>
                       {user.roleLabel ||
-                        (user.role === 'ADMIN'
-                          ? 'System Administrator'
-                          : user.role === 'MANAGER'
+                        (user.role === ROLES.ADMIN
+                          ? 'Owner & Administrator'
+                          : user.role === ROLES.MANAGER
                           ? 'Branch Manager'
-                          : user.role === 'CASHIER'
+                          : user.role === ROLES.CASHIER
                           ? 'POS Cashier'
                           : 'Farm Supervisor')}
                     </span>
@@ -551,5 +597,6 @@ export default function Sidebar() {
         </div>
       )}
     </aside>
+    </>
   );
 }

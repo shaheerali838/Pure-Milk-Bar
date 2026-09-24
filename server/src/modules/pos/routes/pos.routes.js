@@ -18,41 +18,37 @@ import {
 
 const router = Router();
 
-// Optional/Protected: Uncomment to enforce JWT token on all POS routes
-// router.use(authenticate);
+// Protect all POS routes
+router.use(authenticate);
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  POS STATS & RECEIPT LOOKUP (Declared before :id parameter)
+//  POS STATS & RECEIPT LOOKUP
 // ═══════════════════════════════════════════════════════════════════════════
 
 router.get(
   '/stats/daily',
-  // authenticate,
-  // authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  authorize('ADMIN', 'MANAGER', 'CASHIER'),
   validate({ query: dailySalesStatsQuerySchema }),
   orderController.getDailySalesStats
 );
 
 router.get(
   '/orders/stats/daily',
-  // authenticate,
-  // authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  authorize('ADMIN', 'MANAGER', 'CASHIER'),
   validate({ query: dailySalesStatsQuerySchema }),
   orderController.getDailySalesStats
 );
 
 router.get(
   '/receipt/:receiptNumber',
-  // authenticate,
-  // authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  authorize('ADMIN', 'MANAGER', 'CASHIER'),
   validate({ params: receiptNumberParamSchema }),
   orderController.getOrderByReceiptNumber
 );
 
 router.get(
   '/orders/receipt/:receiptNumber',
-  // authenticate,
-  // authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  authorize('ADMIN', 'MANAGER', 'CASHIER'),
   validate({ params: receiptNumberParamSchema }),
   orderController.getOrderByReceiptNumber
 );
@@ -63,64 +59,56 @@ router.get(
 
 router.post(
   '/orders',
-  // authenticate,
-  // authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  authorize('ADMIN', 'MANAGER', 'CASHIER'),
   validate({ body: createOrderSchema }),
   orderController.createOrder
 );
 
 router.post(
   '/',
-  // authenticate,
-  // authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  authorize('ADMIN', 'MANAGER', 'CASHIER'),
   validate({ body: createOrderSchema }),
   orderController.createOrder
 );
 
 router.get(
   '/orders',
-  // authenticate,
-  // authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  authorize('ADMIN', 'MANAGER', 'CASHIER'),
   validate({ query: getOrdersQuerySchema }),
   orderController.getAllOrders
 );
 
 router.get(
   '/',
-  // authenticate,
-  // authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  authorize('ADMIN', 'MANAGER', 'CASHIER'),
   validate({ query: getOrdersQuerySchema }),
   orderController.getAllOrders
 );
 
 router.get(
   '/orders/:id',
-  // authenticate,
-  // authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  authorize('ADMIN', 'MANAGER', 'CASHIER'),
   validate({ params: orderIdParamSchema }),
   orderController.getOrderById
 );
 
 router.get(
   '/:id',
-  // authenticate,
-  // authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  authorize('ADMIN', 'MANAGER', 'CASHIER'),
   validate({ params: orderIdParamSchema }),
   orderController.getOrderById
 );
 
 router.post(
   '/orders/:id/cancel',
-  // authenticate,
-  // authorize('ADMIN', 'MANAGER'),
+  authorize('ADMIN', 'MANAGER'),
   validate({ params: orderIdParamSchema, body: cancelOrderSchema }),
   orderController.cancelOrder
 );
 
 router.post(
   '/:id/cancel',
-  // authenticate,
-  // authorize('ADMIN', 'MANAGER'),
+  authorize('ADMIN', 'MANAGER'),
   validate({ params: orderIdParamSchema, body: cancelOrderSchema }),
   orderController.cancelOrder
 );

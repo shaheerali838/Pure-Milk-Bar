@@ -24,23 +24,23 @@ export default function FarmNav() {
   const { pathname } = useLocation();
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-1.5">
+    <div className="w-full overflow-x-auto no-scrollbar py-1">
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-max">
         {tabs.map(({ to, label, icon: Icon, color }) => {
           const isActive = to === '/farm' ? (pathname === '/farm' || pathname === '/farm/') : pathname.startsWith(to);
           return (
             <NavLink
               key={to}
               to={to}
-              className="flex items-center justify-center gap-1.5 px-4 h-[42px] rounded-full whitespace-nowrap transition-all duration-150 hover:brightness-110 hover:-translate-y-px active:translate-y-0 cursor-pointer"
+              className="flex items-center justify-center gap-2 px-4 h-[38px] sm:h-[40px] rounded-full whitespace-nowrap shrink-0 transition-all duration-150 hover:brightness-110 hover:-translate-y-px active:translate-y-0 cursor-pointer shadow-xs"
               style={{
                 background: isActive ? color : `${color}dd`,
-                boxShadow: isActive ? `0 4px 16px ${color}55` : 'none',
-                border: isActive ? '2px solid rgba(255,255,255,0.28)' : '2px solid transparent',
+                boxShadow: isActive ? `0 4px 14px ${color}66` : 'none',
+                border: isActive ? '2px solid rgba(255,255,255,0.45)' : '2px solid transparent',
               }}
             >
-              <Icon className="w-[14px] h-[14px] shrink-0 text-white" />
-              <span className="text-[12px] sm:text-[13px] font-semibold text-white leading-none">{label}</span>
+              <Icon className="w-4 h-4 shrink-0 text-white" />
+              <span className="text-xs sm:text-[13px] font-bold text-white leading-none tracking-tight">{label}</span>
             </NavLink>
           );
         })}

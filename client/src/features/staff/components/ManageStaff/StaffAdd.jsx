@@ -22,6 +22,8 @@ import {
   Layers,
 } from 'lucide-react';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
+import { useAuth } from '@/context/AuthContext';
+import { ROLES } from '@/config/rbac.config';
 import ImageUpload from '@/components/common/ImageUpload';
 
 const ROLE_OPTIONS = [
@@ -76,6 +78,9 @@ const initialForm = {
 };
 
 export default function StaffAdd({ onBack, onClose, editingStaff = null, onSuccess }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === ROLES.ADMIN;
+
   const { addStaff, updateStaff } = useStaffPayrollContext();
   const handleBack = onBack || onClose;
   const isEdit = Boolean(editingStaff);
@@ -374,35 +379,46 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null, onSucce
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Monthly Base Salary (PKR) <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-[11px]">
-                    Rs.
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    name="monthlySalary"
-                    value={formData.monthlySalary}
-                    onChange={handleChange}
-                    placeholder="35000"
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
-                  />
-                </div>
-              </div>
+              {isAdmin ? (
+                <>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Monthly Base Salary (PKR) <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-[11px]">
+                        Rs.
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        required
+                        name="monthlySalary"
+                        value={formData.monthlySalary}
+                        onChange={handleChange}
+                        placeholder="35000"
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
+                      />
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Calculated Daily Wage
-                </label>
-                <div className="px-3 py-2 bg-emerald-50/70 border border-emerald-200/80 rounded-lg text-emerald-800 font-mono font-black text-xs">
-                  Rs. {calculatedDailySalary.toLocaleString()} / day
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Calculated Daily Wage
+                    </label>
+                    <div className="px-3 py-2 bg-emerald-50/70 border border-emerald-200/80 rounded-lg text-emerald-800 font-mono font-black text-xs">
+                      Rs. {calculatedDailySalary.toLocaleString()} / day
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="col-span-2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="text-[11px] font-semibold text-slate-600">
+                    Salary terms &amp; financial compensation are managed exclusively by the Owner.
+                  </span>
                 </div>
-              </div>
+              )}
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">

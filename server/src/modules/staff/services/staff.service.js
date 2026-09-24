@@ -1,8 +1,22 @@
 import Staff from '../../../models/Staff.model.js';
 import User from '../../../models/User.model.js';
+import { ROLES } from '../../../config/rbac.config.js';
+
+// Helper to sanitize/redact sensitive financial fields for MANAGER role
+const sanitizeStaffForRole = (staffDoc, userRole) => {
+  if (!staffDoc) return null;
+  const staffObj = staffDoc.toObject ? staffDoc.toObject() : { ...staffDoc };
+
+  if (userRole === ROLES.MANAGER) {
+    delete staffObj.monthlySalary;
+    delete staffObj.dailySalary;
+  }
+
+  return staffObj;
+};
 
 // Create a new staff member
-export const createStaffService = async (staffData, adminUserId) => {
+export const createStaffService = async (staffData, user) => {
   const {
     name,
     role = 'Farm Work Man',
@@ -23,7 +37,7 @@ export const createStaffService = async (staffData, adminUserId) => {
 
   const contactPhone = (mobile || phone || '').trim();
 
-  // If phone is provided, optionally check if another staff has it
+  // If phone is provided, verify uniqueness
   if (contactPhone) {
     const existingStaff = await Staff.findOne({ mobile: contactPhone });
     if (existingStaff) {
@@ -33,10 +47,17 @@ export const createStaffService = async (staffData, adminUserId) => {
     }
   }
 
-  // Calculate daily salary if not explicitly provided
-  const computedDaily = dailySalary !== undefined && dailySalary !== null
-    ? Number(dailySalary)
-    : Math.round((Number(monthlySalary) || 0) / 30);
+  const isManager = user?.role === ROLES.MANAGER;
+
+  // Manager cannot set salary or terminate on creation
+  const effectiveMonthlySalary = isManager ? 0 : (Number(monthlySalary) || 0);
+  const computedDaily = isManager
+    ? 0
+    : (dailySalary !== undefined && dailySalary !== null
+        ? Number(dailySalary)
+        : Math.round(effectiveMonthlySalary / 30));
+
+  const initialStatus = (isManager && status === 'Terminated') ? 'Active' : status;
 
   const newStaff = await Staff.create({
     staffCode,
@@ -46,21 +67,21 @@ export const createStaffService = async (staffData, adminUserId) => {
     email: (email || '').trim().toLowerCase(),
     cnic: (cnic || '').trim(),
     shift,
-    monthlySalary: Number(monthlySalary) || 0,
+    monthlySalary: effectiveMonthlySalary,
     dailySalary: computedDaily,
-    status,
+    status: initialStatus,
     route: (route || '').trim() || 'Not Assigned',
     joinedDate: joinedDate ? new Date(joinedDate) : new Date(),
     notes: (notes || '').trim(),
-    userAccountId: userAccountId || null,
-    createdBy: adminUserId || null,
+    userAccountId: isManager ? null : (userAccountId || null),
+    createdBy: user?.id || null,
   });
 
-  return newStaff;
+  return sanitizeStaffForRole(newStaff, user?.role);
 };
 
 // Get all staff members with filters, search, and pagination
-export const getAllStaffService = async (queryParams = {}) => {
+export const getAllStaffService = async (queryParams = {}, user) => {
   const {
     search = '',
     role,
@@ -110,8 +131,13 @@ export const getAllStaffService = async (queryParams = {}) => {
   const sortDirection = sortOrder === 'asc' ? 1 : -1;
   const sortOption = { [sortBy]: sortDirection };
 
-  const [staff, total] = await Promise.all([
+  // If Manager, exclude sensitive salary fields in projection
+  const isManager = user?.role === ROLES.MANAGER;
+  const selectFields = isManager ? '-monthlySalary -dailySalary' : '';
+
+  const [staffList, total] = await Promise.all([
     Staff.find(filter)
+      .select(selectFields)
       .sort(sortOption)
       .skip(skip)
       .limit(limitNum)
@@ -123,7 +149,7 @@ export const getAllStaffService = async (queryParams = {}) => {
   const totalPages = Math.ceil(total / limitNum);
 
   return {
-    staff,
+    staff: staffList,
     pagination: {
       total,
       page: pageNum,
@@ -136,8 +162,12 @@ export const getAllStaffService = async (queryParams = {}) => {
 };
 
 // Get single staff profile by ID
-export const getStaffByIdService = async (staffId) => {
+export const getStaffByIdService = async (staffId, user) => {
+  const isManager = user?.role === ROLES.MANAGER;
+  const selectFields = isManager ? '-monthlySalary -dailySalary' : '';
+
   const staff = await Staff.findById(staffId)
+    .select(selectFields)
     .populate('userAccountId', 'username email role isActive')
     .populate('createdBy', 'name username');
 
@@ -151,12 +181,26 @@ export const getStaffByIdService = async (staffId) => {
 };
 
 // Update staff profile
-export const updateStaffService = async (staffId, updateData) => {
+export const updateStaffService = async (staffId, updateData, user) => {
   const staff = await Staff.findById(staffId);
   if (!staff) {
     const error = new Error('Staff member not found.');
     error.statusCode = 404;
     throw error;
+  }
+
+  const isManager = user?.role === ROLES.MANAGER;
+
+  // Protect sensitive fields from Manager modifications
+  if (isManager) {
+    delete updateData.monthlySalary;
+    delete updateData.dailySalary;
+    delete updateData.userAccountId;
+
+    // Prevent Manager from setting status to Terminated
+    if (updateData.status === 'Terminated') {
+      delete updateData.status;
+    }
   }
 
   const contactPhone = (updateData.mobile || updateData.phone || '').trim();
@@ -179,17 +223,28 @@ export const updateStaffService = async (staffId, updateData) => {
   Object.assign(staff, updateData);
   await staff.save();
 
+  const selectFields = isManager ? '-monthlySalary -dailySalary' : '';
   return await Staff.findById(staffId)
+    .select(selectFields)
     .populate('userAccountId', 'username email role isActive')
     .populate('createdBy', 'name username');
 };
 
 // Update staff status (Active, On Leave, Inactive, etc.)
-export const setStaffStatusService = async (staffId, status) => {
+export const setStaffStatusService = async (staffId, status, user) => {
+  if (user?.role === ROLES.MANAGER && status === 'Terminated') {
+    const error = new Error('Forbidden: Terminating staff members requires Owner (ADMIN) authorization.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const isManager = user?.role === ROLES.MANAGER;
+  const selectFields = isManager ? '-monthlySalary -dailySalary' : '';
+
   const staff = await Staff.findByIdAndUpdate(
     staffId,
     { $set: { status } },
-    { returnDocument: 'after', runValidators: true }
+    { returnDocument: 'after', runValidators: true, select: selectFields }
   );
 
   if (!staff) {
@@ -201,7 +256,7 @@ export const setStaffStatusService = async (staffId, status) => {
   return staff;
 };
 
-// Delete staff member
+// Delete staff member (ADMIN strictly enforced)
 export const deleteStaffService = async (staffId) => {
   const staff = await Staff.findByIdAndDelete(staffId);
   if (!staff) {
@@ -213,8 +268,10 @@ export const deleteStaffService = async (staffId) => {
   return { message: `Staff member '${staff.name}' (${staff.staffCode || staff._id}) removed successfully.` };
 };
 
-// Get live aggregate statistics for staff
-export const getStaffStatsService = async () => {
+// Get live aggregate statistics for staff (Redacts payroll for Manager)
+export const getStaffStatsService = async (user) => {
+  const isManager = user?.role === ROLES.MANAGER;
+
   const [totalStaff, activeStaff, onLeaveStaff, inactiveStaff, roleAggregation, totalSalaryAgg] =
     await Promise.all([
       Staff.countDocuments(),
@@ -226,28 +283,30 @@ export const getStaffStatsService = async () => {
           $group: {
             _id: '$role',
             count: { $sum: 1 },
-            totalSalary: { $sum: '$monthlySalary' },
+            totalSalary: isManager ? { $sum: 0 } : { $sum: '$monthlySalary' },
           },
         },
       ]),
-      Staff.aggregate([
-        {
-          $group: {
-            _id: null,
-            totalMonthlyPayroll: { $sum: '$monthlySalary' },
-          },
-        },
-      ]),
+      isManager
+        ? Promise.resolve([{ totalMonthlyPayroll: 0 }])
+        : Staff.aggregate([
+            {
+              $group: {
+                _id: null,
+                totalMonthlyPayroll: { $sum: '$monthlySalary' },
+              },
+            },
+          ]),
     ]);
 
-  const totalMonthlyPayrollObligation = totalSalaryAgg[0]?.totalMonthlyPayroll || 0;
+  const totalMonthlyPayrollObligation = isManager ? 0 : (totalSalaryAgg[0]?.totalMonthlyPayroll || 0);
 
   return {
     totalStaff,
     activeStaff,
     onLeaveStaff,
     inactiveStaff,
-    totalMonthlyPayrollObligation,
+    totalMonthlyPayrollObligation: isManager ? undefined : totalMonthlyPayrollObligation,
     byRole: roleAggregation,
   };
 };

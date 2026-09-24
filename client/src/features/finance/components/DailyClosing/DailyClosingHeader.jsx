@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Typography } from '@/components/common/Typography';
+import { useAuth } from '@/context/AuthContext';
+import { ROLES } from '@/config/rbac.config';
 
 export default function DailyClosingHeader({
   period = 'today',
@@ -37,6 +39,9 @@ export default function DailyClosingHeader({
   const formattedRange = startDate && endDate
     ? `${new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
     : formattedDate;
+
+  const { user } = useAuth();
+  const canCloseDay = user?.role === ROLES.ADMIN || user?.role === ROLES.MANAGER;
 
   return (
     <div className="space-y-2 pb-4 border-b border-slate-200/80">
@@ -97,16 +102,18 @@ export default function DailyClosingHeader({
             Export CSV
           </Button>
 
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            onClick={onOpenConfirmDialog}
-            className="cursor-pointer font-bold text-xs bg-[#00a86b] hover:bg-[#008f5b] text-white shadow-xs"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-            Confirm Daily Closing
-          </Button>
+          {canCloseDay && (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={onOpenConfirmDialog}
+              className="cursor-pointer font-bold text-xs bg-[#00a86b] hover:bg-[#008f5b] text-white shadow-xs"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+              Confirm Daily Closing
+            </Button>
+          )}
         </div>
       </div>
 

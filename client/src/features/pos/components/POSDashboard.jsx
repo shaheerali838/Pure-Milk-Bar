@@ -204,9 +204,9 @@ export default function POSDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
         <div className="lg:col-span-7 space-y-2 ">
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs space-y-3">
-            <div className="space-y-2.5 flex items-center gap-2 justify-between">
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-sm text-slate-700 w-full sm:w-72 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 shadow-2xs space-y-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 justify-between">
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-3.5 py-1.5 text-sm text-slate-700 w-full sm:w-72 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
                 <Search className="w-4 h-4 text-slate-400 shrink-0" />
                 <input
                   type="text"
@@ -217,10 +217,10 @@ export default function POSDashboard() {
                 />
               </div>
 
-              <div className="block bg-slate-100 rounded-full px-2 py-2">
+              <div className="flex items-center gap-1 bg-slate-100 rounded-full p-1 overflow-x-auto no-scrollbar">
                 {[
                   { id: 'all', label: 'All Items' },
-                  { id: 'milk', label: ' Milk' },
+                  { id: 'milk', label: 'Milk' },
                   { id: 'dahi', label: 'Dahi' },
                   { id: 'lassi', label: 'Lassi' },
                 ].map((cat) => (
@@ -228,10 +228,11 @@ export default function POSDashboard() {
                     key={cat.id}
                     type="button"
                     onClick={() => setSelectedCategory(cat.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${selectedCategory === cat.id
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                      selectedCategory === cat.id
                         ? 'bg-slate-900 text-white shadow-2xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'
-                      }`}
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    }`}
                   >
                     {cat.label}
                   </button>
@@ -254,7 +255,7 @@ export default function POSDashboard() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                 {filteredProducts.map((product, idx) => {
                   const prodId = product.id || product._id || product.sku || `prod-${idx}`;
                   const cartItem = cart.find((i) => i.id === prodId || (product.id && i.id === product.id));
