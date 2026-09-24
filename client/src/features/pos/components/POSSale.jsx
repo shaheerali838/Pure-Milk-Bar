@@ -126,7 +126,7 @@ export default function POSSale() {
         const supCow = Number(inventoryMetrics?.supplierCowMilkStock) || 0;
         return farmCow + supCow;
       }
-      if (isBuff) {
+      if (isBuff) {a
         const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock) || 0;
         const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock) || 0;
         return farmBuff + supBuff;

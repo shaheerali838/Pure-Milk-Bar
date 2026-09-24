@@ -893,9 +893,9 @@ export function POSProvider({ children }) {
       });
     }
 
-    const resolved = logSum;
-    const resolvedCow = cowLogs;
-    const resolvedBuff = buffLogs;
+    const resolved = logSum > 0 ? logSum : baselineSum;
+    const resolvedCow = logSum > 0 ? cowLogs : cowBaseline;
+    const resolvedBuff = logSum > 0 ? buffLogs : buffBaseline;
 
     return {
       totalFarmMilk: Number(resolved.toFixed(1)),

@@ -16,7 +16,6 @@ import POSSale from './POSSale';
 import POSReceiptModal from './POSReceiptModal';
 import ProductDetailModal from '@/features/inventory/components/ProductDetailModal';
 import POSSalesSourceDetail from './POSSalesSourceDetail';
-import POSSalesHistory from './POSSalesHistory';
 
 export default function POSDashboard() {
   const {
@@ -200,8 +199,6 @@ export default function POSDashboard() {
       </div>
 
       <POSCardOverflow onSelectSource={setSelectedSalesSource} />
-
-      <POSSalesHistory compact />
 
 
 
