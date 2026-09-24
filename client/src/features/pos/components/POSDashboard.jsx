@@ -16,6 +16,7 @@ import POSSale from './POSSale';
 import POSReceiptModal from './POSReceiptModal';
 import ProductDetailModal from '@/features/inventory/components/ProductDetailModal';
 import POSSalesSourceDetail from './POSSalesSourceDetail';
+import POSSalesHistory from './POSSalesHistory';
 
 export default function POSDashboard() {
   const {
@@ -67,29 +68,15 @@ export default function POSDashboard() {
     }
 
     if (cat.includes('milk') || name.includes('milk')) {
-      if (src.includes('supplier')) {
-        if (isCow) {
-          const s = Number(inventoryMetrics?.supplierCowMilkStock);
-          if (!isNaN(s) && s >= 0) return s;
-        }
-        if (isBuff) {
-          const s = Number(inventoryMetrics?.supplierBuffaloMilkStock);
-          if (!isNaN(s) && s >= 0) return s;
-        }
-        const liveSup = Number(inventoryMetrics?.supplierMilkStock);
-        if (!isNaN(liveSup) && liveSup >= 0) return liveSup;
+      if (isCow) {
+        const farmCow = Number(inventoryMetrics?.farmCowMilkStock) || 0;
+        const supCow = Number(inventoryMetrics?.supplierCowMilkStock) || 0;
+        return farmCow + supCow;
       }
-      if (src.includes('farm')) {
-        if (isCow) {
-          const s = Number(inventoryMetrics?.farmCowMilkStock);
-          if (!isNaN(s) && s >= 0) return s;
-        }
-        if (isBuff) {
-          const s = Number(inventoryMetrics?.farmBuffaloMilkStock);
-          if (!isNaN(s) && s >= 0) return s;
-        }
-        const liveFarm = Number(inventoryMetrics?.farmMilkStock);
-        if (!isNaN(liveFarm) && liveFarm >= 0) return liveFarm;
+      if (isBuff) {
+        const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock) || 0;
+        const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock) || 0;
+        return farmBuff + supBuff;
       }
       const liveTot = Number(inventoryMetrics?.totalMilkStock);
       if (!isNaN(liveTot) && liveTot >= 0) return liveTot;
@@ -110,6 +97,7 @@ export default function POSDashboard() {
     const isDahi = (product.category || '').toLowerCase().includes('dahi') || (product.name || '').toLowerCase().includes('dahi');
     const isCow = (product.name || '').toLowerCase().includes('cow');
     const isBuff = (product.name || '').toLowerCase().includes('buffalo');
+    const isSupplier = (product.source || '').toLowerCase() === 'supplier';
     const unitLabel = product.unit?.replace('per ', '') || (isMilk ? 'L' : isDahi ? 'kg' : 'units');
 
     if (displayStock <= 0) {
@@ -128,16 +116,14 @@ export default function POSDashboard() {
       }, 3000);
 
       toast.error(isCow ? 'Cow milk out of stock hai' : isBuff ? 'Buffalo milk out of stock hai' : `${product.name} out of stock hai`, {
-        description: isCow
-          ? 'Cow milk out of stock hai. Buffalo milk is available on counter.'
-          : `Current inventory is 0 ${unitLabel}. Please record milking yield or supplier intake.`,
+        description: `Current inventory is 0 ${unitLabel}. Please record milking yield or supplier intake.`,
         duration: 3500,
       });
       return;
     }
-
     const cartItem = cart.find((i) => i.id === product.id);
     const inCartQty = cartItem ? cartItem.quantity : 0;
+    // Only block if we actually have stock tracking enabled for this item
     if (inCartQty >= displayStock) {
       setStockWarningId(product.id);
       setStockWarningMsg(`Max stock in cart (${displayStock} ${unitLabel})`);
@@ -214,6 +200,8 @@ export default function POSDashboard() {
       </div>
 
       <POSCardOverflow onSelectSource={setSelectedSalesSource} />
+
+      <POSSalesHistory compact />
 
 
 

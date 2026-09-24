@@ -103,7 +103,41 @@ export default function POSSale() {
 
     // Sale Actions
     handleCompleteSale,
+    inventoryMetrics = {},
+    products = [],
   } = usePOSContext();
+
+  const getProductDisplayStock = (prodId) => {
+    const prod = products.find(p => p.id === prodId) || {};
+    const name = (prod.name || '').toLowerCase();
+    const cat = (prod.category || '').toLowerCase();
+    const isCow = name.includes('cow');
+    const isBuff = name.includes('buffalo');
+
+    if (cat.includes('dahi') || name.includes('dahi')) {
+      const liveDahi = Number(inventoryMetrics?.totalDahiStock);
+      if (!isNaN(liveDahi) && liveDahi >= 0) return liveDahi;
+      return Number(prod.stock) || 0;
+    }
+
+    if (cat.includes('milk') || name.includes('milk')) {
+      if (isCow) {
+        const farmCow = Number(inventoryMetrics?.farmCowMilkStock) || 0;
+        const supCow = Number(inventoryMetrics?.supplierCowMilkStock) || 0;
+        return farmCow + supCow;
+      }
+      if (isBuff) {
+        const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock) || 0;
+        const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock) || 0;
+        return farmBuff + supBuff;
+      }
+      const liveTot = Number(inventoryMetrics?.totalMilkStock);
+      if (!isNaN(liveTot) && liveTot >= 0) return liveTot;
+      return Number(prod.stock) || 0;
+    }
+
+    return Number(prod.stock) || 0;
+  };
 
   // Sync category from URL search params (e.g. /pos?category=delivery)
   useEffect(() => {
@@ -296,7 +330,16 @@ export default function POSSale() {
                           step="0.05"
                           min="0"
                           value={qty === 0 ? '0' : qty}
-                          onChange={(e) => handleUpdateQuantity(item.id, e.target.value)}
+                          onChange={(e) => {
+                            const maxStock = getProductDisplayStock(item.id);
+                            const val = parseFloat(e.target.value);
+                            if (!isNaN(val) && val > maxStock) {
+                               toast.error(`Cannot sell more than available stock (${maxStock} ${unitLabel})`);
+                               handleUpdateQuantity(item.id, maxStock);
+                            } else {
+                               handleUpdateQuantity(item.id, e.target.value);
+                            }
+                          }}
                           className="w-12 text-center text-xs font-bold text-slate-800 outline-none tabular"
                           title="Type quantity in liters/kg"
                         />
@@ -304,7 +347,14 @@ export default function POSSale() {
                           type="button"
                           onClick={() => {
                             const step = qty < 1 ? 0.25 : 0.5;
-                            handleUpdateQuantity(item.id, Number((qty + step).toFixed(2)));
+                            const newQty = Number((qty + step).toFixed(2));
+                            const maxStock = getProductDisplayStock(item.id);
+                            if (newQty > maxStock) {
+                               toast.error(`Cannot sell more than available stock (${maxStock} ${unitLabel})`);
+                               handleUpdateQuantity(item.id, maxStock);
+                            } else {
+                               handleUpdateQuantity(item.id, newQty);
+                            }
                           }}
                           className="px-1.5 py-0.5 text-slate-500 hover:text-slate-800 transition text-xs font-bold cursor-pointer"
                           title="Increase quantity"
@@ -322,7 +372,20 @@ export default function POSSale() {
                           min="0"
                           step="1"
                           value={lineTotal === 0 ? '0' : (lineTotal || '')}
-                          onChange={(e) => handleUpdateByRupees(item.id, e.target.value)}
+                          onChange={(e) => {
+                             const rupees = e.target.value;
+                             const parsed = parseFloat(rupees);
+                             const calcRate = Number(item.price) || 1;
+                             const calculatedQty = (!isNaN(parsed) && parsed > 0 && calcRate > 0) ? Number((parsed / calcRate).toFixed(3)) : 0;
+                             const maxStock = getProductDisplayStock(item.id);
+                             
+                             if (calculatedQty > maxStock) {
+                               toast.error(`Cannot sell more than available stock (${maxStock} ${unitLabel})`);
+                               handleUpdateByRupees(item.id, Math.round(maxStock * calcRate));
+                             } else {
+                               handleUpdateByRupees(item.id, rupees);
+                             }
+                          }}
                           placeholder="Enter value"
                           className="w-14 text-right text-xs font-bold text-indigo-700 outline-none tabular"
                           title="Type amount in rupees (e.g. 100) to auto-calculate liters"
@@ -340,7 +403,16 @@ export default function POSSale() {
                         <button
                           key={rs}
                           type="button"
-                          onClick={() => handleUpdateByRupees(item.id, rs)}
+                          onClick={() => {
+                             const calcL = rate > 0 ? Number((rs / rate).toFixed(2)) : 0;
+                             const maxStock = getProductDisplayStock(item.id);
+                             if (calcL > maxStock) {
+                               toast.error(`Cannot sell more than available stock (${maxStock} ${unitLabel})`);
+                               handleUpdateByRupees(item.id, Math.round(maxStock * rate));
+                             } else {
+                               handleUpdateByRupees(item.id, rs);
+                             }
+                          }}
                           className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border transition cursor-pointer ${
                             isSelected
                               ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
@@ -354,7 +426,15 @@ export default function POSSale() {
                     })}
                     <button
                       type="button"
-                      onClick={() => handleUpdateQuantity(item.id, 0.5)}
+                      onClick={() => {
+                         const maxStock = getProductDisplayStock(item.id);
+                         if (0.5 > maxStock) {
+                           toast.error(`Cannot sell more than available stock (${maxStock} ${unitLabel})`);
+                           handleUpdateQuantity(item.id, maxStock);
+                         } else {
+                           handleUpdateQuantity(item.id, 0.5);
+                         }
+                      }}
                       className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border transition cursor-pointer ${
                         Math.abs(qty - 0.5) < 0.01
                           ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
@@ -366,7 +446,15 @@ export default function POSSale() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleUpdateQuantity(item.id, 1)}
+                      onClick={() => {
+                         const maxStock = getProductDisplayStock(item.id);
+                         if (1 > maxStock) {
+                           toast.error(`Cannot sell more than available stock (${maxStock} ${unitLabel})`);
+                           handleUpdateQuantity(item.id, maxStock);
+                         } else {
+                           handleUpdateQuantity(item.id, 1);
+                         }
+                      }}
                       className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border transition cursor-pointer ${
                         Math.abs(qty - 1) < 0.01
                           ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
@@ -912,7 +1000,12 @@ export default function POSSale() {
         ) : (
           <button
             type="button"
-            onClick={handleCompleteSale}
+            onClick={() => {
+              const result = handleCompleteSale();
+              if (result) {
+                toast.success('Sale completed successfully!');
+              }
+            }}
             className={`w-full py-2.5 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer ${
               saleCategory === "walkin"
                 ? walkinCustomerType === "registered"

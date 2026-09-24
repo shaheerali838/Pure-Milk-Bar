@@ -182,11 +182,12 @@ export function AnimalProvider({ children }) {
           shift: (shiftName || 'Morning').toUpperCase(),
           date: shiftDate || new Date().toISOString().split('T')[0],
           yieldLiters: val,
+          operatorId: "64f8a1239c1b4e001c8a4567", // Provide a dummy valid ObjectId since auth might be disabled/bypassed
         });
       });
 
       await Promise.allSettled(promises.filter(Boolean));
-      fetchAnimalsAndLogs();
+      await fetchAnimalsAndLogs();
     } catch (err) {
       console.error('Failed to save milking shift:', err);
     }

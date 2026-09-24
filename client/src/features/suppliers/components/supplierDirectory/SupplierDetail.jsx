@@ -197,9 +197,17 @@ export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit 
         {/* Profile Hero Section */}
         <div className="bg-[#f8fafc] p-5 rounded-2xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-2xl shadow-xs shrink-0 font-display">
-              {initialLetter}
-            </div>
+            {supplier.image ? (
+              <img
+                src={supplier.image}
+                alt={supplier.name}
+                className="w-16 h-16 rounded-2xl object-cover shadow-xs border border-slate-200"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-2xl shadow-xs shrink-0 font-display">
+                {initialLetter}
+              </div>
+            )}
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-slate-900 font-display">

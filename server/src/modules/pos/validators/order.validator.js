@@ -59,6 +59,7 @@ export const createOrderSchema = Joi.object({
   cashierId: objectId.optional(),
   customerId: objectId.optional().allow(null),
   customerNameSnapshot: Joi.string().trim().max(100).optional().allow('', null),
+  customerPhoneSnapshot: Joi.string().trim().max(30).optional().allow('', null),
   fulfillmentType: Joi.string()
     .valid(...FULFILLMENT_TYPES)
     .default('COUNTER')

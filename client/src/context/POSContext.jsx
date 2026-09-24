@@ -48,38 +48,7 @@ export const DEFAULT_CATALOG = [
     frequency: 'Daily Morning & Evening Batches',
     description: 'Rich creamy high-fat buffalo milk directly from farm herd',
   },
-  {
-    id: 'PRD-SUP-COW-01',
-    sku: 'PRD-SUP-COW-01',
-    name: 'Cow Milk (Supplier)',
-    category: 'Milk',
-    unit: 'per liter',
-    price: 250,
-    cost: 220,
-    source: 'Supplier',
-    stock: 0,
-    status: 'Active',
-    barcode: '890100104',
-    storage: 'Procured Milk Chiller (0 - 4 °C)',
-    frequency: 'Daily Supplier Intake Batches',
-    description: 'Fresh pure cow milk sourced from verified partner dairy suppliers',
-  },
-  {
-    id: 'PRD-SUP-BUF-01',
-    sku: 'PRD-SUP-BUF-01',
-    name: 'Buffalo Milk (Supplier)',
-    category: 'Milk',
-    unit: 'per liter',
-    price: 280,
-    cost: 235,
-    source: 'Supplier',
-    stock: 0,
-    status: 'Active',
-    barcode: '890100105',
-    storage: 'Procured Milk Chiller (0 - 4 °C)',
-    frequency: 'Daily Supplier Intake Batches',
-    description: 'High-fat pure buffalo milk sourced from partner dairy suppliers',
-  },
+
   {
     id: 'PRD-DAHI-01',
     sku: 'PRD-DAHI-01',
@@ -393,12 +362,6 @@ export function POSProvider({ children }) {
     const isBuffalo = /buffalo/i.test(product.name || '');
     const stock = Number(product.stock) || 0;
 
-    // Out-of-stock validation
-    if (isCow && stock <= 0) {
-      toast.error('Cow milk out of stock hai');
-      return;
-    }
-
     const addQty = typeof initialQty === 'number' && initialQty > 0 ? initialQty : 1;
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
@@ -573,10 +536,14 @@ export function POSProvider({ children }) {
         const list = Array.isArray(res) ? res : res?.orders || res?.data || [];
         if (Array.isArray(list)) {
           setSalesHistory(
-            list.map((o) => ({
+            list.filter((o) => !isLegacyDummySale(o)).map((o) => ({
               ...o,
               invoiceId: o.receiptNumber || o.orderNumber || o.invoiceId || (o._id ? `INV-${o._id.slice(-6)}` : `INV-${Date.now()}`),
               netPayable: Number(o.grandTotal || o.netPayable || 0),
+              walkinCustomer: o.walkinCustomer || (o.customerNameSnapshot ? {
+                name: o.customerNameSnapshot,
+                phone: o.customerPhoneSnapshot || 'N/A',
+              } : null),
             }))
           );
         }
@@ -813,6 +780,7 @@ export function POSProvider({ children }) {
       posService.createOrder({
         customerId: validCustomerId,
         customerNameSnapshot: activeCustomer?.name || (saleCategory === 'walkin' ? 'Walk-in Customer' : 'Customer'),
+        customerPhoneSnapshot: activeCustomer?.phone || (saleCategory === 'walkin' ? (walkinPhone.trim() || null) : null),
         fulfillmentType: 'COUNTER',
         items: cart.map((i) => {
           const qty = Number(i.quantity) || 1;
@@ -925,9 +893,9 @@ export function POSProvider({ children }) {
       });
     }
 
-    const resolved = logSum > 0 ? logSum : baselineSum;
-    const resolvedCow = cowLogs > 0 ? cowLogs : cowBaseline;
-    const resolvedBuff = buffLogs > 0 ? buffLogs : buffBaseline;
+    const resolved = logSum;
+    const resolvedCow = cowLogs;
+    const resolvedBuff = buffLogs;
 
     return {
       totalFarmMilk: Number(resolved.toFixed(1)),
@@ -1137,8 +1105,6 @@ export function POSProvider({ children }) {
     realizationPerLiter: supplierRealizationPerLiter,
     itemizedProducts: Object.values(supplierStats.itemizedProducts),
   };
-
-  const totalSupplierIntake = intakeLogs.reduce((sum, item) => sum + (Number(item.quantity || item.quantityLiters) || 0), 0);
 
   // Dahi batches for milk converted to Dahi and transferred to POS
   let farmMilkConvertedToDahi = 0;

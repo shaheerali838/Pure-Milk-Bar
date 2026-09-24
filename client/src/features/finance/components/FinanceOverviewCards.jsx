@@ -17,7 +17,7 @@ import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
 import { useRiderSalaryContext } from '@/context/RiderSalaryContext';
 
-export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelectRiderFinance, onSelectFarmReport, onSelectSupplierReport, onSelectDahiReport }) {
+export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelectRiderFinance, onSelectFarmReport, onSelectSupplierReport, onSelectDahiReport, onSelectPos }) {
   const {
     totalKhataReceivable = 0,
     activeAccountsCount = 0,
@@ -43,10 +43,10 @@ export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelect
             Select an account module to manage ledgers, billing, collections, and payroll.
           </p>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60 self-start sm:self-center">
+        <button type="button" onClick={onSelectPos} className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-200/60 self-start sm:self-center cursor-pointer">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Automated Ledger Sync</span>
-        </div>
+          <span>POS Sales &amp; Ledger</span>
+        </button>
       </div>
 
       {/* 2 Compact Professional Cards */}

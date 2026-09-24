@@ -19,7 +19,7 @@ export function IntakeProvider({ children }) {
         const qty = parseFloat(p.quantityLiters || p.quantity || 0);
         const rate = parseFloat(p.ratePerLiter || 220);
         const cost = parseFloat(p.totalAmount || p.totalCost || qty * rate);
-        const paid = parseFloat(p.paidAmount || (p.paymentStatus === 'PAID' ? cost : 0));
+        const paid = parseFloat(p.amountPaid ?? p.paidAmount ?? 0);
         const pending = Math.max(0, cost - paid);
 
         return {
@@ -34,9 +34,9 @@ export function IntakeProvider({ children }) {
           totalCost: cost,
           paidAmount: paid,
           pendingAmount: pending,
-          settlement: p.paymentStatus === 'PAID' ? 'Paid' : p.paymentStatus === 'PARTIAL' ? 'Partial' : 'Pending',
+          settlement: paid >= cost ? 'Paid' : paid > 0 ? 'Partial' : 'Pending',
           fat: p.fatPercentage || p.fat || 4.5,
-          snf: p.snfPercentage || p.snf || 8.5,
+          snf: p.snfCalculated || p.snf || 8.5,
           lr: p.lactometerReading || p.lr || 28.0,
           shift: p.shift || 'Morning',
           chiller: p.chiller || 'Chiller-1',
@@ -74,12 +74,14 @@ export function IntakeProvider({ children }) {
         milkType: (newRecord.milkType || 'COW').toUpperCase(),
         quantityLiters: qty,
         fatPercentage: fatVal,
-        snfPercentage: snfVal,
+        snfCalculated: snfVal,
         lactometerReading: lrVal,
         ratePerLiter: rate,
         totalAmount: cost,
-        paymentStatus: newRecord.settlement === 'Paid' ? 'PAID' : newRecord.settlement === 'Partial' ? 'PARTIAL' : 'PENDING',
-        paidAmount: parseFloat(newRecord.paidAmount) || 0,
+        amountPaid: parseFloat(newRecord.paidAmount) || 0,
+        batchNumber: 'B-' + Date.now(),
+        dockInspectorId: "64f8a1239c1b4e001c8a4567",
+        balanceAddedToKhata: cost - (parseFloat(newRecord.paidAmount) || 0),
       };
 
       const created = await supplierService.createProcurement(payload);
@@ -123,12 +125,14 @@ export function IntakeProvider({ children }) {
     }
   };
 
-  // Update Batch Settlement via API
   const updateBatchSettlement = async (intakeId, newSettlement, paidAmt = null, method = 'Cash', notes = '') => {
     try {
+      const intake = intakeLogs.find((l) => l.id === intakeId || l._id === intakeId);
+      const cost = intake ? parseFloat(intake.totalCost) : 0;
+      const actualPaid = paidAmt !== null ? parseFloat(paidAmt) : (newSettlement === 'Paid' ? cost : (newSettlement === 'Partial' ? cost * 0.5 : 0));
+
       await supplierService.updateProcurement(intakeId, {
-        paymentStatus: newSettlement.toUpperCase(),
-        paidAmount: paidAmt,
+        amountPaid: actualPaid,
       });
 
       setIntakeLogs((prev) =>
@@ -149,6 +153,49 @@ export function IntakeProvider({ children }) {
     } catch (err) {
       console.error('Failed to update procurement settlement:', err);
     }
+  };
+
+  const updateIntake = async (id, payload) => {
+    try {
+      await supplierService.updateProcurement(id, {
+        amountPaid: parseFloat(payload.paidAmount ?? payload.amountPaid) || 0,
+      });
+      setIntakeLogs((prev) => prev.map((log) => {
+        if (log.id !== id && log._id !== id) return log;
+        const cost = parseFloat(log.totalCost) || 0;
+        const paid = Math.min(cost, Math.max(0, parseFloat(payload.paidAmount ?? payload.amountPaid) || 0));
+        return {
+          ...log,
+          paidAmount: paid,
+          pendingAmount: Math.max(0, cost - paid),
+          settlement: paid >= cost ? 'Paid' : paid > 0 ? 'Partial' : 'Pending',
+        };
+      }));
+    } catch (err) {
+      console.error('Failed to update intake:', err);
+    }
+  };
+
+  const settleBatchesWithAmount = async (supplierId, amount, method = 'Cash', notes = '') => {
+    let remaining = Math.max(0, parseFloat(amount) || 0);
+    const pendingBatches = intakeLogs
+      .filter((log) => String(log.supplierId) === String(supplierId) && (parseFloat(log.pendingAmount) || 0) > 0)
+      .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+
+    for (const batch of pendingBatches) {
+      if (remaining <= 0) break;
+      const due = parseFloat(batch.pendingAmount) || 0;
+      const payment = Math.min(due, remaining);
+      await updateBatchSettlement(batch.id, payment >= due ? 'Paid' : 'Partial', (parseFloat(batch.paidAmount) || 0) + payment, method, notes);
+      remaining = Math.max(0, remaining - payment);
+    }
+  };
+
+  const settleAllBatchesForSupplier = async (supplierId, method = 'Cash', notes = '') => {
+    const totalDue = intakeLogs
+      .filter((log) => String(log.supplierId) === String(supplierId))
+      .reduce((sum, log) => sum + (parseFloat(log.pendingAmount) || 0), 0);
+    await settleBatchesWithAmount(supplierId, totalDue, method, notes);
   };
 
   const totals = useMemo(() => {
@@ -179,6 +226,9 @@ export function IntakeProvider({ children }) {
     addIntake,
     addBulkIntakes,
     updateBatchSettlement,
+    settleBatchesWithAmount,
+    settleAllBatchesForSupplier,
+    updateIntake,
   };
 
   return <IntakeContext.Provider value={value}>{children}</IntakeContext.Provider>;

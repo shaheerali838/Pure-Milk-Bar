@@ -26,7 +26,7 @@ import {
 
 export default function IntakeShifting({ onSaveSuccess }) {
   const { suppliers = [] } = useSupplierContext();
-  const { addBatchIntake } = useIntakeContext();
+  const { addBulkIntakes } = useIntakeContext();
 
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [shift, setShift] = useState('Evening'); // 'Morning' | 'Evening' (Evening active in screenshot)
@@ -167,7 +167,7 @@ export default function IntakeShifting({ onSaveSuccess }) {
       return;
     }
 
-    addBatchIntake(batchToSave);
+    addBulkIntakes(batchToSave);
     toast.success(`Successfully saved ${batchToSave.length} intake slips for ${shift} Shift!`);
     setSavedSuccessMsg(`Successfully saved ${batchToSave.length} intake slips for ${shift} Shift!`);
 
