@@ -9,20 +9,20 @@ export default function LandingHero() {
       className="text-white min-h-[calc(100vh-76px)] lg:h-[calc(100vh-76px)] lg:max-h-[calc(100vh-76px)] flex flex-col justify-center relative overflow-hidden py-4 sm:py-6 bg-cover bg-center"
       style={{
         backgroundImage:
-          "linear-gradient(to bottom, rgba(15, 38, 33, 0.90) 0%, rgba(20, 51, 45, 0.85) 50%, rgba(15, 38, 33, 0.92) 100%), url('/images/dairyfarm.jpeg')",
+          "linear-gradient(to bottom, rgba(15, 38, 33, 0.72) 0%, rgba(16, 45, 39, 0.56) 50%, rgba(15, 38, 33, 0.76) 100%), url('/images/dairyfarm.jpeg')",
       }}
     >
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex-1 flex flex-col justify-center my-auto text-center items-center">
         <div className="space-y-3.5 sm:space-y-4 max-w-3xl mx-auto flex flex-col items-center">
 
           {/* Centered Heading */}
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-[1.12]">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-[1.12] drop-shadow-md">
             From cow yield to doorstep delivery,{" "}
             <span className="text-[#5BBB7B]">manage your entire dairy</span> in real-time.
           </h1>
 
           {/* Centered Subtitle */}
-          <p className="text-slate-200 text-xs sm:text-sm max-w-2xl font-normal leading-relaxed">
+          <p className="text-slate-100 text-xs sm:text-sm max-w-2xl font-medium leading-relaxed drop-shadow-sm">
             Automate herd logs, bulk milk procurement intake, sub-second POS counter sales, rider fleet fuel tracking, and daily mass-balance reconciliation.
           </p>
 

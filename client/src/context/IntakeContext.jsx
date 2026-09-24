@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import supplierService from '@/services/supplierService';
+import supplierService from '../services/supplierService';
 
 const IntakeContext = createContext(null);
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { ROLES } from '@/config/rbac.config';
+import { useAuth } from '../context/AuthContext';
+import { ROLES } from '../config/rbac.config';
 
 /**
  * ProtectedRoute with enterprise RBAC role and permission guards
