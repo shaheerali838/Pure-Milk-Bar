@@ -55,12 +55,14 @@ export function CustomerProvider({ children }) {
             ? 'Online Payment'
             : newCust.paymentMode || 'Khata',
         status: newCust.status || 'Active',
+        image: newCust.image || null,
       };
 
       const created = await customerService.createCustomer(payload);
       const normalized = {
         ...created,
         id: created._id || created.id || Date.now(),
+        image: created.image || newCust.image || null,
       };
       setCustomers((prev) => [normalized, ...prev]);
       return normalized;

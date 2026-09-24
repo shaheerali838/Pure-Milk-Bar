@@ -40,9 +40,17 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-sm shadow-xs font-display">
-              {initial}
-            </div>
+            {customer.image ? (
+              <img
+                src={customer.image}
+                alt={customer.name}
+                className="w-9 h-9 rounded-xl object-cover shadow-xs border border-slate-200"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-sm shadow-xs font-display">
+                {initial}
+              </div>
+            )}
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold text-slate-900 tracking-tight font-display">

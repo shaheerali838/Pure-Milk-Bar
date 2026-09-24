@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
+import dns from "dns";
 
+dns.setDefaultResultOrder("ipv4first");
 let cached = global.mongoose;
 
 if (!cached) {
@@ -20,19 +22,12 @@ const connectDB = async () => {
     }
 
     if (!cached.promise) {
-      const mongooseOptions = {
-        maxPoolSize: 25, // Maintain up to 25 socket connections
-        minPoolSize: 5,  // Keep at least 5 connections open to eliminate cold handshake latency
-        socketTimeoutMS: 45000,
-        connectTimeoutMS: 10000,
-        serverSelectionTimeoutMS: 5000,
-        family: 4, // Force IPv4 to prevent Windows IPv6 DNS lookup delays
-      };
-
-      cached.promise = mongoose.connect(mongoUri, mongooseOptions).then((mongooseInstance) => {
-        console.log(`MongoDB connected: ${mongooseInstance.connection.host}`);
-        return mongooseInstance;
-      });
+      cached.promise = mongoose
+        .connect(mongoUri, { serverSelectionTimeoutMS: 5000, family: 4 })
+        .then((mongooseInstance) => {
+          console.log(`MongoDB connected: ${mongooseInstance.connection.host}`);
+          return mongooseInstance;
+        });
     }
 
     cached.conn = await cached.promise;

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Droplets, Plus, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAnimalContext } from "../../../../context/AnimalContext";
+import { useStaffContext } from "../../../../context/StaffContext";
 import LogYieldModal from "./LogYieldModal";
 
 // Helper to convert yield string to number
@@ -14,6 +15,8 @@ const parseYield = (val) => {
 
 export default function AnimalYieldBreakdown({ onSelectAnimal }) {
   const { animals = [] } = useAnimalContext();
+  const { staffList = [] } = useStaffContext();
+  const farmWorkers = staffList.filter(s => s.role?.toLowerCase().includes('farm') || s.role?.toLowerCase().includes('milker') || s.role?.toLowerCase().includes('herdsman') || s.role?.toLowerCase().includes('worker'));
   const navigate = useNavigate();
 
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
@@ -65,19 +68,22 @@ export default function AnimalYieldBreakdown({ onSelectAnimal }) {
               <th className="py-3 px-3">MORNING (L)</th>
               <th className="py-3 px-3">EVENING (L)</th>
               <th className="py-3 px-3 bg-emerald-50/70 text-emerald-800">TOTAL (L)</th>
-              <th className="py-3 px-3">MILKER</th>
+              {farmWorkers.length > 0 && <th className="py-3 px-3">MILKER</th>}
               <th className="py-3 px-3">HEALTH NOTE</th>
               <th className="py-3 px-3 text-center">ACTION</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {animals.map((animal) => {
+            {animals.map((animal, idx) => {
               const morning = parseYield(animal.morningYield);
               const evening = parseYield(animal.eveningYield);
               const total = morning + evening > 0 ? morning + evening : parseYield(animal.totalDailyYield);
               const isBuffalo = animal.species?.toLowerCase().includes("buffalo");
 
-              const milkerName = isBuffalo ? "Ramzan Ali" : "Allah Ditta";
+              const milkerName = farmWorkers.length > 0 
+                ? farmWorkers[idx % farmWorkers.length]?.name 
+                : "";
+              
               const healthNote = animal.tag === "COW-B" 
                 ? "High peak lactation yield."
                 : isBuffalo 
@@ -118,9 +124,11 @@ export default function AnimalYieldBreakdown({ onSelectAnimal }) {
                     {total.toFixed(1)} L
                   </td>
 
-                  <td className="py-3.5 px-3 text-slate-700 font-semibold">
-                    {milkerName}
-                  </td>
+                  {farmWorkers.length > 0 && (
+                    <td className="py-3.5 px-3 text-slate-700 font-semibold">
+                      {milkerName}
+                    </td>
+                  )}
 
                   <td className="py-3.5 px-3 font-serif italic text-slate-600 text-xs">
                     {healthNote}

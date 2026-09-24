@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
+import ImageUpload from '@/components/common/ImageUpload';
 
 export default function AddNewCustomerView({ onBack }) {
   const { addCustomer } = useCustomerContext();
@@ -31,6 +32,7 @@ export default function AddNewCustomerView({ onBack }) {
     subscription: '2 L Cow Milk',
     creditLimit: '10000',
     paymentMode: 'Khata',
+    image: '',
   });
 
   const milkProducts = useMemo(() => {
@@ -84,6 +86,7 @@ export default function AddNewCustomerView({ onBack }) {
       khataBalance: 0,
       paymentMode: formData.paymentMode,
       status: 'Active',
+      image: formData.image || null,
     });
 
     onBack();
@@ -420,6 +423,15 @@ export default function AddNewCustomerView({ onBack }) {
                 </Select>
               </div>
             </div>
+          </div>
+
+          <div className="space-y-1.5 pt-1 border-t border-slate-100">
+            <ImageUpload
+              label="Customer Photograph / Passbook Photo"
+              value={formData.image}
+              onChange={(img) => setFormData((prev) => ({ ...prev, image: img }))}
+              helpText="Upload customer image for passbook & POS customer profile"
+            />
           </div>
 
           <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">

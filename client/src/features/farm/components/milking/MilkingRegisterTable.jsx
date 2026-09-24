@@ -3,7 +3,7 @@ import { Sun, Moon, Zap, RotateCcw, Check, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 
-export default function MilkingRegisterTable() {
+export default function MilkingRegisterTable({ onSaveSuccess }) {
   const { animals = [], milkingLogs = [], saveMilkingShift } = useAnimalContext();
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
@@ -108,7 +108,7 @@ export default function MilkingRegisterTable() {
     toast.info(`Cleared inputs for ${shift} shift`);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const hasTypedValues = cattleList.some((item) => {
       const val = activeInputs[item.tag];
       return val !== undefined && val !== "" && !isNaN(parseFloat(val)) && parseFloat(val) > 0;
@@ -125,7 +125,7 @@ export default function MilkingRegisterTable() {
     }));
 
     if (saveMilkingShift) {
-      saveMilkingShift(shift, selectedDate, activeInputs);
+      await saveMilkingShift(shift, selectedDate, activeInputs);
     }
 
     const newlySavedTotal = cattleList.reduce((sum, item) => {
@@ -133,6 +133,9 @@ export default function MilkingRegisterTable() {
     }, 0);
 
     toast.success(`Successfully saved ${shift} shift entries (${newlySavedTotal.toFixed(1)} L)!`);
+    if (onSaveSuccess) {
+      onSaveSuccess();
+    }
   };
 
   return (

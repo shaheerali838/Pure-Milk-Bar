@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import ImageUpload from '@/components/common/ImageUpload';
 
 export default function AddCustomerModal({ isOpen, onClose }) {
   const { addCustomer } = useCustomerContext();
@@ -30,6 +31,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
     subscription: '2 L Cow Milk',
     creditLimit: '10000',
     paymentMode: 'Khata',
+    image: '',
   });
 
   const milkProducts = useMemo(() => {
@@ -85,6 +87,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
       khataBalance: 0,
       paymentMode: formData.paymentMode,
       status: 'Active',
+      image: formData.image || null,
     });
 
     setFormData({
@@ -101,6 +104,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
       subscription: '2 L Cow Milk',
       creditLimit: '10000',
       paymentMode: 'Khata',
+      image: '',
     });
     setSubQty('2');
     setSubUnit('L');
@@ -395,6 +399,13 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                 </Select>
               </div>
             </div>
+          <div className="space-y-1">
+            <ImageUpload
+              label="Customer Photograph / Passbook Photo"
+              value={formData.image}
+              onChange={(img) => setFormData((prev) => ({ ...prev, image: img }))}
+              helpText="Upload customer image for passbook & POS customer profile"
+            />
           </div>
 
           <div className="pt-2 flex justify-end gap-1.5 border-t border-slate-100">

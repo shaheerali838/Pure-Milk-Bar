@@ -11,8 +11,10 @@ import {
   FileText,
   CreditCard,
   Droplets,
+  Camera,
 } from 'lucide-react';
 import { useSupplierContext } from '@/context/SupplierContext';
+import ImageUpload from '@/components/common/ImageUpload';
 
 const SUPPLIER_TYPES = [
   'Commercial Dairy Farm',
@@ -35,6 +37,7 @@ const initialForm = {
   paymentMethod: 'Cash / Direct Settlement',
   accountNumber: '',
   notes: '',
+  image: '',
 };
 
 export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
@@ -58,6 +61,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
         paymentMethod: editSupplier.paymentMethod || 'Cash / Direct Settlement',
         accountNumber: editSupplier.accountNumber || '',
         notes: editSupplier.notes || '',
+        image: editSupplier.image || '',
       });
     } else {
       setFormData(initialForm);
@@ -72,7 +76,6 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      alert('Please enter supplier name.');
       return;
     }
 
@@ -365,6 +368,26 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Section 4: Supplier Photo / Dairy Card */}
+          <div className="pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-2.5">
+              <div className="w-6 h-6 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center text-xs">
+                <Camera className="w-3.5 h-3.5" />
+              </div>
+              <h2 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
+                4. Supplier Photograph / Dairy Identification
+              </h2>
+            </div>
+            <div className="max-w-md">
+              <ImageUpload
+                label="Supplier Photo or Dairy Gate/Card Image"
+                value={formData.image}
+                onChange={(img) => setFormData((prev) => ({ ...prev, image: img }))}
+                helpText="Upload supplier photograph or supplier pass card (JPG, PNG)"
+              />
             </div>
           </div>
 

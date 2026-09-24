@@ -37,6 +37,7 @@ export function SupplierProvider({ children }) {
         baseRate: Number(s.baseRatePerLiter || s.baseRate || s.ratePerLiter) || 220,
         avgLiters: Number(s.expectedDailyQuantity || s.avgLiters) || 10,
         status: s.status || 'Active',
+        image: s.image || null,
       }));
       setSuppliers(normalized);
     } catch (err) {
@@ -68,6 +69,7 @@ export function SupplierProvider({ children }) {
         baseRate: parseFloat(newSupplierData.ratePerLiter || newSupplierData.baseRate) || 220,
         expectedDailyQuantity: parseFloat(newSupplierData.avgLiters) || 10,
         status: newSupplierData.status || 'Active',
+        image: newSupplierData.image || null,
       };
 
       let created;
@@ -83,6 +85,7 @@ export function SupplierProvider({ children }) {
         contact: created.phone || newSupplierData.contact,
         ratePerLiter: created.baseRatePerLiter || created.baseRate || newSupplierData.ratePerLiter || 220,
         avgLiters: created.expectedDailyQuantity || newSupplierData.avgLiters || 10,
+        image: created.image || newSupplierData.image || null,
       };
 
       setSuppliers((prev) => [normalized, ...prev.filter((supplier) => supplier.code !== normalized.code)]);
@@ -125,14 +128,17 @@ export function SupplierProvider({ children }) {
     }
   };
 
-  const recordSupplierPayout = (payoutData) => {
+  const recordSupplierPayout = (payoutData, amount, method, notes) => {
+    const data = typeof payoutData === 'object'
+      ? payoutData
+      : { supplierId: payoutData, amount, method, notes };
     const payoutRecord = {
       id: `PAY-${Date.now()}`,
-      supplierId: payoutData.supplierId,
-      amount: parseFloat(payoutData.amount) || 0,
-      method: payoutData.method || 'Cash',
-      notes: payoutData.notes || '',
-      date: payoutData.date || new Date().toISOString().split('T')[0],
+      supplierId: data.supplierId,
+      amount: parseFloat(data.amount) || 0,
+      method: data.method || 'Cash',
+      notes: data.notes || '',
+      date: data.date || new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString(),
     };
     setDirectPayouts((prev) => [payoutRecord, ...prev]);
@@ -140,7 +146,7 @@ export function SupplierProvider({ children }) {
   };
 
   const settleSupplierBalance = (supplierId, amount = null, paymentMethod = 'Cash', notes = '') => {
-    const targetSup = suppliers.find((s) => (s._id || s.id) === supplierId);
+    const targetSup = suppliers.find((s) => String(s._id || s.id) === String(supplierId));
     if (!targetSup) return false;
 
     if (amount === null || amount === undefined) {

@@ -322,7 +322,7 @@ export function DahiProvider({ children }) {
   }, []);
 
   // Stage transition 2 -> 3: Send Chilled Dahi to Active Shop POS Counter
-  const sendToPOS = useCallback((batchId) => {
+  const sendToPOS = useCallback(async (batchId) => {
     const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     let batchOut = 0;
     setBatches((prev) =>
@@ -334,11 +334,20 @@ export function DahiProvider({ children }) {
         return {
           ...b,
           stage: 'pos',
+          status: 'READY_FOR_POS',
           revenueValue: `Rs. ${rev.toLocaleString()}`,
           transferredAt: timeNow,
         };
       })
     );
+
+    try {
+      await farmService.updateProcessingBatch(batchId, { stage: 'pos', status: 'READY_FOR_POS' });
+      // Trigger cross-context re-render for POS stock update
+      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
+    } catch (e) {
+      console.warn('Backend API updateProcessingBatch error:', e.message);
+    }
 
     // Sync into POS products stock
     if (posCtx?.setProducts && batchOut > 0) {

@@ -34,6 +34,10 @@ const orderSchema = new Schema(
       type: String,
       default: null,
     },
+    customerPhoneSnapshot: {
+      type: String,
+      default: null,
+    },
     fulfillmentType: {
       type: String,
       enum: ['COUNTER', 'DELIVERY', 'TAKEAWAY'],

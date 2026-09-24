@@ -168,9 +168,17 @@ export default function AnimalDetail({
         {/* Profile Hero Section */}
         <div className="bg-[#f8fafc] p-5 rounded-2xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-2xl shadow-xs shrink-0 font-display">
-              <Beef className="w-8 h-8 text-emerald-700" />
-            </div>
+            {animal.image ? (
+              <img
+                src={animal.image}
+                alt={animal.tag}
+                className="w-16 h-16 rounded-2xl object-cover border border-emerald-200 shadow-xs shrink-0"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-2xl shadow-xs shrink-0 font-display">
+                <Beef className="w-8 h-8 text-emerald-700" />
+              </div>
+            )}
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-slate-900 font-display">

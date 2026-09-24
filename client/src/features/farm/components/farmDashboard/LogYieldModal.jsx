@@ -1,17 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { useAnimalContext } from "../../../../context/AnimalContext";
+import { useStaffContext } from "../../../../context/StaffContext";
 
 export default function LogYieldModal({ isOpen, onClose }) {
   const { animals = [], updateAnimal } = useAnimalContext();
+  const { staffList = [] } = useStaffContext();
+  const farmWorkers = staffList.filter(s => s.role?.toLowerCase().includes('farm') || s.role?.toLowerCase().includes('milker') || s.role?.toLowerCase().includes('herdsman') || s.role?.toLowerCase().includes('worker'));
 
   const [formData, setFormData] = useState({
     tag: animals[0]?.tag || "",
     morning: "8.5",
     evening: "7.0",
-    milker: "Allah Ditta",
+    milker: "",
   });
+
+  useEffect(() => {
+    if (farmWorkers.length > 0 && !formData.milker) {
+      setFormData(prev => ({ ...prev, milker: farmWorkers[0].name }));
+    }
+  }, [farmWorkers, formData.milker]);
 
   if (!isOpen) return null;
 
@@ -84,13 +93,24 @@ export default function LogYieldModal({ isOpen, onClose }) {
             />
           </div>
 
-          <InputField
-            label="Herdsman / Milker Name"
-            type="text"
-            value={formData.milker}
-            onChange={(val) => handleChange("milker", val)}
-            placeholder="Allah Ditta"
-          />
+          {farmWorkers.length > 0 && (
+            <div>
+              <label className="block text-slate-700 font-bold mb-1">
+                Herdsman / Milker Name
+              </label>
+              <select
+                value={formData.milker}
+                onChange={(e) => handleChange("milker", e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2 text-slate-800 font-bold focus:outline-none focus:border-emerald-500"
+              >
+                {farmWorkers.map((worker) => (
+                  <option key={worker.id} value={worker.name}>
+                    {worker.name} ({worker.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
             <button

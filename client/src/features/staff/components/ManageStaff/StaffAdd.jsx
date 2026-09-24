@@ -14,12 +14,19 @@ import {
   ShieldCheck,
   FileText,
   Truck,
+  Sparkles,
+  Sliders,
+  Car,
+  Home,
+  Shield,
+  Layers,
 } from 'lucide-react';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
+import ImageUpload from '@/components/common/ImageUpload';
 
 const ROLE_OPTIONS = [
-  'Delivery Rider',
   'Farm Worker',
+  'Delivery Rider',
   'Milking Staff',
   'Security Guard',
   'Cashier',
@@ -53,6 +60,19 @@ const initialForm = {
   address: '',
   emergencyContact: '',
   notes: '',
+  image: '',
+  // Dynamic fields
+  vehicleNumber: '',
+  licenseNumber: '',
+  vehicleType: 'Motorcycle',
+  assignedBarn: '',
+  milkingShiftSpecialization: 'Morning & Evening',
+  assignedCattleCount: '',
+  guardPost: 'Main Gate',
+  weaponLicense: '',
+  posRegisterId: 'Counter 1',
+  khataAuthLimit: '',
+  departmentSupervised: 'Livestock & Milking',
 };
 
 export default function StaffAdd({ onBack, onClose, editingStaff = null, onSuccess }) {
@@ -70,7 +90,7 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null, onSucce
         role: editingStaff.role || 'Farm Worker',
         shift: editingStaff.shift || 'Morning',
         mobile: editingStaff.mobile || '',
-        cnic: editingStaff.cnic || '',
+        cnic: editingStaff.cnic ? String(editingStaff.cnic).replace(/\D/g, '') : '',
         monthlySalary: editingStaff.monthlySalary
           ? String(editingStaff.monthlySalary)
           : '',
@@ -80,6 +100,18 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null, onSucce
         address: editingStaff.address || '',
         emergencyContact: editingStaff.emergencyContact || '',
         notes: editingStaff.notes || '',
+        image: editingStaff.image || '',
+        vehicleNumber: editingStaff.vehicleNumber || '',
+        licenseNumber: editingStaff.licenseNumber || '',
+        vehicleType: editingStaff.vehicleType || 'Motorcycle',
+        assignedBarn: editingStaff.assignedBarn || '',
+        milkingShiftSpecialization: editingStaff.milkingShiftSpecialization || 'Morning & Evening',
+        assignedCattleCount: editingStaff.assignedCattleCount || '',
+        guardPost: editingStaff.guardPost || 'Main Gate',
+        weaponLicense: editingStaff.weaponLicense || '',
+        posRegisterId: editingStaff.posRegisterId || 'Counter 1',
+        khataAuthLimit: editingStaff.khataAuthLimit || '',
+        departmentSupervised: editingStaff.departmentSupervised || 'Livestock & Milking',
       });
     } else {
       setFormData(initialForm);
@@ -89,6 +121,12 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null, onSucce
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCnicChange = (e) => {
+    // Only accept numeric digits
+    const digitsOnly = e.target.value.replace(/\D/g, '');
+    setFormData((prev) => ({ ...prev, cnic: digitsOnly }));
   };
 
   const calculatedDailySalary = formData.monthlySalary
@@ -272,18 +310,23 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null, onSucce
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  CNIC Number
+                  CNIC Number <span className="text-slate-400 font-normal lowercase">(digits only)</span>
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
                     <CreditCard className="w-3.5 h-3.5" />
                   </span>
                   <input
-                    type="text"
+                    type="number"
                     name="cnic"
                     value={formData.cnic}
-                    onChange={handleChange}
-                    placeholder="35201-XXXXXXX-X"
+                    onChange={handleCnicChange}
+                    onKeyDown={(e) => {
+                      if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder="3520112345671 (Digits only)"
                     className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
                   />
                 </div>
@@ -399,50 +442,321 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null, onSucce
             </div>
           </div>
 
-          {/* Section 4: Operational Assignment & Delivery Route */}
+          {/* Section 4: Dynamic Role-Specific Operational Details */}
           <div className="pt-2 border-t border-slate-100">
-            <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-3">
-              <div className="w-6 h-6 rounded-md bg-purple-100 text-purple-700 flex items-center justify-center text-xs">
-                <Truck className="w-3.5 h-3.5" />
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-md bg-purple-100 text-purple-700 flex items-center justify-center text-xs">
+                  <Sliders className="w-3.5 h-3.5" />
+                </div>
+                <h2 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
+                  4. Role-Specific Details ({formData.role})
+                </h2>
               </div>
-              <h2 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
-                4. Operational Assignment &amp; Delivery Route
-              </h2>
+              <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                Dynamic fields for {formData.role}
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-              <div className="md:col-span-1">
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Assigned Route / Delivery Area
-                </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                    <MapPin className="w-3.5 h-3.5" />
-                  </span>
+            {/* A. If Delivery Rider */}
+            {formData.role === 'Delivery Rider' && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs animate-in fade-in duration-200">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Assigned Route / Delivery Area <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                      <MapPin className="w-3.5 h-3.5" />
+                    </span>
+                    <input
+                      type="text"
+                      name="route"
+                      value={formData.route}
+                      onChange={handleChange}
+                      placeholder="e.g. Route A - Model Town"
+                      className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Vehicle Number / Plate
+                  </label>
                   <input
                     type="text"
-                    name="route"
-                    value={formData.route}
+                    name="vehicleNumber"
+                    value={formData.vehicleNumber}
                     onChange={handleChange}
-                    placeholder="e.g. Route A - Model Town & Gulberg"
-                    className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
+                    placeholder="e.g. LEA-2024-8921"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Driving License No.
+                  </label>
+                  <input
+                    type="text"
+                    name="licenseNumber"
+                    value={formData.licenseNumber}
+                    onChange={handleChange}
+                    placeholder="e.g. DL-LHR-98213"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Vehicle Type
+                  </label>
+                  <select
+                    name="vehicleType"
+                    value={formData.vehicleType}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition cursor-pointer font-medium"
+                  >
+                    <option value="Motorcycle">Motorcycle / Bike</option>
+                    <option value="Chilled Van">Chilled Milk Van</option>
+                    <option value="Loader Rickshaw">Loader Rickshaw</option>
+                    <option value="Pickup Truck">Pickup Carrier</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* B. If Farm Worker or Milking Staff */}
+            {(formData.role === 'Farm Worker' || formData.role === 'Milking Staff') && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs animate-in fade-in duration-200">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Assigned Barn / Shed
+                  </label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                      <Home className="w-3.5 h-3.5" />
+                    </span>
+                    <input
+                      type="text"
+                      name="assignedBarn"
+                      value={formData.assignedBarn}
+                      onChange={handleChange}
+                      placeholder="e.g. Shed 1 (High Yield) or Shed 2"
+                      className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Milking Specialization / Duty
+                  </label>
+                  <select
+                    name="milkingShiftSpecialization"
+                    value={formData.milkingShiftSpecialization}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition cursor-pointer font-medium"
+                  >
+                    <option value="Machine Milking Specialist">Machine Milking Specialist</option>
+                    <option value="Hand Milking Staff">Hand Milking Staff</option>
+                    <option value="Bulk Tank Chiller Operator">Bulk Tank Chiller Operator</option>
+                    <option value="Cattle Feeding & Barn Cleaning">Cattle Feeding &amp; Barn Cleaning</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Assigned Cattle Count (Approx)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    name="assignedCattleCount"
+                    value={formData.assignedCattleCount}
+                    onChange={handleChange}
+                    placeholder="e.g. 15 animals"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
                   />
                 </div>
               </div>
+            )}
 
-              <div className="md:col-span-2">
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Duty Notes &amp; Special Instructions
-                </label>
-                <input
-                  type="text"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleChange}
-                  placeholder="e.g. Milking technician, Key holder, Morning delivery driver..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
-                />
+            {/* C. If Security Guard */}
+            {formData.role === 'Security Guard' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs animate-in fade-in duration-200">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Assigned Guard Post / Gate
+                  </label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                      <Shield className="w-3.5 h-3.5" />
+                    </span>
+                    <input
+                      type="text"
+                      name="guardPost"
+                      value={formData.guardPost}
+                      onChange={handleChange}
+                      placeholder="e.g. Main Gate 1, Bulk Intake Gate"
+                      className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Security Clearance / Weapon License #
+                  </label>
+                  <input
+                    type="text"
+                    name="weaponLicense"
+                    value={formData.weaponLicense}
+                    onChange={handleChange}
+                    placeholder="e.g. WPN-99214 (or None)"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Emergency Hotline / Police Check
+                  </label>
+                  <input
+                    type="text"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    placeholder="e.g. Verified by local police station"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
+                  />
+                </div>
               </div>
+            )}
+
+            {/* D. If Cashier or Accountant */}
+            {(formData.role === 'Cashier' || formData.role === 'Accountant') && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs animate-in fade-in duration-200">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Assigned POS Counter / Terminal
+                  </label>
+                  <input
+                    type="text"
+                    name="posRegisterId"
+                    value={formData.posRegisterId}
+                    onChange={handleChange}
+                    placeholder="e.g. Counter 1 - Retail Counter"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Khata / Credit Authorization Limit (PKR)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    name="khataAuthLimit"
+                    value={formData.khataAuthLimit}
+                    onChange={handleChange}
+                    placeholder="e.g. 50000"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Daily Drawer Clearance Note
+                  </label>
+                  <input
+                    type="text"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    placeholder="e.g. Daily shift close at 9:00 PM"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* E. If Dairy Manager */}
+            {formData.role === 'Dairy Manager' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs animate-in fade-in duration-200">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Supervised Department
+                  </label>
+                  <select
+                    name="departmentSupervised"
+                    value={formData.departmentSupervised}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition cursor-pointer font-medium"
+                  >
+                    <option value="Livestock & Milking">Livestock &amp; Milking Operations</option>
+                    <option value="Procurement & Supplier Intake">Procurement &amp; Supplier Intake</option>
+                    <option value="Retail POS & Home Deliveries">Retail POS &amp; Home Deliveries</option>
+                    <option value="General Farm Management">General Farm Administration</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Administrative Authority Notes
+                  </label>
+                  <input
+                    type="text"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    placeholder="e.g. Full inventory and shift approval authority"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Common Notes field for any role if not filled */}
+            {formData.role !== 'Security Guard' &&
+              formData.role !== 'Cashier' &&
+              formData.role !== 'Accountant' &&
+              formData.role !== 'Dairy Manager' && (
+                <div className="mt-3">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    General Duty Notes &amp; Special Instructions
+                  </label>
+                  <input
+                    type="text"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    placeholder="e.g. Trained in machine milking, key holder..."
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
+                  />
+                </div>
+              )}
+          </div>
+
+          {/* Section 5: Staff Photograph */}
+          <div className="pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-3">
+              <div className="w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">
+                <Users className="w-3.5 h-3.5" />
+              </div>
+              <h2 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
+                5. Staff Identification Photograph
+              </h2>
+            </div>
+            <div className="max-w-md">
+              <ImageUpload
+                label="Staff Photograph (JPG, PNG)"
+                value={formData.image}
+                onChange={(img) => setFormData((prev) => ({ ...prev, image: img }))}
+                helpText="Upload employee passport photo or clear face picture"
+              />
             </div>
           </div>
 

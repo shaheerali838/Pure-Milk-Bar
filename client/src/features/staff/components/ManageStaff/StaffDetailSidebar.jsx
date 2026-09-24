@@ -85,9 +85,17 @@ export default function StaffDetailSidebar({ staff, isOpen, onClose }) {
           {/* Header */}
           <div className="px-6 py-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white font-black text-xl flex items-center justify-center font-display shadow-md">
-                {staff.name ? staff.name.charAt(0).toUpperCase() : 'S'}
-              </div>
+              {staff.image ? (
+                <img
+                  src={staff.image}
+                  alt={staff.name}
+                  className="w-12 h-12 rounded-2xl object-cover shadow-md border border-slate-200"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white font-black text-xl flex items-center justify-center font-display shadow-md">
+                  {staff.name ? staff.name.charAt(0).toUpperCase() : 'S'}
+                </div>
+              )}
               <div>
                 <h3 className="text-lg font-black font-display tracking-tight leading-snug">
                   {staff.name}
@@ -229,9 +237,14 @@ export default function StaffDetailSidebar({ staff, isOpen, onClose }) {
                   <div>
                     <label className="text-xs font-bold text-slate-700 block mb-1">CNIC</label>
                     <input
-                      type="text"
+                      type="number"
                       value={formData.cnic}
-                      onChange={(e) => setFormData({ ...formData, cnic: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, cnic: e.target.value.replace(/\D/g, '') })}
+                      onKeyDown={(e) => {
+                        if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:border-emerald-600 font-medium"
                     />
                   </div>

@@ -77,7 +77,7 @@ export default function PaySupplierModal({
     }
   }, [maxPayable]);
 
-  const numPay = Math.max(0, parseFloat(payAmount) || 0);
+  const numPay = Math.min(maxPayable, Math.max(0, parseFloat(payAmount) || 0));
   const remainingSlipPending = Math.max(0, slipPendingAmount - numPay);
   const remainingSupplierTotal = Math.max(0, supplierTotalPending - numPay);
 
@@ -110,14 +110,14 @@ export default function PaySupplierModal({
       });
     }
 
-    // 2. Record payout in SupplierContext to reduce supplier's pending balance
-    if (matchedSupplier && recordSupplierPayout) {
-      recordSupplierPayout(
-        matchedSupplier.id,
-        numPay,
-        paymentNote || `Owner payout for ${shift} Shift slip (#${targetSlip?.id || 'Direct'})`,
-        true
-      );
+    // Direct advances are separate from intake settlements; settled slips are already reflected in intakeLogs.
+    if (!targetSlip && matchedSupplier && recordSupplierPayout) {
+      recordSupplierPayout({
+        supplierId: matchedSupplier.id,
+        amount: numPay,
+        method: 'Cash',
+        notes: paymentNote || `Owner advance for ${supplierName}`,
+      });
     }
 
     toast.success(

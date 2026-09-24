@@ -78,6 +78,10 @@ const staffSchema = new Schema(
       trim: true,
       default: '',
     },
+    image: {
+      type: String,
+      default: null,
+    },
     userAccountId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -101,6 +105,7 @@ const staffSchema = new Schema(
     toObject: {
       virtuals: true,
     },
+    strict: false,
   }
 );
 

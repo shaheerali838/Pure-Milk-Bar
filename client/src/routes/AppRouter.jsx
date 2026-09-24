@@ -136,6 +136,7 @@ export function AppRouter() {
             <Route path="finance/report-farm" element={<FinancePage initialTab="report-farm" />} />
             <Route path="finance/report-supplier" element={<FinancePage initialTab="report-supplier" />} />
             <Route path="finance/report-dahi" element={<FinancePage initialTab="report-dahi" />} />
+            <Route path="finance/pos" element={<FinancePage initialTab="pos" />} />
             <Route path="finance/daily-closing" element={<DailyClosing />} />
             <Route path="daily-closing" element={<DailyClosing />} />
             <Route path="finance/audit-log" element={<TransactionAuditLog />} />

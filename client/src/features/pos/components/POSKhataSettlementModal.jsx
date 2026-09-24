@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function POSKhataSettlementModal() {
   const {
@@ -63,7 +64,7 @@ export default function POSKhataSettlementModal() {
 
     const amt = Number(payAmount) || 0;
     if (amt <= 0) {
-      alert('Please enter a valid amount greater than Rs. 0');
+      toast.error('Please enter a valid amount greater than Rs. 0');
       return;
     }
 

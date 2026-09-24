@@ -57,9 +57,14 @@ const supplierSchema = new Schema(
       type: String,
       default: null,
     },
+    image: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
+    strict: false,
   }
 );
 

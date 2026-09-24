@@ -56,9 +56,14 @@ const customerSchema = new Schema(
       default: 'ACTIVE',
       index: true,
     },
+    image: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
+    strict: false,
   }
 );
 
