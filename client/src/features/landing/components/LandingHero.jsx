@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, ArrowRight, ShoppingCart } from "lucide-react";
+import { ArrowRight, ShoppingCart } from "lucide-react";
 
 export default function LandingHero() {
   return (
@@ -14,11 +14,6 @@ export default function LandingHero() {
     >
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex-1 flex flex-col justify-center my-auto text-center items-center">
         <div className="space-y-3.5 sm:space-y-4 max-w-3xl mx-auto flex flex-col items-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[10.5px] font-semibold text-emerald-200 backdrop-blur-md">
-            <Sparkles className="w-3 h-3 text-[#5BBB7B] animate-pulse" />
-            <span>Next-Gen Operating System for Commercial Dairy Farms &amp; Milk Bars</span>
-          </div>
 
           {/* Centered Heading */}
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-[1.12]">

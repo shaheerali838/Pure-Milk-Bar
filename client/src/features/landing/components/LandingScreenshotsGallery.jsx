@@ -215,11 +215,7 @@ export default function LandingScreenshotsGallery() {
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 lg:mb-8 gap-4">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-3 py-1 rounded-full border border-emerald-200/60 inline-flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#00a86b]" />
-              System Interface Previews
-            </span>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight mt-2">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight">
               Inside Pure Milk Bar ERP: Live System Screens
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">

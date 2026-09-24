@@ -15,10 +15,7 @@ export default function LandingTestimonialsFAQ() {
           {/* Left: Testimonials Column */}
           <div className="lg:col-span-6 space-y-4">
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#00a86b] bg-emerald-100/70 px-3 py-1 rounded-full border border-emerald-200/60">
-                Customer Success
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                 Trusted by Dairy Owners
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">
