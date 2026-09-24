@@ -87,6 +87,8 @@ const LoginForm = ({ initialEmail = "", externalError = "" }) => {
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
 
+  const displayError = errorMessage || externalError;
+
   // Destination route after login
   const from = location.state?.from?.pathname || "/dashboard";
 
