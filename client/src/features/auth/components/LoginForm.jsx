@@ -79,8 +79,15 @@ const LoginForm = ({ initialEmail = "", externalError = "" }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [email, setEmail] = useState(initialEmail || "admin@puremilkbar.com");
-  const [password, setPassword] = useState("admin@123456");
+  const showQuickLogin =
+    import.meta.env.VITE_ENABLE_QUICK_LOGIN !== undefined
+      ? String(import.meta.env.VITE_ENABLE_QUICK_LOGIN).toLowerCase() === "true"
+      : Boolean(import.meta.env.DEV || import.meta.env.MODE === "development");
+
+  const [email, setEmail] = useState(
+    initialEmail || (showQuickLogin ? "admin@puremilkbar.com" : ""),
+  );
+  const [password, setPassword] = useState(showQuickLogin ? "admin@123456" : "");
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -160,63 +167,67 @@ const LoginForm = ({ initialEmail = "", externalError = "" }) => {
 
   return (
     <div className="space-y-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {/* Quick Test Logins Grid */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            Quick Role Switcher
-          </span>
-          <span className="text-[10px] font-semibold text-slate-400">
-            Click to sign in instantly
-          </span>
-        </div>
+      {/* Quick Test Logins Grid (Environment Controlled) */}
+      {showQuickLogin && (
+        <>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                Quick Role Switcher
+              </span>
+              <span className="text-[10px] font-semibold text-slate-400">
+                Click to sign in instantly
+              </span>
+            </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          {QUICK_ROLES.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.role}
-                type="button"
-                onClick={() => handleQuickLogin(item)}
-                disabled={isLoading}
-                className={`p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between shadow-2xs hover:shadow-xs active:scale-98 ${item.bg}`}
-              >
-                <div className="flex items-start justify-between gap-1 mb-1">
-                  <div
-                    className={`p-1 rounded-lg bg-white shadow-2xs ${item.color}`}
+            <div className="grid grid-cols-2 gap-2">
+              {QUICK_ROLES.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.role}
+                    type="button"
+                    onClick={() => handleQuickLogin(item)}
+                    disabled={isLoading}
+                    className={`p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between shadow-2xs hover:shadow-xs active:scale-98 ${item.bg}`}
                   >
-                    <Icon className="w-3.5 h-3.5" />
-                  </div>
-                  <span
-                    className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md ${item.badgeBg}`}
-                  >
-                    {item.badge}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 leading-tight">
-                    {item.title}
-                  </h4>
-                  <p className="text-[10px] text-slate-500 leading-tight mt-0.5 truncate">
-                    {item.desc}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+                    <div className="flex items-start justify-between gap-1 mb-1">
+                      <div
+                        className={`p-1 rounded-lg bg-white shadow-2xs ${item.color}`}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                      </div>
+                      <span
+                        className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md ${item.badgeBg}`}
+                      >
+                        {item.badge}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 leading-tight">
+                        {item.title}
+                      </h4>
+                      <p className="text-[10px] text-slate-500 leading-tight mt-0.5 truncate">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-      <div className="relative flex items-center justify-center">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-slate-200/80" />
-        </div>
-        <div className="relative bg-white px-2.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-          Or sign in manually
-        </div>
-      </div>
+          <div className="relative flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200/80" />
+            </div>
+            <div className="relative bg-white px-2.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Or sign in manually
+            </div>
+          </div>
+        </>
+      )}
 
       {/* If already authenticated notice */}
       {isAuthenticated && user && (
