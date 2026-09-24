@@ -224,12 +224,27 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                 </label>
                 <select
                   value={formData.product}
-                  onChange={(e) => setFormData({ ...formData, product: e.target.value })}
+                  onChange={(e) => {
+                    const prod = e.target.value;
+                    let defaultRate = 'Rs. 320 / kg';
+                    if (prod.includes('Cow Milk')) defaultRate = 'Rs. 260 / L';
+                    else if (prod.includes('Buffalo Milk')) defaultRate = 'Rs. 290 / L';
+                    else if (prod.includes('Lassi')) defaultRate = 'Rs. 200 / L';
+                    else if (prod.includes('Paneer')) defaultRate = 'Rs. 900 / kg';
+                    else if (prod.includes('Ghee')) defaultRate = 'Rs. 2400 / kg';
+                    else if (prod.includes('Sweet Dahi')) defaultRate = 'Rs. 360 / kg';
+                    setFormData({ ...formData, product: prod, posRate: defaultRate });
+                  }}
                   className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-medium cursor-pointer"
                 >
                   <option value="Fresh Dahi (Yogurt)">Fresh Dahi (Yogurt)</option>
                   <option value="Sweet Dahi (Meetha)">Sweet Dahi (Meetha)</option>
                   <option value="Matka Dahi (Clay Pot)">Matka Dahi (Clay Pot)</option>
+                  <option value="Cow Milk">Cow Milk (Chilled / Processed)</option>
+                  <option value="Buffalo Milk">Buffalo Milk (Chilled / Processed)</option>
+                  <option value="Sweet Lassi">Sweet Lassi</option>
+                  <option value="Fresh Paneer">Fresh Paneer</option>
+                  <option value="Desi Ghee">Desi Ghee</option>
                 </select>
               </div>
 

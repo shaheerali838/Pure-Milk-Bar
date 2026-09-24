@@ -261,10 +261,13 @@ export function DahiProvider({ children }) {
     const profitPerKg = Math.max(0, rateNum - 220);
     const expectedProfitVal = Math.round(numOutput * profitPerKg);
 
+    const initialStage = formData.status === 'Completed' || formData.stage === 'pos' ? 'pos' : 'incubating';
+
     const payload = {
       product: formData.product || 'Dahi (Plain)',
       milkUsed: rawMilkNum,
       milkUsedQuantity: rawMilkNum,
+      milkUsedLiters: rawMilkNum,
       source: formData.source || 'Farm & Supplier Mix',
       farmMilkUsed: farmPortion,
       supplierMilkUsed: supPortion,
@@ -272,31 +275,60 @@ export function DahiProvider({ children }) {
       outputQuantity: numOutput,
       fat: formData.fat ? String(formData.fat).replace('%', '') : '4.5',
       date: formData.date || new Date().toISOString().split('T')[0],
-      status: 'Completed',
+      status: formData.status || 'Completed',
+      stage: initialStage,
+      posRate: formData.posRate || `Rs. ${rateNum} / kg`,
     };
 
     let createdRecord = null;
     try {
       const backendRes = await farmService.createProcessingBatch(payload);
       createdRecord = backendRes?.batch || backendRes?.data || backendRes;
+      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
     } catch (e) {
       console.warn('Backend API createProcessingBatch error:', e.message);
     }
 
     const newRecord = {
       ...payload,
-      id: createdRecord?._id || createdRecord?.id || batchId,
+      id: createdRecord?._id || createdRecord?.id || createdRecord?.batchNumber || batchId,
       time: timeNow,
       outputVal: numOutput,
       milkUsedVal: rawMilkNum,
-      stage: 'incubating',
+      stage: initialStage,
       posRate: formData.posRate ? `Rs. ${rateNum} / kg` : `Rs. ${rateNum} / kg`,
       expectedProfit: `+Rs. ${expectedProfitVal.toLocaleString()}`,
     };
 
     setBatches((prev) => [newRecord, ...prev]);
+
+    // If initial stage is pos, sync directly into matching product stock in POS
+    if (initialStage === 'pos' && posCtx?.setProducts && numOutput > 0) {
+      posCtx.setProducts((prev) =>
+        prev.map((p) => {
+          const pName = (p.name || '').toLowerCase();
+          const targetName = (formData.product || '').toLowerCase();
+          if (
+            pName === targetName ||
+            (targetName.includes('cow') && pName.includes('cow')) ||
+            (targetName.includes('buffalo') && pName.includes('buffalo')) ||
+            (targetName.includes('dahi') && pName.includes('dahi')) ||
+            (targetName.includes('lassi') && pName.includes('lassi')) ||
+            (targetName.includes('paneer') && pName.includes('paneer')) ||
+            (targetName.includes('ghee') && pName.includes('ghee'))
+          ) {
+            return {
+              ...p,
+              stock: Number(((p.stock || 0) + numOutput).toFixed(1)),
+            };
+          }
+          return p;
+        })
+      );
+    }
+
     return newRecord;
-  }, [batches.length, realFarmYield, realSupplierIntake]);
+  }, [batches.length, realFarmYield, realSupplierIntake, posCtx]);
 
   // Stage transition 1 -> 2: Move from Incubating to Chilled Storage
   const moveToChiller = useCallback(async (batchId) => {
@@ -315,26 +347,30 @@ export function DahiProvider({ children }) {
     );
 
     try {
-      await farmService.updateProcessingBatch(batchId, { status: 'Completed' });
+      await farmService.updateProcessingBatch(batchId, { stage: 'chilled', status: 'Completed' });
+      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
     } catch (e) {
       console.warn('Backend API updateProcessingBatch error:', e.message);
     }
   }, []);
 
-  // Stage transition 2 -> 3: Send Chilled Dahi to Active Shop POS Counter
+  // Stage transition 2 -> 3: Send Chilled Product / Dahi to Active Shop POS Counter
   const sendToPOS = useCallback(async (batchId) => {
     const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     let batchOut = 0;
+    let batchProduct = '';
+
     setBatches((prev) =>
       prev.map((b) => {
         if (b.id !== batchId && b._id !== batchId) return b;
-        batchOut = Number(b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
+        batchOut = Number(b.outputVal || b.outputQuantity) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
+        batchProduct = b.product || '';
         const rateNum = parseFloat(String(b.posRate || '').replace(/[^\d.]/g, '')) || 320;
         const rev = Math.round((b.outputVal || 0) * rateNum);
         return {
           ...b,
           stage: 'pos',
-          status: 'READY_FOR_POS',
+          status: 'Completed',
           revenueValue: `Rs. ${rev.toLocaleString()}`,
           transferredAt: timeNow,
         };
@@ -342,7 +378,7 @@ export function DahiProvider({ children }) {
     );
 
     try {
-      await farmService.updateProcessingBatch(batchId, { stage: 'pos', status: 'READY_FOR_POS' });
+      await farmService.updateProcessingBatch(batchId, { stage: 'pos', status: 'Completed' });
       // Trigger cross-context re-render for POS stock update
       window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
     } catch (e) {
@@ -353,7 +389,17 @@ export function DahiProvider({ children }) {
     if (posCtx?.setProducts && batchOut > 0) {
       posCtx.setProducts((prev) =>
         prev.map((p) => {
-          if (p.category?.toLowerCase().includes('dahi') || p.name?.toLowerCase().includes('dahi') || p.id === 'PRD-DAHI-01') {
+          const pName = (p.name || '').toLowerCase();
+          const targetName = batchProduct.toLowerCase();
+          if (
+            pName === targetName ||
+            (targetName.includes('cow') && pName.includes('cow')) ||
+            (targetName.includes('buffalo') && pName.includes('buffalo')) ||
+            (targetName.includes('dahi') && pName.includes('dahi')) ||
+            (targetName.includes('lassi') && pName.includes('lassi')) ||
+            (targetName.includes('paneer') && pName.includes('paneer')) ||
+            (targetName.includes('ghee') && pName.includes('ghee'))
+          ) {
             return {
               ...p,
               stock: Number(((p.stock || 0) + batchOut).toFixed(1)),

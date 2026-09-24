@@ -112,8 +112,23 @@ export function POSProvider({ children }) {
   // Version counter to trigger re-renders on local storage events
   const [posSyncVersion, setPosSyncVersion] = useState(0);
 
+  const [processingBatches, setProcessingBatches] = useState([]);
+  const loadProcessingBatches = React.useCallback(async () => {
+    try {
+      const res = await farmService.getProcessingBatches();
+      const list = Array.isArray(res) ? res : res?.batches || res?.data || [];
+      setProcessingBatches(list);
+    } catch (e) {
+      setProcessingBatches([]);
+    }
+  }, []);
+
   useEffect(() => {
-    const handleSync = () => setPosSyncVersion((v) => v + 1);
+    loadProcessingBatches();
+    const handleSync = () => {
+      setPosSyncVersion((v) => v + 1);
+      loadProcessingBatches();
+    };
     window.addEventListener('pure_milk_bar_milking_updated', handleSync);
     window.addEventListener('pure_milk_bar_dahi_updated', handleSync);
     window.addEventListener('pure_milk_bar_sales_updated', handleSync);
@@ -124,7 +139,7 @@ export function POSProvider({ children }) {
       window.removeEventListener('pure_milk_bar_sales_updated', handleSync);
       window.removeEventListener('storage', handleSync);
     };
-  }, []);
+  }, [loadProcessingBatches]);
 
   // Dynamic riders derived from live delivery staff context
   const dynamicRiders = React.useMemo(() => {
@@ -162,14 +177,25 @@ export function POSProvider({ children }) {
           ? res.data
           : [];
         if (Array.isArray(list) && list.length > 0) {
-          setProducts((prev) => {
-            const combined = [...list];
+          const normalizedList = list.map((p) => ({
+            ...p,
+            id: p.id || p._id?.toString() || p.sku,
+            sku: p.sku || p.id || p._id?.toString(),
+          }));
+
+          setProducts(() => {
+            const map = new Map();
+            normalizedList.forEach((p) => {
+              const k = p.id || p.sku || p.name;
+              map.set(k, p);
+            });
             DEFAULT_CATALOG.forEach((def) => {
-              if (!combined.some((p) => p.id === def.id || p.sku === def.sku)) {
-                combined.push(def);
+              const k = def.id || def.sku;
+              if (!map.has(k) && !map.has(def.name)) {
+                map.set(k, def);
               }
             });
-            return combined;
+            return Array.from(map.values());
           });
         }
       } catch (err) {
@@ -179,21 +205,7 @@ export function POSProvider({ children }) {
       }
     }
     loadProducts();
-  }, []);
-
-  const [processingBatches, setProcessingBatches] = useState([]);
-  useEffect(() => {
-    async function loadBatches() {
-      try {
-        const res = await farmService.getProcessingBatches();
-        const list = Array.isArray(res) ? res : res?.batches || [];
-        setProcessingBatches(list);
-      } catch (e) {
-        setProcessingBatches([]);
-      }
-    }
-    loadBatches();
-  }, []);
+  }, [posSyncVersion]);
 
   // Track product being edited (null = adding new product)
   const [editingProduct, setEditingProduct] = useState(null);
@@ -1106,34 +1118,68 @@ export function POSProvider({ children }) {
     itemizedProducts: Object.values(supplierStats.itemizedProducts),
   };
 
-  // Dahi batches for milk converted to Dahi and transferred to POS
+  // Processing batches for milk converted to Dahi, Processed Milk, and value-added items
   let farmMilkConvertedToDahi = 0;
   let supplierMilkConvertedToDahi = 0;
   let totalDahiTransferredToPOS = 0;
+  let processedCowMilkStock = 0;
+  let processedBuffaloMilkStock = 0;
+  let totalProcessedMilk = 0;
+  const batchProductStockMap = {};
 
   (processingBatches || []).forEach((b) => {
-    const numUsed = Number(b.milkUsedQuantity || b.milkUsedVal) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0;
-    if (b.farmMilkUsed !== undefined && b.supplierMilkUsed !== undefined) {
-      farmMilkConvertedToDahi += Number(b.farmMilkUsed) || 0;
-      supplierMilkConvertedToDahi += Number(b.supplierMilkUsed) || 0;
-    } else {
-      const src = (b.source || '').toLowerCase();
-      if (src.includes('farm') && !src.includes('supplier') && !src.includes('mix')) {
-        farmMilkConvertedToDahi += numUsed;
-      } else if (src.includes('supplier') && !src.includes('farm') && !src.includes('mix')) {
-        supplierMilkConvertedToDahi += numUsed;
+    const pName = (b.product || '').toLowerCase();
+    const isDahi = pName.includes('dahi') || pName.includes('yogurt');
+    const isMilk = pName.includes('milk') && !isDahi;
+    const isCow = pName.includes('cow');
+    const isBuff = pName.includes('buffalo');
+
+    const numUsed = Number(b.milkUsedQuantity || b.milkUsedVal || b.milkUsedLiters) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0;
+    const outNum = Number(b.outputQuantity || b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
+
+    // Deduct raw sourcing only when raw milk was converted to value-add (Dahi, Cheese, Ghee, etc.)
+    if (isDahi || (!isMilk && numUsed > 0)) {
+      if (b.farmMilkUsed !== undefined && b.supplierMilkUsed !== undefined) {
+        farmMilkConvertedToDahi += Number(b.farmMilkUsed) || 0;
+        supplierMilkConvertedToDahi += Number(b.supplierMilkUsed) || 0;
       } else {
-        const totalSourced = totalFarmMilk + totalSupplierIntake;
-        const ratio = totalSourced > 0 ? totalFarmMilk / totalSourced : 0.5;
-        const fPortion = Math.round(numUsed * ratio);
-        farmMilkConvertedToDahi += fPortion;
-        supplierMilkConvertedToDahi += Math.max(0, numUsed - fPortion);
+        const src = (b.source || '').toLowerCase();
+        if (src.includes('farm') && !src.includes('supplier') && !src.includes('mix')) {
+          farmMilkConvertedToDahi += numUsed;
+        } else if (src.includes('supplier') && !src.includes('farm') && !src.includes('mix')) {
+          supplierMilkConvertedToDahi += numUsed;
+        } else {
+          const totalSourced = totalFarmMilk + totalSupplierIntake;
+          const ratio = totalSourced > 0 ? totalFarmMilk / totalSourced : 0.5;
+          const fPortion = Math.round(numUsed * ratio);
+          farmMilkConvertedToDahi += fPortion;
+          supplierMilkConvertedToDahi += Math.max(0, numUsed - fPortion);
+        }
       }
     }
 
-    if (b.stage === 'pos' || b.status === 'COMPLETED' || b.status === 'READY_FOR_POS') {
-      const outNum = Number(b.outputQuantity || b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
-      totalDahiTransferredToPOS += outNum;
+    const bStatus = String(b.status || '').toLowerCase();
+    const bStage = String(b.stage || '').toLowerCase();
+    const isReady = ['completed', 'ready_for_pos', 'pos'].includes(bStatus) || ['pos', 'chilled', 'completed'].includes(bStage);
+
+    if (isReady && outNum > 0) {
+      if (isDahi) {
+        totalDahiTransferredToPOS += outNum;
+      } else if (isMilk) {
+        totalProcessedMilk += outNum;
+        if (isCow) {
+          processedCowMilkStock += outNum;
+        } else if (isBuff) {
+          processedBuffaloMilkStock += outNum;
+        } else {
+          processedCowMilkStock += outNum / 2;
+          processedBuffaloMilkStock += outNum / 2;
+        }
+      }
+
+      // Track by specific product name for general inventory products
+      const rawName = b.product || 'Product';
+      batchProductStockMap[rawName] = (batchProductStockMap[rawName] || 0) + outNum;
     }
   });
 
@@ -1166,11 +1212,11 @@ export function POSProvider({ children }) {
   // Remaining liquid milk after BOTH POS sales AND Dahi conversion:
   const remainingFarmMilk = Math.max(0, Number((totalFarmMilk - (farmSalesMetrics?.milkSold || 0) - farmMilkConvertedToDahi).toFixed(1)));
   const remainingSupplierMilk = Math.max(0, Number((totalSupplierIntake - (supplierSalesMetrics?.milkSold || 0) - supplierMilkConvertedToDahi).toFixed(1)));
-  const remainingTotalMilk = Number((remainingFarmMilk + remainingSupplierMilk).toFixed(1));
+  const remainingTotalMilk = Number((remainingFarmMilk + remainingSupplierMilk + totalProcessedMilk).toFixed(1));
 
-  // Separate live remaining stocks for Cow Milk and Buffalo Milk:
-  const remainingFarmCowMilk = Math.max(0, Number((totalFarmCowMilk - farmCowMilkSold).toFixed(1)));
-  const remainingFarmBuffaloMilk = Math.max(0, Number((totalFarmBuffaloMilk - farmBuffaloMilkSold - farmMilkConvertedToDahi).toFixed(1)));
+  // Separate live remaining stocks for Cow Milk and Buffalo Milk (Raw Yield + Processed Batches - Sold):
+  const remainingFarmCowMilk = Math.max(0, Number((totalFarmCowMilk - farmCowMilkSold + processedCowMilkStock).toFixed(1)));
+  const remainingFarmBuffaloMilk = Math.max(0, Number((totalFarmBuffaloMilk - farmBuffaloMilkSold - farmMilkConvertedToDahi + processedBuffaloMilkStock).toFixed(1)));
   const remainingSupplierCowMilk = Math.max(0, Number((totalSupplierCowIntake - supplierCowMilkSold).toFixed(1)));
   const remainingSupplierBuffaloMilk = Math.max(0, Number((totalSupplierBuffaloIntake - supplierBuffaloMilkSold - supplierMilkConvertedToDahi).toFixed(1)));
 
@@ -1327,6 +1373,7 @@ export function POSProvider({ children }) {
           dahiTotalPotentialExtraProfit: dahiTotalExtraProfit,
           milkPrice: activeMilkPrice,
           dahiPrice: activeDahiPrice,
+          productBatchStockMap: batchProductStockMap,
         },
 
         // Farm & Supplier Sales Source Metrics

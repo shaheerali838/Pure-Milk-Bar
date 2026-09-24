@@ -301,7 +301,15 @@ export default function Sidebar() {
                   key={link.id}
                   to={link.path}
                   className={({ isActive }) => {
-                    const isFinanceActive = isActive || pathname.startsWith("/finance");
+                    const isFinanceActive =
+                      (isActive || pathname.startsWith("/finance")) &&
+                      !pathname.startsWith("/finance/daily-closing") &&
+                      !pathname.startsWith("/finance/audit-log") &&
+                      pathname !== "/daily-closing" &&
+                      pathname !== "/dailyclosing" &&
+                      pathname !== "/audit-log" &&
+                      pathname !== "/audit" &&
+                      pathname !== "/transactions";
                     return `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
                       isFinanceActive
                         ? "bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20"
@@ -328,13 +336,18 @@ export default function Sidebar() {
                 <NavLink
                   key={link.id}
                   to={link.path}
-                  className={({ isActive }) =>
-                    `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                      isActive
+                  className={({ isActive }) => {
+                    const isCurrentActive =
+                      isActive ||
+                      pathname === link.path ||
+                      (link.path === '/finance/daily-closing' && (pathname === '/daily-closing' || pathname === '/dailyclosing')) ||
+                      (link.path === '/finance/audit-log' && (pathname === '/audit-log' || pathname === '/audit' || pathname === '/transactions'));
+                    return `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                      isCurrentActive
                         ? 'bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20'
                         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                    }`
-                  }
+                    }`;
+                  }}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
                   <span className="truncate">{link.name}</span>

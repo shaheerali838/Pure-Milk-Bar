@@ -56,7 +56,6 @@ export default function POSDashboard() {
   const getProductDisplayStock = (prod) => {
     const name = (prod.name || '').toLowerCase();
     const cat = (prod.category || '').toLowerCase();
-    const src = (prod.source || '').toLowerCase();
     const isCow = name.includes('cow');
     const isBuff = name.includes('buffalo');
 
@@ -82,7 +81,8 @@ export default function POSDashboard() {
       return Number(prod.stock) || 0;
     }
 
-    return Number(prod.stock) || 0;
+    const batchSpecificStock = Number(inventoryMetrics?.productBatchStockMap?.[prod.name] || 0);
+    return Math.max(0, (Number(prod.stock) || 0) + batchSpecificStock);
   };
 
   // Temporary on-card warning state for zero stock / depleted stock
@@ -255,8 +255,9 @@ export default function POSDashboard() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {filteredProducts.map((product) => {
-                  const cartItem = cart.find((i) => i.id === product.id);
+                {filteredProducts.map((product, idx) => {
+                  const prodId = product.id || product._id || product.sku || `prod-${idx}`;
+                  const cartItem = cart.find((i) => i.id === prodId || (product.id && i.id === product.id));
                   const inCartQty = cartItem ? cartItem.quantity : 0;
                   const isMilk = product.category?.toLowerCase().includes('milk');
                   const isDahi = product.category?.toLowerCase().includes('dahi');
@@ -265,7 +266,7 @@ export default function POSDashboard() {
 
                     return (
                     <div
-                      key={product.id}
+                      key={prodId}
                       onClick={() => handleProductCardClick(product)}
                       className={`relative group bg-white border rounded-2xl p-3.5 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-md flex flex-col justify-between overflow-hidden ${
                         inCartQty > 0

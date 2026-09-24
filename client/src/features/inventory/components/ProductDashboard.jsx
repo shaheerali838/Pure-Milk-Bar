@@ -226,7 +226,8 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
-          {filteredProducts.map((p) => {
+          {filteredProducts.map((p, idx) => {
+            const prodKey = p.id || p._id || p.sku || `prod-${idx}`;
             const salePrice = Number(p.price) || 0;
             const costPrice = Number(p.cost) || 0;
             const profitMargin = salePrice - costPrice;
@@ -242,7 +243,7 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
 
             return (
               <div
-                key={p.id}
+                key={prodKey}
                 onClick={() => handleDetailClick(p)}
                 className="bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-400 shadow-2xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group relative"
                 style={{ borderTop: `4px solid ${accentColor}` }}

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import './User.model.js';
 
 const { Schema, model } = mongoose;
 
@@ -55,8 +56,35 @@ const processingBatchSchema = new Schema(
       type: String,
       trim: true,
       default: 'Completed',
-      enum: ['Completed', 'In Progress', 'Failed', 'COMPLETED', 'IN_PROGRESS', 'FAILED'],
+      enum: ['Completed', 'In Progress', 'Failed', 'COMPLETED', 'IN_PROGRESS', 'FAILED', 'READY_FOR_POS'],
       index: true,
+    },
+    stage: {
+      type: String,
+      trim: true,
+      default: 'pos',
+      enum: ['incubating', 'chilled', 'pos', 'sold_out', 'INCUBATING', 'CHILLED', 'POS', 'SOLD_OUT'],
+      index: true,
+    },
+    source: {
+      type: String,
+      trim: true,
+      default: 'Farm & Supplier Mix',
+    },
+    farmMilkUsed: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    supplierMilkUsed: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    posRate: {
+      type: String,
+      trim: true,
+      default: 'Rs. 320 / kg',
     },
     costEstimate: {
       type: Number,
@@ -79,7 +107,7 @@ const processingBatchSchema = new Schema(
     toJSON: {
       virtuals: true,
       transform: (doc, ret) => {
-        ret.id = ret._id;
+        ret.id = ret.batchNumber || ret._id;
         // Frontend compatibility aliases
         ret.milkUsed = `${ret.milkUsedLiters} L`;
         ret.fat = `${ret.fatPercentage}%`;
