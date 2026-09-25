@@ -53,17 +53,19 @@ export const getReceivablesAging = async (req, res, next) => {
 
 export const createExpense = async (req, res, next) => {
   try {
-    const expense = await createExpenseService(req.body, req.user.id);
+    const userId = req.user ? (req.user.id || req.user._id) : null;
+    const expense = await createExpenseService(req.body, userId);
     res.status(201).json({
       success: true,
       message: 'Expense recorded successfully',
       data: expense,
+      expense,
     });
   } catch (error) {
+    console.error('Error creating expense:', error);
     next(error);
   }
 };
-
 
 export const getExpenses = async (req, res, next) => {
   try {
@@ -71,8 +73,12 @@ export const getExpenses = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data,
+      expenses: data?.expenses || [],
+      totalAmount: data?.totalAmount || 0,
+      pagination: data?.pagination || {},
     });
   } catch (error) {
+    console.error('Error fetching expenses:', error);
     next(error);
   }
 };

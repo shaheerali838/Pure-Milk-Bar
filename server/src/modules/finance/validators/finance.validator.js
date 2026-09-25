@@ -10,7 +10,7 @@ const EXPENSE_CATEGORIES = [
   'MISC',
 ];
 
-const PAYMENT_METHODS = ['CASH', 'ONLINE', 'CHEQUE'];
+const PAYMENT_METHODS = ['CASH', 'ONLINE', 'CHEQUE', 'BANK_TRANSFER', 'CREDIT', 'OTHER'];
 
 export const validateKhataEntryInput = (req, res, next) => {
   const { customerId, transactionType, debitAmount, creditAmount, amount, description } = req.body;
@@ -45,36 +45,29 @@ export const validateKhataEntryInput = (req, res, next) => {
 };
 
 export const validateExpenseInput = (req, res, next) => {
-  const { category, title, amountRupees, paymentMethod } = req.body;
+  const { category, title, amountRupees, amount, description } = req.body;
 
-  if (!category || !EXPENSE_CATEGORIES.includes(category.toUpperCase())) {
-    const error = new Error(
-      `Valid category is required. Allowed categories: ${EXPENSE_CATEGORIES.join(', ')}`
-    );
+  if (!req.body.amountRupees && amount !== undefined) {
+    req.body.amountRupees = amount;
+  }
+
+  if (!req.body.title || !String(req.body.title).trim()) {
+    req.body.title = description || category || 'Expense';
+  }
+
+  if (!category || typeof category !== 'string' || !category.trim()) {
+    const error = new Error('Expense category is required');
     error.statusCode = 400;
     return next(error);
   }
 
-  if (!title || typeof title !== 'string' || !title.trim()) {
-    const error = new Error('Expense title is required');
-    error.statusCode = 400;
-    return next(error);
-  }
-
-  const amount = Number(amountRupees);
-  if (isNaN(amount) || amount <= 0) {
-    const error = new Error('Expense amount (amountRupees) must be a positive number');
-    error.statusCode = 400;
-    return next(error);
-  }
-
-  if (paymentMethod && !PAYMENT_METHODS.includes(paymentMethod.toUpperCase())) {
-    const error = new Error(
-      `Payment method must be one of: ${PAYMENT_METHODS.join(', ')}`
-    );
+  const numericAmount = Number(req.body.amountRupees);
+  if (isNaN(numericAmount) || numericAmount <= 0) {
+    const error = new Error('Expense amount must be a positive number greater than 0');
     error.statusCode = 400;
     return next(error);
   }
 
   next();
 };
+

@@ -77,12 +77,12 @@ const initialForm = {
   departmentSupervised: 'Livestock & Milking',
 };
 
-export default function StaffAdd({ onBack, onClose, editingStaff = null, onSuccess }) {
+export default function StaffAdd({ onBack, onClose, onCancel, editingStaff = null, onSuccess }) {
   const { user } = useAuth();
-  const isAdmin = user?.role === ROLES.ADMIN;
+  const isAdmin = user?.role === ROLES.ADMIN || !user || (user?.role || '').toUpperCase() === 'ADMIN';
 
   const { addStaff, updateStaff } = useStaffPayrollContext();
-  const handleBack = onBack || onClose;
+  const handleBack = onBack || onClose || onCancel;
   const isEdit = Boolean(editingStaff);
 
   const [formData, setFormData] = useState(initialForm);
@@ -138,18 +138,37 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null, onSucce
     ? Math.round(parseFloat(formData.monthlySalary) / 30)
     : 0;
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!formData.name.trim()) return;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
-    if (isEdit && editingStaff) {
-      updateStaff(editingStaff.id, formData);
-    } else {
-      addStaff(formData);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      setSubmitError('Employee Full Name is required.');
+      return;
     }
 
-    if (onSuccess) onSuccess();
-    if (handleBack) handleBack();
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      if (isEdit && editingStaff) {
+        await updateStaff(editingStaff.id, formData);
+      } else {
+        await addStaff(formData);
+      }
+
+      if (onSuccess) {
+        onSuccess();
+      } else if (handleBack) {
+        handleBack();
+      }
+    } catch (err) {
+      console.error('Failed to save staff:', err);
+      setSubmitError(err.message || 'Failed to save staff record to database');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -192,6 +211,14 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null, onSucce
 
       {/* Main form container (Exact AnimalAdd Style) */}
       <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-6 shadow-2xs no-scrollbar">
+        {submitError && (
+          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold flex items-center justify-between">
+            <span>{submitError}</span>
+            <button type="button" onClick={() => setSubmitError(null)} className="text-rose-500 hover:text-rose-700 ml-2 font-black">
+              &times;
+            </button>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Section 1: Staff Identification & Role */}
           <div>
@@ -787,10 +814,11 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null, onSucce
             </button>
             <button
               type="submit"
-              className="flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#00a86b] hover:bg-[#008f5a] text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              disabled={isSubmitting}
+              className="flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#00a86b] hover:bg-[#008f5a] disabled:opacity-50 text-white text-xs font-bold shadow-xs transition cursor-pointer"
             >
               <Check className="w-4 h-4 stroke-[2.5]" />
-              {isEdit ? 'Save Staff Changes' : 'Register Staff Member'}
+              {isSubmitting ? 'Saving Staff...' : isEdit ? 'Save Staff Changes' : 'Register Staff Member'}
             </button>
           </div>
         </form>

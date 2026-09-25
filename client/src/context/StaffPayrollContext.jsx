@@ -84,6 +84,7 @@ export function StaffPayrollProvider({ children }) {
 
     const payload = {
       ...data,
+      staffCode: (data.staffCode || data.id || '').trim() || undefined,
       name: data.name?.trim() || 'New Staff',
       role: data.role || 'Farm Worker',
       shift: data.shift || 'Morning',
@@ -104,13 +105,18 @@ export function StaffPayrollProvider({ children }) {
     try {
       created = await adminService.createStaff(payload);
     } catch (err) {
-      console.warn('Create staff API notice:', err.message);
+      console.warn('Backend createStaff notice (saving locally):', err.message);
     }
+
+    const createdStaffDoc = created?.data || created?.staff || (created && typeof created === 'object' ? created : null);
+    const assignedId = createdStaffDoc?._id || createdStaffDoc?.id || createdStaffDoc?.staffCode || data.id?.trim() || generateStaffId();
 
     const newStaff = {
       ...payload,
-      id: created?._id || created?.id || data.id?.trim() || generateStaffId(),
-      createdAt: new Date().toISOString(),
+      ...(createdStaffDoc || {}),
+      id: assignedId,
+      _id: createdStaffDoc?._id || assignedId,
+      createdAt: createdStaffDoc?.createdAt || new Date().toISOString(),
     };
 
     setStaffList((prev) => [newStaff, ...prev]);
@@ -160,7 +166,7 @@ export function StaffPayrollProvider({ children }) {
 
   // Mark single staff member attendance for a specific date
   // status: 'present' | 'absent' | 'leave'
-  const markAttendance = (staffId, date, status) => {
+  const markAttendance = async (staffId, date, status) => {
     const dateKey = formatDateKey(date);
     const idKey = String(staffId);
     setAttendanceRecords((prev) => {
@@ -173,24 +179,47 @@ export function StaffPayrollProvider({ children }) {
       };
     });
 
-    // Also update current active/status if marking today
+    const targetStaff = staffList.find((s) => String(s.id) === idKey || String(s._id) === idKey);
     const todayStr = formatDateKey(new Date());
+    let newStatus = targetStaff?.status || 'Active';
+
     if (dateKey === todayStr) {
-      setStaffList((prev) =>
-        prev.map((staff) => {
-          if (String(staff.id) !== idKey) return staff;
-          let newStatus = 'Active';
-          if (status === 'leave') newStatus = 'On Leave';
-          if (status === 'absent') newStatus = 'Inactive';
-          return { ...staff, status: newStatus };
-        })
-      );
+      if (status === 'leave') newStatus = 'On Leave';
+      else if (status === 'absent') newStatus = 'Inactive';
+      else if (status === 'present') newStatus = 'Active';
+    }
+
+    setStaffList((prev) =>
+      prev.map((staff) => {
+        if (String(staff.id) !== idKey && String(staff._id) !== idKey) return staff;
+        const updatedMap = { ...(staff.attendanceMap || {}), [dateKey]: status };
+        return {
+          ...staff,
+          ...(dateKey === todayStr && { status: newStatus }),
+          attendanceMap: updatedMap,
+        };
+      })
+    );
+
+    // Sync status and attendanceMap to MongoDB backend API
+    try {
+      const dbId = targetStaff?._id || targetStaff?.id || staffId;
+      const updatedMap = { ...(targetStaff?.attendanceMap || {}), [dateKey]: status };
+      const payload = { attendanceMap: updatedMap };
+      if (dateKey === todayStr) {
+        payload.status = newStatus;
+      }
+      await adminService.updateStaff(dbId, payload);
+    } catch (err) {
+      console.warn('Sync markAttendance error:', err.message);
     }
   };
 
   // Batch mark all staff for a specific date
-  const markAllAttendance = (date, status) => {
+  const markAllAttendance = async (date, status) => {
     const dateKey = formatDateKey(date);
+    const todayStr = formatDateKey(new Date());
+
     setAttendanceRecords((prev) => {
       const dayMap = {};
       staffList.forEach((s) => {
@@ -202,6 +231,36 @@ export function StaffPayrollProvider({ children }) {
         [dateKey]: dayMap,
       };
     });
+
+    let newStatus = 'Active';
+    if (status === 'leave') newStatus = 'On Leave';
+    else if (status === 'absent') newStatus = 'Inactive';
+    else if (status === 'present') newStatus = 'Active';
+
+    setStaffList((prev) =>
+      prev.map((staff) => {
+        const updatedMap = { ...(staff.attendanceMap || {}), [dateKey]: status };
+        return {
+          ...staff,
+          ...(dateKey === todayStr && { status: newStatus }),
+          attendanceMap: updatedMap,
+        };
+      })
+    );
+
+    try {
+      await Promise.all(
+        staffList.map((s) => {
+          const dbId = s._id || s.id;
+          const updatedMap = { ...(s.attendanceMap || {}), [dateKey]: status };
+          const payload = { attendanceMap: updatedMap };
+          if (dateKey === todayStr) payload.status = newStatus;
+          return adminService.updateStaff(dbId, payload);
+        })
+      );
+    } catch (err) {
+      console.warn('Sync markAllAttendance error:', err.message);
+    }
   };
 
   // Get status for staff member on a specific date ('present' | 'absent' | 'leave')
@@ -216,11 +275,13 @@ export function StaffPayrollProvider({ children }) {
         return attendanceRecords[dateKey][staffId];
       }
     }
+    const staff = staffList.find((s) => String(s.id) === idKey || String(s._id) === idKey);
+    if (staff && staff.attendanceMap && staff.attendanceMap[dateKey] !== undefined) {
+      return staff.attendanceMap[dateKey];
+    }
     // Default fallback based on staff.status if viewing today
     const todayStr = formatDateKey(new Date());
-    if (dateKey === todayStr) {
-      const staff = staffList.find((s) => String(s.id) === idKey);
-      if (!staff) return 'present';
+    if (dateKey === todayStr && staff) {
       if (staff.status === 'On Leave') return 'leave';
       if (staff.status === 'Inactive' || staff.status === 'Off Duty') return 'absent';
       return 'present';

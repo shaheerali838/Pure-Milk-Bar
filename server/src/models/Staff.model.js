@@ -7,6 +7,7 @@ const staffSchema = new Schema(
     staffCode: {
       type: String,
       unique: true,
+      sparse: true,
       trim: true,
       uppercase: true,
       index: true,
@@ -81,6 +82,73 @@ const staffSchema = new Schema(
     image: {
       type: String,
       default: null,
+    },
+    address: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    emergencyContact: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    vehicleNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    licenseNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    vehicleType: {
+      type: String,
+      trim: true,
+      default: 'Motorcycle',
+    },
+    assignedBarn: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    milkingShiftSpecialization: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    assignedCattleCount: {
+      type: Schema.Types.Mixed,
+      default: '',
+    },
+    guardPost: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    weaponLicense: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    posRegisterId: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    khataAuthLimit: {
+      type: Schema.Types.Mixed,
+      default: '',
+    },
+    departmentSupervised: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    attendanceMap: {
+      type: Schema.Types.Mixed,
+      default: {},
     },
     userAccountId: {
       type: Schema.Types.ObjectId,
