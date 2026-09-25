@@ -259,6 +259,19 @@ export function IntakeProvider({ children }) {
     };
   }, [intakeLogs]);
 
+  const deleteIntake = async (id) => {
+    try {
+      await supplierService.deleteProcurement(id);
+    } catch (err) {
+      console.warn('Backend delete failed, removing locally:', err);
+    }
+    setIntakeLogs((prev) => {
+      const updated = prev.filter((log) => log.id !== id && log._id !== id);
+      localStorage.setItem('intake_logs_cache', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const value = {
     intakeLogs,
     isLoading,
@@ -271,6 +284,7 @@ export function IntakeProvider({ children }) {
     settleBatchesWithAmount,
     settleAllBatchesForSupplier,
     updateIntake,
+    deleteIntake,
   };
 
   return <IntakeContext.Provider value={value}>{children}</IntakeContext.Provider>;

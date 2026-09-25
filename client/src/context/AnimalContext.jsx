@@ -198,14 +198,61 @@ export function AnimalProvider({ children }) {
   // Delete Animal via API
   const deleteAnimal = async (id) => {
     try {
-      await farmService.deleteAnimal(id);
+      // Optimistic delete
       setAnimals((prev) => {
-        const updated = prev.filter((a) => String(a._id || a.id) !== String(id) && String(a.id) !== String(id));
+        const updated = prev.filter((a) => String(a._id || a.id) !== String(id) && String(a.tag) !== String(id));
         localStorage.setItem('animals_cache', JSON.stringify(updated));
         return updated;
       });
+      
+      const isValidObjectId = /^[a-fA-F0-9]{24}$/.test(String(id));
+      if (isValidObjectId) {
+        await farmService.deleteAnimal(id).catch(err => {
+          console.warn('Backend delete animal failed, but removed locally:', err);
+        });
+      }
     } catch (err) {
-      console.error('Failed to delete animal via API:', err);
+      console.error('Failed to delete animal:', err);
+    }
+  };
+
+  // Delete Milking Log via API
+  const deleteMilkingLog = async (id) => {
+    try {
+      // Optimistic delete
+      setMilkingLogs((prev) => {
+        const updated = prev.filter((log) => String(log._id || log.id) !== String(id));
+        localStorage.setItem('milking_logs_cache', JSON.stringify(updated));
+        return updated;
+      });
+
+      const isValidObjectId = /^[a-fA-F0-9]{24}$/.test(String(id));
+      if (isValidObjectId) {
+        await farmService.deleteMilkingLog(id).catch(err => {
+          console.warn('Backend delete milking log failed, but removed locally:', err);
+        });
+      }
+    } catch (err) {
+      console.error('Failed to delete milking log:', err);
+    }
+  };
+
+  // Update Milking Log via API
+  const updateMilkingLog = async (id, data) => {
+    try {
+      await farmService.updateMilkingLog(id, data);
+      setMilkingLogs((prev) => {
+        const updated = prev.map((log) => {
+          if (String(log._id || log.id) === String(id)) {
+            return { ...log, ...data, yieldLiters: data.yieldLiters || log.yieldLiters, yield: data.yieldLiters || log.yieldLiters };
+          }
+          return log;
+        });
+        localStorage.setItem('milking_logs_cache', JSON.stringify(updated));
+        return updated;
+      });
+    } catch (err) {
+      console.error('Failed to update milking log via API:', err);
       throw err;
     }
   };
@@ -252,6 +299,8 @@ export function AnimalProvider({ children }) {
         updateAnimal,
         saveMilkingShift,
         deleteAnimal,
+        deleteMilkingLog,
+        updateMilkingLog,
         isModalOpen,
         openModal,
         closeModal,

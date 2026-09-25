@@ -57,6 +57,11 @@ export const supplierService = {
     const res = await api.patch(`/api/v1/suppliers/procurements/${id}`, data);
     return res.data || res.procurement || res;
   },
+
+  deleteProcurement: async (id) => {
+    const res = await api.delete(`/api/v1/suppliers/procurements/${id}`);
+    return res.data || res;
+  },
 };
 
 export default supplierService;

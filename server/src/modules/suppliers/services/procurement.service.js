@@ -186,6 +186,33 @@ class ProcurementService {
       },
     };
   }
+
+  async deleteProcurement(id) {
+    const existing = await MilkProcurement.findById(id);
+    if (!existing) {
+      throw new AppError('Procurement record not found', 404, 'PROCUREMENT_NOT_FOUND');
+    }
+
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        await MilkProcurement.findByIdAndDelete(id, { session });
+
+        // Reverse the balance if it was accepted
+        if (existing.status === 'ACCEPTED') {
+          await Supplier.findByIdAndUpdate(
+            existing.supplierId,
+            { $inc: { currentPayableBalance: -existing.balanceAddedToKhata } },
+            { session }
+          );
+        }
+      });
+    } finally {
+      await session.endSession();
+    }
+    
+    return true;
+  }
 }
 
 export default new ProcurementService();
