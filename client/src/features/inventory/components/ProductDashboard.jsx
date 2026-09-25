@@ -8,6 +8,7 @@ import {
   Layers,
   CheckCircle,
   TrendingUp,
+  Tag,
 } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 import { useAuth } from '@/context/AuthContext';
