@@ -19,8 +19,15 @@ export function DahiProvider({ children }) {
   // POS products and inventory from POSContext
   const posCtx = usePOSContext();
 
-  const [batches, setBatches] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [batches, setBatches] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dahi_batches_cache');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch batches directly from backend database
   const fetchBatches = useCallback(async () => {
@@ -35,10 +42,13 @@ export function DahiProvider({ children }) {
         outputVal: Number(b.outputQuantity || b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0,
         milkUsedVal: Number(b.milkUsedQuantity || b.milkUsedVal) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0,
       }));
-      setBatches(normalized);
+      if (normalized.length > 0) {
+        setBatches(normalized);
+        localStorage.setItem('dahi_batches_cache', JSON.stringify(normalized));
+      }
     } catch (err) {
       console.warn('Failed to fetch processing batches from database API:', err.message);
-      setBatches([]);
+      // DO NOT clear state here, rely on localStorage cache
     } finally {
       setIsLoading(false);
     }
@@ -300,7 +310,11 @@ export function DahiProvider({ children }) {
       expectedProfit: `+Rs. ${expectedProfitVal.toLocaleString()}`,
     };
 
-    setBatches((prev) => [newRecord, ...prev]);
+    setBatches((prev) => {
+      const updated = [newRecord, ...prev];
+      localStorage.setItem('dahi_batches_cache', JSON.stringify(updated));
+      return updated;
+    });
 
     // If initial stage is pos, sync directly into matching product stock in POS
     if (initialStage === 'pos' && posCtx?.setProducts && numOutput > 0) {
@@ -332,8 +346,8 @@ export function DahiProvider({ children }) {
 
   // Stage transition 1 -> 2: Move from Incubating to Chilled Storage
   const moveToChiller = useCallback(async (batchId) => {
-    setBatches((prev) =>
-      prev.map((b) => {
+    setBatches((prev) => {
+      const updated = prev.map((b) => {
         if (b.id !== batchId && b._id !== batchId) return b;
         const rateNum = parseFloat(String(b.posRate || '').replace(/[^\d.]/g, '')) || 320;
         const profit = Math.round((b.outputVal || 0) * Math.max(0, rateNum - 220));
@@ -343,8 +357,10 @@ export function DahiProvider({ children }) {
           status: 'Completed',
           expectedProfit: `+Rs. ${profit.toLocaleString()}`,
         };
-      })
-    );
+      });
+      localStorage.setItem('dahi_batches_cache', JSON.stringify(updated));
+      return updated;
+    });
 
     try {
       await farmService.updateProcessingBatch(batchId, { stage: 'chilled', status: 'Completed' });
@@ -360,8 +376,8 @@ export function DahiProvider({ children }) {
     let batchOut = 0;
     let batchProduct = '';
 
-    setBatches((prev) =>
-      prev.map((b) => {
+    setBatches((prev) => {
+      const updated = prev.map((b) => {
         if (b.id !== batchId && b._id !== batchId) return b;
         batchOut = Number(b.outputVal || b.outputQuantity) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
         batchProduct = b.product || '';
@@ -374,8 +390,10 @@ export function DahiProvider({ children }) {
           revenueValue: `Rs. ${rev.toLocaleString()}`,
           transferredAt: timeNow,
         };
-      })
-    );
+      });
+      localStorage.setItem('dahi_batches_cache', JSON.stringify(updated));
+      return updated;
+    });
 
     try {
       await farmService.updateProcessingBatch(batchId, { stage: 'pos', status: 'Completed' });
@@ -413,8 +431,8 @@ export function DahiProvider({ children }) {
 
   // Mark POS batch sold out
   const markSoldOut = useCallback((batchId) => {
-    setBatches((prev) =>
-      prev.map((b) =>
+    setBatches((prev) => {
+      const updated = prev.map((b) =>
         b.id === batchId || b._id === batchId
           ? {
               ...b,
@@ -422,8 +440,10 @@ export function DahiProvider({ children }) {
               status: 'Completed',
             }
           : b
-      )
-    );
+      );
+      localStorage.setItem('dahi_batches_cache', JSON.stringify(updated));
+      return updated;
+    });
   }, []);
 
   // Delete batch (restores milk to sourcing inventory)
@@ -433,7 +453,11 @@ export function DahiProvider({ children }) {
     } catch (e) {
       console.warn('Backend API deleteProcessingBatch error:', e.message);
     }
-    setBatches((prev) => prev.filter((b) => b.id !== batchId && b._id !== batchId));
+    setBatches((prev) => {
+      const updated = prev.filter((b) => b.id !== batchId && b._id !== batchId);
+      localStorage.setItem('dahi_batches_cache', JSON.stringify(updated));
+      return updated;
+    });
   }, []);
 
   const clearBatches = useCallback(() => {

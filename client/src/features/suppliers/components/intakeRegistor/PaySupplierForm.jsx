@@ -478,17 +478,22 @@ export default function PaySupplierForm({ slip = null, onCancel, onPaymentSucces
                   </span>
                 </div>
 
-                <div className="flex justify-between text-slate-600">
-                  <span>Current Slip Due:</span>
-                  <span>Rs. {slipPendingAmount.toLocaleString()}</span>
+                <div className="flex justify-between text-slate-500 pb-1">
+                  <span>Previous Payment:</span>
+                  <span>Rs. {alreadyPaidOnSlip.toLocaleString()}</span>
                 </div>
 
                 <div className="flex justify-between text-emerald-700 font-bold">
                   <span>Amount Paying Now:</span>
-                  <span>- Rs. {numPay.toLocaleString()}</span>
+                  <span>+ Rs. {numPay.toLocaleString()}</span>
                 </div>
 
-                <div className="border-t border-slate-200/80 pt-2 flex justify-between font-bold">
+                <div className="flex justify-between text-blue-700 font-bold border-b border-slate-200/80 pb-2 mb-1">
+                  <span>New Total Paid:</span>
+                  <span>= Rs. {(alreadyPaidOnSlip + numPay).toLocaleString()}</span>
+                </div>
+
+                <div className="pt-1 flex justify-between font-bold">
                   <span className="text-slate-800">Remaining Slip Due:</span>
                   <span
                     className={

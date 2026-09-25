@@ -4,7 +4,14 @@ import supplierService from '../services/supplierService';
 const IntakeContext = createContext(null);
 
 export function IntakeProvider({ children }) {
-  const [intakeLogs, setIntakeLogs] = useState([]);
+  const [intakeLogs, setIntakeLogs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('intake_logs_cache');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -43,11 +50,14 @@ export function IntakeProvider({ children }) {
           status: p.qualityGrade === 'REJECTED' ? 'Rejected' : 'Accepted',
         };
       });
-      setIntakeLogs(normalized);
+      if (normalized.length > 0) {
+        setIntakeLogs(normalized);
+        localStorage.setItem('intake_logs_cache', JSON.stringify(normalized));
+      }
     } catch (err) {
       console.error('Failed to fetch procurements from API:', err);
       setError(err.message || 'Failed to load intake records');
-      setIntakeLogs([]);
+      // DO NOT clear state here, rely on localStorage cache
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +94,14 @@ export function IntakeProvider({ children }) {
         balanceAddedToKhata: cost - (parseFloat(newRecord.paidAmount) || 0),
       };
 
-      const created = await supplierService.createProcurement(payload);
+      let created;
+      try {
+        created = await supplierService.createProcurement(payload);
+      } catch (err) {
+        created = { ...payload, id: `local-${Date.now()}` };
+        console.warn('Procurement API unavailable, saving locally:', err.message);
+      }
+
       const normalized = {
         ...created,
         id: created._id || created.id || `INT-${Date.now()}`,
@@ -106,7 +123,12 @@ export function IntakeProvider({ children }) {
         status: 'Accepted',
       };
 
-      await fetchIntakes();
+      setIntakeLogs((prev) => {
+        const updated = [normalized, ...prev];
+        localStorage.setItem('intake_logs_cache', JSON.stringify(updated));
+        return updated;
+      });
+
       return normalized;
     } catch (err) {
       console.error('Failed to create procurement via API:', err);
@@ -199,19 +221,39 @@ export function IntakeProvider({ children }) {
   };
 
   const totals = useMemo(() => {
-    const totalVolume = intakeLogs.reduce((acc, log) => acc + (parseFloat(log.quantity) || 0), 0);
+    let morningVolume = 0;
+    let eveningVolume = 0;
+
+    const totalVolume = intakeLogs.reduce((acc, log) => {
+      const vol = parseFloat(log.quantity) || 0;
+      if (log.shift === 'Morning' || log.shift === 'morning' || log.time === 'Morning') {
+        morningVolume += vol;
+      } else {
+        eveningVolume += vol;
+      }
+      return acc + vol;
+    }, 0);
+
     const totalExpenditure = intakeLogs.reduce((acc, log) => acc + (parseFloat(log.totalCost) || 0), 0);
     const totalPaid = intakeLogs.reduce((acc, log) => acc + (parseFloat(log.paidAmount) || 0), 0);
     const totalPending = intakeLogs.reduce((acc, log) => acc + (parseFloat(log.pendingAmount) || 0), 0);
     const avgFat = intakeLogs.length > 0 ? (intakeLogs.reduce((acc, log) => acc + (parseFloat(log.fat) || 0), 0) / intakeLogs.length).toFixed(1) : 0;
     const avgSnf = intakeLogs.length > 0 ? (intakeLogs.reduce((acc, log) => acc + (parseFloat(log.snf) || 0), 0) / intakeLogs.length).toFixed(1) : 0;
+    const avgPurchaseRate = totalVolume > 0 ? (totalExpenditure / totalVolume) : 0;
 
     return {
       totalBatches: intakeLogs.length,
+      totalRecords: intakeLogs.length,
       totalVolume: parseFloat(totalVolume.toFixed(1)),
+      totalProcuredVolume: parseFloat(totalVolume.toFixed(1)),
+      morningVolume: parseFloat(morningVolume.toFixed(1)),
+      eveningVolume: parseFloat(eveningVolume.toFixed(1)),
       totalExpenditure: Math.round(totalExpenditure),
+      totalIntakeSpend: Math.round(totalExpenditure),
       totalPaid: Math.round(totalPaid),
       totalPending: Math.round(totalPending),
+      pendingSettlements: Math.round(totalPending),
+      avgPurchaseRate: parseFloat(avgPurchaseRate.toFixed(2)),
       avgFat,
       avgSnf,
     };

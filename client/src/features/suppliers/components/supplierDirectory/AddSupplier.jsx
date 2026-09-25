@@ -36,6 +36,7 @@ const initialForm = {
   status: 'Active',
   paymentMethod: 'Cash / Direct Settlement',
   accountNumber: '',
+  joinDate: new Date().toISOString().split('T')[0],
   notes: '',
   image: '',
 };
@@ -60,6 +61,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
         status: editSupplier.status || 'Active',
         paymentMethod: editSupplier.paymentMethod || 'Cash / Direct Settlement',
         accountNumber: editSupplier.accountNumber || '',
+        joinDate: editSupplier.joinDate || new Date().toISOString().split('T')[0],
         notes: editSupplier.notes || '',
         image: editSupplier.image || '',
       });
@@ -192,6 +194,25 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Registration Date <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                    <Calendar className="w-3.5 h-3.5" />
+                  </span>
+                  <input
+                    type="date"
+                    name="joinDate"
+                    required
+                    value={formData.joinDate}
+                    onChange={handleChange}
+                    className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
+                  />
+                </div>
               </div>
 
               <div>

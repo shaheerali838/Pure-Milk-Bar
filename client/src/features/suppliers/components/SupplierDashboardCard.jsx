@@ -8,7 +8,8 @@ export default function SupplierDashboardCard() {
   const { intakeLogs } = useIntakeContext();
 
   const todayData = useMemo(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const todayLogs = (intakeLogs || []).filter((log) => log.date === todayStr);
 
     const todayVolume = todayLogs.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);

@@ -49,6 +49,7 @@ export default function ExpenseTable({ searchQuery = '', categoryFilter = 'All',
           <tr>
             <th className="px-4 py-3 font-semibold">Date</th>
             <th className="px-4 py-3 font-semibold">Category</th>
+            <th className="px-4 py-3 font-semibold">Animal</th>
             <th className="px-4 py-3 font-semibold">Description</th>
             <th className="px-4 py-3 font-semibold">Ref #</th>
             <th className="px-4 py-3 font-semibold text-right">Amount</th>
@@ -79,6 +80,9 @@ export default function ExpenseTable({ searchQuery = '', categoryFilter = 'All',
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
                     {expense.category.split(' ')[0]}
                   </span>
+                </td>
+                <td className="px-4 py-3 text-slate-600 font-medium text-xs">
+                  {expense.animalName || '-'}
                 </td>
                 <td className="px-4 py-3 text-slate-700 max-w-[200px] truncate" title={expense.description}>
                   {expense.description}

@@ -302,16 +302,18 @@ export default function PaySupplierModal({
             <table className="w-full text-left text-xs">
               <thead className="bg-white border-b border-slate-100">
                 <tr>
-                  <th className="py-1.5 px-3 text-slate-500 font-semibold text-[10px]">Pending Before</th>
+                  <th className="py-1.5 px-3 text-slate-500 font-semibold text-[10px]">Prev. Paid</th>
                   <th className="py-1.5 px-3 text-emerald-600 font-semibold text-[10px]">Paying Now</th>
+                  <th className="py-1.5 px-3 text-blue-600 font-semibold text-[10px]">Total Paid</th>
                   <th className="py-1.5 px-3 text-amber-600 font-semibold text-[10px] text-right">Remaining Due</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td className="py-2.5 px-3 font-mono font-bold text-slate-800">Rs. {slipPendingAmount.toLocaleString()}</td>
-                  <td className="py-2.5 px-3 font-mono font-bold text-emerald-700">- Rs. {numPay.toLocaleString()}</td>
-                  <td className={`py-2.5 px-3 font-mono font-bold text-right ${remainingSlipPending > 0 ? 'text-amber-700' : 'text-slate-400'}`}>
+                  <td className="py-2.5 px-3 font-mono font-bold text-slate-500">Rs. {alreadyPaidOnSlip.toLocaleString()}</td>
+                  <td className="py-2.5 px-3 font-mono font-bold text-emerald-700">+ Rs. {numPay.toLocaleString()}</td>
+                  <td className="py-2.5 px-3 font-mono font-bold text-blue-700">= Rs. {(alreadyPaidOnSlip + numPay).toLocaleString()}</td>
+                  <td className={`py-2.5 px-3 font-mono font-bold text-right ${remainingSlipPending > 0 ? 'text-amber-700' : 'text-emerald-600'}`}>
                     Rs. {remainingSlipPending.toLocaleString()}
                   </td>
                 </tr>

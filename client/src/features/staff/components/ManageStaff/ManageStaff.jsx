@@ -485,10 +485,10 @@ export default function ManageStaff() {
                             <img
                               src={staff.image}
                               alt={staff.name}
-                              className="w-8 h-8 rounded-xl object-cover shrink-0 border border-slate-200"
+                              className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200"
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 font-display">
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 font-display">
                               {staff.name ? staff.name.charAt(0).toUpperCase() : 'S'}
                             </div>
                           )}

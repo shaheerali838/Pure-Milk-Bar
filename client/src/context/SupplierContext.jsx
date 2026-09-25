@@ -5,7 +5,14 @@ import supplierService from '@/services/supplierService';
 const SupplierContext = createContext(null);
 
 export function SupplierProvider({ children }) {
-  const [suppliers, setSuppliers] = useState([]);
+  const [suppliers, setSuppliers] = useState(() => {
+    try {
+      const saved = localStorage.getItem('suppliers_cache');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [directPayouts, setDirectPayouts] = useState([]);
@@ -37,13 +44,17 @@ export function SupplierProvider({ children }) {
         baseRate: Number(s.baseRatePerLiter || s.baseRate || s.ratePerLiter) || 220,
         avgLiters: Number(s.expectedDailyQuantity || s.avgLiters) || 10,
         status: s.status || 'Active',
+        joinDate: s.joinDate || s.registrationDate || (s.createdAt ? new Date(s.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
         image: s.image || null,
       }));
-      setSuppliers(normalized);
+      if (normalized.length > 0) {
+        setSuppliers(normalized);
+        localStorage.setItem('suppliers_cache', JSON.stringify(normalized));
+      }
     } catch (err) {
       console.error('Failed to fetch suppliers from API:', err);
       setError(err.message || 'Failed to load suppliers');
-      setSuppliers([]);
+      // DO NOT clear state here, rely on localStorage cache
     } finally {
       setIsLoading(false);
     }
@@ -69,6 +80,7 @@ export function SupplierProvider({ children }) {
         baseRate: parseFloat(newSupplierData.ratePerLiter || newSupplierData.baseRate) || 220,
         expectedDailyQuantity: parseFloat(newSupplierData.avgLiters) || 10,
         status: newSupplierData.status || 'Active',
+        joinDate: newSupplierData.joinDate || new Date().toISOString().split('T')[0],
         image: newSupplierData.image || null,
       };
 
@@ -85,10 +97,15 @@ export function SupplierProvider({ children }) {
         contact: created.phone || newSupplierData.contact,
         ratePerLiter: created.baseRatePerLiter || created.baseRate || newSupplierData.ratePerLiter || 220,
         avgLiters: created.expectedDailyQuantity || newSupplierData.avgLiters || 10,
+        joinDate: created.joinDate || newSupplierData.joinDate || new Date().toISOString().split('T')[0],
         image: created.image || newSupplierData.image || null,
       };
 
-      setSuppliers((prev) => [normalized, ...prev.filter((supplier) => supplier.code !== normalized.code)]);
+      setSuppliers((prev) => {
+        const updated = [normalized, ...prev.filter((supplier) => supplier.code !== normalized.code)];
+        localStorage.setItem('suppliers_cache', JSON.stringify(updated));
+        return updated;
+      });
       return normalized;
     } catch (err) {
       console.error('Failed to create supplier via API:', err);
@@ -104,9 +121,11 @@ export function SupplierProvider({ children }) {
       } catch (err) {
         console.warn('Supplier API unavailable, updating locally:', err.message);
       }
-      setSuppliers((prev) =>
-        prev.map((s) => (String(s._id || s.id) === String(id) ? { ...s, ...updatedData } : s))
-      );
+      setSuppliers((prev) => {
+        const updated = prev.map((s) => (String(s._id || s.id) === String(id) ? { ...s, ...updatedData } : s));
+        localStorage.setItem('suppliers_cache', JSON.stringify(updated));
+        return updated;
+      });
     } catch (err) {
       console.error('Failed to update supplier via API:', err);
       throw err;
@@ -121,7 +140,11 @@ export function SupplierProvider({ children }) {
       } catch (err) {
         console.warn('Supplier API unavailable, deleting locally:', err.message);
       }
-      setSuppliers((prev) => prev.filter((s) => String(s._id || s.id) !== String(id)));
+      setSuppliers((prev) => {
+        const updated = prev.filter((s) => String(s._id || s.id) !== String(id));
+        localStorage.setItem('suppliers_cache', JSON.stringify(updated));
+        return updated;
+      });
     } catch (err) {
       console.error('Failed to delete supplier via API:', err);
       throw err;

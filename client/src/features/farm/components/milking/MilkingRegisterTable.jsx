@@ -2,12 +2,16 @@ import React, { useState, useEffect } from "react";
 import { Sun, Moon, Zap, RotateCcw, Check, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useAnimalContext } from "../../../../context/AnimalContext";
+import { useStaffPayrollContext } from "../../../../context/StaffPayrollContext";
 
 export default function MilkingRegisterTable({ onSaveSuccess }) {
   const { animals = [], milkingLogs = [], saveMilkingShift } = useAnimalContext();
+  const { staffList = [] } = useStaffPayrollContext();
+  const farmWorkers = staffList.filter(s => s.role?.toLowerCase().includes('farm') || s.role?.toLowerCase().includes('milker') || s.role?.toLowerCase().includes('herdsman') || s.role?.toLowerCase().includes('worker'));
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
-  const [shift, setShift] = useState("Morning"); // 'Morning' or 'Evening'
+  const [shift, setShift] = useState("Morning");
+  const [operatorId, setOperatorId] = useState("");
 
   // Draft inputs while typing
   const [inputValues, setInputValues] = useState({ Morning: {}, Evening: {} });
@@ -119,13 +123,18 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
       return;
     }
 
+    if (!operatorId) {
+      toast.error("Please select a Milker/Operator before saving");
+      return;
+    }
+
     setSavedEntries((prev) => ({
       ...prev,
       [shift]: { ...activeInputs },
     }));
 
     if (saveMilkingShift) {
-      await saveMilkingShift(shift, selectedDate, activeInputs);
+      await saveMilkingShift(shift, selectedDate, activeInputs, operatorId);
     }
 
     const newlySavedTotal = cattleList.reduce((sum, item) => {
@@ -178,6 +187,22 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
                 <Moon className="w-3.5 h-3.5 text-indigo-500" /> Evening
               </button>
             </div>
+          </div>
+
+          <div className="flex flex-col">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
+              MILKER / OPERATOR
+            </span>
+            <select
+              value={operatorId}
+              onChange={(e) => setOperatorId(e.target.value)}
+              className="bg-white border border-slate-200 rounded-full px-4 py-2 text-sm font-semibold text-slate-800 focus:outline-none cursor-pointer"
+            >
+              <option value="">Select Milker</option>
+              {farmWorkers.map(w => (
+                <option key={w.id} value={w.id}>{w.name}</option>
+              ))}
+            </select>
           </div>
         </div>
 

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Receipt } from 'lucide-react';
 import { useExpense } from '../../../../context/ExpenseContext';
+import { useAnimalContext } from '../../../../context/AnimalContext';
 
 const EXPENSE_CATEGORIES = [
   "Feed & Fodder (Silage, Wanda, Vanda)",
@@ -23,6 +24,7 @@ const EXPENSE_CATEGORIES = [
 
 export default function RecordExpenseForm({ expenseId, onClose }) {
   const { addExpense, editExpense, expenses } = useExpense();
+  const { animals = [] } = useAnimalContext();
 
   const editingRecord = expenseId ? expenses.find(e => e.id === expenseId) : null;
 
@@ -33,7 +35,8 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
     date: new Date().toISOString().split('T')[0],
     paymentMethod: 'Cash',
     receiptRef: '',
-    authorizedBy: ''
+    authorizedBy: '',
+    animalName: ''
   });
 
   useEffect(() => {
@@ -45,7 +48,8 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
         date: editingRecord.date || new Date().toISOString().split('T')[0],
         paymentMethod: editingRecord.paymentMethod || 'Cash',
         receiptRef: editingRecord.receiptRef || '',
-        authorizedBy: editingRecord.authorizedBy || ''
+        authorizedBy: editingRecord.authorizedBy || '',
+        animalName: editingRecord.animalName || ''
       });
     }
   }, [editingRecord]);
@@ -85,95 +89,110 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
         </div>
 
         <div className="flex-1 p-6 overflow-y-auto no-scrollbar">
-          <form id="record-expense-form" onSubmit={handleSubmit} className="space-y-5 max-w-2xl">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <form id="record-expense-form" onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Expense Category <span className="text-rose-500">*</span></label>
-                <div className="relative z-[100]">
-                  <Select value={formData.category} onValueChange={(val) => setFormData({ ...formData, category: val })} required>
-                    <SelectTrigger className="h-11 bg-white border-slate-300 focus:ring-emerald-500 rounded-xl text-slate-900 font-medium">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[110] border-slate-200 shadow-lg bg-white">
-                      {EXPENSE_CATEGORIES.map(cat => (
-                        <SelectItem key={cat} value={cat} className="cursor-pointer focus:bg-emerald-50 focus:text-emerald-700 py-2.5 text-slate-900 font-medium">
-                          {cat}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="md:col-span-2">
+                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1">Expense Category *</label>
+                <select
+                  required
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full h-[40px] px-3.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white outline-none focus:border-emerald-600 shadow-2xs cursor-pointer"
+                >
+                  <option value="" disabled>Select a category</option>
+                  {EXPENSE_CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Amount (PKR) <span className="text-rose-500">*</span></label>
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1">Amount (PKR) *</label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">Rs.</span>
-                  <Input
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-xs">Rs.</span>
+                  <input
                     type="number"
                     required
                     min="1"
-                    className="h-11 pl-12 bg-white border-slate-300 focus-visible:ring-emerald-500 rounded-xl text-lg font-bold text-slate-900"
+                    className="w-full h-[40px] pl-10 pr-3.5 rounded-xl border border-slate-200 text-sm font-black text-slate-900 bg-white outline-none focus:border-emerald-600 shadow-2xs tabular-nums"
                     value={formData.amount}
                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Date <span className="text-rose-500">*</span></label>
-                <Input
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1">Date *</label>
+                <input
                   type="date"
                   required
-                  className="h-11 bg-white border-slate-300 focus-visible:ring-emerald-500 rounded-xl text-slate-900 font-medium"
+                  className="w-full h-[40px] px-3.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white outline-none focus:border-emerald-600 shadow-2xs cursor-pointer"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 />
               </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Description <span className="text-rose-500">*</span></label>
-                <Input
+              <div className="md:col-span-2">
+                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1">Description *</label>
+                <input
+                  type="text"
                   placeholder="Enter details"
                   required
-                  className="h-11 bg-white border-slate-300 focus-visible:ring-emerald-500 rounded-xl text-slate-900 font-medium"
+                  className="w-full h-[40px] px-3.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-900 bg-white outline-none focus:border-emerald-600 shadow-2xs"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Payment Method</label>
-                <div className="relative z-[50]">
-                  <Select value={formData.paymentMethod} onValueChange={(val) => setFormData({ ...formData, paymentMethod: val })}>
-                    <SelectTrigger className="h-11 bg-white border-slate-300 focus:ring-emerald-500 rounded-xl text-slate-900 font-medium">
-                      <SelectValue placeholder="Method" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[60] border-slate-200 shadow-lg bg-white">
-                      <SelectItem value="Cash" className="text-slate-900 font-medium">Cash</SelectItem>
-                      <SelectItem value="Bank Transfer" className="text-slate-900 font-medium">Bank Transfer</SelectItem>
-                      <SelectItem value="Credit / Khata" className="text-slate-900 font-medium">Credit / Khata</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1">Payment Method</label>
+                <select
+                  value={formData.paymentMethod}
+                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                  className="w-full h-[40px] px-3.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white outline-none focus:border-emerald-600 shadow-2xs cursor-pointer"
+                >
+                  <option value="Cash">Cash</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Credit / Khata">Credit / Khata</option>
+                </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Receipt / Voucher Ref # <span className="text-slate-400 font-medium lowercase">(optional)</span></label>
-                <Input
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1">Animal Name / Tag <span className="text-slate-400 font-medium lowercase">(optional)</span></label>
+                <select
+                  className="w-full h-[40px] px-3.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white outline-none focus:border-emerald-600 shadow-2xs cursor-pointer"
+                  value={formData.animalName}
+                  onChange={(e) => setFormData({ ...formData, animalName: e.target.value })}
+                >
+                  <option value="">Select an Animal (Optional)</option>
+                  {animals.map(animal => (
+                    <option key={animal.id} value={animal.tag}>
+                      {animal.tag} {animal.name && animal.name !== animal.tag ? `- ${animal.name}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1">Receipt / Voucher Ref # <span className="text-slate-400 font-medium lowercase">(optional)</span></label>
+                <input
+                  type="text"
                   placeholder="Optional reference"
-                  className="h-11 bg-white border-slate-300 focus-visible:ring-emerald-500 rounded-xl text-slate-900 font-medium"
+                  className="w-full h-[40px] px-3.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-900 bg-white outline-none focus:border-emerald-600 shadow-2xs"
                   value={formData.receiptRef}
                   onChange={(e) => setFormData({ ...formData, receiptRef: e.target.value })}
                 />
               </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-[13px] font-bold text-slate-700 uppercase tracking-wider">Authorized / Recorded By <span className="text-slate-400 font-medium lowercase">(optional)</span></label>
-                <Input
+              <div className="md:col-span-2">
+                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1">Authorized / Recorded By <span className="text-slate-400 font-medium lowercase">(optional)</span></label>
+                <input
+                  type="text"
                   placeholder="Enter name"
-                  className="h-11 bg-white border-slate-300 focus-visible:ring-emerald-500 rounded-xl text-slate-900 font-medium"
+                  className="w-full h-[40px] px-3.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-900 bg-white outline-none focus:border-emerald-600 shadow-2xs"
                   value={formData.authorizedBy}
                   onChange={(e) => setFormData({ ...formData, authorizedBy: e.target.value })}
                 />

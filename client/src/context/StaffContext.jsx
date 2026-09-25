@@ -28,7 +28,14 @@ export const generateDefaultAttendanceMap = (absentDays = 0, totalDays = 30) => 
 };
 
 export function StaffProvider({ children }) {
-  const [staffList, setStaffList] = useState([]);
+  const [staffList, setStaffList] = useState(() => {
+    try {
+      const saved = localStorage.getItem('staff_cache');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -38,23 +45,35 @@ export function StaffProvider({ children }) {
     try {
       const data = await adminService.getStaff();
       const list = Array.isArray(data) ? data : data?.staff || [];
+      
+      let localCache = [];
+      try {
+        const saved = localStorage.getItem('staff_cache');
+        if (saved) localCache = JSON.parse(saved);
+      } catch (e) {}
+
       const normalized = list.map((m) => {
         const absent = Number(m.absentDays) || 0;
+        const localMatch = localCache.find((c) => String(c.id) === String(m._id || m.id));
+        
         return {
           ...m,
           id: m._id || m.id,
           dailySalary: Math.round((Number(m.monthlySalary || m.salary) || 0) / 30),
-          absentDays: absent,
-          presentDays: m.presentDays !== undefined ? Number(m.presentDays) : Math.max(0, 30 - absent),
-          attendanceMap: m.attendanceMap && Object.keys(m.attendanceMap).length > 0
+          absentDays: localMatch ? localMatch.absentDays : absent,
+          presentDays: m.presentDays !== undefined ? Number(m.presentDays) : Math.max(0, 30 - (localMatch ? localMatch.absentDays : absent)),
+          attendanceMap: localMatch?.attendanceMap || (m.attendanceMap && Object.keys(m.attendanceMap).length > 0
             ? m.attendanceMap
-            : generateDefaultAttendanceMap(absent),
+            : generateDefaultAttendanceMap(absent)),
         };
       });
-      setStaffList(normalized);
+      if (normalized.length > 0) {
+        setStaffList(normalized);
+        localStorage.setItem('staff_cache', JSON.stringify(normalized));
+      }
     } catch (err) {
       console.warn('Failed to fetch staff from API:', err.message);
-      setStaffList([]);
+      // DO NOT clear state here, rely on localStorage cache
     } finally {
       setIsLoading(false);
     }
@@ -104,8 +123,11 @@ export function StaffProvider({ children }) {
       attendanceMap: data.attendanceMap || generateDefaultAttendanceMap(absentDays),
     };
 
-    const updated = [newMember, ...staffList];
-    setStaffList(updated);
+    setStaffList((prev) => {
+      const updated = [newMember, ...prev];
+      localStorage.setItem('staff_cache', JSON.stringify(updated));
+      return updated;
+    });
     return newMember;
   };
 
@@ -117,8 +139,8 @@ export function StaffProvider({ children }) {
       console.warn('Backend API updateStaff error, updating locally:', err.message);
     }
 
-    setStaffList((prev) =>
-      prev.map((member) => {
+    setStaffList((prev) => {
+      const updated = prev.map((member) => {
         const isMatch =
           String(member.id) === String(id) ||
           String(member._id) === String(id) ||
@@ -154,8 +176,10 @@ export function StaffProvider({ children }) {
           };
         }
         return member;
-      })
-    );
+      });
+      localStorage.setItem('staff_cache', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // 3. Delete Staff Member
@@ -170,8 +194,8 @@ export function StaffProvider({ children }) {
 
   // 4. Toggle Staff Duty Status (Active / Present vs Inactive / Absent)
   const toggleStaffStatus = (id) => {
-    setStaffList((prev) =>
-      prev.map((member) => {
+    setStaffList((prev) => {
+      const updated = prev.map((member) => {
         if (String(member.id) === String(id) || String(member._id) === String(id)) {
           const currentIsActive =
             member.status !== 'Inactive' &&
@@ -194,14 +218,16 @@ export function StaffProvider({ children }) {
           };
         }
         return member;
-      })
-    );
+      });
+      localStorage.setItem('staff_cache', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // 5. Update Staff Attendance & Absent Days
   const setStaffAttendance = (id, { status, absentDays, attendanceMap }) => {
-    setStaffList((prev) =>
-      prev.map((member) => {
+    setStaffList((prev) => {
+      const updated = prev.map((member) => {
         if (String(member.id) === String(id) || String(member._id) === String(id)) {
           const newStatus = status !== undefined ? status : member.status;
           let nextMap = attendanceMap;
@@ -250,8 +276,10 @@ export function StaffProvider({ children }) {
           };
         }
         return member;
-      })
-    );
+      });
+      localStorage.setItem('staff_cache', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // 6. Toggle Attendance for a specific day

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { TrendingUp, PieChart as PieChartIcon, Droplets } from "lucide-react";
+import { Plus, ArrowRight } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { usePOSContext } from "../../../../context/POSContext";
 import { useExpense } from "../../../../context/ExpenseContext";
@@ -7,14 +7,19 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
   CartesianGrid
 } from "recharts";
 import FarmCardOverflow from "./FarmCardOverflow";
-import AnimalYieldBreakdown from "./AnimalYieldBreakdown";
 import AnimalDetail from "../animals/AnimalDetail";
+import AnimalTable from "../animals/AnimalTable";
+import { useNavigate } from "react-router-dom";
 
 const parseYield = (val) => {
   if (typeof val === "number") return val;
@@ -28,6 +33,7 @@ export default function FarmDashboardContent() {
   const { products = [] } = usePOSContext();
   const { expenses = [], totals = {} } = useExpense();
   const [selectedAnimalId, setSelectedAnimalId] = useState(null);
+  const navigate = useNavigate();
 
   // Metrics
   const totalAnimals = animals.length;
@@ -35,13 +41,11 @@ export default function FarmDashboardContent() {
   const buffCount = animals.filter((a) => (a.species || "").toLowerCase().includes("buffalo")).length;
 
   const totalFarmYield = useMemo(() => {
-    // Check if we have logs for today
     const todayStr = new Date().toISOString().split("T")[0];
     const todayLogs = milkingLogs.filter((l) => (l.date ? l.date.split("T")[0] === todayStr : false));
     if (todayLogs.length > 0) {
       return todayLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
     }
-
     return animals.reduce((sum, animal) => {
       const morning = parseYield(animal.morningYield);
       const evening = parseYield(animal.eveningYield);
@@ -52,28 +56,24 @@ export default function FarmDashboardContent() {
 
   const avgAnimalYield = totalAnimals > 0 ? totalFarmYield / totalAnimals : 0;
 
-  // Live Milk Price from POS counter or fallback
   const milkPricePerLiter = useMemo(() => {
     const milkItem = products.find((p) => /cow\s*milk|pure\s*milk|milk/i.test(p.name)) || products[0];
     return Number(milkItem?.price) || 240;
   }, [products]);
 
-  // Live Farm Expenses from Expense Context
   const dailyExpenses = useMemo(() => {
     const recordedExpense = totals?.feedSeedFarming || totals?.totalFarmExpense || 0;
     if (recordedExpense > 0) {
       return Math.round(recordedExpense / 30);
     }
-    // Benchmark feed cost per animal day
-    const feedCostPerAnimalDay = 620;
-    return totalAnimals * feedCostPerAnimalDay;
+    return totalAnimals * 620;
   }, [totals, totalAnimals]);
 
   const dailyRevenue = totalFarmYield * milkPricePerLiter;
   const dailyNetProfit = Math.max(0, dailyRevenue - dailyExpenses);
   const monthlyNetProfit = dailyNetProfit * 30;
 
-  // Dynamic 7-Day Trend Dates & Yields from Server Milking Logs
+  // Trend Data for 7 days
   const trendData = useMemo(() => {
     const days = [];
     for (let i = 6; i >= 0; i--) {
@@ -93,33 +93,79 @@ export default function FarmDashboardContent() {
         return dateStr === d.key;
       });
 
-      let dayYield = logsForDay.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
+      let mYield = logsForDay.filter(l => (l.shift||'').toLowerCase() === 'morning').reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
+      let eYield = logsForDay.filter(l => (l.shift||'').toLowerCase() === 'evening').reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
 
-      // Check animal histories if logsForDay is empty
-      if (dayYield === 0) {
+      if (mYield === 0 && eYield === 0) {
         animals.forEach((a) => {
           const entry = (a.history || []).find((h) => h.date === d.key || h.date === d.label);
           if (entry) {
-            dayYield += (parseFloat(entry.morning) || 0) + (parseFloat(entry.evening) || 0);
+            mYield += (parseFloat(entry.morning) || 0);
+            eYield += (parseFloat(entry.evening) || 0);
           }
         });
       }
 
-      // Default to baseline yield if no entries yet
-      if (dayYield === 0) {
-        dayYield = totalFarmYield > 0 ? totalFarmYield : 120;
+      if (mYield === 0 && eYield === 0) {
+        mYield = totalFarmYield > 0 ? totalFarmYield / 2 : 60;
+        eYield = totalFarmYield > 0 ? totalFarmYield / 2 : 60;
       }
 
-      const dayRevenue = dayYield * milkPricePerLiter;
-      const dayProfit = Math.max(0, dayRevenue - dailyExpenses);
+      const dayRevenue = (mYield + eYield) * milkPricePerLiter;
+      
+      // Calculate realistic day cost. We could just use dailyExpenses. 
+      // In the image, farm cost drops a bit towards the end, but let's keep it around dailyExpenses
+      const dayCost = dailyExpenses;
+      const dayProfit = Math.max(0, dayRevenue - dayCost);
 
       return {
         date: d.label,
-        yield: parseFloat(dayYield.toFixed(1)),
+        morning: parseFloat(mYield.toFixed(1)),
+        evening: parseFloat(eYield.toFixed(1)),
+        revenue: Math.round(dayRevenue),
+        cost: Math.round(dayCost),
         profit: Math.round(dayProfit),
       };
     });
   }, [milkingLogs, animals, totalFarmYield, milkPricePerLiter, dailyExpenses]);
+
+  // Data for Current Lactation Yield by Animal
+  const animalBarData = useMemo(() => {
+    return animals.slice(0, 6).map(a => {
+      const morning = parseYield(a.morningYield);
+      const evening = parseYield(a.eveningYield);
+      const mVal = morning > 0 ? morning : (parseYield(a.totalDailyYield) / 2) || 8;
+      const eVal = evening > 0 ? evening : (parseYield(a.totalDailyYield) / 2) || 7;
+      return {
+        name: a.tag,
+        morning: parseFloat(mVal.toFixed(1)),
+        evening: parseFloat(eVal.toFixed(1)),
+      };
+    });
+  }, [animals]);
+
+  // Aggregate expenses by category
+  const expensesByCategory = useMemo(() => {
+    const cats = {};
+    expenses.forEach(e => {
+      const cat = e.category || 'Other';
+      if (!cats[cat]) cats[cat] = 0;
+      cats[cat] += parseFloat(e.amount) || 0;
+    });
+    const sorted = Object.entries(cats).sort((a,b) => b[1] - a[1]).slice(0, 5);
+    const displayList = sorted.length > 0 ? sorted : [
+      ["Feed", 3200],
+      ["Fuel cost", 2000],
+      ["Kitchen Expense", 950],
+      ["Medical Expense", 1500],
+      ["Transportation", 1800]
+    ];
+    
+    let sum = expenses.reduce((s, e) => s + (parseFloat(e.amount)||0), 0);
+    if (sum === 0) sum = 26400; // Mock total if no data
+
+    return { list: displayList, total: sum };
+  }, [expenses]);
 
   if (selectedAnimalId) {
     return (
@@ -132,7 +178,8 @@ export default function FarmDashboardContent() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
+      {/* Metrics Row */}
       <FarmCardOverflow 
         totalAnimals={totalAnimals}
         cowsCount={cowsCount}
@@ -143,114 +190,193 @@ export default function FarmDashboardContent() {
         monthlyNetProfit={monthlyNetProfit}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+      {/* Grid Row 1: Area Chart & Bar Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        
+        {/* Farm Production Trend (7 Days) */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-[340px]">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-emerald-600" /> Daily Farm Yield & Net Profit Trend
-              </h3>
-              <p className="text-xs text-slate-500">
-                7-day production yield (L) vs estimated net profit (Rs)
-              </p>
+              <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Farm Production Trend (7 Days)</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Own livestock morning vs. evening milking yield</p>
             </div>
-            <div className="flex items-center gap-3 text-xs font-medium">
-              <span className="flex items-center gap-1.5 text-blue-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span> Yield (L)
-              </span>
-              <span className="flex items-center gap-1.5 text-emerald-600 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Net Profit (Rs)
-              </span>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => navigate('/farm/milking')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 text-slate-500" /> Log Shift
+              </button>
+              <button 
+                onClick={() => navigate('/farm/animals')}
+                className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+              >
+                Register <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
-
-          <div className="h-64 w-full">
+          
+          <div className="flex-1 w-full mt-2 -ml-2">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="colorYield" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#155dfc" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#155dfc" stopOpacity={0} />
+                  <linearGradient id="colorMorning" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  <linearGradient id="colorEvening" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
-                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} dy={5} />
+                <YAxis tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} tickFormatter={(val) => `${val} L`} width={45} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", color: "#fff", fontSize: "12px" }}
-                  formatter={(val, name) => [
-                    name === "yield" ? `${val} L` : `Rs. ${val.toLocaleString()}`,
-                    name === "yield" ? "Total Yield" : "Net Profit"
-                  ]}
+                  contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", color: "#fff", fontSize: "11px" }}
+                  formatter={(val, name) => [`${val} L`, name === 'morning' ? 'Morning Yield' : 'Evening Yield']}
                 />
-                <Area yAxisId="left" type="monotone" dataKey="yield" stroke="#155dfc" strokeWidth={2.5} fillOpacity={1} fill="url(#colorYield)" />
-                <Area yAxisId="right" type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorProfit)" />
+                <Area type="monotone" dataKey="morning" stackId="1" stroke="#0ea5e9" strokeWidth={2} fillOpacity={1} fill="url(#colorMorning)" />
+                <Area type="monotone" dataKey="evening" stackId="1" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorEvening)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <PieChartIcon className="w-4 h-4 text-emerald-600" /> Financial Summary
-              </h3>
-              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                Daily Breakdown
-              </span>
+        {/* Current Lactation Yield by Animal */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-[340px]">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Current Lactation Yield by Animal</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Individual cow and buffalo daily output</p>
             </div>
-
-            <div className="space-y-3.5 my-4">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <div>
-                  <p className="text-xs text-slate-500 font-medium">Daily Milk Revenue</p>
-                  <p className="text-[11px] text-slate-400">{totalFarmYield.toFixed(1)} L × Rs. {milkPricePerLiter}</p>
-                </div>
-                <p className="text-base font-extrabold text-slate-900">Rs. {Math.round(dailyRevenue).toLocaleString()}</p>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-xl bg-red-50/50 border border-red-100">
-                <div>
-                  <p className="text-xs text-slate-500 font-medium">Daily Feed & Expenses</p>
-                  <p className="text-[11px] text-slate-400">Live Farm &amp; Feed Costs (Avg / Day)</p>
-                </div>
-                <p className="text-base font-extrabold text-red-600">- Rs. {Math.round(dailyExpenses).toLocaleString()}</p>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-200">
-                <div>
-                  <p className="text-xs text-emerald-800 font-bold">Daily Net Profit</p>
-                  <p className="text-[11px] text-emerald-600">Revenue - Expenses</p>
-                </div>
-                <p className="text-lg font-black text-emerald-700">Rs. {Math.round(dailyNetProfit).toLocaleString()}</p>
-              </div>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => navigate('/farm/animals')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 text-slate-500" /> Add Animal
+              </button>
+              <button 
+                onClick={() => navigate('/farm/animals')}
+                className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+              >
+                View Herd <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
-
-          <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-center">
-            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-              <p className="text-[10px] uppercase font-bold text-slate-400">Profit Margin</p>
-              <p className="text-sm font-extrabold text-slate-800">
-                {dailyRevenue > 0 ? ((dailyNetProfit / dailyRevenue) * 100).toFixed(1) : 0}%
-              </p>
-            </div>
-            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-              <p className="text-[10px] uppercase font-bold text-slate-400">Est. Monthly Profit</p>
-              <p className="text-sm font-extrabold text-emerald-600">
-                Rs. {(monthlyNetProfit / 100000).toFixed(2)} Lakh
-              </p>
-            </div>
+          
+          <div className="flex-1 w-full mt-2 -ml-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={animalBarData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} barSize={50}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} dy={5} />
+                <YAxis tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} tickFormatter={(val) => `${val} L`} width={45} />
+                <Tooltip
+                  cursor={{ fill: 'transparent' }}
+                  contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", color: "#fff", fontSize: "11px" }}
+                  formatter={(val, name) => [`${val} L`, name === 'morning' ? 'Morning Yield' : 'Evening Yield']}
+                />
+                <Bar dataKey="morning" stackId="a" fill="#10b981" radius={[0, 0, 4, 4]} />
+                <Bar dataKey="evening" stackId="a" fill="#047857" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
+
       </div>
 
-      <AnimalYieldBreakdown onSelectAnimal={setSelectedAnimalId} />
+      {/* Grid Row 2: Expenses & Financial P&L */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        
+        {/* Farm Expenses */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col justify-between h-[340px]">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Farm Expenses</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Cattle maintenance, feed & healthcare allocation</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => navigate('/farm/expenses')}
+                  className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add
+                </button>
+                <button 
+                  onClick={() => navigate('/farm/expenses')}
+                  className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                >
+                  All <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4 mt-6">
+              {expensesByCategory.list.map(([name, amount], i) => (
+                <div key={i} className="flex items-center justify-between text-xs font-bold text-slate-700">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-600" />
+                    <span className="truncate max-w-[140px]">{name}</span>
+                  </div>
+                  <span className="font-mono text-slate-900">Rs. {amount.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-sm font-bold">
+            <span className="text-slate-700">Total Farm Expenses:</span>
+            <span className="text-emerald-700 font-mono font-black">Rs. {expensesByCategory.total.toLocaleString()}</span>
+          </div>
+        </div>
+
+        {/* Farm Financial Performance (P&L Trend) */}
+        <div className="lg:col-span-2 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-[340px]">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Farm Financial Performance (P&L Trend)</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Farm revenue contribution vs. direct farm operating costs</p>
+            </div>
+            <button 
+              onClick={() => navigate('/finance')}
+              className="flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 transition cursor-pointer"
+            >
+              Full P&L <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          
+          <div className="flex-1 w-full mt-2 -ml-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trendData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} dy={5} />
+                <YAxis tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} tickFormatter={(val) => `${val} Rs`} width={55} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#fff", borderColor: "#e2e8f0", borderRadius: "12px", color: "#334155", fontSize: "11px", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)" }}
+                  itemStyle={{ fontWeight: 700 }}
+                  labelStyle={{ fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}
+                  formatter={(val, name) => [
+                    `Rs. ${val.toLocaleString()}`, 
+                    name === 'revenue' ? 'Revenue Contrib:' : name === 'cost' ? 'Farm Cost:' : 'Net Profit:'
+                  ]}
+                />
+                <Line type="monotone" dataKey="revenue" name="revenue" stroke="#10b981" strokeWidth={2} dot={{ r: 4, fill: '#fff', stroke: '#10b981', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="cost" name="cost" stroke="#ef4444" strokeWidth={2} dot={{ r: 4, fill: '#fff', stroke: '#ef4444', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="profit" name="profit" stroke="#10b981" strokeDasharray="5 5" strokeWidth={2} dot={{ r: 4, fill: '#fff', stroke: '#10b981', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Grid Row 3: Herd Table */}
+      <div className="mt-4">
+        <AnimalTable onSelectAnimal={setSelectedAnimalId} />
+      </div>
+
     </div>
   );
 }

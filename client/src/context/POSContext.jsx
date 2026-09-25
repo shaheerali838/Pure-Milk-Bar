@@ -236,6 +236,16 @@ export function POSProvider({ children }) {
       const updated = [createdItem, ...prevProducts];
       return updated;
     });
+
+    // Sync to backend
+    try {
+      if (posService && posService.createProduct) {
+        posService.createProduct(createdItem).catch((err) => {
+          console.warn('Failed to sync new product to backend:', err);
+        });
+      }
+    } catch (err) {}
+
     return createdItem;
   };
 
@@ -273,6 +283,21 @@ export function POSProvider({ children }) {
         return cartItem;
       })
     );
+
+    // Sync to backend
+    try {
+      if (posService && posService.updateProduct && updatedProduct.id) {
+        // Optimistic background sync
+        const payload = {
+          ...updatedProduct,
+          price: updatedProduct.price !== undefined && updatedProduct.price !== null && updatedProduct.price !== '' ? Number(updatedProduct.price) : undefined,
+          cost: updatedProduct.cost !== undefined && updatedProduct.cost !== null && updatedProduct.cost !== '' ? Number(updatedProduct.cost) : undefined,
+        };
+        posService.updateProduct(updatedProduct.id, payload).catch((err) => {
+          console.warn('Failed to sync product update to backend:', err);
+        });
+      }
+    } catch (err) {}
   };
 
   // C. Batch Update Products
@@ -303,6 +328,15 @@ export function POSProvider({ children }) {
 
     // Remove from cart if present
     setCart((prev) => prev.filter((item) => item.id !== productId));
+
+    // Sync to backend
+    try {
+      if (posService && posService.deleteProduct) {
+        posService.deleteProduct(productId).catch((err) => {
+          console.warn('Failed to sync product deletion to backend:', err);
+        });
+      }
+    } catch (err) {}
   };
 
   // =========================================================================
@@ -433,14 +467,14 @@ export function POSProvider({ children }) {
   const handleUpdateQuantity = (productId, newQuantity) => {
     if (newQuantity === '' || newQuantity === undefined || newQuantity === null) {
       setCart((prev) =>
-        prev.map((item) => (item.id === productId ? { ...item, quantity: 0 } : item))
+        prev.map((item) => (item.id === productId ? { ...item, quantity: '' } : item))
       );
       return;
     }
-    const parsed = parseFloat(newQuantity);
-    const validQty = isNaN(parsed) ? 0 : Math.max(0, Number(parsed.toFixed(3)));
+    
+    // Allow raw string value (like "0.") to stay in state so user can type decimals
     setCart((prev) =>
-      prev.map((item) => (item.id === productId ? { ...item, quantity: validQty } : item))
+      prev.map((item) => (item.id === productId ? { ...item, quantity: newQuantity } : item))
     );
   };
 

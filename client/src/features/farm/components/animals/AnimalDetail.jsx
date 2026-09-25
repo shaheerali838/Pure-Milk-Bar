@@ -172,10 +172,10 @@ export default function AnimalDetail({
               <img
                 src={animal.image}
                 alt={animal.tag}
-                className="w-16 h-16 rounded-2xl object-cover border border-emerald-200 shadow-xs shrink-0"
+                className="w-16 h-16 rounded-full object-cover border border-emerald-200 shadow-xs shrink-0"
               />
             ) : (
-              <div className="w-16 h-16 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-2xl shadow-xs shrink-0 font-display">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-2xl shadow-xs shrink-0 font-display">
                 <Beef className="w-8 h-8 text-emerald-700" />
               </div>
             )}

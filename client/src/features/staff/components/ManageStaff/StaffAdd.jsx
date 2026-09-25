@@ -223,7 +223,7 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null, onSucce
                     disabled={isEdit}
                     value={formData.id}
                     onChange={handleChange}
-                    placeholder="Auto-generated if empty"
+                    placeholder="Id"
                     className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium disabled:opacity-60"
                   />
                 </div>
@@ -239,7 +239,7 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null, onSucce
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="e.g. Muhammad Ali"
+                  placeholder="enter your name"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
                 />
               </div>
@@ -282,7 +282,7 @@ export default function StaffAdd({ onBack, onClose, editingStaff = null, onSucce
             </div>
           </div>
 
-          {/* Section 2: Contact & Identity Information */}
+          
           <div className="pt-2 border-t border-slate-100">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-3">
               <div className="w-6 h-6 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center text-xs">

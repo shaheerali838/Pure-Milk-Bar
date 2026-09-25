@@ -22,8 +22,22 @@ const normalizeAnimal = (animal, history = []) => {
 };
 
 export function AnimalProvider({ children }) {
-  const [animals, setAnimals] = useState([]);
-  const [milkingLogs, setMilkingLogs] = useState([]);
+  const [animals, setAnimals] = useState(() => {
+    try {
+      const saved = localStorage.getItem('animals_cache');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [milkingLogs, setMilkingLogs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('milking_logs_cache');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,11 +70,25 @@ export function AnimalProvider({ children }) {
         const key = String(log.animalId?._id || log.animalId || log.animalTag || '');
         if (!key) return history;
         if (!history[key]) history[key] = [];
-        history[key].push({
-          date: log.date || log.createdAt,
-          morning: log.shift === 'MORNING' ? Number(log.yieldLiters) || 0 : 0,
-          evening: log.shift === 'EVENING' ? Number(log.yieldLiters) || 0 : 0,
-        });
+
+        const dateStr = log.date ? log.date.split('T')[0] : (log.createdAt ? log.createdAt.split('T')[0] : 'Unknown');
+        const shift = (log.shift || '').toUpperCase();
+        const yVal = Number(log.yieldLiters || log.quantityLiters || log.yield) || 0;
+
+        const morningYield = shift === 'MORNING' ? yVal : 0;
+        const eveningYield = shift === 'EVENING' ? yVal : 0;
+        
+        const existingIdx = history[key].findIndex(e => e.date === dateStr);
+        if (existingIdx >= 0) {
+          if (morningYield > 0) history[key][existingIdx].morning = morningYield;
+          if (eveningYield > 0) history[key][existingIdx].evening = eveningYield;
+        } else {
+          history[key].push({
+            date: dateStr,
+            morning: morningYield,
+            evening: eveningYield,
+          });
+        }
         return history;
       }, {});
 
@@ -78,12 +106,18 @@ export function AnimalProvider({ children }) {
         normalizeAnimal(animal, historyByAnimal[String(animal._id || animal.id || animal.tagNumber)] || [])
       );
 
-      setAnimals(normalized);
-      setMilkingLogs(normalizedLogs);
+      if (normalized.length > 0) {
+        setAnimals(normalized);
+        localStorage.setItem('animals_cache', JSON.stringify(normalized));
+      }
+      if (normalizedLogs.length > 0) {
+        setMilkingLogs(normalizedLogs);
+        localStorage.setItem('milking_logs_cache', JSON.stringify(normalizedLogs));
+      }
     } catch (err) {
       console.error('Failed to fetch farm data from API:', err);
       setError(err.message || 'Failed to load herd animals');
-      setAnimals([]);
+      // DO NOT clear state here, rely on localStorage cache
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +160,11 @@ export function AnimalProvider({ children }) {
       }
       const normalized = normalizeAnimal(created || payload);
 
-      setAnimals((prev) => [normalized, ...prev.filter((animal) => animal.tag !== normalized.tag)]);
+      setAnimals((prev) => {
+        const updated = [normalized, ...prev.filter((animal) => animal.tag !== normalized.tag)];
+        localStorage.setItem('animals_cache', JSON.stringify(updated));
+        return updated;
+      });
       return normalized;
     } catch (err) {
       console.error('Failed to create animal via API:', err);
@@ -141,14 +179,16 @@ export function AnimalProvider({ children }) {
       const evening = parseFloat(formData.eveningYield || 0);
 
       await farmService.updateAnimal(id, formData);
-      setAnimals((prev) =>
-        prev.map((a) => {
+      setAnimals((prev) => {
+        const updated = prev.map((a) => {
           if (String(a._id || a.id) === String(id)) {
             return normalizeAnimal({ ...a, ...formData, tagNumber: formData.tag || a.tagNumber });
           }
           return a;
-        })
-      );
+        });
+        localStorage.setItem('animals_cache', JSON.stringify(updated));
+        return updated;
+      });
     } catch (err) {
       console.error('Failed to update animal via API:', err);
       throw err;
@@ -159,7 +199,11 @@ export function AnimalProvider({ children }) {
   const deleteAnimal = async (id) => {
     try {
       await farmService.deleteAnimal(id);
-      setAnimals((prev) => prev.filter((a) => String(a._id || a.id) !== String(id) && String(a.id) !== String(id)));
+      setAnimals((prev) => {
+        const updated = prev.filter((a) => String(a._id || a.id) !== String(id) && String(a.id) !== String(id));
+        localStorage.setItem('animals_cache', JSON.stringify(updated));
+        return updated;
+      });
     } catch (err) {
       console.error('Failed to delete animal via API:', err);
       throw err;
@@ -167,7 +211,7 @@ export function AnimalProvider({ children }) {
   };
 
   // Save Milking Shift to backend
-  const saveMilkingShift = async (shiftName, arg2, arg3) => {
+  const saveMilkingShift = async (shiftName, arg2, arg3, operatorId = "64f8a1239c1b4e001c8a4567") => {
     try {
       const shiftDate = typeof arg2 === 'string' ? arg2 : typeof arg3 === 'string' ? arg3 : new Date().toISOString().split('T')[0];
       const shiftEntries = (typeof arg2 === 'object' && arg2 !== null) ? arg2 : (typeof arg3 === 'object' && arg3 !== null) ? arg3 : {};
@@ -182,7 +226,7 @@ export function AnimalProvider({ children }) {
           shift: (shiftName || 'Morning').toUpperCase(),
           date: shiftDate || new Date().toISOString().split('T')[0],
           yieldLiters: val,
-          operatorId: "64f8a1239c1b4e001c8a4567", // Provide a dummy valid ObjectId since auth might be disabled/bypassed
+          operatorId: operatorId,
         });
       });
 

@@ -22,7 +22,14 @@ export const formatDateKey = (d) => {
 
 export function StaffPayrollProvider({ children }) {
   // 1. Staff List (Starts empty, synced with live API / MongoDB database)
-  const [staffList, setStaffList] = useState([]);
+  const [staffList, setStaffList] = useState(() => {
+    try {
+      const saved = localStorage.getItem('staff_payroll_cache');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   // 2. Attendance Map: { [dateString 'YYYY-MM-DD']: { [staffId]: 'present' | 'absent' | 'leave' } }
@@ -49,7 +56,10 @@ export function StaffPayrollProvider({ children }) {
           joinedDate: m.joinedDate || (m.createdAt ? new Date(m.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
         };
       });
-      setStaffList(normalized);
+      if (normalized.length > 0) {
+        setStaffList(normalized);
+        localStorage.setItem('staff_payroll_cache', JSON.stringify(normalized));
+      }
     } catch (err) {
       console.warn('Live staff fetch notice:', err.message);
     } finally {
@@ -113,7 +123,11 @@ export function StaffPayrollProvider({ children }) {
       createdAt: new Date().toISOString(),
     };
 
-    setStaffList((prev) => [newStaff, ...prev]);
+    setStaffList((prev) => {
+      const updated = [newStaff, ...prev];
+      localStorage.setItem('staff_payroll_cache', JSON.stringify(updated));
+      return updated;
+    });
     return newStaff;
   };
 

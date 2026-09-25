@@ -55,7 +55,7 @@ export default function DailySheet() {
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [isLocked, setIsLocked] = useState(false);
 
-  const { animals } = useAnimalContext();
+  const { animals, milkingLogs } = useAnimalContext();
   const { expenses } = useExpense();
 
   const handlePrevDay = () => {
@@ -80,22 +80,37 @@ export default function DailySheet() {
 
   // Aggregate Data
   const { milkingRows, expenseRows, totals } = useMemo(() => {
-    // Calculate animal milking yields based on morning and evening baseline data
-    const calculatedMilkingRows = (animals || []).filter(a => a.lactationStatus === 'Milking').map(a => {
-      const mYield = parseFloat(a.morningYield) || 0;
-      const eYield = parseFloat(a.eveningYield) || 0;
-      const totalYield = mYield + eYield;
+    const dayMilkingLogs = (milkingLogs || []).filter(log => (log.date || '').split('T')[0] === date);
 
-      return {
+    const aggregatedMilking = {};
+    (animals || []).filter(a => a.lactationStatus === 'Milking').forEach(a => {
+      aggregatedMilking[a.tag] = {
         tag: a.tag,
         name: a.name || a.tag,
         species: a.species,
-        morningLiters: mYield,
-        eveningLiters: eYield,
-        totalLiters: totalYield,
+        morningLiters: 0,
+        eveningLiters: 0,
         healthStatus: a.healthStatus || 'Healthy',
       };
     });
+
+    dayMilkingLogs.forEach(log => {
+      const tag = log.animalTag || log.tag || log.animal?.tag;
+      if (aggregatedMilking[tag]) {
+        const yieldAmount = parseFloat(log.yieldLiters || log.yield) || 0;
+        const shift = (log.shift || '').toLowerCase();
+        if (shift === 'morning') {
+          aggregatedMilking[tag].morningLiters += yieldAmount;
+        } else if (shift === 'evening') {
+          aggregatedMilking[tag].eveningLiters += yieldAmount;
+        }
+      }
+    });
+
+    const calculatedMilkingRows = Object.values(aggregatedMilking).map(row => ({
+      ...row,
+      totalLiters: row.morningLiters + row.eveningLiters
+    }));
 
     // 2. Process Expenses for the selected date
     const dayExpenses = (expenses || []).filter((e) => {
@@ -114,7 +129,7 @@ export default function DailySheet() {
       expenseRows: dayExpenses,
       totals: { totalCollected, totalMorning, totalEvening, totalExpenses, animalCount: calculatedMilkingRows.length }
     };
-  }, [animals, expenses, date]);
+  }, [animals, milkingLogs, expenses, date]);
 
   const handlePrint = () => window.print();
 

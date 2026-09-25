@@ -25,7 +25,7 @@ export default function StaffProfileHeader({ staff }) {
   return (
     <div className="bg-[#f8fafc] p-5 rounded-2xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
       <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-2xl shadow-2xs shrink-0 font-display overflow-hidden">
+        <div className="w-16 h-16 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-2xl shadow-2xs shrink-0 font-display overflow-hidden">
           {staff.image ? (
             <img src={staff.image} alt={staff.name} className="w-full h-full object-cover" />
           ) : (

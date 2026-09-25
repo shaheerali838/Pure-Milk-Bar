@@ -170,10 +170,10 @@ export default function StaffDetail({
             <img
               src={staff.image}
               alt={staff.name}
-              className="w-14 h-14 rounded-2xl object-cover shadow-xs border border-slate-200"
+              className="w-14 h-14 rounded-full object-cover shadow-xs border border-slate-200"
             />
           ) : (
-            <div className="w-14 h-14 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-xl shadow-xs font-display">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-xl shadow-xs font-display">
               {staff.name ? staff.name.charAt(0).toUpperCase() : 'S'}
             </div>
           )}
