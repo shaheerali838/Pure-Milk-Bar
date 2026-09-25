@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { ChevronRight, Milk, Search, Download, ShoppingCart, Bell } from 'lucide-react';
+import { ChevronRight, Milk, Search, Download, ShoppingCart, Bell, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
 import ExportCSVModal from '@/components/common/ExportCSVModal';
 
-export default function Navbar() {
+export default function Navbar({ onToggleSidebar }) {
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -207,9 +207,19 @@ export default function Navbar() {
   const breadcrumbs = getBreadcrumbs(location.pathname, location.search);
 
   return (
-    <header className="bg-white border-b border-slate-200/80 px-3.5 py-1.5 flex items-center justify-between gap-3 shadow-2xs sticky top-0 z-20 no-print">
-      <div className="shrink-0 overflow-x-auto py-0.5 max-w-[65vw]">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-xs whitespace-nowrap">
+    <header className="bg-white border-b border-slate-200/80 px-2 sm:px-3.5 py-1.5 flex items-center justify-between gap-2 sm:gap-3 shadow-2xs sticky top-0 z-20 no-print">
+      <div className="flex items-center gap-2 min-w-0 flex-1 overflow-x-auto no-scrollbar py-0.5">
+        {/* Mobile Hamburger Toggle */}
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          className="lg:hidden p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors shrink-0 cursor-pointer"
+          title="Toggle Navigation Menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-xs whitespace-nowrap min-w-0">
           {breadcrumbs.map((crumb, idx) => {
             const isLast = idx === breadcrumbs.length - 1;
 
@@ -218,11 +228,12 @@ export default function Navbar() {
                 <Link
                   key={idx}
                   to={crumb.to}
-                  className="inline-flex items-center gap-1.5 text-emerald-800 font-bold bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200/80 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 text-emerald-800 font-bold bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200/80 transition-colors cursor-pointer shrink-0"
                   title="Go to Dashboard Overview"
                 >
-                  <Milk className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>{crumb.label}</span>
+                  <Milk className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span className="hidden sm:inline">{crumb.label}</span>
+                  <span className="sm:hidden">PMB</span>
                 </Link>
               );
             }
@@ -231,13 +242,13 @@ export default function Navbar() {
               <React.Fragment key={idx}>
                 <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
                 {isLast || !crumb.to ? (
-                  <span className="text-emerald-800 font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-xs shadow-2xs truncate max-w-55">
+                  <span className="text-emerald-800 font-bold bg-slate-100 px-1.5 sm:px-2 py-0.5 rounded border border-slate-200 text-xs shadow-2xs truncate max-w-36 sm:max-w-55">
                     {crumb.label}
                   </span>
                 ) : (
                   <Link
                     to={crumb.to}
-                    className="text-slate-600 hover:text-emerald-700 hover:bg-slate-100 px-1.5 py-0.5 rounded font-medium transition-colors cursor-pointer"
+                    className="text-slate-600 hover:text-emerald-700 hover:bg-slate-100 px-1 sm:px-1.5 py-0.5 rounded font-medium transition-colors cursor-pointer truncate max-w-28 sm:max-w-none"
                     title={`Go back to ${crumb.label}`}
                   >
                     {crumb.label}
@@ -249,12 +260,12 @@ export default function Navbar() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <Button
           type="button"
           size="sm"
           onClick={() => setIsExportModalOpen(true)}
-          className="h-7 px-2.5 text-xs font-semibold shadow-2xs cursor-pointer"
+          className="h-7 px-2 sm:px-2.5 text-xs font-semibold shadow-2xs cursor-pointer hidden sm:inline-flex"
           title="Export CSV Data & Custom Filter"
         >
           <Download className="w-3.5 h-3.5" />
@@ -266,15 +277,15 @@ export default function Navbar() {
             type="button"
             variant="outline"
             size="sm"
-            className="h-7 px-2.5 text-xs font-semibold cursor-pointer bg-emerald-50/50 hover:bg-emerald-50 text-emerald-800 border-emerald-200/80 shadow-2xs"
+            className="h-7 px-2 sm:px-2.5 text-xs font-semibold cursor-pointer bg-emerald-50/50 hover:bg-emerald-50 text-emerald-800 border-emerald-200/80 shadow-2xs"
             title="Open POS Terminal"
           >
             <ShoppingCart className="w-3.5 h-3.5 text-emerald-600" />
-            <span>POS</span>
+            <span className="hidden sm:inline">POS</span>
           </Button>
         </Link>
 
-        <div className="w-36 sm:w-44">
+        <div className="w-24 sm:w-36 md:w-44">
           <div className="relative">
             <Search className="w-3 h-3 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
             <input

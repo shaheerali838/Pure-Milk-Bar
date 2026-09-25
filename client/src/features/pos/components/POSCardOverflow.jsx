@@ -10,7 +10,7 @@ export default function POSCardOverflow({ onSelectSource }) {
       id: 'total_milk',
       title: 'Total Milk Stock',
       amount: `${inventoryMetrics?.totalMilk ?? 0} L`,
-      sub: inventoryMetrics?.totalFarmYield ? `Barn Yield: ${Number(inventoryMetrics.totalFarmYield).toFixed(1)} L` : 'In Chiller Storage',
+      sub: `Farm: ${inventoryMetrics?.farmMilkStock ?? 0} L | Sup: ${inventoryMetrics?.supplierMilkStock ?? 0} L`,
       icon: Droplets,
       color: '#009689',
       badge: 'Milk Stock',
@@ -48,20 +48,11 @@ export default function POSCardOverflow({ onSelectSource }) {
       badge: 'Dahi Sales',
       clickable: false,
     },
-    {
-      id: 'dahi_profit',
-      title: 'Dahi Extra Profit',
-      amount: `+Rs. ${(Number(inventoryMetrics?.dahiExtraProfit) || 0).toLocaleString()}`,
-      sub: '+Rs. 60/kg value-add vs raw milk',
-      icon: TrendingUp,
-      color: '#10b981',
-      badge: 'Extra Profit',
-      clickable: false,
-    },
+
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
       {cards.map(({ id, title, amount, sub, icon: Icon, color, badge, clickable, onClick }) => (
         <div
           key={id}

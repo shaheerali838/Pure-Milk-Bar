@@ -54,11 +54,14 @@ export default function DahiProcessing() {
       product: newBatch.product,
       milkUsed: Number(newBatch.milkUsed) || 0,
       milkUsedLiters: Number(newBatch.milkUsed) || 0,
+      milkUsedQuantity: Number(newBatch.milkUsed) || 0,
       output: newBatch.output || `${Math.round((parseFloat(newBatch.milkUsed) || 0) * 0.9)} kg`,
+      outputQuantity: parseFloat(newBatch.output) || Math.round((parseFloat(newBatch.milkUsed) || 0) * 0.9),
       fat: Number(newBatch.fat) || 4.5,
       fatPercentage: Number(newBatch.fat) || 4.5,
       date: newBatch.date || new Date().toISOString().split("T")[0],
       status: newBatch.status || "Completed",
+      stage: newBatch.status === "In Progress" ? "incubating" : "pos",
     };
 
     try {
@@ -71,9 +74,11 @@ export default function DahiProcessing() {
         fat: `${payload.fat}%`,
         date: payload.date,
         status: payload.status,
+        stage: payload.stage,
       };
 
       setBatches((prev) => [normalized, ...prev]);
+      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
       toast.success(`Processing batch for ${payload.product} created successfully!`);
     } catch (err) {
       console.error("Failed to create batch via API:", err);
@@ -86,6 +91,7 @@ export default function DahiProcessing() {
         fat: `${payload.fat}%`,
       };
       setBatches((prev) => [localBatch, ...prev]);
+      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
       toast.success(`Batch saved locally!`);
     }
 

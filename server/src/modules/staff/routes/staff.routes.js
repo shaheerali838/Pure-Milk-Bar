@@ -19,27 +19,27 @@ import {
 
 const router = Router();
 
-// Restrict all staff management operations to authenticated ADMIN users
-router.use(authenticate, authorize('ADMIN'));
+// Base authentication for all staff endpoints
+router.use(authenticate);
 
-// Workforce Analytics & Summary Statistics
-router.get('/stats', getStaffStats);
+// Workforce Analytics & Summary Statistics (ADMIN & MANAGER)
+router.get('/stats', authorize('ADMIN', 'MANAGER'), getStaffStats);
 
-// Staff Collection CRUD
+// Staff Collection CRUD (ADMIN & MANAGER)
 router
   .route('/')
-  .post(validateCreateStaff, createStaff)
-  .get(validateStaffQuery, getAllStaff);
+  .get(authorize('ADMIN', 'MANAGER'), validateStaffQuery, getAllStaff)
+  .post(authorize('ADMIN', 'MANAGER'), validateCreateStaff, createStaff);
 
-// Staff Status Toggle
-router.patch('/:id/status', validateSetStatus, setStaffStatus);
+// Staff Status Toggle (ADMIN & MANAGER)
+router.patch('/:id/status', authorize('ADMIN', 'MANAGER'), validateSetStatus, setStaffStatus);
 
 // Individual Staff CRUD
 router
   .route('/:id')
-  .get(getStaffById)
-  .put(validateUpdateStaff, updateStaff)
-  .patch(validateUpdateStaff, updateStaff)
-  .delete(deleteStaff);
+  .get(authorize('ADMIN', 'MANAGER'), getStaffById)
+  .put(authorize('ADMIN', 'MANAGER'), validateUpdateStaff, updateStaff)
+  .patch(authorize('ADMIN', 'MANAGER'), validateUpdateStaff, updateStaff)
+  .delete(authorize('ADMIN'), deleteStaff); // Strictly ADMIN delete
 
 export default router;

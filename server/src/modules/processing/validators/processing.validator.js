@@ -1,6 +1,8 @@
 import Joi from 'joi';
 
 const createBatchSchema = Joi.object({
+  id: Joi.string().trim().allow('', null),
+  _id: Joi.string().trim().allow('', null),
   batchNumber: Joi.string().trim().uppercase().max(30).allow('', null),
   product: Joi.string()
     .trim()
@@ -12,35 +14,54 @@ const createBatchSchema = Joi.object({
       'string.min': 'Product name must be at least 2 characters long',
     }),
   milkUsedLiters: Joi.number().min(0).allow(null),
+  milkUsedQuantity: Joi.number().min(0).allow(null),
   milkUsed: Joi.alternatives().try(Joi.number().min(0), Joi.string().trim()).allow('', null),
   outputQuantity: Joi.number().min(0).allow(null),
   outputUnit: Joi.string().trim().valid('kg', 'liters', 'bottles', 'tubs', 'packs', 'grams').default('kg'),
   output: Joi.string().trim().allow('', null),
   fatPercentage: Joi.number().min(0).max(20).allow(null),
   fat: Joi.alternatives().try(Joi.number().min(0).max(20), Joi.string().trim()).allow('', null),
-  date: Joi.date().iso().allow(null, ''),
+  date: Joi.alternatives().try(Joi.date().iso(), Joi.string().trim()).allow(null, ''),
   status: Joi.string()
     .trim()
-    .valid('Completed', 'In Progress', 'Failed', 'COMPLETED', 'IN_PROGRESS', 'FAILED')
+    .valid('Completed', 'In Progress', 'Failed', 'COMPLETED', 'IN_PROGRESS', 'FAILED', 'READY_FOR_POS')
     .default('Completed'),
+  stage: Joi.string()
+    .trim()
+    .valid('incubating', 'chilled', 'pos', 'sold_out', 'INCUBATING', 'CHILLED', 'POS', 'SOLD_OUT')
+    .default('pos'),
+  source: Joi.string().trim().allow('', null).default('Farm & Supplier Mix'),
+  farmMilkUsed: Joi.number().min(0).allow(null).default(0),
+  supplierMilkUsed: Joi.number().min(0).allow(null).default(0),
+  posRate: Joi.string().trim().allow('', null).default('Rs. 320 / kg'),
   costEstimate: Joi.number().min(0).default(0),
   notes: Joi.string().trim().allow('', null).default(''),
 });
 
 const updateBatchSchema = Joi.object({
+  id: Joi.string().trim().allow('', null),
+  _id: Joi.string().trim().allow('', null),
   batchNumber: Joi.string().trim().uppercase().max(30).allow('', null),
   product: Joi.string().trim().min(2).max(100),
   milkUsedLiters: Joi.number().min(0),
+  milkUsedQuantity: Joi.number().min(0),
   milkUsed: Joi.alternatives().try(Joi.number().min(0), Joi.string().trim()).allow('', null),
   outputQuantity: Joi.number().min(0),
   outputUnit: Joi.string().trim().valid('kg', 'liters', 'bottles', 'tubs', 'packs', 'grams'),
   output: Joi.string().trim().allow('', null),
   fatPercentage: Joi.number().min(0).max(20).allow(null),
   fat: Joi.alternatives().try(Joi.number().min(0).max(20), Joi.string().trim()).allow('', null),
-  date: Joi.date().iso().allow(null, ''),
+  date: Joi.alternatives().try(Joi.date().iso(), Joi.string().trim()).allow(null, ''),
   status: Joi.string()
     .trim()
-    .valid('Completed', 'In Progress', 'Failed', 'COMPLETED', 'IN_PROGRESS', 'FAILED'),
+    .valid('Completed', 'In Progress', 'Failed', 'COMPLETED', 'IN_PROGRESS', 'FAILED', 'READY_FOR_POS'),
+  stage: Joi.string()
+    .trim()
+    .valid('incubating', 'chilled', 'pos', 'sold_out', 'INCUBATING', 'CHILLED', 'POS', 'SOLD_OUT'),
+  source: Joi.string().trim().allow('', null),
+  farmMilkUsed: Joi.number().min(0).allow(null),
+  supplierMilkUsed: Joi.number().min(0).allow(null),
+  posRate: Joi.string().trim().allow('', null),
   costEstimate: Joi.number().min(0),
   notes: Joi.string().trim().allow('', null),
 }).min(1);

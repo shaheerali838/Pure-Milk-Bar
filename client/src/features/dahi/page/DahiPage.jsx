@@ -79,14 +79,14 @@ export default function DahiPage() {
       {/* 1. Top KPI Summary Cards */}
       <DahiStatsCards metrics={metrics} />
 
-      {/* 3. Middle Navigation Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-        <div className="flex flex-wrap items-center gap-2">
+      {/* 2. Middle Navigation Tabs */}
+      <div className="w-full overflow-x-auto no-scrollbar py-1">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-max">
           {/* Tab 1: Active Kitchen Pipeline */}
           <button
             type="button"
             onClick={() => setActiveTab('pipeline')}
-            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs ${
+            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs whitespace-nowrap shrink-0 ${
               activeTab === 'pipeline'
                 ? 'bg-slate-900 text-white'
                 : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/90'
@@ -109,7 +109,7 @@ export default function DahiPage() {
           <button
             type="button"
             onClick={() => setActiveTab('history')}
-            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs ${
+            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs whitespace-nowrap shrink-0 ${
               activeTab === 'history'
                 ? 'bg-slate-900 text-white'
                 : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/90'
@@ -123,7 +123,7 @@ export default function DahiPage() {
           <button
             type="button"
             onClick={() => setActiveTab('report')}
-            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs ${
+            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs whitespace-nowrap shrink-0 ${
               activeTab === 'report'
                 ? 'bg-slate-900 text-white'
                 : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/90'
@@ -133,11 +133,11 @@ export default function DahiPage() {
             <span>Daily Report</span>
           </button>
 
-          {/* Tab 3: Simple Profit Calculator */}
+          {/* Tab 4: Simple Profit Calculator */}
           <button
             type="button"
             onClick={() => setActiveTab('calculator')}
-            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs ${
+            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs whitespace-nowrap shrink-0 ${
               activeTab === 'calculator'
                 ? 'bg-slate-900 text-white'
                 : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/90'
@@ -147,7 +147,6 @@ export default function DahiPage() {
             <span>Simple Profit Calculator</span>
           </button>
         </div>
-
       </div>
 
       {/* 3. Tab Body Views */}

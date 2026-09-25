@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Building2,
   Bike,
@@ -9,22 +9,22 @@ import {
   Check,
   Save,
   SlidersHorizontal,
-} from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { useSettingsContext } from '@/context/SettingsContext';
-import { useProductContext } from '@/context/ProductContext';
-import { useCustomerContext } from '@/context/CustomerContext';
-import { Typography } from '@/components/common/Typography';
+} from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useSettingsContext } from "@/context/SettingsContext";
+import { useProductContext } from "@/context/ProductContext";
+import { useCustomerContext } from "@/context/CustomerContext";
+import { Typography } from "@/components/common/Typography";
 
 // Tab Components
-import BusinessInfoTab from '../components/BusinessInfoTab';
-import FleetTab from '../components/FleetTab';
-import ProductDefaultsTab from '../components/ProductDefaultsTab';
-import PricingTab from '../components/PricingTab';
-import RolesTab from '../components/RolesTab';
-import NotificationsTab from '../components/NotificationsTab';
+import BusinessInfoTab from "../components/BusinessInfoTab";
+import FleetTab from "../components/FleetTab";
+import ProductDefaultsTab from "../components/ProductDefaultsTab";
+import PricingTab from "../components/PricingTab";
+import RolesTab from "../components/RolesTab";
+import NotificationsTab from "../components/NotificationsTab";
 
 export default function GlobalSettings() {
   const { settings, updateSettingsSection } = useSettingsContext();
@@ -35,7 +35,7 @@ export default function GlobalSettings() {
   const customerCtx = useCustomerContext();
   const updateCreditLimitBatch = customerCtx?.updateCreditLimitBatch;
 
-  const [activeTab, setActiveTab] = useState('business');
+  const [activeTab, setActiveTab] = useState("business");
   const [showSavedAlert, setShowSavedAlert] = useState(false);
 
   // Local draft state for draft/save pattern
@@ -90,10 +90,10 @@ export default function GlobalSettings() {
   // Save changes handler with real Pricing → Products sync
   const handleSaveChanges = () => {
     // 1. Persist draft sections to SettingsContext & Database Backend
-    updateSettingsSection('business', draft.business);
-    updateSettingsSection('productDefaults', draft.productDefaults);
-    updateSettingsSection('pricing', draft.pricing);
-    updateSettingsSection('notifs', draft.notifs);
+    updateSettingsSection("business", draft.business);
+    updateSettingsSection("productDefaults", draft.productDefaults);
+    updateSettingsSection("pricing", draft.pricing);
+    updateSettingsSection("notifs", draft.notifs);
 
     const cowRate = Number(draft.pricing.defaultCowMilkRate) || 0;
     const buffaloRate = Number(draft.pricing.defaultBuffaloMilkRate) || 0;
@@ -107,11 +107,14 @@ export default function GlobalSettings() {
         let buffaloMatched = false;
 
         list = list.map((p) => {
-          const nameLower = (p.name || '').toLowerCase();
-          const catLower = (p.category || '').toLowerCase();
+          const nameLower = (p.name || "").toLowerCase();
+          const catLower = (p.category || "").toLowerCase();
 
           // Cow milk match (by name or category containing 'cow')
-          if (cowRate > 0 && (nameLower.includes('cow') || catLower.includes('cow'))) {
+          if (
+            cowRate > 0 &&
+            (nameLower.includes("cow") || catLower.includes("cow"))
+          ) {
             cowMatched = true;
             return {
               ...p,
@@ -120,7 +123,10 @@ export default function GlobalSettings() {
           }
 
           // Buffalo milk match (by name or category containing 'buffalo')
-          if (buffaloRate > 0 && (nameLower.includes('buffalo') || catLower.includes('buffalo'))) {
+          if (
+            buffaloRate > 0 &&
+            (nameLower.includes("buffalo") || catLower.includes("buffalo"))
+          ) {
             buffaloMatched = true;
             return {
               ...p,
@@ -131,55 +137,66 @@ export default function GlobalSettings() {
           return p;
         });
 
-        const defaultUnit = draft.productDefaults?.defaultUnit === 'kg' ? 'per kg' : 'per liter';
+        const defaultUnit =
+          draft.productDefaults?.defaultUnit === "kg" ? "per kg" : "per liter";
 
         // If no cow product exists in list yet, but cowRate is specified (>0), create one
         if (cowRate > 0 && !cowMatched) {
           list.push({
-            id: 'PRD-COW-01',
-            sku: 'PRD-COW-01',
-            name: 'Pure Cow Milk',
-            category: 'Milk',
+            id: "PRD-COW-01",
+            sku: "PRD-COW-01",
+            name: "Pure Cow Milk",
+            category: "Milk",
             unit: defaultUnit,
             price: cowRate,
             cost: Math.round(cowRate * 0.8),
-            status: 'Active',
-            barcode: '890100101',
-            storage: 'Refrigerated Chiller (0 - 4 °C)',
-            frequency: 'Daily Morning & Evening Batches',
-            description: 'Fresh pure cow milk',
+            status: "Active",
+            barcode: "890100101",
+            storage: "Refrigerated Chiller (0 - 4 °C)",
+            frequency: "Daily Morning & Evening Batches",
+            description: "Fresh pure cow milk",
           });
         }
 
         // If no buffalo product exists in list yet, but buffaloRate is specified (>0), create one
         if (buffaloRate > 0 && !buffaloMatched) {
           list.push({
-            id: 'PRD-BUF-01',
-            sku: 'PRD-BUF-01',
-            name: 'Pure Buffalo Milk',
-            category: 'Milk',
+            id: "PRD-BUF-01",
+            sku: "PRD-BUF-01",
+            name: "Pure Buffalo Milk",
+            category: "Milk",
             unit: defaultUnit,
             price: buffaloRate,
             cost: Math.round(buffaloRate * 0.8),
-            status: 'Active',
-            barcode: '890100102',
-            storage: 'Refrigerated Chiller (0 - 4 °C)',
-            frequency: 'Daily Morning & Evening Batches',
-            description: 'High fat fresh buffalo milk',
+            status: "Active",
+            barcode: "890100102",
+            storage: "Refrigerated Chiller (0 - 4 °C)",
+            frequency: "Daily Morning & Evening Batches",
+            description: "High fat fresh buffalo milk",
           });
         }
 
         return list;
       });
-    } else if (updateProduct && Array.isArray(products) && products.length > 0) {
+    } else if (
+      updateProduct &&
+      Array.isArray(products) &&
+      products.length > 0
+    ) {
       // Fallback if batch updater not available
       products.forEach((p) => {
-        const nameLower = (p.name || '').toLowerCase();
-        const catLower = (p.category || '').toLowerCase();
-        if (cowRate > 0 && (nameLower.includes('cow') || catLower.includes('cow'))) {
+        const nameLower = (p.name || "").toLowerCase();
+        const catLower = (p.category || "").toLowerCase();
+        if (
+          cowRate > 0 &&
+          (nameLower.includes("cow") || catLower.includes("cow"))
+        ) {
           updateProduct({ ...p, price: cowRate });
         }
-        if (buffaloRate > 0 && (nameLower.includes('buffalo') || catLower.includes('buffalo'))) {
+        if (
+          buffaloRate > 0 &&
+          (nameLower.includes("buffalo") || catLower.includes("buffalo"))
+        ) {
           updateProduct({ ...p, price: buffaloRate });
         }
       });
@@ -193,7 +210,9 @@ export default function GlobalSettings() {
     // 4. Trigger notification
     setShowSavedAlert(true);
     setTimeout(() => setShowSavedAlert(false), 4000);
-    toast.success('Changes saved! Global settings & configurations updated successfully.');
+    toast.success(
+      "Changes saved! Global settings & configurations updated successfully.",
+    );
   };
 
   return (
@@ -206,7 +225,8 @@ export default function GlobalSettings() {
               <Check className="w-3.5 h-3.5 stroke-[3]" />
             </div>
             <span>
-              <strong>Changes Saved:</strong> Global configurations and prices have been saved and applied across the entire system.
+              <strong>Changes Saved:</strong> Global configurations and prices
+              have been saved and applied across the entire system.
             </span>
           </div>
           <button
@@ -223,15 +243,23 @@ export default function GlobalSettings() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-2.5 border-b border-slate-200/80">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <Typography variant="h3" className="font-bold text-slate-900 tracking-tight text-xl font-display">
+            <Typography
+              variant="h3"
+              className="font-bold text-slate-900 tracking-tight text-xl font-display"
+            >
               Global ERP Settings
             </Typography>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
               System Config
             </span>
           </div>
-          <Typography variant="bodySmall" color="muted" className="text-xs text-slate-500">
-            Configure business info, product defaults, live delivery fleet, pricing rules, and notification alerts
+          <Typography
+            variant="bodySmall"
+            color="muted"
+            className="text-xs text-slate-500"
+          >
+            Configure business info, product defaults, live delivery fleet,
+            pricing rules, and notification alerts
           </Typography>
         </div>
 
@@ -246,7 +274,11 @@ export default function GlobalSettings() {
       </div>
 
       {/* Tabs Layout */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-3">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full space-y-3"
+      >
         <TabsList className="bg-slate-100 p-0.5 rounded-xl h-auto flex flex-wrap gap-1 border border-slate-200/60 justify-start">
           <TabsTrigger
             value="business"
@@ -298,7 +330,10 @@ export default function GlobalSettings() {
         </TabsList>
 
         {/* Tab 1: Business Info */}
-        <TabsContent value="business" className="mt-0 focus-visible:outline-none">
+        <TabsContent
+          value="business"
+          className="mt-0 focus-visible:outline-none"
+        >
           <BusinessInfoTab
             data={draft.business}
             onChange={handleBusinessChange}
@@ -311,7 +346,10 @@ export default function GlobalSettings() {
         </TabsContent>
 
         {/* Tab 3: Product Defaults */}
-        <TabsContent value="products" className="mt-0 focus-visible:outline-none">
+        <TabsContent
+          value="products"
+          className="mt-0 focus-visible:outline-none"
+        >
           <ProductDefaultsTab
             data={draft.productDefaults}
             onChange={handleProductDefaultsChange}
@@ -319,11 +357,11 @@ export default function GlobalSettings() {
         </TabsContent>
 
         {/* Tab 4: Pricing & Credit */}
-        <TabsContent value="pricing" className="mt-0 focus-visible:outline-none">
-          <PricingTab
-            data={draft.pricing}
-            onChange={handlePricingChange}
-          />
+        <TabsContent
+          value="pricing"
+          className="mt-0 focus-visible:outline-none"
+        >
+          <PricingTab data={draft.pricing} onChange={handlePricingChange} />
         </TabsContent>
 
         {/* Tab 5: User Roles */}
@@ -333,10 +371,7 @@ export default function GlobalSettings() {
 
         {/* Tab 6: Notifications */}
         <TabsContent value="notifs" className="mt-0 focus-visible:outline-none">
-          <NotificationsTab
-            data={draft.notifs}
-            onChange={handleNotifsChange}
-          />
+          <NotificationsTab data={draft.notifs} onChange={handleNotifsChange} />
         </TabsContent>
       </Tabs>
     </div>

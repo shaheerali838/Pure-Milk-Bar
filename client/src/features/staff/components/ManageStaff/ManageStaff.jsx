@@ -19,10 +19,15 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
+import { useAuth } from '@/context/AuthContext';
+import { ROLES } from '@/config/rbac.config';
 import StaffAdd from './StaffAdd';
 import StaffDetail from './StaffDetail';
 
 export default function ManageStaff() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === ROLES.ADMIN;
+
   const {
     staffList = [],
     metrics,
@@ -37,6 +42,33 @@ export default function ManageStaff() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [shiftFilter, setShiftFilter] = useState('all');
+  
+  const [selectedIds, setSelectedIds] = useState([]);
+  
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(filteredStaff.map(s => s.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectRow = (e, id) => {
+    e.stopPropagation();
+    if (e.target.checked) {
+      setSelectedIds(prev => [...prev, id]);
+    } else {
+      setSelectedIds(prev => prev.filter(i => i !== id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} staff members?`)) return;
+    for (const id of selectedIds) {
+      await deleteStaff(id);
+    }
+    setSelectedIds([]);
+  };
 
   // 1. Full-space Add Staff View (Exact AnimalAdd Design Match)
   if (currentView === 'add') {
@@ -232,34 +264,64 @@ export default function ManageStaff() {
           </div>
         </div>
 
-        {/* 4. Monthly Budget */}
-        <div
-          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #3b82f6' }}
-        >
-          <div className="flex items-start justify-between mb-2">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
-              style={{ background: '#3b82f615' }}
-            >
-              <DollarSign style={{ width: 16, height: 16, color: '#3b82f6' }} />
+        {/* 4. Monthly Budget / Operational Duty Card */}
+        {isAdmin ? (
+          <div
+            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
+            style={{ borderTop: '4px solid #3b82f6' }}
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                style={{ background: '#3b82f615' }}
+              >
+                <DollarSign style={{ width: 16, height: 16, color: '#3b82f6' }} />
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-blue-700 bg-blue-50 border border-blue-200">
+                Payroll
+              </span>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-blue-700 bg-blue-50 border border-blue-200">
-              Payroll
-            </span>
+            <div>
+              <p className="font-display text-2xl font-black text-blue-700 leading-tight tracking-tight mb-0.5 tabular font-mono truncate">
+                Rs. {metrics.totalMonthlyPayroll.toLocaleString()}
+              </p>
+              <p className="text-xs font-bold text-slate-700 font-display">
+                Monthly Base Payroll
+              </p>
+              <p className="text-[11px] text-slate-400 font-medium truncate">
+                Base salary obligation
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="font-display text-2xl font-black text-blue-700 leading-tight tracking-tight mb-0.5 tabular font-mono truncate">
-              Rs. {metrics.totalMonthlyPayroll.toLocaleString()}
-            </p>
-            <p className="text-xs font-bold text-slate-700 font-display">
-              Monthly Base Payroll
-            </p>
-            <p className="text-[11px] text-slate-400 font-medium truncate">
-              Base salary obligation
-            </p>
+        ) : (
+          <div
+            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
+            style={{ borderTop: '4px solid #00a86b' }}
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                style={{ background: '#00a86b15' }}
+              >
+                <Users style={{ width: 16, height: 16, color: '#00a86b' }} />
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-emerald-700 bg-emerald-50 border border-emerald-200">
+                Operations
+              </span>
+            </div>
+            <div>
+              <p className="font-display text-2xl font-black text-[#00a86b] leading-tight tracking-tight mb-0.5 tabular font-mono truncate">
+                {metrics.activeStaffCount} / {metrics.totalStaff}
+              </p>
+              <p className="text-xs font-bold text-slate-700 font-display">
+                Workforce Active
+              </p>
+              <p className="text-[11px] text-slate-400 font-medium truncate">
+                Roster operational status
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 2. Controls & Search Toolbar with 'Add Staff' Button */}
@@ -305,15 +367,27 @@ export default function ManageStaff() {
             <option value="night">Night</option>
           </select>
 
-          {/* Right-Side 'Add Staff' Button (Opens StaffAdd full view) */}
-          <button
-            type="button"
-            onClick={() => setCurrentView('add')}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00a86b] hover:bg-[#008f5a] text-white text-xs font-bold shadow-xs transition cursor-pointer"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            Add Staff
-          </button>
+          {/* Right-Side Actions */}
+          <div className="flex items-center gap-2">
+            {isAdmin && selectedIds.length > 0 && (
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Selected ({selectedIds.length})
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setCurrentView('add')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00a86b] hover:bg-[#008f5a] text-white text-xs font-bold shadow-xs transition cursor-pointer"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              Add Staff
+            </button>
+          </div>
         </div>
       </div>
 
@@ -362,13 +436,16 @@ export default function ManageStaff() {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/70 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
+                  <th className="py-3 px-4">
+                    <input type="checkbox" checked={selectedIds.length === filteredStaff.length && filteredStaff.length > 0} onChange={handleSelectAll} className="cursor-pointer" />
+                  </th>
                   <th className="py-3 px-4">Staff ID</th>
                   <th className="py-3 px-4">Employee Name</th>
                   <th className="py-3 px-4">Role</th>
                   <th className="py-3 px-4">Shift</th>
                   <th className="py-3 px-4">Contact</th>
                   <th className="py-3 px-4">CNIC</th>
-                  <th className="py-3 px-4">Monthly Salary</th>
+                  {isAdmin && <th className="py-3 px-4">Monthly Salary</th>}
                   <th className="py-3 px-4">Assigned Route</th>
                   <th className="py-3 px-4 text-center">Duty Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
@@ -390,15 +467,31 @@ export default function ManageStaff() {
                       }}
                       className="hover:bg-emerald-50/40 transition duration-150 cursor-pointer group"
                     >
+                      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
+                        <input 
+                          type="checkbox" 
+                          checked={selectedIds.includes(staff.id)} 
+                          onChange={(e) => handleSelectRow(e, staff.id)} 
+                          className="cursor-pointer" 
+                        />
+                      </td>
                       <td className="py-3 px-4 font-mono font-bold text-slate-900">
                         #{staff.id}
                       </td>
 
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 font-display">
-                            {staff.name ? staff.name.charAt(0).toUpperCase() : 'S'}
-                          </div>
+                          {staff.image ? (
+                            <img
+                              src={staff.image}
+                              alt={staff.name}
+                              className="w-8 h-8 rounded-xl object-cover shrink-0 border border-slate-200"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 font-display">
+                              {staff.name ? staff.name.charAt(0).toUpperCase() : 'S'}
+                            </div>
+                          )}
                           <div>
                             <span className="font-bold text-slate-900 block group-hover:text-emerald-700 transition">
                               {staff.name}
@@ -435,14 +528,16 @@ export default function ManageStaff() {
                         {staff.cnic || '—'}
                       </td>
 
-                      <td className="py-3 px-4 font-mono tabular">
-                        <span className="font-black text-slate-900">
-                          Rs. {Number(staff.monthlySalary || 0).toLocaleString()}
-                        </span>
-                        <span className="text-[10px] text-slate-400 block font-normal">
-                          (~Rs. {staff.dailySalary || Math.round((staff.monthlySalary || 0) / 30)}/d)
-                        </span>
-                      </td>
+                      {isAdmin && (
+                        <td className="py-3 px-4 font-mono tabular">
+                          <span className="font-black text-slate-900">
+                            Rs. {Number(staff.monthlySalary || 0).toLocaleString()}
+                          </span>
+                          <span className="text-[10px] text-slate-400 block font-normal">
+                            (~Rs. {staff.dailySalary || Math.round((staff.monthlySalary || 0) / 30)}/d)
+                          </span>
+                        </td>
+                      )}
 
                       <td className="py-3 px-4">
                         {isDelivery ? (
@@ -492,14 +587,16 @@ export default function ManageStaff() {
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            type="button"
-                            onClick={(e) => handleDeleteStaff(e, staff)}
-                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition cursor-pointer"
-                            title="Delete Staff"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteStaff(e, staff)}
+                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 transition cursor-pointer"
+                              title="Delete Staff"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

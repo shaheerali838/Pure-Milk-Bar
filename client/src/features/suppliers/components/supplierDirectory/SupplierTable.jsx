@@ -156,9 +156,17 @@ export default function SupplierTable({ onView, onEdit }) {
                   {/* Supplier Name */}
                   <TableCell className="py-3.5 px-4">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 text-[#155dfc] flex items-center justify-center font-bold text-xs shrink-0">
-                        {supplier.name.replace(/Supplier\s+/i, '').charAt(0).toUpperCase() || 'S'}
-                      </div>
+                      {supplier.image ? (
+                        <img
+                          src={supplier.image}
+                          alt={supplier.name}
+                          className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-blue-100 text-[#155dfc] flex items-center justify-center font-bold text-xs shrink-0">
+                          {supplier.name.replace(/Supplier\s+/i, '').charAt(0).toUpperCase() || 'S'}
+                        </div>
+                      )}
                       <div>
                         <span className="font-bold text-slate-900 font-display block">
                           {supplier.name}

@@ -128,6 +128,7 @@ export default function LandingNavbar() {
           <nav className="hidden lg:flex items-center space-x-4 text-[11px] font-bold text-slate-200">
             <a href="#how-it-works" className="hover:text-white transition">How It Works</a>
             <a href="#modules" className="hover:text-white transition">ERP Modules</a>
+            <a href="#screenshots" className="hover:text-white transition text-emerald-300">Screenshots</a>
             <a href="#pos-sandbox" className="hover:text-white transition">POS Sandbox</a>
             <a href="#simulators" className="hover:text-white transition">Simulators</a>
             <a href="#commercial-farms" className="hover:text-white transition">Enrolled Farms</a>

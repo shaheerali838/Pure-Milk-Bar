@@ -56,11 +56,20 @@ const customerSchema = new Schema(
       default: 'ACTIVE',
       index: true,
     },
+    image: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
+    strict: false,
   }
 );
+
+customerSchema.index({ status: 1, createdAt: -1 });
+customerSchema.index({ deliveryRoute: 1, status: 1 });
+customerSchema.index({ name: 'text', phone: 'text' });
 
 export const Customer = model('Customer', customerSchema);
 export default Customer;

@@ -53,6 +53,8 @@ milkingYieldLogSchema.index(
   { animalId: 1, date: 1, shift: 1 },
   { unique: true },
 );
+milkingYieldLogSchema.index({ date: -1, shift: 1 });
+milkingYieldLogSchema.index({ createdAt: -1 });
 
 export const MilkingYieldLog = model("MilkingYieldLog", milkingYieldLogSchema);
 export default MilkingYieldLog;

@@ -19,12 +19,10 @@ import FarmDashboard from "../features/farm/pages/FarmDashboard";
 import AnimalsHerd from "../features/farm/pages/AnimalsHerd";
 import AnimalDetailPage from "../features/farm/pages/AnimalDetailPage";
 import MilkingRegister from "../features/farm/pages/MilkingRegister";
-import DahiProcessing from "../features/farm/pages/DahiProcessing";
 import DahiPage from "../features/dahi/page/DahiPage";
 import ExpenseLayout from "../features/farm/pages/ExpenseLayout";
 import FarmExpenses from "../features/farm/pages/FarmExpenses";
 import RecordFarmExpensePage from "../features/farm/pages/RecordFarmExpensePage";
-
 import ExpenseDetailPage from "../features/farm/pages/ExpenseDetailPage";
 import FarmPL from "../features/farm/pages/FarmPL";
 import DailySheet from "../features/farm/pages/DailySheet";
@@ -37,7 +35,6 @@ import IntakeRegister from "../features/suppliers/pages/IntakeRegister";
 import SourceExpense from "../features/suppliers/pages/SourceExpense";
 import SupplierPL from "../features/suppliers/pages/SupplierPL";
 import ProcurementSheet from "../features/suppliers/pages/ProcurementSheet";
-import Proccessing from "../features/inventory/pages/Processing";
 import Products from "../features/inventory/pages/Products";
 
 // Sales & Point of Sale (POS)
@@ -52,8 +49,6 @@ import CustomerKhataLedger from "../features/customers/pages/CustomerKhataLedger
 
 // Finance, Reconciliation & Daily Closing
 import FinancePage from "../features/finance/pages/FinancePage";
-import CustomerFinance from "../features/finance/pages/CustomerFinance";
-import RiderDeliveryFinancePage from "../features/finance/pages/RiderDeliveryFinancePage";
 import DailyClosing from "../features/finance/pages/DailyClosing";
 import TransactionAuditLog from "../features/audit/pages/TransactionAuditLog";
 
@@ -69,6 +64,7 @@ import StaffAdd from "../features/staff/pages/StaffAdd";
 import GlobalSettings from "../features/settings/pages/GlobalSettings";
 
 import ProtectedRoute from "./ProtectedRoute";
+import { ROLES } from "../config/rbac.config";
 
 export function AppRouter() {
   return (
@@ -79,85 +75,119 @@ export function AppRouter() {
         <Route path="/landing" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Protected Enterprise ERP Routes */}
+        {/* Base Authenticated Wrapper */}
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
-            <Route path="dashboard" element={<Dashboard />} />
 
-            <Route path="farm" element={<Farm />}>
-              <Route index element={<FarmDashboard />} />
-              <Route path="animals" element={<AnimalsHerd />} />
-              <Route path="animals/detail/:id" element={<AnimalDetailPage />} />
-              <Route path="milking" element={<MilkingRegister />} />
-              <Route path="processing" element={<DahiPage />} />
-              <Route path="expenses" element={<ExpenseLayout />}>
-                <Route index element={<FarmExpenses />} />
-                <Route path="new" element={<RecordFarmExpensePage />} />
-                <Route path="edit/:id" element={<RecordFarmExpensePage />} />
-                <Route path="detail/:id" element={<ExpenseDetailPage />} />
+            {/* 1. Main Dashboard: Admin & Manager */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]} />}>
+              <Route path="dashboard" element={<Dashboard />} />
+            </Route>
+
+            {/* 2. Farm Management Hub: Admin, Manager & Farm Supervisor */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.FARM_SUPERVISOR]} />}>
+              <Route path="farm" element={<Farm />}>
+                <Route index element={<FarmDashboard />} />
+                <Route path="animals" element={<AnimalsHerd />} />
+                <Route path="animals/detail/:id" element={<AnimalDetailPage />} />
+                <Route path="milking" element={<MilkingRegister />} />
+                <Route path="processing" element={<DahiPage />} />
+                <Route path="expenses" element={<ExpenseLayout />}>
+                  <Route index element={<FarmExpenses />} />
+                  <Route path="new" element={<RecordFarmExpensePage />} />
+                  <Route path="edit/:id" element={<RecordFarmExpensePage />} />
+                  <Route path="detail/:id" element={<ExpenseDetailPage />} />
+                </Route>
+                <Route path="pl" element={<FarmPL />} />
+                <Route path="dailysheet" element={<DailySheet />} />
+                <Route path="daily-sheet" element={<DailySheet />} />
               </Route>
-              <Route path="pl" element={<FarmPL />} />
-              <Route path="dailysheet" element={<DailySheet />} />
-              <Route path="daily-sheet" element={<DailySheet />} />
+              <Route path="dahi" element={<DahiPage />} />
+              <Route path="processing" element={<DahiPage />} />
+              <Route path="proccessing" element={<DahiPage />} />
+              <Route path="products" element={<Products />} />
             </Route>
 
-            <Route path="supplier" element={<Supplier />}>
-              <Route index element={<SupplierDashboard />} />
-              <Route path="dashboard" element={<SupplierDashboard />} />
-              <Route path="directory" element={<SupplierDirectory />} />
-              <Route path="intake" element={<IntakeRegister />} />
-              <Route path="expenses" element={<SourceExpense />} />
-              <Route path="pl" element={<SupplierPL />} />
-              <Route path="procurement" element={<ProcurementSheet />} />
-              <Route path="procurementsheet" element={<ProcurementSheet />} />
-              <Route path="procurement-sheet" element={<ProcurementSheet />} />
+            {/* 3. Suppliers Hub: Admin & Manager */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]} />}>
+              <Route path="supplier" element={<Supplier />}>
+                <Route index element={<SupplierDashboard />} />
+                <Route path="dashboard" element={<SupplierDashboard />} />
+                <Route path="directory" element={<SupplierDirectory />} />
+                <Route path="intake" element={<IntakeRegister />} />
+                <Route path="expenses" element={<SourceExpense />} />
+                <Route path="pl" element={<SupplierPL />} />
+                <Route path="procurement" element={<ProcurementSheet />} />
+                <Route path="procurementsheet" element={<ProcurementSheet />} />
+                <Route path="procurement-sheet" element={<ProcurementSheet />} />
+              </Route>
             </Route>
-            <Route path="dahi" element={<DahiPage />} />
-            <Route path="processing" element={<DahiPage />} />
-            <Route path="proccessing" element={<DahiPage />} />
-            <Route path="products" element={<Products />} />
 
-            <Route path="pos" element={<Pos />} />
+            {/* 4. Sales & POS: Admin, Manager & Cashier */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.CASHIER]} />}>
+              <Route path="pos" element={<Pos />} />
+            </Route>
 
-            <Route path="delivery" element={<Delivery />} />
+            {/* 5. Deliveries & Customers */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]} />}>
+              <Route path="delivery" element={<Delivery />} />
+            </Route>
 
-            <Route path="customer" element={<CustomerManagement />} />
-            <Route path="customer-khata-ledger" element={<CustomerKhataLedger />} />
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.CASHIER]} />}>
+              <Route path="customer" element={<CustomerManagement />} />
+              <Route path="customer-khata-ledger" element={<CustomerKhataLedger />} />
+            </Route>
 
+            {/* Quick Redirects */}
             <Route path="dailysheet" element={<Navigate to="/farm/dailysheet" replace />} />
             <Route path="daily-sheet" element={<Navigate to="/farm/dailysheet" replace />} />
             <Route path="procurement" element={<Navigate to="/supplier/procurement" replace />} />
             <Route path="procurementsheet" element={<Navigate to="/supplier/procurement" replace />} />
             <Route path="procurement-sheet" element={<Navigate to="/supplier/procurement" replace />} />
 
-            <Route path="finance" element={<FinancePage />} />
-            <Route path="finance/customer" element={<FinancePage initialTab="customer" />} />
-            <Route path="finance/delivery" element={<FinancePage initialTab="delivery" />} />
-            <Route path="finance/report-farm" element={<FinancePage initialTab="report-farm" />} />
-            <Route path="finance/report-supplier" element={<FinancePage initialTab="report-supplier" />} />
-            <Route path="finance/report-dahi" element={<FinancePage initialTab="report-dahi" />} />
-            <Route path="finance/daily-closing" element={<DailyClosing />} />
-            <Route path="daily-closing" element={<DailyClosing />} />
-            <Route path="finance/audit-log" element={<TransactionAuditLog />} />
-            <Route path="audit-log" element={<TransactionAuditLog />} />
-            <Route path="audit" element={<TransactionAuditLog />} />
-            <Route path="transactions" element={<TransactionAuditLog />} />
-            <Route path="finance/staff" element={<Navigate to="/staff" replace />} />
-            <Route path="finance/staff/*" element={<Navigate to="/staff" replace />} />
-            <Route path="staff" element={<StaffManagement />}>
-              <Route index element={<StaffDashboard />} />
-              <Route path="dashboard" element={<StaffDashboard />} />
-              <Route path="manage" element={<ManageStaff />} />
-              <Route path="add" element={<StaffAdd />} />
-              <Route path="attendance" element={<StaffAttendance />} />
-              <Route path="dailysheet" element={<StaffDailySheet />} />
-              <Route path="daily-sheet" element={<StaffDailySheet />} />
+            {/* 6. Finance Hub: Admin (Full) & Manager (Selected) */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]} />}>
+              <Route path="finance" element={<FinancePage />} />
+              <Route path="finance/customer" element={<FinancePage initialTab="customer" />} />
+              <Route path="finance/delivery" element={<FinancePage initialTab="delivery" />} />
+              <Route path="finance/report-farm" element={<FinancePage initialTab="report-farm" />} />
+              <Route path="finance/report-supplier" element={<FinancePage initialTab="report-supplier" />} />
+              <Route path="finance/report-dahi" element={<FinancePage initialTab="report-dahi" />} />
+              <Route path="finance/pos" element={<FinancePage initialTab="pos" />} />
             </Route>
-            <Route path="payroll" element={<Navigate to="/staff" replace />} />
-            <Route path="payroll/*" element={<Navigate to="/staff" replace />} />
 
-            <Route path="settings" element={<GlobalSettings />} />
-            <Route path="global-settings" element={<GlobalSettings />} />
+            {/* Daily Closing: Admin, Manager, Cashier */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.CASHIER]} />}>
+              <Route path="finance/daily-closing" element={<DailyClosing />} />
+              <Route path="daily-closing" element={<DailyClosing />} />
+            </Route>
+
+            {/* Audit Log: Admin & Manager */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]} />}>
+              <Route path="finance/audit-log" element={<TransactionAuditLog />} />
+              <Route path="audit-log" element={<TransactionAuditLog />} />
+              <Route path="audit" element={<TransactionAuditLog />} />
+              <Route path="transactions" element={<TransactionAuditLog />} />
+            </Route>
+
+            {/* 7. Staff Management: Admin & Manager */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]} />}>
+              <Route path="staff" element={<StaffManagement />}>
+                <Route index element={<StaffDashboard />} />
+                <Route path="dashboard" element={<StaffDashboard />} />
+                <Route path="manage" element={<ManageStaff />} />
+                <Route path="add" element={<StaffAdd />} />
+                <Route path="attendance" element={<StaffAttendance />} />
+                <Route path="dailysheet" element={<StaffDailySheet />} />
+                <Route path="daily-sheet" element={<StaffDailySheet />} />
+              </Route>
+            </Route>
+
+            {/* Settings: Admin only */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]} />}>
+              <Route path="settings" element={<GlobalSettings />} />
+              <Route path="global-settings" element={<GlobalSettings />} />
+            </Route>
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>

@@ -46,6 +46,8 @@ export default function AnimalCardOverflow() {
   const [editAnimal, setEditAnimal] = useState(null);
   const [deleteTargetAnimal, setDeleteTargetAnimal] = useState(null);
   const [selectedAnimalId, setSelectedAnimalId] = useState(null);
+  const [selectedAnimalIds, setSelectedAnimalIds] = useState([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Filter animals list based on search term, species, and status
   const filteredAnimals = animals.filter((a) => {
@@ -69,6 +71,36 @@ export default function AnimalCardOverflow() {
     if (filterValue === "all") return animalStatus;
     return filterValue;
   }
+
+  // Bulk Selection Handlers
+  const handleToggleSelect = (id) => {
+    setSelectedAnimalIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedAnimalIds.length === filteredAnimals.length && filteredAnimals.length > 0) {
+      setSelectedAnimalIds([]);
+    } else {
+      setSelectedAnimalIds(filteredAnimals.map((a) => a.id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedAnimalIds.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      for (const id of selectedAnimalIds) {
+        await deleteAnimal(id);
+      }
+      setSelectedAnimalIds([]);
+    } catch (err) {
+      console.error("Bulk delete animal error:", err);
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
 
   const headers = [
     "Tag #",
@@ -135,11 +167,50 @@ export default function AnimalCardOverflow() {
         onOpenAddModal={openModal}
       />
 
+      {/* Bulk Action Bar when items selected */}
+      {selectedAnimalIds.length > 0 && (
+        <div className="flex items-center justify-between bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-lg animate-in slide-in-from-bottom-2 duration-150">
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <span className="bg-emerald-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold">
+              {selectedAnimalIds.length}
+            </span>
+            <span>Animals Selected</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedAnimalIds([])}
+              className="px-2.5 py-1 text-xs text-slate-300 hover:text-white transition cursor-pointer"
+            >
+              Deselect All
+            </button>
+            <button
+              type="button"
+              disabled={isBulkDeleting}
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition cursor-pointer shadow-xs disabled:opacity-50"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              {isBulkDeleting ? "Deleting..." : `Delete Selected (${selectedAnimalIds.length})`}
+            </button>
+          </div>
+        </div>
+      )}
+
       {activeTab === "registry" ? (
         <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-2xs">
           <Table className="w-full border-collapse text-[13px]">
             <TableHeader>
               <TableRow className="bg-slate-50 border-b border-slate-200 hover:bg-slate-50">
+                <TableHead className="w-10 px-3.5 py-2.5 text-center">
+                  <input
+                    type="checkbox"
+                    checked={filteredAnimals.length > 0 && selectedAnimalIds.length === filteredAnimals.length}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    title="Select All Animals"
+                  />
+                </TableHead>
                 {headers.map((h) => (
                   <TableHead
                     key={h}
@@ -154,7 +225,7 @@ export default function AnimalCardOverflow() {
               {filteredAnimals.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={headers.length}
+                    colSpan={headers.length + 1}
                     className="px-4 py-12 text-center text-slate-400 text-sm"
                   >
                     No matching animals found. Click{" "}
@@ -169,8 +240,19 @@ export default function AnimalCardOverflow() {
                   <TableRow
                     key={a.id}
                     onClick={() => setSelectedAnimalId(a.id)}
-                    className="border-b border-slate-100 last:border-b-0 hover:bg-emerald-50/30 transition-colors cursor-pointer group"
+                    className={`border-b border-slate-100 last:border-b-0 hover:bg-emerald-50/30 transition-colors cursor-pointer group ${
+                      selectedAnimalIds.includes(a.id) ? "bg-emerald-50/50" : ""
+                    }`}
                   >
+                    <TableCell className="w-10 px-3.5 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedAnimalIds.includes(a.id)}
+                        onChange={() => handleToggleSelect(a.id)}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </TableCell>
+
                     <TableCell className="px-3.5 py-2.5">
                       <span className="flex items-center gap-1.5 font-mono text-[12px] font-bold text-slate-800 group-hover:text-emerald-700 tabular">
                         <Beef className="w-3.5 h-3.5 text-emerald-600" />

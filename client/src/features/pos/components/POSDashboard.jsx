@@ -7,7 +7,9 @@ import {
   ShoppingBag,
   Check,
   PackageX,
+  AlertCircle,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { usePOSContext } from '@/context/POSContext';
 import POSCardOverflow from './POSCardOverflow';
 import POSSale from './POSSale';
@@ -54,7 +56,8 @@ export default function POSDashboard() {
   const getProductDisplayStock = (prod) => {
     const name = (prod.name || '').toLowerCase();
     const cat = (prod.category || '').toLowerCase();
-    const src = (prod.source || '').toLowerCase();
+    const isCow = name.includes('cow');
+    const isBuff = name.includes('buffalo');
 
     if (cat.includes('dahi') || name.includes('dahi')) {
       const liveDahi = Number(inventoryMetrics?.totalDahiStock);
@@ -63,20 +66,79 @@ export default function POSDashboard() {
     }
 
     if (cat.includes('milk') || name.includes('milk')) {
-      if (src.includes('supplier')) {
-        const liveSup = Number(inventoryMetrics?.supplierMilkStock);
-        if (!isNaN(liveSup) && liveSup >= 0) return liveSup;
+      if (isCow) {
+        const farmCow = Number(inventoryMetrics?.farmCowMilkStock) || 0;
+        const supCow = Number(inventoryMetrics?.supplierCowMilkStock) || 0;
+        return farmCow + supCow;
       }
-      if (src.includes('farm')) {
-        const liveFarm = Number(inventoryMetrics?.farmMilkStock);
-        if (!isNaN(liveFarm) && liveFarm >= 0) return liveFarm;
+      if (isBuff) {
+        const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock) || 0;
+        const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock) || 0;
+        return farmBuff + supBuff;
       }
       const liveTot = Number(inventoryMetrics?.totalMilkStock);
       if (!isNaN(liveTot) && liveTot >= 0) return liveTot;
       return Number(prod.stock) || 0;
     }
 
-    return Number(prod.stock) || 0;
+    const batchSpecificStock = Number(inventoryMetrics?.productBatchStockMap?.[prod.name] || 0);
+    return Math.max(0, (Number(prod.stock) || 0) + batchSpecificStock);
+  };
+
+  // Temporary on-card warning state for zero stock / depleted stock
+  const [stockWarningId, setStockWarningId] = useState(null);
+  const [stockWarningMsg, setStockWarningMsg] = useState('');
+
+  // Handle product click with in-UI out-of-stock warning (NO browser alert)
+  const handleProductCardClick = (product) => {
+    const displayStock = getProductDisplayStock(product);
+    const isMilk = (product.category || '').toLowerCase().includes('milk') || (product.name || '').toLowerCase().includes('milk');
+    const isDahi = (product.category || '').toLowerCase().includes('dahi') || (product.name || '').toLowerCase().includes('dahi');
+    const isCow = (product.name || '').toLowerCase().includes('cow');
+    const isBuff = (product.name || '').toLowerCase().includes('buffalo');
+    const isSupplier = (product.source || '').toLowerCase() === 'supplier';
+    const unitLabel = product.unit?.replace('per ', '') || (isMilk ? 'L' : isDahi ? 'kg' : 'units');
+
+    if (displayStock <= 0) {
+      setStockWarningId(product.id);
+      const shortMsg = isCow
+        ? 'Cow milk out of stock hai'
+        : isBuff
+        ? 'Buffalo milk out of stock hai'
+        : isDahi
+        ? `Dahi stock is 0 ${unitLabel}`
+        : `${product.name} out of stock hai`;
+      setStockWarningMsg(shortMsg);
+
+      setTimeout(() => {
+        setStockWarningId((current) => (current === product.id ? null : current));
+      }, 3000);
+
+      toast.error(isCow ? 'Cow milk out of stock hai' : isBuff ? 'Buffalo milk out of stock hai' : `${product.name} out of stock hai`, {
+        description: `Current inventory is 0 ${unitLabel}. Please record milking yield or supplier intake.`,
+        duration: 3500,
+      });
+      return;
+    }
+    const cartItem = cart.find((i) => i.id === product.id);
+    const inCartQty = cartItem ? cartItem.quantity : 0;
+    // Only block if we actually have stock tracking enabled for this item
+    if (inCartQty >= displayStock) {
+      setStockWarningId(product.id);
+      setStockWarningMsg(`Max stock in cart (${displayStock} ${unitLabel})`);
+
+      setTimeout(() => {
+        setStockWarningId((current) => (current === product.id ? null : current));
+      }, 3000);
+
+      toast.warning(`Cannot add more "${product.name}"`, {
+        description: `All available stock (${displayStock} ${unitLabel}) is already in your cart.`,
+        duration: 3500,
+      });
+      return;
+    }
+
+    handleAddToCart(product);
   };
 
   // Handler for Detail (Eye) - Opens the detail page of the product
@@ -142,9 +204,9 @@ export default function POSDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
         <div className="lg:col-span-7 space-y-2 ">
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs space-y-3">
-            <div className="space-y-2.5 flex items-center gap-2 justify-between">
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-sm text-slate-700 w-full sm:w-72 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 shadow-2xs space-y-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 justify-between">
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-3.5 py-1.5 text-sm text-slate-700 w-full sm:w-72 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
                 <Search className="w-4 h-4 text-slate-400 shrink-0" />
                 <input
                   type="text"
@@ -155,10 +217,10 @@ export default function POSDashboard() {
                 />
               </div>
 
-              <div className="block bg-slate-100 rounded-full px-2 py-2">
+              <div className="flex items-center gap-1 bg-slate-100 rounded-full p-1 overflow-x-auto no-scrollbar">
                 {[
                   { id: 'all', label: 'All Items' },
-                  { id: 'milk', label: ' Milk' },
+                  { id: 'milk', label: 'Milk' },
                   { id: 'dahi', label: 'Dahi' },
                   { id: 'lassi', label: 'Lassi' },
                 ].map((cat) => (
@@ -166,10 +228,11 @@ export default function POSDashboard() {
                     key={cat.id}
                     type="button"
                     onClick={() => setSelectedCategory(cat.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${selectedCategory === cat.id
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                      selectedCategory === cat.id
                         ? 'bg-slate-900 text-white shadow-2xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'
-                      }`}
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    }`}
                   >
                     {cat.label}
                   </button>
@@ -192,24 +255,50 @@ export default function POSDashboard() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {filteredProducts.map((product) => {
-                  const cartItem = cart.find((i) => i.id === product.id);
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                {filteredProducts.map((product, idx) => {
+                  const prodId = product.id || product._id || product.sku || `prod-${idx}`;
+                  const cartItem = cart.find((i) => i.id === prodId || (product.id && i.id === product.id));
                   const inCartQty = cartItem ? cartItem.quantity : 0;
                   const isMilk = product.category?.toLowerCase().includes('milk');
                   const isDahi = product.category?.toLowerCase().includes('dahi');
                   const displayStock = getProductDisplayStock(product);
                   const unitLabel = product.unit?.replace('per ', '') || (isMilk ? 'L' : 'kg');
 
-                  return (
+                    return (
                     <div
-                      key={product.id}
-                      onClick={() => handleAddToCart(product)}
-                      className={`relative group bg-white border rounded-2xl p-3.5 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-md flex flex-col justify-between ${inCartQty > 0
+                      key={prodId}
+                      onClick={() => handleProductCardClick(product)}
+                      className={`relative group bg-white border rounded-2xl p-3.5 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-md flex flex-col justify-between overflow-hidden ${
+                        inCartQty > 0
                           ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/10'
+                          : displayStock <= 0
+                          ? 'border-rose-200/90 hover:border-rose-400 bg-rose-50/10'
                           : 'border-slate-200/90 hover:border-indigo-200'
-                        }`}
+                      }`}
                     >
+                      {/* On-Card Stock Warning Message Overlay (NO browser alert) */}
+                      {stockWarningId === product.id && (
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setStockWarningId(null);
+                          }}
+                          className="absolute inset-0 z-30 bg-rose-950/95 text-white rounded-2xl p-3 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in-95 duration-150 backdrop-blur-xs shadow-xl cursor-pointer"
+                        >
+                          <AlertCircle className="w-6 h-6 text-rose-300 mb-1 animate-pulse" />
+                          <span className="text-xs font-black text-white leading-tight">
+                            {stockWarningMsg}
+                          </span>
+                          <p className="text-[10px] text-rose-200 mt-1 font-medium leading-tight">
+                            {isMilk ? 'Cannot add: 0 L milk available.' : 'Cannot add: Product out of stock.'}
+                          </p>
+                          <span className="mt-2 text-[9px] font-bold bg-white/20 hover:bg-white/30 text-white px-2.5 py-0.5 rounded-full transition">
+                            Tap to dismiss
+                          </span>
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between gap-2 mb-2.5">
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isMilk
@@ -243,20 +332,33 @@ export default function POSDashboard() {
                                 : 'bg-purple-50/80 border border-purple-100'
                             }`}
                         >
-                          {isDahi ? '' : product.category?.toLowerCase().includes('lassi') ? '🧃' : '🥛'}
+                          {isDahi ? '🥣' : product.category?.toLowerCase().includes('lassi') ? '🧃' : '🥛'}
                         </div>
 
                         <div className="min-w-0 flex-1">
                           <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition line-clamp-1">
                             {product.name}
                           </h4>
-                          <p className={`text-[10px] font-semibold mt-0.5 ${displayStock > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
-                            {displayStock > 0 ? `Stock: ${displayStock} ${unitLabel}` : '0 in stock'}
+                          <p
+                            className={`text-[10px] font-bold mt-0.5 flex items-center gap-1 ${
+                              displayStock > 0 ? 'text-emerald-600' : 'text-rose-600 font-extrabold'
+                            }`}
+                          >
+                            {displayStock > 0 ? (
+                              <>
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                Stock: {displayStock} {unitLabel}
+                              </>
+                            ) : (
+                              <>
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                0 {unitLabel} (Out of Stock)
+                              </>
+                            )}
                           </p>
                         </div>
                       </div>
 
-                     
                       <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
                         <div>
                           <span className="text-sm font-black text-slate-900 tracking-tight">
@@ -267,7 +369,19 @@ export default function POSDashboard() {
                           </span>
                         </div>
 
-                        {inCartQty > 0 ? (
+                        {displayStock <= 0 ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleProductCardClick(product);
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold transition shadow-2xs cursor-pointer"
+                          >
+                            <AlertCircle className="w-3 h-3 text-rose-500" />
+                            Out of Stock
+                          </button>
+                        ) : inCartQty > 0 ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-600 text-white text-[11px] font-bold shadow-2xs">
                             <Check className="w-3 h-3 stroke-3" />
                             {inCartQty} in cart
@@ -277,7 +391,7 @@ export default function POSDashboard() {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleAddToCart(product);
+                              handleProductCardClick(product);
                             }}
                             className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 text-xs font-bold transition shadow-2xs cursor-pointer"
                           >

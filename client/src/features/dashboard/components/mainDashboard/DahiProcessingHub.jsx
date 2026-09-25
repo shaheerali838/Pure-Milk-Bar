@@ -71,17 +71,20 @@ export default function DahiProcessingHub() {
   return (
     <div
       onClick={() => navigate('/farm/processing')}
-      className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group select-none"
+      className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer group select-none relative overflow-hidden"
     >
+      {/* Ambient Top Glow */}
+      <div className="absolute -top-14 -right-14 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl pointer-events-none" />
+
       <div>
         {/* Header */}
-        <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+        <div className="flex items-start justify-between pb-3.5 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#0092b8] text-white flex items-center justify-center shrink-0 shadow-xs">
-              <Layers className="w-4.5 h-4.5" />
+            <div className="w-10 h-10 rounded-2xl bg-[#0092b8] text-white flex items-center justify-center shrink-0 shadow-md shadow-teal-600/25 group-hover:scale-105 transition-transform">
+              <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 font-display leading-tight">
+              <h3 className="text-sm font-extrabold text-slate-900 font-display leading-tight">
                 Dahi &amp; Value-Add Processing
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
@@ -89,61 +92,59 @@ export default function DahiProcessingHub() {
               </p>
             </div>
           </div>
-          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#ccfbf1] text-[#0f766e] border border-[#99f6e4] shrink-0">
+          <span className="px-3 py-1 rounded-full text-[11px] font-black bg-teal-50 text-teal-700 shrink-0">
             +{marginUpliftPct}% Uplift
           </span>
         </div>
 
-        {/* Data Rows */}
-        <div className="py-3 space-y-2 text-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-500 font-medium">Raw Milk Converted Today:</span>
-            <span className="font-mono font-bold text-slate-900 tabular">
-              {rawMilkConverted.toFixed(1)} L (Farm: {farmMilkPortion} L • Sup: {supMilkPortion} L)
+        {/* Metric Data Rows */}
+        <div className="py-3.5 space-y-2">
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
+            <span className="text-slate-600 text-xs font-semibold">Raw Milk Converted</span>
+            <span className="font-mono font-bold text-slate-900 text-xs tabular">
+              {rawMilkConverted.toFixed(1)} L (Farm: {farmMilkPortion}L • Sup: {supMilkPortion}L)
             </span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-slate-500 font-medium">Finished Output:</span>
-            <span className="font-mono font-bold text-emerald-600 tabular">
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
+            <span className="text-slate-600 text-xs font-semibold">Finished Output</span>
+            <span className="font-mono font-bold text-emerald-700 text-xs tabular">
               {dahiOutputKg.toFixed(1)} kg ({yieldPct}% Yield)
             </span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-slate-500 font-medium">Available Dahi Stock (POS):</span>
-            <span className="font-mono font-bold text-cyan-700 tabular">
-              {inventoryMetrics?.totalDahiStock || 0} kg (At Counter Ready)
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
+            <span className="text-slate-600 text-xs font-semibold">Available Dahi Stock</span>
+            <span className="font-mono font-bold text-teal-700 text-xs tabular">
+              {inventoryMetrics?.totalDahiStock || 0} kg (POS Ready)
             </span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-slate-500 font-medium">Active Batches Lifecycle:</span>
-            <span className="font-mono font-bold text-slate-900 tabular">
-              {inProgressCount} In Progress • {completedCount} Completed
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
+            <span className="text-slate-600 text-xs font-semibold">Active Batches</span>
+            <span className="font-mono font-bold text-slate-900 text-xs tabular">
+              {inProgressCount} In Progress • {completedCount} Done
             </span>
           </div>
         </div>
 
-        {/* Highlight Net Contribution Row */}
-        <div className="pt-3 pb-2 border-t border-slate-100 flex items-center justify-between font-bold text-xs">
-          <span className="text-slate-900">Value-Add Gross Profit:</span>
-          <span className="font-mono font-bold text-emerald-600 tabular">
+        {/* Net Contribution Pill Banner */}
+        <div className="p-3 rounded-2xl bg-gradient-to-r from-teal-500/15 via-teal-500/10 to-cyan-500/15 flex items-center justify-between font-bold text-xs mb-4">
+          <span className="text-slate-900 font-extrabold">Value-Add Gross Profit:</span>
+          <span className="font-mono font-black text-emerald-700 text-sm tabular">
             +Rs. {valueAddProfit.toLocaleString()}
           </span>
         </div>
       </div>
 
-      {/* Bottom Full-Width Pill Action Button */}
-      <div className="mt-2 pt-1">
-        <Link
-          to="/farm/processing"
-          className="w-full py-2.5 px-5 rounded-full bg-[#0092b8] hover:bg-[#007f9f] text-white flex items-center justify-between text-xs font-bold transition-all shadow-xs group cursor-pointer"
-        >
-          <span>Open Dahi Processing Hub</span>
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-        </Link>
-      </div>
+      {/* Action Button */}
+      <Link
+        to="/farm/processing"
+        className="w-full py-3 px-5 rounded-2xl bg-[#0092b8] hover:bg-[#007f9f] text-white flex items-center justify-between text-xs font-extrabold transition-all shadow-md shadow-teal-600/20 hover:shadow-teal-600/35 cursor-pointer group"
+      >
+        <span>Open Dahi Processing Hub</span>
+        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+      </Link>
     </div>
   );
 }

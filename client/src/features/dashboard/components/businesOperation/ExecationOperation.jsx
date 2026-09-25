@@ -15,25 +15,27 @@ export const ExecationOperation = () => {
   const { pathname } = useLocation()
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5">
-      {links.map(({ to, label, icon: Icon, color }) => {
-        const isActive = pathname === to || pathname.startsWith(to + '/')
-        return (
-          <NavLink
-            key={to}
-            to={to}
-            className="flex items-center justify-center gap-1.5 px-3.5 h-[38px] rounded-full whitespace-nowrap cursor-pointer"
-            style={{
-              background: isActive ? color : `${color}dd`,
-              boxShadow: isActive ? `0 4px 16px ${color}55` : 'none',
-              border: isActive ? '2px solid rgba(255,255,255,0.28)' : '2px solid transparent',
-            }}
-          >
-            <Icon className="w-[14px] h-[14px] shrink-0 text-white" />
-            <span className="text-[12px] sm:text-[13px] font-semibold text-white leading-none">{label}</span>
-          </NavLink>
-        )
-      })}
+    <div className="w-full overflow-x-auto no-scrollbar py-1">
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-max">
+        {links.map(({ to, label, icon: Icon, color }) => {
+          const isActive = pathname === to || pathname.startsWith(to + '/')
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              className="flex items-center justify-center gap-2 px-4 h-[38px] sm:h-[40px] rounded-full whitespace-nowrap shrink-0 transition-all duration-150 hover:brightness-110 hover:-translate-y-px active:translate-y-0 cursor-pointer shadow-xs"
+              style={{
+                background: isActive ? color : `${color}dd`,
+                boxShadow: isActive ? `0 4px 14px ${color}66` : 'none',
+                border: isActive ? '2px solid rgba(255,255,255,0.45)' : '2px solid transparent',
+              }}
+            >
+              <Icon className="w-4 h-4 shrink-0 text-white" />
+              <span className="text-xs sm:text-[13px] font-bold text-white leading-none tracking-tight">{label}</span>
+            </NavLink>
+          )
+        })}
+      </div>
     </div>
   )
 }

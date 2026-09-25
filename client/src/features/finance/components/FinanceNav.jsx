@@ -16,6 +16,7 @@ export default function FinanceNav({ activeTab, onTabChange }) {
   const isFarm = activeTab === 'report-farm';
   const isSupplier = activeTab === 'report-supplier';
   const isDahi = activeTab === 'report-dahi';
+  const isPos = activeTab === 'pos';
 
   return (
     <div className="bg-white px-3.5 py-2 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between gap-3">
@@ -49,6 +50,11 @@ export default function FinanceNav({ activeTab, onTabChange }) {
             <>
               <span className="w-2 h-2 rounded-full bg-indigo-500" />
               <span>Dahi Daily Report</span>
+            </>
+          ) : isPos ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>POS Sales</span>
             </>
           ) : (
             <>

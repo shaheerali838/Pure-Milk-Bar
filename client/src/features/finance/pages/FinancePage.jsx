@@ -7,6 +7,7 @@ import DeliveryFinance from '../components/DeliveryFinance/DeliveryFinance';
 import FarmDailyReport from '../components/FarmDailyReport';
 import SupplierDailyReport from '../components/SupplierDailyReport';
 import DahiDailyReport from '../../dahi/component/DahiDailyReport';
+import POSSalesHistory from '../../pos/components/POSSalesHistory';
 
 export default function FinancePage({ initialTab }) {
   const location = useLocation();
@@ -20,6 +21,7 @@ export default function FinancePage({ initialTab }) {
     if (location.pathname === '/finance/report-farm') return 'report-farm';
     if (location.pathname === '/finance/report-supplier') return 'report-supplier';
     if (location.pathname === '/finance/report-dahi') return 'report-dahi';
+    if (location.pathname === '/finance/pos') return 'pos';
     return 'overview';
   };
 
@@ -43,6 +45,8 @@ export default function FinancePage({ initialTab }) {
       navigate('/finance/report-supplier');
     } else if (newTab === 'report-dahi') {
       navigate('/finance/report-dahi');
+    } else if (newTab === 'pos') {
+      navigate('/finance/pos');
     }
   };
 
@@ -59,6 +63,7 @@ export default function FinancePage({ initialTab }) {
           onSelectFarmReport={() => handleTabChange('report-farm')}
           onSelectSupplierReport={() => handleTabChange('report-supplier')}
           onSelectDahiReport={() => handleTabChange('report-dahi')}
+          onSelectPos={() => handleTabChange('pos')}
         />
       )}
 
@@ -91,6 +96,8 @@ export default function FinancePage({ initialTab }) {
           <DahiDailyReport />
         </div>
       )}
+
+      {activeTab === 'pos' && <POSSalesHistory />}
     </div>
   );
 }

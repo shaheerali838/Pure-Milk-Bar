@@ -168,22 +168,22 @@ export default function TopSummaryCards() {
           <Link
             key={card.id}
             to={card.to}
-            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:border-slate-300 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 cursor-pointer select-none group"
+            className="flex flex-col justify-between bg-white rounded-3xl p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer select-none group relative overflow-hidden"
             style={{ borderTop: `4px solid ${card.color}` }}
             title={`Open ${card.title}`}
           >
-            <div className="flex items-start justify-between mb-2">
+            <div className="flex items-start justify-between mb-2.5">
               <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
-                style={{ background: `${card.color}15` }}
+                className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform"
+                style={{ background: `${card.color}18` }}
               >
-                <Icon style={{ width: 16, height: 16, color: card.color }} />
+                <Icon style={{ width: 18, height: 18, color: card.color }} />
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
+                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full text-slate-700 bg-slate-100/90 shadow-2xs">
                   {card.tag}
                 </span>
-                <ChevronRight className="w-3 h-3 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all" />
               </div>
             </div>
 

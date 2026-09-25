@@ -91,9 +91,14 @@ export function clearStoredSession() {
   });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 3. CORE REQUEST PIPELINE & INTERCEPTORS
-// ═══════════════════════════════════════════════════════════════════════════
+// In-memory request deduplication & short-lived response cache
+const inFlightRequests = new Map();
+const apiCache = new Map();
+const CACHE_TTL_MS = 5000; // 5 seconds cache for identical GET queries
+
+export function clearApiCache() {
+  apiCache.clear();
+}
 
 export async function request(endpoint, options = {}) {
   const {
@@ -103,6 +108,7 @@ export async function request(endpoint, options = {}) {
     headers = {},
     timeout = 30000,
     blob = false,
+    skipCache = false,
     ...customConfig
   } = options;
 
@@ -126,7 +132,27 @@ export async function request(endpoint, options = {}) {
     }
   }
 
+  // Clear cache on write operations (POST, PUT, PATCH, DELETE)
+  if (method !== 'GET') {
+    apiCache.clear();
+  }
+
+  // Cache key based on URL & auth token
   const token = getStoredToken();
+  const cacheKey = `${method}:${url}:${token || 'anon'}`;
+
+  // Check cache for GET requests
+  if (method === 'GET' && !blob && !skipCache) {
+    const cachedEntry = apiCache.get(cacheKey);
+    if (cachedEntry && Date.now() - cachedEntry.timestamp < CACHE_TTL_MS) {
+      return cachedEntry.data;
+    }
+
+    // Deduplicate in-flight GET requests
+    if (inFlightRequests.has(cacheKey)) {
+      return inFlightRequests.get(cacheKey);
+    }
+  }
 
   const reqHeaders = {
     'Content-Type': 'application/json',
@@ -152,64 +178,83 @@ export async function request(endpoint, options = {}) {
     config.body = typeof body === 'string' ? body : JSON.stringify(body);
   }
 
-  try {
-    const response = await fetch(url, config);
-    clearTimeout(timeoutId);
+  const executeFetch = async () => {
+    try {
+      const response = await fetch(url, config);
+      clearTimeout(timeoutId);
 
-    if (response.status === 204) {
-      return { success: true };
-    }
-
-    if (blob) {
-      if (!response.ok) {
-        throw new Error(`Blob request failed with status ${response.status}`);
+      if (response.status === 204) {
+        return { success: true };
       }
-      return await response.blob();
-    }
 
-    let data;
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      data = await response.json();
-    } else {
-      data = await response.text();
-    }
-
-    if (!response.ok) {
-      let errorMsg = `Request failed with status ${response.status}`;
-      if (typeof data === 'object' && data !== null) {
-        if (typeof data.message === 'string') {
-          errorMsg = data.message;
-        } else if (typeof data.error === 'string') {
-          errorMsg = data.error;
-        } else if (typeof data.error?.message === 'string') {
-          errorMsg = data.error.message;
-        } else {
-          errorMsg = JSON.stringify(data);
+      if (blob) {
+        if (!response.ok) {
+          throw new Error(`Blob request failed with status ${response.status}`);
         }
-      } else if (typeof data === 'string' && data) {
-        errorMsg = data;
+        return await response.blob();
       }
-      const error = new Error(errorMsg);
-      error.status = response.status;
-      error.data = data;
-      throw error;
-    }
 
-    return data;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (options.fallback !== undefined) {
-      if (import.meta.env?.DEV) {
-        console.warn(`[API ${method}] ${url} unavailable (${error.message}). Using fallback.`);
+      let data;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        data = await response.text();
       }
-      return options.fallback;
+
+      if (!response.ok) {
+        let errorMsg = `Request failed with status ${response.status}`;
+        if (typeof data === 'object' && data !== null) {
+          if (typeof data.message === 'string') {
+            errorMsg = data.message;
+          } else if (typeof data.error === 'string') {
+            errorMsg = data.error;
+          } else if (typeof data.error?.message === 'string') {
+            errorMsg = data.error.message;
+          } else {
+            errorMsg = JSON.stringify(data);
+          }
+        } else if (typeof data === 'string' && data) {
+          errorMsg = data;
+        }
+        const error = new Error(errorMsg);
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      // Cache successful GET responses
+      if (method === 'GET' && !blob && !skipCache) {
+        apiCache.set(cacheKey, { data, timestamp: Date.now() });
+      }
+
+      return data;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (options.fallback !== undefined) {
+        if (import.meta.env?.DEV) {
+          console.warn(`[API ${method}] ${url} unavailable (${error.message}). Using fallback.`);
+        }
+        return options.fallback;
+      }
+      if (import.meta.env?.DEV) {
+        console.warn(`[API ${method}] ${url} failed:`, error.message);
+      }
+      throw error;
+    } finally {
+      if (method === 'GET') {
+        inFlightRequests.delete(cacheKey);
+      }
     }
-    if (import.meta.env?.DEV) {
-      console.warn(`[API ${method}] ${url} failed:`, error.message);
-    }
-    throw error;
+  };
+
+  const promise = executeFetch();
+
+  if (method === 'GET' && !blob && !skipCache) {
+    inFlightRequests.set(cacheKey, promise);
   }
+
+  return promise;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

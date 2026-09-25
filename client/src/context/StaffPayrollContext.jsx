@@ -42,6 +42,7 @@ export function StaffPayrollProvider({ children }) {
         return {
           ...m,
           id: m._id || m.id,
+          image: m.image || null,
           monthlySalary: monthly,
           dailySalary: Number(m.dailySalary) || Math.round(monthly / 30),
           status: m.status || (m.active !== false ? 'Active' : 'Inactive'),
@@ -81,11 +82,13 @@ export function StaffPayrollProvider({ children }) {
         : Math.round(monthlySalary / 30);
 
     const payload = {
+      ...data,
       name: data.name?.trim() || 'New Staff',
       role: data.role || 'Farm Worker',
       shift: data.shift || 'Morning',
       mobile: data.mobile?.trim() || data.phone?.trim() || '',
-      cnic: data.cnic?.trim() || '',
+      cnic: data.cnic ? String(data.cnic).trim() : '',
+      image: data.image || null,
       monthlySalary,
       dailySalary,
       route: data.route?.trim() || (data.role?.toLowerCase().includes('delivery') ? 'Unassigned' : 'N/A'),

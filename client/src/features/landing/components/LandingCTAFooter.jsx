@@ -1,15 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, ArrowRight, ShoppingCart, Milk } from "lucide-react";
+import { ArrowRight, ShoppingCart, Milk } from "lucide-react";
 
 export default function LandingCTAFooter() {
   return (
     <section className="py-12 lg:py-16 bg-[#163E34] text-slate-300" id="contact">
       {/* Top CTA Banner */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-center space-y-4 mb-10">
-        <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-semibold text-emerald-200">
-          <Sparkles className="w-3.5 h-3.5 text-[#5BBB7B]" /> Live Operating System Ready
-        </span>
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white max-w-2xl mx-auto leading-tight">
           Ready to streamline your dairy operations with zero shrinkage?
         </h2>

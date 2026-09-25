@@ -92,12 +92,12 @@ export default function FarmDailyReport() {
         const qty = Number(item.quantity) || 0;
         const sub = Number(item.subtotal) || (qty * (Number(item.price) || 0));
 
-        // Identify Farm Milk sales (Cow / Buffalo / Farm Milk, excluding Dahi)
+        // Identify Farm sales (Farm Milk or Dahi)
         const isSupplier = source.includes('supplier') || name.includes('supplier') || name.includes('sourced') || name.includes('chilled') || cat.includes('supplier');
         const isDahi = name.includes('dahi') || cat.includes('dahi') || name.includes('curd') || name.includes('yogurt');
         const isMilk = name.includes('milk') || cat.includes('milk') || name.includes('cow') || name.includes('buffalo');
 
-        if (!isDahi && isMilk && (source.includes('farm') || !isSupplier)) {
+        if ((isMilk || isDahi) && (source.includes('farm') || !isSupplier)) {
           dates[d].farmMilkSalesQty += qty;
           dates[d].farmMilkSalesRev += sub;
           dates[d].saleItems.push({
@@ -215,16 +215,16 @@ export default function FarmDailyReport() {
         </div>
 
         <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Direct Farm Milk Sold</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Direct Farm Dairy Sold</span>
           <div className="flex items-baseline gap-1.5 mt-1">
             <span className="text-xl font-black font-mono text-slate-800">{overallTotals.totalSalesQty.toFixed(1)}</span>
-            <span className="text-xs font-semibold text-slate-500">Liters</span>
+            <span className="text-xs font-semibold text-slate-500">Unit</span>
           </div>
           <span className="text-[10px] text-slate-400 mt-1 block">Counter &amp; Delivery sales</span>
         </div>
 
         <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Farm Milk Revenue</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Farm Dairy Revenue</span>
           <div className="flex items-baseline gap-1.5 mt-1">
             <span className="text-xl font-black font-mono text-emerald-700">Rs. {overallTotals.totalSalesRev.toLocaleString()}</span>
           </div>
@@ -323,12 +323,12 @@ export default function FarmDailyReport() {
                   </div>
                 </div>
 
-                {/* Right: Farm Milk Sales */}
+                {/* Right: Farm Sales */}
                 <div className="p-4 space-y-3 bg-emerald-50/20">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
                       <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-                      Direct Farm Milk POS Sales
+                      Direct Farm POS Sales
                     </div>
                     <span className="text-[11px] font-semibold text-slate-400">
                       {day.saleItems.length} Sales Items
@@ -337,9 +337,9 @@ export default function FarmDailyReport() {
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Liquid Milk Sold</span>
+                      <span className="text-slate-500">Dairy Sold (Milk/Dahi)</span>
                       <span className="font-mono font-bold text-slate-800 text-sm">
-                        {day.farmMilkSalesQty.toFixed(1)} L
+                        {day.farmMilkSalesQty.toFixed(1)} Unit
                       </span>
                     </div>
 

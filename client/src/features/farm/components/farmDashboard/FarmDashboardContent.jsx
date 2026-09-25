@@ -1,6 +1,8 @@
-import React, { useState } from "react";
-import { TrendingUp, PieChart as PieChartIcon } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { TrendingUp, PieChart as PieChartIcon, Droplets } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
+import { usePOSContext } from "../../../../context/POSContext";
+import { useExpense } from "../../../../context/ExpenseContext";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -22,7 +24,9 @@ const parseYield = (val) => {
 };
 
 export default function FarmDashboardContent() {
-  const { animals = [] } = useAnimalContext();
+  const { animals = [], milkingLogs = [] } = useAnimalContext();
+  const { products = [] } = usePOSContext();
+  const { expenses = [], totals = {} } = useExpense();
   const [selectedAnimalId, setSelectedAnimalId] = useState(null);
 
   // Metrics
@@ -30,42 +34,92 @@ export default function FarmDashboardContent() {
   const cowsCount = animals.filter((a) => (a.species || "").toLowerCase().includes("cow")).length;
   const buffCount = animals.filter((a) => (a.species || "").toLowerCase().includes("buffalo")).length;
 
-  const totalFarmYield = animals.reduce((sum, animal) => {
-    const morning = parseYield(animal.morningYield);
-    const evening = parseYield(animal.eveningYield);
-    const total = morning + evening > 0 ? morning + evening : parseYield(animal.totalDailyYield);
-    return sum + total;
-  }, 0);
+  const totalFarmYield = useMemo(() => {
+    // Check if we have logs for today
+    const todayStr = new Date().toISOString().split("T")[0];
+    const todayLogs = milkingLogs.filter((l) => (l.date ? l.date.split("T")[0] === todayStr : false));
+    if (todayLogs.length > 0) {
+      return todayLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
+    }
+
+    return animals.reduce((sum, animal) => {
+      const morning = parseYield(animal.morningYield);
+      const evening = parseYield(animal.eveningYield);
+      const total = morning + evening > 0 ? morning + evening : parseYield(animal.totalDailyYield);
+      return sum + total;
+    }, 0);
+  }, [animals, milkingLogs]);
 
   const avgAnimalYield = totalAnimals > 0 ? totalFarmYield / totalAnimals : 0;
 
-  // Financial Estimates
-  const milkPricePerLiter = 210;
-  const feedCostPerAnimalDay = 620;
+  // Live Milk Price from POS counter or fallback
+  const milkPricePerLiter = useMemo(() => {
+    const milkItem = products.find((p) => /cow\s*milk|pure\s*milk|milk/i.test(p.name)) || products[0];
+    return Number(milkItem?.price) || 240;
+  }, [products]);
+
+  // Live Farm Expenses from Expense Context
+  const dailyExpenses = useMemo(() => {
+    const recordedExpense = totals?.feedSeedFarming || totals?.totalFarmExpense || 0;
+    if (recordedExpense > 0) {
+      return Math.round(recordedExpense / 30);
+    }
+    // Benchmark feed cost per animal day
+    const feedCostPerAnimalDay = 620;
+    return totalAnimals * feedCostPerAnimalDay;
+  }, [totals, totalAnimals]);
+
   const dailyRevenue = totalFarmYield * milkPricePerLiter;
-  const dailyExpenses = totalAnimals * feedCostPerAnimalDay;
   const dailyNetProfit = Math.max(0, dailyRevenue - dailyExpenses);
   const monthlyNetProfit = dailyNetProfit * 30;
 
-  // 7-Day Trend Data
-  const chartDates = ["18 Aug", "19 Aug", "20 Aug", "21 Aug", "22 Aug", "23 Aug", "24 Aug"];
-  const trendData = chartDates.map((date) => {
-    let dayYield = 0;
-    animals.forEach((a) => {
-      const entry = (a.history || []).find((h) => h.date === date);
-      dayYield += entry ? (entry.morning || 0) + (entry.evening || 0) : parseYield(a.totalDailyYield) / 7;
+  // Dynamic 7-Day Trend Dates & Yields from Server Milking Logs
+  const trendData = useMemo(() => {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const key = `${yyyy}-${mm}-${dd}`;
+      const label = d.toLocaleDateString("en-US", { day: "numeric", month: "short" });
+      days.push({ key, label });
+    }
+
+    return days.map((d) => {
+      const logsForDay = milkingLogs.filter((log) => {
+        const dateStr = log.date ? log.date.split("T")[0] : "";
+        return dateStr === d.key;
+      });
+
+      let dayYield = logsForDay.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
+
+      // Check animal histories if logsForDay is empty
+      if (dayYield === 0) {
+        animals.forEach((a) => {
+          const entry = (a.history || []).find((h) => h.date === d.key || h.date === d.label);
+          if (entry) {
+            dayYield += (parseFloat(entry.morning) || 0) + (parseFloat(entry.evening) || 0);
+          }
+        });
+      }
+
+      // Default to baseline yield if no entries yet
+      if (dayYield === 0) {
+        dayYield = totalFarmYield > 0 ? totalFarmYield : 120;
+      }
+
+      const dayRevenue = dayYield * milkPricePerLiter;
+      const dayProfit = Math.max(0, dayRevenue - dailyExpenses);
+
+      return {
+        date: d.label,
+        yield: parseFloat(dayYield.toFixed(1)),
+        profit: Math.round(dayProfit),
+      };
     });
-    if (dayYield === 0) dayYield = totalFarmYield;
-
-    const dayRevenue = dayYield * milkPricePerLiter;
-    const dayProfit = Math.max(0, dayRevenue - dailyExpenses);
-
-    return {
-      date,
-      yield: parseFloat(dayYield.toFixed(1)),
-      profit: Math.round(dayProfit)
-    };
-  });
+  }, [milkingLogs, animals, totalFarmYield, milkPricePerLiter, dailyExpenses]);
 
   if (selectedAnimalId) {
     return (
@@ -164,7 +218,7 @@ export default function FarmDashboardContent() {
               <div className="flex items-center justify-between p-3 rounded-xl bg-red-50/50 border border-red-100">
                 <div>
                   <p className="text-xs text-slate-500 font-medium">Daily Feed & Expenses</p>
-                  <p className="text-[11px] text-slate-400">{totalAnimals} animals × Rs. {feedCostPerAnimalDay}</p>
+                  <p className="text-[11px] text-slate-400">Live Farm &amp; Feed Costs (Avg / Day)</p>
                 </div>
                 <p className="text-base font-extrabold text-red-600">- Rs. {Math.round(dailyExpenses).toLocaleString()}</p>
               </div>

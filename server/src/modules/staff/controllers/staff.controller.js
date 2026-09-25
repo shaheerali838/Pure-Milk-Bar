@@ -7,13 +7,11 @@ import {
   deleteStaffService,
   getStaffStatsService,
 } from '../services/staff.service.js';
-import { sendSuccess } from '../../../utils/apiResponse.js';
 
-// Create a new staff member (Admin Only)
+// Create a new staff member (Admin & Manager)
 export const createStaff = async (req, res, next) => {
   try {
-    const adminUserId = req.user?.id;
-    const staff = await createStaffService(req.body, adminUserId);
+    const staff = await createStaffService(req.body, req.user);
 
     return res.status(201).json({
       success: true,
@@ -27,10 +25,10 @@ export const createStaff = async (req, res, next) => {
   }
 };
 
-// Get list of all staff with search, filters, pagination
+// Get list of all staff with search, filters, pagination (Admin & Manager)
 export const getAllStaff = async (req, res, next) => {
   try {
-    const result = await getAllStaffService(req.query);
+    const result = await getAllStaffService(req.query, req.user);
 
     return res.status(200).json({
       success: true,
@@ -45,10 +43,10 @@ export const getAllStaff = async (req, res, next) => {
   }
 };
 
-// Get single staff member by ID
+// Get single staff member by ID (Admin & Manager)
 export const getStaffById = async (req, res, next) => {
   try {
-    const staff = await getStaffByIdService(req.params.id);
+    const staff = await getStaffByIdService(req.params.id, req.user);
 
     return res.status(200).json({
       success: true,
@@ -61,10 +59,10 @@ export const getStaffById = async (req, res, next) => {
   }
 };
 
-// Update staff member details
+// Update staff member details (Admin & Manager)
 export const updateStaff = async (req, res, next) => {
   try {
-    const updatedStaff = await updateStaffService(req.params.id, req.body);
+    const updatedStaff = await updateStaffService(req.params.id, req.body, req.user);
 
     return res.status(200).json({
       success: true,
@@ -82,7 +80,7 @@ export const updateStaff = async (req, res, next) => {
 export const setStaffStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
-    const updatedStaff = await setStaffStatusService(req.params.id, status);
+    const updatedStaff = await setStaffStatusService(req.params.id, status, req.user);
 
     return res.status(200).json({
       success: true,
@@ -96,7 +94,7 @@ export const setStaffStatus = async (req, res, next) => {
   }
 };
 
-// Delete staff member
+// Delete staff member (strictly ADMIN)
 export const deleteStaff = async (req, res, next) => {
   try {
     const result = await deleteStaffService(req.params.id);
@@ -114,7 +112,7 @@ export const deleteStaff = async (req, res, next) => {
 // Get workforce analytics & statistics
 export const getStaffStats = async (req, res, next) => {
   try {
-    const stats = await getStaffStatsService();
+    const stats = await getStaffStatsService(req.user);
 
     return res.status(200).json({
       success: true,

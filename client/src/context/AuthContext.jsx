@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { ROLES, PERMISSIONS, ROLE_PERMISSIONS } from '@/config/rbac.config';
 
 const AuthContext = createContext(null);
 
 const STORAGE_KEY = 'pmb_auth_session';
 
-// Pre-configured system accounts with realistic enterprise dairy profiles
+// Pre-configured system accounts with realistic enterprise dairy profiles & distinct roles
 export const DEMO_ACCOUNTS = [
   {
     id: 'usr_admin_01',
@@ -13,13 +14,12 @@ export const DEMO_ACCOUNTS = [
     password: 'admin@123456',
     altPassword: 'admin123',
     name: 'Shaheer Ali',
-    role: 'ADMIN',
-    roleLabel: 'System Administrator & Owner',
+    role: ROLES.ADMIN,
+    roleLabel: 'Owner & System Administrator',
     phone: '+92 300 1234567',
     avatar: 'SA',
     shift: 'ROTATING',
     branch: 'Headquarters & Processing Hub',
-    permissions: ['ALL_ACCESS'],
   },
   {
     id: 'usr_mgr_02',
@@ -27,13 +27,12 @@ export const DEMO_ACCOUNTS = [
     email: 'manager@puremilkbar.com',
     password: 'manager123',
     name: 'Tariq Mehmood',
-    role: 'ADMIN',
+    role: ROLES.MANAGER,
     roleLabel: 'Operations & Branch Manager',
     phone: '+92 321 8844221',
     avatar: 'TM',
     shift: 'MORNING',
     branch: 'Model Town Commercial Outlet',
-    permissions: ['ALL_ACCESS'],
   },
   {
     id: 'usr_cashier_03',
@@ -41,13 +40,12 @@ export const DEMO_ACCOUNTS = [
     email: 'cashier@puremilkbar.com',
     password: 'cashier123',
     name: 'Hamza Butt',
-    role: 'ADMIN',
+    role: ROLES.CASHIER,
     roleLabel: 'POS & Counter Cashier',
     phone: '+92 333 9955112',
     avatar: 'HB',
     shift: 'EVENING',
     branch: 'Main Bar Counter #1',
-    permissions: ['ALL_ACCESS'],
   },
   {
     id: 'usr_farm_04',
@@ -55,13 +53,12 @@ export const DEMO_ACCOUNTS = [
     email: 'farm@puremilkbar.com',
     password: 'farm123',
     name: 'Chaudhry Akram',
-    role: 'ADMIN',
-    roleLabel: 'Herd & Milk Dock Supervisor',
+    role: ROLES.FARM_SUPERVISOR,
+    roleLabel: 'Farm & Production Supervisor',
     phone: '+92 345 7711223',
     avatar: 'CA',
     shift: 'MORNING',
     branch: 'Dairy Farm Yard #4',
-    permissions: ['ALL_ACCESS'],
   },
 ];
 
@@ -94,6 +91,21 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   const isAuthenticated = Boolean(user && token);
+
+  // Helper to check if current user has any of the specified roles
+  const hasRole = useCallback((...allowedRoles) => {
+    if (!user || !user.role) return false;
+    if (user.role === ROLES.ADMIN) return true; // ADMIN matches all
+    return allowedRoles.includes(user.role);
+  }, [user]);
+
+  // Helper to check if current user has a specific granular permission
+  const hasPermission = useCallback((permission) => {
+    if (!user || !user.role) return false;
+    if (user.role === ROLES.ADMIN) return true; // ADMIN possesses all permissions
+    const userPerms = ROLE_PERMISSIONS[user.role] || [];
+    return userPerms.includes(permission);
+  }, [user]);
 
   const saveSession = (userData, userToken) => {
     const payload = JSON.stringify({ user: userData, token: userToken, savedAt: new Date().toISOString() });
@@ -140,8 +152,8 @@ export const AuthProvider = ({ children }) => {
       );
 
       if (matched) {
-        // Simulated network latency for realistic feel
-        await new Promise((resolve) => setTimeout(resolve, 350));
+        // Simulated network latency
+        await new Promise((resolve) => setTimeout(resolve, 250));
 
         const userPayload = {
           id: matched.id,
@@ -154,7 +166,6 @@ export const AuthProvider = ({ children }) => {
           avatar: matched.avatar,
           shift: matched.shift,
           branch: matched.branch,
-          permissions: matched.permissions,
           lastLoginAt: new Date().toISOString(),
         };
 
@@ -164,13 +175,27 @@ export const AuthProvider = ({ children }) => {
         return { success: true, user: userPayload };
       }
 
-      // 3. Fallback: Accept any valid structured email + password >= 6 chars for testing flexibility
+      // 3. Fallback: Structured email match for quick testing
       if (cleanIdentifier.includes('@') && cleanPassword.length >= 6) {
-        await new Promise((resolve) => setTimeout(resolve, 350));
+        await new Promise((resolve) => setTimeout(resolve, 250));
         const usernamePrefix = cleanIdentifier.split('@')[0];
         const formattedName = usernamePrefix
           .replace(/[._-]/g, ' ')
           .replace(/\b\w/g, (c) => c.toUpperCase());
+
+        let detectedRole = ROLES.ADMIN;
+        let detectedLabel = 'Owner & System Administrator';
+
+        if (cleanIdentifier.includes('manager')) {
+          detectedRole = ROLES.MANAGER;
+          detectedLabel = 'Operations & Branch Manager';
+        } else if (cleanIdentifier.includes('cashier')) {
+          detectedRole = ROLES.CASHIER;
+          detectedLabel = 'POS & Counter Cashier';
+        } else if (cleanIdentifier.includes('farm') || cleanIdentifier.includes('supervisor')) {
+          detectedRole = ROLES.FARM_SUPERVISOR;
+          detectedLabel = 'Farm & Production Supervisor';
+        }
 
         const customUser = {
           id: 'usr_' + Date.now().toString(36),
@@ -178,12 +203,11 @@ export const AuthProvider = ({ children }) => {
           name: formattedName || 'Enterprise Operator',
           email: cleanIdentifier,
           phone: '+92 300 0000000',
-          role: cleanIdentifier.includes('manager') ? 'MANAGER' : cleanIdentifier.includes('cashier') ? 'CASHIER' : 'ADMIN',
-          roleLabel: cleanIdentifier.includes('manager') ? 'Branch Manager' : cleanIdentifier.includes('cashier') ? 'POS Cashier' : 'Dairy Farm Administrator',
+          role: detectedRole,
+          roleLabel: detectedLabel,
           avatar: formattedName.substring(0, 2).toUpperCase() || 'PM',
           shift: 'MORNING',
           branch: 'Main Dairy Farm Facility',
-          permissions: ['ALL_ACCESS'],
           lastLoginAt: new Date().toISOString(),
         };
 
@@ -193,7 +217,6 @@ export const AuthProvider = ({ children }) => {
         return { success: true, user: customUser };
       }
 
-      // 4. Invalid credentials
       throw new Error('Invalid email or password. Please use registered credentials or click a quick demo account.');
     } catch (err) {
       setError(err.message || 'Login failed');
@@ -202,7 +225,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const loginWithDemo = async (role = 'ADMIN') => {
+  const loginWithDemo = async (role = ROLES.ADMIN) => {
     const target = DEMO_ACCOUNTS.find((a) => a.role === role) || DEMO_ACCOUNTS[0];
     return login(target.email, target.password, true);
   };
@@ -237,6 +260,8 @@ export const AuthProvider = ({ children }) => {
     loginWithDemo,
     logout,
     updateUserProfile,
+    hasRole,
+    hasPermission,
     demoAccounts: DEMO_ACCOUNTS,
   };
 

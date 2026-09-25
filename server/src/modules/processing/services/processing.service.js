@@ -1,4 +1,5 @@
 import ProcessingBatch from '../../../models/ProcessingBatch.model.js';
+import User from '../../../models/User.model.js';
 import AppError from '../../../utils/AppError.js';
 
 // Parse numeric value from string (e.g. "100 L" -> 100, "4.5%" -> 4.5)
@@ -16,6 +17,7 @@ export const createBatchService = async (batchData, userId) => {
     product = 'Dahi (Plain)',
     milkUsed,
     milkUsedLiters,
+    milkUsedQuantity,
     output,
     outputQuantity,
     outputUnit = 'kg',
@@ -23,13 +25,18 @@ export const createBatchService = async (batchData, userId) => {
     fatPercentage,
     date,
     status = 'Completed',
+    stage,
+    source = 'Farm & Supplier Mix',
+    farmMilkUsed = 0,
+    supplierMilkUsed = 0,
+    posRate = 'Rs. 320 / kg',
     costEstimate = 0,
     notes = '',
   } = batchData;
 
   const resolvedMilkUsed = milkUsedLiters !== undefined && milkUsedLiters !== null
     ? Number(milkUsedLiters)
-    : parseNumeric(milkUsed, 0);
+    : (milkUsedQuantity !== undefined && milkUsedQuantity !== null ? Number(milkUsedQuantity) : parseNumeric(milkUsed, 0));
 
   const resolvedOutputQty = outputQuantity !== undefined && outputQuantity !== null
     ? Number(outputQuantity)
@@ -38,6 +45,8 @@ export const createBatchService = async (batchData, userId) => {
   const resolvedFat = fatPercentage !== undefined && fatPercentage !== null
     ? Number(fatPercentage)
     : parseNumeric(fat, 4.5);
+
+  const resolvedStage = stage || (['completed', 'ready_for_pos', 'pos'].includes(String(status).toLowerCase()) ? 'pos' : 'incubating');
 
   const newBatch = await ProcessingBatch.create({
     batchNumber,
@@ -49,10 +58,27 @@ export const createBatchService = async (batchData, userId) => {
     fatPercentage: resolvedFat,
     date: date ? new Date(date) : new Date(),
     status,
+    stage: resolvedStage,
+    source: source || 'Farm & Supplier Mix',
+    farmMilkUsed: Number(farmMilkUsed) || 0,
+    supplierMilkUsed: Number(supplierMilkUsed) || 0,
+    posRate: posRate || 'Rs. 320 / kg',
     costEstimate: Number(costEstimate) || 0,
     notes: (notes || '').trim(),
     operatorId: userId || null,
   });
+
+  // If batch is completed or ready for POS, increment matching Product stock if exists
+  if (resolvedStage === 'pos' || ['completed', 'ready_for_pos'].includes(String(status).toLowerCase())) {
+    try {
+      const Product = (await import('../../../models/Product.model.js')).default;
+      const productRegex = new RegExp(`^${product.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i');
+      await Product.findOneAndUpdate(
+        { $or: [{ name: productRegex }, { sku: productRegex }] },
+        { $inc: { currentStock: resolvedOutputQty } }
+      );
+    } catch (_) {}
+  }
 
   return newBatch;
 };
@@ -120,8 +146,17 @@ export const getAllBatchesService = async (queryParams = {}) => {
     ...b,
     id: b.batchNumber || b._id.toString(),
     _id: b._id,
+    stage: b.stage || (['completed', 'ready_for_pos'].includes(String(b.status).toLowerCase()) ? 'pos' : 'incubating'),
+    source: b.source || 'Farm & Supplier Mix',
+    farmMilkUsed: b.farmMilkUsed || 0,
+    supplierMilkUsed: b.supplierMilkUsed || 0,
+    posRate: b.posRate || 'Rs. 320 / kg',
     milkUsed: `${b.milkUsedLiters || 0} L`,
+    milkUsedQuantity: b.milkUsedLiters || 0,
     output: b.output || `${b.outputQuantity || 0} ${b.outputUnit || 'kg'}`,
+    outputQuantity: b.outputQuantity || 0,
+    outputVal: b.outputQuantity || 0,
+    milkUsedVal: b.milkUsedLiters || 0,
     fat: `${b.fatPercentage || 0}%`,
     date: b.date ? new Date(b.date).toISOString().split('T')[0] : '',
   }));
@@ -152,8 +187,17 @@ export const getBatchByIdService = async (batchId) => {
   return {
     ...batch,
     id: batch.batchNumber || batch._id.toString(),
+    stage: batch.stage || (['completed', 'ready_for_pos'].includes(String(batch.status).toLowerCase()) ? 'pos' : 'incubating'),
+    source: batch.source || 'Farm & Supplier Mix',
+    farmMilkUsed: batch.farmMilkUsed || 0,
+    supplierMilkUsed: batch.supplierMilkUsed || 0,
+    posRate: batch.posRate || 'Rs. 320 / kg',
     milkUsed: `${batch.milkUsedLiters || 0} L`,
+    milkUsedQuantity: batch.milkUsedLiters || 0,
     output: batch.output || `${batch.outputQuantity || 0} ${batch.outputUnit || 'kg'}`,
+    outputQuantity: batch.outputQuantity || 0,
+    outputVal: batch.outputQuantity || 0,
+    milkUsedVal: batch.milkUsedLiters || 0,
     fat: `${batch.fatPercentage || 0}%`,
     date: batch.date ? new Date(batch.date).toISOString().split('T')[0] : '',
   };
@@ -178,8 +222,21 @@ export const updateBatchService = async (batchId, updateData) => {
     updateData.outputQuantity = parseNumeric(updateData.output, batch.outputQuantity);
   }
 
+  const prevStage = batch.stage;
   Object.assign(batch, updateData);
   await batch.save();
+
+  // If stage changed to 'pos', update product currentStock if matching product exists
+  if (batch.stage === 'pos' && prevStage !== 'pos') {
+    try {
+      const Product = (await import('../../../models/Product.model.js')).default;
+      const productRegex = new RegExp(`^${batch.product.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i');
+      await Product.findOneAndUpdate(
+        { $or: [{ name: productRegex }, { sku: productRegex }] },
+        { $inc: { currentStock: batch.outputQuantity } }
+      );
+    } catch (_) {}
+  }
 
   const updated = await ProcessingBatch.findById(batchId)
     .populate('operatorId', 'name username')
@@ -188,8 +245,17 @@ export const updateBatchService = async (batchId, updateData) => {
   return {
     ...updated,
     id: updated.batchNumber || updated._id.toString(),
+    stage: updated.stage || 'pos',
+    source: updated.source || 'Farm & Supplier Mix',
+    farmMilkUsed: updated.farmMilkUsed || 0,
+    supplierMilkUsed: updated.supplierMilkUsed || 0,
+    posRate: updated.posRate || 'Rs. 320 / kg',
     milkUsed: `${updated.milkUsedLiters || 0} L`,
+    milkUsedQuantity: updated.milkUsedLiters || 0,
     output: updated.output || `${updated.outputQuantity || 0} ${updated.outputUnit || 'kg'}`,
+    outputQuantity: updated.outputQuantity || 0,
+    outputVal: updated.outputQuantity || 0,
+    milkUsedVal: updated.milkUsedLiters || 0,
     fat: `${updated.fatPercentage || 0}%`,
     date: updated.date ? new Date(updated.date).toISOString().split('T')[0] : '',
   };

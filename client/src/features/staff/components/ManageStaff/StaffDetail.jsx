@@ -166,9 +166,17 @@ export default function StaffDetail({
       {/* 2. Top Profile Card (Card Stays Here) */}
       <div className="bg-[#f8fafc] p-5 rounded-2xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-4 shadow-2xs">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-xl shadow-xs font-display">
-            {staff.name ? staff.name.charAt(0).toUpperCase() : 'S'}
-          </div>
+          {staff.image ? (
+            <img
+              src={staff.image}
+              alt={staff.name}
+              className="w-14 h-14 rounded-2xl object-cover shadow-xs border border-slate-200"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-xl shadow-xs font-display">
+              {staff.name ? staff.name.charAt(0).toUpperCase() : 'S'}
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-slate-900 font-display">

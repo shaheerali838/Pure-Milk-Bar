@@ -119,7 +119,7 @@ export default function PaySupplierForm({ slip = null, onCancel, onPaymentSucces
     }
   }, [selectedSlipId, selectedSupplierId]);
 
-  const numPay = Math.max(0, parseFloat(payAmount) || 0);
+  const numPay = Math.min(maxPayable, Math.max(0, parseFloat(payAmount) || 0));
   const remainingSlipPending = Math.max(0, slipPendingAmount - numPay);
   const isFullSettlement = numPay >= slipPendingAmount && slipPendingAmount > 0;
 
@@ -158,24 +158,14 @@ export default function PaySupplierForm({ slip = null, onCancel, onPaymentSucces
         settlement: newSettlement,
       });
 
-      // 2. Record payout in SupplierContext with isBatchSettlement=true to avoid double-counting
-      if (matchedSupplier && recordSupplierPayout) {
-        recordSupplierPayout(
-          matchedSupplier.id,
-          numPay,
-          notes ||
-            `Payment for ${shift} Shift intake slip #${activeSlip.id}`,
-          true
-        );
-      }
     } else if (matchedSupplier && recordSupplierPayout) {
       // Direct supplier advance payout
-      recordSupplierPayout(
-        matchedSupplier.id,
-        numPay,
-        notes || `Advance payment to ${supplierName}`,
-        false
-      );
+      recordSupplierPayout({
+        supplierId: matchedSupplier.id,
+        amount: numPay,
+        method: 'Cash',
+        notes: notes || `Advance payment to ${supplierName}`,
+      });
     }
 
     toast.success(

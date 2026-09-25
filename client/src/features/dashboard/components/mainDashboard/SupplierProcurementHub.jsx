@@ -47,17 +47,20 @@ export default function SupplierProcurementHub() {
   return (
     <div
       onClick={() => navigate('/supplier/intake')}
-      className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group select-none"
+      className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer group select-none relative overflow-hidden"
     >
+      {/* Ambient Top Glow */}
+      <div className="absolute -top-14 -right-14 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+
       <div>
         {/* Header */}
-        <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+        <div className="flex items-start justify-between pb-3.5 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#155dfc] text-white flex items-center justify-center shrink-0 shadow-xs">
-              <Truck className="w-4.5 h-4.5" />
+            <div className="w-10 h-10 rounded-2xl bg-[#155dfc] text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-600/25 group-hover:scale-105 transition-transform">
+              <Truck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 font-display leading-tight">
+              <h3 className="text-sm font-extrabold text-slate-900 font-display leading-tight">
                 Supplier Milk Procurement
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
@@ -65,61 +68,59 @@ export default function SupplierProcurementHub() {
               </p>
             </div>
           </div>
-          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#dbeafe] text-[#1d4ed8] border border-[#bfdbfe] shrink-0">
+          <span className="px-3 py-1 rounded-full text-[11px] font-black bg-blue-50 text-blue-700 shrink-0">
             +{sourcingMarginPct}% Margin
           </span>
         </div>
 
-        {/* Data Rows */}
-        <div className="py-3 space-y-2 text-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-500 font-medium">Procured Milk Volume:</span>
-            <span className="font-mono font-bold text-slate-900 tabular">
-              {procuredVolume.toFixed(1)} L ({activeSuppliersCount} Active Suppliers)
+        {/* Metric Data Rows */}
+        <div className="py-3.5 space-y-2">
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
+            <span className="text-slate-600 text-xs font-semibold">Procured Volume</span>
+            <span className="font-mono font-bold text-slate-900 text-xs tabular">
+              {procuredVolume.toFixed(1)} L ({activeSuppliersCount} Suppliers)
             </span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-slate-500 font-medium">Milk Purchase Direct Cost:</span>
-            <span className="font-mono font-bold text-slate-900 tabular">
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
+            <span className="text-slate-600 text-xs font-semibold">Direct Sourcing Cost</span>
+            <span className="font-mono font-bold text-slate-900 text-xs tabular">
               Rs. {directCost.toLocaleString()} (@ Rs. {Math.round(avgProcurementRate)}/L)
             </span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-slate-500 font-medium">Available Supplier Milk Stock:</span>
-            <span className="font-mono font-bold text-blue-700 tabular">
-              {inventoryMetrics?.supplierMilkStock || 0} L (In Dock Chiller)
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
+            <span className="text-slate-600 text-xs font-semibold">Supplier Milk Stock</span>
+            <span className="font-mono font-bold text-blue-700 text-xs tabular">
+              {inventoryMetrics?.supplierMilkStock || 0} L (Dock Chiller)
             </span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-slate-500 font-medium">Collection Diesel &amp; Testing:</span>
-            <span className="font-mono font-bold text-rose-500 tabular">
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
+            <span className="text-slate-600 text-xs font-semibold">Transit &amp; Testing</span>
+            <span className="font-mono font-bold text-rose-600 text-xs tabular">
               Rs. {collectionDiesel.toLocaleString()}
             </span>
           </div>
         </div>
 
-        {/* Highlight Net Contribution Row */}
-        <div className="pt-3 pb-2 border-t border-slate-100 flex items-center justify-between font-bold text-xs">
-          <span className="text-slate-900">Net Sourcing Contribution:</span>
-          <span className="font-mono font-bold text-[#155dfc] tabular">
+        {/* Net Contribution Pill Banner */}
+        <div className="p-3 rounded-2xl bg-gradient-to-r from-blue-500/15 via-blue-500/10 to-indigo-500/15 flex items-center justify-between font-bold text-xs mb-4">
+          <span className="text-slate-900 font-extrabold">Net Sourcing Contribution:</span>
+          <span className="font-mono font-black text-[#155dfc] text-sm tabular">
             {netContribution >= 0 ? `+Rs. ${netContribution.toLocaleString()}` : `-Rs. ${Math.abs(netContribution).toLocaleString()}`}
           </span>
         </div>
       </div>
 
-      {/* Bottom Full-Width Pill Action Button */}
-      <div className="mt-2 pt-1">
-        <Link
-          to="/supplier/intake"
-          className="w-full py-2.5 px-5 rounded-full bg-[#155dfc] hover:bg-[#0f4ad8] text-white flex items-center justify-between text-xs font-bold transition-all shadow-xs group cursor-pointer"
-        >
-          <span>Open Supplier Sourcing Hub</span>
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-        </Link>
-      </div>
+      {/* Action Button */}
+      <Link
+        to="/supplier/intake"
+        className="w-full py-3 px-5 rounded-2xl bg-[#155dfc] hover:bg-[#0f4ad8] text-white flex items-center justify-between text-xs font-extrabold transition-all shadow-md shadow-blue-600/20 hover:shadow-blue-600/35 cursor-pointer group"
+      >
+        <span>Open Supplier Sourcing Hub</span>
+        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+      </Link>
     </div>
   );
 }

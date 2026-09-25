@@ -34,6 +34,10 @@ const orderSchema = new Schema(
       type: String,
       default: null,
     },
+    customerPhoneSnapshot: {
+      type: String,
+      default: null,
+    },
     fulfillmentType: {
       type: String,
       enum: ['COUNTER', 'DELIVERY', 'TAKEAWAY'],
@@ -89,6 +93,10 @@ const orderSchema = new Schema(
     timestamps: { createdAt: true, updatedAt: false },
   }
 );
+
+orderSchema.index({ date: -1, fulfillmentType: 1 });
+orderSchema.index({ cashierId: 1, date: -1 });
+orderSchema.index({ customerId: 1, date: -1 });
 
 export const Order = model('Order', orderSchema);
 export default Order;
