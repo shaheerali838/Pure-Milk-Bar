@@ -30,10 +30,42 @@ export default function POSDeliverySection() {
     registeredCustomers = [],
     paymentMethod = 'cod',
     setPaymentMethod,
+    codPaymentOption = 'full',
+    setCodPaymentOption,
+    codPaidAmount = '',
+    setCodPaidAmount,
+    netPayable = 0,
+    cashTendered,
+    setCashTendered,
+    onlineDetails,
+    setOnlineDetails,
     fuelLog,
     setFuelLog,
     updateFuelLog,
   } = usePOSContext();
+
+  const numCashTendered = Number(cashTendered) || 0;
+  const changeDue = Math.max(0, numCashTendered - netPayable);
+
+  const cashChips = [
+    { label: 'Exact', value: netPayable },
+    { label: 'Rs. 500', value: 500 },
+    { label: 'Rs. 1,000', value: 1000 },
+    { label: 'Rs. 2,000', value: 2000 },
+    { label: 'Rs. 5,000', value: 5000 },
+  ];
+
+  // Calculate COD payment breakdown
+  const codCalcPaid =
+    codPaymentOption === 'full'
+      ? netPayable
+      : codPaymentOption === 'half'
+      ? Math.round(netPayable / 2)
+      : codPaymentOption === 'partial'
+      ? Math.min(netPayable, Math.max(0, parseFloat(codPaidAmount) || 0))
+      : 0;
+
+  const codCalcRemaining = Math.max(0, netPayable - codCalcPaid);
 
   return (
     <div className="space-y-2.5 animate-in fade-in duration-150">
@@ -65,6 +97,34 @@ export default function POSDeliverySection() {
 
       {deliverySubType === 'ontime' && (
         <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+              Select Customer (Optional - Link to Khata):
+            </label>
+            <div className="relative">
+              <select
+                value={linkedCustomerId}
+                onChange={(e) => {
+                  const cId = e.target.value;
+                  setLinkedCustomerId(cId);
+                  const found = registeredCustomers.find((c) => String(c.id) === String(cId));
+                  if (found && found.address) {
+                    setDropAddress(found.address + (found.area ? `, ${found.area}` : ''));
+                  }
+                }}
+                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 pr-7 appearance-none"
+              >
+                <option value="">— Walk-in / Guest Delivery (No Khata) —</option>
+                {registeredCustomers.map((cust) => (
+                  <option key={cust.id} value={cust.id}>
+                    {cust.name} ({cust.phone}) — {cust.area || 'Model Town'} [Khata: Rs. {(cust.khataBalance || 0).toLocaleString()}]
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-2.5 pointer-events-none" />
+            </div>
+          </div>
+
           <div>
             <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
               Delivery Rider / Boy (Optional):
@@ -244,63 +304,264 @@ export default function POSDeliverySection() {
         </div>
       )}
 
-      <div className="space-y-1.5">
-        <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">
-          DELIVERY PAYMENT METHOD
-        </span>
-        <div className="grid grid-cols-4 gap-1">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">
+            DELIVERY PAYMENT METHOD
+          </span>
+          <span className="text-[10px] font-bold text-slate-600 uppercase">
+            {deliverySubType === 'ontime' ? '⚡ On-Time Options' : '📅 Monthly Options'}
+          </span>
+        </div>
+
+        {/* Dynamic Payment Method Buttons:
+            - On-Time Delivery: Shows COD, Cash, Online (Khata is HIDDEN)
+            - Monthly Delivery: Shows Khata, COD, Online (Cash is HIDDEN)
+        */}
+        <div className="grid grid-cols-3 gap-1.5">
+          {deliverySubType === 'monthly' && (
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('khata')}
+              className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
+                paymentMethod === 'khata'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <CreditCard className="w-4 h-4 mb-0.5" />
+              <span>Khata Credit</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => setPaymentMethod('cod')}
-            className={`py-1.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
+            className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
               paymentMethod === 'cod'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
             }`}
           >
-            <Truck className="w-3.5 h-3.5 mb-0.5" />
-            <span>COD</span>
+            <Truck className="w-4 h-4 mb-0.5" />
+            <span>COD Delivery</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setPaymentMethod('cash')}
-            className={`py-1.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
-              paymentMethod === 'cash'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            <Banknote className="w-3.5 h-3.5 mb-0.5" />
-            <span>Cash</span>
-          </button>
+          {deliverySubType === 'ontime' && (
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('cash')}
+              className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
+                paymentMethod === 'cash'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <Banknote className="w-4 h-4 mb-0.5" />
+              <span>Cash Advance</span>
+            </button>
+          )}
 
           <button
             type="button"
             onClick={() => setPaymentMethod('online')}
-            className={`py-1.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
+            className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
               paymentMethod === 'online'
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
             }`}
           >
-            <Smartphone className="w-3.5 h-3.5 mb-0.5" />
-            <span>Online</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setPaymentMethod('khata')}
-            className={`py-1.5 px-1 rounded-lg text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
-              paymentMethod === 'khata'
-                ? 'bg-purple-600 text-white shadow-xs'
-                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            <CreditCard className="w-3.5 h-3.5 mb-0.5" />
-            <span>Khata</span>
+            <Smartphone className="w-4 h-4 mb-0.5" />
+            <span>Online Pay</span>
           </button>
         </div>
+
+        {/* 1. COD Interactive Settlement Section (Full / Half / Partial / Khata) */}
+        {paymentMethod === 'cod' && (
+          <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl space-y-2.5 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase text-blue-900 tracking-wider flex items-center gap-1">
+                <Truck className="w-3.5 h-3.5 text-blue-600" />
+                COD Collection Mode (Doorstep Payment)
+              </span>
+              <span className="text-[10px] font-semibold text-blue-700">Choose collection plan</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+              <button
+                type="button"
+                onClick={() => setCodPaymentOption('full')}
+                className={`py-2 px-1 rounded-xl border text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
+                  codPaymentOption === 'full'
+                    ? 'border-emerald-500 bg-emerald-600 text-white shadow-xs'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <span className="text-[10px] uppercase tracking-wider">Full Payment</span>
+                <span className="text-xs font-black font-mono">100%</span>
+                <span className="text-[9px] opacity-80 mt-0.5">Rs. {netPayable.toLocaleString()}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCodPaymentOption('half')}
+                className={`py-2 px-1 rounded-xl border text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
+                  codPaymentOption === 'half'
+                    ? 'border-amber-500 bg-amber-500 text-white shadow-xs'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <span className="text-[10px] uppercase tracking-wider">Half (50%)</span>
+                <span className="text-xs font-black font-mono">50%</span>
+                <span className="text-[9px] opacity-80 mt-0.5">Rs. {Math.round(netPayable / 2).toLocaleString()}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCodPaymentOption('partial')}
+                className={`py-2 px-1 rounded-xl border text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
+                  codPaymentOption === 'partial'
+                    ? 'border-indigo-500 bg-indigo-600 text-white shadow-xs'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <span className="text-[10px] uppercase tracking-wider">Partial Pay</span>
+                <span className="text-xs font-black font-mono">Custom</span>
+                <span className="text-[9px] opacity-80 mt-0.5">Enter amount</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCodPaymentOption('unpaid')}
+                className={`py-2 px-1 rounded-xl border text-xs font-bold flex flex-col items-center justify-center transition cursor-pointer ${
+                  codPaymentOption === 'unpaid'
+                    ? 'border-purple-500 bg-purple-600 text-white shadow-xs'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <span className="text-[10px] uppercase tracking-wider">On Khata</span>
+                <span className="text-xs font-black font-mono">0%</span>
+                <span className="text-[9px] opacity-80 mt-0.5">Rs. 0 (Collect Later)</span>
+              </button>
+            </div>
+
+            {codPaymentOption === 'partial' && (
+              <div className="p-2 bg-white rounded-lg border border-indigo-200 space-y-1">
+                <label className="block text-[10px] font-bold text-indigo-900 uppercase">
+                  Cash Amount to Collect on Delivery (Rs.):
+                </label>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1.5 text-xs font-bold text-slate-400">Rs.</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max={netPayable}
+                    value={codPaidAmount}
+                    onChange={(e) => setCodPaidAmount(e.target.value)}
+                    placeholder="e.g. 500"
+                    className="w-full pl-8 pr-2.5 py-1 bg-white border border-indigo-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 tabular"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* COD Summary Badges */}
+            <div className="grid grid-cols-3 gap-1.5 pt-1 text-center">
+              <div className="p-2 bg-white rounded-lg border border-slate-200">
+                <span className="text-[9px] uppercase font-bold text-slate-400 block">Total Order</span>
+                <span className="text-xs font-black text-slate-800 font-mono">Rs. {netPayable.toLocaleString()}</span>
+              </div>
+              <div className="p-2 bg-white rounded-lg border border-emerald-200">
+                <span className="text-[9px] uppercase font-bold text-emerald-600 block">Rider Collects</span>
+                <span className="text-xs font-black text-emerald-700 font-mono">Rs. {codCalcPaid.toLocaleString()}</span>
+              </div>
+              <div className="p-2 bg-white rounded-lg border border-rose-200">
+                <span className="text-[9px] uppercase font-bold text-rose-600 block">Baqi / Khata Due</span>
+                <span className="text-xs font-black text-rose-700 font-mono">Rs. {codCalcRemaining.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 2. Cash Tendered Box */}
+        {paymentMethod === 'cash' && (
+          <div className="p-2.5 bg-emerald-50/50 border border-emerald-100 rounded-xl space-y-1.5">
+            <span className="text-[10px] font-bold uppercase text-emerald-900 block">Cash Received</span>
+            <div className="relative">
+              <span className="absolute left-2.5 top-1.5 text-xs font-bold text-slate-400">Rs.</span>
+              <input
+                type="number"
+                min="0"
+                value={cashTendered}
+                onChange={(e) => setCashTendered(e.target.value)}
+                placeholder="0"
+                className="w-full pl-8 pr-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:border-emerald-500 tabular"
+              />
+            </div>
+            <div className="grid grid-cols-5 gap-1">
+              {cashChips.map((chip) => (
+                <button
+                  key={chip.label}
+                  type="button"
+                  onClick={() => setCashTendered(String(chip.value))}
+                  className="py-1 px-1 bg-white hover:bg-emerald-50 border border-emerald-200 rounded text-[10px] font-bold text-slate-700 transition cursor-pointer text-center tabular"
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+            {changeDue > 0 && (
+              <div className="p-1.5 bg-emerald-100/60 border border-emerald-200 rounded-lg flex justify-between items-center text-xs font-bold text-emerald-800">
+                <span>Change Due:</span>
+                <span className="tabular">Rs. {changeDue.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 3. Online Payment Details */}
+        {paymentMethod === 'online' && (
+          <div className="p-2.5 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-blue-900 uppercase">Gateway</span>
+              <select
+                value={onlineDetails?.provider || 'JazzCash'}
+                onChange={(e) =>
+                  setOnlineDetails &&
+                  setOnlineDetails({ ...(onlineDetails || {}), provider: e.target.value })
+                }
+                className="bg-white border border-blue-200 rounded px-2 py-0.5 text-xs font-bold text-blue-800"
+              >
+                <option value="JazzCash">JazzCash</option>
+                <option value="EasyPaisa">EasyPaisa</option>
+                <option value="Raast">Raast Instant</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="text"
+                placeholder="Sender Mobile #"
+                value={onlineDetails?.senderAccount || ''}
+                onChange={(e) =>
+                  setOnlineDetails &&
+                  setOnlineDetails({ ...(onlineDetails || {}), senderAccount: e.target.value })
+                }
+                className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs"
+              />
+              <input
+                type="text"
+                placeholder="TRX ID #"
+                value={onlineDetails?.trxId || ''}
+                onChange={(e) =>
+                  setOnlineDetails &&
+                  setOnlineDetails({ ...(onlineDetails || {}), trxId: e.target.value })
+                }
+                className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-mono"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

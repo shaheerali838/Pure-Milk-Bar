@@ -16,17 +16,22 @@ export default function AddDebitView({ customer, onBack }) {
 
   if (!customer) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.amount || Number(formData.amount) <= 0) return;
 
-    addLedgerEntry(customer.id, {
+    await addLedgerEntry(customer._id || customer.id, {
       description: formData.description || 'Manual Charge',
       debit: Number(formData.amount),
       credit: 0,
       date: formData.date,
       method: 'Manual Debit',
+      paymentMethod: 'Khata Credit',
       notes: formData.notes,
+      orderTotal: Number(formData.amount),
+      paidAmount: 0,
+      remainingAmount: Number(formData.amount),
+      fulfillmentType: 'Manual Khata Debit',
     });
 
     onBack();

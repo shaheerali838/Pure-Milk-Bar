@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import './User.model.js';
+import './Customer.model.js';
 
 const { Schema, model } = mongoose;
 
@@ -51,17 +53,54 @@ const khataEntrySchema = new Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['CASH', 'ONLINE', 'ADJUSTMENT', 'CHEQUE', null],
+      enum: ['CASH', 'ONLINE', 'ADJUSTMENT', 'CHEQUE', 'KHATA', 'SPLIT', 'COD', null],
       default: null,
     },
     referenceTransactionId: {
       type: String,
       default: null,
     },
+    items: {
+      type: [
+        {
+          name: { type: String, required: true },
+          quantity: { type: Number, required: true },
+          unit: { type: String, default: '' },
+          unitPrice: { type: Number, default: 0 },
+          subtotal: { type: Number, default: 0 },
+        },
+      ],
+      default: [],
+    },
+    orderTotal: {
+      type: Number,
+      default: 0,
+    },
+    paidAmount: {
+      type: Number,
+      default: 0,
+    },
+    remainingAmount: {
+      type: Number,
+      default: 0,
+    },
+    fulfillmentType: {
+      type: String,
+      default: null,
+    },
+    riderName: {
+      type: String,
+      default: null,
+    },
+    deliveryAddress: {
+      type: String,
+      default: null,
+    },
     cashierId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Cashier User ID is required'],
+      required: false,
+      default: null,
       index: true,
     },
   },

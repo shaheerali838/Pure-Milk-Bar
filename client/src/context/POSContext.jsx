@@ -96,7 +96,7 @@ export const deliveryRidersList = [];
 
 export function POSProvider({ children }) {
   const { rawCustomers = [], customers = [] } = useCustomerContext();
-  const { addLedgerEntry } = useLedgerContext();
+  const { addLedgerEntry, fetchCustomerLedger } = useLedgerContext() || {};
   const animalCtx = useAnimalContext();
   const animals = animalCtx?.animals || [];
   const milkingLogs = animalCtx?.milkingLogs || [];
@@ -332,6 +332,10 @@ export function POSProvider({ children }) {
   const [partialPaidAmount, setPartialPaidAmount] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
 
+  // COD Payment Options: 'full' | 'half' | 'partial' | 'unpaid'
+  const [codPaymentOption, setCodPaymentOption] = useState('full');
+  const [codPaidAmount, setCodPaidAmount] = useState('');
+
   const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'khata' | 'online' | 'cod'
   const [cashTendered, setCashTendered] = useState('');
 
@@ -348,6 +352,19 @@ export function POSProvider({ children }) {
   const [dropAddress, setDropAddress] = useState('');
   const [collectEmptyBottles, setCollectEmptyBottles] = useState(false);
   const [linkedCustomerId, setLinkedCustomerId] = useState('');
+
+  // Auto-switch paymentMethod based on delivery subtype rules:
+  // - On-Time Delivery: Khata is not allowed (switch to COD or Cash)
+  // - Monthly Delivery: Cash is not allowed (switch to Khata)
+  useEffect(() => {
+    if (saleCategory === 'delivery') {
+      if (deliverySubType === 'ontime' && paymentMethod === 'khata') {
+        setPaymentMethod('cod');
+      } else if (deliverySubType === 'monthly' && paymentMethod === 'cash') {
+        setPaymentMethod('khata');
+      }
+    }
+  }, [saleCategory, deliverySubType, paymentMethod]);
 
   // Fuel Log state for delivery orders
   const [showFuelLog, setShowFuelLog] = useState(false);
@@ -689,89 +706,186 @@ export function POSProvider({ children }) {
       notes: orderNotes || '',
     };
 
-    // Registered Customer / Monthly Subscribed Walk-in / Customer Mode: Execute exact Customer Khata Ledger Buy logic
-    if ((isRegisteredWalkin || isLegacyCustomerSale) && activeCustomer) {
-      const description = `POS Counter Buy: ${itemSummary}`;
+    const cartItemsSnapshot = cart.map((i) => ({
+      id: i.id,
+      name: i.name,
+      quantity: Number(i.quantity) || 0,
+      unit: i.unit || 'per kg',
+      price: Number(i.price) || 0,
+      subtotal: Math.round((Number(i.quantity) || 0) * (Number(i.price) || 0)),
+    }));
 
-      if (khataPaymentOption === 'cash') {
-        addLedgerEntry(activeCustomer.id, {
-          description,
-          debit: netPayable,
-          credit: 0,
-          date: todayDate,
-          method: 'Cash',
-          notes: orderNotes ? `Instant POS Cash Purchase. ${orderNotes}` : 'Instant POS Cash Purchase',
-        });
-        addLedgerEntry(activeCustomer.id, {
-          description: `Payment Received (Against POS Buy Order)`,
-          debit: 0,
-          credit: netPayable,
-          date: todayDate,
-          method: 'Cash',
-          notes: 'Full immediate cash settlement',
-        });
+    // Calculate paid and remaining amounts for accurate ledger syncing & reporting
+    let calculatedPaidAmount = netPayable;
+    let calculatedRemainingAmount = 0;
+
+    if (saleCategory === 'walkin' && isRegisteredWalkin && activeCustomer) {
+      if (khataPaymentOption === 'cash' || paymentMethod === 'cash' || paymentMethod === 'online') {
+        calculatedPaidAmount = netPayable;
+        calculatedRemainingAmount = 0;
       } else if (khataPaymentOption === 'partial') {
-        const paid = parseFloat(partialPaidAmount) || 0;
-        addLedgerEntry(activeCustomer.id, {
-          description,
-          debit: netPayable,
-          credit: 0,
-          date: todayDate,
-          method: 'Khata Credit',
-          notes: orderNotes ? `Partial Cash: Rs. ${paid}. ${orderNotes}` : `Partial Cash: Rs. ${paid}`,
-        });
-        if (paid > 0) {
-          addLedgerEntry(activeCustomer.id, {
-            description: `Partial Payment (Against POS Buy Order)`,
-            debit: 0,
-            credit: paid,
-            date: todayDate,
-            method: 'Cash',
-            notes: 'Partial on-the-spot payment',
-          });
-        }
+        calculatedPaidAmount = Math.min(netPayable, Math.max(0, parseFloat(partialPaidAmount) || 0));
+        calculatedRemainingAmount = Math.max(0, netPayable - calculatedPaidAmount);
       } else {
-        // Full Khata Charge
-        addLedgerEntry(activeCustomer.id, {
-          description,
-          debit: netPayable,
-          credit: 0,
-          date: todayDate,
-          method: 'Khata Credit',
-          notes: orderNotes ? `POS Monthly Subscribed Buy. ${orderNotes}` : 'POS Monthly Subscribed Buy',
-        });
+        // Full Khata
+        calculatedPaidAmount = 0;
+        calculatedRemainingAmount = netPayable;
       }
     } else if (saleCategory === 'delivery') {
-      const riderLabel = customRiderName || (activeRider ? activeRider.name : 'Unassigned');
-      if (deliverySubType === 'monthly' && activeCustomer && paymentMethod === 'khata') {
-        // Monthly Delivery charged to Khata
-        addLedgerEntry(activeCustomer.id, {
-          description: `POS Monthly Delivery: ${itemSummary} [${riderLabel}]`,
-          debit: netPayable,
-          credit: 0,
-          date: todayDate,
-          method: 'Khata Credit',
-          notes: orderNotes ? `Doorstep Delivery. ${orderNotes}` : 'Doorstep Delivery',
-        });
+      if (paymentMethod === 'online' || paymentMethod === 'cash') {
+        calculatedPaidAmount = netPayable;
+        calculatedRemainingAmount = 0;
+      } else if (paymentMethod === 'khata') {
+        calculatedPaidAmount = 0;
+        calculatedRemainingAmount = netPayable;
+      } else if (paymentMethod === 'cod') {
+        if (codPaymentOption === 'full') {
+          calculatedPaidAmount = netPayable;
+          calculatedRemainingAmount = 0;
+        } else if (codPaymentOption === 'half') {
+          calculatedPaidAmount = Math.round(netPayable / 2);
+          calculatedRemainingAmount = Math.max(0, netPayable - calculatedPaidAmount);
+        } else if (codPaymentOption === 'partial') {
+          calculatedPaidAmount = Math.min(netPayable, Math.max(0, parseFloat(codPaidAmount) || 0));
+          calculatedRemainingAmount = Math.max(0, netPayable - calculatedPaidAmount);
+        } else {
+          // Unpaid / Full Khata
+          calculatedPaidAmount = 0;
+          calculatedRemainingAmount = netPayable;
+        }
       }
+    }
 
+    // Determine backend payment method and split metadata
+    let backendPaymentMethod = 'CASH';
+    let splitPaymentMeta = null;
+
+    if (calculatedPaidAmount >= netPayable) {
+      backendPaymentMethod = paymentMethod === 'online' ? 'ONLINE' : 'CASH';
+    } else if (calculatedPaidAmount <= 0) {
+      backendPaymentMethod = 'KHATA';
+    } else {
+      backendPaymentMethod = 'SPLIT';
+      splitPaymentMeta = {
+        cashAmount: paymentMethod === 'online' ? 0 : calculatedPaidAmount,
+        onlineAmount: paymentMethod === 'online' ? calculatedPaidAmount : 0,
+        khataAmount: calculatedRemainingAmount,
+      };
+    }
+
+    // Ledger Sync: If an active customer is linked to this order, record in Customer Khata Ledger
+    if (activeCustomer) {
+      const isFullPaid = calculatedPaidAmount >= netPayable;
+      const isPartialPaid = calculatedPaidAmount > 0 && calculatedPaidAmount < netPayable;
+
+      const fulfillmentLabel =
+        saleCategory === 'delivery'
+          ? paymentMethod === 'cod'
+            ? 'Doorstep (COD)'
+            : 'Doorstep Delivery'
+          : 'Walk-in Counter';
+
+      const payMethodLabel =
+        paymentMethod === 'cod'
+          ? isFullPaid
+            ? 'COD Full Paid'
+            : isPartialPaid
+            ? `COD Partial (Rs. ${calculatedPaidAmount.toLocaleString()})`
+            : 'COD Unpaid / Khata'
+          : paymentMethod === 'online'
+          ? 'Online Payment'
+          : paymentMethod === 'khata'
+          ? 'Khata Credit'
+          : 'Cash';
+
+      const noteMsg = isFullPaid
+        ? 'No Khata / Fully Paid in Full'
+        : isPartialPaid
+        ? `Partial Paid: Rs. ${calculatedPaidAmount.toLocaleString()}, Remaining Baqi: Rs. ${calculatedRemainingAmount.toLocaleString()}`
+        : 'Charged to Khata (Full Baqi)';
+
+      // 1. Record Debit Order Entry (What was bought) - marked as isPosOrder=true to prevent double-writing
+      if (typeof addLedgerEntry === 'function') {
+        addLedgerEntry(
+          activeCustomer.id || activeCustomer._id,
+          {
+            description: `${saleCategory === 'delivery' ? 'Doorstep Delivery' : 'POS Counter Buy'}: ${itemSummary}`,
+            debit: netPayable,
+            credit: 0,
+            date: todayDate,
+            orderTotal: netPayable,
+            paidAmount: calculatedPaidAmount,
+            remainingAmount: calculatedRemainingAmount,
+            fulfillmentType: fulfillmentLabel,
+            paymentMethod: payMethodLabel,
+            items: cartItemsSnapshot,
+            invoiceId,
+            notes: orderNotes ? `${noteMsg}. ${orderNotes}` : noteMsg,
+          },
+          true
+        );
+
+        // 2. If payment was made on a partial or full settlement, record local payment line
+        if (calculatedPaidAmount > 0 && calculatedRemainingAmount > 0) {
+          addLedgerEntry(
+            activeCustomer.id || activeCustomer._id,
+            {
+              description: `Payment Received (Against Order #${invoiceId}) [${payMethodLabel}]`,
+              debit: 0,
+              credit: calculatedPaidAmount,
+              date: todayDate,
+              orderTotal: netPayable,
+              paidAmount: calculatedPaidAmount,
+              remainingAmount: calculatedRemainingAmount,
+              fulfillmentType: fulfillmentLabel,
+              paymentMethod: paymentMethod === 'online' ? 'Online Payment' : paymentMethod === 'cod' ? 'Cash on Delivery' : 'Cash',
+              invoiceId,
+              notes: `Partial Settlement: Rs. ${calculatedPaidAmount.toLocaleString()} Received`,
+            },
+            true
+          );
+        }
+      }
+    }
+
+    const isObjectId = (val) => typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val);
+    const validCustomerId = isObjectId(activeCustomer?._id || activeCustomer?.id)
+      ? (activeCustomer?._id || activeCustomer?.id)
+      : null;
+
+    if (saleCategory === 'delivery') {
       // Automatically register the delivery run in DeliveryContext (Drop Points table)
       if (typeof addDelivery === 'function') {
         const itemDesc = cart.map((i) => `${i.quantity}x ${i.name}`).join(', ');
         const totalQty = cart.reduce((acc, i) => acc + (Number(i.quantity) || 0), 0);
+        const formattedDeliveryItems = cart.map((i) => ({
+          name: i.name || 'Product',
+          quantity: Number(i.quantity) || 1,
+          unit: i.unit || 'PIECE',
+          unitPrice: Number(i.price) || 0,
+          subtotal: (Number(i.quantity) || 1) * (Number(i.price) || 0),
+        }));
+
         addDelivery({
           date: todayDate,
           shift: activeCustomer?.shift || 'MORNING',
-          route: activeCustomer?.area || deliveryLandmark || 'Model Town & Faisal Town',
-          riderNameSnapshot: customRiderName || activeRider?.name || 'Unassigned',
+          route: activeCustomer?.area || deliveryLandmark || 'Standard Route',
+          riderNameSnapshot: customRiderName || activeRider?.name || null,
+          riderId: activeRider?.id || null,
           staffType: activeRider?.vehicleType === 'Walking Man' ? 'WALKING_BOY' : (activeRider ? 'MOTORCYCLE_RIDER' : 'OTHER'),
-          customerId: activeCustomer ? activeCustomer.id : undefined,
-          customerName: activeCustomer ? activeCustomer.name : (walkinName.trim() || 'Home Delivery Customer'),
-          deliveryAddress: dropAddress || activeCustomer?.address || activeCustomer?.area || 'Model Town',
+          customerId: validCustomerId || undefined,
+          customerName: activeCustomer ? activeCustomer.name : (walkinName.trim() || 'Walk-in / Guest Delivery'),
+          deliveryAddress: dropAddress || activeCustomer?.address || activeCustomer?.area || 'Direct Drop Point',
           itemDescription: itemDesc,
           qtyLiters: totalQty,
-          paymentMode: paymentMethod.toUpperCase(),
-          codAmountToCollect: paymentMethod === 'cod' || paymentMethod === 'cash' ? netPayable : 0,
+          items: formattedDeliveryItems,
+          amountPaid: calculatedPaidAmount,
+          amountDue: calculatedRemainingAmount,
+          paymentStatus: calculatedPaidAmount >= netPayable ? 'PAID' : calculatedPaidAmount > 0 ? 'PARTIAL' : 'UNPAID',
+          paymentMode: backendPaymentMethod,
+          codAmountToCollect: calculatedRemainingAmount > 0 ? calculatedRemainingAmount : 0,
+          source: 'POS_ONE_TIME',
+          receiptNumber: invoiceId,
           bottlesReturned: 0,
         });
       }
@@ -794,16 +908,6 @@ export function POSProvider({ children }) {
           notes: fuelLog.notes ? fuelLog.notes.trim() : '',
         });
       }
-    } else if (paymentMethod === 'khata' && activeCustomer) {
-      // Fallback Khata payment
-      addLedgerEntry(activeCustomer.id, {
-        description: `POS Counter Sale (${invoiceId})`,
-        debit: netPayable,
-        credit: 0,
-        date: todayDate,
-        method: 'Khata',
-        notes: `Items: ${cart.map((i) => `${i.name} x${i.quantity}`).join(', ')}`,
-      });
     }
 
     const updatedSales = [saleRecord, ...salesHistory];
@@ -811,16 +915,11 @@ export function POSProvider({ children }) {
 
     // Save order to live backend POS API
     try {
-      const isObjectId = (val) => typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val);
-      const validCustomerId = isObjectId(activeCustomer?._id || activeCustomer?.id)
-        ? (activeCustomer?._id || activeCustomer?.id)
-        : null;
-
       posService.createOrder({
         customerId: validCustomerId,
-        customerNameSnapshot: activeCustomer?.name || (saleCategory === 'walkin' ? 'Walk-in Customer' : 'Customer'),
+        customerNameSnapshot: activeCustomer?.name || (saleCategory === 'walkin' ? (walkinName.trim() || 'Walk-in Customer') : 'Customer'),
         customerPhoneSnapshot: activeCustomer?.phone || (saleCategory === 'walkin' ? (walkinPhone.trim() || null) : null),
-        fulfillmentType: 'COUNTER',
+        fulfillmentType: saleCategory === 'delivery' ? 'DELIVERY' : 'COUNTER',
         items: cart.map((i) => {
           const qty = Number(i.quantity) || 1;
           const price = Number(i.price) || 0;
@@ -836,15 +935,28 @@ export function POSProvider({ children }) {
         }),
         subtotal: cartSubtotal,
         discountAmount: effectiveDiscount || 0,
-        deliveryFee: 0,
+        deliveryFee: effectiveDeliveryCharge || 0,
         grandTotal: netPayable,
-        amountReceived: netPayable,
-        changeGiven: 0,
-        paymentMethod: ['CASH', 'KHATA', 'ONLINE', 'SPLIT'].includes(String(paymentMethod).toUpperCase())
-          ? String(paymentMethod).toUpperCase()
-          : 'CASH',
+        amountReceived: calculatedPaidAmount,
+        changeGiven: paymentMethod === 'cash' && calculatedPaidAmount > netPayable ? calculatedPaidAmount - netPayable : 0,
+        paymentMethod: backendPaymentMethod,
+        splitPaymentMeta,
+        deliveryMeta: saleCategory === 'delivery' ? {
+          riderId: activeRider?.id || null,
+          riderName: customRiderName || activeRider?.name || null,
+          riderNameSnapshot: customRiderName || activeRider?.name || null,
+          dropAddress: dropAddress || activeCustomer?.address || activeCustomer?.area || null,
+          deliveryAddress: dropAddress || activeCustomer?.address || activeCustomer?.area || null,
+          deliverySubType: deliverySubType === 'monthly' ? 'MONTHLY' : 'ON_TIME',
+        } : null,
         notes: orderNotes || '',
-      }).catch((err) => console.warn('Background POS order sync error:', err));
+      })
+      .then(() => {
+        if (validCustomerId && typeof fetchCustomerLedger === 'function') {
+          fetchCustomerLedger(validCustomerId);
+        }
+      })
+      .catch((err) => console.warn('Background POS order sync error:', err));
     } catch (e) {
       console.warn('POS API order sync error:', e);
     }
@@ -1344,6 +1456,10 @@ export function POSProvider({ children }) {
         // Payment
         paymentMethod,
         setPaymentMethod,
+        codPaymentOption,
+        setCodPaymentOption,
+        codPaidAmount,
+        setCodPaidAmount,
         cashTendered,
         setCashTendered,
         onlineDetails,

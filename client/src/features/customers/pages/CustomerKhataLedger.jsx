@@ -18,7 +18,7 @@ import EditCustomerModal from '../components/Customer_&_Accounts/EditCustomerMod
 export default function CustomerKhataLedger() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { customers } = useCustomerContext();
-  const { getLedgerForCustomer, settleKhata } = useLedgerContext();
+  const { getLedgerForCustomer, fetchCustomerLedger, settleKhata, ledgers } = useLedgerContext();
 
   const urlCustomerId = searchParams.get('customerId');
   const [selectedCustomerId, setSelectedCustomerId] = useState(urlCustomerId || '');
@@ -33,32 +33,41 @@ export default function CustomerKhataLedger() {
 
   // Sync selected customer from URL or fallback to first customer
   useEffect(() => {
-    if (urlCustomerId && customers.some((c) => String(c.id) === String(urlCustomerId))) {
+    if (urlCustomerId && customers.some((c) => String(c.id || c._id) === String(urlCustomerId))) {
       setSelectedCustomerId(String(urlCustomerId));
-    } else if ((!selectedCustomerId || !customers.some((c) => String(c.id) === String(selectedCustomerId))) && customers.length > 0) {
-      setSelectedCustomerId(String(customers[0].id));
+    } else if ((!selectedCustomerId || !customers.some((c) => String(c.id || c._id) === String(selectedCustomerId))) && customers.length > 0) {
+      setSelectedCustomerId(String(customers[0].id || customers[0]._id));
     }
   }, [customers, urlCustomerId]);
+
+  // Fetch live statement from backend whenever selected customer changes
+  useEffect(() => {
+    if (selectedCustomerId) {
+      fetchCustomerLedger(selectedCustomerId);
+    }
+  }, [selectedCustomerId, fetchCustomerLedger]);
 
   const handleSelectCustomer = (id) => {
     setSelectedCustomerId(id);
     setSearchParams({ customerId: id });
+    if (id) fetchCustomerLedger(id);
   };
 
-  const currentCustomer = customers.find((c) => String(c.id) === String(selectedCustomerId)) || null;
+  const currentCustomer = customers.find((c) => String(c.id || c._id) === String(selectedCustomerId)) || null;
 
-  const rawEntries = selectedCustomerId ? getLedgerForCustomer(selectedCustomerId) : [];
+  const rawEntries = selectedCustomerId ? (getLedgerForCustomer(selectedCustomerId) || []) : [];
 
   // Filter entries if month matches or show all
   const filteredEntries = rawEntries.filter((entry) => {
     if (!selectedMonth || !entry.date) return true;
-    return entry.date.startsWith(selectedMonth);
+    const dStr = typeof entry.date === 'string' ? entry.date : '';
+    return dStr.startsWith(selectedMonth);
   });
 
-  const activeEntries = filteredEntries.length > 0 ? filteredEntries : rawEntries;
+  const activeEntries = (filteredEntries.length > 0 || !selectedMonth) ? filteredEntries : rawEntries;
 
   const openingEntry = activeEntries.find((e) => e.type === 'OPENING') || activeEntries[0];
-  const openingBalance = openingEntry ? openingEntry.runningBalance : (currentCustomer ? currentCustomer.openingBalance || 0 : 0);
+  const openingBalance = openingEntry ? openingEntry.runningBalance : (currentCustomer ? (currentCustomer.openingBalance ?? currentCustomer.khataBalance ?? currentCustomer.currentBalance ?? 0) : 0);
   const openingDate = openingEntry ? openingEntry.date : '';
 
   const debitEntries = activeEntries.filter((e) => Number(e.debit) > 0);
@@ -70,7 +79,7 @@ export default function CustomerKhataLedger() {
   const paidCount = creditEntries.length;
 
   const closingBalance =
-    currentCustomer !== null ? currentCustomer.khataBalance : 0;
+    currentCustomer !== null ? Number(currentCustomer.khataBalance ?? currentCustomer.currentBalance ?? 0) : 0;
 
   const handleSettleKhata = () => {
     if (!selectedCustomerId || !currentCustomer) return;
@@ -117,7 +126,7 @@ export default function CustomerKhataLedger() {
   }
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3 p-1 sm:p-2.5 w-full animate-in fade-in duration-150">
       <LedgerHeader
         onHowToFinish={() => setCurrentSubView('howToFinish')}
         onPrint={handlePrint}

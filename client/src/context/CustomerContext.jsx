@@ -21,6 +21,9 @@ export function CustomerProvider({ children }) {
       const normalized = list.map((c) => ({
         ...c,
         id: c._id || c.id,
+        khataBalance: Number(c.khataBalance ?? c.currentBalance ?? c.openingBalance) || 0,
+        currentBalance: Number(c.currentBalance ?? c.khataBalance ?? c.openingBalance) || 0,
+        openingBalance: Number(c.openingBalance ?? c.khataBalance ?? c.currentBalance) || 0,
       }));
       setCustomers(normalized);
     } catch (err) {

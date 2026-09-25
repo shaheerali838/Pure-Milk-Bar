@@ -38,27 +38,37 @@ export function DeliveryProvider({ children }) {
       const payload = {
         date: data.date || todayISO,
         shift: data.shift || 'MORNING',
-        route: data.route ? data.route.trim() : '',
-        riderNameSnapshot: data.riderNameSnapshot ? data.riderNameSnapshot.trim() : '',
+        route: data.route ? data.route.trim() : 'Standard Delivery',
+        riderNameSnapshot: data.riderNameSnapshot ? data.riderNameSnapshot.trim() : null,
+        riderId: data.riderId || null,
         staffType: data.staffType || 'MOTORCYCLE_RIDER',
-        customerId: data.customerId,
-        customerName: data.customerName ? data.customerName.trim() : '',
+        customerName: data.customerName ? data.customerName.trim() : 'Walk-in / Guest Delivery',
         deliveryAddress: data.deliveryAddress ? data.deliveryAddress.trim() : '',
-        itemDescription: data.itemDescription ? data.itemDescription.trim() : 'Fresh Milk',
-        qtyLiters: Number(data.qtyLiters) || 1,
+        itemDescription: data.itemDescription ? data.itemDescription.trim() : 'Dairy Delivery',
+        qtyLiters: Number(data.qtyLiters) || 0,
         paymentMode: data.paymentMode || 'CASH',
-        codAmountToCollect:
-          data.paymentMode === 'CASH' || data.paymentMode === 'ONLINE'
-            ? Number(data.codAmountToCollect) || 0
-            : 0,
+        codAmountToCollect: Number(data.codAmountToCollect) || 0,
+        items: Array.isArray(data.items) ? data.items : [],
+        amountPaid: Number(data.amountPaid) || 0,
+        amountDue: Number(data.amountDue) || 0,
+        paymentStatus: data.paymentStatus || 'UNPAID',
+        source: data.source || 'SCHEDULED_ROUTE',
+        linkedOrderId: data.linkedOrderId || null,
+        receiptNumber: data.receiptNumber || null,
         status: data.status || 'PENDING',
         bottlesReturned: Number(data.bottlesReturned) || 0,
       };
 
+      // Only add customerId if it's a valid ID
+      if (data.customerId) {
+        payload.customerId = data.customerId;
+      }
+
       const created = await deliveryService.createDelivery(payload);
+      const deliveryDoc = created?.deliveryRun || created;
       const normalized = {
-        ...created,
-        id: created._id || created.id || Date.now(),
+        ...deliveryDoc,
+        id: deliveryDoc._id || deliveryDoc.id || Date.now(),
       };
       setDeliveries((prev) => [normalized, ...prev]);
       return normalized;

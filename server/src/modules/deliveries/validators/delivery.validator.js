@@ -12,72 +12,75 @@ export const createDeliveryRunSchema = Joi.object({
   date: Joi.date().iso().default(Date.now),
   shift: Joi.string()
     .valid('MORNING', 'EVENING')
-    .required()
-    .messages({
-      'any.required': 'Shift is required (MORNING or EVENING)',
-      'any.only': 'Shift must be MORNING or EVENING',
-    }),
+    .default('MORNING')
+    .optional(),
   route: Joi.string()
     .trim()
     .max(100)
-    .required()
-    .messages({
-      'string.empty': 'Route name is required',
-    }),
+    .allow('', null)
+    .optional(),
   riderId: Joi.string()
     .pattern(objectIdPattern)
     .allow('', null)
-    .messages({
-      'string.pattern.base': 'Invalid Rider User ID format',
-    }),
-  riderNameSnapshot: Joi.string().trim().max(100).allow('', null),
+    .optional(),
+  riderNameSnapshot: Joi.string().trim().max(100).allow('', null).optional(),
   staffType: Joi.string()
-    .valid('MOTORCYCLE_RIDER', 'WALKING_BOY', 'VAN_DRIVER')
-    .default('MOTORCYCLE_RIDER'),
+    .valid('MOTORCYCLE_RIDER', 'WALKING_BOY', 'VAN_DRIVER', 'OTHER')
+    .default('MOTORCYCLE_RIDER')
+    .optional(),
   customerId: Joi.string()
     .pattern(objectIdPattern)
-    .required()
-    .messages({
-      'any.required': 'Customer ID is required',
-      'string.pattern.base': 'Invalid Customer ID format',
-    }),
+    .allow('', null)
+    .optional(),
   customerName: Joi.string()
     .trim()
     .max(150)
-    .required()
-    .messages({
-      'string.empty': 'Customer name is required',
-    }),
+    .allow('', null)
+    .optional()
+    .default('Walk-in / Guest Delivery'),
   deliveryAddress: Joi.string()
     .trim()
     .max(300)
-    .required()
-    .messages({
-      'string.empty': 'Delivery address is required',
-    }),
+    .allow('', null)
+    .optional(),
   itemDescription: Joi.string()
     .trim()
     .max(200)
-    .required()
-    .messages({
-      'string.empty': 'Item description is required',
-    }),
+    .allow('', null)
+    .optional(),
   qtyLiters: Joi.number()
-    .positive()
-    .min(0.1)
-    .required()
-    .messages({
-      'any.required': 'Quantity in Liters is required',
-      'number.min': 'Quantity must be at least 0.1 Liters',
-    }),
+    .min(0)
+    .optional()
+    .default(0),
   paymentMode: Joi.string()
-    .valid('CASH', 'KHATA', 'ONLINE', 'PREPAID')
-    .required()
-    .messages({
-      'any.required': 'Payment mode is required',
-      'any.only': 'Payment mode must be CASH, KHATA, ONLINE, or PREPAID',
-    }),
+    .valid('CASH', 'KHATA', 'ONLINE', 'PREPAID', 'SPLIT', 'COD')
+    .optional()
+    .default('CASH'),
   codAmountToCollect: Joi.number().min(0).default(0),
+  source: Joi.string()
+    .valid('POS_ONE_TIME', 'SCHEDULED_ROUTE')
+    .optional()
+    .default('SCHEDULED_ROUTE'),
+  linkedOrderId: Joi.string()
+    .pattern(objectIdPattern)
+    .allow('', null)
+    .optional(),
+  receiptNumber: Joi.string().trim().max(50).allow('', null).optional(),
+  items: Joi.array().items(
+    Joi.object({
+      name: Joi.string().required(),
+      quantity: Joi.number().required(),
+      unit: Joi.string().allow('', null).optional(),
+      unitPrice: Joi.number().min(0).optional().default(0),
+      subtotal: Joi.number().min(0).optional().default(0),
+    })
+  ).optional().default([]),
+  amountPaid: Joi.number().min(0).optional().default(0),
+  amountDue: Joi.number().min(0).optional().default(0),
+  paymentStatus: Joi.string()
+    .valid('PAID', 'PARTIAL', 'UNPAID')
+    .optional()
+    .default('UNPAID'),
   status: Joi.string()
     .valid('PENDING', 'DELIVERED', 'FAILED', 'SKIPPED')
     .default('PENDING'),

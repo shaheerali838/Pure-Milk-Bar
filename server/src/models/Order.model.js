@@ -88,6 +88,25 @@ const orderSchema = new Schema(
       type: Schema.Types.Mixed,
       default: null,
     },
+    deliveryMeta: {
+      riderId: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+      },
+      riderNameSnapshot: {
+        type: String,
+        default: null,
+      },
+      dropAddress: {
+        type: String,
+        default: null,
+      },
+      deliverySubType: {
+        type: String,
+        default: null,
+      },
+    },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },

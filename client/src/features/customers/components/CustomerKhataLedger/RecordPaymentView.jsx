@@ -76,7 +76,7 @@ export default function RecordPaymentView({ customer, onBack }) {
     setPaymentType(pct === 100 ? 'full' : 'partial');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.amount || Number(formData.amount) <= 0) return;
 
@@ -84,7 +84,7 @@ export default function RecordPaymentView({ customer, onBack }) {
       ? `${formData.description} - ${formData.method} (${formData.reference})`
       : `${formData.description} - ${formData.method}`;
 
-    addLedgerEntry(customer.id, {
+    await addLedgerEntry(customer._id || customer.id, {
       description: desc,
       debit: 0,
       credit: Number(formData.amount),
@@ -92,6 +92,11 @@ export default function RecordPaymentView({ customer, onBack }) {
       method: formData.method,
       notes: formData.notes,
       paymentType: paymentType,
+      paidAmount: Number(formData.amount),
+      remainingAmount: remainingBalance,
+      orderTotal: Number(formData.amount),
+      fulfillmentType: 'Payment Clearance',
+      paymentMethod: formData.method,
     });
 
     onBack();
