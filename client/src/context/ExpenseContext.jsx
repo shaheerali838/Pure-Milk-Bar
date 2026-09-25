@@ -17,22 +17,31 @@ export function useExpense() {
     return context;
 }
 
+const STORAGE_KEY = 'pmb_farm_expenses_v1';
+
 export function ExpenseProvider({ children }) {
     const [expenses, setExpenses] = useState(() => {
         try {
-            const saved = localStorage.getItem('farm_expenses_cache');
-            return saved ? JSON.parse(saved) : [];
-        } catch {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            return stored ? JSON.parse(stored) : [];
+        } catch (_) {
             return [];
         }
     });
     const [isLoading, setIsLoading] = useState(false);
 
+    // Save to localStorage on every expense update
+    useEffect(() => {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+        } catch (_) {}
+    }, [expenses]);
+
     // Fetch live farm expenses from database API
     const fetchExpenses = useCallback(async () => {
         setIsLoading(true);
         try {
-            const res = await api.finance.getExpenses({ scope: 'FARM' });
+            const res = await api.finance.getExpenses({ scope: 'FARM', limit: 1000 }, { skipCache: true });
             const list = Array.isArray(res)
                 ? res
                 : Array.isArray(res?.data?.expenses)
@@ -42,22 +51,30 @@ export function ExpenseProvider({ children }) {
                 : Array.isArray(res?.data)
                 ? res.data
                 : [];
-            const normalized = list.map((exp) => ({
-                ...exp,
-                id: exp._id || exp.id || `EXP-${Date.now()}`,
-                category: exp.category || 'General Expense',
-                amount: Number(exp.amountRupees || exp.amount) || 0,
-                date: exp.date ? exp.date.split('T')[0] : new Date().toISOString().split('T')[0],
-                description: exp.title || exp.description || exp.notes || '',
-                authorizedBy: exp.authorizedBy || 'Admin',
-            }));
-            if (normalized.length > 0) {
-                setExpenses(normalized);
-                localStorage.setItem('farm_expenses_cache', JSON.stringify(normalized));
+            if (list.length > 0) {
+                const normalized = list.map((exp) => ({
+                    ...exp,
+                    _id: exp._id || exp.id,
+                    id: exp._id || exp.id || `EXP-${Date.now()}`,
+                    category: exp.category || 'General Expense',
+                    amount: Number(exp.amountRupees ?? exp.amount) || 0,
+                    date: exp.date ? String(exp.date).split('T')[0] : new Date().toISOString().split('T')[0],
+                    description: exp.description || exp.notes || exp.title || '',
+                    authorizedBy: exp.authorizedBy || 'Admin',
+                }));
+
+                setExpenses(prev => {
+                    const serverIds = new Set(normalized.map(e => String(e._id || e.id)));
+                    const localOnly = prev.filter(e => e.id && String(e.id).startsWith('EXP-') && !serverIds.has(String(e.id)));
+                    const merged = [...localOnly, ...normalized];
+                    try {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+                    } catch (_) {}
+                    return merged;
+                });
             }
         } catch (err) {
             console.warn('Failed to load farm expenses from database API:', err.message);
-            // DO NOT clear state here, rely on localStorage cache
         } finally {
             setIsLoading(false);
         }
@@ -68,15 +85,18 @@ export function ExpenseProvider({ children }) {
     }, [fetchExpenses]);
 
     const addExpense = async (expense) => {
+        const tempId = expense.id || `EXP-${Date.now()}`;
         const newExpense = {
             ...expense,
-            id: expense.id || `EXP-${Date.now()}`,
+            id: tempId,
             date: expense.date || new Date().toISOString().split('T')[0],
             amount: Number(expense.amount) || 0,
         };
         setExpenses(prev => {
             const updated = [newExpense, ...prev];
-            localStorage.setItem('farm_expenses_cache', JSON.stringify(updated));
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+            } catch (_) {}
             return updated;
         });
 
@@ -96,32 +116,56 @@ export function ExpenseProvider({ children }) {
 
         // Sync to backend database
         try {
-            await api.finance.createExpense({
+            const res = await api.finance.createExpense({
                 scope: 'FARM',
                 category: mappedCategory,
-                amountRupees: Number(expense.amount) || 0,
                 title: expense.description || expense.category || 'Farm Expense',
+                amount: Number(expense.amount) || 0,
+                amountRupees: Number(expense.amount) || 0,
                 date: expense.date || new Date().toISOString().split('T')[0],
+                description: expense.description || expense.category || '',
                 notes: expense.description || '',
                 paymentMethod: mappedPaymentMethod,
+                receiptRef: expense.receiptRef || '',
                 authorizedBy: expense.authorizedBy || 'Admin',
             });
+
+            const created = res?.data?.expense || res?.data || res?.expense || res;
+            if (created && (created._id || created.id)) {
+                const realId = created._id || created.id;
+                setExpenses(prev => {
+                    const updated = prev.map(item => item.id === tempId ? {
+                        ...item,
+                        _id: realId,
+                        id: realId,
+                        amount: Number(created.amountRupees ?? created.amount ?? item.amount)
+                    } : item);
+                    try {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+                    } catch (_) {}
+                    return updated;
+                });
+            }
         } catch (e) {
-            console.warn('Expense API backend sync skipped:', e.message);
+            console.error('Expense API backend sync error:', e);
         }
     };
 
     const editExpense = async (id, updatedExpense) => {
         setExpenses(prev => {
-            const updated = prev.map(exp => ((exp._id || exp.id) === id || exp.id === id ? { ...updatedExpense, id } : exp));
-            localStorage.setItem('farm_expenses_cache', JSON.stringify(updated));
+            const updated = prev.map(exp => ((exp._id || exp.id) === id || exp.id === id ? { ...updatedExpense, id, _id: id } : exp));
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+            } catch (_) {}
             return updated;
         });
         try {
             await api.finance.updateExpense(id, {
                 amountRupees: Number(updatedExpense.amount),
+                title: updatedExpense.description || updatedExpense.category,
                 category: updatedExpense.category,
                 notes: updatedExpense.description || updatedExpense.notes,
+                authorizedBy: updatedExpense.authorizedBy,
             });
         } catch (e) {
             console.warn('Expense edit API sync skipped:', e.message);
@@ -131,7 +175,9 @@ export function ExpenseProvider({ children }) {
     const deleteExpense = async (id) => {
         setExpenses(prev => {
             const updated = prev.filter(exp => (exp._id || exp.id) !== id && exp.id !== id);
-            localStorage.setItem('farm_expenses_cache', JSON.stringify(updated));
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+            } catch (_) {}
             return updated;
         });
         try {

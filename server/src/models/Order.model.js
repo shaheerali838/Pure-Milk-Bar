@@ -91,6 +91,7 @@ const orderSchema = new Schema(
   },
   {
     timestamps: { createdAt: true, updatedAt: false },
+    collection: 'pos',
   }
 );
 
@@ -98,5 +99,5 @@ orderSchema.index({ date: -1, fulfillmentType: 1 });
 orderSchema.index({ cashierId: 1, date: -1 });
 orderSchema.index({ customerId: 1, date: -1 });
 
-export const Order = model('Order', orderSchema);
+export const Order = model('Order', orderSchema, 'pos');
 export default Order;

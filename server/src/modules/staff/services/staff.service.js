@@ -1,6 +1,24 @@
+import mongoose from 'mongoose';
 import Staff from '../../../models/Staff.model.js';
 import User from '../../../models/User.model.js';
 import { ROLES } from '../../../config/rbac.config.js';
+
+// Helper to find a staff member by Mongoose ObjectId OR custom staffCode / id
+const findStaffByAnyId = async (staffId) => {
+  if (!staffId) return null;
+  const sStr = String(staffId).trim();
+  if (mongoose.Types.ObjectId.isValid(sStr)) {
+    const doc = await Staff.findById(sStr);
+    if (doc) return doc;
+  }
+  return await Staff.findOne({
+    $or: [
+      { staffCode: sStr.toUpperCase() },
+      { staffCode: sStr },
+      { id: sStr },
+    ],
+  });
+};
 
 // Helper to sanitize/redact sensitive financial fields for MANAGER role
 const sanitizeStaffForRole = (staffDoc, userRole) => {
@@ -18,6 +36,8 @@ const sanitizeStaffForRole = (staffDoc, userRole) => {
 // Create a new staff member
 export const createStaffService = async (staffData, user) => {
   const {
+    staffCode: rawStaffCode,
+    id: rawId,
     name,
     role = 'Farm Work Man',
     mobile,
@@ -31,9 +51,25 @@ export const createStaffService = async (staffData, user) => {
     route = 'Not Assigned',
     joinedDate,
     notes = '',
+    image = null,
+    address = '',
+    emergencyContact = '',
+    vehicleNumber = '',
+    licenseNumber = '',
+    vehicleType = 'Motorcycle',
+    assignedBarn = '',
+    milkingShiftSpecialization = '',
+    assignedCattleCount = '',
+    guardPost = '',
+    weaponLicense = '',
+    posRegisterId = '',
+    khataAuthLimit = '',
+    departmentSupervised = '',
+    attendanceMap = {},
     userAccountId = null,
-    staffCode,
   } = staffData;
+
+  const staffCode = (rawStaffCode || rawId || '').trim() || undefined;
 
   const contactPhone = (mobile || phone || '').trim();
 
@@ -73,6 +109,21 @@ export const createStaffService = async (staffData, user) => {
     route: (route || '').trim() || 'Not Assigned',
     joinedDate: joinedDate ? new Date(joinedDate) : new Date(),
     notes: (notes || '').trim(),
+    image,
+    address,
+    emergencyContact,
+    vehicleNumber,
+    licenseNumber,
+    vehicleType,
+    assignedBarn,
+    milkingShiftSpecialization,
+    assignedCattleCount,
+    guardPost,
+    weaponLicense,
+    posRegisterId,
+    khataAuthLimit,
+    departmentSupervised,
+    attendanceMap,
     userAccountId: isManager ? null : (userAccountId || null),
     createdBy: user?.id || null,
   });
@@ -163,13 +214,7 @@ export const getAllStaffService = async (queryParams = {}, user) => {
 
 // Get single staff profile by ID
 export const getStaffByIdService = async (staffId, user) => {
-  const isManager = user?.role === ROLES.MANAGER;
-  const selectFields = isManager ? '-monthlySalary -dailySalary' : '';
-
-  const staff = await Staff.findById(staffId)
-    .select(selectFields)
-    .populate('userAccountId', 'username email role isActive')
-    .populate('createdBy', 'name username');
+  const staff = await findStaffByAnyId(staffId);
 
   if (!staff) {
     const error = new Error('Staff member not found.');
@@ -177,12 +222,13 @@ export const getStaffByIdService = async (staffId, user) => {
     throw error;
   }
 
-  return staff;
+  const isManager = user?.role === ROLES.MANAGER;
+  return sanitizeStaffForRole(staff, user?.role);
 };
 
 // Update staff profile
 export const updateStaffService = async (staffId, updateData, user) => {
-  const staff = await Staff.findById(staffId);
+  const staff = await findStaffByAnyId(staffId);
   if (!staff) {
     const error = new Error('Staff member not found.');
     error.statusCode = 404;
@@ -207,7 +253,7 @@ export const updateStaffService = async (staffId, updateData, user) => {
 
   // If phone is modified, verify uniqueness
   if (contactPhone && contactPhone !== staff.mobile) {
-    const phoneExists = await Staff.findOne({ mobile: contactPhone, _id: { $ne: staffId } });
+    const phoneExists = await Staff.findOne({ mobile: contactPhone, _id: { $ne: staff._id } });
     if (phoneExists) {
       const error = new Error(`Phone number '${contactPhone}' is already assigned to another staff member.`);
       error.statusCode = 409;
@@ -223,11 +269,7 @@ export const updateStaffService = async (staffId, updateData, user) => {
   Object.assign(staff, updateData);
   await staff.save();
 
-  const selectFields = isManager ? '-monthlySalary -dailySalary' : '';
-  return await Staff.findById(staffId)
-    .select(selectFields)
-    .populate('userAccountId', 'username email role isActive')
-    .populate('createdBy', 'name username');
+  return sanitizeStaffForRole(staff, user?.role);
 };
 
 // Update staff status (Active, On Leave, Inactive, etc.)
@@ -238,32 +280,29 @@ export const setStaffStatusService = async (staffId, status, user) => {
     throw error;
   }
 
-  const isManager = user?.role === ROLES.MANAGER;
-  const selectFields = isManager ? '-monthlySalary -dailySalary' : '';
-
-  const staff = await Staff.findByIdAndUpdate(
-    staffId,
-    { $set: { status } },
-    { returnDocument: 'after', runValidators: true, select: selectFields }
-  );
-
+  const staff = await findStaffByAnyId(staffId);
   if (!staff) {
     const error = new Error('Staff member not found.');
     error.statusCode = 404;
     throw error;
   }
 
-  return staff;
+  staff.status = status;
+  await staff.save();
+
+  return sanitizeStaffForRole(staff, user?.role);
 };
 
 // Delete staff member (ADMIN strictly enforced)
 export const deleteStaffService = async (staffId) => {
-  const staff = await Staff.findByIdAndDelete(staffId);
+  const staff = await findStaffByAnyId(staffId);
   if (!staff) {
     const error = new Error('Staff member not found.');
     error.statusCode = 404;
     throw error;
   }
+
+  await Staff.deleteOne({ _id: staff._id });
 
   return { message: `Staff member '${staff.name}' (${staff.staffCode || staff._id}) removed successfully.` };
 };

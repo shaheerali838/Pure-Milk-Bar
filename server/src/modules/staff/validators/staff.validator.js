@@ -1,6 +1,7 @@
 import Joi from 'joi';
 
 const createStaffSchema = Joi.object({
+  id: Joi.string().trim().allow('', null),
   staffCode: Joi.string().trim().uppercase().max(30).allow('', null),
   name: Joi.string()
     .trim()
@@ -32,10 +33,26 @@ const createStaffSchema = Joi.object({
   route: Joi.string().trim().allow('', null).default('Not Assigned'),
   joinedDate: Joi.date().iso().allow(null, ''),
   notes: Joi.string().trim().allow('', null).default(''),
+  image: Joi.string().allow('', null).default(null),
+  address: Joi.string().trim().allow('', null).default(''),
+  emergencyContact: Joi.string().trim().allow('', null).default(''),
+  vehicleNumber: Joi.string().trim().allow('', null).default(''),
+  licenseNumber: Joi.string().trim().allow('', null).default(''),
+  vehicleType: Joi.string().trim().allow('', null).default('Motorcycle'),
+  assignedBarn: Joi.string().trim().allow('', null).default(''),
+  milkingShiftSpecialization: Joi.string().trim().allow('', null).default(''),
+  assignedCattleCount: Joi.alternatives().try(Joi.number(), Joi.string()).allow('', null).default(''),
+  guardPost: Joi.string().trim().allow('', null).default(''),
+  weaponLicense: Joi.string().trim().allow('', null).default(''),
+  posRegisterId: Joi.string().trim().allow('', null).default(''),
+  khataAuthLimit: Joi.alternatives().try(Joi.number(), Joi.string()).allow('', null).default(''),
+  departmentSupervised: Joi.string().trim().allow('', null).default(''),
+  attendanceMap: Joi.object().unknown().allow(null),
   userAccountId: Joi.string().hex().length(24).allow(null, ''),
 });
 
 const updateStaffSchema = Joi.object({
+  id: Joi.string().trim().allow('', null),
   staffCode: Joi.string().trim().uppercase().max(30).allow('', null),
   name: Joi.string().trim().min(2).max(100),
   role: Joi.string().trim().max(100),
@@ -54,6 +71,21 @@ const updateStaffSchema = Joi.object({
   route: Joi.string().trim().allow('', null),
   joinedDate: Joi.date().iso().allow(null, ''),
   notes: Joi.string().trim().allow('', null),
+  image: Joi.string().allow('', null),
+  address: Joi.string().trim().allow('', null),
+  emergencyContact: Joi.string().trim().allow('', null),
+  vehicleNumber: Joi.string().trim().allow('', null),
+  licenseNumber: Joi.string().trim().allow('', null),
+  vehicleType: Joi.string().trim().allow('', null),
+  assignedBarn: Joi.string().trim().allow('', null),
+  milkingShiftSpecialization: Joi.string().trim().allow('', null),
+  assignedCattleCount: Joi.alternatives().try(Joi.number(), Joi.string()).allow('', null),
+  guardPost: Joi.string().trim().allow('', null),
+  weaponLicense: Joi.string().trim().allow('', null),
+  posRegisterId: Joi.string().trim().allow('', null),
+  khataAuthLimit: Joi.alternatives().try(Joi.number(), Joi.string()).allow('', null),
+  departmentSupervised: Joi.string().trim().allow('', null),
+  attendanceMap: Joi.object().unknown().allow(null),
   userAccountId: Joi.string().hex().length(24).allow(null, ''),
 }).min(1);
 

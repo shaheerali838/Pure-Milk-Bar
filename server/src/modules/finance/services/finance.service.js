@@ -252,36 +252,85 @@ export const getReceivablesAgingService = async () => {
 
 
 export const createExpenseService = async (data, userId) => {
-  const { category, title, amountRupees, paymentMethod = 'CASH', receiptNumber, notes, date } = data;
+  const {
+    category,
+    title,
+    amountRupees,
+    amount,
+    paymentMethod = 'CASH',
+    receiptNumber,
+    receiptRef,
+    notes,
+    description,
+    date,
+    scope = 'FARM',
+    authorizedBy,
+    costAttribution,
+  } = data;
+
   const voucherNumber = generateExpenseVoucher();
+  const finalAmount = Number(amountRupees ?? amount ?? 0);
+  const finalTitle = String(title || description || category || 'Farm Expense').trim();
+  const finalCategory = String(category || 'FARM_OPERATION').trim();
+
+  let cleanPaymentMethod = 'CASH';
+  if (paymentMethod) {
+    const pmUpper = String(paymentMethod).toUpperCase();
+    if (pmUpper.includes('BANK')) cleanPaymentMethod = 'BANK_TRANSFER';
+    else if (pmUpper.includes('ONLINE') || pmUpper.includes('CREDIT')) cleanPaymentMethod = 'ONLINE';
+    else if (pmUpper.includes('CHEQUE')) cleanPaymentMethod = 'CHEQUE';
+    else cleanPaymentMethod = 'CASH';
+  }
+
+  const validUserId = (userId && mongoose.Types.ObjectId.isValid(userId)) ? userId : null;
+
+  const finalReceiptNumber = (receiptNumber || receiptRef) ? String(receiptNumber || receiptRef).trim() : null;
 
   const expense = await Expense.create({
     voucherNumber,
     date: date ? new Date(date) : new Date(),
-    category: category.toUpperCase(),
-    title: title.trim(),
-    amountRupees: Number(amountRupees),
-    paymentMethod: paymentMethod.toUpperCase(),
-    receiptNumber: receiptNumber ? receiptNumber.trim() : null,
-    notes: notes ? notes.trim() : null,
-    loggedByUserId: userId,
+    scope: String(scope || 'FARM').toUpperCase(),
+    category: finalCategory,
+    title: finalTitle,
+    amountRupees: finalAmount,
+    paymentMethod: cleanPaymentMethod,
+    receiptNumber: finalReceiptNumber,
+    notes: notes ? String(notes).trim() : (description ? String(description).trim() : null),
+    authorizedBy: authorizedBy ? String(authorizedBy).trim() : null,
+    costAttribution: typeof costAttribution === 'string' ? costAttribution.trim() : (typeof costAttribution === 'object' && costAttribution !== null ? JSON.stringify(costAttribution) : ''),
+    loggedByUserId: validUserId,
   });
 
-  await expense.populate('loggedByUserId', 'name username role');
+  if (validUserId && expense.loggedByUserId) {
+    try {
+      await expense.populate('loggedByUserId', 'name username role');
+    } catch (_) {}
+  }
+
   return expense;
 };
 
 export const getExpensesService = async (queryParams) => {
-  const { category, paymentMethod, startDate, endDate, search, page = 1, limit = 50 } = queryParams;
+  const { category, scope, paymentMethod, startDate, endDate, search, page = 1, limit = 200 } = queryParams;
 
   const query = {};
 
+  if (scope) {
+    const scopeUpper = String(scope).toUpperCase();
+    query.$or = [
+      { scope: scopeUpper },
+      { scope: { $exists: false } },
+      { scope: null },
+      { scope: '' },
+    ];
+  }
+
   if (category) {
-    query.category = category.toUpperCase();
+    query.category = { $regex: new RegExp(String(category).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') };
   }
 
   if (paymentMethod) {
-    query.paymentMethod = paymentMethod.toUpperCase();
+    query.paymentMethod = String(paymentMethod).toUpperCase();
   }
 
   if (startDate || endDate) {
@@ -295,15 +344,26 @@ export const getExpensesService = async (queryParams) => {
   }
 
   if (search) {
-    query.$or = [
+    const searchConditions = [
       { title: { $regex: search, $options: 'i' } },
+      { category: { $regex: search, $options: 'i' } },
       { voucherNumber: { $regex: search, $options: 'i' } },
       { receiptNumber: { $regex: search, $options: 'i' } },
     ];
+
+    if (query.$or) {
+      query.$and = [
+        { $or: query.$or },
+        { $or: searchConditions },
+      ];
+      delete query.$or;
+    } else {
+      query.$or = searchConditions;
+    }
   }
 
   const pageNum = Math.max(1, parseInt(page, 10));
-  const limitNum = Math.max(1, Math.min(200, parseInt(limit, 10)));
+  const limitNum = Math.max(1, Math.min(500, parseInt(limit, 10)));
   const skip = (pageNum - 1) * limitNum;
 
   const [expenses, totalCount] = await Promise.all([

@@ -193,15 +193,16 @@ export function StaffProvider({ children }) {
   };
 
   // 4. Toggle Staff Duty Status (Active / Present vs Inactive / Absent)
-  const toggleStaffStatus = (id) => {
+  const toggleStaffStatus = async (id) => {
+    const target = staffList.find((m) => String(m.id) === String(id) || String(m._id) === String(id));
+    const currentIsActive = target
+      ? target.status !== 'Inactive' && target.status !== 'Off Duty' && target.active !== false
+      : true;
+    const nextStatus = currentIsActive ? 'Inactive' : 'Active';
+
     setStaffList((prev) => {
       const updated = prev.map((member) => {
         if (String(member.id) === String(id) || String(member._id) === String(id)) {
-          const currentIsActive =
-            member.status !== 'Inactive' &&
-            member.status !== 'Off Duty' &&
-            member.active !== false;
-          const nextStatus = currentIsActive ? 'Inactive' : 'Active';
           const nextAbsent = currentIsActive ? Math.max(1, member.absentDays || 1) : 0;
           const currentMap = member.attendanceMap && Object.keys(member.attendanceMap).length > 0
             ? { ...member.attendanceMap }
@@ -222,10 +223,16 @@ export function StaffProvider({ children }) {
       localStorage.setItem('staff_cache', JSON.stringify(updated));
       return updated;
     });
+
+    try {
+      await adminService.updateStaff(id, { status: nextStatus });
+    } catch (err) {
+      console.warn('Backend API toggleStaffStatus sync notice:', err.message);
+    }
   };
 
   // 5. Update Staff Attendance & Absent Days
-  const setStaffAttendance = (id, { status, absentDays, attendanceMap }) => {
+  const setStaffAttendance = async (id, { status, absentDays, attendanceMap }) => {
     setStaffList((prev) => {
       const updated = prev.map((member) => {
         if (String(member.id) === String(id) || String(member._id) === String(id)) {
@@ -280,6 +287,12 @@ export function StaffProvider({ children }) {
       localStorage.setItem('staff_cache', JSON.stringify(updated));
       return updated;
     });
+
+    try {
+      await adminService.updateStaff(id, { ...(status !== undefined && { status }), ...(attendanceMap && { attendanceMap }) });
+    } catch (err) {
+      console.warn('Backend API setStaffAttendance sync notice:', err.message);
+    }
   };
 
   // 6. Toggle Attendance for a specific day
@@ -306,6 +319,8 @@ export function StaffProvider({ children }) {
           const todayNum = Math.min(30, Math.max(1, new Date().getDate()));
           const todayStatus = currentMap[todayNum] || 'present';
           const nextStatus = todayStatus === 'present' ? 'Active' : (todayStatus === 'leave' ? 'On Leave' : 'Inactive');
+
+          adminService.updateStaff(id, { status: nextStatus, attendanceMap: currentMap }).catch(() => {});
 
           return {
             ...member,
@@ -340,6 +355,8 @@ export function StaffProvider({ children }) {
           const todayNum = Math.min(30, Math.max(1, new Date().getDate()));
           const todayStatus = currentMap[todayNum] || 'present';
           const nextStatus = todayStatus === 'present' ? 'Active' : (todayStatus === 'leave' ? 'On Leave' : 'Inactive');
+
+          adminService.updateStaff(id, { status: nextStatus, attendanceMap: currentMap }).catch(() => {});
 
           return {
             ...member,
