@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import mongoose from "mongoose";
 import dns from "dns";
 
@@ -17,13 +18,13 @@ const connectDB = async () => {
       );
     }
 
-    if (cached.conn) {
+    if (cached.conn && mongoose.connection.readyState === 1) {
       return cached.conn;
     }
 
-    if (!cached.promise) {
+    if (!cached.promise || mongoose.connection.readyState === 0) {
       cached.promise = mongoose
-        .connect(mongoUri, { serverSelectionTimeoutMS: 5000, family: 4 })
+        .connect(mongoUri, { serverSelectionTimeoutMS: 15000, family: 4 })
         .then(async (mongooseInstance) => {
           console.log(`MongoDB connected: ${mongooseInstance.connection.host}`);
           try {
@@ -58,8 +59,10 @@ const connectDB = async () => {
     return cached.conn;
   } catch (error) {
     cached.promise = null;
+    cached.conn = null;
     console.error(`MongoDB connection failed: ${error.message}`);
     console.warn("Please check your internet connection or MongoDB Atlas IP Whitelist (allow 0.0.0.0/0 or your current IP).");
+    throw error;
   }
 };
 

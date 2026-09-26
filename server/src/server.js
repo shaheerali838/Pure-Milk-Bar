@@ -6,10 +6,6 @@ import { seedAdmin } from './seeds/admin.seed.js';
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
-    app.listen(PORT, () => {
-        console.log(`Server running on http://localhost:${PORT}`);
-    });
-
     try {
         const conn = await connectDB();
         if (conn) {
@@ -18,6 +14,10 @@ const startServer = async () => {
     } catch (error) {
         console.error('DB initialization error:', error.message);
     }
+
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+    });
 };
 
 startServer();
