@@ -9,7 +9,7 @@ export const ERP_MODULES = [
     title: "Livestock & Cattle Herd Register",
     badge: "RFID Herd Tracking",
     route: "/farm/animals",
-    image: "/images/animals.webp",
+    image: "/images/modules/livestock-herd.jpg",
     description:
       "Cattle profiles, ear-tag RFID codes, lactation status (Lactating/Dry/Pregnant), breed specifications, and individual yield curves.",
     features: [
@@ -45,7 +45,7 @@ export const ERP_MODULES = [
     title: "Supplier Procurement & Milk Dock",
     badge: "Automated Intake",
     route: "/supplier",
-    image: "/images/storage.webp",
+    image: "/images/modules/procurement-dock.jpg",
     description:
       "Direct milk intake reception with density testing, batch volume logging, and instant supplier debit/credit vouchers.",
     features: [
@@ -81,7 +81,7 @@ export const ERP_MODULES = [
     title: "High-Speed POS & Retail Counter",
     badge: "Sub-Second Checkout",
     route: "/pos",
-    image: "/images/delivery.jpeg",
+    image: "/images/modules/pos-counter.jpg",
     description:
       "Ultra-fast touch POS: Rupee-first quick sale (Rs. 50, 100, 500), Walk-in counter cash, instant thermal slips, and customer Khata sync.",
     features: [
@@ -99,7 +99,7 @@ export const ERP_MODULES = [
     title: "Delivery Fleet, Routes & Fuel",
     badge: "Fleet & Logistics",
     route: "/delivery",
-    image: "/images/delivery.jpeg",
+    image: "/images/modules/logistics-fleet.jpg",
     description:
       "Manage morning/evening neighborhood milk runs: Route drops (Model Town, Faisal Town), bottle return audits, and rider fuel KM logging.",
     features: [
@@ -117,7 +117,7 @@ export const ERP_MODULES = [
     title: "Customer Khata & Debt Recovery",
     badge: "100% Zero-Loss Ledger",
     route: "/customer-khata-ledger",
-    image: "/images/PnL.jpeg",
+    image: "/images/modules/khata-finance.jpg",
     description:
       "Complete digital Khata: Real-time debit/credit timelines, monthly delivery automated billing, partial cash payments, and WhatsApp receipts.",
     features: [

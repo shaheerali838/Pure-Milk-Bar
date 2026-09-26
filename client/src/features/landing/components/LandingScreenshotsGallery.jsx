@@ -10,7 +10,6 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   Monitor,
-  Info,
   X,
   Eye,
   ShieldCheck,
@@ -468,22 +467,7 @@ export default function LandingScreenshotsGallery() {
           </div>
         </div>
 
-        {/* Developer / Owner Helper Ribbon (Theme Matching Emerald Tint) */}
-        <div className="mt-8 p-3.5 sm:p-4 rounded-xl bg-emerald-50/80 border border-emerald-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-700">
-          <div className="flex items-center gap-2.5">
-            <Info className="w-4 h-4 text-[#00a86b] shrink-0" />
-            <span>
-              <strong className="text-slate-900">Customizing Screenshots:</strong> Drop your own screenshot images into <code className="text-[#1F4B3F] bg-emerald-100/80 px-1.5 py-0.5 rounded font-mono font-semibold">client/public/images/screenshots/</code> and update the <code className="text-[#1F4B3F] bg-emerald-100/80 px-1.5 py-0.5 rounded font-mono font-semibold">ERP_SCREENSHOTS</code> array in <code className="text-[#1F4B3F] bg-emerald-100/80 px-1.5 py-0.5 rounded font-mono font-semibold">LandingScreenshotsGallery.jsx</code>.
-            </span>
-          </div>
-          <Link
-            to="/login"
-            className="shrink-0 text-[#00a86b] hover:text-[#008f5b] font-bold flex items-center gap-1 transition"
-          >
-            <span>Launch ERP</span>
-            <ExternalLink className="w-3 h-3" />
-          </Link>
-        </div>
+
       </div>
 
       {/* Full-Screen Lightbox Modal */}
