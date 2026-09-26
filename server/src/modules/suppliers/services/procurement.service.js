@@ -28,6 +28,13 @@ class ProcurementService {
       );
     }
 
+    if (!data.dockInspectorId) {
+      const admin = await mongoose.model('User').findOne({ role: 'ADMIN' });
+      if (admin) {
+        data.dockInspectorId = admin._id;
+      }
+    }
+
     // Use a session for atomic write: create record + update supplier balance
     const session = await mongoose.startSession();
     let procurement;

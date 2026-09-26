@@ -17,25 +17,9 @@ export function useExpense() {
     return context;
 }
 
-const STORAGE_KEY = 'pmb_farm_expenses_v1';
-
 export function ExpenseProvider({ children }) {
-    const [expenses, setExpenses] = useState(() => {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            return stored ? JSON.parse(stored) : [];
-        } catch (_) {
-            return [];
-        }
-    });
+    const [expenses, setExpenses] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-
-    // Save to localStorage on every expense update
-    useEffect(() => {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
-        } catch (_) {}
-    }, [expenses]);
 
     // Fetch live farm expenses from database API
     const fetchExpenses = useCallback(async () => {
@@ -51,7 +35,7 @@ export function ExpenseProvider({ children }) {
                 : Array.isArray(res?.data)
                 ? res.data
                 : [];
-            if (list.length > 0) {
+            if (Array.isArray(list)) {
                 const normalized = list.map((exp) => ({
                     ...exp,
                     _id: exp._id || exp.id,
@@ -63,15 +47,7 @@ export function ExpenseProvider({ children }) {
                     authorizedBy: exp.authorizedBy || 'Admin',
                 }));
 
-                setExpenses(prev => {
-                    const serverIds = new Set(normalized.map(e => String(e._id || e.id)));
-                    const localOnly = prev.filter(e => e.id && String(e.id).startsWith('EXP-') && !serverIds.has(String(e.id)));
-                    const merged = [...localOnly, ...normalized];
-                    try {
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-                    } catch (_) {}
-                    return merged;
-                });
+                setExpenses(normalized);
             }
         } catch (err) {
             console.warn('Failed to load farm expenses from database API:', err.message);
@@ -92,13 +68,7 @@ export function ExpenseProvider({ children }) {
             date: expense.date || new Date().toISOString().split('T')[0],
             amount: Number(expense.amount) || 0,
         };
-        setExpenses(prev => {
-            const updated = [newExpense, ...prev];
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-            } catch (_) {}
-            return updated;
-        });
+        setExpenses(prev => [newExpense, ...prev]);
 
         // Map to allowed backend categories
         const allowedCats = ['UTILITIES', 'SALARIES', 'MAINTENANCE', 'FEED', 'PACKAGING', 'RENT', 'TRANSPORT', 'MISC'];
@@ -133,32 +103,21 @@ export function ExpenseProvider({ children }) {
             const created = res?.data?.expense || res?.data || res?.expense || res;
             if (created && (created._id || created.id)) {
                 const realId = created._id || created.id;
-                setExpenses(prev => {
-                    const updated = prev.map(item => item.id === tempId ? {
-                        ...item,
-                        _id: realId,
-                        id: realId,
-                        amount: Number(created.amountRupees ?? created.amount ?? item.amount)
-                    } : item);
-                    try {
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-                    } catch (_) {}
-                    return updated;
-                });
+                setExpenses(prev => prev.map(item => item.id === tempId ? {
+                    ...item,
+                    _id: realId,
+                    id: realId,
+                    amount: Number(created.amountRupees ?? created.amount ?? item.amount)
+                } : item));
             }
         } catch (e) {
             console.error('Expense API backend sync error:', e);
+            throw e;
         }
     };
 
     const editExpense = async (id, updatedExpense) => {
-        setExpenses(prev => {
-            const updated = prev.map(exp => ((exp._id || exp.id) === id || exp.id === id ? { ...updatedExpense, id, _id: id } : exp));
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-            } catch (_) {}
-            return updated;
-        });
+        setExpenses(prev => prev.map(exp => ((exp._id || exp.id) === id || exp.id === id ? { ...updatedExpense, id, _id: id } : exp)));
         try {
             await api.finance.updateExpense(id, {
                 amountRupees: Number(updatedExpense.amount),
@@ -168,22 +127,18 @@ export function ExpenseProvider({ children }) {
                 authorizedBy: updatedExpense.authorizedBy,
             });
         } catch (e) {
-            console.warn('Expense edit API sync skipped:', e.message);
+            console.warn('Expense edit API sync error:', e.message);
+            throw e;
         }
     };
 
     const deleteExpense = async (id) => {
-        setExpenses(prev => {
-            const updated = prev.filter(exp => (exp._id || exp.id) !== id && exp.id !== id);
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-            } catch (_) {}
-            return updated;
-        });
+        setExpenses(prev => prev.filter(exp => (exp._id || exp.id) !== id && exp.id !== id));
         try {
             await api.finance.deleteExpense(id);
         } catch (e) {
-            console.warn('Expense delete API sync skipped:', e.message);
+            console.warn('Expense delete API sync error:', e.message);
+            throw e;
         }
     };
 

@@ -22,14 +22,7 @@ export const formatDateKey = (d) => {
 
 export function StaffPayrollProvider({ children }) {
   // 1. Staff List (Starts empty, synced with live API / MongoDB database)
-  const [staffList, setStaffList] = useState(() => {
-    try {
-      const saved = localStorage.getItem('staff_payroll_cache');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [staffList, setStaffList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // 2. Attendance Map: { [dateString 'YYYY-MM-DD']: { [staffId]: 'present' | 'absent' | 'leave' } }
@@ -54,12 +47,26 @@ export function StaffPayrollProvider({ children }) {
           dailySalary: Number(m.dailySalary) || Math.round(monthly / 30),
           status: m.status || (m.active !== false ? 'Active' : 'Inactive'),
           joinedDate: m.joinedDate || (m.createdAt ? new Date(m.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
+          attendanceMap: m.attendanceMap || {},
         };
       });
-      if (normalized.length > 0) {
-        setStaffList(normalized);
-        localStorage.setItem('staff_payroll_cache', JSON.stringify(normalized));
-      }
+      setStaffList(normalized);
+
+      // Hydrate attendanceRecords from each staff member's attendanceMap
+      const hydratedRecords = {};
+      normalized.forEach((staff) => {
+        const sId = String(staff.id);
+        const sMongoId = staff._id ? String(staff._id) : null;
+        const sCode = staff.staffCode ? String(staff.staffCode) : null;
+        const map = staff.attendanceMap || {};
+        Object.entries(map).forEach(([dKey, status]) => {
+          if (!hydratedRecords[dKey]) hydratedRecords[dKey] = {};
+          hydratedRecords[dKey][sId] = status;
+          if (sMongoId) hydratedRecords[dKey][sMongoId] = status;
+          if (sCode) hydratedRecords[dKey][sCode] = status;
+        });
+      });
+      setAttendanceRecords(hydratedRecords);
     } catch (err) {
       console.warn('Live staff fetch notice:', err.message);
     } finally {
@@ -110,12 +117,7 @@ export function StaffPayrollProvider({ children }) {
       notes: data.notes?.trim() || '',
     };
 
-    let created = null;
-    try {
-      created = await adminService.createStaff(payload);
-    } catch (err) {
-      console.warn('Backend createStaff notice (saving locally):', err.message);
-    }
+    const created = await adminService.createStaff(payload);
 
     const createdStaffDoc = created?.data || created?.staff || (created && typeof created === 'object' ? created : null);
     const assignedId = createdStaffDoc?._id || createdStaffDoc?.id || createdStaffDoc?.staffCode || data.id?.trim() || generateStaffId();
@@ -128,11 +130,7 @@ export function StaffPayrollProvider({ children }) {
       createdAt: createdStaffDoc?.createdAt || new Date().toISOString(),
     };
 
-    setStaffList((prev) => {
-      const updated = [newStaff, ...prev];
-      localStorage.setItem('staff_payroll_cache', JSON.stringify(updated));
-      return updated;
-    });
+    setStaffList((prev) => [newStaff, ...prev]);
     return newStaff;
   };
 
@@ -192,7 +190,7 @@ export function StaffPayrollProvider({ children }) {
       };
     });
 
-    const targetStaff = staffList.find((s) => String(s.id) === idKey || String(s._id) === idKey);
+    const targetStaff = staffList.find((s) => String(s.id) === idKey || String(s._id) === idKey || String(s.staffCode) === idKey);
     const todayStr = formatDateKey(new Date());
     let newStatus = targetStaff?.status || 'Active';
 
@@ -202,10 +200,11 @@ export function StaffPayrollProvider({ children }) {
       else if (status === 'present') newStatus = 'Active';
     }
 
+    const updatedMap = { ...(targetStaff?.attendanceMap || {}), [dateKey]: status };
+
     setStaffList((prev) =>
       prev.map((staff) => {
-        if (String(staff.id) !== idKey && String(staff._id) !== idKey) return staff;
-        const updatedMap = { ...(staff.attendanceMap || {}), [dateKey]: status };
+        if (String(staff.id) !== idKey && String(staff._id) !== idKey && String(staff.staffCode) !== idKey) return staff;
         return {
           ...staff,
           ...(dateKey === todayStr && { status: newStatus }),
@@ -217,7 +216,6 @@ export function StaffPayrollProvider({ children }) {
     // Sync status and attendanceMap to MongoDB backend API
     try {
       const dbId = targetStaff?._id || targetStaff?.id || staffId;
-      const updatedMap = { ...(targetStaff?.attendanceMap || {}), [dateKey]: status };
       const payload = { attendanceMap: updatedMap };
       if (dateKey === todayStr) {
         payload.status = newStatus;
@@ -237,7 +235,8 @@ export function StaffPayrollProvider({ children }) {
       const dayMap = {};
       staffList.forEach((s) => {
         dayMap[String(s.id)] = status;
-        dayMap[s.id] = status;
+        if (s._id) dayMap[String(s._id)] = status;
+        if (s.staffCode) dayMap[String(s.staffCode)] = status;
       });
       return {
         ...prev,
@@ -288,9 +287,20 @@ export function StaffPayrollProvider({ children }) {
         return attendanceRecords[dateKey][staffId];
       }
     }
-    const staff = staffList.find((s) => String(s.id) === idKey || String(s._id) === idKey);
+    const staff = staffList.find((s) => String(s.id) === idKey || String(s._id) === idKey || String(s.staffCode) === idKey);
     if (staff && staff.attendanceMap && staff.attendanceMap[dateKey] !== undefined) {
       return staff.attendanceMap[dateKey];
+    }
+    // Also check integer day number key if stored like { 26: 'present' }
+    if (staff && staff.attendanceMap) {
+      const parts = dateKey.split('-');
+      const dayNum = parseInt(parts[2], 10);
+      if (staff.attendanceMap[dayNum] !== undefined) {
+        return staff.attendanceMap[dayNum];
+      }
+      if (staff.attendanceMap[String(dayNum)] !== undefined) {
+        return staff.attendanceMap[String(dayNum)];
+      }
     }
     // Default fallback based on staff.status if viewing today
     const todayStr = formatDateKey(new Date());

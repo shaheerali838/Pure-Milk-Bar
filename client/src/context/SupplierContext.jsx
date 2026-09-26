@@ -1,18 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useIntakeContext } from './IntakeContext';
 import supplierService from '@/services/supplierService';
+import api from '@/services/api';
 
 const SupplierContext = createContext(null);
 
 export function SupplierProvider({ children }) {
-  const [suppliers, setSuppliers] = useState(() => {
-    try {
-      const saved = localStorage.getItem('suppliers_cache');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [suppliers, setSuppliers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [directPayouts, setDirectPayouts] = useState([]);
@@ -47,14 +41,10 @@ export function SupplierProvider({ children }) {
         joinDate: s.joinDate || s.registrationDate || (s.createdAt ? new Date(s.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
         image: s.image || null,
       }));
-      if (normalized.length > 0) {
-        setSuppliers(normalized);
-        localStorage.setItem('suppliers_cache', JSON.stringify(normalized));
-      }
+      setSuppliers(normalized);
     } catch (err) {
       console.error('Failed to fetch suppliers from API:', err);
       setError(err.message || 'Failed to load suppliers');
-      // DO NOT clear state here, rely on localStorage cache
     } finally {
       setIsLoading(false);
     }
@@ -84,13 +74,7 @@ export function SupplierProvider({ children }) {
         image: newSupplierData.image || null,
       };
 
-      let created;
-      try {
-        created = await supplierService.createSupplier(payload);
-      } catch (err) {
-        created = { ...payload, id: `local-${Date.now()}` };
-        console.warn('Supplier API unavailable, saving locally:', err.message);
-      }
+      const created = await supplierService.createSupplier(payload);
       const normalized = {
         ...created,
         id: created._id || created.id || `SUP-${Date.now()}`,
@@ -101,11 +85,7 @@ export function SupplierProvider({ children }) {
         image: created.image || newSupplierData.image || null,
       };
 
-      setSuppliers((prev) => {
-        const updated = [normalized, ...prev.filter((supplier) => supplier.code !== normalized.code)];
-        localStorage.setItem('suppliers_cache', JSON.stringify(updated));
-        return updated;
-      });
+      setSuppliers((prev) => [normalized, ...prev.filter((supplier) => supplier.code !== normalized.code)]);
       return normalized;
     } catch (err) {
       console.error('Failed to create supplier via API:', err);
@@ -116,16 +96,8 @@ export function SupplierProvider({ children }) {
   // Update Supplier via API
   const updateSupplier = async (id, updatedData) => {
     try {
-      try {
-        await supplierService.updateSupplier(id, updatedData);
-      } catch (err) {
-        console.warn('Supplier API unavailable, updating locally:', err.message);
-      }
-      setSuppliers((prev) => {
-        const updated = prev.map((s) => (String(s._id || s.id) === String(id) ? { ...s, ...updatedData } : s));
-        localStorage.setItem('suppliers_cache', JSON.stringify(updated));
-        return updated;
-      });
+      await supplierService.updateSupplier(id, updatedData);
+      setSuppliers((prev) => prev.map((s) => (String(s._id || s.id) === String(id) ? { ...s, ...updatedData } : s)));
     } catch (err) {
       console.error('Failed to update supplier via API:', err);
       throw err;
@@ -135,16 +107,8 @@ export function SupplierProvider({ children }) {
   // Delete Supplier via API
   const deleteSupplier = async (id) => {
     try {
-      try {
-        await supplierService.deleteSupplier(id);
-      } catch (err) {
-        console.warn('Supplier API unavailable, deleting locally:', err.message);
-      }
-      setSuppliers((prev) => {
-        const updated = prev.filter((s) => String(s._id || s.id) !== String(id));
-        localStorage.setItem('suppliers_cache', JSON.stringify(updated));
-        return updated;
-      });
+      setSuppliers((prev) => prev.filter((s) => String(s._id || s.id) !== String(id)));
+      await supplierService.deleteSupplier(id);
     } catch (err) {
       console.error('Failed to delete supplier via API:', err);
       throw err;
@@ -155,16 +119,34 @@ export function SupplierProvider({ children }) {
     const data = typeof payoutData === 'object'
       ? payoutData
       : { supplierId: payoutData, amount, method, notes };
+    const numAmt = parseFloat(data.amount) || 0;
     const payoutRecord = {
       id: `PAY-${Date.now()}`,
       supplierId: data.supplierId,
-      amount: parseFloat(data.amount) || 0,
+      amount: numAmt,
       method: data.method || 'Cash',
       notes: data.notes || '',
       date: data.date || new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString(),
     };
     setDirectPayouts((prev) => [payoutRecord, ...prev]);
+
+    // Sync payout to live backend finance expenses
+    if (numAmt > 0) {
+      const sup = suppliers.find((s) => String(s._id || s.id) === String(data.supplierId));
+      api.finance.createExpense({
+        scope: 'SUPPLIER',
+        category: 'SUPPLIER_PROCUREMENT',
+        title: `Supplier Payout: ${sup?.name || data.supplierId}`,
+        amount: numAmt,
+        amountRupees: numAmt,
+        date: payoutRecord.date,
+        paymentMethod: String(data.method || 'Cash').toUpperCase() === 'ONLINE' ? 'ONLINE' : 'CASH',
+        notes: data.notes || `Direct payout to supplier ${sup?.name || data.supplierId}`,
+        authorizedBy: 'Admin',
+      }).catch((e) => console.warn('Supplier payout backend expense sync notice:', e.message));
+    }
+
     return payoutRecord;
   };
 

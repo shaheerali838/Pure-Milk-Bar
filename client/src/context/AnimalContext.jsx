@@ -22,22 +22,8 @@ const normalizeAnimal = (animal, history = []) => {
 };
 
 export function AnimalProvider({ children }) {
-  const [animals, setAnimals] = useState(() => {
-    try {
-      const saved = localStorage.getItem('animals_cache');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-  const [milkingLogs, setMilkingLogs] = useState(() => {
-    try {
-      const saved = localStorage.getItem('milking_logs_cache');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [animals, setAnimals] = useState([]);
+  const [milkingLogs, setMilkingLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -106,18 +92,11 @@ export function AnimalProvider({ children }) {
         normalizeAnimal(animal, historyByAnimal[String(animal._id || animal.id || animal.tagNumber)] || [])
       );
 
-      if (normalized.length > 0) {
-        setAnimals(normalized);
-        localStorage.setItem('animals_cache', JSON.stringify(normalized));
-      }
-      if (normalizedLogs.length > 0) {
-        setMilkingLogs(normalizedLogs);
-        localStorage.setItem('milking_logs_cache', JSON.stringify(normalizedLogs));
-      }
+      setAnimals(normalized);
+      setMilkingLogs(normalizedLogs);
     } catch (err) {
       console.error('Failed to fetch farm data from API:', err);
       setError(err.message || 'Failed to load herd animals');
-      // DO NOT clear state here, rely on localStorage cache
     } finally {
       setIsLoading(false);
     }
@@ -151,20 +130,10 @@ export function AnimalProvider({ children }) {
         image: formData.image || null,
       };
 
-      let created;
-      try {
-        created = await farmService.createAnimal(payload);
-      } catch (err) {
-        created = { ...payload, id: `local-${Date.now()}` };
-        console.warn('Animal API unavailable, saving locally:', err.message);
-      }
+      const created = await farmService.createAnimal(payload);
       const normalized = normalizeAnimal(created || payload);
 
-      setAnimals((prev) => {
-        const updated = [normalized, ...prev.filter((animal) => animal.tag !== normalized.tag)];
-        localStorage.setItem('animals_cache', JSON.stringify(updated));
-        return updated;
-      });
+      setAnimals((prev) => [normalized, ...prev.filter((animal) => animal.tag !== normalized.tag)]);
       return normalized;
     } catch (err) {
       console.error('Failed to create animal via API:', err);
@@ -175,20 +144,15 @@ export function AnimalProvider({ children }) {
   // Update Animal via API
   const updateAnimal = async (id, formData) => {
     try {
-      const morning = parseFloat(formData.morningYield || 0);
-      const evening = parseFloat(formData.eveningYield || 0);
-
       await farmService.updateAnimal(id, formData);
-      setAnimals((prev) => {
-        const updated = prev.map((a) => {
+      setAnimals((prev) =>
+        prev.map((a) => {
           if (String(a._id || a.id) === String(id)) {
             return normalizeAnimal({ ...a, ...formData, tagNumber: formData.tag || a.tagNumber });
           }
           return a;
-        });
-        localStorage.setItem('animals_cache', JSON.stringify(updated));
-        return updated;
-      });
+        })
+      );
     } catch (err) {
       console.error('Failed to update animal via API:', err);
       throw err;
@@ -198,42 +162,22 @@ export function AnimalProvider({ children }) {
   // Delete Animal via API
   const deleteAnimal = async (id) => {
     try {
-      // Optimistic delete
-      setAnimals((prev) => {
-        const updated = prev.filter((a) => String(a._id || a.id) !== String(id) && String(a.tag) !== String(id));
-        localStorage.setItem('animals_cache', JSON.stringify(updated));
-        return updated;
-      });
-      
-      const isValidObjectId = /^[a-fA-F0-9]{24}$/.test(String(id));
-      if (isValidObjectId) {
-        await farmService.deleteAnimal(id).catch(err => {
-          console.warn('Backend delete animal failed, but removed locally:', err);
-        });
-      }
+      setAnimals((prev) => prev.filter((a) => String(a._id || a.id) !== String(id) && String(a.tag) !== String(id)));
+      await farmService.deleteAnimal(id);
     } catch (err) {
       console.error('Failed to delete animal:', err);
+      throw err;
     }
   };
 
   // Delete Milking Log via API
   const deleteMilkingLog = async (id) => {
     try {
-      // Optimistic delete
-      setMilkingLogs((prev) => {
-        const updated = prev.filter((log) => String(log._id || log.id) !== String(id));
-        localStorage.setItem('milking_logs_cache', JSON.stringify(updated));
-        return updated;
-      });
-
-      const isValidObjectId = /^[a-fA-F0-9]{24}$/.test(String(id));
-      if (isValidObjectId) {
-        await farmService.deleteMilkingLog(id).catch(err => {
-          console.warn('Backend delete milking log failed, but removed locally:', err);
-        });
-      }
+      setMilkingLogs((prev) => prev.filter((log) => String(log._id || log.id) !== String(id)));
+      await farmService.deleteMilkingLog(id);
     } catch (err) {
       console.error('Failed to delete milking log:', err);
+      throw err;
     }
   };
 
@@ -241,16 +185,14 @@ export function AnimalProvider({ children }) {
   const updateMilkingLog = async (id, data) => {
     try {
       await farmService.updateMilkingLog(id, data);
-      setMilkingLogs((prev) => {
-        const updated = prev.map((log) => {
+      setMilkingLogs((prev) =>
+        prev.map((log) => {
           if (String(log._id || log.id) === String(id)) {
             return { ...log, ...data, yieldLiters: data.yieldLiters || log.yieldLiters, yield: data.yieldLiters || log.yieldLiters };
           }
           return log;
-        });
-        localStorage.setItem('milking_logs_cache', JSON.stringify(updated));
-        return updated;
-      });
+        })
+      );
     } catch (err) {
       console.error('Failed to update milking log via API:', err);
       throw err;
@@ -258,7 +200,7 @@ export function AnimalProvider({ children }) {
   };
 
   // Save Milking Shift to backend
-  const saveMilkingShift = async (shiftName, arg2, arg3, operatorId = "64f8a1239c1b4e001c8a4567") => {
+  const saveMilkingShift = async (shiftName, arg2, arg3, operatorId = undefined) => {
     try {
       const shiftDate = typeof arg2 === 'string' ? arg2 : typeof arg3 === 'string' ? arg3 : new Date().toISOString().split('T')[0];
       const shiftEntries = (typeof arg2 === 'object' && arg2 !== null) ? arg2 : (typeof arg3 === 'object' && arg3 !== null) ? arg3 : {};
@@ -267,20 +209,22 @@ export function AnimalProvider({ children }) {
         const val = parseFloat(yieldVal);
         if (isNaN(val) || val <= 0) return null;
         const animal = animals.find((a) => a.tag === tag);
-        return farmService.createMilkingLog({
+        const payload = {
           animalId: animal?._id || animal?.id,
           animalTag: tag,
           shift: (shiftName || 'Morning').toUpperCase(),
           date: shiftDate || new Date().toISOString().split('T')[0],
           yieldLiters: val,
-          operatorId: operatorId,
-        });
+        };
+        if (operatorId) payload.operatorId = operatorId;
+        return farmService.createMilkingLog(payload);
       });
 
       await Promise.allSettled(promises.filter(Boolean));
       await fetchAnimalsAndLogs();
     } catch (err) {
       console.error('Failed to save milking shift:', err);
+      throw err;
     }
   };
 

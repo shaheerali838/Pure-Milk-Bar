@@ -82,17 +82,7 @@ export default function DahiProcessing() {
       toast.success(`Processing batch for ${payload.product} created successfully!`);
     } catch (err) {
       console.error("Failed to create batch via API:", err);
-      // Local fallback
-      const nextNum = batches.length + 2201;
-      const localBatch = {
-        id: `DAH-${nextNum}`,
-        ...payload,
-        milkUsed: `${payload.milkUsed} L`,
-        fat: `${payload.fat}%`,
-      };
-      setBatches((prev) => [localBatch, ...prev]);
-      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
-      toast.success(`Batch saved locally!`);
+      toast.error(err.response?.data?.message || err.message || "Failed to create processing batch in database");
     }
 
     setIsModalOpen(false);

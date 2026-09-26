@@ -52,7 +52,7 @@ export function FuelLogProvider({ children }) {
       staffName: data.staffName ? data.staffName.trim() : 'Unassigned',
       date: data.date || todayISO,
       liters: Number(data.liters) || 0,
-      amount: Number(data.amount) || 0,
+      amount: Number(data.amount || data.costRupees) || 0,
       distanceKm: Number(data.distanceKm) || 0,
       notes: data.notes ? data.notes.trim() : '',
       createdAt: new Date().toISOString(),
@@ -62,16 +62,24 @@ export function FuelLogProvider({ children }) {
 
     // Sync to backend database
     try {
-      await deliveryService.createFuelLog({
+      const res = await deliveryService.createFuelLog({
         staffName: newLog.staffName,
         date: newLog.date,
+        shift: (data.shift || 'MORNING').toUpperCase(),
+        vehiclePlate: data.vehiclePlate || 'STANDARD',
         liters: newLog.liters,
         amount: newLog.amount,
+        costRupees: newLog.amount,
         distanceKm: newLog.distanceKm,
         notes: newLog.notes,
       });
+      const created = res?.data || res?.log || res;
+      if (created && (created._id || created.id)) {
+        const realId = created._id || created.id;
+        setFuelLogs((prev) => prev.map((f) => f.id === newLog.id ? { ...f, _id: realId, id: realId } : f));
+      }
     } catch (e) {
-      console.warn('Fuel log API sync skipped:', e.message);
+      console.warn('Fuel log API sync notice:', e.message);
     }
 
     return newLog;

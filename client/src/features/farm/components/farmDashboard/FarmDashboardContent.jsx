@@ -153,16 +153,9 @@ export default function FarmDashboardContent() {
       cats[cat] += parseFloat(e.amount) || 0;
     });
     const sorted = Object.entries(cats).sort((a,b) => b[1] - a[1]).slice(0, 5);
-    const displayList = sorted.length > 0 ? sorted : [
-      ["Feed", 3200],
-      ["Fuel cost", 2000],
-      ["Kitchen Expense", 950],
-      ["Medical Expense", 1500],
-      ["Transportation", 1800]
-    ];
+    const displayList = sorted;
     
-    let sum = expenses.reduce((s, e) => s + (parseFloat(e.amount)||0), 0);
-    if (sum === 0) sum = 26400; // Mock total if no data
+    const sum = expenses.reduce((s, e) => s + (parseFloat(e.amount)||0), 0);
 
     return { list: displayList, total: sum };
   }, [expenses]);

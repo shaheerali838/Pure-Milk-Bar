@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '@/services/api';
 
 const RiderSalaryContext = createContext();
 
@@ -34,6 +35,20 @@ export function RiderSalaryProvider({ children }) {
       notes: notes.trim(),
       createdAt: new Date().toISOString(),
     };
+
+    if (paymentAmount > 0) {
+      api.finance.createExpense({
+        scope: 'RETAIL',
+        category: 'SALARIES',
+        title: `Rider Salary Payment: ${staffName || `Rider #${staffId}`}`,
+        amount: paymentAmount,
+        amountRupees: paymentAmount,
+        date: todayISO,
+        paymentMethod: paymentMode === 'ONLINE' ? 'ONLINE' : 'CASH',
+        notes: notes || `Rider salary payment for ${month}`,
+        authorizedBy: 'Admin',
+      }).catch((e) => console.warn('Rider salary backend expense sync notice:', e.message));
+    }
 
     setSalaries((prev) => {
       const existingIndex = prev.findIndex(

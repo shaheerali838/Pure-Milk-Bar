@@ -266,7 +266,18 @@ export const updateStaffService = async (staffId, updateData, user) => {
     updateData.dailySalary = Math.round(Number(updateData.monthlySalary) / 30);
   }
 
+  if (updateData.attendanceMap !== undefined) {
+    staff.attendanceMap = {
+      ...(staff.attendanceMap || {}),
+      ...updateData.attendanceMap,
+    };
+    staff.markModified('attendanceMap');
+  }
+
   Object.assign(staff, updateData);
+  if (updateData.attendanceMap !== undefined) {
+    staff.markModified('attendanceMap');
+  }
   await staff.save();
 
   return sanitizeStaffForRole(staff, user?.role);
