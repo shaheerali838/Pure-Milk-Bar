@@ -26,7 +26,8 @@ export default function LandingNavbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#00a86b]/20 text-[#5BBB7B] border border-[#00a86b]/30">
-              <ShieldCheck className="w-2.5 h-2.5 mr-1 text-[#5BBB7B]" /> Verified Dairy ERP
+              <ShieldCheck className="w-2.5 h-2.5 mr-1 text-[#5BBB7B]" />{" "}
+              Verified Dairy ERP
             </span>
             <span className="text-slate-300 hidden md:inline">
               Active Hubs: Lahore &bull; Faisalabad &bull; Twin Cities
@@ -60,7 +61,11 @@ export default function LandingNavbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-13 flex items-center justify-between gap-4">
           {/* Left: Brand Logo & Categories Button */}
           <div className="flex items-center space-x-3 shrink-0">
-            <Link to="/" className="flex items-center gap-2 group" title="Pure Milk Bar ERP">
+            <Link
+              to="/"
+              className="flex items-center gap-2 group"
+              title="Pure Milk Bar ERP"
+            >
               <div className="w-7.5 h-7.5 rounded-lg bg-[#00a86b] flex items-center justify-center text-white shadow-md shadow-emerald-500/25 group-hover:scale-105 transition-transform shrink-0">
                 <Milk className="w-3.5 h-3.5 text-white" />
               </div>
@@ -98,12 +103,36 @@ export default function LandingNavbar() {
                   </div>
                   <div className="space-y-0.5 mt-1">
                     {[
-                      { name: "Herd & Milking Hub", path: "/login", icon: Tractor },
-                      { name: "Supplier Intake Dock", path: "/login", icon: Truck },
-                      { name: "Counter Touch POS", path: "/login", icon: ShoppingCart },
-                      { name: "Customer Khata Ledgers", path: "/login", icon: Wallet },
-                      { name: "Delivery Fleet Logistics", path: "/login", icon: Bike },
-                      { name: "Daily Closing & Audit", path: "/login", icon: Scale },
+                      {
+                        name: "Herd & Milking Hub",
+                        path: "/login",
+                        icon: Tractor,
+                      },
+                      {
+                        name: "Supplier Intake Dock",
+                        path: "/login",
+                        icon: Truck,
+                      },
+                      {
+                        name: "Counter Touch POS",
+                        path: "/login",
+                        icon: ShoppingCart,
+                      },
+                      {
+                        name: "Customer Khata Ledgers",
+                        path: "/login",
+                        icon: Wallet,
+                      },
+                      {
+                        name: "Delivery Fleet Logistics",
+                        path: "/login",
+                        icon: Bike,
+                      },
+                      {
+                        name: "Daily Closing & Audit",
+                        path: "/login",
+                        icon: Scale,
+                      },
                     ].map((item, idx) => {
                       const Icon = item.icon;
                       return (
@@ -126,14 +155,33 @@ export default function LandingNavbar() {
 
           {/* Center: Navigation Anchor Links */}
           <nav className="hidden lg:flex items-center space-x-4 text-[11px] font-bold text-slate-200">
-            <a href="#how-it-works" className="hover:text-white transition">How It Works</a>
-            <a href="#modules" className="hover:text-white transition">ERP Modules</a>
-            <a href="#screenshots" className="hover:text-white transition text-emerald-300">Screenshots</a>
-            <a href="#pos-sandbox" className="hover:text-white transition">POS Sandbox</a>
-            <a href="#simulators" className="hover:text-white transition">Simulators</a>
-            <a href="#commercial-farms" className="hover:text-white transition">Enrolled Farms</a>
-            <a href="#faq" className="hover:text-white transition">FAQ</a>
-            <a href="#contact" className="hover:text-white transition">Contact</a>
+            <a href="#how-it-works" className="hover:text-white transition">
+              How It Works
+            </a>
+            <a href="#modules" className="hover:text-white transition">
+              ERP Modules
+            </a>
+            <a
+              href="#screenshots"
+              className="hover:text-white transition text-emerald-300"
+            >
+              Screenshots
+            </a>
+            <a href="#pos-sandbox" className="hover:text-white transition">
+              POS Sandbox
+            </a>
+            <a href="#simulators" className="hover:text-white transition">
+              Simulators
+            </a>
+            <a href="#commercial-farms" className="hover:text-white transition">
+              Enrolled Farms
+            </a>
+            <a href="#faq" className="hover:text-white transition">
+              FAQ
+            </a>
+            <a href="#contact" className="hover:text-white transition">
+              Contact
+            </a>
           </nav>
 
           {/* Right: Unified Clear Authentication Button */}
@@ -142,7 +190,6 @@ export default function LandingNavbar() {
               to="/login"
               className="bg-[#00a86b] hover:bg-[#008f5b] text-white font-bold text-xs px-4 py-2 rounded-full shadow-md shadow-emerald-500/25 transition-all duration-200 flex items-center gap-2 group cursor-pointer"
             >
-              <LogIn className="w-3.5 h-3.5 text-emerald-100" />
               <span>Sign In to ERP</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
