@@ -14,16 +14,18 @@ export default function LandingHero() {
     >
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex-1 flex flex-col justify-center my-auto text-center items-center">
         <div className="space-y-3.5 sm:space-y-4 max-w-3xl mx-auto flex flex-col items-center">
-
           {/* Centered Heading */}
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-[1.12] drop-shadow-md">
             From cow yield to doorstep delivery,{" "}
-            <span className="text-[#5BBB7B]">manage your entire dairy</span> in real-time.
+            <span className="text-[#5BBB7B]">manage your entire dairy</span> in
+            real-time.
           </h1>
 
           {/* Centered Subtitle */}
           <p className="text-slate-100 text-xs sm:text-sm max-w-2xl font-medium leading-relaxed drop-shadow-sm">
-            Automate herd logs, bulk milk procurement intake, sub-second POS counter sales, rider fleet fuel tracking, and daily mass-balance reconciliation.
+            Automate herd logs, bulk milk procurement intake, sub-second POS
+            counter sales, rider fleet fuel tracking, and daily mass-balance
+            reconciliation.
           </p>
 
           {/* Clean Centered CTAs */}
@@ -76,20 +78,36 @@ export default function LandingHero() {
           {/* Centered 4-Counter Metrics Row */}
           <div className="pt-3 grid grid-cols-2 sm:grid-cols-4 gap-6 w-full max-w-2xl border-t border-white/15 text-center">
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold text-white">1.2M+</div>
-              <div className="text-[10px] text-slate-300 font-normal">Liters Reconciled</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-white">
+                1.2M+
+              </div>
+              <div className="text-[10px] text-slate-300 font-normal">
+                Liters Reconciled
+              </div>
             </div>
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold text-[#5BBB7B]">99.8%</div>
-              <div className="text-[10px] text-slate-300 font-normal">Mass Balance Acc.</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-[#5BBB7B]">
+                99.8%
+              </div>
+              <div className="text-[10px] text-slate-300 font-normal">
+                Mass Balance Acc.
+              </div>
             </div>
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold text-white">100%</div>
-              <div className="text-[10px] text-slate-300 font-normal">Zero-Loss Khata</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-white">
+                100%
+              </div>
+              <div className="text-[10px] text-slate-300 font-normal">
+                Zero-Loss Khata
+              </div>
             </div>
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold text-[#5BBB7B]">4.95 ★</div>
-              <div className="text-[10px] text-slate-300 font-normal">Operator Rating</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-[#5BBB7B]">
+                4.95 ★
+              </div>
+              <div className="text-[10px] text-slate-300 font-normal">
+                Operator Rating
+              </div>
             </div>
           </div>
         </div>
