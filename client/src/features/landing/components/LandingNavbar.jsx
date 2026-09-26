@@ -1,12 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import {
-  Milk,
-  ShieldCheck,
-  Globe,
-  ArrowRight,
-  LogIn,
-} from "lucide-react";
+import { Milk, ShieldCheck, Globe, ArrowRight, LogIn } from "lucide-react";
 
 export default function LandingNavbar() {
   return (
@@ -16,7 +10,8 @@ export default function LandingNavbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#00a86b]/20 text-[#5BBB7B] border border-[#00a86b]/30">
-              <ShieldCheck className="w-2.5 h-2.5 mr-1 text-[#5BBB7B]" /> Verified Dairy ERP
+              <ShieldCheck className="w-2.5 h-2.5 mr-1 text-[#5BBB7B]" />{" "}
+              Verified Dairy ERP
             </span>
             <span className="text-slate-300 hidden md:inline">
               Active Hubs: Lahore &bull; Faisalabad &bull; Twin Cities
@@ -50,7 +45,11 @@ export default function LandingNavbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-13 flex items-center justify-between gap-4">
           {/* Left: Brand Logo */}
           <div className="flex items-center shrink-0">
-            <Link to="/" className="flex items-center gap-2.5 group" title="Pure Milk Bar">
+            <Link
+              to="/"
+              className="flex items-center gap-2.5 group"
+              title="Pure Milk Bar"
+            >
               <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-br from-[#00b074] to-[#008f5b] flex items-center justify-center text-white shadow-sm shadow-emerald-950/25 group-hover:scale-105 transition-transform duration-200 shrink-0">
                 <Milk className="w-4.5 h-4.5 text-white" />
               </div>
@@ -67,14 +66,54 @@ export default function LandingNavbar() {
 
           {/* Center: Navigation Anchor Links */}
           <nav className="hidden lg:flex items-center space-x-4 text-[11px] font-bold text-slate-200">
-            <a href="#how-it-works" className="text-slate-200 hover:text-white transition">How It Works</a>
-            <a href="#modules" className="text-slate-200 hover:text-white transition">ERP Modules</a>
-            <a href="#screenshots" className="text-slate-200 hover:text-white transition">Screenshots</a>
-            <a href="#pos-sandbox" className="text-slate-200 hover:text-white transition">POS Sandbox</a>
-            <a href="#simulators" className="text-slate-200 hover:text-white transition">Simulators</a>
-            <a href="#commercial-farms" className="text-slate-200 hover:text-white transition">Enrolled Farms</a>
-            <a href="#faq" className="text-slate-200 hover:text-white transition">FAQ</a>
-            <a href="#contact" className="text-slate-200 hover:text-white transition">Contact</a>
+            <a
+              href="#how-it-works"
+              className="text-slate-200 hover:text-white transition"
+            >
+              How It Works
+            </a>
+            <a
+              href="#modules"
+              className="text-slate-200 hover:text-white transition"
+            >
+              ERP Modules
+            </a>
+            <a
+              href="#screenshots"
+              className="text-slate-200 hover:text-white transition"
+            >
+              Screenshots
+            </a>
+            <a
+              href="#pos-sandbox"
+              className="text-slate-200 hover:text-white transition"
+            >
+              POS Sandbox
+            </a>
+            <a
+              href="#simulators"
+              className="text-slate-200 hover:text-white transition"
+            >
+              Simulators
+            </a>
+            <a
+              href="#commercial-farms"
+              className="text-slate-200 hover:text-white transition"
+            >
+              Enrolled Farms
+            </a>
+            <a
+              href="#faq"
+              className="text-slate-200 hover:text-white transition"
+            >
+              FAQ
+            </a>
+            <a
+              href="#contact"
+              className="text-slate-200 hover:text-white transition"
+            >
+              Contact
+            </a>
           </nav>
 
           {/* Right: Unified Clear Authentication Button */}
@@ -83,7 +122,6 @@ export default function LandingNavbar() {
               to="/login"
               className="bg-[#00a86b] hover:bg-[#008f5b] text-white font-bold text-xs px-4 py-2 rounded-full shadow-md shadow-emerald-500/25 transition-all duration-200 flex items-center gap-2 group cursor-pointer"
             >
-              <LogIn className="w-3.5 h-3.5 text-emerald-100" />
               <span>Sign In to ERP</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
