@@ -13,60 +13,6 @@ import farmService from '@/services/farmService';
 
 const POSContext = createContext();
 
-// Initial Dairy Catalog with explicit Source attribution ('Farm' vs 'Supplier')
-// Initial Dairy Catalog with the 3 Core Products: Cow Milk, Buffalo Milk, and Dahi (Strictly 0 initial stock)
-export const DEFAULT_CATALOG = [
-  {
-    id: 'PRD-COW-01',
-    sku: 'PRD-COW-01',
-    name: 'Cow Milk',
-    category: 'Milk',
-    unit: 'per liter',
-    price: 260,
-    cost: 190,
-    source: 'Farm',
-    stock: 0,
-    status: 'Active',
-    barcode: '890100101',
-    storage: 'Refrigerated Chiller (0 - 4 °C)',
-    frequency: 'Daily Morning & Evening Batches',
-    description: 'Fresh pure cow milk directly from farm herd',
-  },
-  {
-    id: 'PRD-BUF-01',
-    sku: 'PRD-BUF-01',
-    name: 'Buffalo Milk',
-    category: 'Milk',
-    unit: 'per liter',
-    price: 290,
-    cost: 210,
-    source: 'Farm',
-    stock: 0,
-    status: 'Active',
-    barcode: '890100102',
-    storage: 'Refrigerated Chiller (0 - 4 °C)',
-    frequency: 'Daily Morning & Evening Batches',
-    description: 'Rich creamy high-fat buffalo milk directly from farm herd',
-  },
-
-  {
-    id: 'PRD-DAHI-01',
-    sku: 'PRD-DAHI-01',
-    name: 'Dahi',
-    category: 'Dahi',
-    unit: 'per kg',
-    price: 320,
-    cost: 220,
-    source: 'Farm',
-    stock: 0,
-    status: 'Active',
-    barcode: '890100103',
-    storage: 'Cold Storage Room (2 - 6 °C)',
-    frequency: 'Daily Morning Batches',
-    description: 'Traditional thick fresh whole milk dahi (pot yogurt)',
-  },
-];
-
 // Helper to identify and purge any legacy dummy sales records (e.g. INV-1025..1028, mock names)
 export const isLegacyDummySale = (sale) => {
   if (!sale) return true;
@@ -161,7 +107,7 @@ export function POSProvider({ children }) {
   // =========================================================================
   // 1. PRODUCTS STATE - Always ensures Cow Milk, Buffalo Milk, and Dahi exist
   // =========================================================================
-  const [products, setProducts] = useState(DEFAULT_CATALOG);
+  const [products, setProducts] = useState([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
   useEffect(() => {
@@ -176,27 +122,16 @@ export function POSProvider({ children }) {
           : Array.isArray(res?.data)
           ? res.data
           : [];
-        if (Array.isArray(list) && list.length > 0) {
+        if (Array.isArray(list)) {
           const normalizedList = list.map((p) => ({
             ...p,
             id: p.id || p._id?.toString() || p.sku,
             sku: p.sku || p.id || p._id?.toString(),
+            cost: p.costPrice !== undefined ? p.costPrice : p.cost,
+            unit: p.unit === 'KG' ? 'per kg' : p.unit === 'LITER' ? 'per liter' : p.unit === 'PACKET' ? 'per packet' : p.unit === 'PIECE' ? 'per piece' : p.unit || 'per kg',
           }));
 
-          setProducts(() => {
-            const map = new Map();
-            normalizedList.forEach((p) => {
-              const k = p.id || p.sku || p.name;
-              map.set(k, p);
-            });
-            DEFAULT_CATALOG.forEach((def) => {
-              const k = def.id || def.sku;
-              if (!map.has(k) && !map.has(def.name)) {
-                map.set(k, def);
-              }
-            });
-            return Array.from(map.values());
-          });
+          setProducts(normalizedList);
         }
       } catch (err) {
         console.warn('POS live products API skipped:', err.message);
@@ -240,7 +175,21 @@ export function POSProvider({ children }) {
     // Sync to backend
     try {
       if (posService && posService.createProduct) {
-        posService.createProduct(createdItem).catch((err) => {
+        const payload = {
+          sku: createdItem.sku,
+          name: createdItem.name,
+          category: createdItem.category,
+          unit: String(createdItem.unit).toUpperCase().includes('KG') ? 'KG' : String(createdItem.unit).toUpperCase().includes('LITER') ? 'LITER' : String(createdItem.unit).toUpperCase().includes('PACKET') ? 'PACKET' : 'PIECE',
+          price: createdItem.price,
+          costPrice: createdItem.cost,
+          currentStock: Number(createdItem.stock) || 0,
+        };
+        posService.createProduct(payload).then((backendProduct) => {
+          if (backendProduct && (backendProduct._id || backendProduct.id)) {
+            const realId = backendProduct._id || backendProduct.id;
+            setProducts((prev) => prev.map(p => (p.id === createdItem.id ? { ...p, id: realId, _id: realId } : p)));
+          }
+        }).catch((err) => {
           console.warn('Failed to sync new product to backend:', err);
         });
       }
@@ -291,8 +240,11 @@ export function POSProvider({ children }) {
         const payload = {
           ...updatedProduct,
           price: updatedProduct.price !== undefined && updatedProduct.price !== null && updatedProduct.price !== '' ? Number(updatedProduct.price) : undefined,
-          cost: updatedProduct.cost !== undefined && updatedProduct.cost !== null && updatedProduct.cost !== '' ? Number(updatedProduct.cost) : undefined,
+          costPrice: updatedProduct.cost !== undefined && updatedProduct.cost !== null && updatedProduct.cost !== '' ? Number(updatedProduct.cost) : undefined,
         };
+        if (updatedProduct.unit) {
+          payload.unit = String(updatedProduct.unit).toUpperCase().includes('KG') ? 'KG' : String(updatedProduct.unit).toUpperCase().includes('LITER') ? 'LITER' : String(updatedProduct.unit).toUpperCase().includes('PACKET') ? 'PACKET' : 'PIECE';
+        }
         posService.updateProduct(updatedProduct.id, payload).catch((err) => {
           console.warn('Failed to sync product update to backend:', err);
         });

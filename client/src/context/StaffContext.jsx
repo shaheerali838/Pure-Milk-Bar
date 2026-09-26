@@ -299,8 +299,8 @@ export function StaffProvider({ children }) {
 
   // 6. Toggle Attendance for a specific day
   const toggleDayAttendance = (id, dayNum) => {
-    setStaffList((prev) =>
-      prev.map((member) => {
+    setStaffList((prev) => {
+      const updated = prev.map((member) => {
         if (String(member.id) === String(id) || String(member._id) === String(id)) {
           const currentMap = member.attendanceMap && Object.keys(member.attendanceMap).length > 0
             ? { ...member.attendanceMap }
@@ -335,14 +335,16 @@ export function StaffProvider({ children }) {
           };
         }
         return member;
-      })
-    );
+      });
+      localStorage.setItem('staff_cache', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // 7. Set specific attendance status for a day ('present' | 'leave' | 'absent')
   const setDayAttendance = (id, dayNum, statusToSet = 'present') => {
-    setStaffList((prev) =>
-      prev.map((member) => {
+    setStaffList((prev) => {
+      const updated = prev.map((member) => {
         if (String(member.id) === String(id) || String(member._id) === String(id)) {
           const currentMap = member.attendanceMap && Object.keys(member.attendanceMap).length > 0
             ? { ...member.attendanceMap }
@@ -371,14 +373,16 @@ export function StaffProvider({ children }) {
           };
         }
         return member;
-      })
-    );
+      });
+      localStorage.setItem('staff_cache', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // 8. Mark all days for a staff member
   const markAllAttendance = (id, statusToSet = 'present') => {
-    setStaffList((prev) =>
-      prev.map((member) => {
+    setStaffList((prev) => {
+      const updated = prev.map((member) => {
         if (String(member.id) === String(id) || String(member._id) === String(id)) {
           const newMap = {};
           for (let d = 1; d <= 30; d++) {
@@ -399,15 +403,17 @@ export function StaffProvider({ children }) {
           };
         }
         return member;
-      })
-    );
+      });
+      localStorage.setItem('staff_cache', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // 9. Mark staff today
   const markStaffToday = (id, statusToSet = 'present') => {
     const todayNum = Math.min(30, Math.max(1, new Date().getDate()));
-    setStaffList((prev) =>
-      prev.map((member) => {
+    setStaffList((prev) => {
+      const updated = prev.map((member) => {
         if (String(member.id) === String(id) || String(member._id) === String(id)) {
           const currentMap = member.attendanceMap && Object.keys(member.attendanceMap).length > 0
             ? { ...member.attendanceMap }
@@ -430,15 +436,17 @@ export function StaffProvider({ children }) {
           };
         }
         return member;
-      })
-    );
+      });
+      localStorage.setItem('staff_cache', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // 10. Mark entire staff today
   const markEntireStaffToday = (statusToSet = 'present') => {
     const todayNum = Math.min(30, Math.max(1, new Date().getDate()));
-    setStaffList((prev) =>
-      prev.map((member) => {
+    setStaffList((prev) => {
+      const updated = prev.map((member) => {
         const currentMap = member.attendanceMap && Object.keys(member.attendanceMap).length > 0
           ? { ...member.attendanceMap }
           : generateDefaultAttendanceMap(member.absentDays || 0);
@@ -458,8 +466,10 @@ export function StaffProvider({ children }) {
           status: nextStatus,
           active: statusToSet === 'present',
         };
-      })
-    );
+      });
+      localStorage.setItem('staff_cache', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // 11. Computed Metrics for Dashboard Cards
