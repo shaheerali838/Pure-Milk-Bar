@@ -13,7 +13,8 @@ import {
 
 export const addKhataEntry = async (req, res, next) => {
   try {
-    const result = await addKhataEntryService(req.body, req.user.id);
+    const userId = req.user?._id || req.user?.id || null;
+    const result = await addKhataEntryService(req.body, userId);
     res.status(201).json({
       success: true,
       message: `Khata ${req.body.transactionType.toUpperCase()} entry recorded successfully`,

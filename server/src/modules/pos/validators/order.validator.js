@@ -99,6 +99,12 @@ export const createOrderSchema = Joi.object({
   }),
   onlineTransferMeta: onlineTransferMetaSchema,
   splitPaymentMeta: splitPaymentMetaSchema,
+  deliveryMeta: Joi.object({
+    riderId: objectId.optional().allow(null),
+    riderNameSnapshot: Joi.string().trim().max(100).optional().allow('', null),
+    dropAddress: Joi.string().trim().max(300).optional().allow('', null),
+    deliverySubType: Joi.string().trim().max(50).optional().allow('', null),
+  }).optional().allow(null),
   notes: Joi.string().trim().max(500).optional().allow('', null),
 }).options({ stripUnknown: true });
 

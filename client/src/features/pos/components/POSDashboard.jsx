@@ -16,6 +16,7 @@ import POSSale from './POSSale';
 import POSReceiptModal from './POSReceiptModal';
 import ProductDetailModal from '@/features/inventory/components/ProductDetailModal';
 import POSSalesSourceDetail from './POSSalesSourceDetail';
+import POSWalkinHistoryModal from './POSWalkinHistoryModal';
 
 export default function POSDashboard() {
   const {
@@ -30,6 +31,9 @@ export default function POSDashboard() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+
+  // Walk-in history modal state
+  const [isWalkinHistoryOpen, setIsWalkinHistoryOpen] = useState(false);
 
   // Product detail view state
   const [productForDetail, setProductForDetail] = useState(null);
@@ -185,6 +189,15 @@ export default function POSDashboard() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsWalkinHistoryOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300 transition shadow-2xs cursor-pointer"
+          >
+            <span>🥛</span>
+            <span>Walk-in History (دودھ کسٹمرز)</span>
+          </button>
+
           {cart.length > 0 && (
             <button
               type="button"
@@ -419,6 +432,10 @@ export default function POSDashboard() {
       </div>
 
       <POSReceiptModal />
+      <POSWalkinHistoryModal
+        isOpen={isWalkinHistoryOpen}
+        onClose={() => setIsWalkinHistoryOpen(false)}
+      />
     </div>
   );
 }

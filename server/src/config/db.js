@@ -59,10 +59,7 @@ const connectDB = async () => {
   } catch (error) {
     cached.promise = null;
     console.error(`MongoDB connection failed: ${error.message}`);
-    if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
-      process.exit(1);
-    }
-    throw error;
+    console.warn("Please check your internet connection or MongoDB Atlas IP Whitelist (allow 0.0.0.0/0 or your current IP).");
   }
 };
 

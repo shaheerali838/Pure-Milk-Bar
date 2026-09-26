@@ -121,13 +121,27 @@ class OrderService {
       }
     }
 
-    // 8. Update Customer Khata and create Khata Ledger Entry if credit used
-    if (customer && totalKhataDebit > 0) {
-      const updatedCustomer = await Customer.findByIdAndUpdate(
-        customer._id,
-        { $inc: { currentBalance: totalKhataDebit } },
-        { new: true }
-      );
+    // 8. Update Customer Khata and create Khata Ledger Entry for customer purchase history
+    if (customer) {
+      let currentRunningBalance = customer.currentBalance;
+      if (totalKhataDebit > 0) {
+        const updatedCustomer = await Customer.findByIdAndUpdate(
+          customer._id,
+          { $inc: { currentBalance: totalKhataDebit } },
+          { new: true }
+        );
+        currentRunningBalance = updatedCustomer.currentBalance;
+      }
+
+      const orderItemsSnapshot = Array.isArray(order.items)
+        ? order.items.map((it) => ({
+            name: it.name || 'Product',
+            quantity: Number(it.quantity) || 1,
+            unit: it.unit || 'PIECE',
+            unitPrice: Number(it.unitPrice) || 0,
+            subtotal: Number(it.subtotal) || 0,
+          }))
+        : [];
 
       await KhataEntry.create({
         customerId: customer._id,
@@ -137,10 +151,17 @@ class OrderService {
         description: `POS Order #${order.receiptNumber} (${order.fulfillmentType})`,
         debitAmount: totalKhataDebit,
         creditAmount: 0,
-        runningBalance: updatedCustomer.currentBalance,
-        paymentMethod: 'KHATA',
+        runningBalance: currentRunningBalance,
+        paymentMethod: order.paymentMethod,
         referenceTransactionId: order.receiptNumber,
         cashierId,
+        items: orderItemsSnapshot,
+        orderTotal: order.grandTotal,
+        paidAmount: Math.max(0, order.grandTotal - totalKhataDebit),
+        remainingAmount: totalKhataDebit,
+        fulfillmentType: order.fulfillmentType === 'DELIVERY' ? 'Doorstep Delivery' : 'Walk-in Counter',
+        riderName: order.deliveryMeta?.riderName || order.deliveryMeta?.riderNameSnapshot || orderData.deliveryMeta?.riderName || orderData.riderName || null,
+        deliveryAddress: order.deliveryMeta?.deliveryAddress || order.deliveryMeta?.dropAddress || customer.address || null,
       });
     }
 

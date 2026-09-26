@@ -62,9 +62,17 @@ export default function POSSalesHistory({ compact = false }) {
   const [search, setSearch] = useState('');
   const [selectedSale, setSelectedSale] = useState(null);
   const [dateFilter, setDateFilter] = useState('all');
+  const [channelFilter, setChannelFilter] = useState('all'); // 'all' | 'walkin' | 'delivery'
 
   const filteredByDate = useMemo(() => {
-    const list = [...salesHistory].sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
+    let list = [...salesHistory].sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
+    
+    if (channelFilter === 'walkin') {
+      list = list.filter(s => s.saleCategory === 'walkin' || s.fulfillmentType === 'COUNTER' || s.fulfillmentMode === 'counter' || !s.saleCategory);
+    } else if (channelFilter === 'delivery') {
+      list = list.filter(s => s.saleCategory === 'delivery' || s.fulfillmentType === 'DOORSTEP' || s.fulfillmentMode === 'doorstep');
+    }
+
     if (dateFilter === 'today') {
       const todayStr = new Date().toDateString();
       return list.filter(sale => new Date(sale.timestamp || sale.date).toDateString() === todayStr);
@@ -75,7 +83,7 @@ export default function POSSalesHistory({ compact = false }) {
       return list.filter(sale => new Date(sale.timestamp || sale.date) >= weekAgo);
     }
     return list;
-  }, [salesHistory, dateFilter]);
+  }, [salesHistory, dateFilter, channelFilter]);
 
   const filteredSales = filteredByDate.filter((sale) => {
     const customer = getCustomer(sale);
@@ -123,21 +131,46 @@ export default function POSSalesHistory({ compact = false }) {
               Comprehensive overview of total sales, income, and customer data.
             </p>
           </div>
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-center">
-            {['today', 'week', 'all'].map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                onClick={() => setDateFilter(filter)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  dateFilter === filter
-                    ? 'bg-white text-emerald-700 shadow-xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {filter === 'today' ? 'Today' : filter === 'week' ? 'Last 7 Days' : 'All History'}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Channel Filter */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+              {[
+                { id: 'all', label: 'All Channels' },
+                { id: 'walkin', label: '🥛 Walk-in Counter' },
+                { id: 'delivery', label: '🚚 Doorstep Delivery' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setChannelFilter(tab.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    channelFilter === tab.id
+                      ? 'bg-slate-900 text-white shadow-xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Date Filter */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+              {['today', 'week', 'all'].map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() => setDateFilter(filter)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    dateFilter === filter
+                      ? 'bg-white text-emerald-700 shadow-xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {filter === 'today' ? 'Today' : filter === 'week' ? 'Last 7 Days' : 'All History'}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

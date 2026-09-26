@@ -3,6 +3,8 @@ import adminService from '@/services/adminService';
 
 const StaffContext = createContext();
 
+const STORAGE_KEY_STAFF = 'pure_milk_bar_staff';
+
 export const generateDefaultAttendanceMap = (absentDays = 0, totalDays = 30) => {
   const map = {};
   const clampedAbsent = Math.max(0, Math.min(totalDays, Number(absentDays) || 0));

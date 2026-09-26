@@ -49,6 +49,7 @@ export default function BuyProductModal({ customer, isOpen, onClose }) {
   const [rate, setRate] = useState('220');
   const [purchaseDate, setPurchaseDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [deliveryType, setDeliveryType] = useState('Doorstep Delivery');
+  const [riderName, setRiderName] = useState('');
   const [paymentOption, setPaymentOption] = useState('khata'); // 'khata', 'cash', 'partial'
   const [partialPaidAmount, setPartialPaidAmount] = useState('');
   const [notes, setNotes] = useState('');
@@ -99,7 +100,7 @@ export default function BuyProductModal({ customer, isOpen, onClose }) {
   };
 
   const grandTotal = calculateGrandTotal();
-  const currentKhataBal = Number(customer.khataBalance || 0);
+  const currentKhataBal = Number(customer.khataBalance ?? customer.currentBalance ?? 0);
   const projectedBalance =
     paymentOption === 'khata'
       ? currentKhataBal + grandTotal
@@ -117,6 +118,18 @@ export default function BuyProductModal({ customer, isOpen, onClose }) {
       .join(' + ');
 
     const description = `Buy: ${itemSummary} [${deliveryType}]`;
+    const invoiceId = `ORD-${Date.now().toString().slice(-4)}`;
+    const structuredItems = items.map((i) => ({
+      productId: i.productId,
+      name: i.productName,
+      quantity: parseFloat(i.quantity) || 0,
+      unit: i.unit || 'L',
+      price: parseFloat(i.rate) || 0,
+      unitPrice: parseFloat(i.rate) || 0,
+      subtotal: (parseFloat(i.quantity) || 0) * (parseFloat(i.rate) || 0),
+    }));
+
+    const finalRiderName = riderName.trim() || (deliveryType.toLowerCase().includes('doorstep') ? (customer.referenceName || '') : '');
 
     if (paymentOption === 'cash') {
       // 1. Add debit for items
@@ -126,34 +139,67 @@ export default function BuyProductModal({ customer, isOpen, onClose }) {
         credit: 0,
         date: purchaseDate,
         method: 'Cash',
+        orderTotal: grandTotal,
+        paidAmount: grandTotal,
+        remainingAmount: 0,
+        fulfillmentType: deliveryType,
+        riderName: finalRiderName,
+        deliveryAddress: customer.address || '',
+        paymentMethod: 'Cash',
+        items: structuredItems,
+        invoiceId,
         notes: notes ? `Instant Cash Purchase. ${notes}` : 'Instant Cash Purchase',
       });
       // 2. Add credit for immediate cash payment
       addLedgerEntry(customer.id, {
-        description: `Payment Received (Against Buy Order)`,
+        description: `Payment Received (Against Buy Order #${invoiceId})`,
         debit: 0,
         credit: grandTotal,
         date: purchaseDate,
         method: 'Cash',
+        orderTotal: grandTotal,
+        paidAmount: grandTotal,
+        remainingAmount: 0,
+        fulfillmentType: deliveryType,
+        riderName: finalRiderName,
+        paymentMethod: 'Cash',
+        invoiceId,
         notes: 'Full immediate payment',
       });
     } else if (paymentOption === 'partial') {
       const paid = parseFloat(partialPaidAmount) || 0;
+      const remaining = Math.max(0, grandTotal - paid);
       addLedgerEntry(customer.id, {
         description,
         debit: grandTotal,
         credit: 0,
         date: purchaseDate,
         method: 'Khata Credit',
+        orderTotal: grandTotal,
+        paidAmount: paid,
+        remainingAmount: remaining,
+        fulfillmentType: deliveryType,
+        riderName: finalRiderName,
+        deliveryAddress: customer.address || '',
+        paymentMethod: 'Partial Cash',
+        items: structuredItems,
+        invoiceId,
         notes: notes ? `Partial Cash: Rs. ${paid}. ${notes}` : `Partial Cash: Rs. ${paid}`,
       });
       if (paid > 0) {
         addLedgerEntry(customer.id, {
-          description: `Partial Payment (Against Buy Order)`,
+          description: `Partial Payment (Against Buy Order #${invoiceId})`,
           debit: 0,
           credit: paid,
           date: purchaseDate,
           method: 'Cash',
+          orderTotal: grandTotal,
+          paidAmount: paid,
+          remainingAmount: remaining,
+          fulfillmentType: deliveryType,
+          riderName: finalRiderName,
+          paymentMethod: 'Cash',
+          invoiceId,
           notes: 'Partial on-the-spot payment',
         });
       }
@@ -165,6 +211,15 @@ export default function BuyProductModal({ customer, isOpen, onClose }) {
         credit: 0,
         date: purchaseDate,
         method: 'Khata Credit',
+        orderTotal: grandTotal,
+        paidAmount: 0,
+        remainingAmount: grandTotal,
+        fulfillmentType: deliveryType,
+        riderName: finalRiderName,
+        deliveryAddress: customer.address || '',
+        paymentMethod: 'Khata Credit',
+        items: structuredItems,
+        invoiceId,
         notes: notes ? `Khata Order. ${notes}` : 'Khata Order',
       });
     }
@@ -356,7 +411,7 @@ export default function BuyProductModal({ customer, isOpen, onClose }) {
             </Table>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
                 Buying Date
@@ -365,25 +420,39 @@ export default function BuyProductModal({ customer, isOpen, onClose }) {
                 type="date"
                 value={purchaseDate}
                 onChange={(e) => setPurchaseDate(e.target.value)}
-                className="w-full h-8.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800"
+                className="w-full h-8.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 font-mono"
               />
             </div>
 
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Delivery / Order Shift
+                Channel / Delivery
               </label>
               <Select value={deliveryType} onValueChange={setDeliveryType}>
                 <SelectTrigger className="w-full h-8.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800">
                   <SelectValue placeholder="Delivery type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Doorstep Delivery" className="text-xs">Doorstep Delivery</SelectItem>
-                  <SelectItem value="Counter Store Purchase" className="text-xs">Counter Store Purchase</SelectItem>
-                  <SelectItem value="Morning Shift Delivery" className="text-xs">Morning Shift Delivery</SelectItem>
-                  <SelectItem value="Evening Shift Delivery" className="text-xs">Evening Shift Delivery</SelectItem>
+                  <SelectItem value="Doorstep Delivery" className="text-xs">Doorstep Delivery (ہوم ڈیلیوری)</SelectItem>
+                  <SelectItem value="Doorstep (COD)" className="text-xs">Doorstep (COD - کیش آن ڈیلیوری)</SelectItem>
+                  <SelectItem value="Walk-in Counter" className="text-xs">Walk-in Counter (شاپ کاؤنٹر)</SelectItem>
+                  <SelectItem value="Morning Shift Delivery" className="text-xs">Morning Shift Delivery (صبح کی شفٹ)</SelectItem>
+                  <SelectItem value="Evening Shift Delivery" className="text-xs">Evening Shift Delivery (شام کی شفٹ)</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                Delivery Rider / Staff
+              </label>
+              <Input
+                type="text"
+                value={riderName}
+                onChange={(e) => setRiderName(e.target.value)}
+                placeholder="e.g. Rider Ali / Bilal"
+                className="w-full h-8.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 font-medium"
+              />
             </div>
           </div>
 

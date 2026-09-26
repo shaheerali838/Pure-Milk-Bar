@@ -70,7 +70,6 @@ export function StaffPayrollProvider({ children }) {
   useEffect(() => {
     fetchStaff();
   }, [fetchStaff]);
-
   // Helper to generate next Staff ID like STF-001, STF-002
   const generateStaffId = () => {
     if (!staffList || staffList.length === 0) return 'STF-001';

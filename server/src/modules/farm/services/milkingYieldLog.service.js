@@ -18,10 +18,17 @@ class MilkingYieldLogService {
       );
     }
 
-    // 2. Create the milking yield log with operator reference
+    // 2. Resolve operatorId if not supplied
+    let resolvedOperatorId = operatorId || data.operatorId;
+    if (!resolvedOperatorId) {
+      const admin = await mongoose.model('User').findOne({ role: 'ADMIN' });
+      resolvedOperatorId = admin?._id;
+    }
+
+    // 3. Create the milking yield log with operator reference
     const milkingLog = await MilkingYieldLog.create({
       ...data,
-      operatorId,
+      operatorId: resolvedOperatorId,
     });
 
     // 3. Recalculate the animal's daily average yield (last 30 days)

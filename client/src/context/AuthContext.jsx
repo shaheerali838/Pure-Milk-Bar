@@ -109,7 +109,9 @@ export const AuthProvider = ({ children }) => {
 
   const saveSession = (userData, userToken) => {
     const payload = JSON.stringify({ user: userData, token: userToken, savedAt: new Date().toISOString() });
-    sessionStorage.setItem(STORAGE_KEY, payload);
+    try { sessionStorage.setItem(STORAGE_KEY, payload); } catch (_) {}
+    try { localStorage.setItem(STORAGE_KEY, payload); } catch (_) {}
+    try { localStorage.setItem('auth_token', userToken); } catch (_) {}
     setUser(userData);
     setToken(userToken);
   };
@@ -122,12 +124,12 @@ export const AuthProvider = ({ children }) => {
     const cleanPassword = String(password).trim();
 
     try {
-      // 1. Try backend API login if available
+      // 1. Try backend API login first
       try {
         const response = await fetch('/api/v1/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: cleanIdentifier.includes('@') ? 'admin' : cleanIdentifier, password: cleanPassword }),
+          body: JSON.stringify({ username: cleanIdentifier, password: cleanPassword }),
         });
 
         if (response.ok) {
@@ -135,13 +137,13 @@ export const AuthProvider = ({ children }) => {
           const loggedUser = data.data?.user || data.user;
           const accessToken = data.data?.accessToken || data.token;
           if (loggedUser && accessToken) {
-            saveSession(loggedUser, accessToken, rememberMe);
+            saveSession(loggedUser, accessToken);
             setIsLoading(false);
             return { success: true, user: loggedUser };
           }
         }
       } catch (apiErr) {
-        // Backend not running or endpoint not ready; proceed with built-in client auth
+        console.warn('Backend login API fallback:', apiErr.message);
       }
 
       // 2. Validate against pre-configured enterprise accounts

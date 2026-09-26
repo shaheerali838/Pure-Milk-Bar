@@ -1,35 +1,44 @@
 import React from 'react';
-import { HelpCircle, Printer } from 'lucide-react';
+import { HelpCircle, Printer, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function LedgerHeader({ onHowToFinish, onPrint }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-      <div>
-        <h2 className="text-lg font-bold text-slate-900 tracking-tight leading-tight">
-          Khata Ledger &amp; Dues Clearance
-        </h2>
-        <p className="text-[11px] text-slate-500">
-          Digital ledger management, customer Khata settlements, and clearance slips
+    <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-slate-200/60">
+      <div className="flex items-center gap-2">
+        <h1 className="text-lg font-bold tracking-tight text-slate-900 font-display">
+          Customer Khata Ledger
+        </h1>
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+          Dues &amp; Settlements
+        </span>
+        <span className="hidden md:inline text-xs text-slate-400">|</span>
+        <p className="hidden md:inline text-xs text-slate-500">
+          Itemized billing history, payments received &amp; debt clearance
         </p>
       </div>
 
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <button
+      <div className="flex items-center gap-1.5">
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={onHowToFinish}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-[11px] font-semibold shadow-2xs transition cursor-pointer"
+          className="h-7.5 px-2.5 text-xs font-medium text-slate-700 hover:text-slate-900 border-slate-200 bg-white hover:bg-slate-50 shadow-2xs cursor-pointer gap-1.5"
         >
-          <HelpCircle className="w-3 h-3 text-slate-500" />
-          How to Finish Khata?
-        </button>
-        <button
+          <HelpCircle className="w-3.5 h-3.5 text-slate-500" />
+          <span>How to Finish Khata?</span>
+        </Button>
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={onPrint}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-[11px] font-semibold shadow-2xs transition cursor-pointer"
+          className="h-7.5 px-2.5 text-xs font-medium text-slate-700 hover:text-slate-900 border-slate-200 bg-white hover:bg-slate-50 shadow-2xs cursor-pointer gap-1.5"
         >
-          <Printer className="w-3 h-3 text-slate-500" />
-          Print
-        </button>
+          <Printer className="w-3.5 h-3.5 text-slate-500" />
+          <span>Print Statement</span>
+        </Button>
       </div>
     </div>
   );

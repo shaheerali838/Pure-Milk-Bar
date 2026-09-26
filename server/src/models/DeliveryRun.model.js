@@ -19,14 +19,14 @@ const deliveryRunSchema = new Schema(
     },
     shift: {
       type: String,
-      required: [true, 'Shift is required'],
       enum: ['MORNING', 'EVENING'],
+      default: 'MORNING',
       index: true,
     },
     route: {
       type: String,
-      required: [true, 'Route is required'],
       trim: true,
+      default: 'Standard Delivery',
       index: true,
     },
     riderId: {
@@ -41,44 +41,87 @@ const deliveryRunSchema = new Schema(
     },
     staffType: {
       type: String,
-      enum: ['MOTORCYCLE_RIDER', 'WALKING_BOY', 'VAN_DRIVER'],
+      enum: ['MOTORCYCLE_RIDER', 'WALKING_BOY', 'VAN_DRIVER', 'OTHER'],
       default: 'MOTORCYCLE_RIDER',
     },
     customerId: {
       type: Schema.Types.ObjectId,
       ref: 'Customer',
-      required: [true, 'Customer ID is required'],
+      required: false,
+      default: null,
       index: true,
     },
     customerName: {
       type: String,
-      required: [true, 'Customer name is required'],
       trim: true,
+      default: 'Walk-in / Guest Delivery',
     },
     deliveryAddress: {
       type: String,
-      required: [true, 'Delivery address is required'],
       trim: true,
+      default: '',
     },
     itemDescription: {
       type: String,
-      required: [true, 'Item description is required'],
       trim: true,
+      default: 'Dairy Delivery',
     },
     qtyLiters: {
       type: Number,
-      required: [true, 'Quantity in liters is required'],
-      min: [0.1, 'Quantity must be positive'],
+      default: 0,
+      min: 0,
     },
     paymentMode: {
       type: String,
-      required: [true, 'Payment mode is required'],
-      enum: ['CASH', 'KHATA', 'ONLINE', 'PREPAID'],
+      enum: ['CASH', 'KHATA', 'ONLINE', 'PREPAID', 'SPLIT', 'COD'],
+      default: 'CASH',
     },
     codAmountToCollect: {
       type: Number,
       default: 0,
       min: 0,
+    },
+    source: {
+      type: String,
+      enum: ['POS_ONE_TIME', 'SCHEDULED_ROUTE'],
+      default: 'SCHEDULED_ROUTE',
+      index: true,
+    },
+    linkedOrderId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Order',
+      default: null,
+    },
+    receiptNumber: {
+      type: String,
+      default: null,
+    },
+    items: {
+      type: [
+        {
+          name: { type: String, required: true },
+          quantity: { type: Number, required: true },
+          unit: { type: String, default: 'PIECE' },
+          unitPrice: { type: Number, default: 0 },
+          subtotal: { type: Number, default: 0 },
+        },
+      ],
+      default: [],
+    },
+    amountPaid: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    amountDue: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['PAID', 'PARTIAL', 'UNPAID'],
+      default: 'UNPAID',
     },
     status: {
       type: String,

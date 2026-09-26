@@ -1,5 +1,6 @@
 import React from 'react';
-import { BookOpen, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
+import { BookOpen, TrendingUp, TrendingDown, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function LedgerStatsCards({
   openingBalance = 0,
@@ -10,68 +11,80 @@ export default function LedgerStatsCards({
   paidCount = 0,
   currentBalance = 0,
 }) {
+  const isCleared = currentBalance <= 0;
+
   const statCards = [
     {
-      label: "Opening Balance",
-      value: `Rs. ${Number(openingBalance || 0).toLocaleString()}`,
-      sub: openingDate || "Start of period",
+      label: 'Opening Balance',
+      value: `PKR ${Number(openingBalance || 0).toLocaleString()}`,
+      sub: openingDate ? `Dated: ${openingDate}` : 'Period start',
       icon: BookOpen,
-      color: "#155dfc",
-      badge: "Opening",
+      iconColor: 'text-slate-600',
+      iconBg: 'bg-slate-100',
+      badge: 'Opening',
+      badgeClass: 'bg-slate-100 text-slate-700 border-slate-200/60',
     },
     {
-      label: "Total Charged (Milk)",
-      value: `Rs. ${Number(totalCharged || 0).toLocaleString()}`,
-      sub: `${chargedCount} total debits`,
+      label: 'Total Debits',
+      value: `PKR ${Number(totalCharged || 0).toLocaleString()}`,
+      sub: `${chargedCount} orders / debits`,
       icon: TrendingUp,
-      color: "#e11d48",
-      badge: "Debits",
+      iconColor: 'text-rose-600',
+      iconBg: 'bg-rose-50',
+      badge: 'Debits',
+      badgeClass: 'bg-rose-50 text-rose-700 border-rose-200/60',
     },
     {
-      label: "Total Paid",
-      value: `Rs. ${Number(totalPaid || 0).toLocaleString()}`,
-      sub: `${paidCount} payments recorded`,
+      label: 'Total Credits',
+      value: `PKR ${Number(totalPaid || 0).toLocaleString()}`,
+      sub: `${paidCount} payments received`,
       icon: TrendingDown,
-      color: "#009966",
-      badge: "Credits",
+      iconColor: 'text-emerald-600',
+      iconBg: 'bg-emerald-50',
+      badge: 'Credits',
+      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
     },
     {
-      label: "Current Balance (Due)",
-      value: `Rs. ${Number(currentBalance || 0).toLocaleString()}`,
-      sub: currentBalance > 0 ? "Pending recovery" : "All Dues Cleared",
-      icon: AlertCircle,
-      color: currentBalance > 0 ? "#f59e0b" : "#10b981",
-      badge: currentBalance > 0 ? "Due" : "Cleared",
+      label: 'Cleared Balance',
+      value: `PKR ${Number(currentBalance || 0).toLocaleString()}`,
+      sub: isCleared ? 'Dues fully cleared' : 'Outstanding recovery',
+      icon: isCleared ? CheckCircle2 : AlertCircle,
+      iconColor: isCleared ? 'text-emerald-600' : 'text-amber-600',
+      iconBg: isCleared ? 'bg-emerald-50' : 'bg-amber-50',
+      badge: isCleared ? 'Cleared' : 'Pending',
+      badgeClass: isCleared
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
+        : 'bg-amber-50 text-amber-700 border-amber-200/60',
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
-      {statCards.map(({ label, value, sub, icon: Icon, color, badge }) => (
-        <div
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+      {statCards.map(({ label, value, sub, icon: Icon, iconColor, iconBg, badge, badgeClass }) => (
+        <Card
           key={label}
-          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-sm hover:shadow-md transition-all duration-200"
-          style={{ borderTop: `4px solid ${color}` }}
+          className="bg-white border-slate-200/80 shadow-2xs hover:border-slate-300 transition-colors h-20"
         >
-          <div className="flex items-start justify-between mb-1.5">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
-              style={{ background: `${color}15` }}
-            >
-              <Icon style={{ width: 16, height: 16, color }} />
+          <CardContent className="p-3 h-full flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-slate-500 truncate">
+                {label}
+              </span>
+              <div className={`w-6 h-6 rounded-md ${iconBg} ${iconColor} flex items-center justify-center shrink-0`}>
+                <Icon className="w-3.5 h-3.5" />
+              </div>
             </div>
-            <span className="text-[10px] font-bold px-3 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
-              {badge}
-            </span>
-          </div>
-          <div>
-            <p className="font-display text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
-              {value}
-            </p>
-            <p className="text-xs font-bold text-slate-700">{label}</p>
-            <p className="text-[11px] font-medium text-slate-400">{sub}</p>
-          </div>
-        </div>
+
+            <div className="flex items-baseline justify-between gap-1">
+              <div className="text-lg font-bold font-mono text-slate-900 tracking-tight tabular">
+                {value}
+              </div>
+              <span className={`text-[9px] font-semibold px-1.5 py-0.2 rounded border ${badgeClass}`}>
+                {badge}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

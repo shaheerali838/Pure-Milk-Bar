@@ -27,6 +27,7 @@ const providers = [
 
   // 2. Base Domain Entities
   CustomerProvider,
+  LedgerProvider,
   AnimalProvider,
   ExpenseProvider,
   SourcExpenseProvider,
@@ -37,15 +38,14 @@ const providers = [
   RiderSalaryProvider,
   DeliveryProvider,
   IntakeProvider,
-  DahiProvider,
+  SupplierProvider,
   PayrollProvider,
 
-  // 3. Dependent Domain Providers
-  LedgerProvider,
-  SupplierProvider,
-
-  // 4. POS Engine
+  // 3. POS Engine
   POSProvider,
+
+  // 4. Dahi Processing (consumes POS, Intake, Animal)
+  DahiProvider,
 
   // 5. Aggregate Transactions
   TransactionProvider,

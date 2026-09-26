@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import KhataEntry from '../../../models/KhataEntry.model.js';
 import Customer from '../../../models/Customer.model.js';
 import Expense from '../../../models/Expense.model.js';
+import User from '../../../models/User.model.js';
 
 
 const generateKhataVoucher = () => {
@@ -89,6 +90,13 @@ export const addKhataEntryService = async (data, userId) => {
           runningBalance: newBalance,
           paymentMethod: paymentMethod ? paymentMethod.toUpperCase() : (txType === 'CREDIT' ? 'CASH' : null),
           referenceTransactionId: referenceTransactionId || null,
+          items: Array.isArray(data.items) ? data.items : [],
+          orderTotal: Number(data.orderTotal ?? (txType === 'DEBIT' ? entryAmount : 0)),
+          paidAmount: Number(data.paidAmount ?? (txType === 'CREDIT' ? entryAmount : 0)),
+          remainingAmount: Number(data.remainingAmount ?? (txType === 'DEBIT' ? entryAmount : 0)),
+          fulfillmentType: data.fulfillmentType || null,
+          riderName: data.riderName || null,
+          deliveryAddress: data.deliveryAddress || null,
           cashierId: userId,
         },
       ],

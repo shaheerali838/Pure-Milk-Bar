@@ -21,7 +21,6 @@ export const posService = {
     const res = await api.delete(`/api/v1/inventory/products/${id}`);
     return res.data || res;
   },
-
   // Create POS Order
   createOrder: async (orderData) => {
     const res = await api.post('/api/v1/pos/orders', orderData);
