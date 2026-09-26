@@ -23,7 +23,7 @@ import {
  * You can easily paste or replace your ERP system screenshots here!
  *
  * Steps to add your own screenshots:
- * 1. Drop your image files into `client/public/images/` (e.g. my-dashboard.png)
+ * 1. Drop your image files into `client/public/images/screenshots/` (e.g. dashboard.png)
  * 2. Update or add entries in the `ERP_SCREENSHOTS` array below with your image paths!
  * 3. Supports `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg`, or external image URLs.
  * ============================================================================
@@ -36,7 +36,7 @@ export const ERP_SCREENSHOTS = [
     categoryLabel: "Overview",
     badge: "Real-Time Telemetry",
     urlBar: "puremilkbar.erp/dashboard",
-    image: "/images/dairyfarm.jpeg", // 👈 Replace with your dashboard screenshot
+    image: "/images/screenshots/dashboard.png",
     route: "/dashboard",
     description:
       "Unified real-time dairy intelligence: Live milk yield vs procurement intake, cold-room temperature status, active POS counter revenue, and fleet dispatch tracking.",
@@ -54,7 +54,7 @@ export const ERP_SCREENSHOTS = [
     categoryLabel: "Farm & Cattle",
     badge: "RFID Herd Tracking",
     urlBar: "puremilkbar.erp/farm/animals",
-    image: "/images/animals.webp", // 👈 Replace with your herd screenshot
+    image: "/images/screenshots/farm-animals.png",
     route: "/farm/animals",
     description:
       "Individual cow and buffalo profile tracking with RFID tags, lactation cycles (Lactating, Dry, Pregnant), pedigree details, and daily yield historical curves.",
@@ -66,31 +66,13 @@ export const ERP_SCREENSHOTS = [
     ],
   },
   {
-    id: "milking-register",
-    title: "Shift-by-Shift Milking Register",
-    category: "farm",
-    categoryLabel: "Farm & Cattle",
-    badge: "Shift Yield Logs",
-    urlBar: "puremilkbar.erp/farm/milking",
-    image: "/images/milking-register.jpeg", // 👈 Replace with your milking register screenshot
-    route: "/farm/milking",
-    description:
-      "Record morning and evening milking shift entries with milk temperature, bulk tank dips, fat & SNF testing, and automated variance detection against herd potential.",
-    highlights: [
-      "Morning and evening milking shift entries",
-      "Fat %, SNF, density, and temperature logging",
-      "Bulk chiller dipstick vs measured intake audits",
-      "Automated shrinkage and spillage tracking",
-    ],
-  },
-  {
     id: "supplier-dock",
     title: "Milk Dock Intake & Supplier Procurement",
     category: "procurement",
     categoryLabel: "Milk Dock",
     badge: "Automated Intake Dock",
     urlBar: "puremilkbar.erp/supplier",
-    image: "/images/storage.webp", // 👈 Replace with your procurement dock screenshot
+    image: "/images/screenshots/supplier.png",
     route: "/supplier",
     description:
       "Rapid milk reception terminal with digital dipstick logging, temperature quality grading, tiered rate contracts, and automated Khata debit/credit vouchers.",
@@ -108,7 +90,7 @@ export const ERP_SCREENSHOTS = [
     categoryLabel: "POS & Sales",
     badge: "Sub-Second Billing",
     urlBar: "puremilkbar.erp/pos",
-    image: "/images/inventory.jpeg", // 👈 Replace with your POS counter screenshot
+    image: "/images/screenshots/pos.png",
     route: "/pos",
     description:
       "Ultra-fast POS interface optimized for touchscreens and thermal receipt printers: Quick milk bagging, Dahi pots, retail dairy products, and instant cash/Khata split billing.",
@@ -126,7 +108,7 @@ export const ERP_SCREENSHOTS = [
     categoryLabel: "Finance & Ledgers",
     badge: "100% Zero-Loss Ledger",
     urlBar: "puremilkbar.erp/farm/pl",
-    image: "/images/PnL.jpeg", // 👈 Replace with your P&L screenshot
+    image: "/images/screenshots/farm-pl.png",
     route: "/farm/pl",
     description:
       "Real-time cost per liter analysis (feed, labor, vet, electricity) alongside customer khata recovery, daily cash register closing, and bank settlements.",
@@ -144,7 +126,7 @@ export const ERP_SCREENSHOTS = [
     categoryLabel: "Fleet & Logistics",
     badge: "Route Logistics",
     urlBar: "puremilkbar.erp/delivery",
-    image: "/images/delivery.jpeg", // 👈 Replace with your delivery screenshot
+    image: "/images/screenshots/delivery.png",
     route: "/delivery",
     description:
       "Doorstep morning/evening delivery route management: Rider dispatch sheets, route bottles allocation, customer collection tracking, and empty bottle returns.",
@@ -160,7 +142,7 @@ export const ERP_SCREENSHOTS = [
 const CATEGORIES = [
   { id: "all", label: "All Screenshots" },
   { id: "overview", label: "Dashboard" },
-  { id: "farm", label: "Livestock & Milking" },
+  { id: "farm", label: "Livestock & Herd" },
   { id: "procurement", label: "Milk Dock Intake" },
   { id: "pos", label: "Touch POS" },
   { id: "finance", label: "Khata & P&L" },
@@ -310,7 +292,7 @@ export default function LandingScreenshotsGallery() {
                     {currentItem.title}
                   </h4>
                   <p className="text-xs text-slate-400 max-w-md mb-3">
-                    Paste your screenshot at <code className="text-emerald-300 bg-black/40 px-1.5 py-0.5 rounded font-mono">{currentItem.image}</code> in <code className="text-emerald-300">client/public/images/</code> to display it here.
+                    Paste your screenshot at <code className="text-emerald-300 bg-black/40 px-1.5 py-0.5 rounded font-mono">{currentItem.image}</code> in <code className="text-emerald-300">client/public/images/screenshots/</code> to display it here.
                   </p>
                   <Link
                     to={currentItem.route || "/login"}
@@ -491,7 +473,7 @@ export default function LandingScreenshotsGallery() {
           <div className="flex items-center gap-2.5">
             <Info className="w-4 h-4 text-[#00a86b] shrink-0" />
             <span>
-              <strong className="text-slate-900">Customizing Screenshots:</strong> Drop your own screenshot images into <code className="text-[#1F4B3F] bg-emerald-100/80 px-1.5 py-0.5 rounded font-mono font-semibold">client/public/images/</code> and update the <code className="text-[#1F4B3F] bg-emerald-100/80 px-1.5 py-0.5 rounded font-mono font-semibold">ERP_SCREENSHOTS</code> array in <code className="text-[#1F4B3F] bg-emerald-100/80 px-1.5 py-0.5 rounded font-mono font-semibold">LandingScreenshotsGallery.jsx</code>.
+              <strong className="text-slate-900">Customizing Screenshots:</strong> Drop your own screenshot images into <code className="text-[#1F4B3F] bg-emerald-100/80 px-1.5 py-0.5 rounded font-mono font-semibold">client/public/images/screenshots/</code> and update the <code className="text-[#1F4B3F] bg-emerald-100/80 px-1.5 py-0.5 rounded font-mono font-semibold">ERP_SCREENSHOTS</code> array in <code className="text-[#1F4B3F] bg-emerald-100/80 px-1.5 py-0.5 rounded font-mono font-semibold">LandingScreenshotsGallery.jsx</code>.
             </span>
           </div>
           <Link
