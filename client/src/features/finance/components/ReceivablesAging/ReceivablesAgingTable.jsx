@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Eye, Search, CreditCard, Pencil } from 'lucide-react';
+import { Eye, Search, CreditCard, Pencil, Download } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
+import { exportTableToCSV } from '@/utils/csvExport';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -99,6 +100,49 @@ export default function ReceivablesAgingTable({ onViewDetail, onRecordPayment, o
   const sum90plus = filteredRows.reduce((acc, r) => acc + r.buckets.d90plus, 0);
   const sumTotal = filteredRows.reduce((acc, r) => acc + r.total, 0);
 
+  const handleExportCSV = () => {
+    const headers = [
+      'Customer Name',
+      'Phone Number',
+      'Area',
+      '0–30 Days (Rs)',
+      '31–60 Days (Rs)',
+      '61–90 Days (Rs)',
+      '90+ Days (Rs)',
+      'Total Outstanding (Rs)',
+      'Credit Risk Category',
+    ];
+    const rows = filteredRows.map(({ customer, buckets, total, risk }) => [
+      customer.name,
+      customer.phone || '-',
+      customer.area || '-',
+      Number(buckets.d0_30 || 0),
+      Number(buckets.d31_60 || 0),
+      Number(buckets.d61_90 || 0),
+      Number(buckets.d90plus || 0),
+      Number(total || 0),
+      risk,
+    ]);
+
+    exportTableToCSV({
+      filename: `Receivables_Aging_Report_${new Date().toISOString().split('T')[0]}`,
+      title: 'Customer Accounts Receivables Aging & Credit Risk Report',
+      metadata: [
+        ['Total Customers with Overdue Dues', customersWithDues.length],
+        ['Total Overdue Outstanding Balance', `Rs. ${sumTotal.toLocaleString()}`],
+        ['Current (0-30 Days)', `Rs. ${sum0_30.toLocaleString()}`],
+        ['Moderate (31-60 Days)', `Rs. ${sum31_60.toLocaleString()}`],
+        ['Attention (61-90 Days)', `Rs. ${sum61_90.toLocaleString()}`],
+        ['Critical Overdue (90+ Days)', `Rs. ${sum90plus.toLocaleString()}`],
+      ],
+      headers,
+      rows,
+      summaryRows: [
+        ['PORTFOLIO TOTALS', '', '', `Rs. ${sum0_30.toLocaleString()}`, `Rs. ${sum31_60.toLocaleString()}`, `Rs. ${sum61_90.toLocaleString()}`, `Rs. ${sum90plus.toLocaleString()}`, `Rs. ${sumTotal.toLocaleString()}`, `Accounts: ${filteredRows.length}`],
+      ],
+    });
+  };
+
   return (
     <div className="space-y-2">
       <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-2">
@@ -106,15 +150,29 @@ export default function ReceivablesAgingTable({ onViewDetail, onRecordPayment, o
           <span>{customersWithDues.length} customers with outstanding balance</span>
         </div>
 
-        <div className="relative w-72">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-          <Input
-            type="text"
-            placeholder="Search by name, phone, area..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-8 pl-8 pr-3 py-1 bg-white border border-slate-200 rounded-md text-xs focus-visible:border-emerald-500 focus-visible:ring-0 placeholder:text-slate-400"
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative w-64">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <Input
+              type="text"
+              placeholder="Search by name, phone, area..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-8 pl-8 pr-3 py-1 bg-white border border-slate-200 rounded-md text-xs focus-visible:border-emerald-500 focus-visible:ring-0 placeholder:text-slate-400"
+            />
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            className="h-8 px-3 text-xs font-semibold text-emerald-800 hover:text-emerald-950 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 shadow-2xs cursor-pointer gap-1.5 shrink-0"
+            title="Export receivables aging report to CSV"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Export CSV</span>
+          </Button>
         </div>
       </div>
 

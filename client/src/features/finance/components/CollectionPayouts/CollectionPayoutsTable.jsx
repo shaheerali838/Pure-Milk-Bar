@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Eye, Search, CreditCard, Pencil } from 'lucide-react';
+import { Eye, Search, CreditCard, Pencil, Download } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
+import { exportTableToCSV } from '@/utils/csvExport';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -60,6 +61,53 @@ export default function CollectionPayoutsTable({ onViewReceipt, onRecordPayment,
     return matchesSearch && matchesStatus;
   });
 
+  const handleExportCSV = () => {
+    const headers = [
+      'Slip Ref ID',
+      'Date',
+      'Customer ID',
+      'Customer Name',
+      'Customer Phone',
+      'Payment Type',
+      'Paid Amount (PKR)',
+      'Payment Method',
+      'Clearance Status',
+      'Remarks / Description',
+    ];
+    const rows = filteredRows.map(({ customer, entry }) => {
+      const isPending = entry.method === 'Bank' || entry.method === 'Bank Transfer';
+      return [
+        entry.id || entry.reference || '-',
+        entry.date || '-',
+        customer.id || '-',
+        customer.name || '-',
+        customer.phone || '-',
+        entry.type || 'Payment',
+        Number(entry.credit || 0),
+        entry.method || 'Cash',
+        isPending ? 'Pending' : 'Confirmed',
+        entry.notes || entry.description || '-',
+      ];
+    });
+    const totalCollected = filteredRows.reduce((sum, { entry }) => sum + (Number(entry.credit) || 0), 0);
+
+    exportTableToCSV({
+      filename: `Customer_Collections_Receipts_${new Date().toISOString().split('T')[0]}`,
+      title: 'Customer Payments & Collections Register',
+      metadata: [
+        ['Status Filter', statusFilter],
+        ['Search Query', searchQuery || 'All Receipts'],
+        ['Total Receipts Filtered', filteredRows.length],
+        ['Total Amount Collected', `Rs. ${totalCollected.toLocaleString()}`],
+      ],
+      headers,
+      rows,
+      summaryRows: [
+        ['SUMMARY TOTALS', '', '', '', '', 'Total Collections', `Rs. ${totalCollected.toLocaleString()}`, '', '', `Receipts: ${filteredRows.length}`],
+      ],
+    });
+  };
+
   return (
     <div className="space-y-2">
       <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-2">
@@ -74,20 +122,34 @@ export default function CollectionPayoutsTable({ onViewReceipt, onRecordPayment,
           />
         </div>
 
-        <div className="w-44">
-          <Select
-            value={statusFilter}
-            onValueChange={(val) => setStatusFilter(val)}
+        <div className="flex items-center gap-2">
+          <div className="w-44">
+            <Select
+              value={statusFilter}
+              onValueChange={(val) => setStatusFilter(val)}
+            >
+              <SelectTrigger className="w-full h-8 px-2.5 bg-white border border-slate-200 rounded-md text-xs text-slate-700 cursor-pointer">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All Status" className="text-xs">All Status</SelectItem>
+                <SelectItem value="Confirmed" className="text-xs">Confirmed</SelectItem>
+                <SelectItem value="Pending" className="text-xs">Pending</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            className="h-8 px-3 text-xs font-semibold text-emerald-800 hover:text-emerald-950 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 shadow-2xs cursor-pointer gap-1.5 shrink-0"
+            title="Export filtered collection receipts to CSV"
           >
-            <SelectTrigger className="w-full h-8 px-2.5 bg-white border border-slate-200 rounded-md text-xs text-slate-700 cursor-pointer">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All Status" className="text-xs">All Status</SelectItem>
-              <SelectItem value="Confirmed" className="text-xs">Confirmed</SelectItem>
-              <SelectItem value="Pending" className="text-xs">Pending</SelectItem>
-            </SelectContent>
-          </Select>
+            <Download className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Export CSV</span>
+          </Button>
         </div>
       </div>
 

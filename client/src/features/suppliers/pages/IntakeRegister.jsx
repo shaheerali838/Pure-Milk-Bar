@@ -15,6 +15,7 @@ import LogIntakeForm from '../components/intakeRegistor/LogIntakeForm';
 import IntakeDetail from '../components/intakeRegistor/IntakeDetail';
 import PaySupplierForm from '../components/intakeRegistor/PaySupplierForm';
 import { useIntakeContext } from '@/context/IntakeContext';
+import { exportTableToCSV } from '@/utils/csvExport';
 
 export default function IntakeRegister() {
   const { intakeLogs } = useIntakeContext();
@@ -64,48 +65,66 @@ export default function IntakeRegister() {
     const headers = [
       'Slip ID',
       'Date',
-      'Time',
+      'Time / Shift',
       'Supplier ID',
       'Supplier Name',
-      'Area',
-      'Shift',
+      'Area / Route',
       'Quantity (Liters)',
       'Rate per Liter (PKR)',
       'Total Cost (PKR)',
+      'Paid Amount (PKR)',
+      'Pending Balance (PKR)',
       'Fat %',
       'LR',
       'SNF %',
-      'Settlement',
+      'Settlement Status',
       'Received By',
     ];
 
     const rows = intakeLogs.map((r) => [
-      r.id,
-      r.date,
-      r.time,
-      r.supplierId,
-      `"${r.supplierName.replace(/"/g, '""')}"`,
-      `"${r.area || ''}"`,
-      r.shift,
-      r.quantity,
-      r.ratePerLiter,
-      r.totalCost,
-      r.fat,
-      r.lr,
-      r.snf,
-      r.settlement,
-      `"${r.receivedBy || ''}"`,
+      r.id || r._id || '-',
+      r.date || '-',
+      r.time || r.shift || 'Morning',
+      r.supplierId || '-',
+      r.supplierName || 'Supplier',
+      r.area || 'Local Route',
+      Number(r.quantity || 0).toFixed(1),
+      Number(r.ratePerLiter || 0).toFixed(1),
+      Number(r.totalCost || 0),
+      Number(r.paidAmount || 0),
+      Number(r.pendingAmount || (r.totalCost - (r.paidAmount || 0)) || 0),
+      Number(r.fat || 0).toFixed(2),
+      Number(r.lr || 0).toFixed(1),
+      Number(r.snf || 0).toFixed(2),
+      r.settlement || 'Pending',
+      r.receivedBy || 'System',
     ]);
 
-    const csvContent = [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `milk_intake_register_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const totalLiters = intakeLogs.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
+    const totalCost = intakeLogs.reduce((sum, r) => sum + (Number(r.totalCost) || 0), 0);
+    const totalPaid = intakeLogs.reduce((sum, r) => sum + (Number(r.paidAmount) || 0), 0);
+    const totalPending = totalCost - totalPaid;
+    const avgFat = intakeLogs.length ? (intakeLogs.reduce((sum, r) => sum + (Number(r.fat) || 0), 0) / intakeLogs.length).toFixed(2) : 0;
+    const avgSnf = intakeLogs.length ? (intakeLogs.reduce((sum, r) => sum + (Number(r.snf) || 0), 0) / intakeLogs.length).toFixed(2) : 0;
+
+    exportTableToCSV({
+      filename: `milk_intake_register_${new Date().toISOString().split('T')[0]}`,
+      title: 'Milk Procurement & Intake Register',
+      metadata: [
+        ['Total Slips Recorded', intakeLogs.length],
+        ['Total Volume Procured', `${totalLiters.toFixed(1)} Liters`],
+        ['Average Fat %', `${avgFat}%`],
+        ['Average SNF %', `${avgSnf}%`],
+        ['Total Payable', `Rs. ${totalCost.toLocaleString()}`],
+        ['Total Paid', `Rs. ${totalPaid.toLocaleString()}`],
+        ['Outstanding Balance', `Rs. ${totalPending.toLocaleString()}`],
+      ],
+      headers,
+      rows,
+      summaryRows: [
+        ['SUMMARY TOTALS', '', '', '', '', 'Total Procurement', `${totalLiters.toFixed(1)} Liters`, '', `Rs. ${totalCost.toLocaleString()}`, `Rs. ${totalPaid.toLocaleString()}`, `Rs. ${totalPending.toLocaleString()}`, `${avgFat}%`, '', `${avgSnf}%`, '', `Slips: ${rows.length}`],
+      ],
+    });
   };
 
   // 1. FULL SPACE: Log Intake Form View

@@ -1,4 +1,6 @@
 
+import { exportTableToCSV } from '@/utils/csvExport';
+
 export const getDailyClosingSummary = async (options = {}) => {
   // Can be called with a date string or options object { date, period, startDate, endDate }
   const params = typeof options === 'string' ? { date: options, period: 'today' } : options;
@@ -103,41 +105,42 @@ export const exportDailyClosingCsv = (summaryData) => {
     : summaryData.date || 'today';
 
   const rows = [
-    ['Day End Summary Report', dateLabel],
-    ['Period Mode', summaryData.period || 'today'],
-    ['Status', summaryData.status || 'Open'],
-    [''],
-    ['--- MILK FLOW RECONCILIATION (Liters) ---'],
-    ['1. Morning Opening Stock (L)', summaryData.milkFlow?.morningOpeningStock ?? '—'],
-    ['2. Farm Milking Production (L)', summaryData.milkFlow?.farmProduction ?? '—'],
-    ['3. Supplier Milk Inflow (L)', summaryData.milkFlow?.supplierInflow ?? '— (Not available yet)'],
-    ['Total Available Milk (L)', summaryData.milkFlow?.totalAvailable ?? '—'],
-    ['4. Counter POS Sales (L)', summaryData.milkFlow?.counterPosSales ?? '—'],
-    ['5. Doorstep Delivery Sales (L)', summaryData.milkFlow?.doorstepDeliveries ?? '—'],
-    ['6. Dahi & Processing Used (L)', summaryData.milkFlow?.dahiProcessingUsed ?? '—'],
-    ['7. Spoilage & Wastage (L)', summaryData.milkFlow?.spoiledWastage ?? '—'],
-    ['Total Milk Deductions (L)', summaryData.milkFlow?.totalDeductions ?? '—'],
-    ['Expected Closing Stock (L)', summaryData.milkFlow?.expectedClosingStock ?? '—'],
-    ['Physical Closing Stock (L)', summaryData.physicalStock?.physicalClosingStock ?? '—'],
-    ['Difference from Expected (L)', summaryData.physicalStock?.variance ?? '—'],
-    [''],
-    ['--- MONEY COLLECTED TODAY (PKR) ---'],
-    ['1. Counter Cash Collected (Rs.)', summaryData.collections?.counterCash ?? '—'],
-    ['2. Counter Online Digital (Rs.)', summaryData.collections?.onlineTransfer ?? '—'],
-    ['3. Delivery COD Cash (Rs.)', summaryData.collections?.deliveryCodCash ?? '—'],
-    ['4. Customer Khata Recovered (Rs.)', summaryData.collections?.customerKhataRecovered ?? '—'],
-    ['Total Collections (Rs.)', summaryData.collections?.totalCollections ?? '—'],
-    ['Total Daily Expenses (Rs.)', summaryData.expenses?.totalExpenses ?? '—'],
-    ['Net Liquid Flow (Rs.)', summaryData.financialSummary?.netCashLiquidFlow ?? '—'],
-    ['Net Estimated Profit (Rs.)', summaryData.financialSummary?.netEstimatedProfit ?? '—'],
+    ['--- MILK FLOW MASS BALANCE (LITERS) ---', '', ''],
+    ['1. Morning Opening Tank Stock (L)', summaryData.milkFlow?.morningOpeningStock ?? '—', 'Tank physical start'],
+    ['2. Farm Milking Production (L)', summaryData.milkFlow?.farmProduction ?? '—', 'Morning + evening herd yields'],
+    ['3. Supplier Milk Sourcing Inflow (L)', summaryData.milkFlow?.supplierInflow ?? '—', 'External farmer deliveries'],
+    ['Total Available Raw Milk (L)', summaryData.milkFlow?.totalAvailable ?? '—', 'Total stock before dispatch'],
+    ['4. Counter POS Milk Sales (L)', summaryData.milkFlow?.counterPosSales ?? '—', 'Shop counter volume sold'],
+    ['5. Doorstep Delivery Sales (L)', summaryData.milkFlow?.doorstepDeliveries ?? '—', 'Rider subscription dispatches'],
+    ['6. Dahi & Processing Milk Used (L)', summaryData.milkFlow?.dahiProcessingUsed ?? '—', 'Used in milk processing'],
+    ['7. Spoilage & Wastage (L)', summaryData.milkFlow?.spoiledWastage ?? '—', 'Spillage & testing samples'],
+    ['Total Milk Deductions (L)', summaryData.milkFlow?.totalDeductions ?? '—', 'Total dispatched / consumed'],
+    ['Theoretical Expected Closing Stock (L)', summaryData.milkFlow?.expectedClosingStock ?? '—', 'Available minus Deductions'],
+    ['Physical Measured Tank Stock (L)', summaryData.physicalStock?.physicalClosingStock ?? '—', 'Physical dipstick reading'],
+    ['Variance / Discrepancy (L)', summaryData.physicalStock?.variance ?? '—', 'Physical minus Expected'],
+    ['', '', ''],
+    ['--- MULTI-CHANNEL COLLECTIONS (PKR) ---', '', ''],
+    ['1. Counter Cash Collected', summaryData.collections?.counterCash ? `Rs. ${Number(summaryData.collections.counterCash).toLocaleString()}` : '—', 'POS Cash in drawer'],
+    ['2. Counter Online Digital Transfers', summaryData.collections?.onlineTransfer ? `Rs. ${Number(summaryData.collections.onlineTransfer).toLocaleString()}` : '—', 'JazzCash / EasyPaisa / Bank'],
+    ['3. Doorstep Delivery COD Recoveries', summaryData.collections?.deliveryCodCash ? `Rs. ${Number(summaryData.collections.deliveryCodCash).toLocaleString()}` : '—', 'Rider cash collections'],
+    ['4. Customer Khata Dues Recovered', summaryData.collections?.customerKhataRecovered ? `Rs. ${Number(summaryData.collections.customerKhataRecovered).toLocaleString()}` : '—', 'Ledger balances cleared'],
+    ['Total Money Collected', summaryData.collections?.totalCollections ? `Rs. ${Number(summaryData.collections.totalCollections).toLocaleString()}` : '—', 'Gross cash inflow'],
+    ['Total Daily Expenses Paid', summaryData.expenses?.totalExpenses ? `Rs. ${Number(summaryData.expenses.totalExpenses).toLocaleString()}` : '—', 'Feed, fuel, wages & maintenance'],
+    ['Net Operational Liquid Cash Flow', summaryData.financialSummary?.netCashLiquidFlow ? `Rs. ${Number(summaryData.financialSummary.netCashLiquidFlow).toLocaleString()}` : '—', 'Collections minus Expenses'],
+    ['Estimated Net Profit', summaryData.financialSummary?.netEstimatedProfit ? `Rs. ${Number(summaryData.financialSummary.netEstimatedProfit).toLocaleString()}` : '—', 'Accounting bottomline'],
   ];
 
-  const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(',')).join('\n');
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement('a');
-  link.setAttribute('href', encodedUri);
-  link.setAttribute('download', `Day_End_Summary_${dateLabel}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  exportTableToCSV({
+    filename: `Day_End_Summary_${dateLabel}`,
+    title: 'Daily Closing, Reconciliation & P&L Summary',
+    metadata: [
+      ['Closing Period', summaryData.period?.toUpperCase() || 'TODAY'],
+      ['Date / Range', dateLabel],
+      ['Audit Status', (summaryData.status || 'OPEN').toUpperCase()],
+      ['Closed Timestamp', summaryData.lastClosedAt || 'Pending final lock'],
+      ['Verified Operator', summaryData.closedBy || 'Admin'],
+    ],
+    headers: ['Reconciliation & Financial Line Item', 'Recorded Metric', 'Audit Context & Source'],
+    rows,
+  });
 };

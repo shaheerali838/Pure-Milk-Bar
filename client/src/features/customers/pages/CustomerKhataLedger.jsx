@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useCustomerContext } from '../../../context/CustomerContext';
 import { useLedgerContext } from '../../../context/LedgerContext';
+import { exportTableToCSV } from '@/utils/csvExport';
 import LedgerHeader from '../components/CustomerKhataLedger/LedgerHeader';
 import LedgerCustomerSelector from '../components/CustomerKhataLedger/LedgerCustomerSelector';
 import LedgerCustomerProfileCard from '../components/CustomerKhataLedger/LedgerCustomerProfileCard';
@@ -92,6 +93,53 @@ export default function CustomerKhataLedger() {
     window.print();
   };
 
+  const handleExportCSV = () => {
+    if (!currentCustomer) return;
+    const headers = [
+      'Txn ID',
+      'Date',
+      'Type',
+      'Description',
+      'Debit / Charged (Rs)',
+      'Credit / Paid (Rs)',
+      'Running Balance (Rs)',
+      'Payment Method',
+      'Notes',
+    ];
+    const rows = activeEntries.map((e) => [
+      e.id || e._id || '-',
+      e.date || '-',
+      e.type || 'ENTRY',
+      e.description || 'Ledger statement entry',
+      `Rs. ${Number(e.debit || 0).toLocaleString()}`,
+      `Rs. ${Number(e.credit || 0).toLocaleString()}`,
+      `Rs. ${Number(e.runningBalance || 0).toLocaleString()}`,
+      e.method || '-',
+      e.notes || '-',
+    ]);
+
+    exportTableToCSV({
+      filename: `Khata_Statement_${currentCustomer.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_${selectedMonth || 'all'}`,
+      title: `Customer Khata Statement — ${currentCustomer.name}`,
+      metadata: [
+        ['Customer Name', currentCustomer.name],
+        ['Phone Number', currentCustomer.phone || '-'],
+        ['Area / Address', currentCustomer.area || currentCustomer.address || '-'],
+        ['Credit Limit', `Rs. ${Number(currentCustomer.creditLimit || 0).toLocaleString()}`],
+        ['Opening Balance', `Rs. ${Number(openingBalance || 0).toLocaleString()}`],
+        ['Total Charged (Period)', `Rs. ${Number(totalCharged || 0).toLocaleString()}`],
+        ['Total Paid (Period)', `Rs. ${Number(totalPaid || 0).toLocaleString()}`],
+        ['Current Outstanding Khata Balance', `Rs. ${Number(closingBalance || 0).toLocaleString()}`],
+        ['Statement Month Filter', selectedMonth || 'All Time History'],
+      ],
+      headers,
+      rows,
+      summaryRows: [
+        ['SUMMARY TOTALS', '', '', '', `Rs. ${Number(totalCharged || 0).toLocaleString()}`, `Rs. ${Number(totalPaid || 0).toLocaleString()}`, `Closing: Rs. ${Number(closingBalance || 0).toLocaleString()}`, '', `Entries: ${activeEntries.length}`],
+      ],
+    });
+  };
+
   if (currentSubView === 'buy' && currentCustomer) {
     return <BuyProductView customer={currentCustomer} onBack={() => setCurrentSubView('ledger')} />;
   }
@@ -130,6 +178,7 @@ export default function CustomerKhataLedger() {
       <LedgerHeader
         onHowToFinish={() => setCurrentSubView('howToFinish')}
         onPrint={handlePrint}
+        onExportCSV={handleExportCSV}
       />
 
       <LedgerCustomerSelector

@@ -23,36 +23,7 @@ import {
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
-
-function exportToCSV(filename, headers, rows) {
-  if (!headers || !headers.length) return;
-
-  const escapeCell = (val) => {
-    if (val === null || val === undefined) return '""';
-    const str = String(val);
-    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-      return `"${str.replace(/"/g, '""')}"`;
-    }
-    return `"${str}"`;
-  };
-
-  const headerRow = headers.map(escapeCell).join(',');
-  const dataRows = (rows || []).map((row) =>
-    (Array.isArray(row) ? row : headers.map((h) => row[h] ?? '')).map(escapeCell).join(',')
-  );
-
-  const csvContent = [headerRow, ...dataRows].join('\r\n');
-  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', `${filename}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
+import { exportMultiSectionCSV } from '@/utils/csvExport';
 
 export default function ProcurementSheet() {
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -182,30 +153,65 @@ export default function ProcurementSheet() {
 
   const handleDownloadCSV = () => {
     // 1. Export Intake Data
-    const intakeHeaders = ['Supplier', 'Code', 'Route', 'Morning (L)', 'Evening (L)', 'Total (L)', 'Avg Fat %', 'Net Rate', 'Gross Due (Rs)', 'Net Payable (Rs)', 'Status'];
+    const intakeHeaders = ['Supplier', 'Code', 'Route', 'Morning (L)', 'Evening (L)', 'Total (L)', 'Avg Fat %', 'Net Rate (Rs/L)', 'Gross Due (Rs)', 'Net Payable (Rs)', 'Status'];
     const intakeCsvRows = rows.map(r => [
-      r.farmer, r.code, r.route, r.morningLiters.toFixed(1), r.eveningLiters.toFixed(1), r.totalLiters.toFixed(1),
-      r.weightedFat.toFixed(2), r.rate.toFixed(1), r.grossDue, r.netPayable, r.dispatchStatus
+      r.farmer,
+      r.code,
+      r.route,
+      r.morningLiters.toFixed(1),
+      r.eveningLiters.toFixed(1),
+      r.totalLiters.toFixed(1),
+      r.weightedFat.toFixed(2),
+      `Rs. ${r.rate.toFixed(1)}`,
+      `Rs. ${Number(r.grossDue || 0).toLocaleString()}`,
+      `Rs. ${Number(r.netPayable || 0).toLocaleString()}`,
+      r.dispatchStatus || 'Accepted'
     ]);
     
     // 2. Export Expenses Data
     const expenseHeaders = ['Expense ID', 'Date', 'Category', 'Amount (Rs)', 'Payment Mode', 'Logged By'];
     const expenseCsvRows = (expenses || []).filter(e => e.date === date).map(e => [
-      e.id, e.date, e.category, e.amount, e.paymentMode, e.loggedBy
+      e.id,
+      e.date,
+      e.category,
+      `Rs. ${Number(e.amount || 0).toLocaleString()}`,
+      e.paymentMode || e.paymentMethod || 'Cash',
+      e.loggedBy || e.authorizedBy || 'Admin'
     ]);
 
-    // 3. Combine them with sections
-    const combinedData = [
-      ['=== PROCUREMENT INTAKE SHEET ==='],
-      intakeHeaders,
-      ...intakeCsvRows,
-      [],
-      ['=== SOURCING EXPENSES TODAY ==='],
-      expenseHeaders,
-      ...expenseCsvRows
-    ];
+    const totalExpenseAmount = (expenses || []).filter(e => e.date === date).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
-    exportToCSV(`Procurement_Sheet_${date}`, ['Pure Milk Bar Operations'], combinedData);
+    exportMultiSectionCSV({
+      filename: `Procurement_Master_Sheet_${date}`,
+      title: 'Pure Milk Bar ERP — Daily Milk Procurement Master Sheet',
+      metadata: [
+        ['Sheet Date', date],
+        ['Total Sourced Volume', `${totals.totalCollected.toFixed(1)} Liters`],
+        ['Total Net Payable', `Rs. ${totals.totalNetPayable.toLocaleString()}`],
+        ['Average Fat %', `${totals.avgFat}%`],
+        ['Active Suppliers Count', totals.farmersCount],
+      ],
+      sections: [
+        {
+          title: 'Daily Farmer Milk Intake & Quality Breakdown',
+          description: 'Route-wise farmer milk collection, test metrics and net dues',
+          headers: intakeHeaders,
+          rows: intakeCsvRows,
+          summaryRows: [
+            ['TOTAL INTAKE', '', '', totals.totalMorning.toFixed(1), totals.totalEvening.toFixed(1), `${totals.totalCollected.toFixed(1)} L`, `${totals.avgFat}%`, '', '', `Rs. ${totals.totalNetPayable.toLocaleString()}`, `Suppliers: ${rows.length}`],
+          ],
+        },
+        {
+          title: 'Daily Sourcing & Procurement Expenses',
+          description: 'Transport, chiller operation, and procurement handling overheads',
+          headers: expenseHeaders,
+          rows: expenseCsvRows,
+          summaryRows: [
+            ['TOTAL EXPENSES', '', '', `Rs. ${totalExpenseAmount.toLocaleString()}`, '', `Vouchers: ${expenseCsvRows.length}`],
+          ],
+        },
+      ],
+    });
   };
 
   return (

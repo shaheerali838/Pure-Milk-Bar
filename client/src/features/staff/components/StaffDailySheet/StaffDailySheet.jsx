@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
+import { exportTableToCSV } from '@/utils/csvExport';
 
 export default function StaffDailySheet() {
   const {
@@ -208,46 +209,36 @@ export default function StaffDailySheet() {
 
     const csvRows = filteredRows.map((r) => [
       r.index,
-      `"${r.staffId}"`,
-      `"${r.name}"`,
-      `"${r.role}"`,
-      `"${r.shift}"`,
-      `"${r.status.toUpperCase()}"`,
+      r.staffId,
+      r.name,
+      r.role,
+      r.shift,
+      r.status ? r.status.toUpperCase() : 'PRESENT',
       r.scheduledHours,
       r.actualHours,
-      r.payableToday,
-      `"${r.assignment}"`,
-      `"${r.notes}"`,
+      `Rs. ${Number(r.payableToday || 0).toLocaleString()}`,
+      r.assignment || '-',
+      r.notes || '-',
     ]);
 
-    const summaryRows = [
-      [],
-      ['=== DAILY WORKFORCE TOTALS ==='],
-      ['Total Staff Scheduled', totals.totalScheduledStaff],
-      ['Total Hours Logged', totals.totalHoursLogged],
-      ['Present On Duty', totals.presentStaff],
-      ['On Leave', totals.leaveStaff],
-      ['Absent Off Duty', totals.absentStaff],
-      ['Total Daily Wage Payout (PKR)', totals.totalDailyWagePayout],
-    ];
-
-    const combinedData = [
+    exportTableToCSV({
+      filename: `Staff_Daily_Sheet_${date}`,
+      title: 'Daily Staff Attendance, Duty & Wages Master Sheet',
+      metadata: [
+        ['Sheet Date', date],
+        ['Shift Filter', shiftFilter.toUpperCase()],
+        ['Total Scheduled Staff', totals.totalScheduledStaff],
+        ['Present On Duty', totals.presentStaff],
+        ['On Leave / Absent', totals.leaveStaff + totals.absentStaff],
+        ['Total Hours Worked', `${totals.totalHoursLogged} Hours`],
+        ['Total Daily Wage Payout', `Rs. ${Number(totals.totalDailyWagePayout || 0).toLocaleString()}`],
+      ],
       headers,
-      ...csvRows,
-      ...summaryRows,
-    ];
-
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      combinedData.map((e) => e.join(',')).join('\n');
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Staff_Daily_Sheet_${date}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      rows: csvRows,
+      summaryRows: [
+        ['DAILY TOTALS', '', '', '', '', `${totals.presentStaff} Present / ${totals.totalScheduledStaff} Total`, '', `${totals.totalHoursLogged} hrs`, `Rs. ${Number(totals.totalDailyWagePayout || 0).toLocaleString()}`, '', `Roster: ${csvRows.length}`],
+      ],
+    });
   };
 
   // Start Editing Row

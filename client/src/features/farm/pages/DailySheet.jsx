@@ -20,36 +20,7 @@ import {
 
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useExpense } from '@/context/ExpenseContext';
-
-function exportToCSV(filename, headers, rows) {
-  if (!headers || !headers.length) return;
-
-  const escapeCell = (val) => {
-    if (val === null || val === undefined) return '""';
-    const str = String(val);
-    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-      return `"${str.replace(/"/g, '""')}"`;
-    }
-    return `"${str}"`;
-  };
-
-  const headerRow = headers.map(escapeCell).join(',');
-  const dataRows = (rows || []).map((row) =>
-    (Array.isArray(row) ? row : headers.map((h) => row[h] ?? '')).map(escapeCell).join(',')
-  );
-
-  const csvContent = [headerRow, ...dataRows].join('\r\n');
-  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', `${filename}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
+import { exportMultiSectionCSV } from '@/utils/csvExport';
 
 export default function DailySheet() {
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -137,27 +108,58 @@ export default function DailySheet() {
     // 1. Export Milking Data
     const milkingHeaders = ['Animal Tag', 'Name', 'Species', 'Morning Yield (L)', 'Evening Yield (L)', 'Total Yield (L)', 'Health Status'];
     const milkingCsvRows = milkingRows.map(r => [
-      r.tag, r.name, r.species, r.morningLiters.toFixed(1), r.eveningLiters.toFixed(1), r.totalLiters.toFixed(1), r.healthStatus
+      r.tag,
+      r.name || r.tag,
+      r.species || 'Buffalo',
+      r.morningLiters.toFixed(1),
+      r.eveningLiters.toFixed(1),
+      r.totalLiters.toFixed(1),
+      r.healthStatus || 'Healthy'
     ]);
     
     // 2. Export Expenses Data
     const expenseHeaders = ['Expense ID', 'Date', 'Category', 'Amount (Rs)', 'Payment Mode', 'Authorized By'];
     const expenseCsvRows = expenseRows.map(e => [
-      e.id, e.date, e.category, e.amount, e.paymentMethod || e.paymentMode, e.authorizedBy || e.loggedBy || 'N/A'
+      e.id,
+      e.date,
+      e.category,
+      `Rs. ${Number(e.amount || 0).toLocaleString()}`,
+      e.paymentMethod || e.paymentMode || 'Cash',
+      e.authorizedBy || e.loggedBy || 'N/A'
     ]);
 
-    // 3. Combine them with sections
-    const combinedData = [
-      ['=== FARM MILKING LOG ==='],
-      milkingHeaders,
-      ...milkingCsvRows,
-      [],
-      ['=== FARM EXPENSES TODAY ==='],
-      expenseHeaders,
-      ...expenseCsvRows
-    ];
-
-    exportToCSV(`Farm_Daily_Sheet_${date}`, ['Pure Milk Bar Farm Operations'], combinedData);
+    exportMultiSectionCSV({
+      filename: `Farm_Daily_Sheet_${date}`,
+      title: 'Pure Milk Bar ERP — Farm Daily Master Operations Sheet',
+      metadata: [
+        ['Sheet Date', date],
+        ['Total Herd Milking Yield', `${totals.totalCollected.toFixed(1)} Liters`],
+        ['Morning Milking Total', `${totals.totalMorning.toFixed(1)} Liters`],
+        ['Evening Milking Total', `${totals.totalEvening.toFixed(1)} Liters`],
+        ['Active Animals Milked', totals.animalCount],
+        ['Total Farm Expenses Today', `Rs. ${Number(totals.totalExpenses || 0).toLocaleString()}`],
+      ],
+      sections: [
+        {
+          title: 'Herd Milking Yield Register',
+          description: 'Animal-wise morning and evening milking production log',
+          headers: milkingHeaders,
+          rows: milkingCsvRows,
+          summaryRows: [
+            ['TOTAL HERD YIELD', '', '', `${totals.totalMorning.toFixed(1)} L`, `${totals.totalEvening.toFixed(1)} L`, `${totals.totalCollected.toFixed(1)} Liters`, `Animals: ${calculatedMilkingRows.length}`],
+          ],
+        },
+        {
+          title: 'Farm Operational Expenses Today',
+          description: 'Fodder, veterinary medicine, labor and maintenance vouchers',
+          headers: expenseHeaders,
+          rows: expenseCsvRows,
+          summaryRows: [
+            ['TOTAL EXPENSES', '', '', `Rs. ${Number(totals.totalExpenses || 0).toLocaleString()}`, '', `Vouchers: ${expenseRows.length}`],
+          ],
+        },
+      ],
+    });
   };
 
   return (
