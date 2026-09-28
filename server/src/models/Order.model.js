@@ -88,6 +88,10 @@ const orderSchema = new Schema(
       type: Schema.Types.Mixed,
       default: null,
     },
+    splitPaymentMeta: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
     deliveryMeta: {
       riderId: {
         type: Schema.Types.ObjectId,
