@@ -141,7 +141,6 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
           <div
             key={id}
             className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs hover:shadow-xs transition-all duration-200"
-            style={{ borderTop: `4px solid ${color}` }}
           >
             <div className="flex items-start justify-between mb-1.5">
               <div
@@ -246,7 +245,6 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
                 key={prodKey}
                 onClick={() => handleDetailClick(p)}
                 className="bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-400 shadow-2xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group relative"
-                style={{ borderTop: `4px solid ${accentColor}` }}
               >
                 <div className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">

@@ -1,4 +1,5 @@
 import deliveryService from '../services/delivery.service.js';
+import User from '../../../models/User.model.js';
 
 class DeliveryController {
 
@@ -118,9 +119,17 @@ class DeliveryController {
 
     async createVehicleFuelLog(req, res, next) {
         try {
+            let riderId = req.body.riderId || req.user?.id || req.user?._id;
+            if (!riderId) {
+                const admin = await User.findOne({ role: 'ADMIN' });
+                riderId = admin?._id;
+            }
             const payload = {
                 ...req.body,
-                riderId: req.body.riderId || req.user?.id,
+                riderId,
+                costRupees: Number(req.body.costRupees ?? req.body.amount) || 0,
+                vehiclePlate: req.body.vehiclePlate || 'STANDARD',
+                shift: req.body.shift || 'MORNING',
             };
             const fuelLog = await deliveryService.createVehicleFuelLog(payload);
             return res.status(201).json({

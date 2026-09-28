@@ -6,10 +6,16 @@ const expenseSchema = new Schema(
     {
         voucherNumber: {
             type: String,
-            required: [true, 'Voucher number is required'],
-            unique: true,
+            default: () => `EXP-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+            sparse: true,
             trim: true,
             uppercase: true,
+            index: true,
+        },
+        scope: {
+            type: String,
+            trim: true,
+            default: 'FARM',
             index: true,
         },
         date: {
@@ -21,22 +27,14 @@ const expenseSchema = new Schema(
         category: {
             type: String,
             required: [true, 'Expense category is required'],
-            enum: [
-                'UTILITIES',     // Electricity, Water, Gas
-                'SALARIES',      // Staff Salaries & Daily Wages
-                'MAINTENANCE',   // Chilling Tank / Equipment Repair
-                'FEED',          // Cattle Feed & Fodder
-                'PACKAGING',     // Milk Bottles & Bags
-                'RENT',          // Shop / Farm Rent
-                'TRANSPORT',     // Vehicle & Freight
-                'MISC',          // Miscellaneous Expenses
-            ],
+            trim: true,
             index: true,
         },
         title: {
             type: String,
             required: [true, 'Expense title is required'],
             trim: true,
+            default: 'Expense',
         },
         amountRupees: {
             type: Number,
@@ -45,8 +43,8 @@ const expenseSchema = new Schema(
         },
         paymentMethod: {
             type: String,
-            required: [true, 'Payment method is required'],
-            enum: ['CASH', 'ONLINE', 'CHEQUE'],
+            trim: true,
+            uppercase: true,
             default: 'CASH',
         },
         receiptNumber: {
@@ -59,20 +57,62 @@ const expenseSchema = new Schema(
             trim: true,
             default: null,
         },
+        description: {
+            type: String,
+            trim: true,
+            default: '',
+        },
+        authorizedBy: {
+            type: String,
+            trim: true,
+            default: 'Admin',
+        },
+        costAttribution: {
+            type: String,
+            trim: true,
+            default: '',
+        },
         loggedByUserId: {
             type: Schema.Types.ObjectId,
             ref: 'User',
-            required: [true, 'Logged by User ID is required'],
+            default: null,
             index: true,
         },
     },
     {
         timestamps: { createdAt: true, updatedAt: false },
+        toJSON: {
+            virtuals: true,
+            transform: (doc, ret) => {
+                ret.id = ret._id;
+                ret.amount = ret.amountRupees;
+                return ret;
+            },
+        },
+        toObject: { virtuals: true },
+        strict: false,
     }
 );
 
+expenseSchema.virtual('amount').get(function () {
+    return this.amountRupees;
+});
+
+// Pre-save hook to calculate voucherNumber if missing
+expenseSchema.pre('save', function () {
+    if (!this.voucherNumber) {
+        const timestamp = Date.now().toString().slice(-4);
+        const random = Math.floor(100 + Math.random() * 900);
+        this.voucherNumber = `VCH-${timestamp}${random}`;
+    }
+    if (this.amountRupees !== undefined && !this.amount) {
+        this.amount = this.amountRupees;
+    }
+});
+
 // Compound Index for fast date & category queries
 expenseSchema.index({ category: 1, date: -1 });
+expenseSchema.index({ scope: 1, date: -1 });
 
 export const Expense = model('Expense', expenseSchema);
 export default Expense;

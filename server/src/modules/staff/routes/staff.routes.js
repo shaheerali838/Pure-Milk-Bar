@@ -7,6 +7,7 @@ import {
   setStaffStatus,
   deleteStaff,
   getStaffStats,
+  sendStaffCredentials,
 } from '../controllers/staff.controller.js';
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize } from '../../../middlewares/authorize.js';
@@ -24,6 +25,9 @@ router.use(authenticate);
 
 // Workforce Analytics & Summary Statistics (ADMIN & MANAGER)
 router.get('/stats', authorize('ADMIN', 'MANAGER'), getStaffStats);
+
+// Send / Resend Login Credentials Email (strictly ADMIN)
+router.post('/:id/send-credentials', authorize('ADMIN'), sendStaffCredentials);
 
 // Staff Collection CRUD (ADMIN & MANAGER)
 router

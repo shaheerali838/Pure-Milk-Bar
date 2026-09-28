@@ -85,6 +85,13 @@ export default function ExpenseDetailPage() {
                   <p className="text-base text-slate-700">{expense.authorizedBy}</p>
                 </div>
               )}
+              
+              {expense.animalName && (
+                <div>
+                  <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Animal Name / Tag</p>
+                  <p className="text-base text-slate-700">{expense.animalName}</p>
+                </div>
+              )}
             </div>
           </div>
 

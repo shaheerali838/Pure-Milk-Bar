@@ -66,9 +66,14 @@ export default function POSCartItems() {
                 >
                   <Minus className="w-3 h-3" />
                 </button>
-                <span className="px-1.5 text-xs font-bold text-slate-800 tabular">
-                  {item.quantity}
-                </span>
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  value={item.quantity}
+                  onChange={(e) => handleUpdateQuantity(item.id, e.target.value)}
+                  className="w-14 text-center text-xs font-bold text-slate-800 tabular border-x border-slate-150 outline-none focus:bg-blue-50/50"
+                />
                 <button
                   type="button"
                   onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}

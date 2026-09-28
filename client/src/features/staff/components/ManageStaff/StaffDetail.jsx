@@ -53,7 +53,7 @@ export default function StaffDetail({
 
   if (!staff) {
     return (
-      <div className="p-8 bg-slate-50 min-h-[300px] flex flex-col items-center justify-center space-y-3">
+      <div className="p-8 bg-slate-50 min-h-75 flex flex-col items-center justify-center space-y-3">
         <div className="w-12 h-12 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center">
           <Users className="w-6 h-6" />
         </div>
@@ -170,10 +170,10 @@ export default function StaffDetail({
             <img
               src={staff.image}
               alt={staff.name}
-              className="w-14 h-14 rounded-2xl object-cover shadow-xs border border-slate-200"
+              className="w-14 h-14 rounded-full object-cover shadow-xs border border-slate-200"
             />
           ) : (
-            <div className="w-14 h-14 rounded-2xl bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-xl shadow-xs font-display">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold flex items-center justify-center text-xl shadow-xs font-display">
               {staff.name ? staff.name.charAt(0).toUpperCase() : 'S'}
             </div>
           )}
@@ -239,7 +239,6 @@ export default function StaffDetail({
         {/* 1. Working Shift */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #10b981' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -268,7 +267,6 @@ export default function StaffDetail({
         {/* 2. Monthly Salary */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #3b82f6' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -282,7 +280,7 @@ export default function StaffDetail({
             </span>
           </div>
           <div>
-            <p className="font-display text-xl font-black text-blue-700 leading-tight tracking-tight mb-0.5 tabular font-mono">
+            <p className="font-mono text-xl font-black text-blue-700 leading-tight tracking-tight mb-0.5 tabular">
               Rs. {Number(staff.monthlySalary || 0).toLocaleString()}
             </p>
             <p className="text-xs font-bold text-slate-700 font-display">
@@ -297,7 +295,6 @@ export default function StaffDetail({
         {/* 3. Daily Wage Rate */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #f59e0b' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -311,7 +308,7 @@ export default function StaffDetail({
             </span>
           </div>
           <div>
-            <p className="font-display text-xl font-black text-amber-800 leading-tight tracking-tight mb-0.5 tabular font-mono">
+            <p className="font-mono text-xl font-black text-amber-800 leading-tight tracking-tight mb-0.5 tabular">
               Rs. {dailySalaryRate.toLocaleString()}
             </p>
             <p className="text-xs font-bold text-slate-700 font-display">
@@ -326,7 +323,6 @@ export default function StaffDetail({
         {/* 4. Attendance Record */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #009966' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -340,7 +336,7 @@ export default function StaffDetail({
             </span>
           </div>
           <div>
-            <p className="font-display text-xl font-black text-emerald-700 leading-tight tracking-tight mb-0.5 tabular font-mono">
+            <p className="font-mono text-xl font-black text-emerald-700 leading-tight tracking-tight mb-0.5 tabular">
               {presentDays} / {totalMonthDays} Days
             </p>
             <p className="text-xs font-bold text-slate-700 font-display">

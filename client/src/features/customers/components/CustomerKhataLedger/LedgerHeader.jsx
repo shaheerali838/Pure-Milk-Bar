@@ -1,8 +1,8 @@
 import React from 'react';
-import { HelpCircle, Printer, FileText } from 'lucide-react';
+import { HelpCircle, Printer, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function LedgerHeader({ onHowToFinish, onPrint }) {
+export default function LedgerHeader({ onHowToFinish, onPrint, onExportCSV }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-slate-200/60">
       <div className="flex items-center gap-2">
@@ -39,6 +39,18 @@ export default function LedgerHeader({ onHowToFinish, onPrint }) {
           <Printer className="w-3.5 h-3.5 text-slate-500" />
           <span>Print Statement</span>
         </Button>
+        {onExportCSV && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onExportCSV}
+            className="h-7.5 px-2.5 text-xs font-semibold text-emerald-800 hover:text-emerald-950 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 shadow-2xs cursor-pointer gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Export CSV</span>
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -17,18 +17,21 @@ import {
   Check,
   ChevronRight,
   Info,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { Badge } from '@/components/ui/badge';
 
-export default function FarmIntakeHistory({ onNewIntake }) {
-  const { animals = [], milkingLogs = [] } = useAnimalContext();
+export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
+  const { animals = [], milkingLogs = [], deleteMilkingLog, updateMilkingLog } = useAnimalContext();
 
   const [search, setSearch] = useState('');
   const [shiftFilter, setShiftFilter] = useState('All');
   const [speciesFilter, setSpeciesFilter] = useState('All');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [selectedLogs, setSelectedLogs] = useState([]);
 
   // Map animals by tag for quick lookup
   const animalMap = useMemo(() => {
@@ -113,6 +116,19 @@ export default function FarmIntakeHistory({ onNewIntake }) {
   const variancePercent = totalExpectedMilk > 0
     ? ((totalNetVariance / totalExpectedMilk) * 100).toFixed(1)
     : 0;
+
+  const handleBulkDelete = async () => {
+    if (selectedLogs.length === 0) return;
+    if (window.confirm(`Are you sure you want to delete ${selectedLogs.length} selected records?`)) {
+      try {
+        await Promise.all(selectedLogs.map(id => deleteMilkingLog(id)));
+        setSelectedLogs([]);
+      } catch (error) {
+        const msg = error.response?.data?.message || error.message || 'Unknown error occurred';
+        alert(`Failed to delete some records: ${msg}`);
+      }
+    }
+  };
 
   return (
     <div className="space-y-4 animate-in fade-in duration-150">
@@ -305,17 +321,31 @@ export default function FarmIntakeHistory({ onNewIntake }) {
             )}
           </div>
 
-          {/* Quick Action: Log New Intake */}
-          {onNewIntake && (
-            <button
-              type="button"
-              onClick={onNewIntake}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Log Intake
-            </button>
-          )}
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            {selectedLogs.length > 0 && (
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete Selected ({selectedLogs.length})
+              </button>
+            )}
+            
+            {/* Quick Action: Log New Intake */}
+            {onNewIntake && (
+              <button
+                type="button"
+                onClick={onNewIntake}
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Log Intake
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -364,6 +394,17 @@ export default function FarmIntakeHistory({ onNewIntake }) {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/70 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
+                  <th className="py-3 px-4 w-10 text-center">
+                    <input 
+                      type="checkbox" 
+                      checked={filteredLogs.length > 0 && selectedLogs.length === filteredLogs.length}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedLogs(filteredLogs.map(log => log.id));
+                        else setSelectedLogs([]);
+                      }}
+                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer" 
+                    />
+                  </th>
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Shift</th>
                   <th className="py-3 px-4">Cattle Tag</th>
@@ -386,6 +427,17 @@ export default function FarmIntakeHistory({ onNewIntake }) {
                       onClick={() => setSelectedRecord(log)}
                       className="hover:bg-indigo-50/40 transition duration-150 cursor-pointer group"
                     >
+                      <td className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input 
+                          type="checkbox" 
+                          checked={selectedLogs.includes(log.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedLogs(prev => [...prev, log.id]);
+                            else setSelectedLogs(prev => prev.filter(id => id !== log.id));
+                          }}
+                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer" 
+                        />
+                      </td>
                       <td className="py-3 px-4 font-mono font-medium text-slate-700 whitespace-nowrap">
                         {log.dateStr}
                       </td>
@@ -458,17 +510,59 @@ export default function FarmIntakeHistory({ onNewIntake }) {
                       </td>
 
                       <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedRecord(log);
-                          }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold shadow-2xs transition cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-slate-500" />
-                          View
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (window.confirm('Are you sure you want to delete this milking log?')) {
+                                try {
+                                  await deleteMilkingLog(log.id);
+                                } catch (error) {
+                                  const msg = error.response?.data?.message || error.message || 'Unknown error occurred';
+                                  alert(`Failed to delete milking log: ${msg}`);
+                                }
+                              }
+                            }}
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 shadow-2xs transition cursor-pointer"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (onEditIntake) {
+                                onEditIntake(log);
+                              } else {
+                                const newYield = window.prompt('Enter new yield (Liters) for this record:', log.actualYield);
+                                if (newYield && !isNaN(parseFloat(newYield))) {
+                                  try {
+                                    await updateMilkingLog(log.id, { yieldLiters: parseFloat(newYield) });
+                                  } catch (error) {
+                                    alert('Failed to update yield');
+                                  }
+                                }
+                              }
+                            }}
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 shadow-2xs transition cursor-pointer"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 text-slate-500" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedRecord(log);
+                            }}
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 shadow-2xs transition cursor-pointer"
+                            title="View"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-slate-500" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

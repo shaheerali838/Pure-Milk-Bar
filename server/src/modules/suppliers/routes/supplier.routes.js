@@ -74,6 +74,13 @@ router.patch(
   procurementController.updateProcurement
 );
 
+router.delete(
+  '/procurements/:id',
+  authorize('ADMIN', 'MANAGER'),
+  validate({ params: procurementIdParamSchema }),
+  procurementController.deleteProcurement
+);
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  2. SUPPLIER BASE & WILDCARD ROUTES — /api/v1/suppliers
 // ═══════════════════════════════════════════════════════════════════════════

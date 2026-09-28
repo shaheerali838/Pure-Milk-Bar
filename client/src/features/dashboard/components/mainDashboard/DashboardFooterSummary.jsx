@@ -89,7 +89,6 @@ export default function DashboardFooterSummary() {
             key={c.id}
             to={c.to}
             className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:border-slate-300 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 cursor-pointer select-none group"
-            style={{ borderTop: `4px solid ${c.color}` }}
           >
             <div className="flex items-start justify-between mb-2">
               <div

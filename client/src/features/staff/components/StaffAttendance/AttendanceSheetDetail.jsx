@@ -228,7 +228,6 @@ export default function AttendanceSheetDetail({ staff, isOpen, onClose, onBack, 
             {/* Total Days */}
             <div
               className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3 shadow-xs hover:shadow-md transition-all duration-200"
-              style={{ borderTop: '4px solid #64748b' }}
             >
               <div className="flex items-start justify-between mb-1.5">
                 <div
@@ -257,7 +256,6 @@ export default function AttendanceSheetDetail({ staff, isOpen, onClose, onBack, 
             {/* Days Present */}
             <div
               className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3 shadow-xs hover:shadow-md transition-all duration-200"
-              style={{ borderTop: '4px solid #009966' }}
             >
               <div className="flex items-start justify-between mb-1.5">
                 <div
@@ -286,7 +284,6 @@ export default function AttendanceSheetDetail({ staff, isOpen, onClose, onBack, 
             {/* Excused Leaves */}
             <div
               className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3 shadow-xs hover:shadow-md transition-all duration-200"
-              style={{ borderTop: '4px solid #f59e0b' }}
             >
               <div className="flex items-start justify-between mb-1.5">
                 <div
@@ -315,7 +312,6 @@ export default function AttendanceSheetDetail({ staff, isOpen, onClose, onBack, 
             {/* Absents */}
             <div
               className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3 shadow-xs hover:shadow-md transition-all duration-200"
-              style={{ borderTop: '4px solid #ef4444' }}
             >
               <div className="flex items-start justify-between mb-1.5">
                 <div
@@ -344,7 +340,6 @@ export default function AttendanceSheetDetail({ staff, isOpen, onClose, onBack, 
             {/* Daily Wage Rate */}
             <div
               className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3 shadow-xs hover:shadow-md transition-all duration-200"
-              style={{ borderTop: '4px solid #3b82f6' }}
             >
               <div className="flex items-start justify-between mb-1.5">
                 <div
@@ -373,7 +368,6 @@ export default function AttendanceSheetDetail({ staff, isOpen, onClose, onBack, 
             {/* Net Monthly Payable */}
             <div
               className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3 shadow-xs hover:shadow-md transition-all duration-200"
-              style={{ borderTop: '4px solid #10b981' }}
             >
               <div className="flex items-start justify-between mb-1.5">
                 <div
@@ -405,7 +399,7 @@ export default function AttendanceSheetDetail({ staff, isOpen, onClose, onBack, 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {/* Selected Date Information Banner / Card */}
           {selectedDayRecord && (
-            <div className="bg-gradient-to-r from-emerald-50 via-teal-50/60 to-slate-50 border-2 border-emerald-500/40 rounded-2xl p-4 shadow-sm">
+            <div className="bg-linear-to-r from-emerald-50 via-teal-50/60 to-slate-50 border-2 border-emerald-500/40 rounded-2xl p-4 shadow-sm">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">

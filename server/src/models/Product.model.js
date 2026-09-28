@@ -59,6 +59,11 @@ const productSchema = new Schema(
       default: true,
       index: true,
     },
+    image: {
+      type: String,
+      trim: true,
+      default: null,
+    },
   },
   {
     timestamps: true,

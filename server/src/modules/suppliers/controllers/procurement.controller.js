@@ -63,6 +63,17 @@ class ProcurementController {
       next(error);
     }
   }
+
+  async deleteProcurement(req, res, next) {
+    try {
+      const params = req._validated?.params || req.params;
+      await procurementService.deleteProcurement(params.id);
+
+      return sendSuccess(res, 200, 'Procurement record deleted successfully', null);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new ProcurementController();

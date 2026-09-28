@@ -101,11 +101,8 @@ export const createProcurementSchema = Joi.object({
     }),
 
   dockInspectorId: objectId
-    .required()
-    .messages({
-      'any.required': 'Dock inspector User ID is required',
-      'string.pattern.name': 'Invalid Dock Inspector ID format',
-    }),
+    .allow('', null)
+    .optional(),
 
   status: Joi.string()
     .valid(...STATUSES)

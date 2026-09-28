@@ -101,7 +101,7 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-        <Card className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs flex items-center justify-between border-t-3 border-t-emerald-500">
+        <Card className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs flex items-center justify-between">
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Khata Balance</p>
             <p className="text-base font-bold text-slate-900 font-display tabular mt-0.5">
@@ -116,7 +116,7 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
           </div>
         </Card>
 
-        <Card className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs flex items-center justify-between border-t-3 border-t-blue-500">
+        <Card className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs flex items-center justify-between">
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Subscription</p>
             <p className="text-base font-bold text-slate-900 font-display mt-0.5">
@@ -131,7 +131,7 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
           </div>
         </Card>
 
-        <Card className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs flex items-center justify-between border-t-3 border-t-purple-500">
+        <Card className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs flex items-center justify-between">
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Primary Phone</p>
             <p className="text-base font-bold text-slate-900 font-mono tabular mt-0.5">

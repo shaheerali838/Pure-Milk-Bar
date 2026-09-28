@@ -250,21 +250,21 @@ export default function BuyProductView({ customer, onBack }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-        <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs border-t-3 border-t-rose-500">
+        <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Current Khata Due</span>
           <div className="text-base font-black text-rose-600 tabular mt-0.5">
             Rs. {currentKhataBal.toLocaleString()}
           </div>
         </Card>
 
-        <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs border-t-3 border-t-blue-500">
+        <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Cart Subtotal</span>
           <div className="text-base font-black text-slate-900 tabular mt-0.5">
             Rs. {grandTotal.toLocaleString()}
           </div>
         </Card>
 
-        <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs border-t-3 border-t-emerald-500">
+        <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">Projected Khata Balance</span>
           <div className="text-base font-black text-emerald-800 tabular mt-0.5">
             Rs. {projectedBalance.toLocaleString()}

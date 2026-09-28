@@ -340,6 +340,14 @@ export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit 
             </h3>
             <div className="space-y-3 text-slate-700">
               <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                <span className="text-slate-500 flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-slate-400" /> Registration Date:
+                </span>
+                <span className="font-mono font-bold text-slate-800 text-sm">
+                  {supplier.joinDate || new Date().toISOString().split('T')[0]}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
                 <span className="text-slate-500">Agreed Rate:</span>
                 <span className="font-mono font-bold text-emerald-700 text-sm">
                   Rs. {rate} / L

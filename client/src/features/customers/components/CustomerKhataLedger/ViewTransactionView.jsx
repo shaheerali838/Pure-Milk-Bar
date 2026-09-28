@@ -62,7 +62,7 @@ export default function ViewTransactionView({ transaction: rawTxn, customer, onB
 
       {/* Metric Cards Banner */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 max-w-4xl">
-        <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs border-t-3 border-t-slate-800">
+        <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
             Total Order Bill
           </span>
@@ -71,7 +71,7 @@ export default function ViewTransactionView({ transaction: rawTxn, customer, onB
           </div>
         </Card>
 
-        <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs border-t-3 border-t-emerald-500">
+        <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
             Amount Paid (Wasool)
           </span>
@@ -80,7 +80,7 @@ export default function ViewTransactionView({ transaction: rawTxn, customer, onB
           </div>
         </Card>
 
-        <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs border-t-3 border-t-rose-500">
+        <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider block">
             Remaining Dues (Baqi)
           </span>
@@ -89,7 +89,7 @@ export default function ViewTransactionView({ transaction: rawTxn, customer, onB
           </div>
         </Card>
 
-        <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs border-t-3 border-t-blue-500">
+        <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">
             Resulting Khata Balance
           </span>

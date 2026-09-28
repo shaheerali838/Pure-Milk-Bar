@@ -75,7 +75,7 @@ const QUICK_ROLES = [
 ];
 
 const LoginForm = ({ initialEmail = "", externalError = "" }) => {
-  const { login, user, isAuthenticated, logout } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -166,7 +166,7 @@ const LoginForm = ({ initialEmail = "", externalError = "" }) => {
   };
 
   return (
-    <div className="space-y-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="space-y-4 scrollbar-none [&::-webkit-scrollbar]:hidden">
       {/* Quick Test Logins Grid (Environment Controlled) */}
       {showQuickLogin && (
         <>
@@ -229,41 +229,6 @@ const LoginForm = ({ initialEmail = "", externalError = "" }) => {
         </>
       )}
 
-      {/* If already authenticated notice */}
-      {isAuthenticated && user && (
-        <div className="bg-emerald-50 border border-emerald-200/80 rounded-xl p-3 flex items-center justify-between text-xs text-emerald-950">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-xs shrink-0">
-              {user.avatar || "SA"}
-            </div>
-            <div className="min-w-0">
-              <p className="font-bold text-slate-900 truncate">{user.name}</p>
-              <p className="text-[11px] text-emerald-700 truncate">
-                {user.email || user.username}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => navigate("/dashboard")}
-              className="h-7 px-3 text-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer font-semibold"
-            >
-              Go to ERP
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={logout}
-              className="h-7 px-2.5 text-xs text-slate-600 border-slate-300 hover:bg-slate-100 cursor-pointer"
-            >
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-3" noValidate>
         {displayError && (

@@ -172,7 +172,7 @@ export default function SupplierTable({ onView, onEdit }) {
                           {supplier.name}
                         </span>
                         <span className="text-[10px] font-mono text-slate-400">
-                          {supplier.id}
+                          {supplier.id} • {supplier.joinDate || new Date().toISOString().split('T')[0]}
                         </span>
                       </div>
                     </div>

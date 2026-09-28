@@ -6,7 +6,7 @@ import AnimalAdd from "./AnimalAdd";
 import AnimalFilterHeader from "./AnimalFilterHeader";
 import AnimalDetail from "./AnimalDetail";
 import { useAnimalContext } from "../../../../context/AnimalContext";
-import { useStaffContext } from "@/context/StaffContext";
+import { useStaffPayrollContext } from "@/context/StaffPayrollContext";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -36,8 +36,8 @@ export default function AnimalCardOverflow() {
   } = useAnimalContext();
 
   const navigate = useNavigate();
-  const { staffList = [] } = useStaffContext();
-  const displayWorkers = staffList;
+  const { staffList = [] } = useStaffPayrollContext();
+  const displayWorkers = staffList.filter(s => s.role === 'Farm Worker' || s.role === 'Milking Staff');
   const [activeTab, setActiveTab] = useState("registry"); // 'registry' or 'workers'
   const [searchTerm, setSearchTerm] = useState("");
   const [speciesFilter, setSpeciesFilter] = useState("all");
@@ -254,10 +254,29 @@ export default function AnimalCardOverflow() {
                     </TableCell>
 
                     <TableCell className="px-3.5 py-2.5">
-                      <span className="flex items-center gap-1.5 font-mono text-[12px] font-bold text-slate-800 group-hover:text-emerald-700 tabular">
-                        <Beef className="w-3.5 h-3.5 text-emerald-600" />
-                        {a.tag}
-                      </span>
+                      <div className="flex items-center gap-2.5">
+                        {a.image ? (
+                          <img
+                            src={a.image}
+                            alt={a.tag}
+                            className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 border border-emerald-200">
+                            <Beef className="w-4 h-4 text-emerald-600" />
+                          </div>
+                        )}
+                        <div className="flex flex-col">
+                          <span className="font-mono text-[12px] font-bold text-slate-800 group-hover:text-emerald-700 tabular">
+                            {a.tag}
+                          </span>
+                          {a.name && a.name !== a.tag && (
+                            <span className="text-[10px] text-slate-500 font-semibold truncate max-w-[100px]">
+                              {a.name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </TableCell>
 
                     <TableCell className="px-3.5 py-2.5 text-slate-700 font-medium">

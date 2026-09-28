@@ -47,7 +47,6 @@ export function IntakeProvider({ children }) {
     } catch (err) {
       console.error('Failed to fetch procurements from API:', err);
       setError(err.message || 'Failed to load intake records');
-      setIntakeLogs([]);
     } finally {
       setIsLoading(false);
     }
@@ -80,11 +79,11 @@ export function IntakeProvider({ children }) {
         totalAmount: cost,
         amountPaid: parseFloat(newRecord.paidAmount) || 0,
         batchNumber: 'B-' + Date.now(),
-        dockInspectorId: "64f8a1239c1b4e001c8a4567",
         balanceAddedToKhata: cost - (parseFloat(newRecord.paidAmount) || 0),
       };
 
       const created = await supplierService.createProcurement(payload);
+
       const normalized = {
         ...created,
         id: created._id || created.id || `INT-${Date.now()}`,
@@ -106,7 +105,8 @@ export function IntakeProvider({ children }) {
         status: 'Accepted',
       };
 
-      await fetchIntakes();
+      setIntakeLogs((prev) => [normalized, ...prev]);
+
       return normalized;
     } catch (err) {
       console.error('Failed to create procurement via API:', err);
@@ -199,23 +199,53 @@ export function IntakeProvider({ children }) {
   };
 
   const totals = useMemo(() => {
-    const totalVolume = intakeLogs.reduce((acc, log) => acc + (parseFloat(log.quantity) || 0), 0);
+    let morningVolume = 0;
+    let eveningVolume = 0;
+
+    const totalVolume = intakeLogs.reduce((acc, log) => {
+      const vol = parseFloat(log.quantity) || 0;
+      if (log.shift === 'Morning' || log.shift === 'morning' || log.time === 'Morning') {
+        morningVolume += vol;
+      } else {
+        eveningVolume += vol;
+      }
+      return acc + vol;
+    }, 0);
+
     const totalExpenditure = intakeLogs.reduce((acc, log) => acc + (parseFloat(log.totalCost) || 0), 0);
     const totalPaid = intakeLogs.reduce((acc, log) => acc + (parseFloat(log.paidAmount) || 0), 0);
     const totalPending = intakeLogs.reduce((acc, log) => acc + (parseFloat(log.pendingAmount) || 0), 0);
     const avgFat = intakeLogs.length > 0 ? (intakeLogs.reduce((acc, log) => acc + (parseFloat(log.fat) || 0), 0) / intakeLogs.length).toFixed(1) : 0;
     const avgSnf = intakeLogs.length > 0 ? (intakeLogs.reduce((acc, log) => acc + (parseFloat(log.snf) || 0), 0) / intakeLogs.length).toFixed(1) : 0;
+    const avgPurchaseRate = totalVolume > 0 ? (totalExpenditure / totalVolume) : 0;
 
     return {
       totalBatches: intakeLogs.length,
+      totalRecords: intakeLogs.length,
       totalVolume: parseFloat(totalVolume.toFixed(1)),
+      totalProcuredVolume: parseFloat(totalVolume.toFixed(1)),
+      morningVolume: parseFloat(morningVolume.toFixed(1)),
+      eveningVolume: parseFloat(eveningVolume.toFixed(1)),
       totalExpenditure: Math.round(totalExpenditure),
+      totalIntakeSpend: Math.round(totalExpenditure),
       totalPaid: Math.round(totalPaid),
       totalPending: Math.round(totalPending),
+      pendingSettlements: Math.round(totalPending),
+      avgPurchaseRate: parseFloat(avgPurchaseRate.toFixed(2)),
       avgFat,
       avgSnf,
     };
   }, [intakeLogs]);
+
+  const deleteIntake = async (id) => {
+    try {
+      await supplierService.deleteProcurement(id);
+      setIntakeLogs((prev) => prev.filter((log) => log.id !== id && log._id !== id));
+    } catch (err) {
+      console.error('Backend delete intake failed:', err);
+      throw err;
+    }
+  };
 
   const value = {
     intakeLogs,
@@ -229,6 +259,7 @@ export function IntakeProvider({ children }) {
     settleBatchesWithAmount,
     settleAllBatchesForSupplier,
     updateIntake,
+    deleteIntake,
   };
 
   return <IntakeContext.Provider value={value}>{children}</IntakeContext.Provider>;

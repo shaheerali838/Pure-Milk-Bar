@@ -65,7 +65,6 @@ export default function POSCardOverflow({ onSelectSource }) {
               ? 'cursor-pointer hover:shadow-md hover:scale-[1.01] hover:border-slate-300'
               : 'hover:shadow-xs'
           }`}
-          style={{ borderTop: `3.5px solid ${color}` }}
         >
           <div className="flex items-start justify-between mb-1.5">
             <div

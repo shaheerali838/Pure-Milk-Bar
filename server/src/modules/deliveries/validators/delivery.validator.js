@@ -151,41 +151,32 @@ export const updateDeliveryStatusSchema = Joi.object({
 export const createVehicleFuelLogSchema = Joi.object({
   riderId: Joi.string()
     .pattern(objectIdPattern)
-    .required()
-    .messages({
-      'any.required': 'Rider User ID is required',
-      'string.pattern.base': 'Invalid Rider User ID format',
-    }),
+    .allow('', null)
+    .optional(),
   date: Joi.date().iso().default(Date.now),
   shift: Joi.string()
     .valid('MORNING', 'EVENING')
-    .required()
-    .messages({
-      'any.required': 'Shift is required (MORNING or EVENING)',
-      'any.only': 'Shift must be MORNING or EVENING',
-    }),
+    .default('MORNING')
+    .optional(),
   vehiclePlate: Joi.string()
     .trim()
     .uppercase()
     .max(20)
-    .required()
-    .messages({
-      'string.empty': 'Vehicle plate number is required',
-    }),
+    .default('STANDARD')
+    .allow('', null)
+    .optional(),
   expenseType: Joi.string()
     .valid('FUEL', 'MAINTENANCE', 'TOLL', 'OTHER')
     .default('FUEL'),
-  liters: Joi.number().min(0).allow(null),
-  costRupees: Joi.number()
-    .min(0)
-    .required()
-    .messages({
-      'any.required': 'Cost in Rupees is required',
-      'number.min': 'Cost cannot be negative',
-    }),
-  odometerKm: Joi.number().min(0).allow(null),
-  receiptNumber: Joi.string().trim().max(50).allow('', null),
-  linkedDeliveryRunId: Joi.string().pattern(objectIdPattern).allow(null),
+  liters: Joi.number().min(0).allow(null).optional(),
+  costRupees: Joi.number().min(0).optional(),
+  amount: Joi.number().min(0).optional(),
+  staffName: Joi.string().trim().allow('', null).optional(),
+  distanceKm: Joi.number().min(0).allow(null).optional(),
+  notes: Joi.string().trim().allow('', null).optional(),
+  odometerKm: Joi.number().min(0).allow(null).optional(),
+  receiptNumber: Joi.string().trim().max(50).allow('', null).optional(),
+  linkedDeliveryRunId: Joi.string().pattern(objectIdPattern).allow('', null).optional(),
 });
 
 export const updateVehicleFuelLogSchema = Joi.object({

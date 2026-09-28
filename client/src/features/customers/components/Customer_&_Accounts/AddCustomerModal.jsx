@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, ShieldCheck } from 'lucide-react';
+import { X, ShieldCheck, Loader2 } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { usePOSContext } from '../../../../context/POSContext';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import ImageUpload from '@/components/common/ImageUpload';
 export default function AddCustomerModal({ isOpen, onClose }) {
   const { addCustomer } = useCustomerContext();
   const { products = [] } = usePOSContext();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -65,50 +66,58 @@ export default function AddCustomerModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!formData.name || !formData.phone) return;
 
+    setIsSubmitting(true);
     const formattedSubscription = `${subQty} ${subUnit} ${selectedProduct?.name || 'Cow Milk'}`.trim();
 
-    addCustomer({
-      name: formData.name,
-      area: formData.area || 'Model Town',
-      phone: formData.phone,
-      onlineAccount: formData.onlineAccount || formData.phone,
-      cnicNumber: formData.cnicNumber || '',
-      idType: formData.idType,
-      verificationStatus: formData.verificationStatus,
-      address: formData.address || '',
-      secondaryPhone: formData.secondaryPhone || '',
-      referenceName: formData.referenceName || '',
-      subscription: formattedSubscription,
-      creditLimit: Number(formData.creditLimit) || 10000,
-      khataBalance: 0,
-      paymentMode: formData.paymentMode,
-      status: 'Active',
-      image: formData.image || null,
-    });
+    try {
+      await addCustomer({
+        name: formData.name,
+        area: formData.area || 'Model Town',
+        phone: formData.phone,
+        onlineAccount: formData.onlineAccount || formData.phone,
+        cnicNumber: formData.cnicNumber || '',
+        idType: formData.idType,
+        verificationStatus: formData.verificationStatus,
+        address: formData.address || '',
+        secondaryPhone: formData.secondaryPhone || '',
+        referenceName: formData.referenceName || '',
+        subscription: formattedSubscription,
+        creditLimit: Number(formData.creditLimit) || 10000,
+        khataBalance: 0,
+        paymentMode: formData.paymentMode,
+        status: 'Active',
+        image: formData.image || null,
+      });
 
-    setFormData({
-      name: '',
-      area: '',
-      phone: '',
-      onlineAccount: '',
-      cnicNumber: '',
-      idType: 'CNIC',
-      verificationStatus: 'Verified',
-      address: '',
-      secondaryPhone: '',
-      referenceName: '',
-      subscription: '2 L Cow Milk',
-      creditLimit: '10000',
-      paymentMode: 'Khata',
-      image: '',
-    });
-    setSubQty('2');
-    setSubUnit('L');
-    onClose();
+      setFormData({
+        name: '',
+        area: '',
+        phone: '',
+        onlineAccount: '',
+        cnicNumber: '',
+        idType: 'CNIC',
+        verificationStatus: 'Verified',
+        address: '',
+        secondaryPhone: '',
+        referenceName: '',
+        subscription: '2 L Cow Milk',
+        creditLimit: '10000',
+        paymentMode: 'Khata',
+        image: '',
+      });
+      setSubQty('2');
+      setSubUnit('L');
+      onClose();
+    } catch (err) {
+      console.error('Failed to add customer:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -129,6 +138,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
             variant="ghost"
             size="icon"
             onClick={onClose}
+            disabled={isSubmitting}
             className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
@@ -399,6 +409,8 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                 </Select>
               </div>
             </div>
+          </div>
+
           <div className="space-y-1">
             <ImageUpload
               label="Customer Photograph / Passbook Photo"
@@ -414,6 +426,7 @@ export default function AddCustomerModal({ isOpen, onClose }) {
               variant="outline"
               size="sm"
               onClick={onClose}
+              disabled={isSubmitting}
               className="text-xs"
             >
               Cancel
@@ -421,9 +434,17 @@ export default function AddCustomerModal({ isOpen, onClose }) {
             <Button
               type="submit"
               size="sm"
-              className="text-xs font-bold shadow-2xs"
+              disabled={isSubmitting}
+              className="text-xs font-bold shadow-2xs flex items-center gap-1.5"
             >
-              Save Customer
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Saving Customer...
+                </>
+              ) : (
+                'Save Customer'
+              )}
             </Button>
           </div>
         </form>

@@ -1,12 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calculator, Sparkles, TrendingUp, ArrowRight, DollarSign, Scale, Milk } from 'lucide-react';
+import { useDahiContext } from '@/context/DahiContext';
 
 export default function DahiProfitCalculator() {
+  const { metrics, batches } = useDahiContext() || {};
+
   const [milkInputLiters, setMilkInputLiters] = useState(50);
-  const [milkCostPerLiter, setMilkCostPerLiter] = useState(210);
+  const [milkCostPerLiter, setMilkCostPerLiter] = useState(220); // standard farm raw milk baseline cost
   const [dahiSellingPricePerKg, setDahiSellingPricePerKg] = useState(320);
   const [cultureGasCost, setCultureGasCost] = useState(350);
   const [yieldPercent, setYieldPercent] = useState(98.5);
+
+  useEffect(() => {
+    if (metrics && metrics.convertedToDahi && Number(metrics.convertedToDahi) > 0) {
+      // Scale culture cost proportionately (approx Rs 7 per liter)
+      const inputLiters = Number(metrics.convertedToDahi);
+      setMilkInputLiters(inputLiters);
+      setCultureGasCost(inputLiters * 7); 
+    }
+    
+    if (batches && batches.length > 0) {
+      const latestBatch = batches[0];
+      if (latestBatch.posRate) {
+        const rate = parseFloat(String(latestBatch.posRate).replace(/[^\d.]/g, ''));
+        if (!isNaN(rate) && rate > 0) setDahiSellingPricePerKg(rate);
+      }
+      if (latestBatch.milkUsedVal && latestBatch.outputVal) {
+        const calculatedYield = ((parseFloat(latestBatch.outputVal) / parseFloat(latestBatch.milkUsedVal)) * 100);
+        if (!isNaN(calculatedYield) && calculatedYield > 0 && calculatedYield <= 100) {
+          setYieldPercent(Number(calculatedYield.toFixed(1)));
+        }
+      }
+    }
+  }, [metrics, batches]);
 
   const totalRawCost = milkInputLiters * milkCostPerLiter;
   const dahiOutputKg = Number(((milkInputLiters * yieldPercent) / 100).toFixed(1));

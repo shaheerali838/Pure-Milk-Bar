@@ -10,22 +10,14 @@ import {
   FileText,
   Tag,
   ShieldCheck,
+  Loader2,
 } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import ImageUpload from "@/components/common/ImageUpload";
 
-const SPECIES_OPTIONS = [
-  "Cow (Sahiwal)",
-  "Cow (Cholistani)",
-  "Buffalo (Nili Ravi)",
-  "Buffalo (Kundi)",
-];
+const SPECIES_OPTIONS = ["Cow", "Buffalo"];
 
-const LACTATION_STATUS_OPTIONS = [
-  "Milking",
-  "Dry/Gestating",
-  "Calf",
-];
+const LACTATION_STATUS_OPTIONS = ["Milking", "Dry/Gestating", "Calf"];
 
 const HEALTH_STATUS_OPTIONS = [
   "Healthy & Vaccinated",
@@ -37,7 +29,7 @@ const HEALTH_STATUS_OPTIONS = [
 const initialForm = {
   tag: "",
   name: "",
-  species: "Cow (Sahiwal)",
+  species: "Cow",
   lactationStatus: "Milking",
   acquisitionDate: new Date().toISOString().split("T")[0],
   purchasePrice: "",
@@ -49,12 +41,18 @@ const initialForm = {
   image: "",
 };
 
-export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuccess }) {
+export default function AnimalAdd({
+  onBack,
+  onClose,
+  editingAnimal = null,
+  onSuccess,
+}) {
   const { addAnimal, updateAnimal } = useAnimalContext();
   const handleBack = onBack || onClose;
   const isEdit = Boolean(editingAnimal);
 
   const [formData, setFormData] = useState(initialForm);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (editingAnimal) {
@@ -63,7 +61,9 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
         name: editingAnimal.name || "",
         species: editingAnimal.species || "Cow (Sahiwal)",
         lactationStatus: editingAnimal.lactationStatus || "Milking",
-        acquisitionDate: editingAnimal.acquisitionDate || new Date().toISOString().split("T")[0],
+        acquisitionDate:
+          editingAnimal.acquisitionDate ||
+          new Date().toISOString().split("T")[0],
         purchasePrice: editingAnimal.purchasePrice
           ? String(editingAnimal.purchasePrice).replace(/[^0-9.]/g, "")
           : "",
@@ -92,7 +92,9 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
+    setIsSubmitting(true);
     try {
       if (isEdit && editingAnimal) {
         await updateAnimal(editingAnimal._id || editingAnimal.id, formData);
@@ -105,6 +107,7 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
     } catch (err) {
       console.error("Failed to save animal:", err);
       alert(err.message || "Failed to save livestock record");
+      setIsSubmitting(false);
     }
   };
 
@@ -123,7 +126,9 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
           </button>
           <div>
             <h1 className="text-base font-bold text-slate-900 tracking-tight font-display leading-tight">
-              {isEdit ? `Edit Livestock — ${editingAnimal?.tag || ""}` : "Register New Livestock Animal"}
+              {isEdit
+                ? `Edit Livestock — ${editingAnimal?.tag || ""}`
+                : "Register New Livestock Animal"}
             </h1>
           </div>
         </div>
@@ -152,7 +157,9 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
             <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-2.5">
               <div
                 className={`w-6 h-6 rounded-md flex items-center justify-center text-xs ${
-                  isEdit ? "bg-indigo-100 text-indigo-700" : "bg-emerald-100 text-emerald-700"
+                  isEdit
+                    ? "bg-indigo-100 text-indigo-700"
+                    : "bg-emerald-100 text-emerald-700"
                 }`}
               >
                 <Beef className="w-3.5 h-3.5" />
@@ -165,7 +172,10 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Tag # <span className="text-slate-400 font-normal lowercase">(optional)</span>
+                  Tag #{" "}
+                  <span className="text-slate-400 font-normal lowercase">
+                    (optional)
+                  </span>
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
@@ -193,7 +203,8 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
                   onChange={handleChange}
                   placeholder="Enter name"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-medium"
-                  required/>
+                  required
+                />
               </div>
 
               <div>
@@ -205,7 +216,8 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
                   value={formData.species}
                   onChange={handleChange}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition cursor-pointer font-medium"
-                required>
+                  required
+                >
                   {SPECIES_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
                       {opt}
@@ -223,7 +235,8 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
                   value={formData.lactationStatus}
                   onChange={handleChange}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition cursor-pointer font-medium"
-                required>
+                  required
+                >
                   {LACTATION_STATUS_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
                       {opt}
@@ -356,7 +369,8 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
                     value={formData.purchasePrice}
                     onChange={handleChange}
                     placeholder="250000"
-                  required  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
+                    required
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
                   />
                 </div>
               </div>
@@ -404,7 +418,9 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
                 <ImageUpload
                   label="Cattle Photograph / Identification Image"
                   value={formData.image}
-                  onChange={(img) => setFormData((prev) => ({ ...prev, image: img }))}
+                  onChange={(img) =>
+                    setFormData((prev) => ({ ...prev, image: img }))
+                  }
                   helpText="Upload pure breed cattle photograph (JPG, PNG)"
                 />
               </div>
@@ -416,20 +432,33 @@ export default function AnimalAdd({ onBack, onClose, editingAnimal = null, onSuc
             <button
               type="button"
               onClick={handleBack}
-              className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition cursor-pointer"
+              disabled={isSubmitting}
+              className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className={`flex items-center gap-1.5 px-5 py-2 rounded-lg text-white text-xs font-bold shadow-xs transition cursor-pointer ${
-                isEdit
-                  ? "bg-indigo-600 hover:bg-indigo-700"
-                  : "bg-[#00a86b] hover:bg-[#007a52]"
+              disabled={isSubmitting}
+              className={`flex items-center gap-1.5 px-5 py-2 rounded-lg text-white text-xs font-bold shadow-xs transition ${
+                isSubmitting
+                  ? "bg-slate-400 cursor-not-allowed opacity-80"
+                  : isEdit
+                  ? "bg-indigo-600 hover:bg-indigo-700 cursor-pointer"
+                  : "bg-[#00a86b] hover:bg-[#007a52] cursor-pointer"
               }`}
             >
-              <Check className="w-3.5 h-3.5" />
-              {isEdit ? "Save Changes" : "Register Livestock Animal"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>{isEdit ? "Saving Changes..." : "Registering Livestock..."}</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{isEdit ? "Save Changes" : "Register Livestock Animal"}</span>
+                </>
+              )}
             </button>
           </div>
         </form>

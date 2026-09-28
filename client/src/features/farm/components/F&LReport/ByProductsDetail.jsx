@@ -43,7 +43,7 @@ export default function ByProductsDetail({ data, onClose, onBack }) {
         </div>
       </div>
 
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-white shadow-sm">
+      <div className="p-6 rounded-2xl bg-linear-to-r from-amber-500 via-amber-600 to-amber-700 text-white shadow-sm">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs font-bold text-amber-100 uppercase tracking-wider">
             Total By-Product &amp; Secondary Revenue
@@ -61,7 +61,7 @@ export default function ByProductsDetail({ data, onClose, onBack }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 border-t-4 border-t-amber-500 shadow-xs hover:shadow-md transition-all duration-200 space-y-2">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md transition-all duration-200 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center shrink-0">
@@ -78,7 +78,7 @@ export default function ByProductsDetail({ data, onClose, onBack }) {
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 border-t-4 border-t-teal-500 shadow-xs hover:shadow-md transition-all duration-200 space-y-2">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md transition-all duration-200 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center shrink-0">
@@ -110,7 +110,7 @@ export default function ByProductsDetail({ data, onClose, onBack }) {
             <p className="text-[11px] text-slate-400 mt-1">Any secondary transactions recorded in POS or ledger will appear here automatically.</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100 max-h-[340px] overflow-y-auto pr-1">
+          <div className="divide-y divide-slate-100 max-h-85 overflow-y-auto pr-1">
             {byProductsList.map((item, idx) => (
               <div key={idx} className="py-3 px-2 flex items-center justify-between text-xs hover:bg-slate-50/80 rounded-xl transition">
                 <div className="min-w-0 pr-3">

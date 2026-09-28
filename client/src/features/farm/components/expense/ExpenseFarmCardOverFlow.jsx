@@ -46,7 +46,6 @@ export default function ExpenseFarmCardOverFlow() {
         <div
           key={label}
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2 shadow-sm hover:shadow-md transition-all duration-200"
-          style={{ borderTop: `4px solid ${color}` }}
         >
           <div className="flex items-start justify-between mb-1">
             <div

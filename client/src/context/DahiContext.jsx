@@ -20,7 +20,7 @@ export function DahiProvider({ children }) {
   const posCtx = usePOSContext();
 
   const [batches, setBatches] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch batches directly from backend database
   const fetchBatches = useCallback(async () => {
@@ -38,7 +38,6 @@ export function DahiProvider({ children }) {
       setBatches(normalized);
     } catch (err) {
       console.warn('Failed to fetch processing batches from database API:', err.message);
-      setBatches([]);
     } finally {
       setIsLoading(false);
     }
@@ -412,7 +411,7 @@ export function DahiProvider({ children }) {
   }, [posCtx]);
 
   // Mark POS batch sold out
-  const markSoldOut = useCallback((batchId) => {
+  const markSoldOut = useCallback(async (batchId) => {
     setBatches((prev) =>
       prev.map((b) =>
         b.id === batchId || b._id === batchId
@@ -424,6 +423,13 @@ export function DahiProvider({ children }) {
           : b
       )
     );
+
+    try {
+      await farmService.updateProcessingBatch(batchId, { stage: 'sold_out', status: 'Completed' });
+      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
+    } catch (e) {
+      console.warn('Backend API updateProcessingBatch markSoldOut error:', e.message);
+    }
   }, []);
 
   // Delete batch (restores milk to sourcing inventory)

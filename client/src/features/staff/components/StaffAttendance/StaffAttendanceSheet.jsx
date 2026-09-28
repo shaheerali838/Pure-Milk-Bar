@@ -207,7 +207,6 @@ export default function StaffAttendanceSheet({ staff }) {
         {/* Days Present */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #009966' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -236,7 +235,6 @@ export default function StaffAttendanceSheet({ staff }) {
         {/* On Leave */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #f59e0b' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -265,7 +263,6 @@ export default function StaffAttendanceSheet({ staff }) {
         {/* Days Absent */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #ef4444' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -294,7 +291,6 @@ export default function StaffAttendanceSheet({ staff }) {
         {/* Daily Wage Rate */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #3b82f6' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -323,7 +319,6 @@ export default function StaffAttendanceSheet({ staff }) {
         {/* Net Monthly Payable */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #10b981' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -409,7 +404,7 @@ export default function StaffAttendanceSheet({ staff }) {
 
       {/* Master 30-Day Attendance Table */}
       <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs bg-white">
-        <div className="overflow-x-auto max-h-[460px] overflow-y-auto">
+        <div className="overflow-x-auto max-h-115 overflow-y-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead className="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 text-slate-600 font-bold uppercase text-[11px] tracking-wider">
               <tr>

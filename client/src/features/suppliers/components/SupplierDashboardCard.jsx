@@ -8,7 +8,8 @@ export default function SupplierDashboardCard() {
   const { intakeLogs } = useIntakeContext();
 
   const todayData = useMemo(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const todayLogs = (intakeLogs || []).filter((log) => log.date === todayStr);
 
     const todayVolume = todayLogs.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
@@ -63,7 +64,6 @@ export default function SupplierDashboardCard() {
         <div
           key={id}
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs"
-          style={{ borderTop: `3.5px solid ${color}` }}
         >
           <div className="flex items-start justify-between mb-1.5">
             <div

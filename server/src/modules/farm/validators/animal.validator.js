@@ -90,6 +90,10 @@ export const createAnimalSchema = Joi.object({
     .allow(null, '')
     .default(null),
 
+  image: Joi.string()
+    .allow(null, '')
+    .optional(),
+
   isActive: Joi.boolean().default(true),
 }).options({ stripUnknown: true });
 
@@ -171,6 +175,10 @@ export const updateAnimalSchema = Joi.object({
     .trim()
     .max(1000)
     .allow(null, ''),
+
+  image: Joi.string()
+    .allow(null, '')
+    .optional(),
 
   isActive: Joi.boolean(),
 }).options({ stripUnknown: true }).min(1);

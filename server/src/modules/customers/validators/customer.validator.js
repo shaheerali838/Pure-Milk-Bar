@@ -41,6 +41,7 @@ export const createCustomerSchema = Joi.object({
     .uppercase()
     .valid('ACTIVE', 'INACTIVE', 'SUSPENDED')
     .default('ACTIVE'),
+  image: Joi.string().allow('', null).optional(),
 }).options({ stripUnknown: true });
 
 // Update Customer Schema
@@ -63,6 +64,7 @@ export const updateCustomerSchema = Joi.object({
     .trim()
     .uppercase()
     .valid('ACTIVE', 'INACTIVE', 'SUSPENDED'),
+  image: Joi.string().allow('', null).optional(),
 }).options({ stripUnknown: true }).min(1);
 
 // Set Customer Status Schema

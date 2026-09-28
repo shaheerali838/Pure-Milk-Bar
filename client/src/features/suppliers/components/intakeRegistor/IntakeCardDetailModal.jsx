@@ -107,7 +107,6 @@ export default function IntakeCardDetailModal({
     >
       <div
         className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden"
-        style={{ borderTop: `5px solid ${config.color}` }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 1. Modal Header */}

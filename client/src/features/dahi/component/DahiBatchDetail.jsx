@@ -192,18 +192,6 @@ export default function DahiBatchDetail({ batchId, onBack }) {
                 </span>
               </div>
               <div className="flex justify-between items-center pt-2">
-                <span className="text-slate-500">Farm Milk Portion:</span>
-                <span className="font-mono font-bold text-emerald-700">
-                  {batch.farmMilkUsed ? `${batch.farmMilkUsed} kg` : (batch.source === 'Farm Milk' ? batch.milkUsed : '0 kg')}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pt-2">
-                <span className="text-slate-500">Supplier Milk Portion:</span>
-                <span className="font-mono font-bold text-blue-700">
-                  {batch.supplierMilkUsed ? `${batch.supplierMilkUsed} kg` : (batch.source === 'Supplier Milk' ? batch.milkUsed : '0 kg')}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pt-2">
                 <span className="text-slate-500 font-semibold">Total Input:</span>
                 <span className="font-mono font-black text-slate-900">
                   {batch.milkUsed}

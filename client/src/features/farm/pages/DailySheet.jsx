@@ -20,42 +20,13 @@ import {
 
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useExpense } from '@/context/ExpenseContext';
-
-function exportToCSV(filename, headers, rows) {
-  if (!headers || !headers.length) return;
-
-  const escapeCell = (val) => {
-    if (val === null || val === undefined) return '""';
-    const str = String(val);
-    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-      return `"${str.replace(/"/g, '""')}"`;
-    }
-    return `"${str}"`;
-  };
-
-  const headerRow = headers.map(escapeCell).join(',');
-  const dataRows = (rows || []).map((row) =>
-    (Array.isArray(row) ? row : headers.map((h) => row[h] ?? '')).map(escapeCell).join(',')
-  );
-
-  const csvContent = [headerRow, ...dataRows].join('\r\n');
-  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', `${filename}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
+import { exportMultiSectionCSV } from '@/utils/csvExport';
 
 export default function DailySheet() {
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [isLocked, setIsLocked] = useState(false);
 
-  const { animals } = useAnimalContext();
+  const { animals, milkingLogs } = useAnimalContext();
   const { expenses } = useExpense();
 
   const handlePrevDay = () => {
@@ -80,22 +51,37 @@ export default function DailySheet() {
 
   // Aggregate Data
   const { milkingRows, expenseRows, totals } = useMemo(() => {
-    // Calculate animal milking yields based on morning and evening baseline data
-    const calculatedMilkingRows = (animals || []).filter(a => a.lactationStatus === 'Milking').map(a => {
-      const mYield = parseFloat(a.morningYield) || 0;
-      const eYield = parseFloat(a.eveningYield) || 0;
-      const totalYield = mYield + eYield;
+    const dayMilkingLogs = (milkingLogs || []).filter(log => (log.date || '').split('T')[0] === date);
 
-      return {
+    const aggregatedMilking = {};
+    (animals || []).filter(a => a.lactationStatus === 'Milking').forEach(a => {
+      aggregatedMilking[a.tag] = {
         tag: a.tag,
         name: a.name || a.tag,
         species: a.species,
-        morningLiters: mYield,
-        eveningLiters: eYield,
-        totalLiters: totalYield,
+        morningLiters: 0,
+        eveningLiters: 0,
         healthStatus: a.healthStatus || 'Healthy',
       };
     });
+
+    dayMilkingLogs.forEach(log => {
+      const tag = log.animalTag || log.tag || log.animal?.tag;
+      if (aggregatedMilking[tag]) {
+        const yieldAmount = parseFloat(log.yieldLiters || log.yield) || 0;
+        const shift = (log.shift || '').toLowerCase();
+        if (shift === 'morning') {
+          aggregatedMilking[tag].morningLiters += yieldAmount;
+        } else if (shift === 'evening') {
+          aggregatedMilking[tag].eveningLiters += yieldAmount;
+        }
+      }
+    });
+
+    const calculatedMilkingRows = Object.values(aggregatedMilking).map(row => ({
+      ...row,
+      totalLiters: row.morningLiters + row.eveningLiters
+    }));
 
     // 2. Process Expenses for the selected date
     const dayExpenses = (expenses || []).filter((e) => {
@@ -114,7 +100,7 @@ export default function DailySheet() {
       expenseRows: dayExpenses,
       totals: { totalCollected, totalMorning, totalEvening, totalExpenses, animalCount: calculatedMilkingRows.length }
     };
-  }, [animals, expenses, date]);
+  }, [animals, milkingLogs, expenses, date]);
 
   const handlePrint = () => window.print();
 
@@ -122,27 +108,58 @@ export default function DailySheet() {
     // 1. Export Milking Data
     const milkingHeaders = ['Animal Tag', 'Name', 'Species', 'Morning Yield (L)', 'Evening Yield (L)', 'Total Yield (L)', 'Health Status'];
     const milkingCsvRows = milkingRows.map(r => [
-      r.tag, r.name, r.species, r.morningLiters.toFixed(1), r.eveningLiters.toFixed(1), r.totalLiters.toFixed(1), r.healthStatus
+      r.tag,
+      r.name || r.tag,
+      r.species || 'Buffalo',
+      r.morningLiters.toFixed(1),
+      r.eveningLiters.toFixed(1),
+      r.totalLiters.toFixed(1),
+      r.healthStatus || 'Healthy'
     ]);
     
     // 2. Export Expenses Data
     const expenseHeaders = ['Expense ID', 'Date', 'Category', 'Amount (Rs)', 'Payment Mode', 'Authorized By'];
     const expenseCsvRows = expenseRows.map(e => [
-      e.id, e.date, e.category, e.amount, e.paymentMethod || e.paymentMode, e.authorizedBy || e.loggedBy || 'N/A'
+      e.id,
+      e.date,
+      e.category,
+      `Rs. ${Number(e.amount || 0).toLocaleString()}`,
+      e.paymentMethod || e.paymentMode || 'Cash',
+      e.authorizedBy || e.loggedBy || 'N/A'
     ]);
 
-    // 3. Combine them with sections
-    const combinedData = [
-      ['=== FARM MILKING LOG ==='],
-      milkingHeaders,
-      ...milkingCsvRows,
-      [],
-      ['=== FARM EXPENSES TODAY ==='],
-      expenseHeaders,
-      ...expenseCsvRows
-    ];
-
-    exportToCSV(`Farm_Daily_Sheet_${date}`, ['Pure Milk Bar Farm Operations'], combinedData);
+    exportMultiSectionCSV({
+      filename: `Farm_Daily_Sheet_${date}`,
+      title: 'Pure Milk Bar ERP — Farm Daily Master Operations Sheet',
+      metadata: [
+        ['Sheet Date', date],
+        ['Total Herd Milking Yield', `${totals.totalCollected.toFixed(1)} Liters`],
+        ['Morning Milking Total', `${totals.totalMorning.toFixed(1)} Liters`],
+        ['Evening Milking Total', `${totals.totalEvening.toFixed(1)} Liters`],
+        ['Active Animals Milked', totals.animalCount],
+        ['Total Farm Expenses Today', `Rs. ${Number(totals.totalExpenses || 0).toLocaleString()}`],
+      ],
+      sections: [
+        {
+          title: 'Herd Milking Yield Register',
+          description: 'Animal-wise morning and evening milking production log',
+          headers: milkingHeaders,
+          rows: milkingCsvRows,
+          summaryRows: [
+            ['TOTAL HERD YIELD', '', '', `${totals.totalMorning.toFixed(1)} L`, `${totals.totalEvening.toFixed(1)} L`, `${totals.totalCollected.toFixed(1)} Liters`, `Animals: ${calculatedMilkingRows.length}`],
+          ],
+        },
+        {
+          title: 'Farm Operational Expenses Today',
+          description: 'Fodder, veterinary medicine, labor and maintenance vouchers',
+          headers: expenseHeaders,
+          rows: expenseCsvRows,
+          summaryRows: [
+            ['TOTAL EXPENSES', '', '', `Rs. ${Number(totals.totalExpenses || 0).toLocaleString()}`, '', `Vouchers: ${expenseRows.length}`],
+          ],
+        },
+      ],
+    });
   };
 
   return (
@@ -164,13 +181,13 @@ export default function DailySheet() {
             <button
               type="button"
               onClick={handlePrevDay}
-              className="px-2.5 h-[38px] rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer shadow-xs"
+              className="px-2.5 h-9.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer shadow-xs"
               title="Previous Day"
             >
               &larr; Prev
             </button>
 
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-3.5 h-[38px] text-xs font-semibold text-slate-700 shadow-xs">
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-3.5 h-9.5 text-xs font-semibold text-slate-700 shadow-xs">
               <Calendar className="w-3.5 h-3.5 text-amber-600" />
               <input
                 type="date"
@@ -183,7 +200,7 @@ export default function DailySheet() {
             <button
               type="button"
               onClick={handleNextDay}
-              className="px-2.5 h-[38px] rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer shadow-xs"
+              className="px-2.5 h-9.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer shadow-xs"
               title="Next Day"
             >
               Next &rarr;
@@ -193,7 +210,7 @@ export default function DailySheet() {
           <Button
             onClick={handleDownloadCSV}
             variant="outline"
-            className="flex items-center gap-2 px-3.5 h-[38px] rounded-full text-xs font-semibold border-emerald-200 text-emerald-700 hover:bg-emerald-50 shadow-xs"
+            className="flex items-center gap-2 px-3.5 h-9.5 rounded-full text-xs font-semibold border-emerald-200 text-emerald-700 hover:bg-emerald-50 shadow-xs"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download CSV</span>
@@ -202,7 +219,7 @@ export default function DailySheet() {
           <Button
             onClick={handlePrint}
             variant="outline"
-            className="flex items-center gap-2 px-3.5 h-[38px] rounded-full text-xs font-semibold border-slate-200 shadow-xs"
+            className="flex items-center gap-2 px-3.5 h-9.5 rounded-full text-xs font-semibold border-slate-200 shadow-xs"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Print Sheet</span>
@@ -210,7 +227,7 @@ export default function DailySheet() {
 
           <Button
             onClick={() => setIsLocked(!isLocked)}
-            className="flex items-center gap-2 px-4 h-[38px] rounded-full text-white text-xs font-semibold shadow-xs"
+            className="flex items-center gap-2 px-4 h-9.5 rounded-full text-white text-xs font-semibold shadow-xs"
             style={{ backgroundColor: isLocked ? '#059669' : '#d97706' }}
           >
             {isLocked ? (
@@ -278,7 +295,6 @@ export default function DailySheet() {
           <div
             key={id}
             className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs"
-            style={{ borderTop: `3.5px solid ${color}` }}
           >
             <div className="flex items-start justify-between mb-1.5">
               <div
@@ -450,7 +466,7 @@ export default function DailySheet() {
                       {row.category}
                     </TableCell>
 
-                    <TableCell className="py-3.5 px-4 font-medium text-slate-600 text-xs truncate max-w-[200px]">
+                    <TableCell className="py-3.5 px-4 font-medium text-slate-600 text-xs truncate max-w-50">
                       {row.description || '—'}
                     </TableCell>
 

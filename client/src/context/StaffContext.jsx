@@ -40,8 +40,10 @@ export function StaffProvider({ children }) {
     try {
       const data = await adminService.getStaff();
       const list = Array.isArray(data) ? data : data?.staff || [];
+
       const normalized = list.map((m) => {
         const absent = Number(m.absentDays) || 0;
+        
         return {
           ...m,
           id: m._id || m.id,
@@ -56,7 +58,7 @@ export function StaffProvider({ children }) {
       setStaffList(normalized);
     } catch (err) {
       console.warn('Failed to fetch staff from API:', err.message);
-      setStaffList([]);
+      setError(err.message || 'Failed to load staff');
     } finally {
       setIsLoading(false);
     }
@@ -87,12 +89,7 @@ export function StaffProvider({ children }) {
       image: data.image || null,
     };
 
-    let backendStaff = null;
-    try {
-      backendStaff = await adminService.createStaff(payload);
-    } catch (err) {
-      console.warn('Backend API createStaff error, saving locally:', err.message);
-    }
+    const backendStaff = await adminService.createStaff(payload);
 
     const newMember = {
       ...payload,
@@ -106,8 +103,7 @@ export function StaffProvider({ children }) {
       attendanceMap: data.attendanceMap || generateDefaultAttendanceMap(absentDays),
     };
 
-    const updated = [newMember, ...staffList];
-    setStaffList(updated);
+    setStaffList((prev) => [newMember, ...prev]);
     return newMember;
   };
 
@@ -171,15 +167,16 @@ export function StaffProvider({ children }) {
   };
 
   // 4. Toggle Staff Duty Status (Active / Present vs Inactive / Absent)
-  const toggleStaffStatus = (id) => {
+  const toggleStaffStatus = async (id) => {
+    const target = staffList.find((m) => String(m.id) === String(id) || String(m._id) === String(id));
+    const currentIsActive = target
+      ? target.status !== 'Inactive' && target.status !== 'Off Duty' && target.active !== false
+      : true;
+    const nextStatus = currentIsActive ? 'Inactive' : 'Active';
+
     setStaffList((prev) =>
       prev.map((member) => {
         if (String(member.id) === String(id) || String(member._id) === String(id)) {
-          const currentIsActive =
-            member.status !== 'Inactive' &&
-            member.status !== 'Off Duty' &&
-            member.active !== false;
-          const nextStatus = currentIsActive ? 'Inactive' : 'Active';
           const nextAbsent = currentIsActive ? Math.max(1, member.absentDays || 1) : 0;
           const currentMap = member.attendanceMap && Object.keys(member.attendanceMap).length > 0
             ? { ...member.attendanceMap }
@@ -198,10 +195,16 @@ export function StaffProvider({ children }) {
         return member;
       })
     );
+
+    try {
+      await adminService.updateStaff(id, { status: nextStatus });
+    } catch (err) {
+      console.warn('Backend API toggleStaffStatus sync notice:', err.message);
+    }
   };
 
   // 5. Update Staff Attendance & Absent Days
-  const setStaffAttendance = (id, { status, absentDays, attendanceMap }) => {
+  const setStaffAttendance = async (id, { status, absentDays, attendanceMap }) => {
     setStaffList((prev) =>
       prev.map((member) => {
         if (String(member.id) === String(id) || String(member._id) === String(id)) {
@@ -254,6 +257,12 @@ export function StaffProvider({ children }) {
         return member;
       })
     );
+
+    try {
+      await adminService.updateStaff(id, { ...(status !== undefined && { status }), ...(attendanceMap && { attendanceMap }) });
+    } catch (err) {
+      console.warn('Backend API setStaffAttendance sync notice:', err.message);
+    }
   };
 
   // 6. Toggle Attendance for a specific day
@@ -280,6 +289,8 @@ export function StaffProvider({ children }) {
           const todayNum = Math.min(30, Math.max(1, new Date().getDate()));
           const todayStatus = currentMap[todayNum] || 'present';
           const nextStatus = todayStatus === 'present' ? 'Active' : (todayStatus === 'leave' ? 'On Leave' : 'Inactive');
+
+          adminService.updateStaff(id, { status: nextStatus, attendanceMap: currentMap }).catch(() => {});
 
           return {
             ...member,
@@ -315,6 +326,8 @@ export function StaffProvider({ children }) {
           const todayStatus = currentMap[todayNum] || 'present';
           const nextStatus = todayStatus === 'present' ? 'Active' : (todayStatus === 'leave' ? 'On Leave' : 'Inactive');
 
+          adminService.updateStaff(id, { status: nextStatus, attendanceMap: currentMap }).catch(() => {});
+
           return {
             ...member,
             attendanceMap: currentMap,
@@ -343,6 +356,9 @@ export function StaffProvider({ children }) {
           const leaveCount = statusToSet === 'leave' ? 30 : 0;
           const presentCount = statusToSet === 'present' ? 30 : 0;
           const nextStatus = statusToSet === 'present' ? 'Active' : (statusToSet === 'leave' ? 'On Leave' : 'Inactive');
+
+          adminService.updateStaff(id, { status: nextStatus, attendanceMap: newMap }).catch(() => {});
+
           return {
             ...member,
             attendanceMap: newMap,
@@ -374,6 +390,8 @@ export function StaffProvider({ children }) {
           const presentCount = Object.values(currentMap).filter((v) => v === 'present').length;
           const nextStatus = statusToSet === 'present' ? 'Active' : (statusToSet === 'leave' ? 'On Leave' : 'Inactive');
 
+          adminService.updateStaff(id, { status: nextStatus, attendanceMap: currentMap }).catch(() => {});
+
           return {
             ...member,
             attendanceMap: currentMap,
@@ -403,6 +421,9 @@ export function StaffProvider({ children }) {
         const leaveCount = Object.values(currentMap).filter((v) => v === 'leave').length;
         const presentCount = Object.values(currentMap).filter((v) => v === 'present').length;
         const nextStatus = statusToSet === 'present' ? 'Active' : (statusToSet === 'leave' ? 'On Leave' : 'Inactive');
+
+        const dbId = member._id || member.id;
+        adminService.updateStaff(dbId, { status: nextStatus, attendanceMap: currentMap }).catch(() => {});
 
         return {
           ...member,

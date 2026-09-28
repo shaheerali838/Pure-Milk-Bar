@@ -174,7 +174,6 @@ export default function ManageStaff() {
         {/* 1. Total Roster */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #10b981' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -203,7 +202,6 @@ export default function ManageStaff() {
         {/* 2. Active / On Duty */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #009966' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -232,7 +230,6 @@ export default function ManageStaff() {
         {/* 3. Delivery Riders */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #f59e0b' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -268,7 +265,6 @@ export default function ManageStaff() {
         {isAdmin ? (
           <div
             className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-            style={{ borderTop: '4px solid #3b82f6' }}
           >
             <div className="flex items-start justify-between mb-2">
               <div
@@ -282,7 +278,7 @@ export default function ManageStaff() {
               </span>
             </div>
             <div>
-              <p className="font-display text-2xl font-black text-blue-700 leading-tight tracking-tight mb-0.5 tabular font-mono truncate">
+              <p className="font-mono text-2xl font-black text-blue-700 leading-tight tracking-tight mb-0.5 tabular truncate">
                 Rs. {metrics.totalMonthlyPayroll.toLocaleString()}
               </p>
               <p className="text-xs font-bold text-slate-700 font-display">
@@ -296,7 +292,6 @@ export default function ManageStaff() {
         ) : (
           <div
             className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-            style={{ borderTop: '4px solid #00a86b' }}
           >
             <div className="flex items-start justify-between mb-2">
               <div
@@ -310,7 +305,7 @@ export default function ManageStaff() {
               </span>
             </div>
             <div>
-              <p className="font-display text-2xl font-black text-[#00a86b] leading-tight tracking-tight mb-0.5 tabular font-mono truncate">
+              <p className="font-mono text-2xl font-black text-[#00a86b] leading-tight tracking-tight mb-0.5 tabular truncate">
                 {metrics.activeStaffCount} / {metrics.totalStaff}
               </p>
               <p className="text-xs font-bold text-slate-700 font-display">
@@ -485,10 +480,10 @@ export default function ManageStaff() {
                             <img
                               src={staff.image}
                               alt={staff.name}
-                              className="w-8 h-8 rounded-xl object-cover shrink-0 border border-slate-200"
+                              className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200"
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 font-display">
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 font-display">
                               {staff.name ? staff.name.charAt(0).toUpperCase() : 'S'}
                             </div>
                           )}
