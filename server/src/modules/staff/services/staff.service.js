@@ -1,7 +1,60 @@
+import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import Staff from '../../../models/Staff.model.js';
 import User from '../../../models/User.model.js';
 import { ROLES } from '../../../config/rbac.config.js';
+import { sendStaffCredentialsEmail } from '../../../utils/email.util.js';
+import { uploadToCloudinary } from '../../../config/cloudinary.js';
+
+// Helper to map human-readable staff designation to RBAC User Role
+export const mapStaffRoleToUserRole = (staffRole) => {
+  const r = (staffRole || '').toLowerCase().trim();
+  if (r.includes('manager')) return ROLES.MANAGER;
+  if (r.includes('cashier')) return ROLES.CASHIER;
+  if (r.includes('farm') || r.includes('supervisor') || r.includes('milking') || r.includes('livestock')) return ROLES.FARM_SUPERVISOR;
+  if (r.includes('rider') || r.includes('delivery')) return ROLES.RIDER;
+  return ROLES.CASHIER;
+};
+
+// Helper to generate a strong random temporary password
+export const generateSecurePassword = (length = 10) => {
+  const letters = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
+  const numbers = '23456789';
+  const specials = '!@#$%';
+  let pwd = 'Pmb@';
+  const allChars = letters + numbers + specials;
+  for (let i = 0; i < length - 4; i++) {
+    pwd += allChars.charAt(Math.floor(Math.random() * allChars.length));
+  }
+  return pwd;
+};
+
+// Helper to generate a clean unique username for new staff user
+const generateUniqueUsername = async (name, email) => {
+  let base = '';
+  if (email && email.includes('@')) {
+    base = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+  } else if (name) {
+    base = name.trim().toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_');
+  } else {
+    base = 'staff';
+  }
+
+  if (base.length < 3) base = `staff_${base}`;
+  base = base.substring(0, 16);
+
+  let candidate = base;
+  let counter = 1;
+  while (await User.findOne({ username: candidate })) {
+    candidate = `${base}${Math.floor(100 + Math.random() * 900)}`;
+    counter++;
+    if (counter > 10) {
+      candidate = `${base}_${Date.now().toString().slice(-4)}`;
+      break;
+    }
+  }
+  return candidate;
+};
 
 // Helper to find a staff member by Mongoose ObjectId OR custom staffCode / id
 const findStaffByAnyId = async (staffId) => {
@@ -42,7 +95,7 @@ export const createStaffService = async (staffData, user) => {
     role = 'Farm Work Man',
     mobile,
     phone,
-    email,
+    email: rawEmail,
     cnic,
     shift = 'Morning',
     monthlySalary = 0,
@@ -67,11 +120,16 @@ export const createStaffService = async (staffData, user) => {
     departmentSupervised = '',
     attendanceMap = {},
     userAccountId = null,
+    createLoginAccount,
+    sendEmailCredentials = true,
+    username: customUsername,
+    password: customPassword,
+    portalUrl,
   } = staffData;
 
   const staffCode = (rawStaffCode || rawId || '').trim() || undefined;
-
   const contactPhone = (mobile || phone || '').trim();
+  const email = (rawEmail || '').trim().toLowerCase();
 
   // If phone is provided, verify uniqueness
   if (contactPhone) {
@@ -84,6 +142,7 @@ export const createStaffService = async (staffData, user) => {
   }
 
   const isManager = user?.role === ROLES.MANAGER;
+  const isOwner = user?.role === ROLES.ADMIN || !user || (user?.role || '').toUpperCase() === 'ADMIN';
 
   // Manager cannot set salary or terminate on creation
   const effectiveMonthlySalary = isManager ? 0 : (Number(monthlySalary) || 0);
@@ -95,12 +154,89 @@ export const createStaffService = async (staffData, user) => {
 
   const initialStatus = (isManager && status === 'Terminated') ? 'Active' : status;
 
+  // Determine if login account should be provisioned
+  // Auto-enabled for Owner enrolling Manager, Cashier, Farm Supervisor, Delivery Rider or if explicitly requested
+  const normalizedRoleName = role.toLowerCase();
+  const shouldCreateAccount =
+    isOwner &&
+    !isManager &&
+    (createLoginAccount === true ||
+      customPassword ||
+      (createLoginAccount !== false &&
+        (normalizedRoleName.includes('manager') ||
+          normalizedRoleName.includes('cashier') ||
+          normalizedRoleName.includes('supervisor') ||
+          normalizedRoleName.includes('rider') ||
+          normalizedRoleName.includes('accountant'))));
+
+  let linkedUserDoc = null;
+  let generatedPlainPassword = null;
+  let emailDispatchResult = null;
+
+  if (shouldCreateAccount && (email || customUsername)) {
+    const mappedRole = mapStaffRoleToUserRole(role);
+    const targetUsername = customUsername ? customUsername.trim().toLowerCase() : await generateUniqueUsername(name, email);
+    generatedPlainPassword = customPassword && customPassword.trim() ? customPassword.trim() : generateSecurePassword(10);
+
+    // Check if user already exists
+    let existingUser = await User.findOne({
+      $or: [
+        { username: targetUsername },
+        ...(email ? [{ email }] : []),
+      ],
+    });
+
+    if (existingUser) {
+      linkedUserDoc = existingUser;
+      // Update role/active if necessary
+      linkedUserDoc.role = mappedRole;
+      linkedUserDoc.isActive = true;
+      if (email && !linkedUserDoc.email) linkedUserDoc.email = email;
+      await linkedUserDoc.save();
+    } else {
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(generatedPlainPassword, salt);
+      const userPhone = contactPhone || `+92300${Math.floor(1000000 + Math.random() * 9000000)}`;
+
+      linkedUserDoc = await User.create({
+        username: targetUsername,
+        name: name.trim(),
+        phone: userPhone,
+        email: email || null,
+        passwordHash,
+        role: mappedRole,
+        shift: shift ? shift.toUpperCase().replace(/\s+/g, '_') : 'MORNING',
+        isActive: true,
+      });
+    }
+
+    // Send credentials onboarding email if email is provided
+    if (email && sendEmailCredentials !== false) {
+      emailDispatchResult = await sendStaffCredentialsEmail({
+        email,
+        name: name.trim(),
+        username: linkedUserDoc.username,
+        password: generatedPlainPassword,
+        role: mappedRole,
+        shift,
+        portalUrl,
+      });
+    }
+  }
+
+  const finalUserAccountId = isManager ? null : (linkedUserDoc?._id || userAccountId || null);
+
+  let staffImageUrl = image;
+  if (staffImageUrl && typeof staffImageUrl === 'string' && staffImageUrl.startsWith('data:image')) {
+    staffImageUrl = await uploadToCloudinary(staffImageUrl, 'puremilkbar/staff');
+  }
+
   const newStaff = await Staff.create({
     staffCode,
     name: name.trim(),
     role: role.trim(),
     mobile: contactPhone,
-    email: (email || '').trim().toLowerCase(),
+    email,
     cnic: (cnic || '').trim(),
     shift,
     monthlySalary: effectiveMonthlySalary,
@@ -109,7 +245,7 @@ export const createStaffService = async (staffData, user) => {
     route: (route || '').trim() || 'Not Assigned',
     joinedDate: joinedDate ? new Date(joinedDate) : new Date(),
     notes: (notes || '').trim(),
-    image,
+    image: staffImageUrl,
     address,
     emergencyContact,
     vehicleNumber,
@@ -124,11 +260,120 @@ export const createStaffService = async (staffData, user) => {
     khataAuthLimit,
     departmentSupervised,
     attendanceMap,
-    userAccountId: isManager ? null : (userAccountId || null),
-    createdBy: user?.id || null,
+    userAccountId: finalUserAccountId,
+    createdBy: user?.id && mongoose.Types.ObjectId.isValid(user.id) ? user.id : null,
   });
 
-  return sanitizeStaffForRole(newStaff, user?.role);
+  const sanitized = sanitizeStaffForRole(newStaff, user?.role);
+
+  // If credentials were created, attach credentials summary for Owner confirmation
+  if (linkedUserDoc) {
+    sanitized.accountDetails = {
+      userId: linkedUserDoc._id,
+      username: linkedUserDoc.username,
+      email: linkedUserDoc.email || email,
+      role: linkedUserDoc.role,
+      temporaryPassword: generatedPlainPassword,
+      emailSent: emailDispatchResult?.success ?? false,
+      emailPreviewUrl: emailDispatchResult?.previewUrl || null,
+    };
+  }
+
+  return sanitized;
+};
+
+// Explicitly send or re-send login credentials to a staff member (Owner only)
+export const sendStaffCredentialsService = async (staffId, customData = {}, user) => {
+  const staff = await findStaffByAnyId(staffId);
+  if (!staff) {
+    const error = new Error('Staff member not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const targetEmail = (customData.email || staff.email || '').trim().toLowerCase();
+  if (!targetEmail || !targetEmail.includes('@')) {
+    const error = new Error(`Staff member '${staff.name}' does not have a valid email address. Please update their email first.`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Update staff email if new one provided
+  if (customData.email && customData.email.trim() !== staff.email) {
+    staff.email = targetEmail;
+    await staff.save();
+  }
+
+  const mappedRole = mapStaffRoleToUserRole(staff.role);
+  const plainPassword = customData.password && customData.password.trim() ? customData.password.trim() : generateSecurePassword(10);
+
+  let userDoc = null;
+  if (staff.userAccountId) {
+    userDoc = await User.findById(staff.userAccountId);
+  }
+
+  if (!userDoc) {
+    userDoc = await User.findOne({
+      $or: [
+        { email: targetEmail },
+        ...(staff.mobile ? [{ phone: staff.mobile }] : []),
+      ],
+    });
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const passwordHash = await bcrypt.hash(plainPassword, salt);
+
+  if (userDoc) {
+    userDoc.passwordHash = passwordHash;
+    userDoc.role = mappedRole;
+    userDoc.isActive = true;
+    userDoc.email = targetEmail;
+    await userDoc.save();
+  } else {
+    const targetUsername = customData.username ? customData.username.trim().toLowerCase() : await generateUniqueUsername(staff.name, targetEmail);
+    const userPhone = staff.mobile || `+92300${Math.floor(1000000 + Math.random() * 9000000)}`;
+
+    userDoc = await User.create({
+      username: targetUsername,
+      name: staff.name,
+      phone: userPhone,
+      email: targetEmail,
+      passwordHash,
+      role: mappedRole,
+      shift: staff.shift ? staff.shift.toUpperCase().replace(/\s+/g, '_') : 'MORNING',
+      isActive: true,
+    });
+
+    staff.userAccountId = userDoc._id;
+    await staff.save();
+  }
+
+  const emailResult = await sendStaffCredentialsEmail({
+    email: targetEmail,
+    name: staff.name,
+    username: userDoc.username,
+    password: plainPassword,
+    role: mappedRole,
+    shift: staff.shift,
+    portalUrl: customData.portalUrl,
+  });
+
+  return {
+    success: true,
+    message: emailResult.success
+      ? `Login credentials successfully emailed to ${targetEmail}`
+      : `Credentials generated, but email delivery encountered a notice: ${emailResult.error || 'Check server logs'}`,
+    emailSent: emailResult.success,
+    previewUrl: emailResult.previewUrl,
+    accountDetails: {
+      userId: userDoc._id,
+      username: userDoc.username,
+      email: targetEmail,
+      role: mappedRole,
+      temporaryPassword: plainPassword,
+    },
+  };
 };
 
 // Get all staff members with filters, search, and pagination
@@ -264,6 +509,10 @@ export const updateStaffService = async (staffId, updateData, user) => {
 
   if (updateData.monthlySalary !== undefined && updateData.dailySalary === undefined) {
     updateData.dailySalary = Math.round(Number(updateData.monthlySalary) / 30);
+  }
+
+  if (updateData.image && typeof updateData.image === 'string' && updateData.image.startsWith('data:image')) {
+    updateData.image = await uploadToCloudinary(updateData.image, 'puremilkbar/staff');
   }
 
   if (updateData.attendanceMap !== undefined) {

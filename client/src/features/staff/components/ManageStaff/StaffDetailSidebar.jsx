@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   X,
   Phone,
+  Mail,
   CreditCard,
   Clock,
   MapPin,
@@ -14,15 +15,27 @@ import {
   TrendingDown,
   CheckCircle2,
   XCircle,
+  Key,
+  Send,
+  Sparkles,
+  Copy,
 } from 'lucide-react';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
+import { useAuth } from '@/context/AuthContext';
+import { ROLES } from '@/config/rbac.config';
+import adminService from '@/services/adminService';
 
 export default function StaffDetailSidebar({ staff, isOpen, onClose }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === ROLES.ADMIN || !user || (user?.role || '').toUpperCase() === 'ADMIN';
+
   const { updateStaff, deleteStaff, getStaffMonthlyAttendance, getStaffStatusOnDate } =
     useStaffPayrollContext();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [credentialsNotice, setCredentialsNotice] = useState(null);
 
   if (!isOpen || !staff) return null;
 
@@ -33,6 +46,7 @@ export default function StaffDetailSidebar({ staff, isOpen, onClose }) {
       role: staff.role || 'Farm Worker',
       shift: staff.shift || 'Morning',
       mobile: staff.mobile || '',
+      email: staff.email || '',
       cnic: staff.cnic || '',
       monthlySalary: staff.monthlySalary || '',
       route: staff.route || '',
@@ -47,6 +61,37 @@ export default function StaffDetailSidebar({ staff, isOpen, onClose }) {
     e.preventDefault();
     updateStaff(staff.id, formData);
     setIsEditing(false);
+  };
+
+  const handleSendCredentials = async () => {
+    if (!staff.email) {
+      alert('Please edit this staff profile and add an email address first.');
+      return;
+    }
+
+    setIsSendingEmail(true);
+    setCredentialsNotice(null);
+
+    try {
+      const res = await adminService.sendStaffCredentials(staff.id, {
+        email: staff.email,
+        portalUrl: `${window.location.origin}/login`,
+      });
+
+      setCredentialsNotice({
+        type: 'success',
+        message: res.message || `Credentials email dispatched to ${staff.email}!`,
+        password: res.accountDetails?.temporaryPassword,
+        username: res.accountDetails?.username,
+      });
+    } catch (err) {
+      setCredentialsNotice({
+        type: 'error',
+        message: err.message || 'Failed to dispatch credentials email.',
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   const handleDelete = () => {
@@ -83,7 +128,7 @@ export default function StaffDetailSidebar({ staff, isOpen, onClose }) {
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
         <div className="w-screen max-w-md sm:max-w-lg bg-white shadow-2xl flex flex-col transform transition ease-in-out duration-300 overflow-hidden">
           {/* Header */}
-          <div className="px-6 py-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between">
+          <div className="px-6 py-5 bg-linear-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
               {staff.image ? (
                 <img
@@ -216,7 +261,7 @@ export default function StaffDetailSidebar({ staff, isOpen, onClose }) {
                     >
                       <option value="Morning">Morning (05 AM - 01 PM)</option>
                       <option value="Evening">Evening (01 PM - 09 PM)</option>
-                      <option value="Night">Night (09 PM - 05 AM)</option>
+                      <option value="Both">Both (Morning &amp; Evening)</option>
                     </select>
                   </div>
                 </div>
@@ -235,6 +280,21 @@ export default function StaffDetailSidebar({ staff, isOpen, onClose }) {
                   </div>
 
                   <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="staff@puremilkbar.com"
+                      className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:border-emerald-600 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
                     <label className="text-xs font-bold text-slate-700 block mb-1">CNIC</label>
                     <input
                       type="number"
@@ -248,19 +308,19 @@ export default function StaffDetailSidebar({ staff, isOpen, onClose }) {
                       className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:border-emerald-600 font-medium"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
-                    Monthly Base Salary (PKR)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.monthlySalary}
-                    onChange={(e) => setFormData({ ...formData, monthlySalary: e.target.value })}
-                    className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:border-emerald-600 font-medium font-mono"
-                  />
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">
+                      Monthly Salary (PKR)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.monthlySalary}
+                      onChange={(e) => setFormData({ ...formData, monthlySalary: e.target.value })}
+                      className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none focus:border-emerald-600 font-medium font-mono"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -338,13 +398,57 @@ export default function StaffDetailSidebar({ staff, isOpen, onClose }) {
                     </div>
 
                     <div className="p-2.5 bg-slate-50 rounded-xl">
-                      <span className="text-[10px] text-slate-400 block font-bold">CNIC</span>
-                      <span className="text-slate-800 font-bold flex items-center gap-1 mt-0.5 font-mono">
-                        <CreditCard className="w-3.5 h-3.5 text-slate-500" />
-                        {staff.cnic || '—'}
+                      <span className="text-[10px] text-slate-400 block font-bold">Email</span>
+                      <span className="text-slate-800 font-bold flex items-center gap-1 mt-0.5 truncate" title={staff.email}>
+                        <Mail className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                        {staff.email || '—'}
                       </span>
                     </div>
                   </div>
+
+                  {/* System Portal Credentials Action Card for Owner */}
+                  {isAdmin && (
+                    <div className="pt-2 border-t border-slate-100">
+                      <div className="p-3 bg-indigo-50/70 border border-indigo-200/80 rounded-xl space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <Key className="w-3.5 h-3.5 text-indigo-700" />
+                            <span className="text-xs font-bold text-indigo-950">Portal Account &amp; Email Credentials</span>
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${staff.userAccountId ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
+                            {staff.userAccountId ? 'Account Linked' : 'No Account'}
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] text-indigo-800/80 leading-relaxed">
+                          {staff.email
+                            ? `Dispatch an automated onboarding email with login credentials for ${staff.name} to ${staff.email}.`
+                            : 'Add an email address to this staff member to send login credentials.'}
+                        </p>
+
+                        {credentialsNotice && (
+                          <div className={`p-2.5 rounded-lg text-xs font-semibold ${credentialsNotice.type === 'success' ? 'bg-emerald-100/90 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300'}`}>
+                            <div>{credentialsNotice.message}</div>
+                            {credentialsNotice.password && (
+                              <div className="mt-1 font-mono text-[11px] font-bold bg-white px-2 py-1 rounded border border-emerald-200 text-slate-900">
+                                Temp Password: {credentialsNotice.password}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={handleSendCredentials}
+                          disabled={isSendingEmail || !staff.email}
+                          className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          {isSendingEmail ? 'Dispatching Credentials Email...' : 'Send / Reset Login Credentials Email'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {staff.route && staff.route.toLowerCase() !== 'n/a' && (
                     <div className="p-2.5 bg-amber-50/70 border border-amber-200/80 rounded-xl flex items-center gap-2 text-xs">

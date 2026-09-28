@@ -74,7 +74,6 @@ export default function IntakeCardOverflow({ onViewBatch }) {
               }
             }}
             className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 cursor-pointer hover:shadow-md hover:scale-[1.01] hover:border-slate-300"
-            style={{ borderTop: `3.5px solid ${color}` }}
             title={`Click to view detailed ${label} breakdown`}
           >
             {/* Top Row: Icon Container, Badge & Arrow */}

@@ -51,8 +51,8 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
 
       <div className={`p-6 rounded-2xl text-white shadow-sm ${
         isProfitable 
-          ? 'bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-800' 
-          : 'bg-gradient-to-r from-rose-600 via-rose-700 to-red-800'
+          ? 'bg-linear-to-r from-indigo-600 via-indigo-700 to-purple-800' 
+          : 'bg-linear-to-r from-rose-600 via-rose-700 to-red-800'
       }`}>
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs font-bold text-indigo-100 uppercase tracking-wider">
@@ -87,7 +87,7 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
           </div>
 
           <div className="space-y-3.5">
-            <div className="flex items-center justify-between p-4 rounded-xl border border-emerald-100 bg-gradient-to-r from-emerald-50/50 via-white to-white hover:border-emerald-300 transition-all duration-150">
+            <div className="flex items-center justify-between p-4 rounded-xl border border-emerald-100 bg-linear-to-r from-emerald-50/50 via-white to-white hover:border-emerald-300 transition-all duration-150">
               <div className="flex items-center gap-3">
                 <span className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 font-black text-base flex items-center justify-center shrink-0 shadow-2xs">
                   +
@@ -102,7 +102,7 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
               </p>
             </div>
 
-            <div className="flex items-center justify-between p-4 rounded-xl border border-rose-100 bg-gradient-to-r from-rose-50/50 via-white to-white hover:border-rose-300 transition-all duration-150">
+            <div className="flex items-center justify-between p-4 rounded-xl border border-rose-100 bg-linear-to-r from-rose-50/50 via-white to-white hover:border-rose-300 transition-all duration-150">
               <div className="flex items-center gap-3">
                 <span className="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 font-black text-base flex items-center justify-center shrink-0 shadow-2xs">
                   -
@@ -141,7 +141,7 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
 
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white border border-slate-200/90 border-t-4 border-t-blue-500 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <p className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Profit Per Liter</p>
@@ -156,7 +156,7 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
               </p>
             </div>
 
-            <div className="bg-white border border-slate-200/90 border-t-4 border-t-indigo-500 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <p className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">Net Margin Ratio</p>

@@ -28,7 +28,7 @@ export default function HowToFinishView({ onBack }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-4xl">
-        <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2 border-t-3 border-t-emerald-500">
+        <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2">
           <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-sm">
             1
           </div>
@@ -38,7 +38,7 @@ export default function HowToFinishView({ onBack }) {
           </p>
         </Card>
 
-        <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2 border-t-3 border-t-blue-500">
+        <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2">
           <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-sm">
             2
           </div>
@@ -48,7 +48,7 @@ export default function HowToFinishView({ onBack }) {
           </p>
         </Card>
 
-        <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2 border-t-3 border-t-purple-500">
+        <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2">
           <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold text-sm">
             3
           </div>

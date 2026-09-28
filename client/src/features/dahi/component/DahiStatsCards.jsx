@@ -84,7 +84,6 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
           role={onSelectCard ? 'button' : undefined}
           tabIndex={onSelectCard ? 0 : undefined}
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
-          style={{ borderTop: `4px solid ${color}` }}
           title={`Detailed ${title}`}
         >
           {/* Top header row: icon + badge */}

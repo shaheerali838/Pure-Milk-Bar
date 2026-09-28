@@ -42,6 +42,15 @@ export const adminService = {
     }
   },
 
+  sendStaffCredentials: async (id, data = {}) => {
+    try {
+      const res = await api.post(`/api/v1/staff/${id}/send-credentials`, data);
+      return res.data || res;
+    } catch (err) {
+      throw err;
+    }
+  },
+
   // Enterprise Settings
   getSettings: async () => {
     const res = await api.get('/api/v1/admin/settings');

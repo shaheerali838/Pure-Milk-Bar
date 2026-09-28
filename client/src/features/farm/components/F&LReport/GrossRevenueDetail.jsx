@@ -53,7 +53,7 @@ export default function GrossRevenueDetail({ data, onClose, onBack }) {
         </div>
       </div>
 
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 text-white shadow-sm">
+      <div className="p-6 rounded-2xl bg-linear-to-r from-emerald-600 via-emerald-700 to-teal-800 text-white shadow-sm">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs font-bold text-emerald-100 uppercase tracking-wider">
             Consolidated Gross Farm Revenue
@@ -71,7 +71,7 @@ export default function GrossRevenueDetail({ data, onClose, onBack }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white border border-slate-200/90 border-t-4 border-t-blue-500 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Raw Milk Stream</span>
@@ -91,7 +91,7 @@ export default function GrossRevenueDetail({ data, onClose, onBack }) {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/90 border-t-4 border-t-teal-500 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold text-teal-700 uppercase tracking-wider">Value-Added Stream (Farm Dahi)</span>
@@ -127,7 +127,7 @@ export default function GrossRevenueDetail({ data, onClose, onBack }) {
           </div>
 
           <div className="space-y-3.5">
-            <div className="p-4 rounded-xl border border-emerald-100 bg-gradient-to-r from-emerald-50/40 via-white to-white hover:border-emerald-300 transition-all duration-150 space-y-2.5">
+            <div className="p-4 rounded-xl border border-emerald-100 bg-linear-to-r from-emerald-50/40 via-white to-white hover:border-emerald-300 transition-all duration-150 space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 shadow-2xs">
@@ -147,13 +147,13 @@ export default function GrossRevenueDetail({ data, onClose, onBack }) {
               </div>
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500" 
+                  className="h-full bg-linear-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500" 
                   style={{ width: `${Math.min(100, doorstepShare)}%` }}
                 />
               </div>
             </div>
 
-            <div className="p-4 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50/40 via-white to-white hover:border-blue-300 transition-all duration-150 space-y-2.5">
+            <div className="p-4 rounded-xl border border-blue-100 bg-linear-to-r from-blue-50/40 via-white to-white hover:border-blue-300 transition-all duration-150 space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 shadow-2xs">
@@ -173,13 +173,13 @@ export default function GrossRevenueDetail({ data, onClose, onBack }) {
               </div>
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500" 
+                  className="h-full bg-linear-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-500" 
                   style={{ width: `${Math.min(100, posShare)}%` }}
                 />
               </div>
             </div>
 
-            <div className="p-4 rounded-xl border border-purple-100 bg-gradient-to-r from-purple-50/40 via-white to-white hover:border-purple-300 transition-all duration-150 space-y-2.5">
+            <div className="p-4 rounded-xl border border-purple-100 bg-linear-to-r from-purple-50/40 via-white to-white hover:border-purple-300 transition-all duration-150 space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 shadow-2xs">
@@ -199,7 +199,7 @@ export default function GrossRevenueDetail({ data, onClose, onBack }) {
               </div>
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-purple-500 to-violet-500 rounded-full transition-all duration-500" 
+                  className="h-full bg-linear-to-r from-purple-500 to-violet-500 rounded-full transition-all duration-500" 
                   style={{ width: `${Math.min(100, wholesaleShare)}%` }}
                 />
               </div>
@@ -221,7 +221,7 @@ export default function GrossRevenueDetail({ data, onClose, onBack }) {
               <p className="text-[11px] text-slate-400 mt-1">Transactions recorded in POS or Delivery will appear here.</p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 max-h-[340px] overflow-y-auto pr-1">
+            <div className="divide-y divide-slate-100 max-h-85 overflow-y-auto pr-1">
               {recentSales.map((sale, idx) => (
                 <div key={idx} className="py-3 px-2 flex items-center justify-between text-xs hover:bg-slate-50/80 rounded-xl transition">
                   <div className="min-w-0 pr-3">

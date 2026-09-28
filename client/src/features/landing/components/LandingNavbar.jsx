@@ -50,7 +50,7 @@ export default function LandingNavbar() {
               className="flex items-center gap-2.5 group"
               title="Pure Milk Bar"
             >
-              <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-br from-[#00b074] to-[#008f5b] flex items-center justify-center text-white shadow-sm shadow-emerald-950/25 group-hover:scale-105 transition-transform duration-200 shrink-0">
+              <div className="w-8.5 h-8.5 rounded-xl bg-linear-to-br from-[#00b074] to-[#008f5b] flex items-center justify-center text-white shadow-sm shadow-emerald-950/25 group-hover:scale-105 transition-transform duration-200 shrink-0">
                 <Milk className="w-4.5 h-4.5 text-white" />
               </div>
               <div className="flex flex-col justify-center">

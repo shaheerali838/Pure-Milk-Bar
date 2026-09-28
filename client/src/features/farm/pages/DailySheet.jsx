@@ -181,13 +181,13 @@ export default function DailySheet() {
             <button
               type="button"
               onClick={handlePrevDay}
-              className="px-2.5 h-[38px] rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer shadow-xs"
+              className="px-2.5 h-9.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer shadow-xs"
               title="Previous Day"
             >
               &larr; Prev
             </button>
 
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-3.5 h-[38px] text-xs font-semibold text-slate-700 shadow-xs">
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-3.5 h-9.5 text-xs font-semibold text-slate-700 shadow-xs">
               <Calendar className="w-3.5 h-3.5 text-amber-600" />
               <input
                 type="date"
@@ -200,7 +200,7 @@ export default function DailySheet() {
             <button
               type="button"
               onClick={handleNextDay}
-              className="px-2.5 h-[38px] rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer shadow-xs"
+              className="px-2.5 h-9.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer shadow-xs"
               title="Next Day"
             >
               Next &rarr;
@@ -210,7 +210,7 @@ export default function DailySheet() {
           <Button
             onClick={handleDownloadCSV}
             variant="outline"
-            className="flex items-center gap-2 px-3.5 h-[38px] rounded-full text-xs font-semibold border-emerald-200 text-emerald-700 hover:bg-emerald-50 shadow-xs"
+            className="flex items-center gap-2 px-3.5 h-9.5 rounded-full text-xs font-semibold border-emerald-200 text-emerald-700 hover:bg-emerald-50 shadow-xs"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download CSV</span>
@@ -219,7 +219,7 @@ export default function DailySheet() {
           <Button
             onClick={handlePrint}
             variant="outline"
-            className="flex items-center gap-2 px-3.5 h-[38px] rounded-full text-xs font-semibold border-slate-200 shadow-xs"
+            className="flex items-center gap-2 px-3.5 h-9.5 rounded-full text-xs font-semibold border-slate-200 shadow-xs"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Print Sheet</span>
@@ -227,7 +227,7 @@ export default function DailySheet() {
 
           <Button
             onClick={() => setIsLocked(!isLocked)}
-            className="flex items-center gap-2 px-4 h-[38px] rounded-full text-white text-xs font-semibold shadow-xs"
+            className="flex items-center gap-2 px-4 h-9.5 rounded-full text-white text-xs font-semibold shadow-xs"
             style={{ backgroundColor: isLocked ? '#059669' : '#d97706' }}
           >
             {isLocked ? (
@@ -295,7 +295,6 @@ export default function DailySheet() {
           <div
             key={id}
             className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs"
-            style={{ borderTop: `3.5px solid ${color}` }}
           >
             <div className="flex items-start justify-between mb-1.5">
               <div
@@ -467,7 +466,7 @@ export default function DailySheet() {
                       {row.category}
                     </TableCell>
 
-                    <TableCell className="py-3.5 px-4 font-medium text-slate-600 text-xs truncate max-w-[200px]">
+                    <TableCell className="py-3.5 px-4 font-medium text-slate-600 text-xs truncate max-w-50">
                       {row.description || '—'}
                     </TableCell>
 

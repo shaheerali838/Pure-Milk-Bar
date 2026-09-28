@@ -296,13 +296,13 @@ export default function StaffDailySheet() {
             <button
               type="button"
               onClick={handlePrevDay}
-              className="px-2.5 h-[38px] rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer shadow-xs"
+              className="px-2.5 h-9.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer shadow-xs"
               title="Previous Day"
             >
               &larr; Prev
             </button>
 
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-3.5 h-[38px] text-xs font-semibold text-slate-700 shadow-xs">
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-3.5 h-9.5 text-xs font-semibold text-slate-700 shadow-xs">
               <Calendar className="w-3.5 h-3.5 text-amber-600" />
               <input
                 type="date"
@@ -315,7 +315,7 @@ export default function StaffDailySheet() {
             <button
               type="button"
               onClick={handleNextDay}
-              className="px-2.5 h-[38px] rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer shadow-xs"
+              className="px-2.5 h-9.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer shadow-xs"
               title="Next Day"
             >
               Next &rarr;
@@ -325,7 +325,7 @@ export default function StaffDailySheet() {
               <button
                 type="button"
                 onClick={() => setDate(new Date().toISOString().split('T')[0])}
-                className="px-3 h-[38px] rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition cursor-pointer shadow-xs"
+                className="px-3 h-9.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition cursor-pointer shadow-xs"
               >
                 Today
               </button>
@@ -336,7 +336,7 @@ export default function StaffDailySheet() {
           <Button
             onClick={handleDownloadCSV}
             variant="outline"
-            className="flex items-center gap-2 px-3.5 h-[38px] rounded-full text-xs font-semibold border-emerald-200 text-emerald-700 hover:bg-emerald-50 shadow-xs cursor-pointer"
+            className="flex items-center gap-2 px-3.5 h-9.5 rounded-full text-xs font-semibold border-emerald-200 text-emerald-700 hover:bg-emerald-50 shadow-xs cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download CSV</span>
@@ -346,7 +346,7 @@ export default function StaffDailySheet() {
           <Button
             onClick={handlePrint}
             variant="outline"
-            className="flex items-center gap-2 px-3.5 h-[38px] rounded-full text-xs font-semibold border-slate-200 shadow-xs cursor-pointer"
+            className="flex items-center gap-2 px-3.5 h-9.5 rounded-full text-xs font-semibold border-slate-200 shadow-xs cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Print Sheet</span>
@@ -355,7 +355,7 @@ export default function StaffDailySheet() {
           {/* Lock Daily Sheet Button */}
           <Button
             onClick={() => setIsLocked(!isLocked)}
-            className="flex items-center gap-2 px-4 h-[38px] rounded-full text-white text-xs font-semibold shadow-xs cursor-pointer transition"
+            className="flex items-center gap-2 px-4 h-9.5 rounded-full text-white text-xs font-semibold shadow-xs cursor-pointer transition"
             style={{ backgroundColor: isLocked ? '#059669' : '#d97706' }}
           >
             {isLocked ? (
@@ -400,7 +400,6 @@ export default function StaffDailySheet() {
         {/* 1. Total Staff Scheduled */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #3b82f6' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -429,7 +428,6 @@ export default function StaffDailySheet() {
         {/* 2. Total Hours Logged */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #f59e0b' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -443,7 +441,7 @@ export default function StaffDailySheet() {
             </span>
           </div>
           <div>
-            <p className="font-display text-2xl font-black text-amber-800 leading-tight tracking-tight mb-0.5 tabular font-mono">
+            <p className="text-2xl font-black text-amber-800 leading-tight tracking-tight mb-0.5 tabular font-mono">
               {totals.totalHoursLogged} hrs
             </p>
             <p className="text-xs font-bold text-slate-700 font-display">
@@ -458,7 +456,6 @@ export default function StaffDailySheet() {
         {/* 3. Present On Duty */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #009966' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -487,7 +484,6 @@ export default function StaffDailySheet() {
         {/* 4. On Leave & Absent */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #ef4444' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -501,7 +497,7 @@ export default function StaffDailySheet() {
             </span>
           </div>
           <div>
-            <p className="font-display text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular font-mono">
+            <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular font-mono">
               {totals.leaveStaff}L / {totals.absentStaff}A
             </p>
             <p className="text-xs font-bold text-slate-700 font-display">
@@ -516,7 +512,6 @@ export default function StaffDailySheet() {
         {/* 5. Total Daily Wage Payout */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200 col-span-1 sm:col-span-2 lg:col-span-1"
-          style={{ borderTop: '4px solid #10b981' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -530,7 +525,7 @@ export default function StaffDailySheet() {
             </span>
           </div>
           <div>
-            <p className="font-display text-2xl font-black text-emerald-800 leading-tight tracking-tight mb-0.5 tabular font-mono truncate">
+            <p className="text-2xl font-black text-emerald-800 leading-tight tracking-tight mb-0.5 tabular font-mono truncate">
               Rs. {totals.totalDailyWagePayout.toLocaleString()}
             </p>
             <p className="text-xs font-bold text-slate-700 font-display">

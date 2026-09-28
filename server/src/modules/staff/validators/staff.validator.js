@@ -49,6 +49,10 @@ const createStaffSchema = Joi.object({
   departmentSupervised: Joi.string().trim().allow('', null).default(''),
   attendanceMap: Joi.object().unknown().allow(null),
   userAccountId: Joi.string().hex().length(24).allow(null, ''),
+  createLoginAccount: Joi.boolean().allow(null),
+  sendEmailCredentials: Joi.boolean().allow(null),
+  username: Joi.string().trim().min(3).max(50).allow('', null),
+  password: Joi.string().trim().min(6).max(100).allow('', null),
 });
 
 const updateStaffSchema = Joi.object({
@@ -87,6 +91,10 @@ const updateStaffSchema = Joi.object({
   departmentSupervised: Joi.string().trim().allow('', null),
   attendanceMap: Joi.object().unknown().allow(null),
   userAccountId: Joi.string().hex().length(24).allow(null, ''),
+  createLoginAccount: Joi.boolean().allow(null),
+  sendEmailCredentials: Joi.boolean().allow(null),
+  username: Joi.string().trim().min(3).max(50).allow('', null),
+  password: Joi.string().trim().min(6).max(100).allow('', null),
 }).min(1);
 
 const setStatusSchema = Joi.object({

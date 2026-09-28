@@ -154,9 +154,9 @@ function ModuleCard({ item, isMarquee = false }) {
     <div
       className={`relative ${
         isMarquee
-          ? "w-[280px] sm:w-[320px] lg:w-[350px] shrink-0"
-          : "w-full max-w-[380px]"
-      } h-[360px] sm:h-[390px] rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 group bg-slate-900 border border-slate-200/80 cursor-pointer`}
+          ? "w-70 sm:w-[320px] lg:w-87.5 shrink-0"
+          : "w-full max-w-95"
+      } h-90 sm:h-97.5 rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 group bg-slate-900 border border-slate-200/80 cursor-pointer`}
     >
       {/* Background Image */}
       <img
@@ -177,7 +177,7 @@ function ModuleCard({ item, isMarquee = false }) {
       </div>
 
       {/* Default State: Bottom Gradient Overlay & Overview */}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity duration-300 group-hover:opacity-0 pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity duration-300 group-hover:opacity-0 pointer-events-none" />
       <div className="absolute bottom-4 left-4 right-4 z-10 transition-all duration-300 group-hover:opacity-0 pointer-events-none">
         <h3 className="text-base font-bold text-white tracking-tight">{item.title}</h3>
         <p className="text-xs text-slate-200 font-medium mt-0.5 line-clamp-1">{item.description}</p>
@@ -188,7 +188,7 @@ function ModuleCard({ item, isMarquee = false }) {
       </div>
 
       {/* Hover Reveal State: Deep Emerald Gradient & Full Details */}
-      <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-5 text-white">
+      <div className="absolute inset-0 z-20 bg-linear-to-t from-[#0e2923]/95 via-[#1F4B3F]/90 to-[#1F4B3F]/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-col justify-end p-5 text-white">
         <span className="text-[9px] font-bold uppercase tracking-wide text-[#5BBB7B] bg-[#5BBB7B]/20 px-2 py-0.5 rounded-full border border-[#5BBB7B]/30 w-fit mb-1.5">
           {item.badge}
         </span>

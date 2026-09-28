@@ -46,7 +46,7 @@ export default function ValueAddedDetail({ data, onClose, onBack }) {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200/90 border-t-4 border-t-teal-500 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold text-teal-700 uppercase tracking-wider">Total Revenue</span>
@@ -64,7 +64,7 @@ export default function ValueAddedDetail({ data, onClose, onBack }) {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/90 border-t-4 border-t-amber-500 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Packaging Cost</span>
@@ -82,7 +82,7 @@ export default function ValueAddedDetail({ data, onClose, onBack }) {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/90 border-t-4 border-t-emerald-500 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Net Margin Gain</span>
@@ -100,7 +100,7 @@ export default function ValueAddedDetail({ data, onClose, onBack }) {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/90 border-t-4 border-t-purple-500 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Net Margin %</span>
@@ -197,7 +197,7 @@ export default function ValueAddedDetail({ data, onClose, onBack }) {
         )}
       </div>
 
-      <div className="p-5 rounded-2xl bg-gradient-to-br from-teal-50/70 via-white to-emerald-50/50 border border-teal-200/60 shadow-xs flex items-start gap-3.5">
+      <div className="p-5 rounded-2xl bg-linear-to-br from-teal-50/70 via-white to-emerald-50/50 border border-teal-200/60 shadow-xs flex items-start gap-3.5">
         <div className="w-9 h-9 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 shadow-2xs">
           <Sparkles className="w-4 h-4 text-teal-600" />
         </div>

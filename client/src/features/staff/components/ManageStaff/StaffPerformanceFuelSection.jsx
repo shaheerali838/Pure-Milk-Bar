@@ -274,7 +274,7 @@ export default function StaffPerformanceFuelSection({ staff }) {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50/80">
-                  <TableHead className="w-[120px] py-1.5 text-xs">Run Code &amp; Date</TableHead>
+                  <TableHead className="w-30 py-1.5 text-xs">Run Code &amp; Date</TableHead>
                   <TableHead className="py-1.5 text-xs">Customer</TableHead>
                   <TableHead className="py-1.5 text-xs">Drop Address</TableHead>
                   <TableHead className="py-1.5 text-xs">Milk Qty</TableHead>
@@ -293,7 +293,7 @@ export default function StaffPerformanceFuelSection({ staff }) {
                     <TableCell className="text-xs font-bold text-slate-900 py-2 font-display">
                       {delivery.customerName}
                     </TableCell>
-                    <TableCell className="text-xs text-slate-600 py-2 truncate max-w-[180px]">
+                    <TableCell className="text-xs text-slate-600 py-2 truncate max-w-45">
                       {delivery.deliveryAddress || 'Standard Area'}
                     </TableCell>
                     <TableCell className="text-xs font-bold text-emerald-700 tabular py-2">
@@ -344,7 +344,7 @@ export default function StaffPerformanceFuelSection({ staff }) {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50/80">
-                  <TableHead className="w-[120px] py-1.5 text-xs">Date</TableHead>
+                  <TableHead className="w-30 py-1.5 text-xs">Date</TableHead>
                   <TableHead className="py-1.5 text-xs">Fuel (Liters)</TableHead>
                   <TableHead className="py-1.5 text-xs">Amount Paid</TableHead>
                   <TableHead className="py-1.5 text-xs">Distance (KM)</TableHead>

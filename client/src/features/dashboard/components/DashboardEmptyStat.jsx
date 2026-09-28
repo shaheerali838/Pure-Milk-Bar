@@ -6,7 +6,6 @@ export default function DashboardEmptyStat({ title, icon: Icon, color = '#64748b
   return (
     <Card
       className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-xs flex flex-col justify-between"
-      style={{ borderTop: `3px solid ${color}40` }}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <div

@@ -100,13 +100,12 @@ export default function SupplierPLCards({ summaryData, onSelectCard }) {
             role="button"
             tabIndex={0}
             className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 cursor-pointer hover:shadow-md hover:scale-[1.01] hover:border-slate-300"
-            style={{ borderTop: `3.5px solid ${colorHex}` }}
           >
             <div className="flex items-start justify-between mb-1.5">
               <div
                 className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs ${card.iconColor}`}
               >
-                <Icon className="w-[15px] h-[15px]" />
+                <Icon className="w-3.75 h-3.75" />
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">

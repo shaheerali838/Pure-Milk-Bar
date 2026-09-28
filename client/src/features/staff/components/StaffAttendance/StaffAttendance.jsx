@@ -256,7 +256,6 @@ export default function StaffAttendance() {
         {/* 1. Total Roster */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #10b981' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -285,7 +284,6 @@ export default function StaffAttendance() {
         {/* 2. Present On Duty */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #009966' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -314,7 +312,6 @@ export default function StaffAttendance() {
         {/* 3. On Leave (Excused) */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #f59e0b' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -343,7 +340,6 @@ export default function StaffAttendance() {
         {/* 4. Absent (Unexcused) */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #ef4444' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div

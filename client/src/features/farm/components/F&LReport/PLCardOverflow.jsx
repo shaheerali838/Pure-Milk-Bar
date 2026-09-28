@@ -73,7 +73,6 @@ export default function PLCardOverflow({
           key={id}
           onClick={() => onSelectCard && onSelectCard(id)}
           className="group flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-200 cursor-pointer relative overflow-hidden active:scale-[0.99]"
-          style={{ borderTop: `3.5px solid ${color}` }}
         >
           <div className="flex items-start justify-between mb-2">
             <div

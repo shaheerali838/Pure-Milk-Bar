@@ -72,7 +72,6 @@ export default function ReceivablesRecoveriesStats() {
           <Card
             key={kpi.title}
             className="p-4 bg-white border border-slate-200/90 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between"
-            style={{ borderTop: `3px solid ${kpi.color}` }}
           >
             <div className="flex items-start justify-between gap-2 mb-2">
               <div

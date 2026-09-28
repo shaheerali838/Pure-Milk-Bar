@@ -70,6 +70,10 @@ export const createSupplierSchema = Joi.object({
     .max(500)
     .allow(null, '')
     .default(null),
+
+  image: Joi.string()
+    .allow(null, '')
+    .optional(),
 }).options({ stripUnknown: true });
 
 // ─── UPDATE Supplier Schema ──────────────────────────────────────────────────
@@ -117,6 +121,10 @@ export const updateSupplierSchema = Joi.object({
     .trim()
     .max(500)
     .allow(null, ''),
+
+  image: Joi.string()
+    .allow(null, '')
+    .optional(),
 }).options({ stripUnknown: true }).min(1);
 
 // ─── GET Suppliers Query Schema ─────────────────────────────────────────────

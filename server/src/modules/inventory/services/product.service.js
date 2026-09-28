@@ -1,5 +1,6 @@
 import Product from '../../../models/Product.model.js';
 import AppError from '../../../utils/AppError.js';
+import { uploadToCloudinary } from '../../../config/cloudinary.js';
 
 class ProductService {
   async createProduct(data) {
@@ -11,6 +12,10 @@ class ProductService {
         409,
         'DUPLICATE_SKU'
       );
+    }
+
+    if (data.image && typeof data.image === 'string' && data.image.startsWith('data:image')) {
+      data.image = await uploadToCloudinary(data.image, 'puremilkbar/products');
     }
 
     const product = await Product.create(data);
@@ -70,6 +75,10 @@ class ProductService {
           'DUPLICATE_SKU'
         );
       }
+    }
+
+    if (data.image && typeof data.image === 'string' && data.image.startsWith('data:image')) {
+      data.image = await uploadToCloudinary(data.image, 'puremilkbar/products');
     }
 
     const product = await Product.findByIdAndUpdate(id, data, {

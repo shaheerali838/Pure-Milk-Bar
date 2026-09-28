@@ -12,6 +12,7 @@ import {
   CreditCard,
   Droplets,
   Camera,
+  Loader2,
 } from 'lucide-react';
 import { useSupplierContext } from '@/context/SupplierContext';
 import ImageUpload from '@/components/common/ImageUpload';
@@ -47,6 +48,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
   const isEdit = Boolean(editSupplier);
 
   const [formData, setFormData] = useState(initialForm);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (editSupplier) {
@@ -75,19 +77,26 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) {
+    if (!formData.name.trim() || isSubmitting) {
       return;
     }
 
-    if (isEdit && editSupplier) {
-      updateSupplier(editSupplier.id, formData);
-    } else {
-      addSupplier(formData);
-    }
+    setIsSubmitting(true);
+    try {
+      if (isEdit && editSupplier) {
+        await updateSupplier(editSupplier.id, formData);
+      } else {
+        await addSupplier(formData);
+      }
 
-    if (handleBack) handleBack();
+      if (handleBack) handleBack();
+    } catch (err) {
+      console.error('Failed to save supplier:', err);
+      alert(err.message || 'Failed to save supplier record');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -417,20 +426,33 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
             <button
               type="button"
               onClick={handleBack}
-              className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition cursor-pointer"
+              disabled={isSubmitting}
+              className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className={`flex items-center gap-1.5 px-5 py-2 rounded-lg text-white text-xs font-bold shadow-xs transition cursor-pointer ${
-                isEdit
-                  ? 'bg-indigo-600 hover:bg-indigo-700'
-                  : 'bg-[#00a86b] hover:bg-[#007a52]'
+              disabled={isSubmitting}
+              className={`flex items-center gap-1.5 px-5 py-2 rounded-lg text-white text-xs font-bold shadow-xs transition ${
+                isSubmitting
+                  ? 'bg-slate-400 cursor-not-allowed opacity-80'
+                  : isEdit
+                  ? 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer'
+                  : 'bg-[#00a86b] hover:bg-[#007a52] cursor-pointer'
               }`}
             >
-              <Check className="w-3.5 h-3.5" />
-              {isEdit ? 'Save Changes' : 'Register Milk Supplier'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>{isEdit ? 'Saving Changes...' : 'Registering Supplier...'}</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{isEdit ? 'Save Changes' : 'Register Milk Supplier'}</span>
+                </>
+              )}
             </button>
           </div>
         </form>

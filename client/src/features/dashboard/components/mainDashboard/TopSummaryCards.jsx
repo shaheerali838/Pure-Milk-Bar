@@ -168,8 +168,7 @@ export default function TopSummaryCards() {
           <Link
             key={card.id}
             to={card.to}
-            className="flex flex-col justify-between bg-white rounded-3xl p-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer select-none group relative overflow-hidden"
-            style={{ borderTop: `4px solid ${card.color}` }}
+            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-3xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 cursor-pointer select-none group relative overflow-hidden"
             title={`Open ${card.title}`}
           >
             <div className="flex items-start justify-between mb-2.5">
