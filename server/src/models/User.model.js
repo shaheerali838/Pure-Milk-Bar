@@ -52,7 +52,7 @@ const userSchema = new Schema(
     },
     shift: {
       type: String,
-      enum: ['MORNING', 'EVENING', 'ROTATING'],
+      enum: ['MORNING', 'EVENING', 'ROTATING', 'BOTH', 'NIGHT', 'FULL_DAY'],
       default: 'MORNING',
     },
     assignedRouteId: {

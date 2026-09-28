@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useStaffContext } from './StaffContext';
+import api from '@/services/api';
 
 const PayrollContext = createContext();
 
@@ -34,10 +35,11 @@ export function PayrollProvider({ children }) {
   // Record a salary payout
   const recordSalaryDisbursement = ({ staffId, amount, monthYear, paymentMethod = 'Cash', remarks = '' }) => {
     const nextId = `PAY-${Date.now()}`;
+    const numAmt = Number(amount) || 0;
     const newRecord = {
       id: nextId,
       staffId,
-      amount: Number(amount) || 0,
+      amount: numAmt,
       monthYear: monthYear || new Date().toISOString().slice(0, 7),
       paymentMethod,
       disbursedAt: new Date().toISOString(),
@@ -46,6 +48,23 @@ export function PayrollProvider({ children }) {
     };
 
     setPayrollRecords((prev) => [newRecord, ...prev]);
+
+    // Sync to backend database as a Salary expense
+    if (numAmt > 0) {
+      const staffMember = staffList.find((s) => String(s.id || s._id) === String(staffId));
+      api.finance.createExpense({
+        scope: 'FARM',
+        category: 'SALARIES',
+        title: `Salary Payout: ${staffMember?.name || `Staff #${staffId}`}`,
+        amount: numAmt,
+        amountRupees: numAmt,
+        date: new Date().toISOString().split('T')[0],
+        paymentMethod: String(paymentMethod).toUpperCase() === 'ONLINE' ? 'ONLINE' : 'CASH',
+        notes: remarks || `Salary disbursement for ${monthYear || 'monthly'}`,
+        authorizedBy: 'Admin',
+      }).catch((e) => console.warn('Salary disbursement backend expense sync notice:', e.message));
+    }
+
     return newRecord;
   };
 

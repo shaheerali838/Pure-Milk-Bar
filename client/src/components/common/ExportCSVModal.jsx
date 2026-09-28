@@ -24,6 +24,8 @@ import {
   UserCheck,
   History,
   X,
+  Database,
+  Building2,
 } from 'lucide-react';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useExpense } from '@/context/ExpenseContext';
@@ -34,43 +36,12 @@ import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
 import { useFuelLogContext } from '@/context/FuelLogContext';
 import { useStaffContext } from '@/context/StaffContext';
-function exportToCSV(filename, headers, rows) {
-  if (!headers || !headers.length) return;
-
-  const escapeCell = (val) => {
-    if (val === null || val === undefined) return '""';
-    const str = String(val);
-    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-      return `"${str.replace(/"/g, '""')}"`;
-    }
-    return `"${str}"`;
-  };
-
-  const headerRow = headers.map(escapeCell).join(',');
-  const dataRows = (rows || []).map((row) =>
-    (Array.isArray(row) ? row : headers.map((h) => row[h] ?? '')).map(escapeCell).join(',')
-  );
-
-  const csvContent = [headerRow, ...dataRows].join('\r\n');
-  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-
-  const cleanFilename = (filename || 'export')
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]/gi, '_')
-    .replace(/_+/g, '_');
-
-  const today = new Date().toISOString().split('T')[0];
-  const finalFilename = `${cleanFilename}_${today}.csv`;
-
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', finalFilename);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
+import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
+import { useIntakeContext } from '@/context/IntakeContext';
+import { useSupplierContext } from '@/context/SupplierContext';
+import { useAuditContext } from '@/context/AuditContext';
+import { useTransactionContext } from '@/context/TransactionContext';
+import { exportTableToCSV, exportMultiSectionCSV } from '@/utils/csvExport';
 
 const MODULES_LIST = [
   {
@@ -78,98 +49,98 @@ const MODULES_LIST = [
     name: 'All Modules (Complete Bundle)',
     category: 'Master Export',
     icon: '✨',
-    desc: 'Master combined export containing data from all modules in multi-table CSV',
+    desc: 'Master combined multi-section audit export covering all 14 dairy and farm modules',
   },
   {
     id: 'daily_closing',
     name: 'Daily Closing & P&L',
     category: 'Finance',
     icon: '📊',
-    desc: 'Cash, Online Payment, Khata revenue, expenses & daily profit margins',
+    desc: 'Milk flow mass balance, multi-channel collections, expenses, variance & net liquid flow',
   },
   {
     id: 'pos_sales',
     name: 'POS Sales & Invoices',
     category: 'Sales',
     icon: '🛒',
-    desc: 'Counter sales, retail receipts, itemized invoices and billing history',
+    desc: 'Counter sales, retail receipts, itemized invoices, discounts and billing methods',
   },
   {
     id: 'deliveries',
     name: 'Milk Deliveries & Subscriptions',
     category: 'Sales',
     icon: '🚚',
-    desc: 'Doorstep subscriptions, rider dispatches, drop locations & bottle tracking',
+    desc: 'Doorstep subscriptions, rider dispatches, drop locations, routes & COD tracking',
   },
   {
     id: 'procurement',
-    name: 'Milk Procurement & Suppliers',
+    name: 'Milk Procurement & Intake',
     category: 'Procurement',
     icon: '🥛',
-    desc: 'External supplier milk batches, purchases, rates & payment statuses',
+    desc: 'External farmer intake batches, Fat %, LR, SNF, liter quantities, rates & settlements',
+  },
+  {
+    id: 'suppliers',
+    name: 'Dairy Suppliers Registry',
+    category: 'Procurement',
+    icon: '🤝',
+    desc: 'Farmer profiles, contacts, routes, supply volumes, payable dues & ledger balances',
   },
   {
     id: 'khata_ledger',
     name: 'Customer Khata Ledgers',
     category: 'Finance',
     icon: '📒',
-    desc: 'Detailed debit/credit entries, running balances & aging history',
-  },
-  {
-    id: 'expenses',
-    name: 'Expenses & Feed Allocation',
-    category: 'Expenses',
-    icon: '💸',
-    desc: 'Shop overheads, generator fuel, fodder/chara & vet medicine expenses',
+    desc: 'Itemized customer debit/credit transactions, running balances & aging history',
   },
   {
     id: 'payments',
     name: 'Customer Payments & Receipts',
     category: 'Finance',
     icon: '💳',
-    desc: 'Cash, Online Payment collection records & verification',
+    desc: 'Cash, JazzCash, EasyPaisa, and bank transfer payment collection records',
+  },
+  {
+    id: 'expenses',
+    name: 'Expenses & Feed Allocation',
+    category: 'Expenses',
+    icon: '💸',
+    desc: 'Shop overheads, generator fuel, animal fodder/feed & veterinary medical expenses',
   },
   {
     id: 'animals',
     name: 'Herd Animals & Milk Yield',
     category: 'Farm',
     icon: '🐄',
-    desc: 'Cattle tags, morning/evening milking yield logs & health status',
+    desc: 'Cattle ear tags, lactation status, morning/evening milking yields & health status',
   },
   {
     id: 'customers',
     name: 'Customer Directory',
     category: 'Directory',
     icon: '👥',
-    desc: 'Customer addresses, credit limits, phone numbers & delivery schedules',
-  },
-  {
-    id: 'suppliers',
-    name: 'Dairy Suppliers Registry',
-    category: 'Directory',
-    icon: '🤝',
-    desc: 'Farmer contacts, rates per liter/kg, total supply volume & balances',
+    desc: 'Customer addresses, credit limits, phone numbers, delivery shifts & khata balances',
   },
   {
     id: 'products',
     name: 'Products Catalog & Rates',
     category: 'Catalog',
     icon: '🏷️',
-    desc: 'Cow milk, Buffalo milk, Dahi, Lassi pricing and active products',
+    desc: 'Fresh Milk, Dahi, Lassi retail & wholesale pricing, SKU, costs and storage types',
   },
   {
     id: 'users',
     name: 'Staff & Payroll Roster',
     category: 'System',
     icon: '🧑‍💼',
-    desc: 'Riders, cashiers, labor list, monthly salaries & shift assignments',
+    desc: 'Riders, cashiers, milkers, labor list, monthly salaries, shifts & daily wages',
   },
   {
     id: 'audit_log',
     name: 'System Audit Trail Log',
     category: 'System',
     icon: '🛡️',
-    desc: 'User activity history, price modifications & system event audit',
+    desc: 'System activity history, price modifications, user actions & operational audit',
   },
 ];
 
@@ -190,7 +161,8 @@ export default function ExportCSVModal({
   const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [toastMessage, setToastMessage] = useState('');
 
-  const { animals = [] } = useAnimalContext() || {};
+  // Domain Contexts
+  const { animals = [], milkingLogs = [] } = useAnimalContext() || {};
   const { expenses = [] } = useExpense() || {};
   const { customers = [], rawCustomers = [] } = useCustomerContext() || {};
   const { ledgers = {} } = useLedgerContext() || {};
@@ -199,6 +171,11 @@ export default function ExportCSVModal({
   const { staffList: deliveryStaff = [] } = useDeliveryStaffContext() || {};
   const { fuelLogs = [] } = useFuelLogContext() || {};
   const { staffList = [] } = useStaffContext() || {};
+  const { payrollRecords = [] } = useStaffPayrollContext() || {};
+  const { intakeLogs = [] } = useIntakeContext() || {};
+  const { suppliers = [] } = useSupplierContext() || {};
+  const { auditEvents = [] } = useAuditContext() || {};
+  const { transactions = [] } = useTransactionContext() || {};
 
   useEffect(() => {
     if (defaultModule) setSelectedModule(defaultModule);
@@ -275,148 +252,719 @@ export default function ExportCSVModal({
     }
   };
 
-  const preview = useMemo(() => {
-    const customerList = rawCustomers?.length ? rawCustomers : customers;
-    const allStaff = staffList?.length ? staffList : deliveryStaff;
+  const customerList = useMemo(() => {
+    return rawCustomers?.length ? rawCustomers : customers;
+  }, [rawCustomers, customers]);
 
+  const allStaff = useMemo(() => {
+    return staffList?.length ? staffList : deliveryStaff;
+  }, [staffList, deliveryStaff]);
+
+  // Dynamic preview generator with robust fallbacks
+  const preview = useMemo(() => {
     switch (selectedModule) {
       case 'animals': {
-        const headers = ['ID', 'Tag', 'Name', 'Species', 'Lactation Status', 'Morning Yield (L)', 'Evening Yield (L)', 'Total Daily Yield (L)', 'Acquisition Date', 'Purchase Price', 'Health Status'];
+        const headers = [
+          'Animal ID',
+          'Ear Tag',
+          'Name',
+          'Species',
+          'Lactation Status',
+          'Morning Yield (L)',
+          'Evening Yield (L)',
+          'Total Daily Yield (L)',
+          'Acquisition Date',
+          'Purchase Price (Rs)',
+          'Health Status',
+        ];
         const rows = animals.map((a) => [
-          a.id, a.tag, a.name || a.tag, a.species, a.lactationStatus, a.morningYield, a.eveningYield, a.totalDailyYield, a.acquisitionDate, a.purchasePrice || '-', a.healthStatus || 'Healthy'
+          a.id || a._id,
+          a.tag || 'N/A',
+          a.name || a.tag || 'Cattle',
+          a.species || 'Buffalo',
+          a.lactationStatus || 'Lactating',
+          Number(a.morningYield || 0).toFixed(1),
+          Number(a.eveningYield || 0).toFixed(1),
+          Number(a.totalDailyYield || (Number(a.morningYield || 0) + Number(a.eveningYield || 0))).toFixed(1),
+          a.acquisitionDate || a.createdAt?.split('T')[0] || '-',
+          a.purchasePrice ? `Rs. ${Number(a.purchasePrice).toLocaleString()}` : '-',
+          a.healthStatus || 'Healthy',
         ]);
+        const totalYield = rows.reduce((acc, r) => acc + parseFloat(r[7] || 0), 0);
+        return {
+          headers,
+          rows,
+          count: rows.length,
+          summaryRows: [
+            ['SUMMARY TOTALS', '', '', '', '', '', 'Total Herd Production (L)', `${totalYield.toFixed(1)} Liters`, '', '', `Active Animals: ${rows.length}`],
+          ],
+        };
+      }
+
+      case 'procurement': {
+        const filtered = (intakeLogs || []).filter((item) => isDateInRange(item.date));
+        const headers = [
+          'Slip ID',
+          'Date',
+          'Time / Shift',
+          'Supplier ID',
+          'Supplier Name',
+          'Area / Route',
+          'Quantity (Liters)',
+          'Fat %',
+          'LR Reading',
+          'SNF %',
+          'Rate / Liter (Rs)',
+          'Total Gross (Rs)',
+          'Paid Amount (Rs)',
+          'Pending Balance (Rs)',
+          'Settlement Status',
+          'Received By',
+        ];
+        const rows = filtered.map((r) => [
+          r.id || r._id,
+          r.date || '-',
+          r.time || r.shift || 'Morning',
+          r.supplierId || '-',
+          r.supplierName || 'Dairy Supplier',
+          r.area || r.villageOrLocation || 'Local Route',
+          Number(r.quantity || 0).toFixed(1),
+          Number(r.fat || 0).toFixed(2),
+          Number(r.lr || 0).toFixed(1),
+          Number(r.snf || 0).toFixed(2),
+          `Rs. ${Number(r.ratePerLiter || 0).toFixed(1)}`,
+          `Rs. ${Number(r.totalCost || 0).toLocaleString()}`,
+          `Rs. ${Number(r.paidAmount || 0).toLocaleString()}`,
+          `Rs. ${Number(r.pendingAmount || 0).toLocaleString()}`,
+          r.settlement || (Number(r.pendingAmount || 0) === 0 ? 'Paid' : 'Pending'),
+          r.receivedBy || 'System',
+        ]);
+        const totalLiters = filtered.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
+        const totalCost = filtered.reduce((sum, r) => sum + (Number(r.totalCost) || 0), 0);
+        const totalPaid = filtered.reduce((sum, r) => sum + (Number(r.paidAmount) || 0), 0);
+        return {
+          headers,
+          rows,
+          count: rows.length,
+          summaryRows: [
+            ['SUMMARY TOTALS', '', '', '', '', 'Total Milk Procurement', `${totalLiters.toFixed(1)} Liters`, '', '', '', '', `Rs. ${totalCost.toLocaleString()}`, `Rs. ${totalPaid.toLocaleString()}`, `Rs. ${(totalCost - totalPaid).toLocaleString()}`, '', `Slips: ${rows.length}`],
+          ],
+        };
+      }
+
+      case 'suppliers': {
+        const headers = [
+          'Supplier Code',
+          'Full Name',
+          'Phone / Contact',
+          'Area / Village',
+          'Base Rate (Rs/L)',
+          'Expected Daily (L)',
+          'Total Delivered (L)',
+          'Total Cost Payable (Rs)',
+          'Total Cleared (Rs)',
+          'Current Balance Due (Rs)',
+          'Status',
+          'Registration Date',
+        ];
+        const rows = (suppliers || []).map((s) => {
+          const supIntakes = (intakeLogs || []).filter(
+            (l) => String(l.supplierId) === String(s.id || s._id) || l.supplierName === s.name
+          );
+          const totalLit = supIntakes.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+          const totalCost = supIntakes.reduce((sum, i) => sum + (Number(i.totalCost) || 0), 0);
+          const totalPaid = supIntakes.reduce((sum, i) => sum + (Number(i.paidAmount) || 0), 0);
+          const balance = totalCost - totalPaid;
+
+          return [
+            s.code || `SUP-${String(s.id || s._id).slice(-4)}`,
+            s.name || 'Dairy Farmer',
+            s.phone || s.contact || '-',
+            s.area || s.villageOrLocation || 'Central',
+            `Rs. ${Number(s.ratePerLiter || s.baseRate || 220).toFixed(1)}`,
+            `${Number(s.avgLiters || s.expectedDailyQuantity || 0).toFixed(1)} L`,
+            `${totalLit.toFixed(1)} L`,
+            `Rs. ${totalCost.toLocaleString()}`,
+            `Rs. ${totalPaid.toLocaleString()}`,
+            `Rs. ${balance.toLocaleString()}`,
+            s.status || 'Active',
+            s.joinDate || s.createdAt?.split('T')[0] || '-',
+          ];
+        });
         return { headers, rows, count: rows.length };
       }
+
       case 'expenses': {
         const filtered = expenses.filter((e) => isDateInRange(e.date));
-        const headers = ['ID', 'Date', 'Category', 'Description', 'Amount (Rs)', 'Payment Method', 'Receipt Ref', 'Authorized By'];
+        const headers = [
+          'Expense ID',
+          'Date',
+          'Category',
+          'Description / Purpose',
+          'Amount (Rs)',
+          'Payment Mode',
+          'Receipt / Voucher Ref',
+          'Authorized By',
+        ];
         const rows = filtered.map((e) => [
-          e.id, e.date, e.category, e.description, e.amount, e.paymentMethod, e.receiptRef || 'N/A', e.authorizedBy || 'N/A'
+          e.id || e._id,
+          e.date || '-',
+          e.category || 'General Operations',
+          e.description || e.notes || 'Operating expense',
+          `Rs. ${Number(e.amount || 0).toLocaleString()}`,
+          e.paymentMethod || e.paymentMode || 'Cash',
+          e.receiptRef || e.voucherNumber || 'N/A',
+          e.authorizedBy || e.loggedBy || 'Admin',
         ]);
-        return { headers, rows, count: rows.length };
+        const totalExp = filtered.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+        return {
+          headers,
+          rows,
+          count: rows.length,
+          summaryRows: [
+            ['SUMMARY TOTALS', '', '', 'Total Expenses Logged', `Rs. ${totalExp.toLocaleString()}`, '', '', `Entries: ${rows.length}`],
+          ],
+        };
       }
+
       case 'pos_sales': {
-        const filtered = salesHistory.filter((s) => isDateInRange(s.timestamp || s.formattedDate));
-        const headers = ['Invoice ID', 'Date', 'Time', 'Category', 'Customer', 'Items Summary', 'Subtotal (Rs)', 'Discount (Rs)', 'Delivery Charge (Rs)', 'Net Payable (Rs)', 'Payment Method'];
+        const filtered = salesHistory.filter((s) => isDateInRange(s.timestamp || s.formattedDate || s.date));
+        const headers = [
+          'Invoice ID',
+          'Date',
+          'Time',
+          'Order Category',
+          'Customer Name',
+          'Items Summary',
+          'Subtotal (Rs)',
+          'Discount (Rs)',
+          'Delivery Charge (Rs)',
+          'Net Payable (Rs)',
+          'Payment Method',
+          'Cashier / Station',
+        ];
         const rows = filtered.map((s) => [
-          s.invoiceId, s.formattedDate || s.timestamp?.split('T')[0] || '-', s.formattedTime || '-', s.saleCategory || 'walkin',
-          s.customer ? s.customer.name : s.walkinCustomer ? s.walkinCustomer.name : 'Walk-in',
-          (s.items || []).map((i) => `${i.quantity}x ${i.name}`).join('; '),
-          s.subtotal, s.discount, s.deliveryCharge, s.netPayable, s.paymentMethod
+          s.invoiceId || s.id || `INV-${Date.now()}`,
+          s.formattedDate || s.date || s.timestamp?.split('T')[0] || '-',
+          s.formattedTime || s.time || '-',
+          s.saleCategory || 'Counter Walk-in',
+          s.customer?.name || s.walkinCustomer?.name || s.customerName || 'Walk-in Customer',
+          (s.items || []).map((i) => `${i.quantity}x ${i.name}`).join('; ') || 'Standard Sale',
+          `Rs. ${Number(s.subtotal || 0).toLocaleString()}`,
+          `Rs. ${Number(s.discount || 0).toLocaleString()}`,
+          `Rs. ${Number(s.deliveryCharge || 0).toLocaleString()}`,
+          `Rs. ${Number(s.netPayable || s.total || 0).toLocaleString()}`,
+          s.paymentMethod || 'Cash',
+          s.cashier || 'Main Counter',
         ]);
-        return { headers, rows, count: rows.length };
+        const totalRevenue = filtered.reduce((sum, s) => sum + (Number(s.netPayable || s.total) || 0), 0);
+        return {
+          headers,
+          rows,
+          count: rows.length,
+          summaryRows: [
+            ['SUMMARY TOTALS', '', '', '', '', 'Total Net Realized Revenue', '', '', '', `Rs. ${totalRevenue.toLocaleString()}`, '', `Invoices: ${rows.length}`],
+          ],
+        };
       }
+
       case 'deliveries': {
         const filtered = deliveries.filter((d) => isDateInRange(d.date || d.createdAt));
-        const headers = ['Run Code', 'Date', 'Shift', 'Customer Name', 'Delivery Address', 'Route', 'Item Description', 'Quantity (L)', 'Payment Mode', 'COD To Collect (Rs)', 'Status', 'Rider'];
+        const headers = [
+          'Run Code',
+          'Date',
+          'Shift',
+          'Customer Name',
+          'Delivery Address',
+          'Route / Sector',
+          'Item Description',
+          'Quantity (Liters)',
+          'Payment Mode',
+          'COD Amount Due (Rs)',
+          'Delivery Status',
+          'Assigned Rider',
+        ];
         const rows = filtered.map((d) => [
-          d.runCode || `RUN-${d.id}`, d.date, d.shift, d.customerName, d.deliveryAddress, d.route || '-', d.itemDescription, d.qtyLiters, d.paymentMode, d.codAmountToCollect || 0, d.status, d.riderNameSnapshot || '-'
+          d.runCode || `RUN-${d.id}`,
+          d.date || '-',
+          d.shift || 'Morning',
+          d.customerName || 'Customer',
+          d.deliveryAddress || 'Doorstep',
+          d.route || 'General Route',
+          d.itemDescription || 'Fresh Farm Milk',
+          Number(d.qtyLiters || d.quantity || 0).toFixed(1),
+          d.paymentMode || 'COD Cash',
+          `Rs. ${Number(d.codAmountToCollect || 0).toLocaleString()}`,
+          d.status || 'Delivered',
+          d.riderNameSnapshot || d.rider || 'Delivery Staff',
         ]);
-        return { headers, rows, count: rows.length };
+        const totalLiters = filtered.reduce((sum, d) => sum + (Number(d.qtyLiters || d.quantity) || 0), 0);
+        const totalCod = filtered.reduce((sum, d) => sum + (Number(d.codAmountToCollect) || 0), 0);
+        return {
+          headers,
+          rows,
+          count: rows.length,
+          summaryRows: [
+            ['SUMMARY TOTALS', '', '', '', '', '', 'Total Delivered Volume', `${totalLiters.toFixed(1)} Liters`, '', `Rs. ${totalCod.toLocaleString()}`, '', `Runs: ${rows.length}`],
+          ],
+        };
       }
+
       case 'customers': {
-        const headers = ['Customer ID', 'Name', 'Phone', 'Secondary Phone', 'Area', 'Address', 'Shift', 'Subscription', 'Payment Mode', 'Credit Limit (Rs)', 'Khata Balance (Rs)', 'Status', 'Created Date'];
+        const headers = [
+          'Customer ID',
+          'Customer Name',
+          'Phone Number',
+          'Secondary Phone',
+          'Delivery Area',
+          'Street Address',
+          'Shift Preference',
+          'Active Subscription',
+          'Payment Terms',
+          'Credit Limit (Rs)',
+          'Current Khata Due (Rs)',
+          'Account Status',
+          'Member Since',
+        ];
         const rows = customerList.map((c) => [
-          c.id, c.name, c.phone, c.secondaryPhone || '-', c.area, c.address, c.shift, c.subscription || 'Fresh Milk', c.paymentMode, c.creditLimit || 0, c.khataBalance || 0, c.status, c.createdAt || '-'
+          c.id || c._id,
+          c.name || 'Account Holder',
+          c.phone || '-',
+          c.secondaryPhone || '-',
+          c.area || 'City',
+          c.address || '-',
+          c.shift || 'Both Shifts',
+          c.subscription || 'Fresh Farm Milk',
+          c.paymentMode || 'Weekly Khata',
+          `Rs. ${Number(c.creditLimit || 0).toLocaleString()}`,
+          `Rs. ${Number(c.khataBalance || c.currentBalance || 0).toLocaleString()}`,
+          c.status || 'Active',
+          c.createdAt?.split('T')[0] || '-',
         ]);
-        return { headers, rows, count: rows.length };
+        const totalKhata = customerList.reduce((sum, c) => sum + (Number(c.khataBalance || c.currentBalance) || 0), 0);
+        return {
+          headers,
+          rows,
+          count: rows.length,
+          summaryRows: [
+            ['SUMMARY TOTALS', '', '', '', '', '', '', '', '', 'Total Receivables Ledger Due', `Rs. ${totalKhata.toLocaleString()}`, '', `Total Accounts: ${rows.length}`],
+          ],
+        };
       }
+
       case 'khata_ledger': {
-        const headers = ['Txn ID', 'Customer ID', 'Customer Name', 'Customer Phone', 'Date', 'Type', 'Description', 'Debit (Rs)', 'Credit (Rs)', 'Running Balance (Rs)', 'Payment Method', 'Notes'];
+        const headers = [
+          'Txn ID',
+          'Customer ID',
+          'Customer Name',
+          'Customer Phone',
+          'Date',
+          'Transaction Type',
+          'Description',
+          'Debit / Charged (Rs)',
+          'Credit / Paid (Rs)',
+          'Running Balance (Rs)',
+          'Payment Method',
+          'Notes',
+        ];
         const allTxns = [];
+        let grandDebit = 0;
+        let grandCredit = 0;
+
         Object.entries(ledgers || {}).forEach(([custId, txns]) => {
-          const cust = customerList.find((c) => String(c.id) === String(custId));
+          const cust = customerList.find((c) => String(c.id || c._id) === String(custId));
           const custName = cust ? cust.name : `Customer #${custId}`;
           const custPhone = cust ? cust.phone : '-';
+
           (txns || []).forEach((t) => {
             if (isDateInRange(t.date)) {
+              const debit = Number(t.debit) || 0;
+              const credit = Number(t.credit) || 0;
+              grandDebit += debit;
+              grandCredit += credit;
+
               allTxns.push([
-                t.id, custId, custName, custPhone, t.date, t.type, t.description, t.debit || 0, t.credit || 0, t.runningBalance || 0, t.method || '-', t.notes || '-'
+                t.id || t._id || `TX-${allTxns.length + 1}`,
+                custId,
+                custName,
+                custPhone,
+                t.date || '-',
+                t.type || 'ADJUSTMENT',
+                t.description || 'Ledger entry',
+                `Rs. ${debit.toLocaleString()}`,
+                `Rs. ${credit.toLocaleString()}`,
+                `Rs. ${Number(t.runningBalance || 0).toLocaleString()}`,
+                t.method || '-',
+                t.notes || '-',
               ]);
             }
           });
         });
-        return { headers, rows: allTxns, count: allTxns.length };
+
+        return {
+          headers,
+          rows: allTxns,
+          count: allTxns.length,
+          summaryRows: [
+            ['SUMMARY TOTALS', '', '', '', '', '', 'Total Period Ledger Movement', `Rs. ${grandDebit.toLocaleString()}`, `Rs. ${grandCredit.toLocaleString()}`, '', '', `Entries: ${allTxns.length}`],
+          ],
+        };
       }
+
+      case 'payments': {
+        const paymentList = [];
+        // Derive payments from transactions context & customer ledgers
+        (transactions || []).forEach((tx) => {
+          if (tx.type === 'Payment' || tx.channel === 'Online' || tx.type === 'Adjustment') {
+            if (isDateInRange(tx.timestamp || tx.date)) {
+              paymentList.push([
+                tx.id || tx.referenceId,
+                (tx.timestamp || tx.date)?.split('T')[0] || '-',
+                tx.customerName || 'Customer',
+                tx.type || 'Payment',
+                tx.channel || 'Cash',
+                `Rs. ${Number(tx.amount || 0).toLocaleString()}`,
+                tx.referenceId || '-',
+                tx.description || 'Customer Khata Payment',
+                tx.cashier || 'System Cashier',
+              ]);
+            }
+          }
+        });
+
+        // Also pull credit entries from ledgers if transactions list is light
+        if (paymentList.length === 0) {
+          Object.entries(ledgers || {}).forEach(([custId, txns]) => {
+            const cust = customerList.find((c) => String(c.id || c._id) === String(custId));
+            (txns || []).forEach((t) => {
+              if (Number(t.credit) > 0 && isDateInRange(t.date)) {
+                paymentList.push([
+                  t.id || `REC-${paymentList.length + 1}`,
+                  t.date || '-',
+                  cust?.name || `Customer #${custId}`,
+                  'Khata Collection',
+                  t.method || 'Cash',
+                  `Rs. ${Number(t.credit || 0).toLocaleString()}`,
+                  t.reference || t.id || '-',
+                  t.description || 'Payment Received',
+                  'Accounts Cashier',
+                ]);
+              }
+            });
+          });
+        }
+
+        const headers = [
+          'Receipt ID',
+          'Date',
+          'Customer / Payee',
+          'Transaction Category',
+          'Payment Channel',
+          'Amount Received (Rs)',
+          'Reference No',
+          'Description',
+          'Collected By',
+        ];
+        const totalCollected = paymentList.reduce((sum, p) => sum + (parseFloat(p[5]?.replace(/[^0-9.]/g, '')) || 0), 0);
+
+        return {
+          headers,
+          rows: paymentList,
+          count: paymentList.length,
+          summaryRows: [
+            ['SUMMARY TOTALS', '', '', '', 'Total Payments Collected', `Rs. ${totalCollected.toLocaleString()}`, '', '', `Receipts: ${paymentList.length}`],
+          ],
+        };
+      }
+
       case 'products': {
-        const headers = ['SKU', 'Product Name', 'Category', 'Unit', 'Price (Rs)', 'Cost (Rs)', 'Barcode', 'Storage', 'Status'];
-        const rows = products.map((p) => [
-          p.sku || p.id, p.name, p.category, p.unit, p.price, p.cost, p.barcode || '-', p.storage || 'Chiller', p.status || 'Active'
+        const headers = [
+          'Product SKU',
+          'Product Name',
+          'Category',
+          'Unit Measurement',
+          'Retail Price (Rs)',
+          'Wholesale Price (Rs)',
+          'Cost Price (Rs)',
+          'Storage Temperature',
+          'Barcode',
+          'Status',
+        ];
+        const rows = (products || []).map((p) => [
+          p.sku || p.id || `PRD-${p.name?.slice(0, 3).toUpperCase()}`,
+          p.name || 'Dairy Product',
+          p.category || 'Dairy',
+          p.unit || 'Liter',
+          `Rs. ${Number(p.price || 0).toLocaleString()}`,
+          `Rs. ${Number(p.wholesalePrice || p.price || 0).toLocaleString()}`,
+          `Rs. ${Number(p.cost || 0).toLocaleString()}`,
+          p.storage || 'Chiller (+4°C)',
+          p.barcode || '-',
+          p.status || 'Active',
         ]);
         return { headers, rows, count: rows.length };
       }
+
       case 'users': {
-        const headers = ['Staff ID', 'Name', 'Role', 'Mobile', 'Email', 'Shift', 'Monthly Salary (Rs)', 'CNIC', 'Route', 'Status', 'Joined Date'];
+        const headers = [
+          'Staff ID',
+          'Employee Name',
+          'Designation / Role',
+          'Contact Mobile',
+          'CNIC Number',
+          'Assigned Shift',
+          'Monthly Base Salary (Rs)',
+          'Daily Wage Rate (Rs)',
+          'Route / Station Assignment',
+          'Duty Status',
+          'Joining Date',
+        ];
         const rows = allStaff.map((s) => [
-          s.id, s.name, s.role || 'Staff', s.mobile || s.phone || '-', s.email || '-', s.shift || 'Morning', s.monthlySalary || s.salary || 0, s.cnic || '-', s.route || '-', s.status || 'Active', s.joinedDate || '-'
+          s.id || s.staffId || `STF-${s.name?.slice(0, 3)}`,
+          s.name || 'Staff Member',
+          s.role || s.designation || 'Staff',
+          s.mobile || s.phone || '-',
+          s.cnic || '-',
+          s.shift || 'Morning',
+          `Rs. ${Number(s.monthlySalary || s.salary || 0).toLocaleString()}`,
+          `Rs. ${Number(s.dailyWage || Math.round((Number(s.monthlySalary || s.salary || 0)) / 30) || 0).toLocaleString()}`,
+          s.route || s.station || 'Main Dairy Facility',
+          s.status || 'Active On-Duty',
+          s.joinedDate || s.createdAt?.split('T')[0] || '-',
+        ]);
+        const totalSalaries = allStaff.reduce((sum, s) => sum + (Number(s.monthlySalary || s.salary) || 0), 0);
+        return {
+          headers,
+          rows,
+          count: rows.length,
+          summaryRows: [
+            ['SUMMARY TOTALS', '', '', '', '', 'Total Monthly Payroll Obligation', `Rs. ${totalSalaries.toLocaleString()}`, '', '', '', `Headcount: ${rows.length}`],
+          ],
+        };
+      }
+
+      case 'audit_log': {
+        const filtered = (auditEvents || []).filter((e) => isDateInRange(e.timestamp?.split('T')[0]));
+        const headers = [
+          'Log Event ID',
+          'Timestamp',
+          'User / Operator',
+          'System Module',
+          'Action Executed',
+          'Event Details / Changes',
+          'IP / Network Address',
+        ];
+        const rows = filtered.map((e) => [
+          e.id || `EVT-${Date.now()}`,
+          e.timestamp || new Date().toLocaleString(),
+          e.user || 'Admin',
+          e.module || 'System',
+          e.action || 'Activity',
+          e.detail || e.description || '-',
+          e.ipAddress || 'Internal Network',
         ]);
         return { headers, rows, count: rows.length };
       }
+
       case 'daily_closing': {
-        const totalYield = animals.reduce((sum, a) => sum + (parseFloat(a.totalDailyYield) || 0), 0);
-        const totalSales = salesHistory.reduce((sum, s) => sum + (Number(s.netPayable) || 0), 0);
-        const totalExp = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-        const headers = ['Report Metric', 'Value', 'Notes'];
+        const totalHerdYield = animals.reduce((sum, a) => sum + (parseFloat(a.totalDailyYield) || 0), 0);
+        const filteredIntakes = intakeLogs.filter((i) => isDateInRange(i.date));
+        const totalSupplierInflow = filteredIntakes.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+        const totalAvailableMilk = totalHerdYield + totalSupplierInflow;
+
+        const filteredSales = salesHistory.filter((s) => isDateInRange(s.timestamp || s.formattedDate));
+        const totalCounterSales = filteredSales.reduce((sum, s) => sum + (Number(s.netPayable || s.total) || 0), 0);
+
+        const filteredDeliveries = deliveries.filter((d) => isDateInRange(d.date || d.createdAt));
+        const totalDeliveryLit = filteredDeliveries.reduce((sum, d) => sum + (Number(d.qtyLiters) || 0), 0);
+        const totalCodCollected = filteredDeliveries.reduce((sum, d) => sum + (Number(d.codAmountToCollect) || 0), 0);
+
+        const filteredExpenses = expenses.filter((e) => isDateInRange(e.date));
+        const totalExp = filteredExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+        const totalCashCollected = totalCounterSales + totalCodCollected;
+        const netCashLiquidFlow = totalCashCollected - totalExp;
+
+        const headers = ['Financial & Operational Metric', 'Reconciled Value', 'Operational Context / Audit Notes'];
         const rows = [
-          ['Closing Date', singleDate, 'Day End Audit'],
-          ['Daily Milk Production', `${totalYield.toFixed(1)} Liters`, 'Herd Milking Register'],
-          ['Total Gross Sales Revenue', `Rs. ${totalSales.toLocaleString()}`, 'POS + Doorstep'],
-          ['Total Farm Operating Expenses', `Rs. ${totalExp.toLocaleString()}`, 'Feed + Operations'],
-          ['Net Liquid Flow', `Rs. ${(totalSales - totalExp).toLocaleString()}`, 'Daily Operating Balance'],
+          ['Closing Audit Period', period === 'custom' ? `${startDate} to ${endDate}` : singleDate, 'Target date range'],
+          ['Herd Milking Yield (Farm)', `${totalHerdYield.toFixed(1)} Liters`, 'Recorded from animal milking register'],
+          ['Supplier Milk Inflow (Procurement)', `${totalSupplierInflow.toFixed(1)} Liters`, `Logged across ${filteredIntakes.length} supplier intake slips`],
+          ['Total Combined Milk Available', `${totalAvailableMilk.toFixed(1)} Liters`, 'Farm production + external supplier sourcing'],
+          ['Doorstep Deliveries Volume', `${totalDeliveryLit.toFixed(1)} Liters`, `Dispatched across ${filteredDeliveries.length} active runs`],
+          ['POS Counter Gross Sales', `Rs. ${totalCounterSales.toLocaleString()}`, `Generated from ${filteredSales.length} retail invoices`],
+          ['Doorstep Delivery COD Recoveries', `Rs. ${totalCodCollected.toLocaleString()}`, 'Rider cash collections on delivery'],
+          ['Total Cash Revenue Collections', `Rs. ${totalCashCollected.toLocaleString()}`, 'Gross cash inflows received'],
+          ['Total Operating Expenses Paid', `Rs. ${totalExp.toLocaleString()}`, `Feed, wages, fuel & maintenance across ${filteredExpenses.length} vouchers`],
+          ['Net Operational Liquid Cash Flow', `Rs. ${netCashLiquidFlow.toLocaleString()}`, 'Total Collections minus Total Operating Expenses'],
         ];
         return { headers, rows, count: rows.length };
       }
+
       default: {
-        const headers = ['Module', 'Total Records', 'Status'];
+        const headers = ['System Module', 'Active Records Count', 'Operational Status'];
         const rows = [
-          ['Herd Animals', animals.length, 'Active'],
-          ['Farm Expenses', expenses.length, 'Logged'],
-          ['POS Sales Invoices', salesHistory.length, 'Completed'],
-          ['Doorstep Deliveries', deliveries.length, 'Registered'],
-          ['Customer Directory', customerList.length, 'Verified'],
-          ['Staff & Payroll', allStaff.length, 'On-duty'],
-          ['Products Catalog', products.length, 'Available'],
+          ['Herd Animals & Yield', animals.length, 'Active in herd'],
+          ['Milk Procurement Slips', intakeLogs.length, 'Logged in register'],
+          ['Dairy Suppliers', suppliers.length, 'Registered'],
+          ['POS Retail Invoices', salesHistory.length, 'Processed'],
+          ['Doorstep Delivery Runs', deliveries.length, 'Dispatched'],
+          ['Customer Accounts', customerList.length, 'Active in directory'],
+          ['Customer Ledgers', Object.keys(ledgers).length, 'Active ledgers'],
+          ['Operating Expenses', expenses.length, 'Vouchers logged'],
+          ['Products Catalog', products.length, 'SKUs active'],
+          ['Staff & Payroll Roster', allStaff.length, 'On duty'],
+          ['Audit Trail Events', auditEvents.length, 'Events logged'],
         ];
         return { headers, rows, count: rows.length };
       }
     }
-  }, [selectedModule, period, singleDate, startDate, endDate, animals, expenses, customers, rawCustomers, ledgers, products, salesHistory, deliveries, staffList, deliveryStaff]);
+  }, [
+    selectedModule,
+    period,
+    singleDate,
+    startDate,
+    endDate,
+    animals,
+    expenses,
+    customerList,
+    ledgers,
+    products,
+    salesHistory,
+    deliveries,
+    allStaff,
+    intakeLogs,
+    suppliers,
+    auditEvents,
+    transactions,
+  ]);
 
   const handleExport = () => {
+    const periodLabel = period === 'custom' ? `${startDate}_to_${endDate}` : period === 'today' ? singleDate : period;
+    const dateRangeMeta = [
+      ['Export Period Mode', period.toUpperCase()],
+      ['Filter Range', period === 'custom' ? `${startDate} to ${endDate}` : period === 'today' ? singleDate : 'All Available Records'],
+      ['Report Title', MODULES_LIST.find((m) => m.id === selectedModule)?.name || selectedModule],
+    ];
+
     if (selectedModule === 'all') {
-      const allModulesExport = [
-        ['=== HERD ANIMALS & MILK YIELD ==='],
-        ['ID', 'Tag', 'Name', 'Species', 'Daily Yield (L)', 'Health'],
-        ...animals.map((a) => [a.id, a.tag, a.name, a.species, a.totalDailyYield, a.healthStatus || 'Healthy']),
-        [''],
-        ['=== FARM EXPENSES ==='],
-        ['ID', 'Date', 'Category', 'Description', 'Amount (Rs)', 'Method'],
-        ...expenses.map((e) => [e.id, e.date, e.category, e.description, e.amount, e.paymentMethod]),
-        [''],
-        ['=== POS SALES INVOICES ==='],
-        ['Invoice ID', 'Date', 'Customer', 'Net Payable (Rs)', 'Payment Method'],
-        ...salesHistory.map((s) => [s.invoiceId, s.formattedDate, s.customer?.name || s.walkinCustomer?.name || 'Walk-in', s.netPayable, s.paymentMethod]),
-        [''],
-        ['=== DOORSTEP DELIVERIES ==='],
-        ['Run Code', 'Date', 'Customer', 'Address', 'Liters', 'Status'],
-        ...deliveries.map((d) => [d.runCode, d.date, d.customerName, d.deliveryAddress, d.qtyLiters, d.status]),
-        [''],
-        ['=== CUSTOMER DIRECTORY ==='],
-        ['Customer ID', 'Name', 'Phone', 'Area', 'Khata Balance (Rs)', 'Status'],
-        ...(rawCustomers?.length ? rawCustomers : customers).map((c) => [c.id, c.name, c.phone, c.area, c.khataBalance || 0, c.status]),
+      // Build master multi-section bundle
+      const sections = [
+        {
+          title: 'Daily Closing & Liquid Flow Summary',
+          description: 'Reconciled milk flow and operational cash flow for period',
+          headers: ['Metric', 'Value', 'Audit Context'],
+          rows: [
+            ['Report Period', periodLabel, 'Master System Bundle'],
+            ['Total Animals in Herd', animals.length, 'Cattle Registry'],
+            ['Total Procurement Slips', intakeLogs.length, 'Intake Register'],
+            ['Total POS Sales Invoices', salesHistory.length, 'Counter Sales'],
+            ['Total Doorstep Deliveries', deliveries.length, 'Delivery Logistics'],
+            ['Total Registered Customers', customerList.length, 'Directory'],
+            ['Total Registered Suppliers', suppliers.length, 'Procurement Registry'],
+            ['Total Active Staff', allStaff.length, 'Payroll Roster'],
+          ],
+        },
+        {
+          title: 'Milk Procurement & Intake Slips',
+          description: 'External farmer batches and quality tests',
+          headers: ['Slip ID', 'Date', 'Supplier Name', 'Shift', 'Liters', 'Fat %', 'Rate/L (Rs)', 'Total (Rs)', 'Status'],
+          rows: intakeLogs.filter((i) => isDateInRange(i.date)).map((r) => [
+            r.id, r.date, r.supplierName, r.shift, r.quantity, r.fat, r.ratePerLiter, r.totalCost, r.settlement
+          ]),
+        },
+        {
+          title: 'Dairy Suppliers Registry',
+          description: 'Farmer profiles and procurement balances',
+          headers: ['Code', 'Supplier Name', 'Phone', 'Area', 'Base Rate (Rs)', 'Expected Daily (L)', 'Status'],
+          rows: suppliers.map((s) => [
+            s.code || s.id, s.name, s.phone || s.contact, s.area, s.ratePerLiter || 220, s.avgLiters || 0, s.status || 'Active'
+          ]),
+        },
+        {
+          title: 'POS Sales & Invoices',
+          description: 'Counter retail orders and customer billings',
+          headers: ['Invoice ID', 'Date', 'Customer', 'Items', 'Net Payable (Rs)', 'Payment Method'],
+          rows: salesHistory.filter((s) => isDateInRange(s.timestamp || s.formattedDate)).map((s) => [
+            s.invoiceId, s.formattedDate || s.timestamp?.split('T')[0], s.customer?.name || s.walkinCustomer?.name || 'Walk-in',
+            (s.items || []).map((i) => `${i.quantity}x ${i.name}`).join('; '), s.netPayable, s.paymentMethod
+          ]),
+        },
+        {
+          title: 'Doorstep Deliveries & Subscriptions',
+          description: 'Customer daily milk drops and rider logs',
+          headers: ['Run Code', 'Date', 'Shift', 'Customer', 'Address', 'Quantity (L)', 'COD Due (Rs)', 'Status'],
+          rows: deliveries.filter((d) => isDateInRange(d.date || d.createdAt)).map((d) => [
+            d.runCode || d.id, d.date, d.shift, d.customerName, d.deliveryAddress, d.qtyLiters, d.codAmountToCollect, d.status
+          ]),
+        },
+        {
+          title: 'Customer Directory & Khata Balances',
+          description: 'Account profiles, routes and outstanding ledger balances',
+          headers: ['Customer ID', 'Name', 'Phone', 'Area', 'Shift', 'Payment Mode', 'Credit Limit (Rs)', 'Khata Balance (Rs)', 'Status'],
+          rows: customerList.map((c) => [
+            c.id, c.name, c.phone, c.area, c.shift, c.paymentMode, c.creditLimit || 0, c.khataBalance || c.currentBalance || 0, c.status
+          ]),
+        },
+        {
+          title: 'Herd Animals & Milk Yield',
+          description: 'Herd inventory, lactation stages and daily production yields',
+          headers: ['Tag', 'Name', 'Species', 'Lactation', 'Morning (L)', 'Evening (L)', 'Total Daily (L)', 'Health'],
+          rows: animals.map((a) => [
+            a.tag, a.name, a.species, a.lactationStatus, a.morningYield, a.eveningYield, a.totalDailyYield, a.healthStatus
+          ]),
+        },
+        {
+          title: 'Farm & Operational Expenses',
+          description: 'Itemized operating vouchers, feed and facility bills',
+          headers: ['ID', 'Date', 'Category', 'Description', 'Amount (Rs)', 'Payment Mode', 'Authorized By'],
+          rows: expenses.filter((e) => isDateInRange(e.date)).map((e) => [
+            e.id, e.date, e.category, e.description, e.amount, e.paymentMethod, e.authorizedBy || 'Admin'
+          ]),
+        },
+        {
+          title: 'Products Catalog & Rates',
+          description: 'Active inventory SKUs, retail and wholesale prices',
+          headers: ['SKU', 'Product Name', 'Category', 'Unit', 'Retail Price (Rs)', 'Cost (Rs)', 'Status'],
+          rows: products.map((p) => [
+            p.sku || p.id, p.name, p.category, p.unit, p.price, p.cost, p.status
+          ]),
+        },
+        {
+          title: 'Staff Directory & Payroll Roster',
+          description: 'Employees, duties, shifts and monthly salaries',
+          headers: ['Staff ID', 'Name', 'Role', 'Mobile', 'Shift', 'Monthly Salary (Rs)', 'Status'],
+          rows: allStaff.map((s) => [
+            s.id, s.name, s.role, s.mobile || s.phone, s.shift, s.monthlySalary || s.salary, s.status
+          ]),
+        },
       ];
 
-      exportToCSV(`PureMilkBar_COMPLETE_BUNDLE_${period}`, ['Pure Milk Bar ERP — Master Multi-Module System Report'], allModulesExport);
+      exportMultiSectionCSV({
+        filename: `PureMilkBar_COMPLETE_BUNDLE_${periodLabel}`,
+        title: 'Pure Milk Bar ERP — Master Multi-Module Operational & Audit Bundle',
+        metadata: dateRangeMeta,
+        sections,
+      });
+
       setToastMessage('Exported complete multi-module bundle CSV report successfully!');
     } else {
       const moduleMeta = MODULES_LIST.find((m) => m.id === selectedModule);
-      exportToCSV(`PureMilkBar_${selectedModule}_${period}`, preview.headers, preview.rows);
+      exportTableToCSV({
+        filename: `PureMilkBar_${selectedModule}_${periodLabel}`,
+        title: `${moduleMeta?.name || selectedModule} Report`,
+        metadata: dateRangeMeta,
+        headers: preview.headers,
+        rows: preview.rows,
+        summaryRows: preview.summaryRows || [],
+      });
+
       setToastMessage(`Exported ${moduleMeta?.name || selectedModule} CSV successfully!`);
     }
 
     setTimeout(() => {
       onClose();
-    }, 900);
+    }, 800);
   };
 
   if (!isOpen) return null;
@@ -435,10 +983,10 @@ export default function ExportCSVModal({
         <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100 gap-4 shrink-0 bg-slate-50/80 rounded-t-2xl">
           <div>
             <h2 className="text-base font-bold text-slate-900 leading-snug">
-              Export CSV Data & Custom Date Filter
+              Export CSV Data &amp; Custom Date Filter
             </h2>
             <p className="text-xs text-slate-500 mt-0.5 font-normal">
-              Generate structured CSV exports for external reporting, accounting audits, and Excel analysis.
+              Generate structured, audit-ready CSV exports with full operational data for Microsoft Excel, Google Sheets, or Tally.
             </p>
           </div>
           <button
@@ -468,11 +1016,11 @@ export default function ExportCSVModal({
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   Export System Data to CSV / Excel
                   <span className="bg-emerald-500/30 text-emerald-200 border border-emerald-400/40 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                    UTF-8 Enabled
+                    UTF-8 BOM Enabled
                   </span>
                 </h3>
                 <p className="text-xs text-emerald-200/90 mt-0.5 font-sans">
-                  Generate clean, compatible CSV files for Microsoft Excel, Google Sheets, or Tally with custom date range filtering.
+                  Includes comprehensive datasets, proper character escaping, currency metrics, and date range filtering.
                 </p>
               </div>
             </div>
@@ -531,7 +1079,7 @@ export default function ExportCSVModal({
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-slate-600" />
                 <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                  2. Select Date Period & Range
+                  2. Select Date Period &amp; Range
                 </span>
               </div>
 
@@ -687,7 +1235,7 @@ export default function ExportCSVModal({
               <div className="flex items-center gap-2">
                 <Table className="w-4 h-4 text-slate-600" />
                 <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                  Export Preview & Filtered Output Summary
+                  Export Preview &amp; Filtered Output Summary
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -716,12 +1264,16 @@ export default function ExportCSVModal({
                   ))}
                 </div>
 
-                {preview.count > 0 && (
+                {preview.count > 0 ? (
                   <div className="mt-3 text-[11px] text-slate-600 flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                     <span>
                       First record sample: <strong className="text-slate-900 font-bold">{String(preview.rows[0]?.[1] || preview.rows[0]?.[0])}</strong>
                     </span>
                     <span className="font-semibold text-emerald-800">Ready to download .CSV</span>
+                  </div>
+                ) : (
+                  <div className="mt-3 text-[11px] text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                    No records found for this module in the selected date range ({period}). Exporting will generate the structured headers and summary schema.
                   </div>
                 )}
               </div>
@@ -732,7 +1284,7 @@ export default function ExportCSVModal({
                   <strong className="text-emerald-950 block font-bold mb-0.5">
                     Complete Multi-Module Bundle Selected
                   </strong>
-                  Downloading will create a master structured CSV document containing formatted sections for Daily Closing, POS Invoices, Deliveries, Procurement, Expenses, Customer Ledgers, Herd Yield, Products, Staff Roster, and Audit Logs!
+                  Downloading will create a master structured CSV document containing formatted sections for Daily Closing, Milk Procurement, Suppliers Registry, POS Invoices, Deliveries, Customer Directory, Customer Ledgers, Herd Animals, Operating Expenses, Products, and Staff Payroll!
                 </div>
               </div>
             )}
@@ -742,7 +1294,7 @@ export default function ExportCSVModal({
         <div className="px-6 py-3.5 border-t border-slate-100 flex items-center justify-between gap-2.5 shrink-0 bg-slate-50/80 rounded-b-2xl">
           <div className="text-xs text-slate-500 flex items-center gap-1.5 font-normal">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            Compatible with MS Excel, Tally & Google Sheets
+            Compatible with MS Excel, Tally &amp; Google Sheets
           </div>
           <div className="flex items-center gap-2">
             <button

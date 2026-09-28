@@ -4,14 +4,7 @@ import supplierService from '../services/supplierService';
 const IntakeContext = createContext(null);
 
 export function IntakeProvider({ children }) {
-  const [intakeLogs, setIntakeLogs] = useState(() => {
-    try {
-      const saved = localStorage.getItem('intake_logs_cache');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [intakeLogs, setIntakeLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -50,14 +43,10 @@ export function IntakeProvider({ children }) {
           status: p.qualityGrade === 'REJECTED' ? 'Rejected' : 'Accepted',
         };
       });
-      if (normalized.length > 0) {
-        setIntakeLogs(normalized);
-        localStorage.setItem('intake_logs_cache', JSON.stringify(normalized));
-      }
+      setIntakeLogs(normalized);
     } catch (err) {
       console.error('Failed to fetch procurements from API:', err);
       setError(err.message || 'Failed to load intake records');
-      // DO NOT clear state here, rely on localStorage cache
     } finally {
       setIsLoading(false);
     }
@@ -90,17 +79,10 @@ export function IntakeProvider({ children }) {
         totalAmount: cost,
         amountPaid: parseFloat(newRecord.paidAmount) || 0,
         batchNumber: 'B-' + Date.now(),
-        dockInspectorId: "64f8a1239c1b4e001c8a4567",
         balanceAddedToKhata: cost - (parseFloat(newRecord.paidAmount) || 0),
       };
 
-      let created;
-      try {
-        created = await supplierService.createProcurement(payload);
-      } catch (err) {
-        created = { ...payload, id: `local-${Date.now()}` };
-        console.warn('Procurement API unavailable, saving locally:', err.message);
-      }
+      const created = await supplierService.createProcurement(payload);
 
       const normalized = {
         ...created,
@@ -123,11 +105,7 @@ export function IntakeProvider({ children }) {
         status: 'Accepted',
       };
 
-      setIntakeLogs((prev) => {
-        const updated = [normalized, ...prev];
-        localStorage.setItem('intake_logs_cache', JSON.stringify(updated));
-        return updated;
-      });
+      setIntakeLogs((prev) => [normalized, ...prev]);
 
       return normalized;
     } catch (err) {
@@ -262,14 +240,11 @@ export function IntakeProvider({ children }) {
   const deleteIntake = async (id) => {
     try {
       await supplierService.deleteProcurement(id);
+      setIntakeLogs((prev) => prev.filter((log) => log.id !== id && log._id !== id));
     } catch (err) {
-      console.warn('Backend delete failed, removing locally:', err);
+      console.error('Backend delete intake failed:', err);
+      throw err;
     }
-    setIntakeLogs((prev) => {
-      const updated = prev.filter((log) => log.id !== id && log._id !== id);
-      localStorage.setItem('intake_logs_cache', JSON.stringify(updated));
-      return updated;
-    });
   };
 
   const value = {

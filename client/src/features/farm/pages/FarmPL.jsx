@@ -18,6 +18,7 @@ import { useExpense } from '@/context/ExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
+import { exportMultiSectionCSV } from '@/utils/csvExport';
 
 import PLCardOverflow from '../components/F&LReport/PLCardOverflow';
 import SellingRevenue from '../components/F&LReport/SellingRevenue';
@@ -532,58 +533,76 @@ export default function FarmPL() {
 
   // 5. CSV Export Feature
   const handleExportCSV = () => {
-    const lines = [];
-    lines.push('PURE MILK BAR - FARM PROFIT & LOSS (P&L) REPORT');
-    lines.push(`Generated At,${new Date().toLocaleString()}`);
-    lines.push(`Filter Mode,${dateFilterMode}`);
-    if (selectedDate) lines.push(`Selected Date,${selectedDate}`);
-    lines.push('');
-
-    // Section 1: Executive KPI Summary
-    lines.push('--- EXECUTIVE SUMMARY METRICS ---');
-    lines.push('Metric,Value (PKR / %),Notes');
-    lines.push(`Gross Farm Revenue,${calculatedMetrics.grossRevenue},Consolidated inflow from all channels`);
-    lines.push(`Raw Milk Revenue,${calculatedMetrics.rawMilkRevenue},Total Volume: ${calculatedMetrics.rawMilkVolume} L`);
-    lines.push(`Value-Added Revenue,${calculatedMetrics.valueAddedRevenue},Processed products (Farm Dahi)`);
-    lines.push(`Total Farm Costs,${calculatedMetrics.totalFarmCost},All operational farm bills & feed`);
-    lines.push(`Net Profit,${calculatedMetrics.netProfit},Take-home operational profit`);
-    lines.push(`Net Margin %,${calculatedMetrics.netMargin}%,Efficiency ratio`);
-    lines.push(`Profit Per Liter,Rs. ${calculatedMetrics.profitPerLiter} / L,Unit return on volume`);
-    lines.push('');
-
-    // Section 2: Farm Products Revenue Breakdown
-    lines.push('--- FARM PRODUCTS REVENUE BREAKDOWN ---');
-    lines.push('Product Name,Category,Total Output,Selling Rate,Gross Realized,Net Profit,Net Margin %');
-    calculatedMetrics.farmProductsTableData.forEach((p) => {
-      lines.push(`"${p.name}","${p.category}",${p.totalOutput},${p.sellingRate},${p.grossRealized},${p.netProfit},${p.netMargin}%`);
+    exportMultiSectionCSV({
+      filename: `Pure_Milk_Bar_Farm_PL_Report_${dateFilterMode}_${todayISO}`,
+      title: 'Pure Milk Bar — Farm Operations Profit & Loss (P&L) Report',
+      metadata: [
+        ['Filter Mode', dateFilterMode.toUpperCase()],
+        ['Selected Date', selectedDate || 'All Period Range'],
+        ['Gross Farm Revenue', `Rs. ${calculatedMetrics.grossRevenue.toLocaleString()}`],
+        ['Total Farm Costs', `Rs. ${calculatedMetrics.totalFarmCost.toLocaleString()}`],
+        ['Net Realized Profit', `Rs. ${calculatedMetrics.netProfit.toLocaleString()}`],
+        ['Net Margin %', `${calculatedMetrics.netMargin}%`],
+        ['Profit Per Liter', `Rs. ${calculatedMetrics.profitPerLiter} / L`],
+      ],
+      sections: [
+        {
+          title: 'Executive KPI Summary',
+          description: 'High level operational performance, unit economics and profitability metrics',
+          headers: ['Executive Metric', 'Value (PKR / %)', 'Operational Context / Notes'],
+          rows: [
+            ['Gross Farm Revenue', `Rs. ${calculatedMetrics.grossRevenue.toLocaleString()}`, 'Consolidated inflow from all sales channels'],
+            ['Raw Fresh Milk Revenue', `Rs. ${calculatedMetrics.rawMilkRevenue.toLocaleString()}`, `Total Volume: ${calculatedMetrics.rawMilkVolume} L`],
+            ['Value-Added Products Revenue', `Rs. ${calculatedMetrics.valueAddedRevenue.toLocaleString()}`, 'Processed items (Farm Dahi, Sweets, etc.)'],
+            ['Total Operating Farm Costs', `Rs. ${calculatedMetrics.totalFarmCost.toLocaleString()}`, 'All operational farm feed, labor and facility bills'],
+            ['Net Operating Profit', `Rs. ${calculatedMetrics.netProfit.toLocaleString()}`, 'Take-home bottomline profit'],
+            ['Net Margin Efficiency %', `${calculatedMetrics.netMargin}%`, 'Operational margin ratio'],
+            ['Profit Return Per Liter', `Rs. ${calculatedMetrics.profitPerLiter} / L`, 'Unit return realized per produced liter'],
+          ],
+        },
+        {
+          title: 'Farm Products Revenue Breakdown',
+          description: 'Volume outputs, realized selling rates and gross margins by product line',
+          headers: ['Product Name', 'Category', 'Total Output', 'Selling Rate (Rs)', 'Gross Realized (Rs)', 'Net Profit (Rs)', 'Net Margin %'],
+          rows: calculatedMetrics.farmProductsTableData.map((p) => [
+            p.name,
+            p.category,
+            p.totalOutput,
+            `Rs. ${p.sellingRate}`,
+            `Rs. ${Number(p.grossRealized || 0).toLocaleString()}`,
+            `Rs. ${Number(p.netProfit || 0).toLocaleString()}`,
+            `${p.netMargin}%`,
+          ]),
+        },
+        {
+          title: 'Selling Channels Performance',
+          description: 'Volume and revenue breakdown across distribution channels',
+          headers: ['Channel Name', 'Orders Count', 'Revenue (PKR)', 'Channel Share (%)'],
+          rows: [
+            ['Doorstep Delivery', calculatedMetrics.doorstepCount, `Rs. ${calculatedMetrics.doorstepRevenue.toLocaleString()}`, `${calculatedMetrics.doorstepShare}%`],
+            ['POS & Farm Gate', calculatedMetrics.posCount, `Rs. ${calculatedMetrics.posRevenue.toLocaleString()}`, `${calculatedMetrics.posShare}%`],
+            ['Bulk Wholesale', calculatedMetrics.wholesaleCount, `Rs. ${calculatedMetrics.wholesaleRevenue.toLocaleString()}`, `${calculatedMetrics.wholesaleShare}%`],
+          ],
+        },
+        {
+          title: 'Recorded Farm Operating Expenses',
+          description: 'Itemized operational vouchers for feed, labor, fuel and veterinary care',
+          headers: ['Expense ID', 'Date', 'Category', 'Description', 'Payment Method', 'Amount (PKR)', 'Authorized By'],
+          rows: filteredExpenses.map((exp) => [
+            exp.id || 'N/A',
+            exp.date || '-',
+            exp.category || 'General',
+            exp.description || 'Farm expense',
+            exp.paymentMethod || 'Cash',
+            `Rs. ${Number(exp.amount || 0).toLocaleString()}`,
+            exp.authorizedBy || 'Admin',
+          ]),
+          summaryRows: [
+            ['TOTAL EXPENSES', '', '', '', '', `Rs. ${filteredExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0).toLocaleString()}`, `Vouchers: ${filteredExpenses.length}`],
+          ],
+        },
+      ],
     });
-    lines.push('');
-
-    // Section 3: Channel Performance
-    lines.push('--- SELLING CHANNEL PERFORMANCE ---');
-    lines.push('Channel Name,Orders Count,Revenue (PKR),Channel Share (%)');
-    lines.push(`Doorstep Delivery,${calculatedMetrics.doorstepCount},${calculatedMetrics.doorstepRevenue},${calculatedMetrics.doorstepShare}%`);
-    lines.push(`POS & Farm Gate,${calculatedMetrics.posCount},${calculatedMetrics.posRevenue},${calculatedMetrics.posShare}%`);
-    lines.push(`Bulk Wholesale,${calculatedMetrics.wholesaleCount},${calculatedMetrics.wholesaleRevenue},${calculatedMetrics.wholesaleShare}%`);
-    lines.push('');
-
-    // Section 4: Itemized Expenses
-    lines.push('--- RECORDED FARM EXPENSES ---');
-    lines.push('ID,Date,Category,Description,Payment Method,Amount (PKR),Authorized By');
-    filteredExpenses.forEach((exp) => {
-      lines.push(`"${exp.id || ''}","${exp.date || ''}","${exp.category || ''}","${exp.description || ''}","${exp.paymentMethod || ''}",${exp.amount || 0},"${exp.authorizedBy || ''}"`);
-    });
-
-    const csvString = lines.join('\n');
-    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Pure_Milk_Bar_Farm_PL_Report_${dateFilterMode}_${todayISO}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   // ====================================================================

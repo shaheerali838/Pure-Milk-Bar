@@ -63,7 +63,6 @@ export default function DeliveryFinanceStats({
         <div
           key={label}
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-xl p-2.5 shadow-2xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: `3.5px solid ${color}` }}
         >
           <div className="flex items-start justify-between mb-1.5">
             <div

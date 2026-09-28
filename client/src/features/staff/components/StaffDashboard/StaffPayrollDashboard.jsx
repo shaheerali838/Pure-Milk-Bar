@@ -207,7 +207,6 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
         {/* 1. Total Staff */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #10b981' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -236,7 +235,6 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
         {/* 2. Present Today */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #009966' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -265,7 +263,6 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
         {/* 3. On Leave & Absent */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #f59e0b' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -279,7 +276,7 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
             </span>
           </div>
           <div>
-            <p className="font-display text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular font-mono">
+            <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular font-mono">
               {metrics.leaveToday}L / {metrics.absentToday}A
             </p>
             <p className="text-xs font-bold text-slate-700 font-display">
@@ -294,7 +291,6 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
         {/* 4. Total Monthly Payroll */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #3b82f6' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -308,7 +304,7 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
             </span>
           </div>
           <div>
-            <p className="font-display text-2xl font-black text-blue-700 leading-tight tracking-tight mb-0.5 tabular font-mono truncate">
+            <p className="text-2xl font-black text-blue-700 leading-tight tracking-tight mb-0.5 tabular font-mono truncate">
               Rs. {metrics.totalMonthlyPayroll.toLocaleString()}
             </p>
             <p className="text-xs font-bold text-slate-700 font-display">
@@ -465,7 +461,7 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
                 No staff registered. Add staff members to track attendance.
               </div>
             ) : (
-              <div className="divide-y divide-slate-100 mt-2 max-h-[220px] overflow-y-auto">
+              <div className="divide-y divide-slate-100 mt-2 max-h-55 overflow-y-auto">
                 {staffList.slice(0, 5).map((staff) => {
                   const status = getStaffStatusOnDate(staff.id, todayStr);
                   const isPres = status === 'present';
@@ -533,7 +529,7 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
 
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Search Input */}
-            <div className="relative min-w-[200px]">
+            <div className="relative min-w-50">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"

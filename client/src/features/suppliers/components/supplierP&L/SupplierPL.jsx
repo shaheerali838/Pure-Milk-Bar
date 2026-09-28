@@ -17,6 +17,7 @@ import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useSettingsContext } from '@/context/SettingsContext';
+import { exportTableToCSV } from '@/utils/csvExport';
 import SupplierPLCards from './SupplierPLCards';
 import SupplierPLCharts from './SupplierPLCharts';
 import SupplierPLTable from './SupplierPLTable';
@@ -534,50 +535,38 @@ export default function SupplierPL() {
     ];
 
     const rows = productStreams.map((p) => [
-      `"${p.streamName}"`,
-      `"${p.category}"`,
-      `"${p.sourceType}"`,
+      p.streamName,
+      p.category,
+      p.sourceType,
       p.sourcedVolume,
-      p.baseCost,
-      p.avgPurchaseRate ? p.avgPurchaseRate.toFixed(1) : '0',
-      p.resaleRevenue,
-      p.avgResaleRate,
-      p.grossMargin,
+      `Rs. ${Number(p.baseCost || 0).toLocaleString()}`,
+      `Rs. ${p.avgPurchaseRate ? p.avgPurchaseRate.toFixed(1) : '0'}`,
+      `Rs. ${Number(p.resaleRevenue || 0).toLocaleString()}`,
+      `Rs. ${p.avgResaleRate || 0}`,
+      `Rs. ${Number(p.grossMargin || 0).toLocaleString()}`,
       `${p.grossMarginPercent}%`,
-      p.allocatedOverhead,
-      p.netProfit,
+      `Rs. ${Number(p.allocatedOverhead || 0).toLocaleString()}`,
+      `Rs. ${Number(p.netProfit || 0).toLocaleString()}`,
     ]);
 
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [
-        `"Pure Milk Bar - Supplier Procurement Profit & Loss (P&L) Report"`,
-        `"Generated Date: ${new Date().toLocaleDateString()}"`,
-        `"Period Filter: ${customDate ? `Date: ${customDate}` : periodFilter}"`,
-        '',
-        `"P&L SUMMARY TOTALS"`,
-        `"Total Sourced Resale Income",Rs. ${summaryData.income}`,
-        `"Supplier Purchase Cost",Rs. ${summaryData.cost}`,
-        `"Trading Gross Profit",Rs. ${summaryData.gross}`,
-        `"Logistics & Testing Overheads",Rs. ${summaryData.logistics}`,
-        `"Total Net Profit",Rs. ${summaryData.net}`,
-        `"Realization / Liter",Rs. ${summaryData.realizationPerLiter.toFixed(2)}`,
-        '',
-        `"SOURCED MILK LINES BREAKDOWN"`,
-        headers.join(','),
-        ...rows.map((e) => e.join(',')),
-      ].join('\n');
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute(
-      'download',
-      `Supplier_Procurement_PL_Report_${new Date().toISOString().split('T')[0]}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportTableToCSV({
+      filename: `Supplier_Procurement_PL_Report_${new Date().toISOString().split('T')[0]}`,
+      title: 'Supplier Procurement Profit & Loss (P&L) Report',
+      metadata: [
+        ['Period Filter', customDate ? `Date: ${customDate}` : periodFilter],
+        ['Total Sourced Resale Income', `Rs. ${summaryData.income}`],
+        ['Supplier Purchase Cost', `Rs. ${summaryData.cost}`],
+        ['Trading Gross Profit', `Rs. ${summaryData.gross}`],
+        ['Logistics & Testing Overheads', `Rs. ${summaryData.logistics}`],
+        ['Total Net Profit', `Rs. ${summaryData.net}`],
+        ['Realization / Liter', `Rs. ${summaryData.realizationPerLiter.toFixed(2)}`],
+      ],
+      headers,
+      rows,
+      summaryRows: [
+        ['TOTAL SUMMARY', '', '', '', `Rs. ${summaryData.cost}`, '', `Rs. ${summaryData.income}`, '', `Rs. ${summaryData.gross}`, '', `Rs. ${summaryData.logistics}`, `Rs. ${summaryData.net}`],
+      ],
+    });
   };
 
   return (

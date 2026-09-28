@@ -19,6 +19,7 @@ import inventoryRoutes from "./modules/inventory/routes/inventory.routes.js";
 import posRoutes from "./modules/pos/routes/pos.routes.js";
 import staffRoutes from "./modules/staff/routes/staff.routes.js";
 import processingRoutes from "./modules/processing/routes/processing.routes.js";
+import uploadRoutes from "./modules/upload/routes/upload.routes.js";
 
 const app = express();
 
@@ -111,6 +112,7 @@ app.use("/api/v1/daily-closings", dailyClosingRoutes);
 app.use("/api/v1/audit-logs", auditLogRoutes);
 app.use("/api/v1/staff", staffRoutes);
 app.use("/api/v1/processing", processingRoutes);
+app.use("/api/v1/upload", uploadRoutes);
 
 // Root route
 app.get("/", (req, res) => {

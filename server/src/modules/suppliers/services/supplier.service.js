@@ -1,5 +1,6 @@
 import Supplier from '../../../models/Supplier.model.js';
 import AppError from '../../../utils/AppError.js';
+import { uploadToCloudinary } from '../../../config/cloudinary.js';
 
 class SupplierService {
   async createSupplier(data) {
@@ -11,12 +12,18 @@ class SupplierService {
       ? String(data.milkType).toUpperCase()
       : 'BUFFALO';
 
+    let imageUrl = data.image || null;
+    if (imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('data:image')) {
+      imageUrl = await uploadToCloudinary(imageUrl, 'puremilkbar/suppliers');
+    }
+
     const normalizedData = {
       ...data,
       code,
       villageOrLocation,
       baseRatePerLiter,
       milkType,
+      image: imageUrl,
     };
 
     // Check for duplicate code
@@ -95,7 +102,12 @@ class SupplierService {
       }
     }
 
-    const supplier = await Supplier.findByIdAndUpdate(id, data, {
+    const updatePayload = { ...data };
+    if (updatePayload.image && typeof updatePayload.image === 'string' && updatePayload.image.startsWith('data:image')) {
+      updatePayload.image = await uploadToCloudinary(updatePayload.image, 'puremilkbar/suppliers');
+    }
+
+    const supplier = await Supplier.findByIdAndUpdate(id, updatePayload, {
       new: true,
       runValidators: true,
     }).lean();

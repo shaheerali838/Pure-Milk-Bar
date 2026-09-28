@@ -127,7 +127,7 @@ export default function StaffDailyAttendanceManager({
   return (
     <div className="space-y-4 animate-in fade-in duration-150 w-full">
       {/* Top Banner / Date Bar */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white p-5 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-linear-to-r from-slate-900 via-slate-800 to-emerald-950 text-white p-5 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1.5">
@@ -209,7 +209,6 @@ export default function StaffDailyAttendanceManager({
         {/* Total Workforce */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #10b981' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -238,7 +237,6 @@ export default function StaffDailyAttendanceManager({
         {/* Present Today */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #009966' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -267,7 +265,6 @@ export default function StaffDailyAttendanceManager({
         {/* On Leave Today */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #f59e0b' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -296,7 +293,6 @@ export default function StaffDailyAttendanceManager({
         {/* Absent Today */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200"
-          style={{ borderTop: '4px solid #ef4444' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -325,7 +321,6 @@ export default function StaffDailyAttendanceManager({
         {/* Quick Batch Actions */}
         <div
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all duration-200 col-span-2 sm:col-span-1"
-          style={{ borderTop: '4px solid #6366f1' }}
         >
           <div className="flex items-start justify-between mb-2">
             <div
@@ -399,7 +394,7 @@ export default function StaffDailyAttendanceManager({
       {/* Filter and Search Bar */}
       <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-3">
         {/* Search Input */}
-        <div className="relative flex-1 min-w-[240px]">
+        <div className="relative flex-1 min-w-60">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <Input
             type="text"
@@ -591,7 +586,7 @@ export default function StaffDailyAttendanceManager({
                             }
 
                             return (
-                              <div className="flex items-center gap-1.5 text-slate-700 font-semibold truncate max-w-[150px]">
+                              <div className="flex items-center gap-1.5 text-slate-700 font-semibold truncate max-w-37.5">
                                 <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                                 <span className="truncate">
                                   {staff.route && staff.route.toLowerCase() !== 'not assigned'
@@ -741,29 +736,29 @@ export default function StaffDailyAttendanceManager({
             <table className="w-full text-center text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50/90 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-2.5 px-3 text-left sticky left-0 bg-slate-50/95 z-10 w-[180px] shadow-xs">
+                  <th className="py-2.5 px-3 text-left sticky left-0 bg-slate-50/95 z-10 w-45 shadow-xs">
                     Staff Member
                   </th>
                   {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
                     <th
                       key={d}
-                      className={`py-2 px-1 min-w-[28px] ${d === todayDayNum ? 'bg-blue-100/70 text-blue-900 font-black' : ''
+                      className={`py-2 px-1 min-w-7 ${d === todayDayNum ? 'bg-blue-100/70 text-blue-900 font-black' : ''
                         }`}
                     >
                       <span>{d}</span>
                       {d === todayDayNum && <span className="block text-[8px] text-blue-600">TODAY</span>}
                     </th>
                   ))}
-                  <th className="py-2.5 px-2 bg-emerald-50 text-emerald-800 font-bold min-w-[45px]">
+                  <th className="py-2.5 px-2 bg-emerald-50 text-emerald-800 font-bold min-w-11.25">
                     Pres
                   </th>
-                  <th className="py-2.5 px-2 bg-amber-50 text-amber-800 font-bold min-w-[45px]">
+                  <th className="py-2.5 px-2 bg-amber-50 text-amber-800 font-bold min-w-11.25">
                     Leave
                   </th>
-                  <th className="py-2.5 px-2 bg-rose-50 text-rose-800 font-bold min-w-[45px]">
+                  <th className="py-2.5 px-2 bg-rose-50 text-rose-800 font-bold min-w-11.25">
                     Abs
                   </th>
-                  <th className="py-2.5 px-3 text-right bg-slate-50 min-w-[80px]">
+                  <th className="py-2.5 px-3 text-right bg-slate-50 min-w-20">
                     Net Pay
                   </th>
                 </tr>
@@ -785,7 +780,7 @@ export default function StaffDailyAttendanceManager({
                     <tr key={staff.id} className="hover:bg-slate-50/50 transition">
                       {/* Fixed Staff Name */}
                       <td className="py-2.5 px-3 text-left sticky left-0 bg-white hover:bg-slate-50 z-10 shadow-xs border-r border-slate-100">
-                        <span className="font-bold text-slate-900 block leading-tight text-xs truncate max-w-[170px]">
+                        <span className="font-bold text-slate-900 block leading-tight text-xs truncate max-w-42.5">
                           {staff.name}
                         </span>
                         <span className="text-[10px] text-slate-400 font-mono">

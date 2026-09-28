@@ -84,6 +84,8 @@ export const createProductSchema = Joi.object({
 
   isAvailableForDelivery: Joi.boolean()
     .default(true),
+
+  image: Joi.string().allow('', null).optional(),
 }).options({ stripUnknown: true });
 
 // ─── UPDATE Product Schema ──────────────────────────────────────────────────
@@ -139,6 +141,8 @@ export const updateProductSchema = Joi.object({
   isAvailableForPos: Joi.boolean(),
 
   isAvailableForDelivery: Joi.boolean(),
+
+  image: Joi.string().allow('', null).optional(),
 }).options({ stripUnknown: true }).min(1).messages({
   'object.min': 'At least one field must be provided for update',
 });

@@ -6,7 +6,25 @@ import {
   setStaffStatusService,
   deleteStaffService,
   getStaffStatsService,
+  sendStaffCredentialsService,
 } from '../services/staff.service.js';
+
+// Send / Resend Login Credentials Email (strictly ADMIN / Owner)
+export const sendStaffCredentials = async (req, res, next) => {
+  try {
+    const result = await sendStaffCredentialsService(req.params.id, req.body, req.user);
+
+    return res.status(200).json({
+      success: true,
+      statusCode: 200,
+      message: result.message,
+      data: result,
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 // Create a new staff member (Admin & Manager)
 export const createStaff = async (req, res, next) => {

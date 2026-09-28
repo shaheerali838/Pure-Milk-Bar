@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Customer from '../../../models/Customer.model.js';
 import KhataEntry from '../../../models/KhataEntry.model.js';
+import { uploadToCloudinary } from '../../../config/cloudinary.js';
 
 // Helper to validate Mongo ObjectId
 const validateObjectId = (id) => {
@@ -48,9 +49,15 @@ export const createCustomerService = async (customerData) => {
     }
   }
 
+  let customerImageUrl = customerData.image || null;
+  if (customerImageUrl && typeof customerImageUrl === 'string' && customerImageUrl.startsWith('data:image')) {
+    customerImageUrl = await uploadToCloudinary(customerImageUrl, 'puremilkbar/customers');
+  }
+
   const newCustomer = await Customer.create({
     ...customerData,
     code: customerCode,
+    image: customerImageUrl,
   });
 
   return newCustomer;
@@ -178,6 +185,10 @@ export const updateCustomerService = async (customerId, updateData) => {
       throw error;
     }
     updateData.code = newCode;
+  }
+
+  if (updateData.image && typeof updateData.image === 'string' && updateData.image.startsWith('data:image')) {
+    updateData.image = await uploadToCloudinary(updateData.image, 'puremilkbar/customers');
   }
 
   Object.assign(customer, updateData);

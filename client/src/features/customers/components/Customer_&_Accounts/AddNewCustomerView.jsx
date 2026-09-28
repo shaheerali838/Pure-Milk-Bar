@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, ShieldCheck, UserPlus, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, UserPlus, CheckCircle2, Loader2 } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { usePOSContext } from '../../../../context/POSContext';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import ImageUpload from '@/components/common/ImageUpload';
 export default function AddNewCustomerView({ onBack }) {
   const { addCustomer } = useCustomerContext();
   const { products = [] } = usePOSContext();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -64,32 +65,40 @@ export default function AddNewCustomerView({ onBack }) {
   const dailyCost = numQty * currentPrice;
   const monthlyCost = dailyCost * 30;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!formData.name || !formData.phone) return;
 
+    setIsSubmitting(true);
     const formattedSubscription = `${subQty} ${subUnit} ${selectedProduct?.name || 'Cow Milk'}`.trim();
 
-    addCustomer({
-      name: formData.name,
-      area: formData.area || 'Model Town',
-      phone: formData.phone,
-      onlineAccount: formData.onlineAccount || formData.phone,
-      cnicNumber: formData.cnicNumber || '',
-      idType: formData.idType,
-      verificationStatus: formData.verificationStatus,
-      address: formData.address || '',
-      secondaryPhone: formData.secondaryPhone || '',
-      referenceName: formData.referenceName || '',
-      subscription: formattedSubscription,
-      creditLimit: Number(formData.creditLimit) || 10000,
-      khataBalance: 0,
-      paymentMode: formData.paymentMode,
-      status: 'Active',
-      image: formData.image || null,
-    });
+    try {
+      await addCustomer({
+        name: formData.name,
+        area: formData.area || 'Model Town',
+        phone: formData.phone,
+        onlineAccount: formData.onlineAccount || formData.phone,
+        cnicNumber: formData.cnicNumber || '',
+        idType: formData.idType,
+        verificationStatus: formData.verificationStatus,
+        address: formData.address || '',
+        secondaryPhone: formData.secondaryPhone || '',
+        referenceName: formData.referenceName || '',
+        subscription: formattedSubscription,
+        creditLimit: Number(formData.creditLimit) || 10000,
+        khataBalance: 0,
+        paymentMode: formData.paymentMode,
+        status: 'Active',
+        image: formData.image || null,
+      });
 
-    onBack();
+      onBack();
+    } catch (err) {
+      console.error('Failed to add customer:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -440,6 +449,7 @@ export default function AddNewCustomerView({ onBack }) {
               variant="outline"
               size="sm"
               onClick={onBack}
+              disabled={isSubmitting}
               className="px-4 py-1.5 h-8 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl"
             >
               Cancel
@@ -447,10 +457,20 @@ export default function AddNewCustomerView({ onBack }) {
             <Button
               type="submit"
               size="sm"
-              className="px-6 py-1.5 h-8 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+              disabled={isSubmitting}
+              className="px-6 py-1.5 h-8 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Save Customer Record
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Saving Customer Record...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Save Customer Record
+                </>
+              )}
             </Button>
           </div>
         </form>

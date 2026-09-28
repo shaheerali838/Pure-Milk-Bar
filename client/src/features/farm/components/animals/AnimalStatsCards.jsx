@@ -79,7 +79,6 @@ export default function AnimalStatsCards() {
           className={`flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3 shadow-xs hover:shadow-md transition-all duration-200 ${
             path ? "cursor-pointer" : ""
           }`}
-          style={{ borderTop: `4px solid ${color}` }}
         >
           <div className="flex items-start justify-between mb-1">
             <div

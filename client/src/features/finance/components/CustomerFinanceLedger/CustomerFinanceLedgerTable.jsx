@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Eye, Search, CreditCard, Pencil } from 'lucide-react';
+import { Eye, Search, CreditCard, Pencil, Download } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
+import { exportTableToCSV } from '@/utils/csvExport';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -71,6 +72,52 @@ export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayme
     return matchesSearch && matchesStatus;
   });
 
+  const handleExportCSV = () => {
+    const headers = [
+      'Customer Code',
+      'Customer Name',
+      'Phone Number',
+      'Area',
+      'Credit Limit (PKR)',
+      'Total Paid (PKR)',
+      'Credit Outstanding (PKR)',
+      'Last Payment Date',
+      'Payment Status',
+      'Overall Financial Status',
+    ];
+    const rows = filteredCustomers.map(({ customer, custCode, totalPaid, outstanding, lastPaymentDate, lastPaymentLabel, overallStatus }) => [
+      custCode,
+      customer.name,
+      customer.phone || '-',
+      customer.area || '-',
+      Number(customer.creditLimit || 0),
+      Number(totalPaid || 0),
+      Number(outstanding || 0),
+      lastPaymentDate || '-',
+      lastPaymentLabel || '-',
+      overallStatus || '-',
+    ]);
+    const totalOutstanding = filteredCustomers.reduce((sum, item) => sum + item.outstanding, 0);
+    const totalPaidAll = filteredCustomers.reduce((sum, item) => sum + item.totalPaid, 0);
+
+    exportTableToCSV({
+      filename: `Customer_Receivables_Ledger_${new Date().toISOString().split('T')[0]}`,
+      title: 'Customer Accounts & Receivables Ledger Summary',
+      metadata: [
+        ['Status Filter', statusFilter],
+        ['Search Query', searchQuery || 'All Customers'],
+        ['Total Customers Filtered', filteredCustomers.length],
+        ['Total Outstanding Dues', `Rs. ${totalOutstanding.toLocaleString()}`],
+        ['Total Collections Paid', `Rs. ${totalPaidAll.toLocaleString()}`],
+      ],
+      headers,
+      rows,
+      summaryRows: [
+        ['SUMMARY TOTALS', '', '', '', '', `Rs. ${totalPaidAll.toLocaleString()}`, `Rs. ${totalOutstanding.toLocaleString()}`, '', '', `Accounts: ${filteredCustomers.length}`],
+      ],
+    });
+  };
+
   return (
     <div className="space-y-2">
       <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-2">
@@ -85,21 +132,35 @@ export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayme
           />
         </div>
 
-        <div className="w-48">
-          <Select
-            value={statusFilter}
-            onValueChange={(val) => setStatusFilter(val)}
+        <div className="flex items-center gap-2">
+          <div className="w-48">
+            <Select
+              value={statusFilter}
+              onValueChange={(val) => setStatusFilter(val)}
+            >
+              <SelectTrigger className="w-full h-8 px-2.5 bg-white border border-slate-200 rounded-md text-xs text-slate-700 cursor-pointer">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All Financial Status" className="text-xs">All Financial Status</SelectItem>
+                <SelectItem value="Paid Up" className="text-xs">Paid Up</SelectItem>
+                <SelectItem value="Half-Paid" className="text-xs">Half-Paid</SelectItem>
+                <SelectItem value="Credit Overdue" className="text-xs">Credit Overdue</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleExportCSV}
+            className="h-8 px-3 text-xs font-semibold text-emerald-800 hover:text-emerald-950 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 shadow-2xs cursor-pointer gap-1.5 shrink-0"
+            title="Export filtered customer ledger table to CSV"
           >
-            <SelectTrigger className="w-full h-8 px-2.5 bg-white border border-slate-200 rounded-md text-xs text-slate-700 cursor-pointer">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="All Financial Status" className="text-xs">All Financial Status</SelectItem>
-              <SelectItem value="Paid Up" className="text-xs">Paid Up</SelectItem>
-              <SelectItem value="Half-Paid" className="text-xs">Half-Paid</SelectItem>
-              <SelectItem value="Credit Overdue" className="text-xs">Credit Overdue</SelectItem>
-            </SelectContent>
-          </Select>
+            <Download className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Export CSV</span>
+          </Button>
         </div>
       </div>
 

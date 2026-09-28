@@ -178,7 +178,7 @@ const staffSchema = new Schema(
 );
 
 // Pre-save hook to calculate daily salary and auto-generate staffCode if missing
-staffSchema.pre('save', function (next) {
+staffSchema.pre('save', function () {
   if (this.monthlySalary !== undefined && this.monthlySalary !== null) {
     this.dailySalary = Math.round(Number(this.monthlySalary) / 30);
   }
@@ -188,7 +188,6 @@ staffSchema.pre('save', function (next) {
     const random = Math.floor(100 + Math.random() * 900);
     this.staffCode = `STF-${timestamp}${random}`;
   }
-  next();
 });
 
 export const Staff = model('Staff', staffSchema);
