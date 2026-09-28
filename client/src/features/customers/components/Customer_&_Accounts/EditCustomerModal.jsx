@@ -26,6 +26,7 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
     idType: 'CNIC',
     verificationStatus: 'Verified',
     address: '',
+    deliveryFee: '0',
     secondaryPhone: '',
     referenceName: '',
     subscription: '',
@@ -89,6 +90,7 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
         idType: customer.idType || 'CNIC',
         verificationStatus: customer.verificationStatus || 'Verified',
         address: customer.address || '',
+        deliveryFee: customer.deliveryFee !== undefined ? String(customer.deliveryFee) : '0',
         secondaryPhone: customer.secondaryPhone || '',
         referenceName: customer.referenceName || '',
         subscription: customer.subscription || '2 L Cow Milk',
@@ -118,6 +120,7 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
       idType: formData.idType,
       verificationStatus: formData.verificationStatus,
       address: formData.address,
+      deliveryFee: Number(formData.deliveryFee) || 0,
       secondaryPhone: formData.secondaryPhone,
       referenceName: formData.referenceName,
       subscription: formattedSubscription,
@@ -371,15 +374,32 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
               </div>
             </div>
 
-            <div>
-              <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Full Address</label>
-              <Input
-                type="text"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="Enter address"
-                className="h-8 px-2.5 py-1 text-xs"
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Full Address</label>
+                <Input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Enter address"
+                  className="h-8 px-2.5 py-1 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">
+                  Delivery Charges (Rs.) <span className="text-slate-400 font-normal">(Per Order)</span>
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.deliveryFee}
+                  onChange={(e) => setFormData({ ...formData, deliveryFee: e.target.value })}
+                  placeholder="0 (Free Delivery)"
+                  className="h-8 px-2.5 py-1 text-xs font-bold tabular"
+                />
+                <span className="text-[9px] text-slate-400 block mt-0.5">Delivery par auto add hoga, walk-in par nahi</span>
+              </div>
             </div>
           </div>
 

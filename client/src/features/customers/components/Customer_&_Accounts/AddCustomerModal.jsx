@@ -27,10 +27,13 @@ export default function AddCustomerModal({ isOpen, onClose }) {
     idType: 'CNIC',
     verificationStatus: 'Verified',
     address: '',
+    deliveryFee: '0',
     secondaryPhone: '',
     referenceName: '',
     subscription: '2 L Cow Milk',
     creditLimit: '10000',
+    openingBalance: '',
+    openingPaymentMethod: 'CASH',
     paymentMode: 'Khata',
     image: '',
   });
@@ -84,11 +87,13 @@ export default function AddCustomerModal({ isOpen, onClose }) {
         idType: formData.idType,
         verificationStatus: formData.verificationStatus,
         address: formData.address || '',
+        deliveryFee: Number(formData.deliveryFee) || 0,
         secondaryPhone: formData.secondaryPhone || '',
         referenceName: formData.referenceName || '',
         subscription: formattedSubscription,
         creditLimit: Number(formData.creditLimit) || 10000,
-        khataBalance: 0,
+        openingBalance: Number(formData.openingBalance) || 0,
+        openingPaymentMethod: formData.openingPaymentMethod || 'CASH',
         paymentMode: formData.paymentMode,
         status: 'Active',
         image: formData.image || null,
@@ -103,10 +108,13 @@ export default function AddCustomerModal({ isOpen, onClose }) {
         idType: 'CNIC',
         verificationStatus: 'Verified',
         address: '',
+        deliveryFee: '0',
         secondaryPhone: '',
         referenceName: '',
         subscription: '2 L Cow Milk',
         creditLimit: '10000',
+        openingBalance: '',
+        openingPaymentMethod: 'CASH',
         paymentMode: 'Khata',
         image: '',
       });
@@ -368,15 +376,32 @@ export default function AddCustomerModal({ isOpen, onClose }) {
               </div>
             </div>
 
-            <div>
-              <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Full Address</label>
-              <Input
-                type="text"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="Enter address"
-                className="h-8 px-2.5 py-1 text-xs"
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Full Address</label>
+                <Input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Enter address"
+                  className="h-8 px-2.5 py-1 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">
+                  Delivery Charges (Rs.) <span className="text-slate-400 font-normal">(Per Order)</span>
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.deliveryFee}
+                  onChange={(e) => setFormData({ ...formData, deliveryFee: e.target.value })}
+                  placeholder="0 (Free Delivery)"
+                  className="h-8 px-2.5 py-1 text-xs font-bold tabular"
+                />
+                <span className="text-[9px] text-slate-400 block mt-0.5">Delivery par auto add hoga, walk-in par nahi</span>
+              </div>
             </div>
           </div>
 
@@ -397,16 +422,55 @@ export default function AddCustomerModal({ isOpen, onClose }) {
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Payment Mode</label>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Default Payment Mode</label>
                 <Select value={formData.paymentMode} onValueChange={(val) => setFormData({ ...formData, paymentMode: val })}>
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder="Payment Mode" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Khata">Khata</SelectItem>
+                    <SelectItem value="Khata">Khata (Credit Ledger)</SelectItem>
                     <SelectItem value="Online Payment">Online Payment</SelectItem>
+                    <SelectItem value="Cash on Delivery">Cash on Delivery</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">
+                  Opening Balance (PKR) <span className="text-slate-400 font-normal">(Optional)</span>
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.openingBalance}
+                  onChange={(e) => setFormData({ ...formData, openingBalance: e.target.value })}
+                  placeholder="0 (Optional)"
+                  className="h-8 px-2.5 py-1 text-xs tabular bg-white"
+                />
+                <span className="text-[9px] text-slate-400 block mt-0.5">Khali rakhne par 0 rahega</span>
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">
+                  Opening Payment Channel
+                </label>
+                <Select
+                  value={formData.openingPaymentMethod}
+                  onValueChange={(val) => setFormData({ ...formData, openingPaymentMethod: val })}
+                  disabled={!formData.openingBalance || Number(formData.openingBalance) <= 0}
+                >
+                  <SelectTrigger className="h-8 text-xs bg-white">
+                    <SelectValue placeholder="Select Method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CASH">💵 Cash (نقد)</SelectItem>
+                    <SelectItem value="CARD">💳 Card (کارڈ)</SelectItem>
+                    <SelectItem value="ONLINE">📱 Online (EasyPaisa/JazzCash)</SelectItem>
+                    <SelectItem value="KHATA_DEBIT">📋 Previous Khata (سابقہ ادھار)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className="text-[9px] text-slate-400 block mt-0.5">Agar initial payment li ho</span>
               </div>
             </div>
           </div>

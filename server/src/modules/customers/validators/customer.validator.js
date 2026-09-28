@@ -28,7 +28,9 @@ export const createCustomerSchema = Joi.object({
   area: Joi.string().trim().max(100).allow('', null),
   deliveryRoute: Joi.string().trim().max(100).allow('', null),
   creditLimit: Joi.number().min(0).default(5000),
-  openingBalance: Joi.number().allow(null).default(0),
+  deliveryFee: Joi.number().min(0).allow(null).default(0),
+  openingBalance: Joi.number().min(0).allow(null).default(0),
+  openingPaymentMethod: Joi.string().trim().uppercase().allow('', null).optional().default('CASH'),
   currentBalance: Joi.number().allow(null).default(0),
   khataBalance: Joi.number().allow(null).default(0),
   preferredPayment: Joi.string()
@@ -55,6 +57,7 @@ export const updateCustomerSchema = Joi.object({
   area: Joi.string().trim().max(100).allow('', null),
   deliveryRoute: Joi.string().trim().max(100).allow('', null),
   creditLimit: Joi.number().min(0),
+  deliveryFee: Joi.number().min(0).allow(null),
   currentBalance: Joi.number(),
   preferredPayment: Joi.string()
     .trim()

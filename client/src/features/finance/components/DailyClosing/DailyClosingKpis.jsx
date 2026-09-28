@@ -36,7 +36,7 @@ export default function DailyClosingKpis({
     {
       id: 'collected',
       label: 'Money Collected',
-      sublabel: 'Cash + Digital + Khata',
+      sublabel: 'Cash + Online (Wasool)',
       value: formatRs(moneyCollected),
       icon: Banknote,
       color: 'text-emerald-600 dark:text-emerald-400',

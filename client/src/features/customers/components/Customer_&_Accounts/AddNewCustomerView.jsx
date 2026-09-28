@@ -28,10 +28,13 @@ export default function AddNewCustomerView({ onBack }) {
     idType: 'CNIC',
     verificationStatus: 'Verified',
     address: '',
+    deliveryFee: '0',
     secondaryPhone: '',
     referenceName: '',
     subscription: '2 L Cow Milk',
     creditLimit: '10000',
+    openingBalance: '',
+    openingPaymentMethod: 'CASH',
     paymentMode: 'Khata',
     image: '',
   });
@@ -83,11 +86,13 @@ export default function AddNewCustomerView({ onBack }) {
         idType: formData.idType,
         verificationStatus: formData.verificationStatus,
         address: formData.address || '',
+        deliveryFee: Number(formData.deliveryFee) || 0,
         secondaryPhone: formData.secondaryPhone || '',
         referenceName: formData.referenceName || '',
         subscription: formattedSubscription,
         creditLimit: Number(formData.creditLimit) || 10000,
-        khataBalance: 0,
+        openingBalance: Number(formData.openingBalance) || 0,
+        openingPaymentMethod: formData.openingPaymentMethod || 'CASH',
         paymentMode: formData.paymentMode,
         status: 'Active',
         image: formData.image || null,
@@ -302,6 +307,20 @@ export default function AddNewCustomerView({ onBack }) {
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
+                  Doorstep Delivery Charges (Rs.) <span className="text-slate-400 font-normal">(Per Order)</span>
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.deliveryFee}
+                  onChange={(e) => setFormData({ ...formData, deliveryFee: e.target.value })}
+                  placeholder="0 (Free Delivery)"
+                  className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-bold tabular"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
                   Milk Product (From Products)
                 </label>
                 <Select
@@ -430,6 +449,50 @@ export default function AddNewCustomerView({ onBack }) {
                     <SelectItem value="Cash on Delivery" className="text-xs">Cash on Delivery</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            {/* Optional Opening Balance & Payment Channel */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-slate-50/80 p-2.5 rounded-xl border border-slate-200/80">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
+                  Opening Balance (PKR) <span className="text-slate-400 font-normal">(Optional / اختیاری)</span>
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.openingBalance}
+                  onChange={(e) => setFormData({ ...formData, openingBalance: e.target.value })}
+                  placeholder="0 (Optional - default is 0)"
+                  className="h-8.5 px-2.5 py-1 text-xs bg-white border-slate-200 rounded-lg focus-visible:bg-white font-bold tabular"
+                />
+                <span className="text-[9px] text-slate-400 block mt-1">
+                  Agar customer shuruati baqi ya advance de, warna 0 rahega.
+                </span>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
+                  Opening Payment Channel
+                </label>
+                <Select
+                  value={formData.openingPaymentMethod}
+                  onValueChange={(val) => setFormData({ ...formData, openingPaymentMethod: val })}
+                  disabled={!formData.openingBalance || Number(formData.openingBalance) <= 0}
+                >
+                  <SelectTrigger className="h-8.5 bg-white border-slate-200 rounded-lg text-xs font-medium">
+                    <SelectValue placeholder="Select Method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CASH" className="text-xs">💵 Cash (نقد)</SelectItem>
+                    <SelectItem value="CARD" className="text-xs">💳 Card / POS (کارڈ)</SelectItem>
+                    <SelectItem value="ONLINE" className="text-xs">📱 Online Transfer (EasyPaisa/JazzCash)</SelectItem>
+                    <SelectItem value="KHATA_DEBIT" className="text-xs">📋 Previous Khata Udhaar (سابقہ ادھار)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className="text-[9px] text-slate-400 block mt-1">
+                  Opening balance kis tareeqay se adjust kiya jaye.
+                </span>
               </div>
             </div>
           </div>

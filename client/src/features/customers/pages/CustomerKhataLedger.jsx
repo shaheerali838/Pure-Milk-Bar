@@ -67,9 +67,19 @@ export default function CustomerKhataLedger() {
 
   const activeEntries = (filteredEntries.length > 0 || !selectedMonth) ? filteredEntries : rawEntries;
 
-  const openingEntry = activeEntries.find((e) => e.type === 'OPENING') || activeEntries[0];
-  const openingBalance = openingEntry ? openingEntry.runningBalance : (currentCustomer ? (currentCustomer.openingBalance ?? currentCustomer.khataBalance ?? currentCustomer.currentBalance ?? 0) : 0);
-  const openingDate = openingEntry ? openingEntry.date : '';
+  // Accurately compute Opening Balance (balance prior to earliest transaction in active list)
+  let openingBalance = 0;
+  const openingEntry = activeEntries.find((e) => e.type === 'OPENING');
+  if (openingEntry) {
+    openingBalance = Number(openingEntry.runningBalance ?? openingEntry.debit ?? 0);
+  } else if (activeEntries.length > 0) {
+    const earliest = activeEntries[activeEntries.length - 1];
+    openingBalance = (Number(earliest.runningBalance) || 0) - (Number(earliest.debit) || 0) + (Number(earliest.credit) || 0);
+  } else if (currentCustomer) {
+    openingBalance = Number(currentCustomer.openingBalance ?? currentCustomer.khataBalance ?? currentCustomer.currentBalance ?? 0);
+  }
+
+  const openingDate = openingEntry ? openingEntry.date : (activeEntries.length > 0 ? activeEntries[activeEntries.length - 1].date : '');
 
   const debitEntries = activeEntries.filter((e) => Number(e.debit) > 0);
   const totalCharged = debitEntries.reduce((acc, e) => acc + (Number(e.debit) || 0), 0);
@@ -79,8 +89,9 @@ export default function CustomerKhataLedger() {
   const totalPaid = creditEntries.reduce((acc, e) => acc + (Number(e.credit) || 0), 0);
   const paidCount = creditEntries.length;
 
-  const closingBalance =
-    currentCustomer !== null ? Number(currentCustomer.khataBalance ?? currentCustomer.currentBalance ?? 0) : 0;
+  const closingBalance = activeEntries.length > 0
+    ? Number(activeEntries[0].runningBalance || 0)
+    : (currentCustomer !== null ? Number(currentCustomer.currentBalance ?? currentCustomer.khataBalance ?? 0) : 0);
 
   const handleSettleKhata = () => {
     if (!selectedCustomerId || !currentCustomer) return;
@@ -196,6 +207,7 @@ export default function CustomerKhataLedger() {
       {currentCustomer && (
         <LedgerCustomerProfileCard
           customer={currentCustomer}
+          currentBalance={closingBalance}
           onEdit={() => setIsEditModalOpen(true)}
         />
       )}
