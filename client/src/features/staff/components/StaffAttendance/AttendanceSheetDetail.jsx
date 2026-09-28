@@ -75,13 +75,36 @@ export default function AttendanceSheetDetail({ staff, isOpen, onClose, onBack, 
   const dailySalaryRate =
     staff.dailySalary || Math.round((Number(staff.monthlySalary) || 0) / 30);
 
-  const handleMarkAllPresent = () => {
+  const handleMarkAllPresent = async () => {
+    let newAttendanceMap = { ...(staff.attendanceMap || {}) };
+    const todayStr = new Date().toISOString().split('T')[0];
+    
     monthStats.days.forEach((d) => {
       const dateVal = d.dateString || d.dateStr;
       if (dateVal) {
-        markAttendance(staff.id, dateVal, 'present');
+        newAttendanceMap[dateVal] = 'present';
+        // We still need to call markAttendance to update the local `attendanceRecords` state cache
+        // but since we are doing it in a loop, it would trigger N API calls.
+        // Let's just use it and rely on the backend fix. Wait, NO. 30 API calls is bad.
       }
     });
+
+    // We can call context.updateStaff to sync the entire map to the backend
+    try {
+      // We still use markAttendance but we don't want 30 api calls. 
+      // Actually, we can just call markAttendance for today (to set status if needed) 
+      // and use updateStaff for the rest, but the simplest fix is to just use updateStaff
+      // and manually update the `attendanceRecords` locally, but we don't have access to setAttendanceRecords here.
+      // So let's just make the 30 API calls, it's a local admin dashboard, but we should await them sequentially to avoid race condition!
+      for (const d of monthStats.days) {
+        const dateVal = d.dateString || d.dateStr;
+        if (dateVal && staff.attendanceMap?.[dateVal] !== 'present') {
+           await markAttendance(staff.id, dateVal, 'present');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const getRoleBadgeStyle = (role) => {

@@ -267,6 +267,9 @@ export const updateStaffService = async (staffId, updateData, user) => {
   }
 
   Object.assign(staff, updateData);
+  if (updateData.attendanceMap) {
+    staff.markModified('attendanceMap');
+  }
   await staff.save();
 
   return sanitizeStaffForRole(staff, user?.role);
