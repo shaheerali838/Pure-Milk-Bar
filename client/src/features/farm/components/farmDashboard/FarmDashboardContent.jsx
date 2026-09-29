@@ -153,8 +153,7 @@ export default function FarmDashboardContent() {
       cats[cat] += parseFloat(e.amount) || 0;
     });
     const sorted = Object.entries(cats).sort((a,b) => b[1] - a[1]).slice(0, 5);
-    const displayList = sorted;
-    
+    const displayList = sorted.length > 0 ? sorted : [];
     const sum = expenses.reduce((s, e) => s + (parseFloat(e.amount)||0), 0);
 
     return { list: displayList, total: sum };

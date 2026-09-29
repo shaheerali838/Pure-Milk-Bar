@@ -309,7 +309,13 @@ export function StaffPayrollProvider({ children }) {
       if (staff.status === 'Inactive' || staff.status === 'Off Duty') return 'absent';
       return 'present';
     }
-    return 'present'; // Default
+    
+    // Future days should not be marked as present by default
+    if (dateKey > todayStr) {
+      return '-';
+    }
+
+    return 'present'; // Default for past days if not explicitly marked
   };
 
   // Get attendance history for a staff member for a specific month (accurate days in month)

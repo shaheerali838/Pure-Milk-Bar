@@ -1,0 +1,12 @@
+{
+  "name": "dairymilkfarm-root",
+  "version": "1.0.0",
+  "description": "Root package to run client and server concurrently",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "install:all": "npm install --prefix server && npm install --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
