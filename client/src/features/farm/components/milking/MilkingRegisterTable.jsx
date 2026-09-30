@@ -3,7 +3,19 @@ import { Sun, Moon, Zap, RotateCcw, Check, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { useStaffPayrollContext } from "../../../../context/StaffPayrollContext";
-import { getTodayDateStr, normalizeDate } from "@/utils/dateUtils";
+
+const getTodayDateStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const normalizeDate = (dateVal) => {
+  if (!dateVal) return '';
+  if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateVal)) return dateVal.slice(0, 10);
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return String(dateVal).slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 export default function MilkingRegisterTable({ onSaveSuccess }) {
   const { animals = [], milkingLogs = [], saveMilkingShift } = useAnimalContext();

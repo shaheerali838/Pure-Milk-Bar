@@ -23,7 +23,11 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
-import { getTodayDateStr } from '@/utils/dateUtils';
+
+const getTodayDateStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 export default function IntakeShifting({ onSaveSuccess }) {
   const { suppliers = [] } = useSupplierContext();

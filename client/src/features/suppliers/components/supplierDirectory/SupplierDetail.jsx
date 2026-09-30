@@ -25,7 +25,19 @@ import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import IntakeDetail from '../intakeRegistor/IntakeDetail';
 import { toast } from 'sonner';
-import { getTodayDateStr, normalizeDate } from '@/utils/dateUtils';
+
+const getTodayDateStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const normalizeDate = (dateVal) => {
+  if (!dateVal) return '';
+  if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateVal)) return dateVal.slice(0, 10);
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return String(dateVal).slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit }) {
   const { intakeLogs = [], updateBatchSettlement } = useIntakeContext();
