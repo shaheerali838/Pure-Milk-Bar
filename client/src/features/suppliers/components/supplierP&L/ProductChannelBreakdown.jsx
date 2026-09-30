@@ -28,8 +28,6 @@ export default function ProductChannelBreakdown({ product, onClose }) {
   const sourceIconColor =
     product.sourceType === 'Bulk Intake Sourcing'
       ? 'bg-blue-100 text-blue-700'
-      : product.sourceType === 'Cream Separation Intake'
-      ? 'bg-amber-100 text-amber-700'
       : 'bg-emerald-100 text-emerald-700';
 
   return (

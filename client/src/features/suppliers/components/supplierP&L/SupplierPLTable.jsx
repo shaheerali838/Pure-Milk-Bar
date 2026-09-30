@@ -14,7 +14,6 @@ export const CATEGORY_FILTERS = [
   'All Categories',
   'Raw Sourced Milk',
   'Processed & Chilled',
-  'Cream By-Products',
 ];
 
 export default function SupplierPLTable({
@@ -38,10 +37,10 @@ export default function SupplierPLTable({
           </div>
           <div>
             <h3 className="text-xs font-bold text-slate-900 font-display uppercase tracking-wider">
-              Sourced Milk Lines &amp; Resale Channel Breakdown
+              Sourced Milk Streams &amp; Procurement Ledger
             </h3>
             <p className="text-[11px] text-slate-500">
-              Click any line row to inspect channel distribution, base costs, and realization
+              Click any stream row to inspect shift batches, supplier costs, and intake volumes
             </p>
           </div>
         </div>
@@ -73,15 +72,16 @@ export default function SupplierPLTable({
               <th className="py-2.5 px-3.5">Product Stream</th>
               <th className="py-2.5 px-3.5">Category</th>
               <th className="py-2.5 px-3.5 text-right">Sourced Volume</th>
-              <th className="py-2.5 px-3.5 text-right">Resale Revenue</th>
-              <th className="py-2.5 px-3.5 text-right">Gross Margin</th>
+              <th className="py-2.5 px-3.5 text-right">Procurement Cost</th>
+              <th className="py-2.5 px-3.5 text-right">Avg Purchase Rate</th>
+              <th className="py-2.5 px-3.5 text-right">Realized POS Sales</th>
               <th className="py-2.5 px-3.5 text-center">Details</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredProducts.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
+                <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
                   No sourced milk lines found in this category.
                 </td>
               </tr>
@@ -90,9 +90,7 @@ export default function SupplierPLTable({
                 const categoryBadgeColor =
                   p.category === 'Raw Sourced Milk'
                     ? 'bg-blue-50 text-blue-700 border-blue-200'
-                    : p.category === 'Processed & Chilled'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-amber-50 text-amber-700 border-amber-200';
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200';
 
                 return (
                   <tr
@@ -130,33 +128,42 @@ export default function SupplierPLTable({
                       <p className="font-bold font-mono text-slate-900">
                         {Number(p.sourcedVolume).toLocaleString()} {p.unit || 'L'}
                       </p>
-                      <p className="text-[10px] text-slate-400 font-mono">
-                        Base: Rs. {Number(p.baseCost).toLocaleString()}
+                      <p className="text-[10px] text-slate-400">
+                        {p.logsCount || 0} Intake Batches
                       </p>
                     </td>
 
-                    {/* 4. Resale Revenue */}
+                    {/* 4. Procurement Cost */}
                     <td className="py-3 px-3.5 text-right whitespace-nowrap">
-                      <p className="font-bold font-mono text-emerald-700">
-                        Rs. {Number(p.resaleRevenue).toLocaleString()}
+                      <p className="font-bold font-mono text-rose-700">
+                        Rs. {Number(p.baseCost || 0).toLocaleString()}
                       </p>
                       <p className="text-[10px] text-slate-400">
-                        Avg Rs. {Number(p.avgResaleRate || 0).toFixed(1)}/{p.unit || 'L'}
+                        Paid: Rs. {Number(p.paidAmount || 0).toLocaleString()}
                       </p>
                     </td>
 
-                    {/* 5. Gross Margin */}
+                    {/* 5. Avg Purchase Rate */}
                     <td className="py-3 px-3.5 text-right whitespace-nowrap">
                       <span className="font-bold font-mono text-slate-900 block">
-                        +Rs. {Number(p.grossMargin).toLocaleString()}
+                        Rs. {Number(p.avgPurchaseRate || 0).toFixed(1)}/{p.unit || 'L'}
                       </span>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 mt-0.5">
-                        <TrendingUp className="w-2.5 h-2.5" />
-                        {p.grossMarginPercent}% Margin
+                      <span className="text-[10px] text-slate-400">
+                        Direct Intake Rate
                       </span>
                     </td>
 
-                    {/* 6. Details */}
+                    {/* 6. Realized POS Sales */}
+                    <td className="py-3 px-3.5 text-right whitespace-nowrap">
+                      <p className="font-bold font-mono text-emerald-700">
+                        Rs. {Number(p.resaleRevenue || 0).toLocaleString()}
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        {p.soldVolume > 0 ? `${p.soldVolume} L Sold` : '0 L Sold'}
+                      </p>
+                    </td>
+
+                    {/* 7. Details */}
                     <td className="py-3 px-3.5 text-center whitespace-nowrap">
                       <button
                         type="button"
