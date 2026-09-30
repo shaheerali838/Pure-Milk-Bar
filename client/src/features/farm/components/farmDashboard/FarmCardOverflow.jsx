@@ -9,6 +9,7 @@ export default function FarmCardOverflow({
   cowsCount = 0, 
   buffCount = 0, 
   totalFarmYield = 0, 
+  availableFarmStock = null,
   avgAnimalYield = 0, 
   dailyNetProfit = 0, 
   monthlyNetProfit = 0 
@@ -16,7 +17,24 @@ export default function FarmCardOverflow({
   const navigate = useNavigate();
   const { totals, expenses = [] } = useExpense();
   const posCtx = usePOSContext?.();
-  const farmMilkStock = posCtx?.inventoryMetrics?.farmMilkStock ?? (totalFarmYield > 0 ? totalFarmYield.toFixed(1) : '0');
+  
+  // Resilient calculation for Available Farm Stock (Cold room / Chiller):
+  // 1. Direct availableFarmStock prop if provided and positive
+  // 2. POS inventoryMetrics.farmMilkStock or rawFarmMilkStock if positive
+  // 3. Fallback to today's totalFarmYield
+  const parsedPropStock = parseFloat(availableFarmStock);
+  const parsedPosStock = parseFloat(posCtx?.inventoryMetrics?.farmMilkStock ?? posCtx?.inventoryMetrics?.rawFarmMilkStock);
+
+  let effectiveStock = 0;
+  if (!isNaN(parsedPropStock) && parsedPropStock > 0) {
+    effectiveStock = parsedPropStock;
+  } else if (!isNaN(parsedPosStock) && parsedPosStock > 0) {
+    effectiveStock = parsedPosStock;
+  } else if (totalFarmYield > 0) {
+    effectiveStock = totalFarmYield;
+  }
+
+  const farmMilkStock = effectiveStock % 1 === 0 ? effectiveStock.toFixed(0) : effectiveStock.toFixed(1);
   const totalFarmExpense = totals?.totalFarmExpense ?? 0;
 
   const statCards = [

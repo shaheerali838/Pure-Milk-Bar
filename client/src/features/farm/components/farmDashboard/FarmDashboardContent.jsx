@@ -30,7 +30,8 @@ const parseYield = (val) => {
 
 export default function FarmDashboardContent() {
   const { animals = [], milkingLogs = [] } = useAnimalContext();
-  const { products = [] } = usePOSContext();
+  const posCtx = usePOSContext();
+  const products = posCtx?.products || [];
   const { expenses = [], totals = {} } = useExpense();
   const [selectedAnimalId, setSelectedAnimalId] = useState(null);
   const navigate = useNavigate();
@@ -41,8 +42,14 @@ export default function FarmDashboardContent() {
   const buffCount = animals.filter((a) => (a.species || "").toLowerCase().includes("buffalo")).length;
 
   const totalFarmYield = useMemo(() => {
-    const todayStr = new Date().toISOString().split("T")[0];
-    const todayLogs = milkingLogs.filter((l) => (l.date ? l.date.split("T")[0] === todayStr : false));
+    const now = new Date();
+    const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const isoTodayStr = now.toISOString().split("T")[0];
+    const todayLogs = milkingLogs.filter((l) => {
+      if (!l.date) return false;
+      const d = l.date.split("T")[0];
+      return d === localTodayStr || d === isoTodayStr;
+    });
     if (todayLogs.length > 0) {
       return todayLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
     }
@@ -53,6 +60,15 @@ export default function FarmDashboardContent() {
       return sum + total;
     }, 0);
   }, [animals, milkingLogs]);
+
+  // Available live farm stock in cold room / chiller
+  const availableFarmStock = useMemo(() => {
+    const rawPos = parseFloat(posCtx?.inventoryMetrics?.farmMilkStock ?? posCtx?.inventoryMetrics?.rawFarmMilkStock);
+    if (!isNaN(rawPos) && rawPos > 0) {
+      return rawPos;
+    }
+    return totalFarmYield;
+  }, [posCtx?.inventoryMetrics, totalFarmYield]);
 
   const avgAnimalYield = totalAnimals > 0 ? totalFarmYield / totalAnimals : 0;
 
@@ -177,6 +193,7 @@ export default function FarmDashboardContent() {
         cowsCount={cowsCount}
         buffCount={buffCount}
         totalFarmYield={totalFarmYield}
+        availableFarmStock={availableFarmStock}
         avgAnimalYield={avgAnimalYield}
         dailyNetProfit={dailyNetProfit}
         monthlyNetProfit={monthlyNetProfit}

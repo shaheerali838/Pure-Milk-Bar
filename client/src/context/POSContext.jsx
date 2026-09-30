@@ -1123,6 +1123,14 @@ export function POSProvider({ children }) {
     ) {
       return 'Supplier';
     }
+    // If the farm has no buffaloes/buffalo milk and item is buffalo milk, it is from supplier procurement!
+    if (name.includes('buffalo') && totalFarmBuffaloMilk <= 0) {
+      return 'Supplier';
+    }
+    // If the farm has no cow milk and item is cow milk, it is from supplier procurement!
+    if (name.includes('cow') && totalFarmCowMilk <= 0) {
+      return 'Supplier';
+    }
     return 'Farm';
   };
 
@@ -1321,12 +1329,26 @@ export function POSProvider({ children }) {
   });
 
   // Calculate breakdown of sales for Cow vs Buffalo for Farm and Supplier:
+  const todayDateStr = new Date().toISOString().split('T')[0];
+  const nowObj = new Date();
+  const localTodayDateStr = `${nowObj.getFullYear()}-${String(nowObj.getMonth() + 1).padStart(2, '0')}-${String(nowObj.getDate()).padStart(2, '0')}`;
+
   let farmCowMilkSold = 0;
   let farmBuffaloMilkSold = 0;
   let supplierCowMilkSold = 0;
   let supplierBuffaloMilkSold = 0;
 
+  let todayFarmMilkSold = 0;
+  let todayFarmCowMilkSold = 0;
+  let todayFarmBuffaloMilkSold = 0;
+  let todaySupplierMilkSold = 0;
+  let todaySupplierCowMilkSold = 0;
+  let todaySupplierBuffaloMilkSold = 0;
+
   salesHistory.forEach((sale) => {
+    const saleDateStr = sale.timestamp ? String(sale.timestamp).split('T')[0] : (sale.date ? String(sale.date).split('T')[0] : '');
+    const isToday = !saleDateStr || saleDateStr === todayDateStr || saleDateStr === localTodayDateStr;
+
     (sale.items || []).forEach((item) => {
       const src = resolveItemSource(item);
       const name = (item.name || '').toLowerCase();
@@ -1338,24 +1360,44 @@ export function POSProvider({ children }) {
         if (src === 'Supplier') {
           if (isCow) supplierCowMilkSold += qty;
           else supplierBuffaloMilkSold += qty;
+
+          if (isToday) {
+            todaySupplierMilkSold += qty;
+            if (isCow) todaySupplierCowMilkSold += qty;
+            else todaySupplierBuffaloMilkSold += qty;
+          }
         } else {
           if (isCow) farmCowMilkSold += qty;
           else farmBuffaloMilkSold += qty;
+
+          if (isToday) {
+            todayFarmMilkSold += qty;
+            if (isCow) todayFarmCowMilkSold += qty;
+            else todayFarmBuffaloMilkSold += qty;
+          }
         }
       }
     });
   });
 
   // Remaining liquid milk after BOTH POS sales AND Dahi conversion:
-  const remainingFarmMilk = Math.max(0, Number((totalFarmMilk - (farmSalesMetrics?.milkSold || 0) - farmMilkConvertedToDahi).toFixed(1)));
-  const remainingSupplierMilk = Math.max(0, Number((totalSupplierIntake - (supplierSalesMetrics?.milkSold || 0) - supplierMilkConvertedToDahi).toFixed(1)));
+  const effectiveFarmSold = todayFarmMilkSold > 0 ? todayFarmMilkSold : Math.min(totalFarmMilk, farmSalesMetrics?.milkSold || 0);
+  const effectiveSupplierSold = todaySupplierMilkSold > 0 ? todaySupplierMilkSold : Math.min(totalSupplierIntake, supplierSalesMetrics?.milkSold || 0);
+
+  const remainingFarmMilk = Math.max(0, Number((totalFarmMilk - effectiveFarmSold - farmMilkConvertedToDahi).toFixed(1)));
+  const remainingSupplierMilk = Math.max(0, Number((totalSupplierIntake - effectiveSupplierSold - supplierMilkConvertedToDahi).toFixed(1)));
   const remainingTotalMilk = Number((remainingFarmMilk + remainingSupplierMilk + totalProcessedMilk).toFixed(1));
 
   // Separate live remaining stocks for Cow Milk and Buffalo Milk (Raw Yield + Processed Batches - Sold):
-  const remainingFarmCowMilk = Math.max(0, Number((totalFarmCowMilk - farmCowMilkSold + processedCowMilkStock).toFixed(1)));
-  const remainingFarmBuffaloMilk = Math.max(0, Number((totalFarmBuffaloMilk - farmBuffaloMilkSold - farmMilkConvertedToDahi + processedBuffaloMilkStock).toFixed(1)));
-  const remainingSupplierCowMilk = Math.max(0, Number((totalSupplierCowIntake - supplierCowMilkSold).toFixed(1)));
-  const remainingSupplierBuffaloMilk = Math.max(0, Number((totalSupplierBuffaloIntake - supplierBuffaloMilkSold - supplierMilkConvertedToDahi).toFixed(1)));
+  const effectiveFarmCowSold = todayFarmCowMilkSold > 0 ? todayFarmCowMilkSold : Math.min(totalFarmCowMilk, farmCowMilkSold);
+  const effectiveFarmBuffSold = todayFarmBuffaloMilkSold > 0 ? todayFarmBuffaloMilkSold : Math.min(totalFarmBuffaloMilk, farmBuffaloMilkSold);
+  const effectiveSuppCowSold = todaySupplierCowMilkSold > 0 ? todaySupplierCowMilkSold : Math.min(totalSupplierCowIntake, supplierCowMilkSold);
+  const effectiveSuppBuffSold = todaySupplierBuffaloMilkSold > 0 ? todaySupplierBuffaloMilkSold : Math.min(totalSupplierBuffaloIntake, supplierBuffaloMilkSold);
+
+  const remainingFarmCowMilk = Math.max(0, Number((totalFarmCowMilk - effectiveFarmCowSold + processedCowMilkStock).toFixed(1)));
+  const remainingFarmBuffaloMilk = Math.max(0, Number((totalFarmBuffaloMilk - effectiveFarmBuffSold - farmMilkConvertedToDahi + processedBuffaloMilkStock).toFixed(1)));
+  const remainingSupplierCowMilk = Math.max(0, Number((totalSupplierCowIntake - effectiveSuppCowSold).toFixed(1)));
+  const remainingSupplierBuffaloMilk = Math.max(0, Number((totalSupplierBuffaloIntake - effectiveSuppBuffSold - supplierMilkConvertedToDahi).toFixed(1)));
 
   // Available live Dahi stock at POS Counter (transferred minus sold)
   const availableDahiStock = Math.max(0, Number((totalDahiTransferredToPOS - totalDahiSold).toFixed(1)));
