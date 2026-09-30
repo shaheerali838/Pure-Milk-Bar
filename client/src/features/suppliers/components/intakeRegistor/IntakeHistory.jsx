@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Search,
   X,
@@ -14,6 +14,8 @@ import {
   Wallet,
   Sun,
   Moon,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { Badge } from '@/components/ui/badge';
@@ -40,48 +42,153 @@ const normalizeDate = (dateVal) => {
 };
 
 export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
-  const { intakeLogs, deleteIntake, updateBatchSettlement } = useIntakeContext();
+  const { intakeLogs, deleteIntake } = useIntakeContext();
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState('All'); // 'All' | 'Today' | 'Custom'
   const [customDate, setCustomDate] = useState('');
   const [shiftFilter, setShiftFilter] = useState('All'); // 'All' | 'Morning' | 'Evening'
   const [settlementFilter, setSettlementFilter] = useState('All');
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [expandedKeys, setExpandedKeys] = useState(() => new Set());
 
   const todayStr = getTodayDateStr();
 
-  const filteredLogs = intakeLogs.filter((item) => {
-    const q = search.toLowerCase();
-    const matchesSearch =
-      !q ||
-      item.supplierName?.toLowerCase().includes(q) ||
-      (item.id && String(item.id).toLowerCase().includes(q)) ||
-      (item.area && item.area.toLowerCase().includes(q)) ||
-      (item.receivedBy && item.receivedBy.toLowerCase().includes(q));
+  const toggleExpand = (key) => {
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
 
-    // Shift filter (All, Morning, Evening)
-    const matchesShift =
-      shiftFilter === 'All'
-        ? true
-        : (item.shift || '').toLowerCase() === shiftFilter.toLowerCase();
+  // 1. Filter base logs by search, date, shift, and settlement
+  const filteredLogs = useMemo(() => {
+    return intakeLogs.filter((item) => {
+      const q = search.toLowerCase();
+      const matchesSearch =
+        !q ||
+        item.supplierName?.toLowerCase().includes(q) ||
+        (item.id && String(item.id).toLowerCase().includes(q)) ||
+        (item.area && item.area.toLowerCase().includes(q)) ||
+        (item.receivedBy && item.receivedBy.toLowerCase().includes(q));
 
-    // Date filter (All, Today, Custom date)
-    const itemDate = normalizeDate(item.date);
-    let matchesDate = true;
-    if (dateFilter === 'Today') {
-      matchesDate = itemDate === todayStr;
-    } else if (dateFilter === 'Custom' && customDate) {
-      matchesDate = itemDate === customDate;
-    }
+      // Shift filter (All, Morning, Evening)
+      const matchesShift =
+        shiftFilter === 'All'
+          ? true
+          : (item.shift || '').toLowerCase() === shiftFilter.toLowerCase();
 
-    // Settlement filter (All, Paid, Pending)
-    const matchesSettlement =
-      settlementFilter === 'All'
-        ? true
-        : (item.settlement || '').toLowerCase() === settlementFilter.toLowerCase();
+      // Date filter (All, Today, Custom date)
+      const itemDate = normalizeDate(item.date);
+      let matchesDate = true;
+      if (dateFilter === 'Today') {
+        matchesDate = itemDate === todayStr;
+      } else if (dateFilter === 'Custom' && customDate) {
+        matchesDate = itemDate === customDate;
+      }
 
-    return matchesSearch && matchesShift && matchesDate && matchesSettlement;
-  });
+      // Settlement filter (All, Paid, Pending)
+      const matchesSettlement =
+        settlementFilter === 'All'
+          ? true
+          : (item.settlement || '').toLowerCase() === settlementFilter.toLowerCase();
+
+      return matchesSearch && matchesShift && matchesDate && matchesSettlement;
+    });
+  }, [intakeLogs, search, shiftFilter, dateFilter, customDate, todayStr, settlementFilter]);
+
+  // 2. Group records by supplier & date so each supplier has ONLY ONE main row
+  const groupedRecords = useMemo(() => {
+    const map = new Map();
+
+    filteredLogs.forEach((log) => {
+      const dKey = normalizeDate(log.date);
+      const sKey = (log.supplierId || log.supplierName || 'supplier').trim();
+      const groupKey = `${sKey}_${dKey}`;
+
+      if (!map.has(groupKey)) {
+        map.set(groupKey, {
+          key: groupKey,
+          date: log.date,
+          dateKey: dKey,
+          supplierId: log.supplierId,
+          supplierName: log.supplierName,
+          area: log.area,
+          slips: [],
+        });
+      }
+      map.get(groupKey).slips.push(log);
+    });
+
+    return Array.from(map.values()).map((group) => {
+      const slips = group.slips;
+      const morningSlip = slips.find((s) => (s.shift || '').toLowerCase() === 'morning');
+      const eveningSlip = slips.find((s) => (s.shift || '').toLowerCase() === 'evening');
+
+      const totalQuantity = slips.reduce((sum, s) => sum + (parseFloat(s.quantity) || 0), 0);
+      const totalCost = slips.reduce((sum, s) => sum + (parseFloat(s.totalCost) || 0), 0);
+      const totalPaid = slips.reduce((sum, s) => sum + (parseFloat(s.paidAmount) || 0), 0);
+      const totalPending = slips.reduce((sum, s) => {
+        const due =
+          s.pendingAmount !== undefined
+            ? parseFloat(s.pendingAmount)
+            : (parseFloat(s.totalCost) || 0) - (parseFloat(s.paidAmount) || 0);
+        return sum + (due > 0 ? due : 0);
+      }, 0);
+
+      // Average Rate / Liter
+      const avgRate =
+        totalQuantity > 0 ? Math.round(totalCost / totalQuantity) : slips[0]?.ratePerLiter || 220;
+
+      // Weighted average Quality (Fat & LR)
+      const avgFat =
+        totalQuantity > 0
+          ? (
+              slips.reduce(
+                (sum, s) => sum + (parseFloat(s.quantity) || 0) * (parseFloat(s.fat) || 0),
+                0
+              ) / totalQuantity
+            ).toFixed(1)
+          : slips[0]?.fat || 4.5;
+
+      const avgLr =
+        totalQuantity > 0
+          ? (
+              slips.reduce(
+                (sum, s) => sum + (parseFloat(s.quantity) || 0) * (parseFloat(s.lr) || 0),
+                0
+              ) / totalQuantity
+            ).toFixed(1)
+          : slips[0]?.lr || 28.0;
+
+      const isPaid = totalPending <= 0 && totalCost > 0;
+      const isPartial = totalPaid > 0 && totalPending > 0;
+      const settlement = isPaid ? 'Paid' : isPartial ? 'Partial' : 'Pending';
+
+      // First unpaid slip or latest slip for paying
+      const targetPaySlip = slips.find((s) => s.settlement !== 'Paid') || slips[0];
+
+      return {
+        ...group,
+        morningSlip,
+        eveningSlip,
+        totalQuantity,
+        totalCost,
+        totalPaid,
+        totalPending,
+        ratePerLiter: avgRate,
+        fat: avgFat,
+        lr: avgLr,
+        settlement,
+        targetPaySlip,
+        hasBoth: Boolean(morningSlip && eveningSlip),
+      };
+    });
+  }, [filteredLogs]);
 
   const handleDelete = (id) => {
     deleteIntake(id);
@@ -221,13 +328,13 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
         </div>
       </div>
 
-      {/* History Table */}
+      {/* Procurement History Table */}
       <div className="overflow-x-auto">
         <Table className="w-full text-left text-xs sm:text-sm">
           <TableHeader className="bg-slate-50/80 border-b border-slate-200">
             <TableRow>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                Date & Slip #
+                Date &amp; Slip #
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
                 Supplier Name
@@ -236,10 +343,10 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
                 Shift
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
-                Quantity
+                Total Quantity
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
-                Rate/L
+                Total Rate/L
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
                 Total Cost
@@ -248,7 +355,7 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
                 Quality (Fat|LR)
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-center">
-                Settlement
+                Total Settlement
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
                 Actions
@@ -257,7 +364,7 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
           </TableHeader>
 
           <TableBody className="divide-y divide-slate-100">
-            {filteredLogs.length === 0 ? (
+            {groupedRecords.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-12 text-slate-400">
                   <Droplets className="w-8 h-8 mx-auto text-slate-300 mb-2 opacity-50" />
@@ -266,148 +373,352 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredLogs.map((log) => {
-                const isMorning = log.shift.toLowerCase() === 'morning';
+              groupedRecords.map((group) => {
+                const isExpanded = expandedKeys.has(group.key);
+                const hasMultipleShifts = group.slips.length > 1;
 
                 return (
-                  <TableRow
-                    key={log.id}
-                    onClick={() => onView(log)}
-                    className="hover:bg-slate-50/70 cursor-pointer transition-colors group"
-                  >
-                    {/* Date & Slip ID */}
-                    <TableCell className="py-3 px-4">
-                      <div className="font-semibold text-slate-900 flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{log.date}</span>
-                      </div>
-                      <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                        {log.time}
-                      </div>
-                    </TableCell>
-
-                    {/* Supplier Name */}
-                    <TableCell className="py-3 px-4 font-bold text-slate-800">
-                      <div>{log.supplierName}</div>
-                      {log.area && (
-                        <div className="text-[11px] text-slate-400 font-normal">
-                          {log.area}
+                  <React.Fragment key={group.key}>
+                    {/* Primary Consolidated Row */}
+                    <TableRow
+                      onClick={() => toggleExpand(group.key)}
+                      className={`hover:bg-slate-50/80 cursor-pointer transition-colors group ${
+                        isExpanded ? 'bg-slate-50/50' : ''
+                      }`}
+                    >
+                      {/* Date & Slip ID */}
+                      <TableCell className="py-3.5 px-4">
+                        <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{group.date}</span>
                         </div>
-                      )}
-                    </TableCell>
+                        <div className="text-[11px] text-slate-400 font-medium mt-0.5 flex items-center gap-1">
+                          {hasMultipleShifts ? (
+                            <span className="text-emerald-700 font-semibold">
+                              {group.slips.length} Shifts (Click to expand)
+                            </span>
+                          ) : (
+                            <span>{group.slips[0]?.time || group.slips[0]?.shift || 'Shift'}</span>
+                          )}
+                        </div>
+                      </TableCell>
 
-                    {/* Shift */}
-                    <TableCell className="py-3 px-4 text-center">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                          isMorning
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                            : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                        }`}
-                      >
-                        <Clock className="w-3 h-3" />
-                        {log.shift}
-                      </span>
-                    </TableCell>
-
-                    {/* Quantity */}
-                    <TableCell className="py-3 px-4 text-right font-bold text-slate-900 tabular">
-                      {log.quantity.toFixed(1)} L
-                    </TableCell>
-
-                    {/* Rate / Liter */}
-                    <TableCell className="py-3 px-4 text-right font-medium text-slate-700 tabular">
-                      Rs. {log.ratePerLiter}
-                    </TableCell>
-
-                    {/* Total Cost */}
-                    <TableCell className="py-3 px-4 text-right font-bold text-emerald-700 tabular">
-                      Rs. {log.totalCost.toLocaleString()}
-                    </TableCell>
-
-                    {/* Quality: Fat & LR */}
-                    <TableCell className="py-3 px-4 text-center text-xs tabular">
-                      <span className="font-bold text-blue-600">{log.fat}%</span>
-                      <span className="text-slate-300 mx-1">|</span>
-                      <span className="text-slate-600 font-semibold">{log.lr} LR</span>
-                    </TableCell>
-
-                    {/* Settlement */}
-                    <TableCell className="py-3 px-4 text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <Badge
-                            variant="outline"
-                            className={`text-[10px] font-semibold border-0 ${
-                              log.settlement === 'Paid'
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : log.settlement === 'Partial'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-amber-100 text-amber-800'
-                            }`}
-                          >
-                            {log.settlement}
-                          </Badge>
-
-                          {log.settlement !== 'Paid' && (
+                      {/* Supplier Name */}
+                      <TableCell className="py-3.5 px-4 font-bold text-slate-800">
+                        <div className="flex items-center gap-1.5">
+                          <span>{group.supplierName}</span>
+                          {hasMultipleShifts && (
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (onPaySupplier) onPaySupplier(log);
+                                toggleExpand(group.key);
                               }}
-                              title="Pay Supplier for this delivery"
-                              className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#009966] text-white hover:brightness-110 shadow-2xs transition-all cursor-pointer select-none"
+                              className="text-slate-400 hover:text-emerald-700 transition"
+                              title={isExpanded ? 'Collapse shifts' : 'Expand shifts'}
                             >
-                              <Wallet className="w-2.5 h-2.5" />
-                              <span>Pay</span>
+                              {isExpanded ? (
+                                <ChevronUp className="w-3.5 h-3.5 text-emerald-600" />
+                              ) : (
+                                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                              )}
                             </button>
                           )}
                         </div>
+                        {group.area && (
+                          <div className="text-[11px] text-slate-400 font-normal">
+                            {group.area}
+                          </div>
+                        )}
+                      </TableCell>
 
-                        {log.settlement === 'Partial' && (
-                          <span className="text-[9px] font-mono text-slate-500 font-semibold">
-                            Paid: Rs. {(log.paidAmount !== undefined ? log.paidAmount : Math.round(log.totalCost * 0.5)).toLocaleString()}
+                      {/* Shift Badge (Shows Both, or specific active shift) */}
+                      <TableCell className="py-3.5 px-4 text-center">
+                        {group.morningSlip && group.eveningSlip ? (
+                          <div className="inline-flex items-center gap-1 flex-wrap justify-center">
+                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                              <Sun className="w-2.5 h-2.5" />
+                              Morning
+                            </span>
+                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              <Moon className="w-2.5 h-2.5" />
+                              Evening
+                            </span>
+                          </div>
+                        ) : group.morningSlip ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                            <Sun className="w-3 h-3 text-amber-500" />
+                            Morning
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            <Moon className="w-3 h-3 text-indigo-500" />
+                            Evening
                           </span>
                         )}
-                      </div>
-                    </TableCell>
+                      </TableCell>
 
-                    {/* Action Buttons */}
-                    <TableCell className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1">
-                        {/* View Button */}
-                        <button
-                          type="button"
-                          onClick={() => onView(log)}
-                          title="View Intake Slip"
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
+                      {/* Total Quantity */}
+                      <TableCell className="py-3.5 px-4 text-right font-bold text-slate-900 tabular text-sm">
+                        {group.totalQuantity.toFixed(1)} L
+                      </TableCell>
 
-                        {/* Edit Button */}
-                        <button
-                          type="button"
-                          onClick={() => onEdit(log)}
-                          title="Edit Intake Entry"
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
+                      {/* Rate / Liter */}
+                      <TableCell className="py-3.5 px-4 text-right font-medium text-slate-700 tabular text-xs">
+                        Rs. {group.ratePerLiter}
+                      </TableCell>
 
-                        {/* Delete Button */}
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteId(log.id)}
-                          title="Delete Intake Entry"
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                      {/* Total Cost */}
+                      <TableCell className="py-3.5 px-4 text-right font-bold text-emerald-700 tabular text-sm">
+                        Rs. {group.totalCost.toLocaleString()}
+                      </TableCell>
+
+                      {/* Quality: Fat & LR */}
+                      <TableCell className="py-3.5 px-4 text-center text-xs tabular">
+                        <span className="font-bold text-blue-600">{group.fat}%</span>
+                        <span className="text-slate-300 mx-1">|</span>
+                        <span className="text-slate-600 font-semibold">{group.lr} LR</span>
+                      </TableCell>
+
+                      {/* Settlement */}
+                      <TableCell className="py-3.5 px-4 text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] font-semibold border-0 ${
+                                group.settlement === 'Paid'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : group.settlement === 'Partial'
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
+                              {group.settlement}
+                            </Badge>
+
+                            {group.settlement !== 'Paid' && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onPaySupplier) onPaySupplier(group.targetPaySlip);
+                                }}
+                                title="Pay Supplier for this delivery"
+                                className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#009966] text-white hover:brightness-110 shadow-2xs transition-all cursor-pointer select-none"
+                              >
+                                <Wallet className="w-2.5 h-2.5" />
+                                <span>Pay</span>
+                              </button>
+                            )}
+                          </div>
+
+                          {group.totalPaid > 0 && (
+                            <span className="text-[9px] font-mono text-slate-500 font-semibold">
+                              Paid: Rs. {group.totalPaid.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* Action Buttons */}
+                      <TableCell className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
+                          {/* Toggle Expand Button */}
+                          <button
+                            type="button"
+                            onClick={() => toggleExpand(group.key)}
+                            title={isExpanded ? 'Hide Shift Details' : 'View Shift Details'}
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4 text-emerald-600" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
+                          </button>
+
+                          {/* View Button */}
+                          <button
+                            type="button"
+                            onClick={() => onView(group.slips[0])}
+                            title="View Intake Slip"
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+
+                          {/* Edit Button */}
+                          <button
+                            type="button"
+                            onClick={() => onEdit(group.slips[0])}
+                            title="Edit Intake Entry"
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+
+                          {/* Delete Button */}
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(group.slips[0]?.id)}
+                            title="Delete Intake Entry"
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+
+                    {/* Expandable Sub-Detail: Shows both Morning and Evening procurements */}
+                    {isExpanded && (
+                      <TableRow className="bg-slate-50/50 border-b border-slate-200">
+                        <TableCell colSpan={9} className="p-3 sm:p-4">
+                          <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-4 shadow-2xs space-y-3">
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-100 flex-wrap gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider font-display">
+                                  {group.supplierName} — Shift Breakdown
+                                </span>
+                                <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                                  Date: {group.date}
+                                </span>
+                              </div>
+                              <span className="text-[11px] font-medium text-slate-400">
+                                Detailed Morning &amp; Evening Procurements
+                              </span>
+                            </div>
+
+                            {/* Shifts Table */}
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left text-xs">
+                                <thead>
+                                  <tr className="border-b border-slate-100 bg-slate-50/60 text-slate-500 font-bold uppercase text-[9px] tracking-wider">
+                                    <th className="py-2 px-3">Shift</th>
+                                    <th className="py-2 px-3">Time</th>
+                                    <th className="py-2 px-3 text-right">Quantity</th>
+                                    <th className="py-2 px-3 text-right">Rate/L</th>
+                                    <th className="py-2 px-3 text-right">Total Cost</th>
+                                    <th className="py-2 px-3 text-center">Quality (Fat|LR)</th>
+                                    <th className="py-2 px-3 text-center">Settlement</th>
+                                    <th className="py-2 px-3 text-right">Actions</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                  {group.slips.map((slip) => {
+                                    const isMorn = (slip.shift || '').toLowerCase() === 'morning';
+                                    const slipPaid = slip.paidAmount || 0;
+                                    const slipDue =
+                                      slip.pendingAmount !== undefined
+                                        ? slip.pendingAmount
+                                        : Math.max(0, slip.totalCost - slipPaid);
+
+                                    return (
+                                      <tr key={slip.id} className="hover:bg-slate-50/60 transition">
+                                        <td className="py-2.5 px-3">
+                                          <span
+                                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                              isMorn
+                                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                            }`}
+                                          >
+                                            {isMorn ? (
+                                              <Sun className="w-3 h-3 text-amber-500" />
+                                            ) : (
+                                              <Moon className="w-3 h-3 text-indigo-500" />
+                                            )}
+                                            {slip.shift}
+                                          </span>
+                                        </td>
+                                        <td className="py-2.5 px-3 font-mono text-slate-500 text-[11px]">
+                                          {slip.time || (isMorn ? 'Morning' : 'Evening')}
+                                        </td>
+                                        <td className="py-2.5 px-3 text-right font-bold text-slate-900 tabular">
+                                          {slip.quantity.toFixed(1)} L
+                                        </td>
+                                        <td className="py-2.5 px-3 text-right font-medium text-slate-600 tabular">
+                                          Rs. {slip.ratePerLiter}
+                                        </td>
+                                        <td className="py-2.5 px-3 text-right font-bold text-emerald-700 tabular">
+                                          Rs. {slip.totalCost.toLocaleString()}
+                                        </td>
+                                        <td className="py-2.5 px-3 text-center text-xs tabular">
+                                          <span className="font-bold text-blue-600">{slip.fat}%</span>
+                                          <span className="text-slate-300 mx-1">|</span>
+                                          <span className="text-slate-600 font-semibold">{slip.lr} LR</span>
+                                        </td>
+                                        <td className="py-2.5 px-3 text-center">
+                                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                                            <Badge
+                                              variant="outline"
+                                              className={`text-[9px] font-semibold border-0 ${
+                                                slip.settlement === 'Paid'
+                                                  ? 'bg-emerald-100 text-emerald-700'
+                                                  : slip.settlement === 'Partial'
+                                                  ? 'bg-blue-100 text-blue-700'
+                                                  : 'bg-amber-100 text-amber-800'
+                                              }`}
+                                            >
+                                              {slip.settlement}
+                                            </Badge>
+                                            {slip.settlement !== 'Paid' && (
+                                              <button
+                                                type="button"
+                                                onClick={() => onPaySupplier && onPaySupplier(slip)}
+                                                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#009966] text-white hover:brightness-110 shadow-2xs transition cursor-pointer"
+                                              >
+                                                <Wallet className="w-2.5 h-2.5" />
+                                                <span>Pay</span>
+                                              </button>
+                                            )}
+                                          </div>
+                                          {slipPaid > 0 && (
+                                            <span className="text-[9px] font-mono text-slate-400 block mt-0.5">
+                                              Paid: Rs. {slipPaid.toLocaleString()}
+                                            </span>
+                                          )}
+                                        </td>
+                                        <td className="py-2.5 px-3 text-right">
+                                          <div className="flex items-center justify-end gap-1">
+                                            <button
+                                              type="button"
+                                              onClick={() => onView(slip)}
+                                              title="View Slip Details"
+                                              className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                                            >
+                                              <Eye className="w-3.5 h-3.5" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => onEdit(slip)}
+                                              title="Edit Shift Record"
+                                              className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition cursor-pointer"
+                                            >
+                                              <Edit className="w-3.5 h-3.5" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => setConfirmDeleteId(slip.id)}
+                                              title="Delete Shift Record"
+                                              className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
                 );
               })
             )}
@@ -419,8 +730,8 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
       <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
         <div>
           Showing{' '}
-          <strong className="text-slate-800 font-semibold">{filteredLogs.length}</strong> of{' '}
-          <strong className="text-slate-800 font-semibold">{intakeLogs.length}</strong> intake slips
+          <strong className="text-slate-800 font-semibold">{groupedRecords.length}</strong> supplier{groupedRecords.length === 1 ? '' : 's'} (
+          <strong className="text-slate-800 font-semibold">{filteredLogs.length}</strong> intake slip{filteredLogs.length === 1 ? '' : 's'})
         </div>
         <div className="flex items-center gap-1 font-medium">
           <span>Milk Procurement Register • Pur Milk Bar Dairy ERP</span>
