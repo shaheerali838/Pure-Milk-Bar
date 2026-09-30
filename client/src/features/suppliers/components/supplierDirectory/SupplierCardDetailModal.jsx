@@ -332,9 +332,6 @@ export default function SupplierCardDetailModal({
                           <span className="font-bold text-slate-900 text-xs sm:text-sm font-display">
                             {supplier.name}
                           </span>
-                          <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.2 rounded">
-                            {supplier.id}
-                          </span>
                           <Badge
                             variant="outline"
                             className={`text-[9px] font-semibold border-0 ${

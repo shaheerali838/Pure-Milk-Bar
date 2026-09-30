@@ -629,7 +629,7 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
                     Milking Intake Detail Sheet
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Tag #{selectedRecord.animalTag} • {selectedRecord.animalName}
+                    Tag: {selectedRecord.animalTag} • {selectedRecord.animalName}
                   </p>
                 </div>
               </div>

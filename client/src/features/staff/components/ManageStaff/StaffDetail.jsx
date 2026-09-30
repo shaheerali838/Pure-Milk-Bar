@@ -130,7 +130,7 @@ export default function StaffDetail({
               {staff.name}
             </h1>
             <p className="text-xs text-slate-500">
-              Staff ID #{staff.id} • {staff.role}
+              {staff.role}
             </p>
           </div>
         </div>
@@ -182,9 +182,6 @@ export default function StaffDetail({
               <h2 className="text-lg font-bold text-slate-900 font-display">
                 {staff.name}
               </h2>
-              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-200 text-slate-700">
-                #{staff.id}
-              </span>
             </div>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
@@ -355,9 +352,6 @@ export default function StaffDetail({
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
             Operational Duty &amp; Details
           </h3>
-          <span className="text-xs font-semibold text-slate-500">
-            ID #{staff.id}
-          </span>
         </div>
 
         <div className="overflow-x-auto">

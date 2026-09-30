@@ -190,12 +190,7 @@ export default function PaySupplierModal({
                   Supplier Name
                 </span>
                 <p className="text-sm font-bold text-slate-900">
-                  {supplierName}{' '}
-                  {supplierId && (
-                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-200/60 text-emerald-900 ml-1">
-                      {supplierId}
-                    </span>
-                  )}
+                  {supplierName}
                 </p>
               </div>
             </div>

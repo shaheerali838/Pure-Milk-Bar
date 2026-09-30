@@ -110,9 +110,6 @@ export default function FleetTab() {
                               <span className="font-bold text-slate-900 block leading-tight">
                                 {staff.name}
                               </span>
-                              <span className="font-mono text-[10px] text-slate-400">
-                                ID #{staff.id}
-                              </span>
                             </div>
                           </div>
                         </td>

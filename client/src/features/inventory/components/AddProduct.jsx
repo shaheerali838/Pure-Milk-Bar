@@ -90,7 +90,7 @@ export default function AddProduct({ onBack, product = null }) {
             </h1>
             <p className="text-xs text-slate-500">
               {isEditing
-                ? `Update rates, categorization, and details for #${formData.id}`
+                ? `Update rates, categorization, and details for ${formData.name || 'product'}`
                 : 'Register a new dairy product with pricing rules and inventory specs'}
             </p>
           </div>
@@ -108,7 +108,7 @@ export default function AddProduct({ onBack, product = null }) {
               isEditing ? 'bg-indigo-500' : 'bg-emerald-500 animate-pulse'
             }`}
           ></span>
-          {isEditing ? `Editing #${formData.id}` : 'New Product Entry'}
+          {isEditing ? `Editing ${formData.name || 'Product'}` : 'New Product Entry'}
         </span>
       </div>
 

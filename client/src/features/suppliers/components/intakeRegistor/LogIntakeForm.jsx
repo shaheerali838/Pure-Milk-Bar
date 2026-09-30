@@ -143,7 +143,7 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
           </button>
           <div>
             <h1 className="text-base font-bold text-slate-900 tracking-tight font-display leading-tight">
-              {editItem ? `Edit Intake Slip #${editItem.id}` : 'Log Single Milk Intake'}
+              {editItem ? 'Edit Intake Slip' : 'Log Single Milk Intake'}
             </h1>
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
               editItem ? 'bg-blue-500' : 'bg-emerald-500 animate-pulse'
             }`}
           />
-          {editItem ? `Editing #${editItem.id}` : 'New Intake Slip'}
+          {editItem ? 'Editing Intake Slip' : 'New Intake Slip'}
         </span>
       </div>
 

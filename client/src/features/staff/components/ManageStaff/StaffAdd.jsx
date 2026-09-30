@@ -187,7 +187,7 @@ export default function StaffAdd({ onBack, onClose, onCancel, editingStaff = nul
               isEdit ? 'bg-indigo-500' : 'bg-emerald-500 animate-pulse'
             }`}
           />
-          {isEdit ? `Editing #${editingStaff?.id}` : 'New Staff'}
+          {isEdit ? `Editing ${editingStaff?.name || 'Staff'}` : 'New Staff'}
         </span>
       </div>
 

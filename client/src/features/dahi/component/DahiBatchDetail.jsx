@@ -72,10 +72,10 @@ export default function DahiBatchDetail({ batchId, onBack }) {
           </button>
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight font-display">
-              Batch Profile — {batch.id}
+              Dahi Batch Profile
             </h1>
             <p className="text-xs text-slate-500">
-              ID #{batch.id} • Processed on {batch.date}
+              Processed on {batch.date}
             </p>
           </div>
         </div>

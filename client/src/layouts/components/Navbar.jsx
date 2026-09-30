@@ -46,7 +46,7 @@ export default function Navbar({ onToggleSidebar }) {
         } else if (viewParam === 'viewStaff') {
           const matchedStaff = staffList.find((s) => String(s.id) === String(idParam));
           crumbs.push({
-            label: matchedStaff ? `${matchedStaff.name}` : idParam ? `Staff #${idParam}` : 'Staff Details',
+            label: matchedStaff ? `${matchedStaff.name}` : 'Staff Details',
             to: null,
           });
         }
@@ -70,8 +70,6 @@ export default function Navbar({ onToggleSidebar }) {
           crumbs.push({
             label: matchedDelivery
               ? `${matchedDelivery.runCode} (${matchedDelivery.customerName})`
-              : idParam
-              ? `Run #${idParam}`
               : 'Delivery Details',
             to: null,
           });
@@ -93,7 +91,7 @@ export default function Navbar({ onToggleSidebar }) {
         );
         crumbs.push({ label: 'Animals Herd', to: '/farm/animals' });
         crumbs.push({
-          label: matchedAnimal ? `${matchedAnimal.tag} (${matchedAnimal.species})` : `Animal #${animalId}`,
+          label: matchedAnimal ? `${matchedAnimal.tag} (${matchedAnimal.species})` : 'Animal Details',
           to: null,
         });
       } else if (pathname.includes('/animals')) {
@@ -102,13 +100,11 @@ export default function Navbar({ onToggleSidebar }) {
         crumbs.push({ label: 'Farm Expenses', to: '/farm/expenses' });
         crumbs.push({ label: 'Record New Expense', to: null });
       } else if (pathname.includes('/expenses/edit/')) {
-        const expId = pathname.split('/expenses/edit/')[1];
         crumbs.push({ label: 'Farm Expenses', to: '/farm/expenses' });
-        crumbs.push({ label: `Edit Expense #${expId}`, to: null });
+        crumbs.push({ label: 'Edit Expense', to: null });
       } else if (pathname.includes('/expenses/detail/')) {
-        const expId = pathname.split('/expenses/detail/')[1];
         crumbs.push({ label: 'Farm Expenses', to: '/farm/expenses' });
-        crumbs.push({ label: `Expense #${expId}`, to: null });
+        crumbs.push({ label: 'Expense Details', to: null });
       } else if (pathname.includes('/expenses')) {
         crumbs.push({ label: 'Farm Expenses', to: '/farm/expenses' });
       } else if (pathname.includes('/milking')) {

@@ -131,7 +131,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
               isEdit ? 'bg-indigo-500' : 'bg-emerald-500 animate-pulse'
             }`}
           />
-          {isEdit ? `Editing #${editSupplier?.id}` : 'New Supplier'}
+          {isEdit ? `Editing ${editSupplier?.name || 'Supplier'}` : 'New Supplier'}
         </span>
       </div>
 

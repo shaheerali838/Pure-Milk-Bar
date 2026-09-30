@@ -79,7 +79,7 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
               </div>
               <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
                 <MapPin className="w-3 h-3 text-slate-400" />
-                {customer.area || 'Model Town'} &bull; ID: #{customer.id || 'CUST-01'}
+                {customer.area || 'Model Town'}
               </p>
             </div>
           </div>

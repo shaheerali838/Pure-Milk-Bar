@@ -624,7 +624,7 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
                         className="hover:bg-emerald-50/40 transition duration-150 cursor-pointer group"
                       >
                         <td className="py-3 px-4 font-mono font-bold text-slate-900">
-                          #{staff.id}
+                          {staff.staffCode || (staff.id?.length === 24 ? `STF-${staff.id.slice(-4).toUpperCase()}` : staff.id)}
                         </td>
 
                         <td className="py-3 px-4">

@@ -379,7 +379,7 @@ export default function IntakeShifting({ onSaveSuccess }) {
                               {supplier.name}
                             </p>
                             <p className="text-[11px] text-slate-400 font-medium">
-                              {supplier.id} · {supplier.contact}
+                              {supplier.contact || supplier.area}
                             </p>
                           </div>
                         </div>

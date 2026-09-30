@@ -30,7 +30,7 @@ export default function CollectionPayoutsReceiptView({ customer, entry, onBack }
           <div>
             <h1 className="text-lg font-bold text-slate-900 tracking-tight font-display flex items-center gap-2">
               <FileText className="w-4.5 h-4.5 text-emerald-600" />
-              Khata Collection Voucher &bull; #{refCode}
+              Khata Collection Voucher &bull; {refCode}
             </h1>
             <p className="text-xs text-slate-500">
               Customer Recovery Inflow &bull; Recorded on {entry.date}

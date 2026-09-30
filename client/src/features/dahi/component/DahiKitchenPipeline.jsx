@@ -156,7 +156,6 @@ export default function DahiKitchenPipeline({
                   <div className="flex items-start justify-between">
                     <div>
                       <h4 className="text-xs font-bold text-slate-900">{batch.product}</h4>
-                      <p className="text-[10px] font-mono text-slate-400 mt-0.5">{batch.id}</p>
                     </div>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
                       ✓ Ready
@@ -244,7 +243,6 @@ export default function DahiKitchenPipeline({
                   <div className="flex items-start justify-between">
                     <div>
                       <h4 className="text-xs font-bold text-slate-900">{batch.product}</h4>
-                      <p className="text-[10px] font-mono text-slate-400 mt-0.5">{batch.id}</p>
                     </div>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
                       🏬 Live at POS

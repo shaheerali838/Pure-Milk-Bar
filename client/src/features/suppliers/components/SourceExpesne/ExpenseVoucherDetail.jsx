@@ -140,7 +140,7 @@ export default function ExpenseVoucherDetail({
               Expense Details — {expense.voucherNo || expense.category || 'Voucher'}
             </h1>
             <p className="text-xs text-slate-500">
-              {expense.voucherNo ? `Voucher #${expense.voucherNo} • ` : ''}Recorded on {expense.date}
+              {expense.voucherNo ? `Voucher ${expense.voucherNo} • ` : ''}Recorded on {expense.date}
             </p>
           </div>
         </div>
@@ -212,11 +212,8 @@ export default function ExpenseVoucherDetail({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-slate-900 font-display">
-                  {expense.voucherNo || expense.id}
+                  {expense.voucherNo || expense.category || 'Voucher'}
                 </h2>
-                <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-200 text-slate-700">
-                  {expense.id}
-                </span>
               </div>
               <div className="flex items-center gap-2 mt-1.5">
                 <span className="inline-block text-xs font-bold px-2.5 py-0.5 rounded-md border bg-purple-50 text-purple-700 border-purple-200">
@@ -298,8 +295,8 @@ export default function ExpenseVoucherDetail({
                 Voucher &amp; Sourcing Outlay Specifications
               </h3>
             </div>
-            <span className="text-[11px] text-slate-500 font-mono font-medium">
-              System ID: {expense.id}
+            <span className="text-[11px] text-slate-500 font-medium">
+              Verified Expense Voucher
             </span>
           </div>
 
@@ -307,7 +304,7 @@ export default function ExpenseVoucherDetail({
             <tbody className="divide-y divide-slate-100 text-slate-700">
               <tr className="hover:bg-slate-50/60 transition-colors">
                 <td className="py-2.5 px-4 font-semibold text-slate-500 w-1/3 sm:w-1/4">
-                  Official Voucher #
+                  Voucher Number
                 </td>
                 <td className="py-2.5 px-4 font-mono font-bold text-slate-900">
                   {expense.voucherNo || 'General Voucher'}

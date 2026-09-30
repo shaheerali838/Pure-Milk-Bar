@@ -145,7 +145,7 @@ export default function AnimalAdd({
               isEdit ? "bg-indigo-500" : "bg-emerald-500 animate-pulse"
             }`}
           />
-          {isEdit ? `Editing #${editingAnimal?.tag}` : "New Animal"}
+          {isEdit ? `Editing ${editingAnimal?.tag || 'Animal'}` : "New Animal"}
         </span>
       </div>
 
@@ -172,7 +172,7 @@ export default function AnimalAdd({
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Tag #{" "}
+                  Animal Tag{" "}
                   <span className="text-slate-400 font-normal lowercase">
                     (optional)
                   </span>

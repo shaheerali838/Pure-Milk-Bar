@@ -373,7 +373,7 @@ export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit 
               Supplier Profile — {supplier.name}
             </h1>
             <p className="text-xs text-slate-500">
-              Supplier ID: {supplier.id} • Route: {supplier.area || 'Direct Supply'}
+              Route: {supplier.area || 'Direct Supply'}
             </p>
           </div>
         </div>
@@ -431,9 +431,6 @@ export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit 
                 <h2 className="text-lg font-bold text-slate-900 font-display">
                   {supplier.name}
                 </h2>
-                <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-200 text-slate-700">
-                  {supplier.id}
-                </span>
               </div>
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                 <span className="inline-block text-xs font-bold px-2.5 py-0.5 rounded-md border bg-slate-50 text-slate-700 border-slate-200">
@@ -926,9 +923,6 @@ export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit 
                         <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="px-4 py-3">
                             <span className="font-mono font-bold text-slate-800">{p.date}</span>
-                            <span className="block text-[10px] font-mono text-slate-400 mt-0.5">
-                              {p.id}
-                            </span>
                           </td>
                           <td className="px-4 py-3 font-semibold text-slate-800">
                             {p.type}
@@ -1003,7 +997,7 @@ export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit 
                     {paymentTargetBatch ? 'Pay Milk Delivery Batch' : 'Disburse Supplier Payment'}
                   </h2>
                   <p className="text-xs text-slate-500">
-                    {supplier.name} • ID: {supplier.id}
+                    {supplier.name}
                   </p>
                 </div>
               </div>

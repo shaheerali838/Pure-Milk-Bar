@@ -179,7 +179,7 @@ export default function RecordExpenseForm({
               isEdit ? 'bg-indigo-500' : 'bg-emerald-500 animate-pulse'
             }`}
           />
-          {isEdit ? `Editing #${editingExpense?.voucherNo || editingExpense?.id}` : 'New Voucher'}
+          {isEdit ? `Editing ${editingExpense?.voucherNo || 'Expense Voucher'}` : 'New Voucher'}
         </span>
       </div>
 

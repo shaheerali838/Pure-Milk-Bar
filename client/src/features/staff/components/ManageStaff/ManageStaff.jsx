@@ -471,7 +471,7 @@ export default function ManageStaff() {
                         />
                       </td>
                       <td className="py-3 px-4 font-mono font-bold text-slate-900">
-                        #{staff.id}
+                        {staff.staffCode || (staff.id?.length === 24 ? `STF-${staff.id.slice(-4).toUpperCase()}` : staff.id)}
                       </td>
 
                       <td className="py-3 px-4">

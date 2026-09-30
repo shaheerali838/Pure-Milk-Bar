@@ -44,9 +44,6 @@ export default function SupplierDetailSidebar({
                 <h3 className="font-bold text-base text-slate-900 font-display">
                   {supplier.name}
                 </h3>
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">
-                  {supplier.id}
-                </span>
               </div>
               <p className="text-xs text-slate-500">{supplier.supplierType}</p>
             </div>

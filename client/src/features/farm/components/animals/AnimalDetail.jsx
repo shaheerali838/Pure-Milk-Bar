@@ -138,7 +138,7 @@ export default function AnimalDetail({
               Livestock Profile — {animal.tag}
             </h1>
             <p className="text-xs text-slate-500">
-              Tag #{animal.tag} • Registered on {animal.acquisitionDate || 'Recently'}
+              Tag: {animal.tag} • Registered on {animal.acquisitionDate || 'Recently'}
             </p>
           </div>
         </div>
