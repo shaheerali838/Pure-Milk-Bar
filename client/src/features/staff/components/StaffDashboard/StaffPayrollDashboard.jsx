@@ -598,6 +598,7 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/70 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
+                    <th className="py-3 px-4">Staff ID</th>
                     <th className="py-3 px-4">Employee Name</th>
                     <th className="py-3 px-4">Role</th>
                     <th className="py-3 px-4">Shift</th>
@@ -622,6 +623,10 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
                         onClick={() => handleSelectStaff(staff)}
                         className="hover:bg-emerald-50/40 transition duration-150 cursor-pointer group"
                       >
+                        <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                          #{staff.id}
+                        </td>
+
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 font-display">

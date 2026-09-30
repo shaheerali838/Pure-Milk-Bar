@@ -149,6 +149,9 @@ export default function AttendanceSheetDetail({ staff, isOpen, onClose, onBack, 
                 <h2 className="text-base sm:text-lg font-black font-display text-slate-900 tracking-tight">
                   {staff.name}
                 </h2>
+                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                  #{staff.id}
+                </span>
                 <span
                   className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${getRoleBadgeStyle(
                     staff.role

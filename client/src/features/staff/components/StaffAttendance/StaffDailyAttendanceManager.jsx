@@ -145,7 +145,7 @@ export default function StaffDailyAttendanceManager({
           <p className="text-xs text-slate-300 mt-1">
             {targetStaff ? (
               <span>
-                Role: <strong className="text-emerald-300">{targetStaff.role}</strong> • Shift: <strong>{targetStaff.shift || 'Morning'}</strong>
+                Staff ID: <strong className="text-white font-mono">#{targetStaff.id}</strong> • Role: <strong className="text-emerald-300">{targetStaff.role}</strong> • Shift: <strong>{targetStaff.shift || 'Morning'}</strong>
               </span>
             ) : (
               'Single-click daily attendance marking, salary deduction calculation & 30-day master attendance matrix'
@@ -546,6 +546,9 @@ export default function StaffDailyAttendanceManager({
                             <div>
                               <span className="font-bold text-slate-900 block leading-tight">
                                 {staff.name}
+                              </span>
+                              <span className="font-mono text-[10px] text-slate-400">
+                                #{staff.id}
                               </span>
                             </div>
                           </div>

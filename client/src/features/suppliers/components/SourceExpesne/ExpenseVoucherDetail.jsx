@@ -298,6 +298,9 @@ export default function ExpenseVoucherDetail({
                 Voucher &amp; Sourcing Outlay Specifications
               </h3>
             </div>
+            <span className="text-[11px] text-slate-500 font-mono font-medium">
+              System ID: {expense.id}
+            </span>
           </div>
 
           <table className="w-full text-xs text-left border-collapse">

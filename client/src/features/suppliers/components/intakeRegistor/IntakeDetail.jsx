@@ -299,7 +299,7 @@ export default function IntakeDetail({
           <table className="w-full border-collapse text-left text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                <th className="px-4 py-3">Supplier Name</th>
+                <th className="px-4 py-3">Supplier Name &amp; ID</th>
                 <th className="px-4 py-3">Route / Area</th>
                 <th className="px-4 py-3 text-right">Milk Quantity</th>
                 <th className="px-4 py-3 text-right">Rate / Liter</th>
@@ -314,6 +314,9 @@ export default function IntakeDetail({
                 <td className="px-4 py-3.5">
                   <span className="font-bold text-slate-900 text-sm block">
                     {supplierDisplayName}
+                  </span>
+                  <span className="font-mono text-[11px] text-slate-500">
+                    ID: {activeSlip.supplierId || matchedSupplier?.id || '—'}
                   </span>
                 </td>
                 <td className="px-4 py-3.5 font-medium text-slate-700">

@@ -146,6 +146,10 @@ export default function StaffDetailSidebar({ staff, isOpen, onClose }) {
                   {staff.name}
                 </h3>
                 <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs text-slate-300 font-mono font-bold">
+                    ID: #{staff.id}
+                  </span>
+                  <span className="text-slate-500">•</span>
                   <span className="text-xs text-emerald-400 font-medium">
                     {staff.role}
                   </span>

@@ -41,6 +41,7 @@ export default function LedgerCustomerProfileCard({ customer, currentBalance, on
                 >
                   {customer.verificationStatus || 'Verified'}
                 </Badge>
+                <span className="font-mono text-[10px] text-slate-400">#{customer.id}</span>
               </div>
             </div>
           </div>
