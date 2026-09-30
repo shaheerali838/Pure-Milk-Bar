@@ -187,7 +187,7 @@ export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit 
               Supplier Profile — {supplier.name}
             </h1>
             <p className="text-xs text-slate-500">
-              Supplier ID: {supplier.id} • Route: {supplier.area || 'Direct Supply'}
+              Route: {supplier.area || 'Direct Supply'}
             </p>
           </div>
         </div>

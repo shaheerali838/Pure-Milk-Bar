@@ -195,7 +195,6 @@ export default function StaffDailySheet() {
   const handleDownloadCSV = () => {
     const headers = [
       '#',
-      'Staff ID',
       'Staff Name',
       'Role',
       'Shift',
@@ -209,7 +208,6 @@ export default function StaffDailySheet() {
 
     const csvRows = filteredRows.map((r) => [
       r.index,
-      r.staffId,
       r.name,
       r.role,
       r.shift,
@@ -649,7 +647,6 @@ export default function StaffDailySheet() {
             <thead>
               <tr className="border-b border-slate-200 bg-slate-100 text-slate-700 text-[11px] font-bold uppercase tracking-wider">
                 <th className="py-2.5 px-3">#</th>
-                <th className="py-2.5 px-3">Staff ID</th>
                 <th className="py-2.5 px-3">Staff Name</th>
                 <th className="py-2.5 px-3">Role</th>
                 <th className="py-2.5 px-3">Shift</th>
@@ -665,7 +662,7 @@ export default function StaffDailySheet() {
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {filteredRows.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="py-12 text-center text-slate-400">
+                  <td colSpan={11} className="py-12 text-center text-slate-400">
                     No staff records found for this shift.
                   </td>
                 </tr>
@@ -684,10 +681,6 @@ export default function StaffDailySheet() {
                     >
                       <td className="py-2.5 px-3 text-slate-400 font-mono">
                         {row.index}
-                      </td>
-
-                      <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
-                        {row.staffId}
                       </td>
 
                       <td className="py-2.5 px-3">

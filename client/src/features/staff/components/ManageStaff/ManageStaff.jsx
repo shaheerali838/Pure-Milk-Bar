@@ -434,7 +434,6 @@ export default function ManageStaff() {
                   <th className="py-3 px-4">
                     <input type="checkbox" checked={selectedIds.length === filteredStaff.length && filteredStaff.length > 0} onChange={handleSelectAll} className="cursor-pointer" />
                   </th>
-                  <th className="py-3 px-4">Staff ID</th>
                   <th className="py-3 px-4">Employee Name</th>
                   <th className="py-3 px-4">Role</th>
                   <th className="py-3 px-4">Shift</th>
@@ -469,9 +468,6 @@ export default function ManageStaff() {
                           onChange={(e) => handleSelectRow(e, staff.id)} 
                           className="cursor-pointer" 
                         />
-                      </td>
-                      <td className="py-3 px-4 font-mono font-bold text-slate-900">
-                        #{staff.id}
                       </td>
 
                       <td className="py-3 px-4">

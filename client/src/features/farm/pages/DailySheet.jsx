@@ -140,9 +140,8 @@ export default function DailySheet() {
     ]);
     
     // 2. Export Expenses Data
-    const expenseHeaders = ['Expense ID', 'Date', 'Category', 'Amount (Rs)', 'Payment Mode', 'Authorized By'];
+    const expenseHeaders = ['Date', 'Category', 'Amount (Rs)', 'Payment Mode', 'Authorized By'];
     const expenseCsvRows = expenseRows.map(e => [
-      e.id,
       e.date,
       e.category,
       `Rs. ${Number(e.amount || 0).toLocaleString()}`,
@@ -488,9 +487,6 @@ export default function DailySheet() {
             <TableHeader className="bg-slate-50/80 border-b border-slate-200">
               <TableRow>
                 <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                  Expense ID
-                </TableHead>
-                <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
                   Category
                 </TableHead>
                 <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
@@ -512,10 +508,6 @@ export default function DailySheet() {
                     key={idx}
                     className="hover:bg-slate-50/60 transition-colors duration-150"
                   >
-                    <TableCell className="py-3.5 px-4 font-mono text-xs text-slate-500">
-                      {row.id}
-                    </TableCell>
-
                     <TableCell className="py-3.5 px-4 font-bold text-slate-800 text-xs">
                       {row.category}
                     </TableCell>
@@ -537,7 +529,7 @@ export default function DailySheet() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-8 text-center text-slate-500">
+                  <TableCell colSpan={4} className="py-8 text-center text-slate-500">
                     No farm expenses logged for {date}.
                   </TableCell>
                 </TableRow>
