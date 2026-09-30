@@ -232,6 +232,7 @@ export function IntakeProvider({ children }) {
       totalExpenditure: Math.round(totalExpenditure),
       totalIntakeSpend: Math.round(totalExpenditure),
       totalPaid: Math.round(totalPaid),
+      totalPay: Math.round(totalPaid),
       totalPending: Math.round(totalPending),
       pendingSettlements: Math.round(totalPending),
       avgPurchaseRate: parseFloat(avgPurchaseRate.toFixed(2)),

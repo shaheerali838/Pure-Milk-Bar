@@ -3,6 +3,7 @@ import {
   X,
   Users,
   Droplets,
+  DollarSign,
   Receipt,
   Clock,
   MapPin,
@@ -32,10 +33,12 @@ export default function SupplierCardDetailModal({
   const filteredSuppliers = suppliers.filter((s) => {
     const q = searchTerm.toLowerCase();
     const matchesSearch =
-      s.name.toLowerCase().includes(q) ||
-      (s.id && s.id.toLowerCase().includes(q)) ||
+      (s.name && s.name.toLowerCase().includes(q)) ||
       (s.area && s.area.toLowerCase().includes(q));
 
+    if (cardType === 'intake_spend') {
+      return matchesSearch && (s.grossProcuredValue || 0) > 0;
+    }
     if (cardType === 'balances') {
       return matchesSearch && (s.balanceDue || 0) > 0;
     }
@@ -70,6 +73,13 @@ export default function SupplierCardDetailModal({
       icon: Droplets,
       color: '#155dfc',
       badge: 'Volume Breakdown',
+    },
+    intake_spend: {
+      title: 'Total Milk Intake Spend Breakdown',
+      subtitle: `Gross intake spend of Rs. ${(totals.totalIntakeSpend || totals.totalProcurementValue || 0).toLocaleString()} across all suppliers`,
+      icon: DollarSign,
+      color: '#0d9488',
+      badge: 'Total Spend',
     },
     payouts: {
       title: 'Disbursed Supplier Payouts',
@@ -205,6 +215,39 @@ export default function SupplierCardDetailModal({
                   {suppliers
                     .reduce((sum, s) => sum + (s.grossProcuredValue || 0), 0)
                     .toLocaleString()}
+                </span>
+              </div>
+            </>
+          )}
+
+          {cardType === 'intake_spend' && (
+            <>
+              <div className="bg-teal-50/50 p-2.5 rounded-xl border border-teal-100">
+                <span className="text-[11px] text-teal-700 font-medium block">Total Intake Spend</span>
+                <span className="text-lg font-bold text-teal-700 tabular">
+                  Rs. {(totals.totalIntakeSpend || totals.totalProcurementValue || 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
+                <span className="text-[11px] text-blue-700 font-medium block">Suppliers with Intake</span>
+                <span className="text-lg font-bold text-blue-900">
+                  {suppliers.filter((s) => (s.grossProcuredValue || 0) > 0).length}
+                </span>
+              </div>
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <span className="text-[11px] text-slate-500 font-medium block">Avg Spend / Supplier</span>
+                <span className="text-lg font-bold text-slate-900 tabular">
+                  Rs.{' '}
+                  {Math.round(
+                    (totals.totalIntakeSpend || totals.totalProcurementValue || 0) /
+                      Math.max(1, suppliers.filter((s) => (s.grossProcuredValue || 0) > 0).length)
+                  ).toLocaleString()}
+                </span>
+              </div>
+              <div className="bg-amber-50/50 p-2.5 rounded-xl border border-amber-100">
+                <span className="text-[11px] text-amber-700 font-medium block">Pending Balance</span>
+                <span className="text-lg font-bold text-amber-700 tabular">
+                  Rs. {(totals.outstandingBalances || 0).toLocaleString()}
                 </span>
               </div>
             </>
@@ -394,6 +437,17 @@ export default function SupplierCardDetailModal({
                               style={{ width: `${Math.min(100, Math.max(5, volPct))}%` }}
                             />
                           </div>
+                        </div>
+                      )}
+
+                      {cardType === 'intake_spend' && (
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-400 font-medium block">
+                            Gross Intake Spend
+                          </span>
+                          <span className="text-xs font-black text-teal-700 tabular">
+                            Rs. {(supplier.grossProcuredValue || 0).toLocaleString()}
+                          </span>
                         </div>
                       )}
 

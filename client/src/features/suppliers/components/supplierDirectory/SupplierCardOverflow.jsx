@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Droplets, Receipt, Clock, ChevronRight } from 'lucide-react';
+import { Users, Droplets, DollarSign, Receipt, Clock, ChevronRight } from 'lucide-react';
 import { useSupplierContext } from '@/context/SupplierContext';
 import SupplierCardDetailModal from './SupplierCardDetailModal';
 
@@ -27,6 +27,15 @@ export default function SupplierCardOverflow({ onSelectSupplier }) {
       badge: 'Procured Volume',
     },
     {
+      id: 'intake_spend',
+      label: 'Total Intake Spend',
+      value: `Rs. ${(totals.totalIntakeSpend ?? totals.totalProcurementValue ?? 0).toLocaleString()}`,
+      sub: 'Gross value of all milk procured',
+      icon: DollarSign,
+      color: '#0d9488',
+      badge: 'Total Spend',
+    },
+    {
       id: 'payouts',
       label: 'Total Supplier Payouts',
       value: `Rs. ${totals.totalPayouts.toLocaleString()}`,
@@ -48,7 +57,7 @@ export default function SupplierCardOverflow({ onSelectSupplier }) {
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mb-4">
         {statCards.map(({ id, label, value, sub, icon: Icon, color, badge }) => (
           <div
             key={id}

@@ -3,6 +3,7 @@ import {
   X,
   Droplets,
   DollarSign,
+  Wallet,
   TrendingUp,
   Clock,
   Search,
@@ -29,13 +30,15 @@ export default function IntakeCardDetailModal({
   const filteredLogs = intakeLogs.filter((log) => {
     const q = searchTerm.toLowerCase();
     const matchesSearch =
-      log.supplierName.toLowerCase().includes(q) ||
-      (log.id && log.id.toLowerCase().includes(q)) ||
+      (log.supplierName && log.supplierName.toLowerCase().includes(q)) ||
       (log.area && log.area.toLowerCase().includes(q)) ||
       (log.receivedBy && log.receivedBy.toLowerCase().includes(q));
 
     if (cardType === 'pending') {
       return matchesSearch && log.settlement !== 'Paid';
+    }
+    if (cardType === 'paid') {
+      return matchesSearch && (parseFloat(log.paidAmount) || 0) > 0;
     }
     return matchesSearch;
   });
@@ -55,6 +58,13 @@ export default function IntakeCardDetailModal({
       icon: DollarSign,
       color: '#009966',
       badge: 'Procurement Spend',
+    },
+    paid: {
+      title: 'Total Disbursed Milk Payments',
+      subtitle: `Disbursed intake payments totaling Rs. ${(totals.totalPay || totals.totalPaid || 0).toLocaleString()}`,
+      icon: Wallet,
+      color: '#0d9488',
+      badge: 'Total Disbursed',
     },
     rate: {
       title: 'Purchase Rate & Quality Analysis',
@@ -237,6 +247,35 @@ export default function IntakeCardDetailModal({
             </>
           )}
 
+          {cardType === 'paid' && (
+            <>
+              <div className="bg-teal-50/50 p-2.5 rounded-xl border border-teal-100">
+                <span className="text-[11px] text-teal-700 font-medium block">Total Paid Out</span>
+                <span className="text-lg font-bold text-teal-700 tabular">
+                  Rs. {(totals.totalPay || totals.totalPaid || 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
+                <span className="text-[11px] text-blue-700 font-medium block">Paid Slips</span>
+                <span className="text-lg font-bold text-blue-700">
+                  {intakeLogs.filter((l) => l.settlement === 'Paid').length}
+                </span>
+              </div>
+              <div className="bg-purple-50/50 p-2.5 rounded-xl border border-purple-100">
+                <span className="text-[11px] text-purple-700 font-medium block">Partial Slips</span>
+                <span className="text-lg font-bold text-purple-700">
+                  {intakeLogs.filter((l) => l.settlement === 'Partial').length}
+                </span>
+              </div>
+              <div className="bg-amber-50/50 p-2.5 rounded-xl border border-amber-100">
+                <span className="text-[11px] text-amber-700 font-medium block">Pending Payable</span>
+                <span className="text-lg font-bold text-amber-700 tabular">
+                  Rs. {(totals.pendingSettlements || 0).toLocaleString()}
+                </span>
+              </div>
+            </>
+          )}
+
           {cardType === 'pending' && (
             <>
               <div className="bg-amber-50/50 p-2.5 rounded-xl border border-amber-100">
@@ -276,7 +315,7 @@ export default function IntakeCardDetailModal({
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input
             type="text"
-            placeholder="Search slips by supplier name, slip ID, area, or receiver..."
+            placeholder="Search slips by supplier name, area, or receiver..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full text-xs font-medium text-slate-800 bg-transparent outline-none placeholder:text-slate-400"
@@ -303,6 +342,7 @@ export default function IntakeCardDetailModal({
               {filteredLogs.map((log) => {
                 const qty = parseFloat(log.quantity) || 0;
                 const cost = parseFloat(log.totalCost) || qty * (parseFloat(log.ratePerLiter) || 220);
+                const paidAmt = parseFloat(log.paidAmount) || (log.settlement === 'Paid' ? cost : 0);
 
                 return (
                   <div
@@ -325,9 +365,11 @@ export default function IntakeCardDetailModal({
                           <span className="font-bold text-slate-900 text-xs sm:text-sm font-display">
                             {log.supplierName}
                           </span>
-                          <span className="text-[10px] font-mono text-blue-600 font-bold bg-blue-50 px-1.5 py-0.2 rounded">
-                            {log.id}
-                          </span>
+                          {(log.slipNo || log.batchNumber || (log.id && !log.id.match(/^[a-f\d]{24}$/i))) && (
+                            <span className="text-[10px] font-mono text-blue-600 font-bold bg-blue-50 px-1.5 py-0.2 rounded">
+                              {log.slipNo || log.batchNumber || log.id}
+                            </span>
+                          )}
                           <span
                             className={`inline-flex items-center px-2 py-0.2 rounded-full text-[10px] font-semibold ${
                               log.shift === 'Morning'
@@ -361,9 +403,15 @@ export default function IntakeCardDetailModal({
                         <span className="text-xs font-black text-slate-900 tabular block">
                           {qty.toFixed(1)} L
                         </span>
-                        <span className="text-[11px] font-bold text-emerald-700 tabular">
-                          Rs. {cost.toLocaleString()}
-                        </span>
+                        {cardType === 'paid' ? (
+                          <span className="text-[11px] font-bold text-teal-700 tabular block">
+                            Paid: Rs. {paidAmt.toLocaleString()}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-bold text-emerald-700 tabular block">
+                            Rs. {cost.toLocaleString()}
+                          </span>
+                        )}
                       </div>
 
                       {/* Interactive Settlement Badge / Button */}

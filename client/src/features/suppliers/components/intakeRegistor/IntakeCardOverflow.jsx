@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Droplets, DollarSign, TrendingUp, Clock, ChevronRight } from 'lucide-react';
+import { Droplets, DollarSign, Wallet, TrendingUp, Clock, ChevronRight } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { usePOSContext } from '@/context/POSContext';
 import IntakeCardDetailModal from './IntakeCardDetailModal';
@@ -39,6 +39,15 @@ export default function IntakeCardOverflow({ onViewBatch }) {
       badge: 'Total Cost',
     },
     {
+      id: 'paid',
+      label: 'Total Pay',
+      value: `Rs. ${(totals.totalPay || totals.totalPaid || 0).toLocaleString()}`,
+      sub: 'Disbursed intake payments',
+      icon: Wallet,
+      color: '#0d9488',
+      badge: 'Total Disbursed',
+    },
+    {
       id: 'rate',
       label: 'Avg Purchase Rate',
       value: `Rs. ${(totals.avgPurchaseRate || 0).toFixed(1)} / L`,
@@ -60,7 +69,7 @@ export default function IntakeCardOverflow({ onViewBatch }) {
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mb-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mb-3">
         {statCards.map(({ id, label, value, sub, icon: Icon, color, badge }) => (
           <div
             key={id}
