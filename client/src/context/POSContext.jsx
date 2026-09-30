@@ -1209,12 +1209,12 @@ export function POSProvider({ children }) {
     });
   });
 
-  // Calculate Farm P&L Metrics
+  // Calculate Farm P&L Metrics (Real Data Only - No Extra Overhead)
   const farmGrossProfit = Math.max(0, farmStats.totalRevenue - farmStats.totalCost);
   const farmGrossMargin = farmStats.totalRevenue > 0 ? Math.round((farmGrossProfit / farmStats.totalRevenue) * 100) : 0;
-  const farmOverhead = Math.round(farmStats.totalRevenue * 0.12);
-  const farmNetProfit = Math.max(0, farmGrossProfit - farmOverhead);
-  const farmNetMargin = farmStats.totalRevenue > 0 ? Math.round((farmNetProfit / farmStats.totalRevenue) * 100) : 0;
+  const farmOverhead = 0;
+  const farmNetProfit = farmGrossProfit;
+  const farmNetMargin = farmGrossMargin;
   const farmRealizationPerLiter = farmStats.milkSold > 0 ? Number((farmNetProfit / farmStats.milkSold).toFixed(2)) : 0;
 
   const farmSalesMetrics = {
@@ -1229,19 +1229,19 @@ export function POSProvider({ children }) {
     totalCost: farmStats.totalCost,
     grossProfit: farmGrossProfit,
     grossMarginPercent: farmGrossMargin,
-    allocatedOverhead: farmOverhead,
+    allocatedOverhead: 0,
     netProfit: farmNetProfit,
     netMarginPercent: farmNetMargin,
     realizationPerLiter: farmRealizationPerLiter,
     itemizedProducts: Object.values(farmStats.itemizedProducts),
   };
 
-  // Calculate Supplier P&L Metrics
+  // Calculate Supplier P&L Metrics (Real Data Only - No Extra Overhead)
   const supplierGrossProfit = Math.max(0, supplierStats.totalRevenue - supplierStats.totalCost);
   const supplierGrossMargin = supplierStats.totalRevenue > 0 ? Math.round((supplierGrossProfit / supplierStats.totalRevenue) * 100) : 0;
-  const supplierOverhead = Math.round(supplierStats.totalRevenue * 0.10);
-  const supplierNetProfit = Math.max(0, supplierGrossProfit - supplierOverhead);
-  const supplierNetMargin = supplierStats.totalRevenue > 0 ? Math.round((supplierNetProfit / supplierStats.totalRevenue) * 100) : 0;
+  const supplierOverhead = 0;
+  const supplierNetProfit = supplierGrossProfit;
+  const supplierNetMargin = supplierGrossMargin;
   const supplierRealizationPerLiter = supplierStats.milkSold > 0 ? Number((supplierNetProfit / supplierStats.milkSold).toFixed(2)) : 0;
 
   const supplierSalesMetrics = {
@@ -1256,7 +1256,7 @@ export function POSProvider({ children }) {
     totalCost: supplierStats.totalCost,
     grossProfit: supplierGrossProfit,
     grossMarginPercent: supplierGrossMargin,
-    allocatedOverhead: supplierOverhead,
+    allocatedOverhead: 0,
     netProfit: supplierNetProfit,
     netMarginPercent: supplierNetMargin,
     realizationPerLiter: supplierRealizationPerLiter,

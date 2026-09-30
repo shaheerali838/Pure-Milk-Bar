@@ -325,24 +325,15 @@ export default function POSSalesSourcePLModal({ source = 'farm', onClose }) {
               </div>
 
               <div className="flex justify-between py-1 border-b border-slate-200 bg-blue-50/60 px-2 rounded font-bold text-blue-900">
-                <span>3. Gross Profit Margin</span>
+                <span>3. Net Clean Profit (Bachat)</span>
                 <span className="font-mono">
-                  = Rs. {Number(isAll ? farmSalesMetrics.grossProfit + supplierSalesMetrics.grossProfit : currentMetrics.grossProfit).toLocaleString()} ({isAll ? Math.round(((farmSalesMetrics.grossProfit + supplierSalesMetrics.grossProfit) / (farmSalesMetrics.totalRevenue + supplierSalesMetrics.totalRevenue || 1)) * 100) : currentMetrics.grossMarginPercent}%)
-                </span>
-              </div>
-
-              <div className="flex justify-between py-1 border-b border-slate-200 text-amber-700">
-                <span>
-                  4. Less: {isSupplier ? 'Collection Transit Fuel, Chilling & Lab Testing' : isFarm ? 'Farm Utilities, Shed Power & Herd Care' : 'Operating Overheads & Logistics'}
-                </span>
-                <span className="font-mono">
-                  - Rs. {Number(isAll ? farmSalesMetrics.allocatedOverhead + supplierSalesMetrics.allocatedOverhead : currentMetrics.allocatedOverhead).toLocaleString()}
+                  = Rs. {Number(isAll ? farmSalesMetrics.netProfit + supplierSalesMetrics.netProfit : currentMetrics.netProfit).toLocaleString()} ({isAll ? Math.round(((farmSalesMetrics.netProfit + supplierSalesMetrics.netProfit) / (farmSalesMetrics.totalRevenue + supplierSalesMetrics.totalRevenue || 1)) * 100) : currentMetrics.netMarginPercent}%)
                 </span>
               </div>
 
               <div className="flex justify-between pt-2 border-t-2 border-slate-800 font-extrabold text-sm text-slate-900 bg-emerald-50/70 p-2.5 rounded-lg">
                 <div>
-                  <span className="block">Net Bottom-Line Profit</span>
+                  <span className="block">Final Clean Net Profit</span>
                   <span className="text-[10px] font-normal text-slate-500">
                     Realization: Rs. {isAll ? Number(((farmSalesMetrics.netProfit + supplierSalesMetrics.netProfit) / (farmSalesMetrics.milkSold + supplierSalesMetrics.milkSold || 1)).toFixed(2)) : currentMetrics.realizationPerLiter} / Liter
                   </span>
@@ -352,7 +343,7 @@ export default function POSSalesSourcePLModal({ source = 'farm', onClose }) {
                     Rs. {Number(isAll ? farmSalesMetrics.netProfit + supplierSalesMetrics.netProfit : currentMetrics.netProfit).toLocaleString()}
                   </span>
                   <span className="block text-[10px] font-semibold text-emerald-800">
-                    ({isAll ? Math.round(((farmSalesMetrics.netProfit + supplierSalesMetrics.netProfit) / (farmSalesMetrics.totalRevenue + supplierSalesMetrics.totalRevenue || 1)) * 100) : currentMetrics.netMarginPercent}% Net Margin)
+                    ({isAll ? Math.round(((farmSalesMetrics.netProfit + supplierSalesMetrics.netProfit) / (farmSalesMetrics.totalRevenue + supplierSalesMetrics.totalRevenue || 1)) * 100) : currentMetrics.netMarginPercent}% Clean Margin)
                   </span>
                 </div>
               </div>

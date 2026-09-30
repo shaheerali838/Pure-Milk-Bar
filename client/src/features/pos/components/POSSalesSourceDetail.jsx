@@ -447,60 +447,22 @@ export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
                 </td>
               </tr>
 
-              {/* Row 3: Gross Profit */}
-              <tr className="bg-blue-50/40 font-semibold text-blue-900">
-                <td className="py-2.5 px-3.5 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-[10px] font-black">
-                    3
-                  </span>
-                  Gross Profit (Sales minus Milk Cost)
-                </td>
-                <td className="py-2.5 px-3.5 text-blue-800 text-[11px]">
-                  Profit before electricity, chilling, and shop overheads
-                </td>
-                <td className="py-2.5 px-3.5 text-right font-mono font-black text-blue-800 text-sm">
-                  = Rs. {totalGross.toLocaleString()}
-                </td>
-                <td className="py-2.5 px-3.5 text-right font-mono font-bold text-blue-800">
-                  {grossMarginPct}% Margin
-                </td>
-              </tr>
-
-              {/* Row 4: Expenses */}
-              <tr className="hover:bg-slate-50/60 transition-colors">
-                <td className="py-3 px-3.5 font-bold text-amber-800 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-[10px] font-black">
-                    4
-                  </span>
-                  Shop Expenses &amp; Chilling Overhead
-                </td>
-                <td className="py-3 px-3.5 text-slate-600">
-                  Chiller cooling electricity, delivery fuel, bags and shop maintenance
-                </td>
-                <td className="py-3 px-3.5 text-right font-mono font-bold text-amber-700 text-sm">
-                  - Rs. {totalOverhead.toLocaleString()}
-                </td>
-                <td className="py-3 px-3.5 text-right font-mono text-amber-700">
-                  {totalMilkSold > 0 ? `Rs. ${(totalOverhead / totalMilkSold).toFixed(1)} / L` : '—'}
-                </td>
-              </tr>
-
-              {/* Row 5: Final Net Profit */}
+              {/* Row 3: Final Net Profit (Bachat) */}
               <tr className="bg-emerald-100/70 border-t-2 border-emerald-300 font-extrabold text-emerald-950">
                 <td className="py-3.5 px-3.5 text-sm flex items-center gap-1.5">
                   <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black">
-                    5
+                    3
                   </span>
                   Final Clean Net Profit (Bachat)
                 </td>
                 <td className="py-3.5 px-3.5 text-xs text-emerald-900 font-medium">
-                  Actual net profit in pocket after all costs and expenses
+                  Actual net profit after milk cost (Total Sales Revenue minus Milk Cost)
                 </td>
                 <td className="py-3.5 px-3.5 text-right font-mono font-black text-emerald-800 text-base">
                   = Rs. {totalNet.toLocaleString()}
                 </td>
                 <td className="py-3.5 px-3.5 text-right font-mono font-black text-emerald-800 text-sm">
-                  {totalMilkSold > 0 ? `Rs. ${realizationPerLiter} / L` : '—'}
+                  {totalMilkSold > 0 ? `Rs. ${realizationPerLiter} / L` : `${netMarginPct}% Margin`}
                 </td>
               </tr>
             </tbody>

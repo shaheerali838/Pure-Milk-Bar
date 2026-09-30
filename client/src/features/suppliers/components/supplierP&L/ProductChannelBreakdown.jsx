@@ -220,23 +220,7 @@ export default function ProductChannelBreakdown({ product, onClose }) {
             </div>
           </div>
 
-          {/* Section 3: Allocated Logistics & Quality Testing */}
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3">
-            <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="font-semibold text-slate-700 flex items-center gap-1.5">
-                <Truck className="w-3.5 h-3.5 text-slate-500" />
-                Allocated Logistics, Testing &amp; Transit Overheads:
-              </span>
-              <span className="font-bold text-slate-900 font-mono">
-                Rs. {Number(product.allocatedOverhead || 0).toLocaleString()}
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-400">
-              Proportionately allocated from collection route fuel, chiller maintenance, and sulfuric lab testing expenses.
-            </p>
-          </div>
-
-          {/* Section 4: Total Net Realized Gross Profit Box */}
+          {/* Section 3: Total Net Realized Gross Profit Box */}
           <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-xl p-4 shadow-md space-y-3">
             <div className="flex items-center justify-between border-b border-white/10 pb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-300 font-display">
@@ -258,12 +242,6 @@ export default function ProductChannelBreakdown({ product, onClose }) {
                 <span>Less: Base Supplier Procurement Cost:</span>
                 <span className="font-mono font-medium text-rose-300">
                   - Rs. {Number(product.baseCost).toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between text-slate-300">
-                <span>Less: Sourcing Overhead Allocation:</span>
-                <span className="font-mono font-medium text-amber-300">
-                  - Rs. {Number(product.allocatedOverhead || 0).toLocaleString()}
                 </span>
               </div>
             </div>
