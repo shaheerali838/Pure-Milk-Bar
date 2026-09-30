@@ -40,6 +40,11 @@ const customerSchema = new Schema(
       default: 5000,
       min: 0,
     },
+    deliveryFee: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     currentBalance: {
       type: Number,
       default: 0,

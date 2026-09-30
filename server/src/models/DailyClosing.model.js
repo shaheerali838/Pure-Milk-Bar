@@ -61,6 +61,50 @@ const dailyClosingSchema = new Schema(
       type: String,
       default: null,
     },
+    summarySnapshot: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+    productStockSnapshot: {
+      type: [
+        {
+          productId: { type: Schema.Types.ObjectId, ref: 'Product' },
+          name: { type: String, required: true },
+          unit: { type: String, default: 'PIECE' },
+          category: { type: String, default: 'General' },
+          openingStock: { type: Number, default: 0 },
+          produced: { type: Number, default: 0 },
+          sold: { type: Number, default: 0 },
+          wasted: { type: Number, default: 0 },
+          closingStock: { type: Number, default: 0 },
+          physicalCount: { type: Number, default: null },
+          revenue: { type: Number, default: 0 },
+          cost: { type: Number, default: 0 },
+          profit: { type: Number, default: 0 },
+        },
+      ],
+      default: [],
+    },
+    physicalMilkDip: {
+      type: Number,
+      default: null,
+    },
+    milkVariance: {
+      type: Number,
+      default: 0,
+    },
+    physicalCash: {
+      type: Number,
+      default: null,
+    },
+    cashVariance: {
+      type: Number,
+      default: 0,
+    },
+    varianceReason: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },

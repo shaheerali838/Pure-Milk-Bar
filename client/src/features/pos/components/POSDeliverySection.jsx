@@ -117,7 +117,7 @@ export default function POSDeliverySection() {
                 <option value="">— Walk-in / Guest Delivery (No Khata) —</option>
                 {registeredCustomers.map((cust) => (
                   <option key={cust.id} value={cust.id}>
-                    {cust.name} ({cust.phone}) — {cust.area || 'Model Town'} [Khata: Rs. {(cust.khataBalance || 0).toLocaleString()}]
+                    {cust.name} ({cust.phone}) — {cust.area || 'Model Town'} [Khata: Rs. {(cust.khataBalance || 0).toLocaleString()}]{cust.deliveryFee ? ` [Delivery: Rs. ${cust.deliveryFee}]` : ''}
                   </option>
                 ))}
               </select>
@@ -220,7 +220,7 @@ export default function POSDeliverySection() {
                 <option value="">— Choose Registered Customer —</option>
                 {registeredCustomers.map((cust) => (
                   <option key={cust.id} value={cust.id}>
-                    {cust.name} ({cust.phone}) — {cust.area || 'Model Town'} [Khata: Rs. {(cust.khataBalance || 0).toLocaleString()}]
+                    {cust.name} ({cust.phone}) — {cust.area || 'Model Town'} [Khata: Rs. {(cust.khataBalance || 0).toLocaleString()}]{cust.deliveryFee ? ` [Delivery: Rs. ${cust.deliveryFee}]` : ''}
                   </option>
                 ))}
               </select>
@@ -232,9 +232,16 @@ export default function POSDeliverySection() {
             <div className="p-2 bg-white rounded-lg border border-blue-100 space-y-1">
               <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                 <span>{activeCustomer.name}</span>
-                <span className="text-amber-600 tabular text-[11px]">
-                  Khata Due: Rs. {(activeCustomer.khataBalance || 0).toLocaleString()}
-                </span>
+                <div className="flex items-center gap-2">
+                  {Number(activeCustomer.deliveryFee) > 0 && (
+                    <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200">
+                      +Rs. {activeCustomer.deliveryFee} Delivery
+                    </span>
+                  )}
+                  <span className="text-amber-600 tabular text-[11px]">
+                    Khata Due: Rs. {(activeCustomer.khataBalance || 0).toLocaleString()}
+                  </span>
+                </div>
               </div>
               <div className="text-[10px] text-slate-500">
                 <span>{activeCustomer.phone} · {activeCustomer.area || 'Model Town'}</span>

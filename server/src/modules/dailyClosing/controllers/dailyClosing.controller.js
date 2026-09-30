@@ -1,4 +1,9 @@
 import {
+  getDailyClosingSummaryService,
+  confirmDailyClosingService,
+  getDailyClosingHistoryService,
+  recordWastageService,
+  getWastageLogsService,
   createDailyClosingService,
   getDailyClosingsService,
   getDailyClosingByIdService,
@@ -9,7 +14,83 @@ import {
   getDailyClosingReportService,
 } from '../services/dailyClosing.service.js';
 
-// 1. Create/Start Daily Closing Draft
+// 1. Get Daily Closing Summary (The master unified endpoint for today & period ranges)
+export const getDailyClosingSummary = async (req, res, next) => {
+  try {
+    const summary = await getDailyClosingSummaryService(req.query);
+    res.status(200).json({
+      success: true,
+      message: 'Daily closing summary retrieved successfully',
+      data: summary,
+      // Direct root spread compatibility for frontend consumers
+      ...summary,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 2. Confirm and Lock Daily Closing (One-click save to DB)
+export const confirmDailyClosing = async (req, res, next) => {
+  try {
+    const result = await confirmDailyClosingService(req.user, req.body, req.ip);
+    res.status(200).json({
+      success: true,
+      message: 'Daily closing confirmed, frozen and locked successfully',
+      data: result,
+      closing: result.closing,
+      summary: result.summarySnapshot,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 3. Get Light Closing History
+export const getDailyClosingHistory = async (req, res, next) => {
+  try {
+    const history = await getDailyClosingHistoryService(req.query.limit);
+    res.status(200).json({
+      success: true,
+      data: history,
+      history,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 4. Record Spoilage / Wastage Log
+export const recordWastage = async (req, res, next) => {
+  try {
+    const wastage = await recordWastageService(req.user, req.body, req.ip);
+    res.status(201).json({
+      success: true,
+      message: 'Wastage entry recorded successfully',
+      data: wastage,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 5. Get Wastage Logs
+export const getWastageLogs = async (req, res, next) => {
+  try {
+    const logs = await getWastageLogsService(req.query);
+    res.status(200).json({
+      success: true,
+      data: logs,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EXISTING / LEGACY CONTROLLERS
+// ═══════════════════════════════════════════════════════════════════════════
+
 export const createDailyClosing = async (req, res, next) => {
   try {
     const newClosing = await createDailyClosingService(req.user, req.body, req.ip);
@@ -23,7 +104,6 @@ export const createDailyClosing = async (req, res, next) => {
   }
 };
 
-// 2. Get Daily Closing History List
 export const getDailyClosings = async (req, res, next) => {
   try {
     const result = await getDailyClosingsService(req.query);
@@ -37,7 +117,6 @@ export const getDailyClosings = async (req, res, next) => {
   }
 };
 
-// 3. Get Daily Closing Details by ID
 export const getDailyClosingById = async (req, res, next) => {
   try {
     const closing = await getDailyClosingByIdService(req.params.id);
@@ -50,7 +129,6 @@ export const getDailyClosingById = async (req, res, next) => {
   }
 };
 
-// 4. Get Daily Closing by Particular Date (YYYY-MM-DD)
 export const getDailyClosingByDate = async (req, res, next) => {
   try {
     const closing = await getDailyClosingByDateService(req.params.date);
@@ -58,13 +136,13 @@ export const getDailyClosingByDate = async (req, res, next) => {
       success: true,
       message: 'Daily closing date details retrieved successfully',
       data: { closing },
+      ...closing,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// 5. Reconcile Cash + Stock Variance
 export const reconcileDailyClosing = async (req, res, next) => {
   try {
     const reconciledClosing = await reconcileDailyClosingService(
@@ -83,7 +161,6 @@ export const reconcileDailyClosing = async (req, res, next) => {
   }
 };
 
-// 6. Manager/Admin Closing Approve
 export const approveDailyClosing = async (req, res, next) => {
   try {
     const approvedClosing = await approveDailyClosingService(
@@ -102,7 +179,6 @@ export const approveDailyClosing = async (req, res, next) => {
   }
 };
 
-// 7. Approved Closing Reopen (Only Admin)
 export const reopenDailyClosing = async (req, res, next) => {
   try {
     const reopenedClosing = await reopenDailyClosingService(
@@ -121,7 +197,6 @@ export const reopenDailyClosing = async (req, res, next) => {
   }
 };
 
-// 8. Complete Daily Closing Detailed Report
 export const getDailyClosingReport = async (req, res, next) => {
   try {
     const reportData = await getDailyClosingReportService(req.params.id);

@@ -518,10 +518,22 @@ export function POSProvider({ children }) {
   }, [netPayable, paymentMethod, cart.length]);
 
   const allCustomers = rawCustomers.length > 0 ? rawCustomers : customers;
-  const activeCustomer = allCustomers.find((c) => String(c.id) === String(linkedCustomerId)) || null;
+  const activeCustomer = allCustomers.find((c) => String(c.id || c._id) === String(linkedCustomerId)) || null;
   const activeRider = selectedRiderId
     ? dynamicRiders.find((r) => String(r.id) === String(selectedRiderId)) || null
     : null;
+
+  // Auto-sync customer's custom delivery charges when in delivery mode
+  useEffect(() => {
+    if (saleCategory === 'delivery') {
+      if (activeCustomer && activeCustomer.deliveryFee !== undefined && activeCustomer.deliveryFee !== null) {
+        setDeliveryCharge(Number(activeCustomer.deliveryFee) || 0);
+      }
+    } else {
+      // Walkin counter sale: Always 0 delivery fee
+      setDeliveryCharge(0);
+    }
+  }, [saleCategory, activeCustomer]);
 
   // Auto-estimate distance for monthly delivery customer if not already edited
   useEffect(() => {

@@ -440,13 +440,18 @@ export const api = {
 
   // 11. Daily Closing & Cash/Stock Reconciliation
   dailyClosing: {
+    getSummary: (params = {}) => api.get('/api/v1/daily-closings/summary', params, { skipCache: true }),
+    confirm: (data) => api.post('/api/v1/daily-closings/confirm', data),
+    getHistory: (limit = 30) => api.get('/api/v1/daily-closings/history', { limit }, { skipCache: true, fallback: [] }),
+    recordWastage: (data) => api.post('/api/v1/daily-closings/wastage', data),
+    getWastage: (params = {}) => api.get('/api/v1/daily-closings/wastage', params, { fallback: [] }),
     getAll: (params = {}) => api.get('/api/v1/daily-closings', params, { fallback: [] }),
     getById: (id) => api.get(`/api/v1/daily-closings/${id}`, null, { fallback: null }),
     getByDate: (date) => api.get(`/api/v1/daily-closings/date/${date}`, null, { fallback: null }),
     create: (data) => api.post('/api/v1/daily-closings', data),
     reconcile: (id, data) => api.post(`/api/v1/daily-closings/${id}/reconcile`, data),
     approve: (id, data) => api.post(`/api/v1/daily-closings/${id}/approve`, data),
-    reopen: (id, data) => api.post(`/api/v1/daily-closings/${id}/reopen`, data),
+    reopen: (id, data = {}) => api.post(`/api/v1/daily-closings/${id}/reopen`, data),
     getReport: (id) => api.get(`/api/v1/daily-closings/${id}/report`, null, { fallback: {} }),
   },
 

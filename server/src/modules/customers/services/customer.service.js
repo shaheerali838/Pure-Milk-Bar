@@ -54,11 +54,40 @@ export const createCustomerService = async (customerData) => {
     customerImageUrl = await uploadToCloudinary(customerImageUrl, 'puremilkbar/customers');
   }
 
+  const openingBal = Math.max(0, Number(customerData.openingBalance || 0));
+  const openingMethod = String(customerData.openingPaymentMethod || 'CASH').toUpperCase();
+
   const newCustomer = await Customer.create({
     ...customerData,
     code: customerCode,
     image: customerImageUrl,
+    openingBalance: openingBal,
+    currentBalance: openingBal,
+    khataBalance: openingBal,
   });
+
+  if (openingBal > 0) {
+    try {
+      await KhataEntry.create({
+        customerId: newCustomer._id,
+        date: new Date(),
+        voucherNumber: `KV-OP-${customerCode}`,
+        transactionType: 'DEBIT',
+        description: `Customer Account Opening Balance (${openingMethod})`,
+        debitAmount: openingBal,
+        creditAmount: 0,
+        runningBalance: openingBal,
+        paymentMethod: openingMethod,
+        referenceTransactionId: `OP-${customerCode}`,
+        orderTotal: openingBal,
+        paidAmount: openingMethod === 'CASH' || openingMethod === 'CARD' || openingMethod === 'ONLINE' ? openingBal : 0,
+        remainingAmount: openingBal,
+        fulfillmentType: 'Opening Balance',
+      });
+    } catch (err) {
+      console.warn('Failed to auto-create opening KhataEntry:', err);
+    }
+  }
 
   return newCustomer;
 };

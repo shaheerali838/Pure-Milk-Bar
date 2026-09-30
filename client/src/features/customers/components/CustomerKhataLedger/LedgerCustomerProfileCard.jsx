@@ -11,12 +11,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-export default function LedgerCustomerProfileCard({ customer, onEdit }) {
+export default function LedgerCustomerProfileCard({ customer, currentBalance, onEdit }) {
   if (!customer) return null;
 
   const initial = customer.name ? customer.name.charAt(0).toUpperCase() : 'C';
   const creditLimit = Number(customer.creditLimit || 10000);
-  const khataBalance = Number(customer.khataBalance ?? customer.currentBalance ?? 0);
+  const khataBalance = currentBalance !== undefined && currentBalance !== null
+    ? Number(currentBalance)
+    : Number(customer.khataBalance ?? customer.currentBalance ?? 0);
   const khataPercent = Math.min(100, Math.round((khataBalance / creditLimit) * 100));
 
   return (

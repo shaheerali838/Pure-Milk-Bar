@@ -27,6 +27,7 @@ export default function EditCustomerView({ customer, onBack }) {
     idType: 'CNIC',
     verificationStatus: 'Verified',
     address: '',
+    deliveryFee: '0',
     secondaryPhone: '',
     referenceName: '',
     subscription: '2 L Cow Milk',
@@ -90,6 +91,7 @@ export default function EditCustomerView({ customer, onBack }) {
         idType: customer.idType || 'CNIC',
         verificationStatus: customer.verificationStatus || 'Verified',
         address: customer.address || '',
+        deliveryFee: customer.deliveryFee !== undefined ? String(customer.deliveryFee) : '0',
         secondaryPhone: customer.secondaryPhone || '',
         referenceName: customer.referenceName || '',
         subscription: customer.subscription || '2 L Cow Milk',
@@ -119,6 +121,7 @@ export default function EditCustomerView({ customer, onBack }) {
       idType: formData.idType,
       verificationStatus: formData.verificationStatus,
       address: formData.address || '',
+      deliveryFee: Number(formData.deliveryFee) || 0,
       secondaryPhone: formData.secondaryPhone || '',
       referenceName: formData.referenceName || '',
       subscription: formattedSubscription,
@@ -327,6 +330,20 @@ export default function EditCustomerView({ customer, onBack }) {
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   placeholder="Enter address"
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
+                  Doorstep Delivery Charges (Rs.) <span className="text-slate-400 font-normal">(Per Order)</span>
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.deliveryFee}
+                  onChange={(e) => setFormData({ ...formData, deliveryFee: e.target.value })}
+                  placeholder="0 (Free Delivery)"
+                  className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-bold tabular"
                 />
               </div>
 

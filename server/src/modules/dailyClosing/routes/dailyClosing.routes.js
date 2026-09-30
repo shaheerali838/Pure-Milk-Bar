@@ -1,5 +1,10 @@
 import { Router } from 'express';
 import {
+  getDailyClosingSummary,
+  confirmDailyClosing,
+  getDailyClosingHistory,
+  recordWastage,
+  getWastageLogs,
   createDailyClosing,
   getDailyClosings,
   getDailyClosingById,
@@ -15,9 +20,11 @@ import { authorize } from '../../../middlewares/authorize.js';
 
 import {
   validateCreateDailyClosing,
+  validateConfirmDailyClosing,
   validateReconcileDailyClosing,
   validateApproveDailyClosing,
   validateReopenDailyClosing,
+  validateRecordWastage,
 } from '../validators/dailyClosing.validator.js';
 
 const router = Router();
@@ -25,8 +32,42 @@ const router = Router();
 // Protect all routes - Authentication Required
 router.use(authenticate);
 
-// 1. POST /api/v1/daily-closings (Create/Start)
-// 2. GET /api/v1/daily-closings (History List)
+// 1. GET /api/v1/daily-closings/summary (Single unified endpoint for today & period views)
+router.get(
+  '/summary',
+  authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  getDailyClosingSummary
+);
+
+// 2. POST /api/v1/daily-closings/confirm (One-click save & snapshot confirmation)
+router.post(
+  '/confirm',
+  authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  validateConfirmDailyClosing,
+  confirmDailyClosing
+);
+
+// 3. GET /api/v1/daily-closings/history (Light history list for previous closings)
+router.get(
+  '/history',
+  authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  getDailyClosingHistory
+);
+
+// 4. Wastage Routes
+router
+  .route('/wastage')
+  .post(
+    authorize('ADMIN', 'MANAGER', 'CASHIER'),
+    validateRecordWastage,
+    recordWastage
+  )
+  .get(
+    authorize('ADMIN', 'MANAGER', 'CASHIER'),
+    getWastageLogs
+  );
+
+// 5. Existing Routes (Preserved for compatibility)
 router
   .route('/')
   .post(
@@ -39,21 +80,18 @@ router
     getDailyClosings
   );
 
-// 4. GET /api/v1/daily-closings/date/:date (Particular Date Lookup)
 router.get(
   '/date/:date',
   authorize('ADMIN', 'MANAGER', 'CASHIER'),
   getDailyClosingByDate
 );
 
-// 3. GET /api/v1/daily-closings/:id (Specific Closing Details)
 router.get(
   '/:id',
   authorize('ADMIN', 'MANAGER', 'CASHIER'),
   getDailyClosingById
 );
 
-// 5. POST /api/v1/daily-closings/:id/reconcile (Cash + Stock Reconciliation)
 router.post(
   '/:id/reconcile',
   authorize('ADMIN', 'MANAGER', 'CASHIER'),
@@ -61,7 +99,6 @@ router.post(
   reconcileDailyClosing
 );
 
-// 6. POST /api/v1/daily-closings/:id/approve (Manager/Admin Approval)
 router.post(
   '/:id/approve',
   authorize('ADMIN', 'MANAGER'),
@@ -69,7 +106,6 @@ router.post(
   approveDailyClosing
 );
 
-// 7. POST /api/v1/daily-closings/:id/reopen (Admin Only Reopen)
 router.post(
   '/:id/reopen',
   authorize('ADMIN'),
@@ -77,7 +113,6 @@ router.post(
   reopenDailyClosing
 );
 
-// 8. GET /api/v1/daily-closings/:id/report (Complete Audit Report)
 router.get(
   '/:id/report',
   authorize('ADMIN', 'MANAGER'),

@@ -21,6 +21,7 @@ export function CustomerProvider({ children }) {
       const normalized = list.map((c) => ({
         ...c,
         id: c._id || c.id,
+        deliveryFee: Number(c.deliveryFee) || 0,
         khataBalance: Number(c.khataBalance ?? c.currentBalance ?? c.openingBalance) || 0,
         currentBalance: Number(c.currentBalance ?? c.khataBalance ?? c.openingBalance) || 0,
         openingBalance: Number(c.openingBalance ?? c.khataBalance ?? c.currentBalance) || 0,
@@ -52,7 +53,9 @@ export function CustomerProvider({ children }) {
         referenceName: newCust.referenceName || '',
         subscription: newCust.subscription || '2 L Cow Milk',
         creditLimit: Number(newCust.creditLimit) || 10000,
-        openingBalance: Number(newCust.openingBalance || newCust.khataBalance) || 0,
+        deliveryFee: Number(newCust.deliveryFee) || 0,
+        openingBalance: Number(newCust.openingBalance) || 0,
+        openingPaymentMethod: newCust.openingPaymentMethod || 'CASH',
         paymentMode:
           newCust.paymentMode === 'EasyPaisa' || newCust.paymentMode === 'JazzCash'
             ? 'Online Payment'
@@ -65,6 +68,7 @@ export function CustomerProvider({ children }) {
       const normalized = {
         ...created,
         id: created._id || created.id || Date.now(),
+        deliveryFee: Number(created.deliveryFee || newCust.deliveryFee) || 0,
         image: created.image || newCust.image || null,
       };
       setCustomers((prev) => [normalized, ...prev]);
@@ -78,9 +82,12 @@ export function CustomerProvider({ children }) {
   const updateCustomer = async (updatedCust) => {
     const id = updatedCust._id || updatedCust.id;
     try {
-      await customerService.updateCustomer(id, updatedCust);
+      await customerService.updateCustomer(id, {
+        ...updatedCust,
+        deliveryFee: updatedCust.deliveryFee !== undefined ? Number(updatedCust.deliveryFee) || 0 : undefined,
+      });
       setCustomers((prev) =>
-        prev.map((c) => ((c._id || c.id) === id ? { ...c, ...updatedCust } : c))
+        prev.map((c) => ((c._id || c.id) === id ? { ...c, ...updatedCust, deliveryFee: Number(updatedCust.deliveryFee !== undefined ? updatedCust.deliveryFee : c.deliveryFee) || 0 } : c))
       );
     } catch (err) {
       console.error('Failed to update customer via API:', err);

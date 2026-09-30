@@ -45,16 +45,16 @@ export default function LedgerStatsCards({
       badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
     },
     {
-      label: 'Cleared Balance',
+      label: currentBalance > 0 ? 'Current Khata Due' : 'Cleared Balance',
       value: `PKR ${Number(currentBalance || 0).toLocaleString()}`,
       sub: isCleared ? 'Dues fully cleared' : 'Outstanding recovery',
       icon: isCleared ? CheckCircle2 : AlertCircle,
-      iconColor: isCleared ? 'text-emerald-600' : 'text-amber-600',
-      iconBg: isCleared ? 'bg-emerald-50' : 'bg-amber-50',
-      badge: isCleared ? 'Cleared' : 'Pending',
+      iconColor: isCleared ? 'text-emerald-600' : 'text-rose-600',
+      iconBg: isCleared ? 'bg-emerald-50' : 'bg-rose-50',
+      badge: isCleared ? 'Cleared' : 'Due Baqi',
       badgeClass: isCleared
         ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
-        : 'bg-amber-50 text-amber-700 border-amber-200/60',
+        : 'bg-rose-50 text-rose-700 border-rose-200/60',
     },
   ];
 
