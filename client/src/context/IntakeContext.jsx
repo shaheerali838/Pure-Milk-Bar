@@ -145,6 +145,9 @@ export function IntakeProvider({ children }) {
               settlement: newSettlement,
               paidAmount: paid,
               pendingAmount: Math.max(0, cost - paid),
+              paymentMethod: method || log.paymentMethod || 'Cash',
+              paymentNotes: notes || log.paymentNotes || '',
+              paidDate: new Date().toISOString().split('T')[0],
             };
           }
           return log;

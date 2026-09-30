@@ -12,6 +12,9 @@ import {
   Receipt,
   User,
   Clock,
+  Landmark,
+  Smartphone,
+  CreditCard,
 } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
@@ -69,6 +72,14 @@ export default function PaySupplierModal({
   // Default payment amount is the slip's pending amount (or total supplier pending)
   const maxPayable = slipPendingAmount > 0 ? slipPendingAmount : supplierTotalPending;
   const [payAmount, setPayAmount] = useState(() => (maxPayable > 0 ? String(maxPayable) : '0'));
+  const [paymentMethod, setPaymentMethod] = useState(() => {
+    const pref = matchedSupplier?.paymentMethod || 'Cash';
+    if (pref.toLowerCase().includes('bank')) return 'Bank Transfer';
+    if (pref.toLowerCase().includes('wallet')) return 'JazzCash / EasyPaisa';
+    return 'Cash';
+  });
+  const [accountNumber, setAccountNumber] = useState(matchedSupplier?.accountNumber || '');
+  const [referenceNumber, setReferenceNumber] = useState('');
   const [paymentNote, setPaymentNote] = useState('');
 
   useEffect(() => {
@@ -107,6 +118,9 @@ export default function PaySupplierModal({
         paidAmount: newPaid,
         pendingAmount: newPending,
         settlement: newSettlement,
+        paymentMethod,
+        paymentNotes: paymentNote,
+        referenceNumber,
       });
     }
 
@@ -115,13 +129,14 @@ export default function PaySupplierModal({
       recordSupplierPayout({
         supplierId: matchedSupplier.id,
         amount: numPay,
-        method: 'Cash',
+        method: paymentMethod,
+        referenceNumber,
         notes: paymentNote || `Owner advance for ${supplierName}`,
       });
     }
 
     toast.success(
-      `Paid Rs. ${numPay.toLocaleString()} to ${supplierName}. Pending balance reduced!`
+      `Paid Rs. ${numPay.toLocaleString()} via ${paymentMethod} to ${supplierName}. Pending balance reduced!`
     );
 
     if (onPaymentSuccess) onPaymentSuccess();
@@ -266,6 +281,90 @@ export default function PaySupplierModal({
                 <Coins className="w-3.5 h-3.5" />
                 <span>Pay Half (50%): Rs. {Math.round(maxPayable / 2).toLocaleString()}</span>
               </button>
+            </div>
+          </div>
+
+          {/* Payment Method Selector */}
+          <div>
+            <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-2">
+              Select Payment Method *
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: 'Cash', label: 'Cash', icon: Coins, color: 'emerald' },
+                { id: 'Bank Transfer', label: 'Bank Transfer', icon: Landmark, color: 'blue' },
+                { id: 'JazzCash / EasyPaisa', label: 'JazzCash / EasyPaisa', icon: Smartphone, color: 'purple' },
+                { id: 'Cheque', label: 'Cheque / Other', icon: CreditCard, color: 'amber' },
+              ].map((m) => {
+                const Icon = m.icon;
+                const isSelected = paymentMethod === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setPaymentMethod(m.id)}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-bold flex items-center justify-between transition cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-600 ring-2 ring-emerald-500/20 shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Icon className="w-3.5 h-3.5 text-slate-500" />
+                      <span>{m.label}</span>
+                    </div>
+                    {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Conditional Bank / Wallet Destination */}
+          {(paymentMethod === 'Bank Transfer' || paymentMethod === 'JazzCash / EasyPaisa') && (
+            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-xs">
+              <span className="font-bold text-slate-700 block text-[11px]">
+                {paymentMethod === 'Bank Transfer' ? 'Bank / IBAN Details' : 'Wallet Number'}
+              </span>
+              <input
+                type="text"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+                placeholder={
+                  paymentMethod === 'Bank Transfer'
+                    ? 'Enter bank name and account / IBAN'
+                    : 'Enter mobile wallet phone number'
+                }
+                className="w-full h-8 px-2.5 rounded-lg border border-slate-200 text-xs font-mono bg-white outline-none focus:border-emerald-600"
+              />
+            </div>
+          )}
+
+          {/* Reference / Remarks */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-1">
+                Txn Ref / Voucher #
+              </label>
+              <input
+                type="text"
+                value={referenceNumber}
+                onChange={(e) => setReferenceNumber(e.target.value)}
+                placeholder="e.g. TRX-1234"
+                className="w-full h-8 px-2.5 rounded-lg border border-slate-200 text-xs font-mono bg-white outline-none focus:border-emerald-600"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-1">
+                Remarks (Optional)
+              </label>
+              <input
+                type="text"
+                value={paymentNote}
+                onChange={(e) => setPaymentNote(e.target.value)}
+                placeholder="Payment notes"
+                className="w-full h-8 px-2.5 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:border-emerald-600"
+              />
             </div>
           </div>
 
