@@ -206,7 +206,7 @@ export default function PaySupplierModal({
                     <Moon className="w-3.5 h-3.5 text-indigo-500" />
                   )}
                   <span>
-                    {shift} Shift (#{targetSlip.id})
+                    {shift} Shift
                   </span>
                 </div>
                 <span className="text-[10px] text-slate-500 font-normal">

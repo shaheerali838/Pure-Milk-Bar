@@ -280,7 +280,7 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
                       {p.name}
                     </h3>
                     <p className="text-[10px] font-mono text-slate-400 mt-0.5">
-                      SKU: #{p.sku || p.id}
+                      {p.sku ? `SKU: ${p.sku}` : p.category}
                     </p>
                   </div>
 

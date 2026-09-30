@@ -625,7 +625,7 @@ export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit 
                     Settle Supplier Due
                   </h2>
                   <p className="text-xs text-slate-500">
-                    {supplier.name} ({supplier.id})
+                    {supplier.name}
                   </p>
                 </div>
               </div>

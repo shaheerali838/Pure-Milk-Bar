@@ -246,7 +246,7 @@ export default function PaySupplierForm({ slip = null, onCancel, onPaymentSucces
                     >
                       {pendingSlips.map((s) => (
                         <option key={s.id} value={s.id}>
-                          #{s.id} • {s.supplierName} • {s.date} ({s.shift} Shift) • {s.quantity} L • Total: Rs. {s.totalCost.toLocaleString()} • Due: Rs. {(s.pendingAmount !== undefined ? s.pendingAmount : s.totalCost).toLocaleString()}
+                          {s.supplierName} • {s.date} ({s.shift} Shift) • {s.quantity} L • Total: Rs. {s.totalCost.toLocaleString()} • Due: Rs. {(s.pendingAmount !== undefined ? s.pendingAmount : s.totalCost).toLocaleString()}
                         </option>
                       ))}
                     </select>
@@ -265,7 +265,7 @@ export default function PaySupplierForm({ slip = null, onCancel, onPaymentSucces
                   >
                     {suppliers.map((s) => (
                       <option key={s.id} value={s.id}>
-                        {s.name} ({s.id}) • Balance Due: Rs. {(s.balanceDue || 0).toLocaleString()}
+                        {s.name} • Balance Due: Rs. {(s.balanceDue || 0).toLocaleString()}
                       </option>
                     ))}
                   </select>
@@ -294,7 +294,7 @@ export default function PaySupplierForm({ slip = null, onCancel, onPaymentSucces
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-slate-900 font-display">
-                        {shift} Shift Intake Slip (#{activeSlip.id})
+                        {shift} Shift Intake Slip
                       </h3>
                       <p className="text-[11px] text-slate-500">
                         Date: <strong className="text-slate-700">{activeSlip.date}</strong> • Supplier: <strong className="text-slate-700">{supplierName}</strong>

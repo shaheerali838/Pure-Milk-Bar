@@ -282,7 +282,7 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
                         <span>{log.date}</span>
                       </div>
                       <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                        #{log.id} • {log.time}
+                        {log.time}
                       </div>
                     </TableCell>
 

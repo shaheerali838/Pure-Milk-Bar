@@ -163,9 +163,6 @@ export default function IntakeDetail({
               <h2 className="text-lg font-bold text-slate-900 font-display">
                 {supplierDisplayName}
               </h2>
-              <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-200 text-slate-700">
-                #{activeSlip.id}
-              </span>
             </div>
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <span
@@ -294,7 +291,7 @@ export default function IntakeDetail({
             Supplier &amp; Financial Settlement
           </h3>
           <span className="text-xs text-slate-500 font-medium">
-            Delivery Voucher #{activeSlip.id}
+            Delivery Voucher
           </span>
         </div>
 
@@ -422,7 +419,7 @@ export default function IntakeDetail({
             </button>
             <div>
               <h1 className="text-xl font-bold text-slate-900 tracking-tight font-display">
-                Intake Slip Details — #{activeSlip.id}
+                Intake Slip Details
               </h1>
               <p className="text-xs text-slate-500">
                 Supplier: {supplierDisplayName} • {activeSlip.date} ({activeSlip.shift} Shift)
@@ -452,7 +449,7 @@ export default function IntakeDetail({
             >
               {filteredSlips.map((item) => (
                 <option key={item.id} value={item.id}>
-                  #{item.id} — {item.supplierName} ({item.quantity}L • {item.shift})
+                  {item.supplierName} ({item.quantity}L • {item.shift})
                 </option>
               ))}
             </select>
@@ -529,7 +526,7 @@ export default function IntakeDetail({
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900 font-display">
-                Milk Intake Slip Details — #{activeSlip.id}
+                Milk Intake Slip Details
               </h3>
               <p className="text-xs text-slate-500">
                 Supplier: {supplierDisplayName} • {activeSlip.date} ({activeSlip.shift} Shift)

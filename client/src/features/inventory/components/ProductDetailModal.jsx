@@ -213,7 +213,7 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                SKU #{product.sku || product.id} · {product.category} ({product.unit})
+                {product.sku ? `SKU: ${product.sku} · ` : ''}{product.category} ({product.unit})
               </p>
             </div>
           </div>

@@ -204,7 +204,7 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
                   </option>
                   {suppliers.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} ({s.id}) • Route: {s.area} • Agreed: Rs. {s.ratePerLiter}/L
+                      {s.name} • Route: {s.area} • Agreed: Rs. {s.ratePerLiter}/L
                     </option>
                   ))}
                 </select>

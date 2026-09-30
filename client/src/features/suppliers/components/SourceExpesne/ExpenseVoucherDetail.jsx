@@ -137,10 +137,10 @@ export default function ExpenseVoucherDetail({
           </button>
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight font-display">
-              Expense Details — {expense.voucherNo || expense.id}
+              Expense Details — {expense.voucherNo || expense.category || 'Voucher'}
             </h1>
             <p className="text-xs text-slate-500">
-              Voucher #{expense.voucherNo || expense.id} &bull; Recorded on {expense.date}
+              {expense.voucherNo ? `Voucher #${expense.voucherNo} • ` : ''}Recorded on {expense.date}
             </p>
           </div>
         </div>
@@ -168,7 +168,7 @@ export default function ExpenseVoucherDetail({
             >
               {filteredExpensesList.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.voucherNo || item.id} — {item.category} (Rs. {Number(item.amount).toLocaleString()})
+                  {item.voucherNo ? `${item.voucherNo} — ` : ''}{item.category} (Rs. {Number(item.amount).toLocaleString()})
                 </option>
               ))}
             </select>
@@ -307,7 +307,7 @@ export default function ExpenseVoucherDetail({
                   Official Voucher #
                 </td>
                 <td className="py-2.5 px-4 font-mono font-bold text-slate-900">
-                  {expense.voucherNo || expense.id}
+                  {expense.voucherNo || 'General Voucher'}
                 </td>
               </tr>
               <tr className="hover:bg-slate-50/60 transition-colors">

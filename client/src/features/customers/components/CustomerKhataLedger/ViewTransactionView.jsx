@@ -51,7 +51,7 @@ export default function ViewTransactionView({ transaction: rawTxn, customer, onB
         <div>
           <h1 className="text-lg font-bold text-slate-900 tracking-tight font-display flex items-center gap-2">
             <Receipt className="w-4.5 h-4.5 text-emerald-600" />
-            Transaction Audit Spec &bull; #{transaction.invoiceId || transaction.id || 'TXN-01'}
+            Transaction Audit Spec{transaction.invoiceId ? ` • #${transaction.invoiceId}` : ''}
           </h1>
           <p className="text-xs text-slate-500">
             Full Khata audit &amp; purchase ledger record for:{' '}
