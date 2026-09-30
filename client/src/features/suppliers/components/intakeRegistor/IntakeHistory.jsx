@@ -12,6 +12,8 @@ import {
   Clock,
   Filter,
   Wallet,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { Badge } from '@/components/ui/badge';
@@ -23,27 +25,50 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
+import { getTodayDateStr, normalizeDate } from '@/utils/dateUtils';
 
 export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
   const { intakeLogs, deleteIntake, updateBatchSettlement } = useIntakeContext();
   const [search, setSearch] = useState('');
-  const [shiftFilter, setShiftFilter] = useState('All');
+  const [dateFilter, setDateFilter] = useState('All'); // 'All' | 'Today' | 'Custom'
+  const [customDate, setCustomDate] = useState('');
+  const [shiftFilter, setShiftFilter] = useState('All'); // 'All' | 'Morning' | 'Evening'
   const [settlementFilter, setSettlementFilter] = useState('All');
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+
+  const todayStr = getTodayDateStr();
 
   const filteredLogs = intakeLogs.filter((item) => {
     const q = search.toLowerCase();
     const matchesSearch =
-      item.supplierName.toLowerCase().includes(q) ||
-      (item.id && item.id.toLowerCase().includes(q)) ||
+      !q ||
+      item.supplierName?.toLowerCase().includes(q) ||
+      (item.id && String(item.id).toLowerCase().includes(q)) ||
       (item.area && item.area.toLowerCase().includes(q)) ||
       (item.receivedBy && item.receivedBy.toLowerCase().includes(q));
 
-    const matchesShift = shiftFilter === 'All' ? true : item.shift === shiftFilter;
-    const matchesSettlement =
-      settlementFilter === 'All' ? true : item.settlement === settlementFilter;
+    // Shift filter (All, Morning, Evening)
+    const matchesShift =
+      shiftFilter === 'All'
+        ? true
+        : (item.shift || '').toLowerCase() === shiftFilter.toLowerCase();
 
-    return matchesSearch && matchesShift && matchesSettlement;
+    // Date filter (All, Today, Custom date)
+    const itemDate = normalizeDate(item.date);
+    let matchesDate = true;
+    if (dateFilter === 'Today') {
+      matchesDate = itemDate === todayStr;
+    } else if (dateFilter === 'Custom' && customDate) {
+      matchesDate = itemDate === customDate;
+    }
+
+    // Settlement filter (All, Paid, Pending)
+    const matchesSettlement =
+      settlementFilter === 'All'
+        ? true
+        : (item.settlement || '').toLowerCase() === settlementFilter.toLowerCase();
+
+    return matchesSearch && matchesShift && matchesDate && matchesSettlement;
   });
 
   const handleDelete = (id) => {
@@ -54,9 +79,9 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
   return (
     <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
       {/* Search and Filters Header */}
-      <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="p-4 border-b border-slate-100 flex flex-col xl:flex-row gap-3 items-start xl:items-center justify-between">
         {/* Search Input */}
-        <div className="flex items-center gap-2 w-full md:w-80 bg-slate-50 border border-slate-200 rounded-full px-3.5 h-[38px]">
+        <div className="flex items-center gap-2 w-full xl:w-72 bg-slate-50 border border-slate-200 rounded-full px-3.5 h-[38px]">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input
             type="text"
@@ -72,27 +97,88 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
           )}
         </div>
 
-        {/* Filter Badges */}
-        <div className="flex items-center gap-2 flex-wrap self-start md:self-auto">
-          {/* Shift Filter */}
+        {/* Filter Controls (Date, Shift, Settlement, Pay) */}
+        <div className="flex items-center gap-2 flex-wrap w-full xl:w-auto">
+          {/* 1. Date Filter (All / Today / Custom Date) */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full text-xs font-semibold text-slate-600">
+            <button
+              type="button"
+              onClick={() => {
+                setDateFilter('All');
+                setCustomDate('');
+              }}
+              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                dateFilter === 'All'
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
+                  : 'hover:text-slate-900'
+              }`}
+            >
+              All Dates
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDateFilter('Today');
+                setCustomDate('');
+              }}
+              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                dateFilter === 'Today'
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
+                  : 'hover:text-slate-900'
+              }`}
+            >
+              Today
+            </button>
+          </div>
+
+          {/* Date Picker Input */}
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-full px-3 h-[32px] text-xs text-slate-700">
+            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <input
+              type="date"
+              value={customDate}
+              onChange={(e) => {
+                setCustomDate(e.target.value);
+                setDateFilter(e.target.value ? 'Custom' : 'All');
+              }}
+              className="bg-transparent border-none outline-none text-xs font-medium cursor-pointer"
+            />
+            {customDate && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomDate('');
+                  setDateFilter('All');
+                }}
+                className="text-slate-400 hover:text-slate-600 text-xs font-bold ml-1"
+                title="Clear date"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* 2. Shift Filter (All / Morning / Evening) */}
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full text-xs font-semibold text-slate-600">
             {['All', 'Morning', 'Evening'].map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setShiftFilter(s)}
-                className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1 ${
                   shiftFilter === s
                     ? 'bg-white text-blue-600 shadow-xs font-bold'
                     : 'hover:text-slate-900'
                 }`}
               >
-                {s}
+                {s === 'Morning' && <Sun className="w-3 h-3 text-amber-500" />}
+                {s === 'Evening' && <Moon className="w-3 h-3 text-indigo-500" />}
+                <span>{s}</span>
               </button>
             ))}
           </div>
 
-          {/* Settlement Filter */}
+          {/* 3. Settlement Filter */}
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full text-xs font-semibold text-slate-600">
             {['All', 'Paid', 'Pending'].map((st) => (
               <button

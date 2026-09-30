@@ -3,13 +3,15 @@ import { Sun, Moon, Zap, RotateCcw, Check, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { useStaffPayrollContext } from "../../../../context/StaffPayrollContext";
+import { getTodayDateStr, normalizeDate } from "@/utils/dateUtils";
 
 export default function MilkingRegisterTable({ onSaveSuccess }) {
   const { animals = [], milkingLogs = [], saveMilkingShift } = useAnimalContext();
   const { staffList = [] } = useStaffPayrollContext();
   const farmWorkers = staffList.filter(s => s.role?.toLowerCase().includes('farm') || s.role?.toLowerCase().includes('milker') || s.role?.toLowerCase().includes('herdsman') || s.role?.toLowerCase().includes('worker'));
 
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const todayStr = getTodayDateStr();
+  const [selectedDate, setSelectedDate] = useState(() => getTodayDateStr());
   const [shift, setShift] = useState("Morning");
   const [operatorId, setOperatorId] = useState("");
 
@@ -25,7 +27,7 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
       const morningMap = {};
       const eveningMap = {};
       milkingLogs.forEach((log) => {
-        const logDate = log.date ? log.date.split("T")[0] : "";
+        const logDate = normalizeDate(log.date);
         if (!selectedDate || logDate === selectedDate) {
           const s = (log.shift || "").toLowerCase();
           const tag = log.animalTag || log.tag || log.animal?.tag;
@@ -155,12 +157,24 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
             <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
               DATE
             </span>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-white border border-slate-200 rounded-full px-4 py-2 text-sm font-semibold text-slate-800 focus:outline-none cursor-pointer"
-            />
+            <div className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-white border border-slate-200 rounded-full px-4 py-2 text-sm font-semibold text-slate-800 focus:outline-none cursor-pointer"
+              />
+              {selectedDate !== todayStr && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate(todayStr)}
+                  className="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition cursor-pointer shadow-xs"
+                  title="Jump to Today"
+                >
+                  Today
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-col">

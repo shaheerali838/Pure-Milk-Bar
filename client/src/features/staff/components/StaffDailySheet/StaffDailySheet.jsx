@@ -136,7 +136,7 @@ export default function StaffDailySheet() {
   // Filter rows by Shift
   const filteredRows = useMemo(() => {
     if (shiftFilter === 'all') return sheetRows;
-    return sheetRows.filter((r) => r.shift.toLowerCase() === shiftFilter.toLowerCase());
+    return sheetRows.filter((r) => (r.shift || '').toLowerCase() === shiftFilter.toLowerCase());
   }, [sheetRows, shiftFilter]);
 
   // Totals

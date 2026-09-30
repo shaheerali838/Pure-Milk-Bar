@@ -9,6 +9,8 @@ import {
   Droplets,
   Layers,
   DollarSign,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,40 +26,39 @@ import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { exportMultiSectionCSV } from '@/utils/csvExport';
+import { getTodayDateStr, normalizeDate } from '@/utils/dateUtils';
 
 export default function ProcurementSheet() {
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(() => getTodayDateStr());
   const [isLocked, setIsLocked] = useState(false);
+  const [shiftFilter, setShiftFilter] = useState('All'); // 'All' | 'Morning' | 'Evening'
 
   const { intakeLogs } = useIntakeContext();
   const { suppliers } = useSupplierContext();
   const { expenses } = useSourcExpenseContext();
 
+  const todayStr = getTodayDateStr();
+  const isToday = date === todayStr;
+
   const handlePrevDay = () => {
     const parts = (date || '').split('-').map(Number);
     const cur = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
     cur.setDate(cur.getDate() - 1);
-    const y = cur.getFullYear();
-    const m = String(cur.getMonth() + 1).padStart(2, '0');
-    const d = String(cur.getDate()).padStart(2, '0');
-    setDate(`${y}-${m}-${d}`);
+    setDate(normalizeDate(cur));
   };
 
   const handleNextDay = () => {
     const parts = (date || '').split('-').map(Number);
     const cur = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
     cur.setDate(cur.getDate() + 1);
-    const y = cur.getFullYear();
-    const m = String(cur.getMonth() + 1).padStart(2, '0');
-    const d = String(cur.getDate()).padStart(2, '0');
-    setDate(`${y}-${m}-${d}`);
+    setDate(normalizeDate(cur));
   };
 
   // Dynamic Data Aggregation
   const { rows, routeSummaries, totals } = useMemo(() => {
     const dayLogs = (intakeLogs || []).filter((log) => {
-      const lDate = (log.date || '').slice(0, 10);
-      return lDate === date || log.date === date;
+      const lDate = normalizeDate(log.date);
+      return lDate === date;
     });
 
     const supplierGroups = {};
@@ -82,8 +83,9 @@ export default function ProcurementSheet() {
       const qty = parseFloat(log.quantity) || 0;
       const fat = parseFloat(log.fat) || 0;
       const cost = parseFloat(log.totalCost) || 0;
+      const shift = (log.shift || '').toLowerCase();
 
-      if (log.shift === 'Morning') {
+      if (shift === 'morning') {
         supplierGroups[name].morningLiters += qty;
         supplierGroups[name].morningFatSum += fat;
         supplierGroups[name].morningCount += 1;
@@ -97,7 +99,7 @@ export default function ProcurementSheet() {
       supplierGroups[name].totalCost += cost;
     });
 
-    const calculatedRows = Object.values(supplierGroups).map((g) => {
+    const allCalculatedRows = Object.values(supplierGroups).map((g) => {
       const morningFat = g.morningCount > 0 ? g.morningFatSum / g.morningCount : 0;
       const eveningFat = g.eveningCount > 0 ? g.eveningFatSum / g.eveningCount : 0;
       const weightedFat = (morningFat + eveningFat) / (g.morningCount > 0 && g.eveningCount > 0 ? 2 : 1);
@@ -114,6 +116,13 @@ export default function ProcurementSheet() {
         netPayable: g.totalCost,
         dispatchStatus: 'Completed',
       };
+    });
+
+    // Filter rows based on shiftFilter
+    const calculatedRows = allCalculatedRows.filter((r) => {
+      if (shiftFilter === 'Morning') return r.morningLiters > 0;
+      if (shiftFilter === 'Evening') return r.eveningLiters > 0;
+      return true;
     });
 
     const routes = {};
@@ -137,7 +146,7 @@ export default function ProcurementSheet() {
     const totalEvening = calculatedRows.reduce((sum, r) => sum + r.eveningLiters, 0);
     const totalNetPayable = calculatedRows.reduce((sum, r) => sum + r.netPayable, 0);
     
-    // Average fat across all logs
+    // Average fat across day logs
     const avgFat = dayLogs.length > 0 
       ? (dayLogs.reduce((sum, log) => sum + (parseFloat(log.fat) || 0), 0) / dayLogs.length).toFixed(2)
       : 0;
@@ -147,7 +156,7 @@ export default function ProcurementSheet() {
       routeSummaries: routeSummariesArr,
       totals: { totalCollected, totalMorning, totalEvening, totalNetPayable, avgFat, farmersCount: calculatedRows.length }
     };
-  }, [intakeLogs, date]);
+  }, [intakeLogs, date, shiftFilter]);
 
   const handlePrint = () => window.print();
 
@@ -229,6 +238,27 @@ export default function ProcurementSheet() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Shift Filter: All, Morning, Evening */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full text-xs font-semibold text-slate-600 shadow-2xs">
+            {['All', 'Morning', 'Evening'].map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setShiftFilter(s)}
+                className={`px-3 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1 ${
+                  shiftFilter === s
+                    ? 'bg-white text-blue-600 shadow-xs font-bold'
+                    : 'hover:text-slate-900'
+                }`}
+              >
+                {s === 'Morning' && <Sun className="w-3 h-3 text-amber-500" />}
+                {s === 'Evening' && <Moon className="w-3 h-3 text-indigo-500" />}
+                <span>{s}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Date Navigator */}
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -257,6 +287,17 @@ export default function ProcurementSheet() {
             >
               Next &rarr;
             </button>
+
+            {!isToday && (
+              <button
+                type="button"
+                onClick={() => setDate(todayStr)}
+                className="px-3 h-9.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition cursor-pointer shadow-xs"
+                title="Jump to Today"
+              >
+                Today
+              </button>
+            )}
           </div>
 
           <Button

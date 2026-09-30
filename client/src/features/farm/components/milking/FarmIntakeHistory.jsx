@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { Badge } from '@/components/ui/badge';
+import { getTodayDateStr, normalizeDate } from '@/utils/dateUtils';
 
 export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
   const { animals = [], milkingLogs = [], deleteMilkingLog, updateMilkingLog } = useAnimalContext();
@@ -32,6 +33,8 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [selectedLogs, setSelectedLogs] = useState([]);
+
+  const todayStr = getTodayDateStr();
 
   // Map animals by tag for quick lookup
   const animalMap = useMemo(() => {
@@ -72,10 +75,10 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
         expectedShiftYield,
         dailyExpected,
         variance,
-        dateStr: log.date ? log.date.split('T')[0] : new Date().toISOString().split('T')[0],
+        dateStr: normalizeDate(log.date) || todayStr,
       };
     });
-  }, [milkingLogs, animalMap]);
+  }, [milkingLogs, animalMap, todayStr]);
 
   // Filter logs
   const filteredLogs = useMemo(() => {
@@ -301,7 +304,33 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
             ))}
           </div>
 
-          {/* Date Picker */}
+          {/* Date Filter Buttons & Picker */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full text-xs font-semibold text-slate-600">
+            <button
+              type="button"
+              onClick={() => setSelectedDate('')}
+              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                !selectedDate
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
+                  : 'hover:text-slate-900'
+              }`}
+            >
+              All Dates
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedDate(todayStr)}
+              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                selectedDate === todayStr
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
+                  : 'hover:text-slate-900'
+              }`}
+            >
+              Today
+            </button>
+          </div>
+
+          {/* Custom Date Picker */}
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5 text-xs text-slate-700">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
             <input
@@ -313,7 +342,7 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
             {selectedDate && (
               <button
                 onClick={() => setSelectedDate('')}
-                className="text-slate-400 hover:text-slate-600 text-[10px] font-bold"
+                className="text-slate-400 hover:text-slate-600 text-[10px] font-bold ml-1 cursor-pointer"
                 title="Clear date filter"
               >
                 ✕

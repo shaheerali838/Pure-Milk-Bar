@@ -25,6 +25,7 @@ import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import IntakeDetail from '../intakeRegistor/IntakeDetail';
 import { toast } from 'sonner';
+import { getTodayDateStr, normalizeDate } from '@/utils/dateUtils';
 
 export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit }) {
   const { intakeLogs = [], updateBatchSettlement } = useIntakeContext();
@@ -34,6 +35,10 @@ export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit 
   const [showSettleModal, setShowSettleModal] = useState(false);
   const [settleAmount, setSettleAmount] = useState('');
   const [shiftFilter, setShiftFilter] = useState('All');
+  const [dateFilter, setDateFilter] = useState('All'); // 'All' | 'Today' | 'Custom'
+  const [customDate, setCustomDate] = useState('');
+
+  const todayStr = getTodayDateStr();
 
   // Ensure we use the live enriched supplier from context so balance updates instantly
   const supplier =
@@ -73,10 +78,22 @@ export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit 
         supplier.name.toLowerCase().includes(b.supplierName.toLowerCase()))
   );
 
-  // Filter based on selected shift
+  // Filter based on selected shift and date
   const filteredBatches = supplierBatches.filter((b) => {
-    if (shiftFilter === 'All') return true;
-    return b.shift?.toLowerCase() === shiftFilter.toLowerCase();
+    const matchesShift =
+      shiftFilter === 'All'
+        ? true
+        : b.shift?.toLowerCase() === shiftFilter.toLowerCase();
+
+    const bDate = normalizeDate(b.date);
+    let matchesDate = true;
+    if (dateFilter === 'Today') {
+      matchesDate = bDate === todayStr;
+    } else if (dateFilter === 'Custom' && customDate) {
+      matchesDate = bDate === customDate;
+    }
+
+    return matchesShift && matchesDate;
   });
 
   const morningCount = supplierBatches.filter(
@@ -387,45 +404,107 @@ export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit 
               Recent Procurement Batches ({filteredBatches.length})
             </h3>
 
-            {/* Shift Filter Controls: All / Morning / Evening */}
-            <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setShiftFilter('All')}
-                className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                  shiftFilter === 'All'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                All ({supplierBatches.length})
-              </button>
+            {/* Date & Shift Filter Controls */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Date Filter: All / Today / Picker */}
+              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDateFilter('All');
+                    setCustomDate('');
+                  }}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                    dateFilter === 'All'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  All Dates
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDateFilter('Today');
+                    setCustomDate('');
+                  }}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                    dateFilter === 'Today'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Today
+                </button>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => setShiftFilter('Morning')}
-                className={`px-3 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                  shiftFilter === 'Morning'
-                    ? 'bg-amber-500 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <Sun className="w-3 h-3 text-amber-300" />
-                <span>Morning ({morningCount})</span>
-              </button>
+              {/* Date Picker */}
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-700 shadow-2xs">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <input
+                  type="date"
+                  value={customDate}
+                  onChange={(e) => {
+                    setCustomDate(e.target.value);
+                    setDateFilter(e.target.value ? 'Custom' : 'All');
+                  }}
+                  className="bg-transparent border-none outline-none text-xs font-medium cursor-pointer"
+                />
+                {customDate && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomDate('');
+                      setDateFilter('All');
+                    }}
+                    className="text-slate-400 hover:text-slate-600 text-xs font-bold ml-1 cursor-pointer"
+                    title="Clear date"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
 
-              <button
-                type="button"
-                onClick={() => setShiftFilter('Evening')}
-                className={`px-3 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                  shiftFilter === 'Evening'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <Moon className="w-3 h-3 text-indigo-200" />
-                <span>Evening ({eveningCount})</span>
-              </button>
+              {/* Shift Filter Controls: All / Morning / Evening */}
+              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setShiftFilter('All')}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                    shiftFilter === 'All'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  All ({supplierBatches.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShiftFilter('Morning')}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                    shiftFilter === 'Morning'
+                      ? 'bg-amber-500 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <Sun className="w-3 h-3 text-amber-300" />
+                  <span>Morning ({morningCount})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShiftFilter('Evening')}
+                  className={`px-3 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                    shiftFilter === 'Evening'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <Moon className="w-3 h-3 text-indigo-200" />
+                  <span>Evening ({eveningCount})</span>
+                </button>
+              </div>
             </div>
           </div>
 

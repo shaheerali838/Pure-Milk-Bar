@@ -23,13 +23,14 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
+import { getTodayDateStr } from '@/utils/dateUtils';
 
 export default function IntakeShifting({ onSaveSuccess }) {
   const { suppliers = [] } = useSupplierContext();
   const { addBulkIntakes } = useIntakeContext();
 
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [shift, setShift] = useState('Evening'); // 'Morning' | 'Evening' (Evening active in screenshot)
+  const [date, setDate] = useState(() => getTodayDateStr());
+  const [shift, setShift] = useState('Evening'); // 'Morning' | 'Evening'
   const [receiver, setReceiver] = useState('Shift Incharge');
   const [savedSuccessMsg, setSavedSuccessMsg] = useState('');
 
@@ -188,13 +189,25 @@ export default function IntakeShifting({ onSaveSuccess }) {
             <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase block mb-1">
               DATE
             </span>
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 h-[38px] shadow-2xs hover:border-slate-300 transition-colors">
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="text-xs font-semibold text-slate-800 bg-transparent outline-none cursor-pointer"
-              />
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 h-[38px] shadow-2xs hover:border-slate-300 transition-colors">
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="text-xs font-semibold text-slate-800 bg-transparent outline-none cursor-pointer"
+                />
+              </div>
+              {date !== getTodayDateStr() && (
+                <button
+                  type="button"
+                  onClick={() => setDate(getTodayDateStr())}
+                  className="px-2.5 h-[38px] rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition cursor-pointer shadow-xs"
+                  title="Jump to Today"
+                >
+                  Today
+                </button>
+              )}
             </div>
           </div>
 

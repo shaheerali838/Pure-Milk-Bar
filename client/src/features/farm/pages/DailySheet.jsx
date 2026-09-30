@@ -7,6 +7,8 @@ import {
   CheckCircle2,
   Lock,
   Droplets,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,37 +23,38 @@ import {
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useExpense } from '@/context/ExpenseContext';
 import { exportMultiSectionCSV } from '@/utils/csvExport';
+import { getTodayDateStr, normalizeDate } from '@/utils/dateUtils';
 
 export default function DailySheet() {
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(() => getTodayDateStr());
   const [isLocked, setIsLocked] = useState(false);
+  const [shiftFilter, setShiftFilter] = useState('All'); // 'All' | 'Morning' | 'Evening'
 
   const { animals, milkingLogs } = useAnimalContext();
   const { expenses } = useExpense();
+
+  const todayStr = getTodayDateStr();
+  const isToday = date === todayStr;
 
   const handlePrevDay = () => {
     const parts = (date || '').split('-').map(Number);
     const cur = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
     cur.setDate(cur.getDate() - 1);
-    const y = cur.getFullYear();
-    const m = String(cur.getMonth() + 1).padStart(2, '0');
-    const d = String(cur.getDate()).padStart(2, '0');
-    setDate(`${y}-${m}-${d}`);
+    setDate(normalizeDate(cur));
   };
 
   const handleNextDay = () => {
     const parts = (date || '').split('-').map(Number);
     const cur = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
     cur.setDate(cur.getDate() + 1);
-    const y = cur.getFullYear();
-    const m = String(cur.getMonth() + 1).padStart(2, '0');
-    const d = String(cur.getDate()).padStart(2, '0');
-    setDate(`${y}-${m}-${d}`);
+    setDate(normalizeDate(cur));
   };
 
   // Aggregate Data
   const { milkingRows, expenseRows, totals } = useMemo(() => {
-    const dayMilkingLogs = (milkingLogs || []).filter(log => (log.date || '').split('T')[0] === date);
+    const dayMilkingLogs = (milkingLogs || []).filter(
+      (log) => normalizeDate(log.date) === date
+    );
 
     const aggregatedMilking = {};
     (animals || []).filter(a => a.lactationStatus === 'Milking').forEach(a => {
@@ -78,15 +81,22 @@ export default function DailySheet() {
       }
     });
 
-    const calculatedMilkingRows = Object.values(aggregatedMilking).map(row => ({
+    const allCalculatedMilkingRows = Object.values(aggregatedMilking).map(row => ({
       ...row,
       totalLiters: row.morningLiters + row.eveningLiters
     }));
 
+    // Filter by shift
+    const calculatedMilkingRows = allCalculatedMilkingRows.filter((r) => {
+      if (shiftFilter === 'Morning') return r.morningLiters > 0;
+      if (shiftFilter === 'Evening') return r.eveningLiters > 0;
+      return true;
+    });
+
     // 2. Process Expenses for the selected date
     const dayExpenses = (expenses || []).filter((e) => {
-      const eDate = (e.date || '').slice(0, 10);
-      return eDate === date || e.date === date;
+      const eDate = normalizeDate(e.date);
+      return eDate === date;
     });
 
     const totalMorning = calculatedMilkingRows.reduce((sum, r) => sum + r.morningLiters, 0);
@@ -100,7 +110,7 @@ export default function DailySheet() {
       expenseRows: dayExpenses,
       totals: { totalCollected, totalMorning, totalEvening, totalExpenses, animalCount: calculatedMilkingRows.length }
     };
-  }, [animals, milkingLogs, expenses, date]);
+  }, [animals, milkingLogs, expenses, date, shiftFilter]);
 
   const handlePrint = () => window.print();
 
@@ -177,6 +187,27 @@ export default function DailySheet() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Shift Filter: All, Morning, Evening */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full text-xs font-semibold text-slate-600 shadow-2xs">
+            {['All', 'Morning', 'Evening'].map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setShiftFilter(s)}
+                className={`px-3 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1 ${
+                  shiftFilter === s
+                    ? 'bg-white text-blue-600 shadow-xs font-bold'
+                    : 'hover:text-slate-900'
+                }`}
+              >
+                {s === 'Morning' && <Sun className="w-3 h-3 text-amber-500" />}
+                {s === 'Evening' && <Moon className="w-3 h-3 text-indigo-500" />}
+                <span>{s}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Date Navigator */}
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -205,6 +236,17 @@ export default function DailySheet() {
             >
               Next &rarr;
             </button>
+
+            {!isToday && (
+              <button
+                type="button"
+                onClick={() => setDate(todayStr)}
+                className="px-3 h-9.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition cursor-pointer shadow-xs"
+                title="Jump to Today"
+              >
+                Today
+              </button>
+            )}
           </div>
 
           <Button
