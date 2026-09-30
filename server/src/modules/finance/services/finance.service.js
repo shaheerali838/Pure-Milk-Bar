@@ -20,9 +20,6 @@ const generateExpenseVoucher = () => {
 
 
 export const addKhataEntryService = async (data, userId) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
     const {
       customerId,
@@ -36,22 +33,18 @@ export const addKhataEntryService = async (data, userId) => {
       date,
     } = data;
 
-    const txType = transactionType.toUpperCase();
-    const entryAmount = Number(amount ?? (txType === 'DEBIT' ? debitAmount : creditAmount));
+    const txType = (transactionType || 'CREDIT').toUpperCase();
+    const entryAmount = Number(amount ?? (txType === 'DEBIT' ? debitAmount : creditAmount)) || 0;
 
-    const customer = await Customer.findById(customerId).session(session);
+    const customer = await Customer.findById(customerId);
 
     if (!customer) {
-      await session.abortTransaction();
-      session.endSession();
       const error = new Error('Customer not found');
       error.statusCode = 404;
       throw error;
     }
 
-    if (customer.status !== 'ACTIVE') {
-      await session.abortTransaction();
-      session.endSession();
+    if (String(customer.status || '').toUpperCase() !== 'ACTIVE') {
       const error = new Error(`Cannot post khata entry. Customer account status is '${customer.status}'`);
       error.statusCode = 400;
       throw error;
@@ -64,8 +57,6 @@ export const addKhataEntryService = async (data, userId) => {
       newBalance = previousBalance + entryAmount;
 
       if (customer.creditLimit > 0 && newBalance > customer.creditLimit) {
-        await session.abortTransaction();
-        session.endSession();
         const error = new Error(
           `Credit limit exceeded. Current balance (${previousBalance} PKR) + Debit (${entryAmount} PKR) exceeds limit of ${customer.creditLimit} PKR`
         );
@@ -73,41 +64,34 @@ export const addKhataEntryService = async (data, userId) => {
         throw error;
       }
     } else if (txType === 'CREDIT') {
-      newBalance = previousBalance - entryAmount;
+      newBalance = Math.max(0, previousBalance - entryAmount);
     }
 
     const voucherNumber = generateKhataVoucher();
-    const [entry] = await KhataEntry.create(
-      [
-        {
-          customerId: customer._id,
-          date: date ? new Date(date) : new Date(),
-          voucherNumber,
-          transactionType: txType,
-          description: description.trim(),
-          debitAmount: txType === 'DEBIT' ? entryAmount : 0,
-          creditAmount: txType === 'CREDIT' ? entryAmount : 0,
-          runningBalance: newBalance,
-          paymentMethod: paymentMethod ? paymentMethod.toUpperCase() : (txType === 'CREDIT' ? 'CASH' : null),
-          referenceTransactionId: referenceTransactionId || null,
-          items: Array.isArray(data.items) ? data.items : [],
-          orderTotal: Number(data.orderTotal ?? (txType === 'DEBIT' ? entryAmount : 0)),
-          paidAmount: Number(data.paidAmount ?? (txType === 'CREDIT' ? entryAmount : 0)),
-          remainingAmount: Number(data.remainingAmount ?? (txType === 'DEBIT' ? entryAmount : 0)),
-          fulfillmentType: data.fulfillmentType || null,
-          riderName: data.riderName || null,
-          deliveryAddress: data.deliveryAddress || null,
-          cashierId: userId,
-        },
-      ],
-      { session }
-    );
+    const entry = await KhataEntry.create({
+      customerId: customer._id,
+      date: date ? new Date(date) : new Date(),
+      voucherNumber,
+      transactionType: txType,
+      description: (description || '').trim(),
+      debitAmount: txType === 'DEBIT' ? entryAmount : 0,
+      creditAmount: txType === 'CREDIT' ? entryAmount : 0,
+      runningBalance: newBalance,
+      paymentMethod: paymentMethod ? paymentMethod.toUpperCase() : (txType === 'CREDIT' ? 'CASH' : null),
+      referenceTransactionId: referenceTransactionId || null,
+      items: Array.isArray(data.items) ? data.items : [],
+      orderTotal: Number(data.orderTotal ?? (txType === 'DEBIT' ? entryAmount : 0)),
+      paidAmount: Number(data.paidAmount ?? (txType === 'CREDIT' ? entryAmount : 0)),
+      remainingAmount: Number(data.remainingAmount ?? (txType === 'DEBIT' ? entryAmount : 0)),
+      fulfillmentType: data.fulfillmentType || null,
+      riderName: data.riderName || null,
+      deliveryAddress: data.deliveryAddress || null,
+      cashierId: userId,
+    });
 
     customer.currentBalance = newBalance;
-    await customer.save({ session });
-
-    await session.commitTransaction();
-    session.endSession();
+    customer.khataBalance = newBalance;
+    await customer.save();
 
     return {
       entry,
@@ -121,10 +105,6 @@ export const addKhataEntryService = async (data, userId) => {
       },
     };
   } catch (error) {
-    if (session.inTransaction()) {
-      await session.abortTransaction();
-    }
-    session.endSession();
     throw error;
   }
 };
@@ -132,7 +112,7 @@ export const addKhataEntryService = async (data, userId) => {
 export const getCustomerStatementService = async (customerId, queryParams) => {
   const { startDate, endDate, page = 1, limit = 50 } = queryParams;
 
-  const customer = await Customer.findById(customerId).select('code name phone address creditLimit currentBalance status preferredPayment');
+  const customer = await Customer.findById(customerId);
   if (!customer) {
     const error = new Error('Customer not found');
     error.statusCode = 404;
@@ -165,7 +145,7 @@ export const getCustomerStatementService = async (customerId, queryParams) => {
   ]);
 
   const totalsAggregation = await KhataEntry.aggregate([
-    { $match: query },
+    { $match: { customerId: customer._id } },
     {
       $group: {
         _id: null,
@@ -175,6 +155,33 @@ export const getCustomerStatementService = async (customerId, queryParams) => {
     },
   ]);
 
+  const allTotals = totalsAggregation[0] || { totalDebit: 0, totalCredit: 0 };
+  const openingBal = Number(customer.openingBalance || 0);
+  const isAdvance = String(customer.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') || customer.openingPaymentMethod === 'CASH' || customer.openingPaymentMethod === 'ONLINE';
+
+  const hasOpeningEntry = await KhataEntry.exists({
+    customerId: customer._id,
+    $or: [{ voucherNumber: { $regex: /^KV-OP-/i } }, { referenceTransactionId: { $regex: /^OP-/i } }],
+  });
+
+  let calculatedBalance = 0;
+  if (hasOpeningEntry) {
+    calculatedBalance = Math.max(0, allTotals.totalDebit - allTotals.totalCredit);
+  } else {
+    const initialDebit = isAdvance ? 0 : openingBal;
+    const initialCredit = isAdvance ? openingBal : 0;
+    calculatedBalance = Math.max(0, initialDebit + allTotals.totalDebit - (initialCredit + allTotals.totalCredit));
+  }
+
+  if (customer.currentBalance !== calculatedBalance || customer.khataBalance !== calculatedBalance) {
+    customer.currentBalance = calculatedBalance;
+    customer.khataBalance = calculatedBalance;
+    await Customer.findByIdAndUpdate(customer._id, {
+      currentBalance: calculatedBalance,
+      khataBalance: calculatedBalance,
+    });
+  }
+
   const periodSummary = totalsAggregation[0] || { totalDebit: 0, totalCredit: 0 };
 
   return {
@@ -182,7 +189,7 @@ export const getCustomerStatementService = async (customerId, queryParams) => {
     summary: {
       totalDebit: periodSummary.totalDebit,
       totalCredit: periodSummary.totalCredit,
-      netBalance: customer.currentBalance,
+      netBalance: calculatedBalance,
     },
     entries,
     pagination: {

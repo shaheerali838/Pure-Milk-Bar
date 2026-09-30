@@ -1,43 +1,52 @@
 import React from 'react';
-import { Users, UserCheck, CreditCard, Wallet } from 'lucide-react';
+import { Users, UserCheck, CreditCard, Wallet, ArrowDownLeft, ShieldCheck } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
+import { useLedgerContext } from '../../../../context/LedgerContext';
 
 export default function CustomerStatsCards() {
-  const { allCustomersCount, activeAccountsCount, withKhataBalCount, totalKhataReceivable } =
-    useCustomerContext();
+  const { allCustomersCount, activeAccountsCount } = useCustomerContext();
+  const { getAllCustomersAggregates } = useLedgerContext();
+
+  const aggregates = getAllCustomersAggregates ? getAllCustomersAggregates() : {
+    totalAllDue: 0,
+    totalAllPaid: 0,
+    totalAllCharged: 0,
+    khataAccountsCount: 0,
+    totalCustomersCount: allCustomersCount || 0,
+  };
 
   const statCards = [
     {
-      label: "Total Customers",
-      value: `${allCustomersCount}`,
-      sub: "Registered buyers & accounts",
+      label: "Total Customer Accounts",
+      value: `${aggregates.totalCustomersCount || allCustomersCount}`,
+      sub: `${activeAccountsCount} active regular buyers`,
       icon: Users,
       color: "#009966",
       badge: "All Accounts",
     },
     {
-      label: "Active Accounts",
-      value: `${activeAccountsCount}`,
-      sub: "Regular daily buyers",
-      icon: UserCheck,
-      color: "#155dfc",
-      badge: "Active",
-    },
-    {
-      label: "Khata Accounts",
-      value: `${withKhataBalCount}`,
-      sub: "Active credit balances",
+      label: "Accounts With Dues",
+      value: `${aggregates.khataAccountsCount}`,
+      sub: "Customers with active balance",
       icon: Wallet,
-      color: "#009689",
-      badge: "Ledger Bal.",
+      color: "#f59e0b",
+      badge: "Pending Dues",
     },
     {
-      label: "Total Receivable",
-      value: `Rs. ${totalKhataReceivable.toLocaleString()}`,
-      sub: "Outstanding credit amount",
+      label: "Total Dues Receivable",
+      value: `Rs. ${aggregates.totalAllDue.toLocaleString()}`,
+      sub: "Total outstanding balance to collect",
       icon: CreditCard,
       color: "#e11d48",
       badge: "Receivables",
+    },
+    {
+      label: "Total Payments Received",
+      value: `Rs. ${aggregates.totalAllPaid.toLocaleString()}`,
+      sub: "Total payments collected across all accounts",
+      icon: ArrowDownLeft,
+      color: "#059669",
+      badge: "Collected",
     },
   ];
 

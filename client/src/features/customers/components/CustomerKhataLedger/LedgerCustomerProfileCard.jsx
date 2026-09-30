@@ -41,6 +41,14 @@ export default function LedgerCustomerProfileCard({ customer, currentBalance, on
                 >
                   {customer.verificationStatus || 'Verified'}
                 </Badge>
+                {creditLimit > 0 && khataBalance >= creditLimit && (
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] font-black px-1.5 py-0 rounded bg-rose-100 text-rose-800 border-rose-300 animate-pulse"
+                  >
+                    ⚠️ Limit Exceeded
+                  </Badge>
+                )}
                 <span className="font-mono text-[10px] text-slate-400">#{customer.id}</span>
               </div>
             </div>

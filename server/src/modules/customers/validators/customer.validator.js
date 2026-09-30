@@ -30,7 +30,7 @@ export const createCustomerSchema = Joi.object({
   creditLimit: Joi.number().min(0).default(5000),
   deliveryFee: Joi.number().min(0).allow(null).default(0),
   openingBalance: Joi.number().min(0).allow(null).default(0),
-  openingPaymentMethod: Joi.string().trim().uppercase().allow('', null).optional().default('CASH'),
+  openingPaymentMethod: Joi.string().trim().uppercase().allow('', null).optional().default('KHATA_DEBIT'),
   currentBalance: Joi.number().allow(null).default(0),
   khataBalance: Joi.number().allow(null).default(0),
   preferredPayment: Joi.string()

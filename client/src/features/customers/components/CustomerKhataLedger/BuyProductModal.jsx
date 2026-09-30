@@ -108,7 +108,7 @@ export default function BuyProductModal({ customer, isOpen, onClose }) {
       ? currentKhataBal
       : currentKhataBal + Math.max(0, grandTotal - (parseFloat(partialPaidAmount) || 0));
 
-  const handleSubmitPurchase = (e) => {
+  const handleSubmitPurchase = async (e) => {
     e.preventDefault();
     if (items.length === 0 || grandTotal <= 0) return;
 
@@ -120,22 +120,21 @@ export default function BuyProductModal({ customer, isOpen, onClose }) {
     const description = `Buy: ${itemSummary} [${deliveryType}]`;
     const invoiceId = `ORD-${Date.now().toString().slice(-4)}`;
     const structuredItems = items.map((i) => ({
-      productId: i.productId,
       name: i.productName,
       quantity: parseFloat(i.quantity) || 0,
       unit: i.unit || 'L',
-      price: parseFloat(i.rate) || 0,
       unitPrice: parseFloat(i.rate) || 0,
+      price: parseFloat(i.rate) || 0,
       subtotal: (parseFloat(i.quantity) || 0) * (parseFloat(i.rate) || 0),
     }));
 
     const finalRiderName = riderName.trim() || (deliveryType.toLowerCase().includes('doorstep') ? (customer.referenceName || '') : '');
+    const custId = customer._id || customer.id;
 
     if (paymentOption === 'cash') {
-      // 1. Add debit for items
-      addLedgerEntry(customer.id, {
+      await addLedgerEntry(custId, {
         description,
-        debit: grandTotal,
+        debit: 0,
         credit: 0,
         date: purchaseDate,
         method: 'Cash',
@@ -145,67 +144,34 @@ export default function BuyProductModal({ customer, isOpen, onClose }) {
         fulfillmentType: deliveryType,
         riderName: finalRiderName,
         deliveryAddress: customer.address || '',
-        paymentMethod: 'Cash',
+        paymentMethod: 'CASH',
         items: structuredItems,
         invoiceId,
         notes: notes ? `Instant Cash Purchase. ${notes}` : 'Instant Cash Purchase',
       });
-      // 2. Add credit for immediate cash payment
-      addLedgerEntry(customer.id, {
-        description: `Payment Received (Against Buy Order #${invoiceId})`,
-        debit: 0,
-        credit: grandTotal,
-        date: purchaseDate,
-        method: 'Cash',
-        orderTotal: grandTotal,
-        paidAmount: grandTotal,
-        remainingAmount: 0,
-        fulfillmentType: deliveryType,
-        riderName: finalRiderName,
-        paymentMethod: 'Cash',
-        invoiceId,
-        notes: 'Full immediate payment',
-      });
     } else if (paymentOption === 'partial') {
       const paid = parseFloat(partialPaidAmount) || 0;
       const remaining = Math.max(0, grandTotal - paid);
-      addLedgerEntry(customer.id, {
+      await addLedgerEntry(custId, {
         description,
-        debit: grandTotal,
+        debit: remaining,
         credit: 0,
         date: purchaseDate,
-        method: 'Khata Credit',
+        method: 'Cash / Khata',
         orderTotal: grandTotal,
         paidAmount: paid,
         remainingAmount: remaining,
         fulfillmentType: deliveryType,
         riderName: finalRiderName,
         deliveryAddress: customer.address || '',
-        paymentMethod: 'Partial Cash',
+        paymentMethod: 'SPLIT',
         items: structuredItems,
         invoiceId,
-        notes: notes ? `Partial Cash: Rs. ${paid}. ${notes}` : `Partial Cash: Rs. ${paid}`,
+        notes: notes ? `Partial Cash: Rs. ${paid}. Remaining: Rs. ${remaining}. ${notes}` : `Partial Cash: Rs. ${paid}. Remaining: Rs. ${remaining}`,
       });
-      if (paid > 0) {
-        addLedgerEntry(customer.id, {
-          description: `Partial Payment (Against Buy Order #${invoiceId})`,
-          debit: 0,
-          credit: paid,
-          date: purchaseDate,
-          method: 'Cash',
-          orderTotal: grandTotal,
-          paidAmount: paid,
-          remainingAmount: remaining,
-          fulfillmentType: deliveryType,
-          riderName: finalRiderName,
-          paymentMethod: 'Cash',
-          invoiceId,
-          notes: 'Partial on-the-spot payment',
-        });
-      }
     } else {
       // Add full debit to Khata
-      addLedgerEntry(customer.id, {
+      await addLedgerEntry(custId, {
         description,
         debit: grandTotal,
         credit: 0,
@@ -217,7 +183,7 @@ export default function BuyProductModal({ customer, isOpen, onClose }) {
         fulfillmentType: deliveryType,
         riderName: finalRiderName,
         deliveryAddress: customer.address || '',
-        paymentMethod: 'Khata Credit',
+        paymentMethod: 'KHATA',
         items: structuredItems,
         invoiceId,
         notes: notes ? `Khata Order. ${notes}` : 'Khata Order',
@@ -433,11 +399,11 @@ export default function BuyProductModal({ customer, isOpen, onClose }) {
                   <SelectValue placeholder="Delivery type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Doorstep Delivery" className="text-xs">Doorstep Delivery (ہوم ڈیلیوری)</SelectItem>
-                  <SelectItem value="Doorstep (COD)" className="text-xs">Doorstep (COD - کیش آن ڈیلیوری)</SelectItem>
-                  <SelectItem value="Walk-in Counter" className="text-xs">Walk-in Counter (شاپ کاؤنٹر)</SelectItem>
-                  <SelectItem value="Morning Shift Delivery" className="text-xs">Morning Shift Delivery (صبح کی شفٹ)</SelectItem>
-                  <SelectItem value="Evening Shift Delivery" className="text-xs">Evening Shift Delivery (شام کی شفٹ)</SelectItem>
+                  <SelectItem value="Doorstep Delivery" className="text-xs">Doorstep Delivery</SelectItem>
+                  <SelectItem value="Doorstep (COD)" className="text-xs">Doorstep (COD)</SelectItem>
+                  <SelectItem value="Walk-in Counter" className="text-xs">Walk-in Counter</SelectItem>
+                  <SelectItem value="Morning Shift Delivery" className="text-xs">Morning Shift Delivery</SelectItem>
+                  <SelectItem value="Evening Shift Delivery" className="text-xs">Evening Shift Delivery</SelectItem>
                 </SelectContent>
               </Select>
             </div>

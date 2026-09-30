@@ -28,13 +28,13 @@ export default function AddNewCustomerView({ onBack }) {
     idType: 'CNIC',
     verificationStatus: 'Verified',
     address: '',
-    deliveryFee: '0',
+    deliveryFee: '',
     secondaryPhone: '',
     referenceName: '',
     subscription: '2 L Cow Milk',
     creditLimit: '10000',
     openingBalance: '',
-    openingPaymentMethod: 'CASH',
+    openingPaymentMethod: 'CASH_ADVANCE',
     paymentMode: 'Khata',
     image: '',
   });
@@ -86,7 +86,7 @@ export default function AddNewCustomerView({ onBack }) {
         idType: formData.idType,
         verificationStatus: formData.verificationStatus,
         address: formData.address || '',
-        deliveryFee: Number(formData.deliveryFee) || 0,
+        deliveryFee: formData.deliveryFee !== '' ? (Number(formData.deliveryFee) || 0) : 0,
         secondaryPhone: formData.secondaryPhone || '',
         referenceName: formData.referenceName || '',
         subscription: formattedSubscription,
@@ -158,11 +158,13 @@ export default function AddNewCustomerView({ onBack }) {
                   Primary Phone <span className="text-rose-500">*</span>
                 </label>
                 <Input
-                  type="text"
+                  type="tel"
+                  inputMode="numeric"
                   required
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="Enter phone number"
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
+                  placeholder="03001111111"
+                  maxLength={15}
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-mono"
                 />
               </div>
@@ -185,10 +187,12 @@ export default function AddNewCustomerView({ onBack }) {
                   Secondary Phone <span className="text-slate-400 font-normal">(Opt)</span>
                 </label>
                 <Input
-                  type="text"
+                  type="tel"
+                  inputMode="numeric"
                   value={formData.secondaryPhone}
-                  onChange={(e) => setFormData({ ...formData, secondaryPhone: e.target.value })}
-                  placeholder="Enter secondary number"
+                  onChange={(e) => setFormData({ ...formData, secondaryPhone: e.target.value.replace(/\D/g, '') })}
+                  placeholder="03002222222"
+                  maxLength={15}
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-mono"
                 />
               </div>
@@ -226,13 +230,15 @@ export default function AddNewCustomerView({ onBack }) {
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
-                  CNIC No. <span className="text-slate-400 font-normal">(Optional)</span>
+                  CNIC No. <span className="text-slate-400 font-normal">(Optional - Digits Only)</span>
                 </label>
                 <Input
                   type="text"
+                  inputMode="numeric"
                   value={formData.cnicNumber}
-                  onChange={(e) => setFormData({ ...formData, cnicNumber: e.target.value })}
-                  placeholder="Enter ID number"
+                  onChange={(e) => setFormData({ ...formData, cnicNumber: e.target.value.replace(/\D/g, '') })}
+                  placeholder="3520112345671"
+                  maxLength={15}
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-mono"
                 />
               </div>
@@ -307,16 +313,19 @@ export default function AddNewCustomerView({ onBack }) {
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
-                  Doorstep Delivery Charges (Rs.) <span className="text-slate-400 font-normal">(Per Order)</span>
+                  Doorstep Delivery Charges (Rs.) <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <Input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   value={formData.deliveryFee}
-                  onChange={(e) => setFormData({ ...formData, deliveryFee: e.target.value })}
-                  placeholder="0 (Free Delivery)"
+                  onChange={(e) => setFormData({ ...formData, deliveryFee: e.target.value.replace(/\D/g, '') })}
+                  placeholder="0 (Optional - Free if empty)"
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-bold tabular"
                 />
+                <span className="text-[9px] text-slate-400 block mt-1">
+                  Optional: only added to delivery orders if specified
+                </span>
               </div>
 
               <div>
@@ -456,7 +465,7 @@ export default function AddNewCustomerView({ onBack }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-slate-50/80 p-2.5 rounded-xl border border-slate-200/80">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
-                  Opening Balance (PKR) <span className="text-slate-400 font-normal">(Optional / اختیاری)</span>
+                  Opening Balance (PKR) <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <Input
                   type="number"
@@ -467,7 +476,7 @@ export default function AddNewCustomerView({ onBack }) {
                   className="h-8.5 px-2.5 py-1 text-xs bg-white border-slate-200 rounded-lg focus-visible:bg-white font-bold tabular"
                 />
                 <span className="text-[9px] text-slate-400 block mt-1">
-                  Agar customer shuruati baqi ya advance de, warna 0 rahega.
+                  Initial opening balance or advance (leave 0 if none).
                 </span>
               </div>
 
@@ -484,14 +493,13 @@ export default function AddNewCustomerView({ onBack }) {
                     <SelectValue placeholder="Select Method" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="CASH" className="text-xs">💵 Cash (نقد)</SelectItem>
-                    <SelectItem value="CARD" className="text-xs">💳 Card / POS (کارڈ)</SelectItem>
-                    <SelectItem value="ONLINE" className="text-xs">📱 Online Transfer (EasyPaisa/JazzCash)</SelectItem>
-                    <SelectItem value="KHATA_DEBIT" className="text-xs">📋 Previous Khata Udhaar (سابقہ ادھار)</SelectItem>
+                    <SelectItem value="CASH_ADVANCE" className="text-xs">💵 Advance Cash Deposit (Paid in advance)</SelectItem>
+                    <SelectItem value="ONLINE_ADVANCE" className="text-xs">📱 Advance Online Deposit (Paid in advance)</SelectItem>
+                    <SelectItem value="KHATA_DEBIT" className="text-xs">📋 Previous Khata Dues (Customer owes shop)</SelectItem>
                   </SelectContent>
                 </Select>
                 <span className="text-[9px] text-slate-400 block mt-1">
-                  Opening balance kis tareeqay se adjust kiya jaye.
+                  Choose advance deposit or previous dues.
                 </span>
               </div>
             </div>

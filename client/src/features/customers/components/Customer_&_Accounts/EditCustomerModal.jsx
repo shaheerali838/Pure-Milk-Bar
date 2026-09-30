@@ -90,7 +90,7 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
         idType: customer.idType || 'CNIC',
         verificationStatus: customer.verificationStatus || 'Verified',
         address: customer.address || '',
-        deliveryFee: customer.deliveryFee !== undefined ? String(customer.deliveryFee) : '0',
+        deliveryFee: customer.deliveryFee !== undefined && Number(customer.deliveryFee) > 0 ? String(customer.deliveryFee) : '',
         secondaryPhone: customer.secondaryPhone || '',
         referenceName: customer.referenceName || '',
         subscription: customer.subscription || '2 L Cow Milk',
@@ -120,7 +120,7 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
       idType: formData.idType,
       verificationStatus: formData.verificationStatus,
       address: formData.address,
-      deliveryFee: Number(formData.deliveryFee) || 0,
+      deliveryFee: formData.deliveryFee !== '' ? (Number(formData.deliveryFee) || 0) : 0,
       secondaryPhone: formData.secondaryPhone,
       referenceName: formData.referenceName,
       subscription: formattedSubscription,
@@ -176,11 +176,14 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
               <div>
                 <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">Primary Phone *</label>
                 <Input
-                  type="text"
+                  type="tel"
+                  inputMode="numeric"
                   required
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="h-8 px-2.5 py-1 text-xs"
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
+                  placeholder="03001111111"
+                  maxLength={15}
+                  className="h-8 px-2.5 py-1 text-xs font-mono"
                 />
               </div>
             </div>
@@ -202,10 +205,13 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
                   Secondary Phone <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <Input
-                  type="text"
+                  type="tel"
+                  inputMode="numeric"
                   value={formData.secondaryPhone}
-                  onChange={(e) => setFormData({ ...formData, secondaryPhone: e.target.value })}
-                  className="h-8 px-2.5 py-1 text-xs"
+                  onChange={(e) => setFormData({ ...formData, secondaryPhone: e.target.value.replace(/\D/g, '') })}
+                  placeholder="03002222222"
+                  maxLength={15}
+                  className="h-8 px-2.5 py-1 text-xs font-mono"
                 />
               </div>
             </div>
@@ -220,12 +226,15 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">
-                  CNIC / ID Number <span className="text-slate-400 font-normal">(Optional)</span>
+                  CNIC / ID Number <span className="text-slate-400 font-normal">(Optional - Digits Only)</span>
                 </label>
                 <Input
                   type="text"
+                  inputMode="numeric"
                   value={formData.cnicNumber}
-                  onChange={(e) => setFormData({ ...formData, cnicNumber: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, cnicNumber: e.target.value.replace(/\D/g, '') })}
+                  placeholder="3520112345671"
+                  maxLength={15}
                   className="h-8 px-2.5 py-1 text-xs font-mono"
                 />
               </div>
@@ -388,17 +397,19 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-0.5 text-[11px]">
-                  Delivery Charges (Rs.) <span className="text-slate-400 font-normal">(Per Order)</span>
+                  Delivery Charges (Rs.) <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <Input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   value={formData.deliveryFee}
-                  onChange={(e) => setFormData({ ...formData, deliveryFee: e.target.value })}
-                  placeholder="0 (Free Delivery)"
+                  onChange={(e) => setFormData({ ...formData, deliveryFee: e.target.value.replace(/\D/g, '') })}
+                  placeholder="0 (Optional - Free if empty)"
                   className="h-8 px-2.5 py-1 text-xs font-bold tabular"
                 />
-                <span className="text-[9px] text-slate-400 block mt-0.5">Delivery par auto add hoga, walk-in par nahi</span>
+                <span className="text-[9px] text-slate-400 block mt-0.5">
+                  Optional: only added to delivery orders if specified
+                </span>
               </div>
             </div>
           </div>

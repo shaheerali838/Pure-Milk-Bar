@@ -15,6 +15,7 @@ import MilkHisaabAccordion from '../components/DailyClosing/MilkHisaabAccordion'
 import PhysicalMilkCheckCard from '../components/DailyClosing/PhysicalMilkCheckCard';
 import MoneyInAndOutBlock from '../components/DailyClosing/MoneyInAndOutBlock';
 import ProductProfitTable from '../components/DailyClosing/ProductProfitTable';
+import DailyClosingModuleDetails from '../components/DailyClosing/DailyClosingModuleDetails';
 import PreviousClosingsHistory from '../components/DailyClosing/PreviousClosingsHistory';
 import AddWastageDialog from '../components/DailyClosing/AddWastageDialog';
 import ConfirmClosingDialog from '../components/DailyClosing/ConfirmClosingDialog';
@@ -42,6 +43,7 @@ export default function DailyClosing() {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+  const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
 
   // User input states for physical verification
   const [physicalMilk, setPhysicalMilk] = useState('');
@@ -143,6 +145,21 @@ export default function DailyClosing() {
     toast.success('Day end summary CSV downloaded successfully.');
   };
 
+  // Start Next Day Closing (Clear active input and advance date so opening stock & cash carry forward)
+  const handleStartNextDay = () => {
+    const cur = new Date(selectedDate);
+    cur.setDate(cur.getDate() + 1);
+    const nextDateStr = cur.toISOString().split('T')[0];
+
+    setSelectedDate(nextDateStr);
+    setPeriod('today');
+    setPhysicalMilk('');
+    setVarianceReason('');
+    setProductPhysicalCounts({});
+    setSupervisorNotes('');
+    toast.success(`Advanced to new business day: ${nextDateStr}. Opening stocks automatically carried forward!`);
+  };
+
   // Confirm and save closing
   const handleConfirmDailyClosing = async () => {
     if (!summaryData) return;
@@ -166,6 +183,7 @@ export default function DailyClosing() {
 
       toast.success(res?.message || 'Daily closing successfully confirmed and locked!');
       setConfirmDialogOpen(false);
+      setHistoryRefreshTrigger((prev) => prev + 1);
       // Reload fresh frozen data
       loadSummary(true);
     } catch (err) {
@@ -184,6 +202,7 @@ export default function DailyClosing() {
     try {
       await reopenDailyClosing(summaryData.closing.id, reason);
       toast.success('Day end closing reopened successfully. Calculations are now live.');
+      setHistoryRefreshTrigger((prev) => prev + 1);
       loadSummary(true);
     } catch (err) {
       toast.error(err.message || 'Failed to reopen closing.');
@@ -247,6 +266,7 @@ export default function DailyClosing() {
         onExportCsv={handleExportCsv}
         onOpenConfirmDialog={() => setConfirmDialogOpen(true)}
         onOpenReopenDialog={handleReopenDay}
+        onStartNextDay={handleStartNextDay}
         closingInfo={summaryData?.closing}
         isAdmin={isAdmin}
         isRefreshing={isRefreshing}
@@ -264,17 +284,18 @@ export default function DailyClosing() {
         </div>
       )}
 
-      {/* 2. 4 KPI Cards (Milk in tanks, Total Sales, Money Collected, Estimated Profit) */}
+      {/* 2. 4 KPI Cards (Milk Sold, Total Sales, Money Collected, Estimated Profit) */}
       <DailyClosingKpis
-        milkExpected={summaryData?.milk?.expectedClosing ?? 0}
-        isMilkNegative={summaryData?.milk?.isNegative ?? false}
+        milkSold={(summaryData?.milk?.counterSales ?? 0) + (summaryData?.milk?.doorstepSales ?? 0)}
+        counterSales={summaryData?.milk?.counterSales ?? 0}
+        doorstepSales={summaryData?.milk?.doorstepSales ?? 0}
         totalSales={summaryData?.profit?.grossRevenue ?? 0}
         moneyCollected={summaryData?.collections?.totalCollected ?? 0}
         estimatedProfit={summaryData?.profit?.estimatedProfit ?? 0}
         isClosed={isClosed}
       />
 
-      {/* 3. Hero Table: "Kal se kya bacha → Aj kya bika → Abhi kitna bacha" */}
+      {/* 3. Hero Table: Stock Flow */}
       <ProductStockFlowTable
         products={summaryData?.products || []}
         openingSource={summaryData?.openingSource || {}}
@@ -313,8 +334,22 @@ export default function DailyClosing() {
       {/* 7. Product-wise Sales & Profit Table (Collapsed by default) */}
       <ProductProfitTable products={summaryData?.products || []} />
 
-      {/* 8. Previous Closings History List (Collapsed audit log) */}
-      <PreviousClosingsHistory onSelectDate={(d) => setSelectedDate(d)} />
+      {/* 8. Complete Software Module Breakdown (All Operations & Audit Logs) */}
+      {summaryData?.breakdown && (
+        <DailyClosingModuleDetails
+          breakdown={summaryData.breakdown}
+          isClosed={isClosed}
+        />
+      )}
+
+      {/* 9. Previous Closings History List (Complete Audit Log) */}
+      <PreviousClosingsHistory
+        onSelectDate={(d) => {
+          setSelectedDate(d);
+          setPeriod('today');
+        }}
+        refreshTrigger={historyRefreshTrigger}
+      />
 
       {/* Modals */}
       <AddWastageDialog

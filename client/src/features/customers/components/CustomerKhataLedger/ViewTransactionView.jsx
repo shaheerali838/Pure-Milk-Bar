@@ -32,8 +32,39 @@ export default function ViewTransactionView({ transaction: rawTxn, customer, onB
   if (!rawTxn) return null;
 
   const transaction = normalizeLedgerEntry(rawTxn) || rawTxn;
-  const isDebit = Number(transaction.debit) > 0;
-  const isCredit = Number(transaction.credit) > 0;
+  const isOpening = transaction.isOpening || transaction.type === 'OPENING' || /opening/i.test(transaction.description || '');
+  const isAdvanceOpening =
+    isOpening &&
+    (Number(transaction.credit) > 0 ||
+      transaction.fulfillmentType === 'Advance Deposit' ||
+      String(customer?.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') ||
+      customer?.openingPaymentMethod === 'CASH' ||
+      customer?.openingPaymentMethod === 'ONLINE' ||
+      /advance/i.test(transaction.description || ''));
+
+  const rawOpeningVal = Number(
+    transaction.credit ||
+    transaction.debit ||
+    transaction.orderTotal ||
+    transaction.paidAmount ||
+    customer?.openingBalance ||
+    0
+  );
+
+  const displayOrderTotal = isAdvanceOpening
+    ? rawOpeningVal
+    : Number(transaction.orderTotal || transaction.debit || transaction.credit || 0);
+
+  const displayPaidAmount = isAdvanceOpening
+    ? rawOpeningVal
+    : Number(transaction.paidAmount || (Number(transaction.credit) > 0 ? transaction.credit : 0));
+
+  const displayBalanceDue = isAdvanceOpening
+    ? 0
+    : Number(transaction.remainingAmount || (Number(transaction.debit) > 0 ? Number(transaction.debit) - Number(transaction.paidAmount || 0) : 0));
+
+  const isDebit = Number(transaction.debit) > 0 && !isAdvanceOpening;
+  const isCredit = (Number(transaction.credit) > 0 || isAdvanceOpening);
   const hasItems = Array.isArray(transaction.items) && transaction.items.length > 0;
 
   return (
@@ -51,10 +82,18 @@ export default function ViewTransactionView({ transaction: rawTxn, customer, onB
         <div>
           <h1 className="text-lg font-bold text-slate-900 tracking-tight font-display flex items-center gap-2">
             <Receipt className="w-4.5 h-4.5 text-emerald-600" />
-            Transaction Audit Spec &bull; #{transaction.invoiceId || transaction.id || 'TXN-01'}
+            {isAdvanceOpening
+              ? 'Advance Deposit Audit Spec'
+              : isOpening
+              ? 'Opening Balance Audit Spec'
+              : 'Transaction Audit Spec'} &bull; #{transaction.invoiceId || transaction.id || 'TXN-01'}
           </h1>
           <p className="text-xs text-slate-500">
-            Full Khata audit &amp; purchase ledger record for:{' '}
+            {isAdvanceOpening
+              ? 'Customer initial advance payment deposit statement for: '
+              : isOpening
+              ? 'Customer account opening balance statement for: '
+              : 'Full Khata audit & purchase ledger record for: '}
             <span className="font-bold text-slate-700">{customer?.name}</span>
           </p>
         </div>
@@ -64,37 +103,37 @@ export default function ViewTransactionView({ transaction: rawTxn, customer, onB
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 max-w-4xl">
         <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            Total Order Bill
+            {isAdvanceOpening ? 'Advance Deposit' : 'Total Order Bill'}
           </span>
           <div className="text-base font-black text-slate-900 tabular font-display mt-0.5">
-            Rs. {Number(transaction.orderTotal || transaction.debit || transaction.credit || 0).toLocaleString()}
+            Rs. {displayOrderTotal.toLocaleString()}
           </div>
         </Card>
 
         <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
-            Amount Paid (Wasool)
+            {isAdvanceOpening ? 'Amount Received' : 'Amount Paid'}
           </span>
           <div className="text-base font-black text-emerald-700 tabular font-display mt-0.5">
-            Rs. {Number(transaction.paidAmount || (isCredit ? transaction.credit : 0)).toLocaleString()}
+            Rs. {displayPaidAmount.toLocaleString()}
           </div>
         </Card>
 
         <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider block">
-            Remaining Dues (Baqi)
+            Balance Due
           </span>
           <div className="text-base font-black text-rose-600 tabular font-display mt-0.5">
-            Rs. {Number(transaction.remainingAmount || (isDebit ? transaction.debit - (transaction.paidAmount || 0) : 0)).toLocaleString()}
+            Rs. {displayBalanceDue.toLocaleString()}
           </div>
         </Card>
 
         <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">
-            Resulting Khata Balance
+            Total Customer Balance
           </span>
           <div className="text-base font-black text-slate-900 tabular font-display mt-0.5">
-            Rs. {Number(transaction.runningBalance || 0).toLocaleString()}
+            Rs. {Number(customer?.currentBalance !== undefined ? customer.currentBalance : (transaction.runningBalance || 0)).toLocaleString()}
           </div>
         </Card>
       </div>
@@ -118,22 +157,25 @@ export default function ViewTransactionView({ transaction: rawTxn, customer, onB
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-slate-100">
-                  {transaction.items.map((item, i) => (
-                    <TableRow key={i} className="hover:bg-slate-50/50">
-                      <TableCell className="py-2 px-3 font-bold text-slate-900">
-                        {item.name}
-                      </TableCell>
-                      <TableCell className="py-2 px-3 text-center text-slate-700 font-semibold tabular">
-                        {item.quantity} {item.unit || ''}
-                      </TableCell>
-                      <TableCell className="py-2 px-3 text-right text-slate-600 tabular">
-                        Rs. {Number(item.price || 0).toLocaleString()}
-                      </TableCell>
-                      <TableCell className="py-2 px-3 text-right font-bold text-emerald-800 tabular">
-                        Rs. {Number(item.subtotal || item.quantity * item.price).toLocaleString()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {transaction.items.map((item, i) => {
+                    const unitRate = Number(item.unitPrice || item.price || item.rate || (item.quantity > 0 && item.subtotal ? item.subtotal / item.quantity : 0));
+                    return (
+                      <TableRow key={i} className="hover:bg-slate-50/50">
+                        <TableCell className="py-2 px-3 font-bold text-slate-900">
+                          {item.name}
+                        </TableCell>
+                        <TableCell className="py-2 px-3 text-center text-slate-700 font-semibold tabular">
+                          {item.quantity} {item.unit || ''}
+                        </TableCell>
+                        <TableCell className="py-2 px-3 text-right text-slate-600 tabular">
+                          Rs. {unitRate.toLocaleString()}
+                        </TableCell>
+                        <TableCell className="py-2 px-3 text-right font-bold text-emerald-800 tabular">
+                          Rs. {Number(item.subtotal || item.quantity * unitRate).toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -159,7 +201,7 @@ export default function ViewTransactionView({ transaction: rawTxn, customer, onB
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Order Fulfillment Mode
             </span>
-            <p className="font-bold text-blue-700 mt-0.5">{transaction.fulfillmentType || 'Walk-in Counter'}</p>
+            <p className="font-bold text-blue-700 mt-0.5">{isAdvanceOpening ? 'Advance Deposit' : (transaction.fulfillmentType || 'Walk-in Counter')}</p>
           </div>
 
           {transaction.riderName && (
@@ -196,14 +238,20 @@ export default function ViewTransactionView({ transaction: rawTxn, customer, onB
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Payment Method / Channel
             </span>
-            <p className="font-semibold text-purple-700 mt-0.5">{transaction.paymentMethod || 'Cash'}</p>
+            <p className="font-semibold text-purple-700 mt-0.5">
+              {isAdvanceOpening
+                ? (transaction.paymentMethod?.includes('ONLINE') ? 'Advance Online Deposit' : 'Advance Cash Deposit')
+                : (transaction.paymentMethod || 'Cash')}
+            </p>
           </div>
 
           <div className="p-3 bg-slate-50/70 border border-slate-100 rounded-xl">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Payment Status
             </span>
-            <p className="font-bold text-emerald-700 mt-0.5">{transaction.paymentStatus || 'Processed'}</p>
+            <p className="font-bold text-emerald-700 mt-0.5">
+              {isAdvanceOpening ? 'Paid in Full (Advance Deposit)' : (transaction.paymentStatus || 'Processed')}
+            </p>
           </div>
 
           <div className="p-3 bg-slate-50/70 border border-slate-100 rounded-xl">
@@ -211,7 +259,7 @@ export default function ViewTransactionView({ transaction: rawTxn, customer, onB
               Resulting Khata Balance
             </span>
             <p className="font-black text-slate-900 font-mono mt-0.5 tabular">
-              Rs. {Number(transaction.runningBalance || 0).toLocaleString()}
+              Rs. {Number(customer?.currentBalance !== undefined ? customer.currentBalance : (transaction.runningBalance || 0)).toLocaleString()}
             </p>
           </div>
 
@@ -219,7 +267,11 @@ export default function ViewTransactionView({ transaction: rawTxn, customer, onB
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Description / Memo
             </span>
-            <p className="font-semibold text-slate-800 mt-0.5">{transaction.description || '—'}</p>
+            <p className="font-semibold text-slate-800 mt-0.5">
+              {isAdvanceOpening
+                ? 'Customer Initial Advance Cash Deposit (Paid in advance)'
+                : (transaction.description || '—')}
+            </p>
           </div>
 
           {transaction.notes && (

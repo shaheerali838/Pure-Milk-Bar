@@ -51,7 +51,7 @@ export default function MoneyInAndOutBlock({
               Financial Collections & Daily Cash Flow
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Complete money flow: Sales receipts, Digital online, Khata recovery vs Operating expenses
+              Complete money flow: Sales receipts, Digital collections, Customer ledger recovery vs Operating expenses
             </p>
           </div>
         </div>
@@ -108,7 +108,7 @@ export default function MoneyInAndOutBlock({
             <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
               <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
                 <Building className="w-3.5 h-3.5 text-slate-400" />
-                4. Customer Khata Recovered (Cash)
+                4. Customer Ledger Recovered (Cash)
               </span>
               <span className="font-semibold text-emerald-700 dark:text-emerald-400">+{formatRs(khataCash)}</span>
             </div>
@@ -117,7 +117,7 @@ export default function MoneyInAndOutBlock({
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
                   <CreditCard className="w-3.5 h-3.5 text-slate-400" />
-                  5. Customer Khata Recovered (Digital)
+                  5. Customer Ledger Recovered (Digital)
                 </span>
                 <span className="font-semibold text-emerald-700 dark:text-emerald-400">+{formatRs(khataOnline)}</span>
               </div>
@@ -125,7 +125,7 @@ export default function MoneyInAndOutBlock({
 
             {creditGiven > 0 && (
               <div className="flex justify-between py-1 text-slate-500 italic">
-                <span>Credit Given on Khata Today (Receivable)</span>
+                <span>Credit Given Today (Receivable)</span>
                 <span>{formatRs(creditGiven)}</span>
               </div>
             )}

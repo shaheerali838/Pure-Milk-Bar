@@ -26,6 +26,7 @@ export default function DailyClosingHeader({
   onExportCsv,
   onOpenConfirmDialog,
   onOpenReopenDialog,
+  onStartNextDay,
   closingInfo = null,
   isAdmin = false,
   isRefreshing = false,
@@ -107,6 +108,18 @@ export default function DailyClosingHeader({
             Export CSV
           </Button>
 
+          {isClosed && (
+            <Button
+              type="button"
+              size="sm"
+              onClick={onStartNextDay}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm h-9 px-4 gap-1.5 shadow-sm shadow-emerald-600/20"
+            >
+              <Sparkles className="w-4 h-4" />
+              Start Next Day Closing
+            </Button>
+          )}
+
           {isClosed && isAdmin && onOpenReopenDialog && (
             <Button
               type="button"
@@ -120,20 +133,15 @@ export default function DailyClosingHeader({
             </Button>
           )}
 
-          {!isRangeMode && (
+          {!isClosed && !isRangeMode && (
             <Button
               type="button"
               size="sm"
-              disabled={isClosed}
               onClick={onOpenConfirmDialog}
-              className={`h-9 px-4 font-semibold text-xs sm:text-sm gap-2 transition-all shadow-sm ${
-                isClosed
-                  ? 'bg-slate-200 text-slate-500 border border-slate-300 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
-                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 hover:shadow-emerald-600/30'
-              }`}
+              className="h-9 px-4 font-semibold text-xs sm:text-sm gap-2 transition-all shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 hover:shadow-emerald-600/30"
             >
               <Lock className="w-4 h-4" />
-              {isClosed ? 'Day Already Confirmed' : 'Confirm Daily Closing'}
+              Confirm Daily Closing
             </Button>
           )}
         </div>

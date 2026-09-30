@@ -42,7 +42,7 @@ class OrderService {
         throw new AppError('Selected customer was not found', 404, 'CUSTOMER_NOT_FOUND');
       }
 
-      if (customer.status !== 'ACTIVE') {
+      if (String(customer.status || '').toUpperCase() !== 'ACTIVE') {
         throw new AppError(
           `Customer account is currently ${customer.status}. Only ACTIVE accounts can make purchases.`,
           400,
@@ -123,25 +123,54 @@ class OrderService {
 
     // 8. Update Customer Khata and create Khata Ledger Entry for customer purchase history
     if (customer) {
-      let currentRunningBalance = customer.currentBalance;
-      if (totalKhataDebit > 0) {
-        const updatedCustomer = await Customer.findByIdAndUpdate(
-          customer._id,
-          { $inc: { currentBalance: totalKhataDebit } },
-          { new: true }
-        );
-        currentRunningBalance = updatedCustomer.currentBalance;
-      }
+      const totals = await KhataEntry.aggregate([
+        { $match: { customerId: customer._id } },
+        {
+          $group: {
+            _id: null,
+            totalDebit: { $sum: '$debitAmount' },
+            totalCredit: { $sum: '$creditAmount' },
+          },
+        },
+      ]);
+      const currentTotals = totals[0] || { totalDebit: 0, totalCredit: 0 };
+      const newTotalDebit = currentTotals.totalDebit + (totalKhataDebit > 0 ? totalKhataDebit : 0);
+      const newTotalCredit = currentTotals.totalCredit;
+      const updatedBalance = Math.max(0, newTotalDebit - newTotalCredit);
+
+      const updatedCustomer = await Customer.findByIdAndUpdate(
+        customer._id,
+        { currentBalance: updatedBalance, khataBalance: updatedBalance },
+        { new: true }
+      );
+      let currentRunningBalance = updatedCustomer.currentBalance;
 
       const orderItemsSnapshot = Array.isArray(order.items)
-        ? order.items.map((it) => ({
-            name: it.name || 'Product',
-            quantity: Number(it.quantity) || 1,
-            unit: it.unit || 'PIECE',
-            unitPrice: Number(it.unitPrice) || 0,
-            subtotal: Number(it.subtotal) || 0,
-          }))
+        ? order.items.map((it) => {
+            const qty = Number(it.quantity) || 1;
+            const subtotal = Number(it.subtotal || it.total || 0);
+            const unitPrice = Number(it.unitPrice || it.price || it.rate || (qty > 0 && subtotal > 0 ? subtotal / qty : 0));
+            const finalSubtotal = subtotal > 0 ? subtotal : (unitPrice * qty);
+            return {
+              name: it.name || 'Product',
+              quantity: qty,
+              unit: it.unit || 'PIECE',
+              unitPrice: unitPrice,
+              subtotal: finalSubtotal,
+            };
+          })
         : [];
+
+      const deliveryFee = Number(order.deliveryFee || orderData.deliveryFee || order.deliveryMeta?.deliveryFee || 0);
+      if (deliveryFee > 0 && !orderItemsSnapshot.some((it) => /delivery/i.test(it.name))) {
+        orderItemsSnapshot.push({
+          name: 'Doorstep Delivery Fee',
+          quantity: 1,
+          unit: 'TRIP',
+          unitPrice: deliveryFee,
+          subtotal: deliveryFee,
+        });
+      }
 
       await KhataEntry.create({
         customerId: customer._id,

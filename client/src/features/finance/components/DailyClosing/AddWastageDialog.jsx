@@ -204,9 +204,9 @@ export default function AddWastageDialog({
               onChange={(e) => setReason(e.target.value)}
               className="w-full h-9 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="SPOILED">Spoiled / Souring / Bad Smell</option>
-              <option value="CURDLED">Curdled / Phata Doodh during Boil</option>
-              <option value="SPILLAGE">Physical Tank / Bucket Spillage</option>
+              <option value="SPOILED">Spoiled / Souring / Off-Flavored</option>
+              <option value="CURDLED">Curdled Milk during Boiling</option>
+              <option value="SPILLAGE">Physical Handling / Tank Spillage</option>
               <option value="LINE_WASHING">Pipe & Chiller Line-Washing Loss</option>
               <option value="EXPIRED">Expired Past Freshness Shelf-life</option>
               <option value="OTHER">Other Miscellaneous Loss</option>

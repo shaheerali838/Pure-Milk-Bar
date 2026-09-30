@@ -100,6 +100,30 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
         </div>
       </div>
 
+      {/* Credit Limit Alert Banner */}
+      {Number(creditLimit) > 0 && Number(khataBalance) >= Number(creditLimit) && (
+        <div className="p-3 bg-gradient-to-r from-rose-50 via-rose-100/70 to-rose-50 border-2 border-rose-400/90 rounded-2xl shadow-xs flex items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <AlertCircle className="w-5 h-5 animate-pulse text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-xs font-black text-rose-950 uppercase tracking-tight font-display">
+                  ⚠️ Credit Limit Exceeded Notice
+                </h4>
+                <span className="px-2 py-0.5 rounded-md text-[9px] font-black bg-rose-200 text-rose-900 uppercase border border-rose-300">
+                  Limit Reached
+                </span>
+              </div>
+              <p className="text-xs text-rose-800 mt-0.5">
+                Current outstanding Khata dues (<span className="font-black font-mono">PKR {Number(khataBalance).toLocaleString()}</span>) have reached or exceeded the assigned credit limit of <span className="font-black font-mono">PKR {Number(creditLimit).toLocaleString()}</span>.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         <Card className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs flex items-center justify-between">
           <div>

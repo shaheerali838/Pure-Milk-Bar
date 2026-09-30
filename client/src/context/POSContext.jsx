@@ -95,7 +95,7 @@ export const isLegacyDummySale = (sale) => {
 export const deliveryRidersList = [];
 
 export function POSProvider({ children }) {
-  const { rawCustomers = [], customers = [] } = useCustomerContext();
+  const { rawCustomers = [], customers = [], refreshCustomers } = useCustomerContext();
   const { addLedgerEntry, fetchCustomerLedger } = useLedgerContext() || {};
   const animalCtx = useAnimalContext();
   const animals = animalCtx?.animals || [];
@@ -1000,6 +1000,9 @@ export function POSProvider({ children }) {
       .then(() => {
         if (validCustomerId && typeof fetchCustomerLedger === 'function') {
           fetchCustomerLedger(validCustomerId);
+        }
+        if (typeof refreshCustomers === 'function') {
+          refreshCustomers();
         }
       })
       .catch((err) => console.warn('Background POS order sync error:', err));

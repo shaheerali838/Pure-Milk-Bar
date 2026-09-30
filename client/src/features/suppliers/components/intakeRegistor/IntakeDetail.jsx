@@ -425,7 +425,7 @@ export default function IntakeDetail({
             </button>
             <div>
               <h1 className="text-xl font-bold text-slate-900 tracking-tight font-display">
-                Intake Slip Details — #{activeSlip.id}
+                Intake Slip Details 
               </h1>
               <p className="text-xs text-slate-500">
                 Supplier: {supplierDisplayName} • {activeSlip.date} ({activeSlip.shift} Shift)
@@ -455,7 +455,7 @@ export default function IntakeDetail({
             >
               {filteredSlips.map((item) => (
                 <option key={item.id} value={item.id}>
-                  #{item.id} — {item.supplierName} ({item.quantity}L • {item.shift})
+                   — {item.supplierName} ({item.quantity}L • {item.shift})
                 </option>
               ))}
             </select>

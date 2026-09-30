@@ -259,7 +259,7 @@ export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
           <div className="flex items-center justify-between text-xs font-bold mb-1.5">
             <span className="flex items-center gap-1.5 text-emerald-800">
               <TrendingUp className="w-4 h-4 text-emerald-700" />
-              Net Profit (Bachat)
+              Net Profit
             </span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-extrabold">
               {netMarginPct}% Margin
@@ -491,7 +491,7 @@ export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
                   <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black">
                     5
                   </span>
-                  Final Clean Net Profit (Bachat)
+                  Final Clean Net Profit
                 </td>
                 <td className="py-3.5 px-3.5 text-xs text-emerald-900 font-medium">
                   Actual net profit in pocket after all costs and expenses

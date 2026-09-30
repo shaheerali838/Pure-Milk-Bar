@@ -168,8 +168,8 @@ export default function AddProduct({ onBack, product = null }) {
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="w-full appearance-none px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition cursor-pointer pr-10"
                 >
-                  <option value="Milk">🥛 Milk (Doodh)</option>
-                  <option value="Dahi">🥣 Dahi (Yogurt)</option>
+                  <option value="Milk">🥛 Fresh Milk</option>
+                  <option value="Dahi">🥣 Yogurt / Dahi</option>
                   <option value="Lassi">🧃 Lassi</option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
