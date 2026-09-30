@@ -72,24 +72,13 @@ export default function FarmDashboardContent() {
 
   const avgAnimalYield = totalAnimals > 0 ? totalFarmYield / totalAnimals : 0;
 
-  const milkPricePerLiter = useMemo(() => {
-    const milkItem = products.find((p) => /cow\s*milk|pure\s*milk|milk/i.test(p.name)) || products[0];
-    return Number(milkItem?.price) || 240;
-  }, [products]);
+  // Real Financial Metrics from POS (Real sales & direct costs only - no synthetic multipliers)
+  const realFarmRevenue = Number(posCtx?.farmSalesMetrics?.totalRevenue || 0);
+  const realFarmCost = Number(posCtx?.farmSalesMetrics?.totalCost || 0);
+  const dailyNetProfit = Number(posCtx?.farmSalesMetrics?.netProfit || 0);
+  const monthlyNetProfit = dailyNetProfit;
 
-  const dailyExpenses = useMemo(() => {
-    const recordedExpense = totals?.feedSeedFarming || totals?.totalFarmExpense || 0;
-    if (recordedExpense > 0) {
-      return Math.round(recordedExpense / 30);
-    }
-    return totalAnimals * 620;
-  }, [totals, totalAnimals]);
-
-  const dailyRevenue = totalFarmYield * milkPricePerLiter;
-  const dailyNetProfit = Math.max(0, dailyRevenue - dailyExpenses);
-  const monthlyNetProfit = dailyNetProfit * 30;
-
-  // Trend Data for 7 days
+  // Trend Data for 7 days (Using real milking logs and real sales)
   const trendData = useMemo(() => {
     const days = [];
     for (let i = 6; i >= 0; i--) {
@@ -122,16 +111,19 @@ export default function FarmDashboardContent() {
         });
       }
 
-      if (mYield === 0 && eYield === 0) {
-        mYield = totalFarmYield > 0 ? totalFarmYield / 2 : 60;
-        eYield = totalFarmYield > 0 ? totalFarmYield / 2 : 60;
-      }
-
-      const dayRevenue = (mYield + eYield) * milkPricePerLiter;
-      
-      // Calculate realistic day cost. We could just use dailyExpenses. 
-      // In the image, farm cost drops a bit towards the end, but let's keep it around dailyExpenses
-      const dayCost = dailyExpenses;
+      // Check real sales for day 'd.key' from posCtx?.salesHistory
+      const salesForDay = (posCtx?.salesHistory || []).filter((s) => {
+        const sDate = s.formattedDate ? new Date(s.formattedDate).toISOString().split('T')[0] : (s.date || '').split('T')[0];
+        return sDate === d.key;
+      });
+      const dayRevenue = salesForDay.reduce((sum, s) => {
+        const farmItems = (s.items || []).filter(i => (i.source || '').toLowerCase() === 'farm' || !i.source);
+        return sum + farmItems.reduce((isum, item) => isum + (Number(item.subtotal) || (Number(item.quantity || 0) * Number(item.price || 0))), 0);
+      }, 0);
+      const dayCost = salesForDay.reduce((sum, s) => {
+        const farmItems = (s.items || []).filter(i => (i.source || '').toLowerCase() === 'farm' || !i.source);
+        return sum + farmItems.reduce((isum, item) => isum + (Number(item.quantity || 0) * (Number(item.cost) || 0)), 0);
+      }, 0);
       const dayProfit = Math.max(0, dayRevenue - dayCost);
 
       return {
@@ -143,7 +135,7 @@ export default function FarmDashboardContent() {
         profit: Math.round(dayProfit),
       };
     });
-  }, [milkingLogs, animals, totalFarmYield, milkPricePerLiter, dailyExpenses]);
+  }, [milkingLogs, animals, posCtx?.salesHistory]);
 
   // Data for Current Lactation Yield by Animal
   const animalBarData = useMemo(() => {

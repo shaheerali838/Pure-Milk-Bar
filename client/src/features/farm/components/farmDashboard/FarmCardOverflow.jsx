@@ -85,10 +85,12 @@ export default function FarmCardOverflow({
     {
       label: "Farm Net Profit",
       value: `Rs. ${dailyNetProfit.toLocaleString()}`,
-      sub:  "Rs.  month net ",
+      sub: dailyNetProfit > 0
+        ? `From Rs. ${Number(posCtx?.farmSalesMetrics?.totalRevenue || 0).toLocaleString()} real sales`
+        : "No farm sales recorded yet",
       icon: DollarSign,
       color: "#10b981",
-      badge: "Net Profit / Day",
+      badge: dailyNetProfit > 0 ? "Realized Net" : "0 Real Sales",
       path: "/farm/pl"
     }
   ];
