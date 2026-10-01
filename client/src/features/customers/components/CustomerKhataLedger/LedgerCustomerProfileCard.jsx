@@ -1,25 +1,26 @@
-import React from 'react';
-import {
-  Phone,
-  MapPin,
-  CreditCard,
-  Edit3,
-  Milk,
-  Clock,
-} from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { Phone, MapPin, CreditCard, Edit3, Milk, Clock } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
-export default function LedgerCustomerProfileCard({ customer, currentBalance, onEdit }) {
+export default function LedgerCustomerProfileCard({
+  customer,
+  currentBalance,
+  onEdit,
+}) {
   if (!customer) return null;
 
-  const initial = customer.name ? customer.name.charAt(0).toUpperCase() : 'C';
+  const initial = customer.name ? customer.name.charAt(0).toUpperCase() : "C";
   const creditLimit = Number(customer.creditLimit || 10000);
-  const khataBalance = currentBalance !== undefined && currentBalance !== null
-    ? Number(currentBalance)
-    : Number(customer.khataBalance ?? customer.currentBalance ?? 0);
-  const khataPercent = Math.min(100, Math.round((khataBalance / creditLimit) * 100));
+  const khataBalance =
+    currentBalance !== undefined && currentBalance !== null
+      ? Number(currentBalance)
+      : Number(customer.khataBalance ?? customer.currentBalance ?? 0);
+  const khataPercent = Math.min(
+    100,
+    Math.round((khataBalance / creditLimit) * 100),
+  );
 
   return (
     <Card className="bg-white border-slate-200/80 shadow-2xs">
@@ -39,8 +40,19 @@ export default function LedgerCustomerProfileCard({ customer, currentBalance, on
                   variant="outline"
                   className="text-[9px] font-semibold px-1.5 py-0 rounded bg-emerald-50 text-emerald-700 border-emerald-200/80"
                 >
-                  {customer.verificationStatus || 'Verified'}
+                  {customer.verificationStatus || "Verified"}
                 </Badge>
+                {creditLimit > 0 && khataBalance >= creditLimit && (
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] font-black px-1.5 py-0 rounded bg-rose-100 text-rose-800 border-rose-300 animate-pulse"
+                  >
+                    ⚠️ Limit Exceeded
+                  </Badge>
+                )}
+                <span className="font-mono text-[10px] text-slate-400">
+                  #{customer.id}
+                </span>
               </div>
             </div>
           </div>
@@ -51,15 +63,18 @@ export default function LedgerCustomerProfileCard({ customer, currentBalance, on
             <div className="flex items-center gap-1">
               <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="font-semibold text-slate-800 font-mono text-[11px]">
-                {customer.phone || 'No phone'}
+                {customer.phone || "No phone"}
               </span>
             </div>
 
             {/* Delivery Area */}
             <div className="flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <span className="text-slate-700 text-[11px] font-medium max-w-[140px] truncate" title={customer.area || customer.address}>
-                {customer.area || customer.address || 'Model Town'}
+              <span
+                className="text-slate-700 text-[11px] font-medium max-w-[140px] truncate"
+                title={customer.area || customer.address}
+              >
+                {customer.area || customer.address || "Model Town"}
               </span>
             </div>
 
@@ -67,14 +82,16 @@ export default function LedgerCustomerProfileCard({ customer, currentBalance, on
             <div className="flex items-center gap-1">
               <Milk className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
               <span className="text-emerald-800 text-[11px] font-bold">
-                {customer.subscription || '2 L Cow Milk'}
+                {customer.subscription || "2 L Cow Milk"}
               </span>
             </div>
 
             {/* Shift */}
             <div className="hidden lg:flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <span className="text-slate-500 text-[11px] capitalize">{customer.shift || 'Morning'}</span>
+              <span className="text-slate-500 text-[11px] capitalize">
+                {customer.shift || "Morning"}
+              </span>
             </div>
           </div>
 
@@ -87,7 +104,7 @@ export default function LedgerCustomerProfileCard({ customer, currentBalance, on
                 </div>
                 <div
                   className={`text-xs font-bold font-mono ${
-                    khataBalance > 0 ? 'text-rose-600' : 'text-emerald-700'
+                    khataBalance > 0 ? "text-rose-600" : "text-emerald-700"
                   }`}
                 >
                   Rs. {khataBalance.toLocaleString()}
@@ -99,7 +116,7 @@ export default function LedgerCustomerProfileCard({ customer, currentBalance, on
                 <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full ${
-                      khataPercent > 80 ? 'bg-rose-500' : 'bg-emerald-500'
+                      khataPercent > 80 ? "bg-rose-500" : "bg-emerald-500"
                     }`}
                     style={{ width: `${khataPercent}%` }}
                   />

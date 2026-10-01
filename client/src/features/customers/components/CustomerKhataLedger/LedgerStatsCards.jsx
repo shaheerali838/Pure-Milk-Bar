@@ -5,29 +5,32 @@ import { Card, CardContent } from '@/components/ui/card';
 export default function LedgerStatsCards({
   openingBalance = 0,
   openingDate = '',
+  isAdvanceOpening = false,
   totalCharged = 0,
   chargedCount = 0,
   totalPaid = 0,
   paidCount = 0,
   currentBalance = 0,
+  remainingAdvance = 0,
 }) {
   const isCleared = currentBalance <= 0;
+  const hasAdvance = remainingAdvance > 0 && currentBalance <= 0;
 
   const statCards = [
     {
-      label: 'Opening Balance',
+      label: isAdvanceOpening ? 'Opening Advance Deposit' : 'Opening Balance',
       value: `PKR ${Number(openingBalance || 0).toLocaleString()}`,
       sub: openingDate ? `Dated: ${openingDate}` : 'Period start',
       icon: BookOpen,
-      iconColor: 'text-slate-600',
-      iconBg: 'bg-slate-100',
-      badge: 'Opening',
-      badgeClass: 'bg-slate-100 text-slate-700 border-slate-200/60',
+      iconColor: isAdvanceOpening ? 'text-emerald-600' : 'text-slate-600',
+      iconBg: isAdvanceOpening ? 'bg-emerald-50' : 'bg-slate-100',
+      badge: isAdvanceOpening ? 'Advance Deposit' : 'Opening Dues',
+      badgeClass: isAdvanceOpening ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : 'bg-slate-100 text-slate-700 border-slate-200/60',
     },
     {
-      label: 'Total Debits',
+      label: 'Total Debits (Purchases)',
       value: `PKR ${Number(totalCharged || 0).toLocaleString()}`,
-      sub: `${chargedCount} orders / debits`,
+      sub: `${chargedCount} orders / purchases`,
       icon: TrendingUp,
       iconColor: 'text-rose-600',
       iconBg: 'bg-rose-50',
@@ -35,9 +38,9 @@ export default function LedgerStatsCards({
       badgeClass: 'bg-rose-50 text-rose-700 border-rose-200/60',
     },
     {
-      label: 'Total Credits',
+      label: 'Total Credits (Payments)',
       value: `PKR ${Number(totalPaid || 0).toLocaleString()}`,
-      sub: `${paidCount} payments received`,
+      sub: `${paidCount} deposits / payments`,
       icon: TrendingDown,
       iconColor: 'text-emerald-600',
       iconBg: 'bg-emerald-50',
@@ -45,13 +48,13 @@ export default function LedgerStatsCards({
       badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
     },
     {
-      label: currentBalance > 0 ? 'Current Khata Due' : 'Cleared Balance',
-      value: `PKR ${Number(currentBalance || 0).toLocaleString()}`,
-      sub: isCleared ? 'Dues fully cleared' : 'Outstanding recovery',
+      label: hasAdvance ? 'Advance Credit Remaining' : currentBalance > 0 ? 'Current Balance Due' : 'Cleared Balance',
+      value: `PKR ${Number(hasAdvance ? remainingAdvance : currentBalance).toLocaleString()}`,
+      sub: hasAdvance ? 'Shopping deducted from advance' : isCleared ? 'Dues fully cleared' : 'Outstanding recovery',
       icon: isCleared ? CheckCircle2 : AlertCircle,
       iconColor: isCleared ? 'text-emerald-600' : 'text-rose-600',
       iconBg: isCleared ? 'bg-emerald-50' : 'bg-rose-50',
-      badge: isCleared ? 'Cleared' : 'Due Baqi',
+      badge: hasAdvance ? 'Advance Balance' : isCleared ? 'Cleared' : 'Balance Due',
       badgeClass: isCleared
         ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
         : 'bg-rose-50 text-rose-700 border-rose-200/60',

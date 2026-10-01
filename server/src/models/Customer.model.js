@@ -45,6 +45,18 @@ const customerSchema = new Schema(
       default: 0,
       min: 0,
     },
+    openingBalance: {
+      type: Number,
+      default: 0,
+    },
+    openingPaymentMethod: {
+      type: String,
+      default: 'KHATA_DEBIT',
+    },
+    khataBalance: {
+      type: Number,
+      default: 0,
+    },
     currentBalance: {
       type: Number,
       default: 0,

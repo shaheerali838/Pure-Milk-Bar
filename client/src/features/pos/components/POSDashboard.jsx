@@ -8,15 +8,18 @@ import {
   Check,
   PackageX,
   AlertCircle,
+  Truck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePOSContext } from '@/context/POSContext';
+import { useDeliveryContext } from '@/context/DeliveryContext';
 import POSCardOverflow from './POSCardOverflow';
 import POSSale from './POSSale';
 import POSReceiptModal from './POSReceiptModal';
 import ProductDetailModal from '@/features/inventory/components/ProductDetailModal';
 import POSSalesSourceDetail from './POSSalesSourceDetail';
 import POSWalkinHistoryModal from './POSWalkinHistoryModal';
+import POSDoorstepOrdersModal from './POSDoorstepOrdersModal';
 
 export default function POSDashboard() {
   const {
@@ -29,11 +32,17 @@ export default function POSDashboard() {
     inventoryMetrics,
   } = usePOSContext();
 
+  const { deliveries = [] } = useDeliveryContext();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   // Walk-in history modal state
   const [isWalkinHistoryOpen, setIsWalkinHistoryOpen] = useState(false);
+
+  // Doorstep orders modal state & pending count
+  const [isDoorstepOrdersOpen, setIsDoorstepOrdersOpen] = useState(false);
+  const pendingDeliveriesCount = deliveries.filter((d) => d.status === 'PENDING').length;
 
   // Product detail view state
   const [productForDetail, setProductForDetail] = useState(null);
@@ -189,13 +198,37 @@ export default function POSDashboard() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Doorstep Delivery Orders Button with Live Pending Blink */}
+          <button
+            type="button"
+            onClick={() => setIsDoorstepOrdersOpen(true)}
+            className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer ${
+              pendingDeliveriesCount > 0
+                ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 border border-amber-400 ring-2 ring-amber-400/40 animate-pulse shadow-amber-200'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+            }`}
+          >
+            <Truck className="w-3.5 h-3.5 shrink-0" />
+            <span>Doorstep Orders</span>
+            {pendingDeliveriesCount > 0 ? (
+              <span className="flex items-center gap-1 bg-slate-950 text-white px-2 py-0.2 rounded-full text-[10px] font-black tracking-tight">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                {pendingDeliveriesCount} Pending
+              </span>
+            ) : (
+              <span className="bg-slate-200 text-slate-600 px-1.5 py-0.2 rounded-full text-[10px] font-bold">
+                0
+              </span>
+            )}
+          </button>
+
           <button
             type="button"
             onClick={() => setIsWalkinHistoryOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300 transition shadow-2xs cursor-pointer"
           >
             <span>🥛</span>
-            <span>Walk-in History (دودھ کسٹمرز)</span>
+            <span>Walk-in History</span>
           </button>
 
           {cart.length > 0 && (
@@ -435,6 +468,10 @@ export default function POSDashboard() {
       <POSWalkinHistoryModal
         isOpen={isWalkinHistoryOpen}
         onClose={() => setIsWalkinHistoryOpen(false)}
+      />
+      <POSDoorstepOrdersModal
+        isOpen={isDoorstepOrdersOpen}
+        onClose={() => setIsDoorstepOrdersOpen(false)}
       />
     </div>
   );

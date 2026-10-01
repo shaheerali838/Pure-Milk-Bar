@@ -18,12 +18,15 @@ export default function POSCustomerKhataSection() {
   } = usePOSContext();
 
   const currentKhataBal = Number(activeCustomer?.khataBalance || 0);
+  const creditLimit = Number(activeCustomer?.creditLimit || 0);
   const projectedCustomerBalance =
     khataPaymentOption === 'khata'
       ? currentKhataBal + netPayable
       : khataPaymentOption === 'cash'
       ? currentKhataBal
       : currentKhataBal + Math.max(0, netPayable - (parseFloat(partialPaidAmount) || 0));
+
+  const isLimitExceeded = creditLimit > 0 && (currentKhataBal >= creditLimit || projectedCustomerBalance > creditLimit);
 
   return (
     <div className="space-y-3 animate-in fade-in duration-150 text-xs">
@@ -40,7 +43,7 @@ export default function POSCustomerKhataSection() {
             <option value="">— Choose Customer Account —</option>
             {registeredCustomers.map((cust) => (
               <option key={cust.id} value={cust.id}>
-                {cust.name} ({cust.phone}) — {cust.area || 'Model Town'} (Khata: Rs. {(cust.khataBalance || 0).toLocaleString()})
+                {cust.name} ({cust.phone}) — {cust.area || 'Model Town'} (Khata: Rs. {(cust.khataBalance || 0).toLocaleString()} / Limit: Rs. {(cust.creditLimit || 10000).toLocaleString()})
               </option>
             ))}
           </select>
@@ -50,6 +53,26 @@ export default function POSCustomerKhataSection() {
 
       {activeCustomer ? (
         <div className="space-y-2.5">
+          {/* Credit Limit Exceeded Alert Notification */}
+          {isLimitExceeded && (
+            <div className="p-2.5 bg-rose-50 border-2 border-rose-300 rounded-xl flex items-start gap-2 text-rose-900 text-xs animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+              <div>
+                <p className="font-bold text-rose-950 flex items-center gap-1">
+                  <span>⚠️ Credit Limit Exceeded Notice!</span>
+                </p>
+                <p className="text-[11px] text-rose-800 mt-0.5">
+                  Customer credit limit is <span className="font-black font-mono">PKR {creditLimit.toLocaleString()}</span>. 
+                  {currentKhataBal >= creditLimit ? (
+                    <> Dues already reached <span className="font-black font-mono text-rose-950">PKR {currentKhataBal.toLocaleString()}</span>.</>
+                  ) : (
+                    <> This order will raise balance to <span className="font-black font-mono text-rose-950">PKR {projectedCustomerBalance.toLocaleString()}</span>.</>
+                  )}
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-1.5">
             <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-center">
               <span className="text-[9px] font-bold text-rose-700 uppercase block">Current Due</span>

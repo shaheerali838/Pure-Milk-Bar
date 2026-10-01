@@ -186,8 +186,8 @@ export default function POSWalkinHistoryModal({ isOpen, onClose }) {
           {/* Date Filter Tabs */}
           <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
             {[
-              { id: 'today', label: 'Today (آج)' },
-              { id: 'yesterday', label: 'Yesterday (کل)' },
+              { id: 'today', label: 'Today' },
+              { id: 'yesterday', label: 'Yesterday' },
               { id: 'week', label: 'Last 7 Days' },
               { id: 'custom', label: 'Custom Date' },
               { id: 'all', label: 'All History' },
@@ -240,7 +240,7 @@ export default function POSWalkinHistoryModal({ isOpen, onClose }) {
             {/* Total Milk Liters Sold */}
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-3.5 shadow-2xs">
               <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 block flex items-center gap-1">
-                <span>🥛</span> Total Milk Sold (دودھ)
+                <span>🥛</span> Total Milk Sold
               </span>
               <div className="text-2xl font-black font-mono text-blue-950 mt-1">
                 {stats.totalMilkLiters} <span className="text-sm font-bold text-blue-700">Liters</span>

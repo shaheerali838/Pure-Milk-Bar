@@ -34,7 +34,7 @@ export default function LandingNavbar() {
               Help Center
             </a>
             <span className="hover:text-white transition-colors flex items-center gap-1 font-medium text-[9px]">
-              <Globe className="w-2.5 h-2.5" /> English / اردو
+              <Globe className="w-2.5 h-2.5" /> English
             </span>
           </div>
         </div>

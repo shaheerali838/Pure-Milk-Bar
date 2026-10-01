@@ -36,10 +36,10 @@ export default function ProductStockFlowTable({
             </h2>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            <span className="font-semibold text-emerald-700 dark:text-emerald-400">Kal se kya bacha</span> →{' '}
-            <span className="font-semibold text-blue-700 dark:text-blue-400">Aj kya bana/aaya</span> →{' '}
-            <span className="font-semibold text-indigo-700 dark:text-indigo-400">Aj kya bika</span> →{' '}
-            <span className="font-semibold text-slate-800 dark:text-slate-200">Abhi kitna bacha</span>
+            <span className="font-semibold text-emerald-700 dark:text-emerald-400">Opening Stock</span> →{' '}
+            <span className="font-semibold text-blue-700 dark:text-blue-400">Produced / Added</span> →{' '}
+            <span className="font-semibold text-indigo-700 dark:text-indigo-400">Total Sold</span> →{' '}
+            <span className="font-semibold text-slate-800 dark:text-slate-200">Expected Closing</span>
           </p>
         </div>
 
@@ -55,16 +55,16 @@ export default function ProductStockFlowTable({
           <thead>
             <tr className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-semibold text-xs uppercase tracking-wider">
               <th className="py-3 px-4">Product</th>
-              <th className="py-3 px-3 text-right">Kal se bacha<br/><span className="text-[10px] font-normal text-slate-400">Opening</span></th>
-              <th className="py-3 px-3 text-right">Aj bana / aaya<br/><span className="text-[10px] font-normal text-slate-400">Produced/Intake</span></th>
-              <th className="py-3 px-3 text-right">Aj bika<br/><span className="text-[10px] font-normal text-slate-400">Sold (Counter+Del)</span></th>
-              <th className="py-3 px-3 text-right">Waste<br/><span className="text-[10px] font-normal text-slate-400">Spoiled/Lost</span></th>
+              <th className="py-3 px-3 text-right">Opening<br/><span className="text-[10px] font-normal text-slate-400">Start Stock</span></th>
+              <th className="py-3 px-3 text-right">Produced / Added<br/><span className="text-[10px] font-normal text-slate-400">Farm + Supplier</span></th>
+              <th className="py-3 px-3 text-right">Total Sold<br/><span className="text-[10px] font-normal text-slate-400">Counter + Delivery</span></th>
+              <th className="py-3 px-3 text-right">Wastage<br/><span className="text-[10px] font-normal text-slate-400">Loss / Spoiled</span></th>
               <th className="py-3 px-3 text-right bg-emerald-50/50 dark:bg-emerald-950/20 font-bold text-emerald-900 dark:text-emerald-300">
-                Abhi bacha<br/><span className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400">Expected Closing</span>
+                Closing Stock<br/><span className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400">Expected</span>
               </th>
               {!isClosed && (
                 <th className="py-3 px-4 text-center">
-                  Actual Count<br/><span className="text-[10px] font-normal text-slate-400">Physical Check</span>
+                  Physical Count<br/><span className="text-[10px] font-normal text-slate-400">Actual Check</span>
                 </th>
               )}
             </tr>
@@ -106,15 +106,15 @@ export default function ProductStockFlowTable({
                     </td>
 
                     <td className="py-3 px-3 text-right font-medium text-blue-600 dark:text-blue-400">
-                      +{formatQty(item.produced, item.unit)}
+                      {formatQty(item.produced, item.unit)}
                     </td>
 
                     <td className="py-3 px-3 text-right font-medium text-indigo-600 dark:text-indigo-400">
-                      -{formatQty(item.sold, item.unit)}
+                      {formatQty(item.sold, item.unit)}
                     </td>
 
                     <td className="py-3 px-3 text-right font-medium text-rose-500 dark:text-rose-400">
-                      {item.wasted > 0 ? `-${formatQty(item.wasted, item.unit)}` : '0'}
+                      {item.wasted > 0 ? formatQty(item.wasted, item.unit) : '0'}
                     </td>
 
                     <td className="py-3 px-3 text-right font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20">

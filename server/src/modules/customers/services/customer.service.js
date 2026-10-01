@@ -55,15 +55,17 @@ export const createCustomerService = async (customerData) => {
   }
 
   const openingBal = Math.max(0, Number(customerData.openingBalance || 0));
-  const openingMethod = String(customerData.openingPaymentMethod || 'CASH').toUpperCase();
+  const openingMethod = String(customerData.openingPaymentMethod || 'CASH_ADVANCE').toUpperCase();
+  const isAdvanceDeposit = openingMethod.includes('ADVANCE') || openingMethod === 'CASH' || openingMethod === 'ONLINE';
 
   const newCustomer = await Customer.create({
     ...customerData,
     code: customerCode,
     image: customerImageUrl,
     openingBalance: openingBal,
-    currentBalance: openingBal,
-    khataBalance: openingBal,
+    openingPaymentMethod: openingMethod,
+    currentBalance: isAdvanceDeposit ? 0 : openingBal,
+    khataBalance: isAdvanceDeposit ? 0 : openingBal,
   });
 
   if (openingBal > 0) {
@@ -72,17 +74,19 @@ export const createCustomerService = async (customerData) => {
         customerId: newCustomer._id,
         date: new Date(),
         voucherNumber: `KV-OP-${customerCode}`,
-        transactionType: 'DEBIT',
-        description: `Customer Account Opening Balance (${openingMethod})`,
-        debitAmount: openingBal,
-        creditAmount: 0,
-        runningBalance: openingBal,
-        paymentMethod: openingMethod,
+        transactionType: isAdvanceDeposit ? 'CREDIT' : 'DEBIT',
+        description: isAdvanceDeposit
+          ? `Customer Account Initial Advance Deposit (${openingMethod})`
+          : `Customer Account Opening Balance (Previous Dues)`,
+        debitAmount: isAdvanceDeposit ? 0 : openingBal,
+        creditAmount: isAdvanceDeposit ? openingBal : 0,
+        runningBalance: isAdvanceDeposit ? 0 : openingBal,
+        paymentMethod: isAdvanceDeposit ? (openingMethod.includes('ONLINE') ? 'ONLINE' : 'CASH') : 'Opening Balance',
         referenceTransactionId: `OP-${customerCode}`,
         orderTotal: openingBal,
-        paidAmount: openingMethod === 'CASH' || openingMethod === 'CARD' || openingMethod === 'ONLINE' ? openingBal : 0,
-        remainingAmount: openingBal,
-        fulfillmentType: 'Opening Balance',
+        paidAmount: isAdvanceDeposit ? openingBal : 0,
+        remainingAmount: isAdvanceDeposit ? 0 : openingBal,
+        fulfillmentType: isAdvanceDeposit ? 'Advance Deposit' : 'Opening Balance',
       });
     } catch (err) {
       console.warn('Failed to auto-create opening KhataEntry:', err);
@@ -125,13 +129,52 @@ export const getAllCustomersService = async (queryParams) => {
   const sortDirection = sortOrder === 'asc' ? 1 : -1;
   const sortOption = { [sortBy]: sortDirection };
 
-  const [customers, total] = await Promise.all([
+  const [rawCustomers, total] = await Promise.all([
     Customer.find(filter)
       .sort(sortOption)
       .skip(skip)
       .limit(limitNum),
     Customer.countDocuments(filter),
   ]);
+
+  const customers = await Promise.all(
+    rawCustomers.map(async (c) => {
+      const totalsAggregation = await KhataEntry.aggregate([
+        { $match: { customerId: c._id } },
+        {
+          $group: {
+            _id: null,
+            totalDebit: { $sum: '$debitAmount' },
+            totalCredit: { $sum: '$creditAmount' },
+          },
+        },
+      ]);
+      const totals = totalsAggregation[0] || { totalDebit: 0, totalCredit: 0 };
+      const isAdvance = String(c.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') || c.openingPaymentMethod === 'CASH' || c.openingPaymentMethod === 'ONLINE';
+
+      const hasOpeningEntry = await KhataEntry.exists({
+        customerId: c._id,
+        $or: [{ voucherNumber: { $regex: /^KV-OP-/i } }, { referenceTransactionId: { $regex: /^OP-/i } }],
+      });
+
+      let calculatedBalance = 0;
+      if (hasOpeningEntry) {
+        calculatedBalance = Math.max(0, totals.totalDebit - totals.totalCredit);
+      } else {
+        const openingBal = Number(c.openingBalance || 0);
+        const initialDebit = isAdvance ? 0 : openingBal;
+        const initialCredit = isAdvance ? openingBal : 0;
+        calculatedBalance = Math.max(0, initialDebit + totals.totalDebit - (initialCredit + totals.totalCredit));
+      }
+
+      if (c.currentBalance !== calculatedBalance || c.khataBalance !== calculatedBalance) {
+        c.currentBalance = calculatedBalance;
+        c.khataBalance = calculatedBalance;
+        await Customer.findByIdAndUpdate(c._id, { currentBalance: calculatedBalance, khataBalance: calculatedBalance });
+      }
+      return c;
+    })
+  );
 
   const totalPages = Math.ceil(total / limitNum);
 

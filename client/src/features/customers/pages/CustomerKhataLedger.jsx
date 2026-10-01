@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { AlertTriangle, CreditCard, ShieldAlert } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useCustomerContext } from '../../../context/CustomerContext';
 import { useLedgerContext } from '../../../context/LedgerContext';
 import { exportTableToCSV } from '@/utils/csvExport';
@@ -17,18 +19,17 @@ import CustomerDetailsView from '../components/Customer_&_Accounts/CustomerDetai
 import EditCustomerModal from '../components/Customer_&_Accounts/EditCustomerModal';
 
 export default function CustomerKhataLedger() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { customers } = useCustomerContext();
   const { getLedgerForCustomer, fetchCustomerLedger, settleKhata, ledgers } = useLedgerContext();
 
   const urlCustomerId = searchParams.get('customerId');
   const [selectedCustomerId, setSelectedCustomerId] = useState(urlCustomerId || '');
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  });
+  const [selectedMonth, setSelectedMonth] = useState('');
 
   const [currentSubView, setCurrentSubView] = useState('ledger'); // 'ledger' | 'buy' | 'addDebit' | 'recordPayment' | 'viewTransaction' | 'viewCustomer' | 'howToFinish'
+  const [prefillPayAmount, setPrefillPayAmount] = useState(null);
   const [viewTransaction, setViewTransaction] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -59,39 +60,60 @@ export default function CustomerKhataLedger() {
   const rawEntries = selectedCustomerId ? (getLedgerForCustomer(selectedCustomerId) || []) : [];
 
   // Filter entries if month matches or show all
-  const filteredEntries = rawEntries.filter((entry) => {
-    if (!selectedMonth || !entry.date) return true;
-    const dStr = typeof entry.date === 'string' ? entry.date : '';
-    return dStr.startsWith(selectedMonth);
-  });
+  const activeEntries = (selectedMonth && selectedMonth !== 'all')
+    ? rawEntries.filter((entry) => {
+        const dStr = typeof entry.date === 'string' ? entry.date : '';
+        return dStr.startsWith(selectedMonth);
+      })
+    : rawEntries;
 
-  const activeEntries = (filteredEntries.length > 0 || !selectedMonth) ? filteredEntries : rawEntries;
-
-  // Accurately compute Opening Balance (balance prior to earliest transaction in active list)
+  // Accurately compute Opening Balance & Advance Deposit from all-time history
   let openingBalance = 0;
-  const openingEntry = activeEntries.find((e) => e.type === 'OPENING');
+  const openingEntry = rawEntries.find((e) => e.isOpening || e.type === 'OPENING');
+  const isAdvanceOpening =
+    openingEntry?.credit > 0 ||
+    String(currentCustomer?.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') ||
+    currentCustomer?.openingPaymentMethod === 'CASH' ||
+    currentCustomer?.openingPaymentMethod === 'ONLINE' ||
+    /advance/i.test(openingEntry?.description || '') ||
+    /advance/i.test(openingEntry?.fulfillmentType || '');
+
   if (openingEntry) {
-    openingBalance = Number(openingEntry.runningBalance ?? openingEntry.debit ?? 0);
-  } else if (activeEntries.length > 0) {
-    const earliest = activeEntries[activeEntries.length - 1];
-    openingBalance = (Number(earliest.runningBalance) || 0) - (Number(earliest.debit) || 0) + (Number(earliest.credit) || 0);
-  } else if (currentCustomer) {
-    openingBalance = Number(currentCustomer.openingBalance ?? currentCustomer.khataBalance ?? currentCustomer.currentBalance ?? 0);
+    const rawVal = Number(
+      openingEntry.credit ||
+      openingEntry.debit ||
+      openingEntry.orderTotal ||
+      openingEntry.paidAmount ||
+      openingEntry.remainingAmount ||
+      currentCustomer?.openingBalance ||
+      0
+    );
+    openingBalance = rawVal;
+  } else if (currentCustomer && Number(currentCustomer.openingBalance || 0) > 0) {
+    openingBalance = Number(currentCustomer.openingBalance);
   }
 
-  const openingDate = openingEntry ? openingEntry.date : (activeEntries.length > 0 ? activeEntries[activeEntries.length - 1].date : '');
+  const openingDate = openingEntry
+    ? openingEntry.date
+    : currentCustomer?.createdAt
+    ? String(currentCustomer.createdAt).slice(0, 10)
+    : '';
 
-  const debitEntries = activeEntries.filter((e) => Number(e.debit) > 0);
-  const totalCharged = debitEntries.reduce((acc, e) => acc + (Number(e.debit) || 0), 0);
-  const chargedCount = debitEntries.length;
+  const purchaseEntries = rawEntries.filter((e) => !e.isOpening && e.type !== 'OPENING' && !/opening/i.test(e.description || ''));
+  const totalCharged = purchaseEntries.reduce((acc, e) => {
+    return acc + Number(e.debit || e.orderTotal || (e.items?.length > 0 ? e.items.reduce((s, it) => s + Number(it.subtotal || 0), 0) : 0));
+  }, 0);
+  const chargedCount = purchaseEntries.length;
 
-  const creditEntries = activeEntries.filter((e) => Number(e.credit) > 0);
-  const totalPaid = creditEntries.reduce((acc, e) => acc + (Number(e.credit) || 0), 0);
-  const paidCount = creditEntries.length;
+  const paymentEntries = rawEntries.filter((e) => !e.isOpening && e.type !== 'OPENING' && !/opening/i.test(e.description || '') && Number(e.credit) > 0);
+  const totalPayments = paymentEntries.reduce((acc, e) => acc + (Number(e.credit) || 0), 0);
+  const paidCount = paymentEntries.length;
 
-  const closingBalance = activeEntries.length > 0
-    ? Number(activeEntries[0].runningBalance || 0)
-    : (currentCustomer !== null ? Number(currentCustomer.currentBalance ?? currentCustomer.khataBalance ?? 0) : 0);
+  const effectiveDebits = totalCharged + (!isAdvanceOpening ? openingBalance : 0);
+  const totalPaid = totalPayments + (isAdvanceOpening ? openingBalance : 0);
+
+  const closingBalance = Math.max(0, effectiveDebits - totalPaid);
+  const remainingAdvance = Math.max(0, totalPaid - effectiveDebits);
 
   const handleSettleKhata = () => {
     if (!selectedCustomerId || !currentCustomer) return;
@@ -160,14 +182,23 @@ export default function CustomerKhataLedger() {
   }
 
   if (currentSubView === 'recordPayment' && currentCustomer) {
-    return <RecordPaymentView customer={currentCustomer} onBack={() => setCurrentSubView('ledger')} />;
+    return (
+      <RecordPaymentView
+        customer={{ ...currentCustomer, khataBalance: closingBalance }}
+        prefillAmount={prefillPayAmount}
+        onBack={() => {
+          setPrefillPayAmount(null);
+          setCurrentSubView('ledger');
+        }}
+      />
+    );
   }
 
   if (currentSubView === 'viewTransaction' && viewTransaction) {
     return (
       <ViewTransactionView
         transaction={viewTransaction}
-        customer={currentCustomer}
+        customer={currentCustomer ? { ...currentCustomer, currentBalance: closingBalance } : null}
         onBack={() => {
           setViewTransaction(null);
           setCurrentSubView('ledger');
@@ -192,16 +223,58 @@ export default function CustomerKhataLedger() {
         onExportCSV={handleExportCSV}
       />
 
+      {/* Credit Limit Notification Alert Banner */}
+      {currentCustomer && Number(currentCustomer.creditLimit || 0) > 0 && closingBalance >= Number(currentCustomer.creditLimit) && (
+        <div className="p-3 bg-gradient-to-r from-rose-50 via-rose-100/70 to-rose-50 border-2 border-rose-400/90 rounded-2xl shadow-xs flex flex-wrap items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <AlertTriangle className="w-5 h-5 animate-pulse text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-xs font-black text-rose-950 uppercase tracking-tight font-display flex items-center gap-1.5">
+                  <span>Credit Limit Reached / Exceeded!</span>
+                </h4>
+                <span className="px-2 py-0.5 rounded-md text-[9px] font-black bg-rose-200 text-rose-900 uppercase tracking-wide border border-rose-300">
+                  Limit Notice
+                </span>
+              </div>
+              <p className="text-xs text-rose-800 mt-0.5 leading-tight">
+                <span className="font-bold">{currentCustomer.name}</span> has reached or exceeded their assigned credit limit of{' '}
+                <span className="font-black font-mono">PKR {Number(currentCustomer.creditLimit).toLocaleString()}</span>. Current outstanding dues are{' '}
+                <span className="font-black font-mono text-rose-950 underline">PKR {Number(closingBalance).toLocaleString()}</span>.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setCurrentSubView('recordPayment')}
+              className="h-8 px-3.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-xs cursor-pointer gap-1.5"
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              <span>Collect Dues / Payment</span>
+            </Button>
+          </div>
+        </div>
+      )}
+
       <LedgerCustomerSelector
         selectedCustomerId={selectedCustomerId}
-        onSelectCustomer={handleSelectCustomer}
         selectedMonth={selectedMonth}
         onChangeMonth={(m) => setSelectedMonth(m)}
-        onViewCustomerDetails={() => setCurrentSubView('viewCustomer')}
         onOpenBuyModal={() => setCurrentSubView('buy')}
         onOpenAddDebit={() => setCurrentSubView('addDebit')}
         onOpenRecordPayment={() => setCurrentSubView('recordPayment')}
         onSettleKhata={handleSettleKhata}
+        onBack={() => {
+          if (window.history.length > 1) {
+            navigate(-1);
+          } else {
+            navigate('/customer');
+          }
+        }}
       />
 
       {currentCustomer && (
@@ -215,11 +288,13 @@ export default function CustomerKhataLedger() {
       <LedgerStatsCards
         openingBalance={openingBalance}
         openingDate={openingDate}
+        isAdvanceOpening={isAdvanceOpening}
         totalCharged={totalCharged}
         chargedCount={chargedCount}
         totalPaid={totalPaid}
         paidCount={paidCount}
         currentBalance={closingBalance}
+        remainingAdvance={remainingAdvance}
       />
 
       <LedgerTable
@@ -229,6 +304,10 @@ export default function CustomerKhataLedger() {
         totalPaid={totalPaid}
         closingBalance={closingBalance}
         onViewCustomerProfile={() => setCurrentSubView('viewCustomer')}
+        onPayBalance={() => {
+          setPrefillPayAmount(null);
+          setCurrentSubView('recordPayment');
+        }}
         onViewTransaction={(txn) => {
           setViewTransaction(txn);
           setCurrentSubView('viewTransaction');
