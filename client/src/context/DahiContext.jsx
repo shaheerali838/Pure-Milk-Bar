@@ -87,7 +87,7 @@ export function DahiProvider({ children }) {
   }, [fetchBatches]);
 
   // =========================================================================
-  // 1. LIVE SOURCING NUMBERS (Milking Logs + Herd Yield + Supplier Intakes)
+  // 1. LIVE SOURCING NUMBERS (Milking Logs + Supplier Intakes)
   // =========================================================================
   const realFarmYield = useMemo(() => {
     let logSum = 0;
@@ -95,20 +95,8 @@ export function DahiProvider({ children }) {
       logSum = milkingLogs.reduce((acc, log) => acc + (parseFloat(log.yieldLiters || log.yield) || 0), 0);
     }
 
-    let baselineSum = 0;
-    if (Array.isArray(animals) && animals.length > 0) {
-      baselineSum = animals.reduce((acc, a) => {
-        const totalDaily = parseFloat(a.totalDailyYield || 0);
-        if (totalDaily > 0) return acc + totalDaily;
-        const morning = parseFloat(a.morningYield || 0);
-        const evening = parseFloat(a.eveningYield || 0);
-        return acc + (morning + evening);
-      }, 0);
-    }
-
-    const resolved = logSum > 0 ? logSum : baselineSum;
-    return Number(resolved.toFixed(1));
-  }, [animals, milkingLogs]);
+    return Number(logSum.toFixed(1));
+  }, [milkingLogs]);
 
   // Real supplier procurement intake
   const realSupplierIntake = useMemo(() => {

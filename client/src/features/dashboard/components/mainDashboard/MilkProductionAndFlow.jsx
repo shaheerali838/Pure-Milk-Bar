@@ -110,10 +110,7 @@ export default function MilkProductionAndFlow() {
   }, [animals, milkingLogs, intakeLogs]);
 
   // 2. TODAY'S MILK FLOW STEP-BY-STEP CALCULATION
-  const totalFarmMilk = animals.reduce(
-    (sum, a) => sum + (parseFloat(a.totalDailyYield) || 0),
-    0
-  );
+  const totalFarmMilk = Number(inventoryMetrics.totalFarmYield) || 0;
   const totalProcured =
     intakeTotals.totalProcuredVolume !== undefined
       ? Number(intakeTotals.totalProcuredVolume)

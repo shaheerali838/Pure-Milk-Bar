@@ -30,7 +30,7 @@ export default function DashboardFooterSummary() {
   const invoicesCount = salesHistory.length;
 
   // 4. Total Milk Inflow
-  const farmLiters = animals.reduce((s, a) => s + (parseFloat(a.totalDailyYield) || 0), 0);
+  const farmLiters = Number(inventoryMetrics?.totalFarmYield) || 0;
   const procuredLiters =
     intakeTotals.totalProcuredVolume !== undefined
       ? Number(intakeTotals.totalProcuredVolume)

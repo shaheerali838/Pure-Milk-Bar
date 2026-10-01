@@ -43,7 +43,7 @@ export default function DahiProcessingHub() {
   }, 0) || (parseFloat(inventoryMetrics.totalDahi) || parseFloat(inventoryMetrics.dahiSold) || 0);
 
   // Source allocation (Farm vs Supplier)
-  const totalFarmMilk = animals.reduce((s, a) => s + (parseFloat(a.totalDailyYield) || 0), 0);
+  const totalFarmMilk = Number(inventoryMetrics.totalFarmYield) || 0;
   const totalProcured = Number(intakeTotals.totalProcuredVolume) || 0;
   const totalAvailable = totalFarmMilk + totalProcured;
 

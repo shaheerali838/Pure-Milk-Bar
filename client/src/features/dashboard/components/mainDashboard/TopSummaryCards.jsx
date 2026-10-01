@@ -27,12 +27,9 @@ export default function TopSummaryCards() {
   }
 
   // 1. Farm Milk Production
-  const totalFarmMilk = animals.reduce(
-    (sum, a) => sum + (parseFloat(a.totalDailyYield) || 0),
-    0
-  );
+  const totalFarmMilk = Number(inventoryMetrics.totalFarmYield) || 0;
   const milkingAnimalsCount = animals.filter(
-    (a) => a.lactationStatus === 'Milking' || parseFloat(a.totalDailyYield) > 0
+    (a) => a.lactationStatus === 'Milking'
   ).length;
 
   // 2. Purchased Supplier Milk

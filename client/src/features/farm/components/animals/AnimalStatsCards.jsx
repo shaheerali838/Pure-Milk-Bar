@@ -9,7 +9,7 @@ import { KpiGridSkeleton } from "@/components/ui/skeleton";
 
 export default function AnimalStatsCards() {
   const navigate = useNavigate();
-  const { animals = [], isLoading } = useAnimalContext();
+  const { animals = [], milkingLogs = [], isLoading } = useAnimalContext();
   const { staffList = [] } = useStaffContext();
 
   if (isLoading && animals.length === 0) {
@@ -23,12 +23,19 @@ export default function AnimalStatsCards() {
   const milkingCount = animals.filter((a) => a.lactationStatus === "Milking").length;
   const nonMilkingCount = totalAnimals - milkingCount;
 
-  const totalDailyYield = animals
-    .reduce((sum, a) => {
-      const val = parseFloat(a.totalDailyYield) || 0;
-      return sum + val;
-    }, 0)
-    .toFixed(1);
+  const now = new Date();
+  const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const isoTodayStr = now.toISOString().split("T")[0];
+  const todayLogs = (milkingLogs || []).filter((l) => {
+    if (!l.date) return false;
+    const d = l.date.split("T")[0];
+    return d === localTodayStr || d === isoTodayStr;
+  });
+
+  const totalDailyYield = (todayLogs.reduce((sum, l) => {
+    const val = parseFloat(l.yieldLiters || l.yield) || 0;
+    return sum + val;
+  }, 0)).toFixed(1);
 
   // Dynamic Staff Stats from StaffContext
   const totalStaff = staffList.length;
