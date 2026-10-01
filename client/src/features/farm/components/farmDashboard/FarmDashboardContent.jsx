@@ -53,18 +53,13 @@ export default function FarmDashboardContent() {
     if (todayLogs.length > 0) {
       return todayLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
     }
-    return animals.reduce((sum, animal) => {
-      const morning = parseYield(animal.morningYield);
-      const evening = parseYield(animal.eveningYield);
-      const total = morning + evening > 0 ? morning + evening : parseYield(animal.totalDailyYield);
-      return sum + total;
-    }, 0);
-  }, [animals, milkingLogs]);
+    return 0;
+  }, [milkingLogs]);
 
   // Available live farm stock in cold room / chiller
   const availableFarmStock = useMemo(() => {
     const rawPos = parseFloat(posCtx?.inventoryMetrics?.farmMilkStock ?? posCtx?.inventoryMetrics?.rawFarmMilkStock);
-    if (!isNaN(rawPos) && rawPos > 0) {
+    if (!isNaN(rawPos)) {
       return rawPos;
     }
     return totalFarmYield;

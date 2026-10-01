@@ -89,15 +89,90 @@ class AnimalService {
     // Auto-seed default farm animals if database collection is empty
     if (total === 0 && !search && Object.keys(filter).length === 0) {
       const defaultHerd = [
-        { tagNumber: 'COW-01', name: 'Cow 01', type: 'COW', species: 'Cow (Sahiwal)', breed: 'Sahiwal', lactationStatus: 'Milking', lactationStage: 'EARLY', morningYield: 8.5, eveningYield: 7.0, expectedDailyYield: 15.5, healthStatus: 'HEALTHY' },
-        { tagNumber: 'COW-02', name: 'Cow 02', type: 'COW', species: 'Cow (Cholistani)', breed: 'Cholistani', lactationStatus: 'Milking', lactationStage: 'EARLY', morningYield: 7.5, eveningYield: 6.5, expectedDailyYield: 14.0, healthStatus: 'HEALTHY' },
-        { tagNumber: 'COW-03', name: 'Cow 03', type: 'COW', species: 'Cow (Red Sindhi)', breed: 'Red Sindhi', lactationStatus: 'Milking', lactationStage: 'MID', morningYield: 9.0, eveningYield: 8.0, expectedDailyYield: 17.0, healthStatus: 'HEALTHY' },
-        { tagNumber: 'BUF-01', name: 'Buffalo 01', type: 'BUFFALO', species: 'Buffalo (Nili Ravi)', breed: 'Nili Ravi', lactationStatus: 'Milking', lactationStage: 'EARLY', morningYield: 11.0, eveningYield: 9.5, expectedDailyYield: 20.5, healthStatus: 'HEALTHY' },
-        { tagNumber: 'BUF-02', name: 'Buffalo 02', type: 'BUFFALO', species: 'Buffalo (Kundi)', breed: 'Kundi', lactationStatus: 'Milking', lactationStage: 'MID', morningYield: 10.0, eveningYield: 8.5, expectedDailyYield: 18.5, healthStatus: 'HEALTHY' },
-        { tagNumber: 'BUF-03', name: 'Buffalo 03', type: 'BUFFALO', species: 'Buffalo (Nili Ravi)', breed: 'Nili Ravi', lactationStatus: 'Milking', lactationStage: 'LATE', morningYield: 8.0, eveningYield: 7.0, expectedDailyYield: 15.0, healthStatus: 'HEALTHY' },
+        {
+          tagNumber: "COW-01",
+          name: "Cow 01",
+          type: "COW",
+          species: "Cow (Sahiwal)",
+          breed: "Sahiwal",
+          lactationStatus: "Milking",
+          lactationStage: "EARLY",
+          morningYield: 0,
+          eveningYield: 0,
+          expectedDailyYield: 15.5,
+          healthStatus: "HEALTHY",
+        },
+        {
+          tagNumber: "COW-02",
+          name: "Cow 02",
+          type: "COW",
+          species: "Cow (Cholistani)",
+          breed: "Cholistani",
+          lactationStatus: "Milking",
+          lactationStage: "EARLY",
+          morningYield: 0,
+          eveningYield: 0,
+          expectedDailyYield: 14.0,
+          healthStatus: "HEALTHY",
+        },
+        {
+          tagNumber: "COW-03",
+          name: "Cow 03",
+          type: "COW",
+          species: "Cow (Red Sindhi)",
+          breed: "Red Sindhi",
+          lactationStatus: "Milking",
+          lactationStage: "MID",
+          morningYield: 0,
+          eveningYield: 0,
+          expectedDailyYield: 17.0,
+          healthStatus: "HEALTHY",
+        },
+        {
+          tagNumber: "BUF-01",
+          name: "Buffalo 01",
+          type: "BUFFALO",
+          species: "Buffalo (Nili Ravi)",
+          breed: "Nili Ravi",
+          lactationStatus: "Milking",
+          lactationStage: "EARLY",
+          morningYield: 0,
+          eveningYield: 0,
+          expectedDailyYield: 20.5,
+          healthStatus: "HEALTHY",
+        },
+        {
+          tagNumber: "BUF-02",
+          name: "Buffalo 02",
+          type: "BUFFALO",
+          species: "Buffalo (Kundi)",
+          breed: "Kundi",
+          lactationStatus: "Milking",
+          lactationStage: "MID",
+          morningYield: 0,
+          eveningYield: 0,
+          expectedDailyYield: 18.5,
+          healthStatus: "HEALTHY",
+        },
+        {
+          tagNumber: "BUF-03",
+          name: "Buffalo 03",
+          type: "BUFFALO",
+          species: "Buffalo (Nili Ravi)",
+          breed: "Nili Ravi",
+          lactationStatus: "Milking",
+          lactationStage: "LATE",
+          morningYield: 0,
+          eveningYield: 0,
+          expectedDailyYield: 15.0,
+          healthStatus: "HEALTHY",
+        },
       ];
       await Animal.insertMany(defaultHerd);
-      animals = await Animal.find({}).sort({ createdAt: -1 }).limit(limitNum).lean();
+      animals = await Animal.find({})
+        .sort({ createdAt: -1 })
+        .limit(limitNum)
+        .lean();
       total = defaultHerd.length;
     }
 

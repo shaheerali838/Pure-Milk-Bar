@@ -1149,25 +1149,10 @@ export function POSProvider({ children }) {
       });
     }
 
-    let baselineSum = 0;
-    let cowBaseline = 0;
-    let buffBaseline = 0;
-    if (Array.isArray(animals) && animals.length > 0) {
-      animals.forEach((a) => {
-        const isCow = (a.species || '').toLowerCase().includes('cow') || (a.tag && a.tag.startsWith('COW'));
-        const totalDaily = parseFloat(a.totalDailyYield || 0);
-        const morning = parseFloat(a.morningYield || 0);
-        const evening = parseFloat(a.eveningYield || 0);
-        const daily = totalDaily > 0 ? totalDaily : (morning + evening);
-        baselineSum += daily;
-        if (isCow) cowBaseline += daily;
-        else buffBaseline += daily;
-      });
-    }
-
-    const resolved = logSum > 0 ? logSum : baselineSum;
-    const resolvedCow = logSum > 0 ? cowLogs : cowBaseline;
-    const resolvedBuff = logSum > 0 ? buffLogs : buffBaseline;
+    // Strictly calculate from actual recorded Milking Logs
+    const resolved = logSum;
+    const resolvedCow = cowLogs;
+    const resolvedBuff = buffLogs;
 
     return {
       totalFarmMilk: Number(resolved.toFixed(1)),

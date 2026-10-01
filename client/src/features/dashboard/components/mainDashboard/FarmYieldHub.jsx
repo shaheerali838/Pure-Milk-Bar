@@ -7,19 +7,27 @@ import { Link, useNavigate } from "react-router-dom";
 
 export default function FarmYieldHub() {
   const navigate = useNavigate();
-  const { animals = [] } = useAnimalContext();
+  const { animals = [], milkingLogs = [] } = useAnimalContext();
   const { totals: expenseTotals = {} } = useExpense();
   const { products = [], inventoryMetrics = {} } = usePOSContext();
 
   // Milking animals count
   const milkingAnimals = animals.filter(
-    (a) => a.lactationStatus === "Milking" || parseFloat(a.totalDailyYield) > 0,
+    (a) => a.lactationStatus === "Milking",
   );
 
-  const totalFarmYield = animals.reduce(
-    (sum, a) => sum + (parseFloat(a.totalDailyYield) || 0),
-    0,
-  );
+  const now = new Date();
+  const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const isoTodayStr = now.toISOString().split("T")[0];
+  const todayLogs = (milkingLogs || []).filter((l) => {
+    if (!l.date) return false;
+    const d = l.date.split("T")[0];
+    return d === localTodayStr || d === isoTodayStr;
+  });
+
+  const totalFarmYield = todayLogs.length > 0
+    ? todayLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0)
+    : (Number(inventoryMetrics.totalFarmYield) || 0);
 
   // Valuation: Farm milk value @ retail milk rate
   const milkProduct = products.find(
