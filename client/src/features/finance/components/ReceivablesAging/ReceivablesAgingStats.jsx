@@ -1,6 +1,6 @@
 import React from 'react';
 import { CreditCard, Clock, AlertTriangle, AlertCircle } from 'lucide-react';
-import { useCustomerContext } from '../../../../context/CustomerContext';
+import { useCustomerContext, getCustomerDueBalance } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 
 function computeAging(entries, customerKhataBalance) {
@@ -47,17 +47,26 @@ function computeAging(entries, customerKhataBalance) {
 }
 
 export default function ReceivablesAgingStats() {
-  const { rawCustomers, totalKhataReceivable } = useCustomerContext();
-  const { getLedgerForCustomer } = useLedgerContext();
+  const { rawCustomers, customers, totalKhataReceivable } = useCustomerContext();
+  const { getLedgerForCustomer, getCustomerCalculatedStats, getAllCustomersAggregates } = useLedgerContext();
+
+  const customerList = (rawCustomers && rawCustomers.length > 0) ? rawCustomers : (customers || []);
+  const aggregates = getAllCustomersAggregates ? getAllCustomersAggregates() : null;
+  const effectiveTotalDue = (aggregates && aggregates.totalAllDue > 0)
+    ? aggregates.totalAllDue
+    : totalKhataReceivable;
 
   let total0_30 = 0;
   let total31_90 = 0;
   let total90Plus = 0;
 
-  (rawCustomers || []).forEach((c) => {
-    if (Number(c.khataBalance || 0) > 0) {
-      const entries = getLedgerForCustomer(c.id) || [];
-      const b = computeAging(entries, c.khataBalance);
+  customerList.forEach((c) => {
+    const custId = c._id || c.id;
+    const stats = getCustomerCalculatedStats ? getCustomerCalculatedStats(custId) : null;
+    const due = stats && stats.closingBalance !== undefined ? stats.closingBalance : getCustomerDueBalance(c);
+    if (due > 0) {
+      const entries = getLedgerForCustomer(custId) || [];
+      const b = computeAging(entries, due);
       total0_30 += b.d0_30;
       total31_90 += (b.d31_60 + b.d61_90);
       total90Plus += b.d90plus;
@@ -67,7 +76,7 @@ export default function ReceivablesAgingStats() {
   const statCards = [
     {
       label: "Total Receivable",
-      value: `Rs. ${totalKhataReceivable.toLocaleString()}`,
+      value: `Rs. ${Number(effectiveTotalDue).toLocaleString()}`,
       sub: "All outstanding accounts",
       icon: CreditCard,
       color: "#155dfc",

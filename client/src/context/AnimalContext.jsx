@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import farmService from '@/services/farmService';
+import farmService from '../services/farmService.js';
 
 const AnimalContext = createContext();
 

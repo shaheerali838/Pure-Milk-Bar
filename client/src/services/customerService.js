@@ -3,7 +3,7 @@ import api from './api';
 export const customerService = {
   // Get all customers with search, status, and pagination options
   getCustomers: async (params = {}) => {
-    const res = await api.get('/api/v1/customers', params, { fallback: [] });
+    const res = await api.get('/api/v1/customers', { limit: 1000, ...params }, { fallback: [] });
     return res.data?.customers || res.data || res.customers || (Array.isArray(res) ? res : []);
   },
 

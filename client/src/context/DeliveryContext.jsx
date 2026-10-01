@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import deliveryService from '@/services/deliveryService';
+import deliveryService from '../services/deliveryService.js';
 
 const DeliveryContext = createContext();
 

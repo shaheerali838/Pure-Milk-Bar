@@ -6,6 +6,8 @@ import {
   DollarSign,
   Search,
   Filter,
+  Fuel,
+  Plus,
 } from 'lucide-react';
 import { useCustomerContext } from '@/context/CustomerContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
@@ -24,8 +26,12 @@ import {
 import DeliveryFinanceStats from './DeliveryFinanceStats';
 import CustomerDeliveryBreakdownTable from './CustomerDeliveryBreakdownTable';
 import CustomerDropPointsDetailView from './CustomerDropPointsDetailView';
+import RiderPerformanceTable from './RiderPerformanceTable';
+import RiderPerformanceDetailView from './RiderPerformanceDetailView';
 import RiderSalaryPayrollTable from './RiderSalaryPayrollTable';
 import PaySalaryView from './PaySalaryView';
+import FuelExpensesDetailView from './FuelExpensesDetailView';
+import RiderSalariesDetailView from './RiderSalariesDetailView';
 
 export default function DeliveryFinance() {
   const { rawCustomers = [] } = useCustomerContext();
@@ -34,45 +40,53 @@ export default function DeliveryFinance() {
   const { fuelLogs = [] } = useFuelLogContext();
   const { salaries = [] } = useRiderSalaryContext();
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const currentMonthStr = todayStr.substring(0, 7); // 'YYYY-MM'
+  const now = new Date();
+  const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const todayUTC = now.toISOString().split('T')[0];
+  const currentMonthStr = todayLocal.substring(0, 7); // 'YYYY-MM'
 
-  // Time Range Filter State: 'today' | 'weekly' | 'monthly' | 'custom'
-  const [timeFilter, setTimeFilter] = useState('today');
-  const [customStartDate, setCustomStartDate] = useState(todayStr);
-  const [customEndDate, setCustomEndDate] = useState(todayStr);
+  // Time Range Filter State: 'today' | 'weekly' | 'monthly' | 'all' | 'custom'
+  const [timeFilter, setTimeFilter] = useState('all');
+  const [customStartDate, setCustomStartDate] = useState(todayLocal);
+  const [customEndDate, setCustomEndDate] = useState(todayLocal);
 
-  // Sub-tab inside Delivery Finance: 'customers' | 'payroll'
+  // Sub-tab inside Delivery Finance: 'customers' | 'riders' | 'payroll'
   const [subTab, setSubTab] = useState('customers');
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState('');
 
   // Sub-views state
-  const [currentView, setCurrentView] = useState('main'); // 'main' | 'customerDetail' | 'paySalary'
+  const [currentView, setCurrentView] = useState('main'); // 'main' | 'customerDetail' | 'riderDetail' | 'fuelDetail' | 'salariesDetail' | 'paySalary'
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedCustomerDeliveries, setSelectedCustomerDeliveries] = useState([]);
+  const [selectedRider, setSelectedRider] = useState(null);
+  const [selectedRiderDeliveries, setSelectedRiderDeliveries] = useState([]);
+  const [selectedRiderFuelLogs, setSelectedRiderFuelLogs] = useState([]);
   const [salaryPaymentState, setSalaryPaymentState] = useState(null);
 
   // Helper to check if a date string falls in the selected time range
   const isDateInTimeRange = (dateString) => {
+    if (timeFilter === 'all') return true;
     if (!dateString) return false;
-    const dateOnly = dateString.split('T')[0];
+    const dateOnly = typeof dateString === 'string' && dateString.includes('T')
+      ? dateString.split('T')[0]
+      : String(dateString).slice(0, 10);
 
     if (timeFilter === 'today') {
-      return dateOnly === todayStr;
+      return dateOnly === todayLocal || dateOnly === todayUTC;
     }
 
     if (timeFilter === 'weekly') {
       const targetDate = new Date(dateOnly);
-      const today = new Date(todayStr);
+      const today = new Date(todayLocal);
       const diffTime = today.getTime() - targetDate.getTime();
       const diffDays = diffTime / (1000 * 3600 * 24);
       return diffDays >= 0 && diffDays <= 7;
     }
 
     if (timeFilter === 'monthly') {
-      return dateOnly.startsWith(currentMonthStr);
+      return dateOnly.startsWith(currentMonthStr) || dateOnly.startsWith(todayUTC.substring(0, 7));
     }
 
     if (timeFilter === 'custom') {
@@ -83,8 +97,8 @@ export default function DeliveryFinance() {
   };
 
   // Filter deliveries and fuel logs by time range
-  const filteredDeliveries = deliveries.filter((d) => isDateInTimeRange(d.date));
-  const filteredFuelLogs = fuelLogs.filter((f) => isDateInTimeRange(f.date));
+  const filteredDeliveries = deliveries.filter((d) => isDateInTimeRange(d.date || d.createdAt));
+  const filteredFuelLogs = fuelLogs.filter((f) => isDateInTimeRange(f.date || f.createdAt));
 
   // Compute total salaries paid in this month
   const totalSalariesPaid = salaries
@@ -120,10 +134,12 @@ export default function DeliveryFinance() {
         return 'This Week';
       case 'monthly':
         return 'This Month';
+      case 'all':
+        return 'All Time';
       case 'custom':
         return `${customStartDate} to ${customEndDate}`;
       default:
-        return 'Today';
+        return 'All Time';
     }
   };
 
@@ -143,7 +159,52 @@ export default function DeliveryFinance() {
     );
   }
 
+  if (currentView === 'riderDetail' && selectedRider) {
+    return (
+      <RiderPerformanceDetailView
+        staff={selectedRider}
+        deliveries={selectedRiderDeliveries}
+        fuelLogs={selectedRiderFuelLogs}
+        timeRangeLabel={getTimeRangeLabel()}
+        onBack={() => {
+          setSelectedRider(null);
+          setSelectedRiderDeliveries([]);
+          setSelectedRiderFuelLogs([]);
+          setCurrentView('main');
+        }}
+      />
+    );
+  }
 
+  if (currentView === 'fuelDetail') {
+    return (
+      <FuelExpensesDetailView
+        fuelLogs={fuelLogs}
+        staffList={staffList}
+        onBack={() => setCurrentView('main')}
+      />
+    );
+  }
+
+  if (currentView === 'salariesDetail') {
+    return (
+      <RiderSalariesDetailView
+        staffList={staffList}
+        salaries={salaries}
+        selectedMonth={currentMonthStr}
+        onBack={() => setCurrentView('main')}
+        onPaySalary={(staff, baseSalary, remainingBalance, record) => {
+          setSalaryPaymentState({
+            staff,
+            baseSalary,
+            remainingBalance,
+            record,
+          });
+          setCurrentView('paySalary');
+        }}
+      />
+    );
+  }
 
   if (currentView === 'paySalary' && salaryPaymentState) {
     return (
@@ -155,11 +216,11 @@ export default function DeliveryFinance() {
         selectedMonth={currentMonthStr}
         onBack={() => {
           setSalaryPaymentState(null);
-          setCurrentView('main');
+          setCurrentView('salariesDetail');
         }}
         onComplete={() => {
           setSalaryPaymentState(null);
-          setCurrentView('main');
+          setCurrentView('salariesDetail');
         }}
       />
     );
@@ -172,6 +233,8 @@ export default function DeliveryFinance() {
         filteredFuelLogs={filteredFuelLogs}
         totalSalariesPaid={totalSalariesPaid}
         timeRangeLabel={getTimeRangeLabel()}
+        onViewFuelDetail={() => setCurrentView('fuelDetail')}
+        onViewSalaryDetail={() => setCurrentView('salariesDetail')}
       />
 
       <div className="bg-white p-2 rounded-xl border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-2">
@@ -189,7 +252,18 @@ export default function DeliveryFinance() {
             Customer Drop Points
           </button>
 
-
+          <button
+            type="button"
+            onClick={() => setSubTab('riders')}
+            className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all border ${
+              subTab === 'riders'
+                ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                : 'bg-purple-50/80 text-purple-800 border-purple-200/80 hover:bg-purple-100'
+            }`}
+          >
+            <Bike className="w-3.5 h-3.5" />
+            Rider Deliveries &amp; Performance
+          </button>
 
           <button
             type="button"
@@ -201,7 +275,7 @@ export default function DeliveryFinance() {
             }`}
           >
             <DollarSign className="w-3.5 h-3.5" />
-            Rider Payroll & Salary
+            Rider Payroll &amp; Salary
           </button>
         </div>
 
@@ -239,6 +313,17 @@ export default function DeliveryFinance() {
               }`}
             >
               This Month
+            </button>
+            <button
+              type="button"
+              onClick={() => setTimeFilter('all')}
+              className={`px-2.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
+                timeFilter === 'all'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              All Time
             </button>
             <button
               type="button"
@@ -296,7 +381,19 @@ export default function DeliveryFinance() {
         />
       )}
 
-
+      {subTab === 'riders' && (
+        <RiderPerformanceTable
+          staffList={searchedStaff}
+          filteredDeliveries={filteredDeliveries}
+          filteredFuelLogs={filteredFuelLogs}
+          onViewRiderDetail={(staff, delvs, fuels) => {
+            setSelectedRider(staff);
+            setSelectedRiderDeliveries(delvs);
+            setSelectedRiderFuelLogs(fuels);
+            setCurrentView('riderDetail');
+          }}
+        />
+      )}
 
       {subTab === 'payroll' && (
         <RiderSalaryPayrollTable

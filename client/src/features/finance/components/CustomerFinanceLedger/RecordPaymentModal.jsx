@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, DollarSign, CheckCircle2, ArrowRight, Wallet } from 'lucide-react';
 import { useLedgerContext } from '../../../../context/LedgerContext';
+import { getCustomerDueBalance } from '../../../../context/CustomerContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,9 +13,11 @@ import {
 } from '@/components/ui/select';
 
 export default function RecordPaymentModal({ customer, isOpen, onClose }) {
-  const { addLedgerEntry } = useLedgerContext();
+  const { addLedgerEntry, getCustomerCalculatedStats } = useLedgerContext();
 
-  const outstanding = Math.max(0, Number(customer?.khataBalance || 0));
+  const custId = customer?._id || customer?.id;
+  const stats = getCustomerCalculatedStats ? getCustomerCalculatedStats(custId) : null;
+  const outstanding = stats && stats.closingBalance !== undefined ? stats.closingBalance : getCustomerDueBalance(customer);
 
   const [paymentType, setPaymentType] = useState('partial'); // 'partial' | 'half' | 'full'
   const [formData, setFormData] = useState({

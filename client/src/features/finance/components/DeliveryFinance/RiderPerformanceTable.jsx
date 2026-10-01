@@ -11,6 +11,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
+const normalizeStr = (str) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
 export default function RiderPerformanceTable({
   staffList = [],
   filteredDeliveries = [],
@@ -18,26 +20,69 @@ export default function RiderPerformanceTable({
   onViewRiderDetail,
 }) {
   const riderMetrics = staffList.map((staff) => {
-    const staffDeliveries = filteredDeliveries.filter(
-      (d) =>
-        d.riderNameSnapshot &&
-        staff.name &&
-        d.riderNameSnapshot.toLowerCase().trim() === staff.name.toLowerCase().trim()
-    );
+    const sId = String(staff.id || staff._id || staff.staffCode || '');
+    const sNameNorm = normalizeStr(staff.name);
+    const sVehicleNorm = normalizeStr(staff.vehicle);
+
+    const staffDeliveries = filteredDeliveries.filter((d) => {
+      const rId = typeof d.riderId === 'object' ? String(d.riderId?._id || d.riderId?.id || '') : String(d.riderId || '');
+      if (rId && sId && (rId === sId || rId === String(staff._id) || rId === String(staff.id))) {
+        return true;
+      }
+
+      const snapName = normalizeStr(d.riderNameSnapshot || d.riderName || (typeof d.rider === 'object' ? d.rider?.name : d.rider) || '');
+      if (snapName && sNameNorm) {
+        if (snapName === sNameNorm || snapName.includes(sNameNorm) || sNameNorm.includes(snapName)) {
+          return true;
+        }
+      }
+
+      return false;
+    });
 
     const completedRuns = staffDeliveries.filter((d) => d.status === 'DELIVERED').length;
-    const pendingRuns = staffDeliveries.filter((d) => d.status === 'PENDING').length;
+    const pendingRuns = staffDeliveries.filter((d) => d.status === 'PENDING' || d.status === 'OUT_FOR_DELIVERY').length;
     const totalLiters = staffDeliveries.reduce(
-      (sum, d) => sum + (Number(d.qtyLiters) || 0),
+      (sum, d) =>
+        sum +
+        (Number(d.qtyLiters) ||
+          (Array.isArray(d.items)
+            ? d.items.reduce((s, it) => s + (Number(it.quantity) || 0), 0)
+            : 0)),
+      0
+    );
+    const totalCodCollected = staffDeliveries.reduce(
+      (sum, d) => sum + (Number(d.codAmountToCollect || d.amountPaid || 0)),
       0
     );
 
-    const staffFuelLogs = filteredFuelLogs.filter(
-      (f) =>
-        f.staffName &&
-        staff.name &&
-        f.staffName.toLowerCase().trim() === staff.name.toLowerCase().trim()
-    );
+    const staffFuelLogs = filteredFuelLogs.filter((f) => {
+      const fRiderId = typeof f.riderId === 'object' ? String(f.riderId?._id || f.riderId?.id || '') : String(f.riderId || '');
+      if (fRiderId && sId && (fRiderId === sId || fRiderId === String(staff._id) || fRiderId === String(staff.id))) {
+        return true;
+      }
+
+      const fNameNorm = normalizeStr(f.staffName || f.riderName || f.authorizedBy || '');
+      if (fNameNorm && sNameNorm) {
+        if (fNameNorm === sNameNorm || fNameNorm.includes(sNameNorm) || sNameNorm.includes(fNameNorm)) {
+          return true;
+        }
+      }
+
+      const fPlateNorm = normalizeStr(f.vehiclePlate);
+      if (fPlateNorm && sVehicleNorm && sVehicleNorm.length > 2) {
+        if (fPlateNorm === sVehicleNorm || fPlateNorm.includes(sVehicleNorm) || sVehicleNorm.includes(fPlateNorm)) {
+          return true;
+        }
+      }
+
+      const fNotesNorm = normalizeStr(f.notes || f.description || f.title || '');
+      if (fNotesNorm && sNameNorm && sNameNorm.length > 3 && fNotesNorm.includes(sNameNorm)) {
+        return true;
+      }
+
+      return false;
+    });
 
     const totalFuelLiters = staffFuelLogs.reduce(
       (sum, f) => sum + (Number(f.liters) || 0),
@@ -59,6 +104,7 @@ export default function RiderPerformanceTable({
       completedRuns,
       pendingRuns,
       totalLiters,
+      totalCodCollected,
       totalFuelLiters,
       totalFuelCost,
       totalDistance,

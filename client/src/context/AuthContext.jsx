@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { ROLES, PERMISSIONS, ROLE_PERMISSIONS } from '@/config/rbac.config';
+import { ROLES, PERMISSIONS, ROLE_PERMISSIONS } from '../config/rbac.config.js';
 
 const AuthContext = createContext(null);
 

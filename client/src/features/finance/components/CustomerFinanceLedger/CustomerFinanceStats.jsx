@@ -4,27 +4,36 @@ import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 
 export default function CustomerFinanceStats() {
-  const { allCustomersCount, totalKhataReceivable, withKhataBalCount, rawCustomers } = useCustomerContext();
-  const { getLedgerForCustomer } = useLedgerContext();
+  const { allCustomersCount, totalKhataReceivable, withKhataBalCount, rawCustomers, customers } = useCustomerContext();
+  const { getLedgerForCustomer, getAllCustomersAggregates } = useLedgerContext();
 
-  // Sum all credit amounts across every customer's ledger
-  const totalCollected = (rawCustomers || []).reduce((acc, cust) => {
-    const entries = getLedgerForCustomer(cust.id) || [];
-    return acc + entries.reduce((sum, e) => sum + (Number(e.credit) || 0), 0);
-  }, 0);
+  const aggregates = getAllCustomersAggregates ? getAllCustomersAggregates() : null;
+  const effectiveTotalDue = (aggregates && aggregates.totalAllDue > 0)
+    ? aggregates.totalAllDue
+    : totalKhataReceivable;
+  const effectiveKhataCount = (aggregates && aggregates.khataAccountsCount > 0)
+    ? aggregates.khataAccountsCount
+    : withKhataBalCount;
+
+  const totalCollected = (aggregates && aggregates.totalAllPaid > 0)
+    ? aggregates.totalAllPaid
+    : (rawCustomers || customers || []).reduce((acc, cust) => {
+        const entries = getLedgerForCustomer(cust.id || cust._id) || [];
+        return acc + entries.reduce((sum, e) => sum + (Number(e.credit) || 0), 0);
+      }, 0);
 
   const statCards = [
     {
       label: "Total Customers",
-      value: `${allCustomersCount}`,
-      sub: `${withKhataBalCount} with active debt`,
+      value: `${allCustomersCount || (rawCustomers || []).length}`,
+      sub: `${effectiveKhataCount} with active debt`,
       icon: Users,
       color: "#155dfc",
       badge: "Accounts",
     },
     {
       label: "Total Outstanding Credit",
-      value: `Rs. ${totalKhataReceivable.toLocaleString()}`,
+      value: `Rs. ${Number(effectiveTotalDue).toLocaleString()}`,
       sub: "Active Khata balance pending",
       icon: CreditCard,
       color: "#e11d48",
@@ -40,7 +49,7 @@ export default function CustomerFinanceStats() {
     },
     {
       label: "Accounts in Credit",
-      value: `${withKhataBalCount}`,
+      value: `${effectiveKhataCount}`,
       sub: "Unpaid balances pending",
       icon: Wallet,
       color: "#f59e0b",

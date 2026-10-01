@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, User, MapPin, PackageOpen, Bike } from 'lucide-react';
+import { Eye, User, MapPin, PackageOpen, Bike, CreditCard, DollarSign } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -7,20 +7,30 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { getCustomerDueBalance } from '@/context/CustomerContext';
+import { useLedgerContext } from '@/context/LedgerContext';
 
 export default function CustomerDeliveryBreakdownTable({
   rawCustomers = [],
   filteredDeliveries = [],
   onViewCustomerDropPoints,
 }) {
+  let ledgerCtx = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    ledgerCtx = useLedgerContext();
+  } catch (_) {}
+
   // Aggregate deliveries per customer
   const customerBreakdowns = rawCustomers.map((customer) => {
+    const custId = String(customer._id || customer.id);
     const custDeliveries = filteredDeliveries.filter(
       (d) =>
-        String(d.customerId) === String(customer.id) ||
+        String(d.customerId) === custId ||
         (d.customerName &&
           customer.name &&
           d.customerName.toLowerCase().trim() === customer.name.toLowerCase().trim())
@@ -43,6 +53,23 @@ export default function CustomerDeliveryBreakdownTable({
       )
     );
 
+    // Compute dynamic real-time Khata Balance from LedgerContext
+    const stats = ledgerCtx?.getCustomerCalculatedStats
+      ? ledgerCtx.getCustomerCalculatedStats(customer.id || customer._id)
+      : null;
+
+    let dynamicKhataBalance = 0;
+    let isAdvance = false;
+    let advanceAmount = 0;
+
+    if (stats) {
+      dynamicKhataBalance = Number(stats.closingBalance) || 0;
+      isAdvance = stats.isAdvanceOpening || (Number(stats.remainingAdvance) > 0);
+      advanceAmount = Number(stats.remainingAdvance) || 0;
+    } else {
+      dynamicKhataBalance = getCustomerDueBalance(customer);
+    }
+
     return {
       customer,
       custDeliveries,
@@ -50,8 +77,15 @@ export default function CustomerDeliveryBreakdownTable({
       totalLiters,
       totalCodCollected,
       riderNames,
+      dynamicKhataBalance,
+      isAdvance,
+      advanceAmount,
     };
   });
+
+  const totalAllLiters = customerBreakdowns.reduce((sum, c) => sum + c.totalLiters, 0);
+  const totalAllCod = customerBreakdowns.reduce((sum, c) => sum + c.totalCodCollected, 0);
+  const totalAllKhataDue = customerBreakdowns.reduce((sum, c) => sum + (c.dynamicKhataBalance || 0), 0);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
@@ -59,11 +93,11 @@ export default function CustomerDeliveryBreakdownTable({
         <TableHeader>
           <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
             <TableHead className="min-w-[180px] py-1.5 text-xs">Customer Name & Area</TableHead>
-            <TableHead className="min-w-[100px] py-1.5 text-xs">Drop Runs</TableHead>
+            <TableHead className="min-w-[90px] py-1.5 text-xs">Drop Runs</TableHead>
             <TableHead className="min-w-[110px] py-1.5 text-xs">Milk Delivered</TableHead>
             <TableHead className="min-w-[120px] py-1.5 text-xs">COD Collected</TableHead>
             <TableHead className="min-w-[130px] py-1.5 text-xs">Delivered By (Rider)</TableHead>
-            <TableHead className="w-[100px] py-1.5 text-xs">Khata Balance</TableHead>
+            <TableHead className="min-w-[120px] py-1.5 text-xs">Dynamic Khata Balance</TableHead>
             <TableHead className="w-[80px] text-right py-1.5 text-xs">Action</TableHead>
           </TableRow>
         </TableHeader>
@@ -92,12 +126,13 @@ export default function CustomerDeliveryBreakdownTable({
                 totalLiters,
                 totalCodCollected,
                 riderNames,
+                dynamicKhataBalance,
+                isAdvance,
+                advanceAmount,
               }) => {
-                const khataBal = Number(customer.khataBalance) || 0;
-
                 return (
                   <TableRow
-                    key={customer.id}
+                    key={customer._id || customer.id}
                     onClick={() =>
                       onViewCustomerDropPoints &&
                       onViewCustomerDropPoints(customer, custDeliveries)
@@ -107,7 +142,7 @@ export default function CustomerDeliveryBreakdownTable({
                     <TableCell className="align-top py-2">
                       <div className="space-y-0.5">
                         <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5 font-display">
-                          <User className="w-3 h-3 text-slate-400 shrink-0" />
+                          <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span>{customer.name}</span>
                         </div>
                         <div className="text-[11px] text-slate-500 flex items-center gap-1">
@@ -162,12 +197,34 @@ export default function CustomerDeliveryBreakdownTable({
                     </TableCell>
 
                     <TableCell className="align-top py-2">
-                      <Badge
-                        variant={khataBal > 0 ? 'amber' : 'green'}
-                        className="text-[10px] px-1.5 py-0"
-                      >
-                        Rs. {khataBal.toLocaleString()}
-                      </Badge>
+                      {dynamicKhataBalance > 0 ? (
+                        <div className="space-y-0.5">
+                          <Badge
+                            variant="amber"
+                            className="text-[10px] px-2 py-0.5 font-bold font-mono tabular border border-amber-200"
+                          >
+                            Due: Rs. {dynamicKhataBalance.toLocaleString()}
+                          </Badge>
+                          <span className="text-[9px] text-amber-700 block font-medium">Unpaid Khata</span>
+                        </div>
+                      ) : advanceAmount > 0 ? (
+                        <div className="space-y-0.5">
+                          <Badge
+                            variant="blue"
+                            className="text-[10px] px-2 py-0.5 font-bold font-mono tabular border border-blue-200"
+                          >
+                            Adv: Rs. {advanceAmount.toLocaleString()}
+                          </Badge>
+                          <span className="text-[9px] text-blue-700 block font-medium">Advance Balance</span>
+                        </div>
+                      ) : (
+                        <Badge
+                          variant="green"
+                          className="text-[10px] px-2 py-0.5 font-bold font-mono tabular border border-emerald-200"
+                        >
+                          Cleared (Rs. 0)
+                        </Badge>
+                      )}
                     </TableCell>
 
                     <TableCell className="align-top py-2 text-right">
@@ -191,7 +248,29 @@ export default function CustomerDeliveryBreakdownTable({
             )
           )}
         </TableBody>
+
+        {customerBreakdowns.length > 0 && (
+          <TableFooter className="bg-slate-50/90 border-t-2 border-slate-200 font-bold text-xs text-slate-900">
+            <TableRow>
+              <TableCell colSpan={2} className="py-2 text-slate-800 uppercase font-black">
+                Total ({customerBreakdowns.length} Customers)
+              </TableCell>
+              <TableCell className="py-2 text-emerald-700 font-mono tabular">
+                {totalAllLiters.toFixed(1)} L
+              </TableCell>
+              <TableCell className="py-2 text-slate-900 font-mono tabular">
+                Rs. {totalAllCod.toLocaleString()}
+              </TableCell>
+              <TableCell className="py-2"></TableCell>
+              <TableCell className="py-2 font-mono tabular text-amber-700 font-black">
+                Rs. {totalAllKhataDue.toLocaleString()} (Due)
+              </TableCell>
+              <TableCell className="py-2"></TableCell>
+            </TableRow>
+          </TableFooter>
+        )}
       </Table>
     </div>
   );
 }
+

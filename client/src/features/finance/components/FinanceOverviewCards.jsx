@@ -25,13 +25,26 @@ import { useExpense } from '@/context/ExpenseContext';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { useDahiContext } from '@/context/DahiContext';
+import { useLedgerContext } from '@/context/LedgerContext';
 
 export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelectRiderFinance, onSelectFarmReport, onSelectSupplierReport, onSelectDahiReport, onSelectPos }) {
   const {
     totalKhataReceivable = 0,
     activeAccountsCount = 0,
     withKhataBalCount = 0,
+    customers = [],
   } = useCustomerContext();
+
+  const { getAllCustomersAggregates } = useLedgerContext() || {};
+  const ledgerAgg = getAllCustomersAggregates ? getAllCustomersAggregates() : null;
+
+  const dynamicTotalDue = (ledgerAgg && ledgerAgg.totalAllDue > 0)
+    ? ledgerAgg.totalAllDue
+    : totalKhataReceivable;
+
+  const dynamicKhataUsers = (ledgerAgg && ledgerAgg.khataAccountsCount > 0)
+    ? ledgerAgg.khataAccountsCount
+    : withKhataBalCount;
 
   const { deliveries = [] } = useDeliveryContext();
   const { staffList = [] } = useDeliveryStaffContext();
@@ -146,19 +159,19 @@ export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelect
             <div className="px-1">
               <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Total Due</span>
               <span className="text-xs font-extrabold text-emerald-700 tabular-nums">
-                Rs. {Number(totalKhataReceivable).toLocaleString()}
+                Rs. {Number(dynamicTotalDue).toLocaleString()}
               </span>
             </div>
             <div className="border-x border-slate-200/70 px-1">
               <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Accounts</span>
               <span className="text-xs font-bold text-slate-800 tabular-nums">
-                {activeAccountsCount}
+                {activeAccountsCount || customers.length}
               </span>
             </div>
             <div className="px-1">
               <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Khata Users</span>
               <span className="text-xs font-bold text-slate-800 tabular-nums">
-                {withKhataBalCount}
+                {dynamicKhataUsers}
               </span>
             </div>
           </div>

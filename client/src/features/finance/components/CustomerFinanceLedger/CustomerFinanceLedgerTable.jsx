@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Eye, Search, CreditCard, Pencil, Download } from 'lucide-react';
-import { useCustomerContext } from '../../../../context/CustomerContext';
+import { useCustomerContext, getCustomerDueBalance } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 import { exportTableToCSV } from '@/utils/csvExport';
 import { Button } from '@/components/ui/button';
@@ -22,17 +22,21 @@ import {
 } from '@/components/ui/table';
 
 export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayment, onEditCustomer }) {
-  const { rawCustomers } = useCustomerContext();
-  const { getLedgerForCustomer } = useLedgerContext();
+  const { rawCustomers, customers } = useCustomerContext();
+  const { getLedgerForCustomer, getCustomerCalculatedStats } = useLedgerContext();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Financial Status');
 
-  const customerList = (rawCustomers || []).map((customer, index) => {
-    const entries = getLedgerForCustomer(customer.id) || [];
-    const totalPaid = entries.reduce((sum, e) => sum + (Number(e.credit) || 0), 0);
+  const customerSource = (rawCustomers && rawCustomers.length > 0) ? rawCustomers : (customers || []);
+
+  const customerList = customerSource.map((customer, index) => {
+    const custId = customer._id || customer.id;
+    const entries = getLedgerForCustomer(custId) || [];
+    const stats = getCustomerCalculatedStats ? getCustomerCalculatedStats(custId) : null;
+    const totalPaid = stats ? stats.totalPaid : entries.reduce((sum, e) => sum + (Number(e.credit) || 0), 0);
     const lastPaymentEntry = [...entries].reverse().find((e) => Number(e.credit) > 0);
-    const outstanding = Number(customer.khataBalance) || 0;
+    const outstanding = stats && stats.closingBalance !== undefined ? stats.closingBalance : getCustomerDueBalance(customer);
 
     let overallStatus = 'Credit Overdue';
     if (outstanding === 0) overallStatus = 'Paid Up';
@@ -46,7 +50,7 @@ export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayme
       ? (lastPaymentEntry.method || 'Online Payment')
       : 'Credit (No Payment)';
 
-    const custCode = `CUST-${String(customer.id).slice(-4) || String(index + 1).padStart(4, '0')}`;
+    const custCode = `CUST-${String(custId).slice(-4) || String(index + 1).padStart(4, '0')}`;
 
     return {
       customer,

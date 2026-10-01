@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useCustomerContext } from './CustomerContext';
-import api from '@/services/api';
+import api from '../services/api.js';
 
 const LedgerContext = createContext();
 

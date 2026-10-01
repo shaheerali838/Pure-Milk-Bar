@@ -7,7 +7,7 @@ import { useExpense } from './ExpenseContext';
 import { usePOSContext } from './POSContext';
 import { useDeliveryContext } from './DeliveryContext';
 import { usePayrollContext } from './PayrollContext';
-import financeService from '@/services/financeService';
+import financeService from '../services/financeService.js';
 
 const AuditContext = createContext();
 

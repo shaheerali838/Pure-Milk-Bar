@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useIntakeContext } from './IntakeContext';
-import supplierService from '@/services/supplierService';
-import api from '@/services/api';
+import supplierService from '../services/supplierService.js';
+import api from '../services/api.js';
 
 const SupplierContext = createContext(null);
 

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
-import farmService from "@/services/farmService";
+import farmService from "../../../services/farmService.js";
 import { toast } from "sonner";
 
 export default function DahiProcessing() {

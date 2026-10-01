@@ -6,10 +6,10 @@ import { useDeliveryContext } from './DeliveryContext';
 import { useIntakeContext } from './IntakeContext';
 import { useFuelLogContext } from './FuelLogContext';
 import { useDeliveryStaffContext } from './DeliveryStaffContext';
-import { estimateDistanceKm } from '@/features/pos/utils/estimateDeliveryDistance';
-import posService from '@/services/posService';
+import { estimateDistanceKm } from '../features/pos/utils/estimateDeliveryDistance.js';
+import posService from '../services/posService.js';
 import { toast } from 'sonner';
-import farmService from '@/services/farmService';
+import farmService from '../services/farmService.js';
 
 const POSContext = createContext();
 

@@ -7,12 +7,14 @@ export default function ReceivablesAgingDetailModal({ customer, buckets, isOpen,
 
   if (!isOpen || !customer) return null;
 
-  const total = Number(customer.khataBalance || 0);
-
   const b0_30 = buckets?.d0_30 || 0;
   const b31_60 = buckets?.d31_60 || 0;
   const b61_90 = buckets?.d61_90 || 0;
   const b90plus = buckets?.d90plus || 0;
+
+  const total = (b0_30 + b31_60 + b61_90 + b90plus) > 0
+    ? (b0_30 + b31_60 + b61_90 + b90plus)
+    : Number(customer.currentBalance ?? customer.khataBalance ?? 0);
 
   let riskLabel = 'Low Risk (0-30 Days)';
   let riskBadgeColor = 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30';

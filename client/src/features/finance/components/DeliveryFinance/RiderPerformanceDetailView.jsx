@@ -37,7 +37,19 @@ export default function RiderPerformanceDetailView({
   const isRider = staff.type === 'RIDER';
   const totalRuns = deliveries.length;
   const completedRuns = deliveries.filter((d) => d.status === 'DELIVERED').length;
-  const totalLiters = deliveries.reduce((sum, d) => sum + (Number(d.qtyLiters) || 0), 0);
+  const totalLiters = deliveries.reduce(
+    (sum, d) =>
+      sum +
+      (Number(d.qtyLiters) ||
+        (Array.isArray(d.items)
+          ? d.items.reduce((s, it) => s + (Number(it.quantity) || 0), 0)
+          : 0)),
+    0
+  );
+  const totalCodCollected = deliveries.reduce(
+    (sum, d) => sum + (Number(d.codAmountToCollect || d.amountPaid || 0)),
+    0
+  );
   const totalFuelLiters = fuelLogs.reduce((sum, f) => sum + (Number(f.liters) || 0), 0);
   const totalFuelCost = fuelLogs.reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
   const totalDistance = fuelLogs.reduce((sum, f) => sum + (Number(f.distanceKm) || 0), 0);
@@ -58,7 +70,7 @@ export default function RiderPerformanceDetailView({
           </Button>
           <div>
             <h1 className="text-base font-bold text-slate-900 tracking-tight font-display leading-none flex items-center gap-2">
-              <span>Rider Performance & Fuel Report &bull; {staff.name}</span>
+              <span>Rider Performance &amp; Fuel Report &bull; {staff.name}</span>
               <Badge variant="green" className="text-[10px]">
                 {timeRangeLabel}
               </Badge>
@@ -98,7 +110,16 @@ export default function RiderPerformanceDetailView({
             <p className="text-[10px] text-slate-400">{totalLiters.toFixed(1)} L milk</p>
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+              COD Collected
+            </span>
+            <p className="text-base font-black font-display text-emerald-400 tabular leading-tight">
+              Rs. {totalCodCollected.toLocaleString()}
+            </p>
+            <p className="text-[10px] text-slate-400">Cash on delivery</p>
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300">
               Fuel Consumed
             </span>
             <p className="text-base font-black font-display text-blue-300 tabular leading-tight">
@@ -107,13 +128,15 @@ export default function RiderPerformanceDetailView({
             <p className="text-[10px] text-slate-400">Rs. {totalFuelCost.toLocaleString()}</p>
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Distance
+            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+              Distance &amp; Mileage
             </span>
             <p className="text-base font-black font-display text-amber-300 tabular leading-tight">
               {totalDistance} km
             </p>
-            <p className="text-[10px] text-slate-400">{fuelLogs.length} receipts</p>
+            <p className="text-[10px] text-slate-400">
+              {totalFuelLiters > 0 && totalDistance > 0 ? `${(totalDistance / totalFuelLiters).toFixed(1)} km/L` : `${fuelLogs.length} receipts`}
+            </p>
           </div>
         </div>
       </div>
