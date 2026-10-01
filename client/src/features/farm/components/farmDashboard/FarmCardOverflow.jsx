@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Beef, Droplets, Activity, DollarSign, IndianRupee } from 'lucide-react';
+import { Beef, Droplets, Activity, DollarSign } from 'lucide-react';
 import { useExpense } from '../../../../context/ExpenseContext';
 import { usePOSContext } from '../../../../context/POSContext';
 
@@ -75,9 +75,9 @@ export default function FarmCardOverflow({
     },
     {
       label: "Total Farm Expenses",
-      value: `PKR ${totalFarmExpense.toLocaleString()}`,
+      value: `Rs. ${totalFarmExpense.toLocaleString()}`,
       sub: `${expenses.length} recorded expense${expenses.length === 1 ? '' : 's'}`,
-      icon: IndianRupee,
+      icon: DollarSign,
       color: "#e11d48",
       badge: "Expenses",
       path: "/farm/expenses"

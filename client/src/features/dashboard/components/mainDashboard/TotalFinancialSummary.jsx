@@ -28,12 +28,59 @@ export default function TotalFinancialSummary() {
   const { intakeLogs = [] } = useIntakeContext();
   const { expenses: supplierExpensesList = [] } = useSourcExpenseContext() || {};
 
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const currentMonthStr = useMemo(() => todayStr.slice(0, 7), [todayStr]);
+  const todayStr = useMemo(() => {
+    try {
+      return new Date().toISOString().split('T')[0];
+    } catch {
+      return '';
+    }
+  }, []);
+  const currentMonthStr = useMemo(() => (todayStr ? todayStr.slice(0, 7) : ''), [todayStr]);
 
-  const isMatchingPeriod = (dateStr) => {
-    if (!dateStr) return true;
-    const cleanDate = String(dateStr).slice(0, 10);
+  const parseISODate = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
+      return val.slice(0, 10);
+    }
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      try {
+        return d.toISOString().split('T')[0];
+      } catch {
+        return '';
+      }
+    }
+    return '';
+  };
+
+  const getSaleDate = (sale) => {
+    if (!sale) return '';
+    if (sale.timestamp) {
+      const parsed = parseISODate(sale.timestamp);
+      if (parsed) return parsed;
+    }
+    if (sale.date) {
+      const parsed = parseISODate(sale.date);
+      if (parsed) return parsed;
+    }
+    if (sale.createdAt) {
+      const parsed = parseISODate(sale.createdAt);
+      if (parsed) return parsed;
+    }
+    if (sale.formattedDate) {
+      const parsed = parseISODate(sale.formattedDate);
+      if (parsed) return parsed;
+    }
+    return '';
+  };
+
+  const isMatchingPeriod = (dateVal) => {
+    if (period === 'all') return true;
+    if (!dateVal) return true;
+    const cleanDate = typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateVal)
+      ? dateVal.slice(0, 10)
+      : parseISODate(dateVal);
+    if (!cleanDate) return true;
     if (period === 'today') return cleanDate === todayStr;
     if (period === 'this_month') return cleanDate.startsWith(currentMonthStr);
     return true; // 'all'
@@ -49,9 +96,7 @@ export default function TotalFinancialSummary() {
     let dahiVolume = 0;
 
     activeFarmSales.forEach((sale) => {
-      const saleDate = sale.formattedDate
-        ? new Date(sale.formattedDate).toISOString().split('T')[0]
-        : (sale.timestamp ? sale.timestamp.split('T')[0] : (sale.date || ''));
+      const saleDate = getSaleDate(sale);
 
       if (!isMatchingPeriod(saleDate)) return;
 
@@ -112,9 +157,7 @@ export default function TotalFinancialSummary() {
     let dahiVolume = 0;
 
     activeSupplierSales.forEach((sale) => {
-      const saleDate = sale.formattedDate
-        ? new Date(sale.formattedDate).toISOString().split('T')[0]
-        : (sale.timestamp ? sale.timestamp.split('T')[0] : (sale.date || ''));
+      const saleDate = getSaleDate(sale);
 
       if (!isMatchingPeriod(saleDate)) return;
 

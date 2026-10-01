@@ -1,6 +1,6 @@
 import React from 'react';
 import { useExpense } from '../../../../context/ExpenseContext';
-import { IndianRupee, Tractor, Wrench, Utensils } from 'lucide-react';
+import { DollarSign, Tractor, Wrench, Utensils } from 'lucide-react';
 
 export default function ExpenseFarmCardOverFlow() {
   const { totals } = useExpense();
@@ -8,9 +8,9 @@ export default function ExpenseFarmCardOverFlow() {
   const statCards = [
     {
       label: "Total Farm Expense",
-      value: `PKR ${totals.totalFarmExpense.toLocaleString()}`,
+      value: `Rs. ${totals.totalFarmExpense.toLocaleString()}`,
       sub: "Total expenses recorded",
-      icon: IndianRupee,
+      icon: DollarSign,
       color: "#009966",
       badge: "Total Expenses"
     },

@@ -113,7 +113,26 @@ export default function FarmDashboardContent() {
 
       // Check real sales for day 'd.key' from posCtx?.salesHistory
       const salesForDay = (posCtx?.salesHistory || []).filter((s) => {
-        const sDate = s.formattedDate ? new Date(s.formattedDate).toISOString().split('T')[0] : (s.date || '').split('T')[0];
+        let sDate = '';
+        if (s.date && /^\d{4}-\d{2}-\d{2}/.test(s.date)) {
+          sDate = s.date.slice(0, 10);
+        } else if (s.timestamp && /^\d{4}-\d{2}-\d{2}/.test(s.timestamp)) {
+          sDate = s.timestamp.slice(0, 10);
+        } else if (s.createdAt && /^\d{4}-\d{2}-\d{2}/.test(s.createdAt)) {
+          sDate = s.createdAt.slice(0, 10);
+        } else {
+          const raw = s.date || s.timestamp || s.createdAt || s.formattedDate || '';
+          if (raw) {
+            const parsed = new Date(raw);
+            if (!isNaN(parsed.getTime())) {
+              try {
+                sDate = parsed.toISOString().split('T')[0];
+              } catch {
+                sDate = '';
+              }
+            }
+          }
+        }
         return sDate === d.key;
       });
       const dayRevenue = salesForDay.reduce((sum, s) => {

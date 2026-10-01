@@ -60,9 +60,26 @@ export default function SupplierPL() {
   const activeSupplierSales = supplierSalesHistory.length > 0 ? supplierSalesHistory : salesHistory;
   const filteredSales = useMemo(() => {
     return activeSupplierSales.filter((sale) => {
-      const sDate = sale.formattedDate
-        ? new Date(sale.formattedDate).toISOString().split('T')[0]
-        : (sale.timestamp ? sale.timestamp.split('T')[0] : (sale.date || ''));
+      let sDate = '';
+      if (sale.date && /^\d{4}-\d{2}-\d{2}/.test(sale.date)) {
+        sDate = sale.date.slice(0, 10);
+      } else if (sale.timestamp && /^\d{4}-\d{2}-\d{2}/.test(sale.timestamp)) {
+        sDate = sale.timestamp.slice(0, 10);
+      } else if (sale.createdAt && /^\d{4}-\d{2}-\d{2}/.test(sale.createdAt)) {
+        sDate = sale.createdAt.slice(0, 10);
+      } else {
+        const raw = sale.date || sale.timestamp || sale.createdAt || sale.formattedDate || '';
+        if (raw) {
+          const parsed = new Date(raw);
+          if (!isNaN(parsed.getTime())) {
+            try {
+              sDate = parsed.toISOString().split('T')[0];
+            } catch {
+              sDate = '';
+            }
+          }
+        }
+      }
       if (customDate) return sDate === customDate;
       if (periodFilter === 'Today') return sDate === todayStr;
       if (periodFilter === 'This Month') return sDate.startsWith(currentMonthStr);
