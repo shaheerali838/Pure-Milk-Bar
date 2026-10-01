@@ -14,12 +14,17 @@ import { usePOSContext } from '@/context/POSContext';
 import { useLedgerContext } from '@/context/LedgerContext';
 
 import { Link } from 'react-router-dom';
+import { KpiGridSkeleton } from '@/components/ui/skeleton';
 
 export default function TopSummaryCards() {
-  const { animals = [] } = useAnimalContext();
-  const { intakeLogs = [], totals: intakeTotals = {} } = useIntakeContext();
+  const { animals = [], isLoading: isAnimalsLoading } = useAnimalContext();
+  const { intakeLogs = [], totals: intakeTotals = {}, isLoading: isIntakeLoading } = useIntakeContext();
   const { salesHistory = [], inventoryMetrics = {} } = usePOSContext();
   const { ledgers = {} } = useLedgerContext();
+
+  if (isAnimalsLoading && isIntakeLoading && animals.length === 0 && intakeLogs.length === 0) {
+    return <KpiGridSkeleton count={8} />;
+  }
 
   // 1. Farm Milk Production
   const totalFarmMilk = animals.reduce(

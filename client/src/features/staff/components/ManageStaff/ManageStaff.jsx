@@ -33,6 +33,7 @@ export default function ManageStaff() {
     metrics,
     deleteStaff,
     getStaffStatusOnDate,
+    isLoading,
   } = useStaffPayrollContext();
 
   const [currentView, setCurrentView] = useState('list'); // 'list' | 'add' | 'edit' | 'detail'
@@ -447,7 +448,32 @@ export default function ManageStaff() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                {filteredStaff.map((staff) => {
+                {isLoading && staffList.length === 0 ? (
+                  Array.from({ length: 7 }).map((_, r) => (
+                    <tr key={r} className="animate-pulse">
+                      <td className="py-3 px-4"><div className="w-4 h-4 bg-slate-200 rounded" /></td>
+                      <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-16" /></td>
+                      <td className="py-3 px-4"><div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-slate-200" /><div className="space-y-1"><div className="h-3.5 bg-slate-200 rounded w-24" /><div className="h-2.5 bg-slate-100 rounded w-16" /></div></div></td>
+                      <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-20" /></td>
+                      <td className="py-3 px-4"><div className="h-5 bg-slate-200 rounded-full w-14" /></td>
+                      <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-20" /></td>
+                      <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-24" /></td>
+                      {isAdmin && <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-16" /></td>}
+                      <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-20" /></td>
+                      <td className="py-3 px-4 text-center"><div className="h-5 bg-slate-200 rounded-full w-16 mx-auto" /></td>
+                      <td className="py-3 px-4 text-right"><div className="h-6 bg-slate-200 rounded w-16 ml-auto" /></td>
+                    </tr>
+                  ))
+                ) : filteredStaff.length === 0 ? (
+                  <tr>
+                    <td colSpan={isAdmin ? 11 : 10} className="text-center py-12 text-slate-400">
+                      <Users className="w-8 h-8 mx-auto text-slate-300 mb-2 opacity-50" />
+                      <p className="font-semibold text-slate-600">No staff members found</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Try adjusting search or role filter</p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredStaff.map((staff) => {
                   const todayStatus = getStaffStatusOnDate(staff.id, todayStr);
                   const isDelivery =
                     (staff.role || '').toLowerCase().includes('delivery') ||
@@ -596,7 +622,7 @@ export default function ManageStaff() {
                       </td>
                     </tr>
                   );
-                })}
+                }))}
               </tbody>
             </table>
           </div>

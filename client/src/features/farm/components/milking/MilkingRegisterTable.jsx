@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Sun, Moon, Zap, RotateCcw, Check, Save } from "lucide-react";
+import { Sun, Moon, Zap, RotateCcw, Check, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { useStaffPayrollContext } from "../../../../context/StaffPayrollContext";
+import { useStaffContext } from "../../../../context/StaffContext";
 
 const getTodayDateStr = () => {
   const d = new Date();
@@ -19,13 +20,38 @@ const normalizeDate = (dateVal) => {
 
 export default function MilkingRegisterTable({ onSaveSuccess }) {
   const { animals = [], milkingLogs = [], saveMilkingShift } = useAnimalContext();
-  const { staffList = [] } = useStaffPayrollContext();
-  const farmWorkers = staffList.filter(s => s.role?.toLowerCase().includes('farm') || s.role?.toLowerCase().includes('milker') || s.role?.toLowerCase().includes('herdsman') || s.role?.toLowerCase().includes('worker'));
+  const payrollCtx = useStaffPayrollContext();
+  const staffCtx = useStaffContext();
+
+  const staffList = (payrollCtx?.staffList?.length > 0 ? payrollCtx.staffList : staffCtx?.staffList) || [];
+  
+  const farmWorkers = staffList.filter((s) => {
+    const r = (s.role || "").toLowerCase();
+    return (
+      r.includes("farm") ||
+      r.includes("milk") ||
+      r.includes("herd") ||
+      r.includes("work") ||
+      r.includes("labor") ||
+      r.includes("oper") ||
+      r.includes("staff") ||
+      r.includes("manag") ||
+      r.includes("superv")
+    );
+  });
+  const availableMilkers = farmWorkers.length > 0 ? farmWorkers : staffList;
 
   const todayStr = getTodayDateStr();
   const [selectedDate, setSelectedDate] = useState(() => getTodayDateStr());
   const [shift, setShift] = useState("Morning");
   const [operatorId, setOperatorId] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (availableMilkers.length > 0 && !operatorId) {
+      setOperatorId(String(availableMilkers[0].id || availableMilkers[0]._id || availableMilkers[0].name));
+    }
+  }, [availableMilkers, operatorId]);
 
   // Draft inputs while typing
   const [inputValues, setInputValues] = useState({ Morning: {}, Evening: {} });
@@ -142,22 +168,30 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
       return;
     }
 
-    setSavedEntries((prev) => ({
-      ...prev,
-      [shift]: { ...activeInputs },
-    }));
+    setIsSaving(true);
+    try {
+      setSavedEntries((prev) => ({
+        ...prev,
+        [shift]: { ...activeInputs },
+      }));
 
-    if (saveMilkingShift) {
-      await saveMilkingShift(shift, selectedDate, activeInputs, operatorId);
-    }
+      if (saveMilkingShift) {
+        await saveMilkingShift(shift, selectedDate, activeInputs, operatorId);
+      }
 
-    const newlySavedTotal = cattleList.reduce((sum, item) => {
-      return sum + (parseFloat(activeInputs[item.tag]) || 0);
-    }, 0);
+      const newlySavedTotal = cattleList.reduce((sum, item) => {
+        return sum + (parseFloat(activeInputs[item.tag]) || 0);
+      }, 0);
 
-    toast.success(`Successfully saved ${shift} shift entries (${newlySavedTotal.toFixed(1)} L)!`);
-    if (onSaveSuccess) {
-      onSaveSuccess();
+      toast.success(`Successfully saved ${shift} shift entries (${newlySavedTotal.toFixed(1)} L)!`);
+      if (onSaveSuccess) {
+        onSaveSuccess();
+      }
+    } catch (err) {
+      console.error("Failed to save milking shift:", err);
+      toast.error("Failed to save milking shift to database");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -225,8 +259,10 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
               className="bg-white border border-slate-200 rounded-full px-4 py-2 text-sm font-semibold text-slate-800 focus:outline-none cursor-pointer"
             >
               <option value="">Select Milker</option>
-              {farmWorkers.map(w => (
-                <option key={w.id} value={w.id}>{w.name}</option>
+              {availableMilkers.map((w) => (
+                <option key={w.id || w._id} value={w.id || w._id || w.name}>
+                  {w.name} ({w.role || "Staff"})
+                </option>
               ))}
             </select>
           </div>
@@ -379,9 +415,20 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
             <button
               type="button"
               onClick={handleSave}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
+              disabled={isSaving}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed active:scale-95 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
             >
-              <Save className="w-4 h-4" /> Save {shift} Entries
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving {shift} Entries...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Save {shift} Entries</span>
+                </>
+              )}
             </button>
           </div>
         </div>

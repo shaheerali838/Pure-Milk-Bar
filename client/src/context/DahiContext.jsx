@@ -27,7 +27,11 @@ export function DahiProvider({ children }) {
     setIsLoading(true);
     try {
       const data = await farmService.getProcessingBatches();
-      const list = Array.isArray(data) ? data : data?.batches || [];
+      const rawList = Array.isArray(data) ? data : data?.batches || [];
+      const list = rawList.filter((b) => {
+        const p = (b.product || '').toLowerCase();
+        return p.includes('dahi') || p.includes('yogurt') || p.includes('curd') || (!p.includes('milk') && !p.includes('pasteur'));
+      });
       const normalized = list.map((b) => {
         const farmUsed = Number(b.farmMilkUsed) || 0;
         const supUsed = Number(b.supplierMilkUsed) || 0;
@@ -68,6 +72,18 @@ export function DahiProvider({ children }) {
 
   useEffect(() => {
     fetchBatches();
+
+    const handleUpdate = () => {
+      fetchBatches();
+    };
+
+    window.addEventListener('pure_milk_bar_dahi_updated', handleUpdate);
+    window.addEventListener('pure_milk_bar_pos_sale_completed', handleUpdate);
+
+    return () => {
+      window.removeEventListener('pure_milk_bar_dahi_updated', handleUpdate);
+      window.removeEventListener('pure_milk_bar_pos_sale_completed', handleUpdate);
+    };
   }, [fetchBatches]);
 
   // =========================================================================

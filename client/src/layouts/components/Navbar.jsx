@@ -163,9 +163,9 @@ export default function Navbar({ onToggleSidebar }) {
       return crumbs;
     }
 
-    if (pathname.startsWith('/proccessing')) {
-      crumbs.push({ label: 'Processing & Batching', to: '/proccessing' });
-      crumbs.push({ label: 'Dahi & Milk Processing', to: '/proccessing' });
+    if (pathname.startsWith('/proccessing') || pathname.startsWith('/dahi') || pathname.startsWith('/processing')) {
+      crumbs.push({ label: 'Processing & Batching', to: '/dahi' });
+      crumbs.push({ label: 'Dahi Processing', to: '/dahi' });
       return crumbs;
     }
 

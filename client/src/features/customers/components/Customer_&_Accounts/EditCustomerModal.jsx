@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, ShieldCheck } from 'lucide-react';
+import { X, ShieldCheck, Loader2 } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { usePOSContext } from '../../../../context/POSContext';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import {
 export default function EditCustomerModal({ customer, isOpen, onClose }) {
   const { updateCustomer } = useCustomerContext();
   const { products = [] } = usePOSContext();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     id: '',
@@ -110,27 +111,34 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
 
     const formattedSubscription = `${subQty} ${subUnit} ${selectedProduct?.name || 'Cow Milk'}`.trim();
 
-    updateCustomer({
-      ...customer,
-      name: formData.name,
-      area: formData.area,
-      phone: formData.phone,
-      onlineAccount: formData.onlineAccount,
-      cnicNumber: formData.cnicNumber,
-      idType: formData.idType,
-      verificationStatus: formData.verificationStatus,
-      address: formData.address,
-      deliveryFee: formData.deliveryFee !== '' ? (Number(formData.deliveryFee) || 0) : 0,
-      secondaryPhone: formData.secondaryPhone,
-      referenceName: formData.referenceName,
-      subscription: formattedSubscription,
-      creditLimit: Number(formData.creditLimit) || 0,
-      khataBalance: Number(formData.khataBalance) || 0,
-      paymentMode: formData.paymentMode,
-      status: formData.status,
-    });
+    setIsSubmitting(true);
+    try {
+      updateCustomer({
+        ...customer,
+        name: formData.name,
+        area: formData.area,
+        phone: formData.phone,
+        onlineAccount: formData.onlineAccount,
+        cnicNumber: formData.cnicNumber,
+        idType: formData.idType,
+        verificationStatus: formData.verificationStatus,
+        address: formData.address,
+        deliveryFee: formData.deliveryFee !== '' ? (Number(formData.deliveryFee) || 0) : 0,
+        secondaryPhone: formData.secondaryPhone,
+        referenceName: formData.referenceName,
+        subscription: formattedSubscription,
+        creditLimit: Number(formData.creditLimit) || 0,
+        khataBalance: Number(formData.khataBalance) || 0,
+        paymentMode: formData.paymentMode,
+        status: formData.status,
+      });
 
-    onClose();
+      onClose();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -476,16 +484,25 @@ export default function EditCustomerModal({ customer, isOpen, onClose }) {
               variant="outline"
               size="sm"
               onClick={onClose}
-              className="text-xs"
+              disabled={isSubmitting}
+              className="text-xs disabled:opacity-50"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-2xs"
+              disabled={isSubmitting}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-xs shadow-2xs flex items-center gap-1.5"
             >
-              Update Profile
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Updating Profile...
+                </>
+              ) : (
+                'Update Profile'
+              )}
             </Button>
           </div>
         </form>

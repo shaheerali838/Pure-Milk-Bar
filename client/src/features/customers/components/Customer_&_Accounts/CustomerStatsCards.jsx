@@ -2,10 +2,15 @@ import React from 'react';
 import { Users, UserCheck, CreditCard, Wallet, ArrowDownLeft, ShieldCheck } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
+import { KpiGridSkeleton } from '@/components/ui/skeleton';
 
 export default function CustomerStatsCards() {
-  const { allCustomersCount, activeAccountsCount } = useCustomerContext();
+  const { allCustomersCount, activeAccountsCount, isLoading } = useCustomerContext();
   const { getAllCustomersAggregates } = useLedgerContext();
+
+  if (isLoading && (!allCustomersCount || allCustomersCount === 0)) {
+    return <KpiGridSkeleton count={4} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-2" />;
+  }
 
   const aggregates = getAllCustomersAggregates ? getAllCustomersAggregates() : {
     totalAllDue: 0,

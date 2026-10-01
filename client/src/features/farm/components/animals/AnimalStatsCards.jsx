@@ -5,11 +5,16 @@ import { useAnimalContext } from "../../../../context/AnimalContext";
 import { useStaffContext } from "@/context/StaffContext";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { KpiGridSkeleton } from "@/components/ui/skeleton";
 
 export default function AnimalStatsCards() {
   const navigate = useNavigate();
-  const { animals = [] } = useAnimalContext();
+  const { animals = [], isLoading } = useAnimalContext();
   const { staffList = [] } = useStaffContext();
+
+  if (isLoading && animals.length === 0) {
+    return <KpiGridSkeleton count={4} className="grid-cols-2 lg:grid-cols-4 gap-3 mb-2" />;
+  }
 
   const totalAnimals = animals.length;
   const cowsCount = animals.filter((a) => a.species && a.species.includes("Cow")).length;

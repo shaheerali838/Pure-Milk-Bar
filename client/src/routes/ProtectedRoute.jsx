@@ -16,9 +16,14 @@ export const ProtectedRoute = ({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-900 text-white">
-        <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm text-slate-300 font-medium">Authenticating Dairy Operations Engine...</p>
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-900 text-white p-6 space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center animate-pulse">
+          <div className="w-6 h-6 border-3 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+        </div>
+        <div className="text-center space-y-1">
+          <p className="text-base font-bold text-white tracking-tight">Pure Milk Bar</p>
+          <p className="text-xs text-slate-400 font-medium">Authenticating Dairy Operations Engine...</p>
+        </div>
       </div>
     );
   }

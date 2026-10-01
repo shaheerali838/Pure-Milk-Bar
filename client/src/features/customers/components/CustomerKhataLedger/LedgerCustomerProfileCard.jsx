@@ -27,8 +27,8 @@ export default function LedgerCustomerProfileCard({
       <CardContent className="p-2.5 sm:px-4 sm:py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* 1. Customer Avatar + Name + Status Badges */}
-          <div className="flex items-center gap-2.5 min-w-[200px]">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-600 to-teal-700 text-white font-bold text-xs flex items-center justify-center shadow-2xs shrink-0 font-display">
+          <div className="flex items-center gap-2.5 min-w-50">
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-emerald-600 to-teal-700 text-white font-bold text-xs flex items-center justify-center shadow-2xs shrink-0 font-display">
               {initial}
             </div>
             <div className="min-w-0">
@@ -71,7 +71,7 @@ export default function LedgerCustomerProfileCard({
             <div className="flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span
-                className="text-slate-700 text-[11px] font-medium max-w-[140px] truncate"
+                className="text-slate-700 text-[11px] font-medium max-w-35 truncate"
                 title={customer.area || customer.address}
               >
                 {customer.area || customer.address || "Model Town"}

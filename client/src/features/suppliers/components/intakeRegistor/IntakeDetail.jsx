@@ -70,7 +70,7 @@ export default function IntakeDetail({
 
   if (!activeSlip) {
     return (
-      <div className="p-8 bg-slate-50 min-h-[400px] flex flex-col items-center justify-center space-y-3">
+      <div className="p-8 bg-slate-50 min-h-100 flex flex-col items-center justify-center space-y-3">
         <div className="w-12 h-12 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center">
           <Droplets className="w-6 h-6" />
         </div>
@@ -635,7 +635,7 @@ export default function IntakeDetail({
       {/* 4. Supplier & Financial Settlement Table */}
       <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-4 shadow-2xs text-xs">
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200">
-          <h3 className="font-bold text-slate-900 flex items-center gap-2 text-xs uppercase tracking-wider text-slate-700">
+          <h3 className="font-bold flex items-center gap-2 text-xs uppercase tracking-wider text-slate-700">
             <Receipt className="w-4 h-4 text-emerald-600" />
             Supplier &amp; Financial Settlement
           </h3>
@@ -780,7 +780,7 @@ export default function IntakeDetail({
         ? totalDayDue
         : pendingDue) > 0 &&
         onPaySupplier && (
-          <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50 via-amber-100/40 to-white border border-amber-200 flex flex-wrap items-center justify-between gap-3">
+          <div className="p-4 rounded-xl bg-linear-to-r from-amber-50 via-amber-100/40 to-white border border-amber-200 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
                 <Wallet className="w-5 h-5" />
@@ -877,7 +877,7 @@ export default function IntakeDetail({
             <select
               value={activeId}
               onChange={(e) => setActiveId(e.target.value)}
-              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 transition cursor-pointer max-w-[200px] sm:max-w-[240px]"
+              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 transition cursor-pointer max-w-50 sm:max-w-60"
             >
               {filteredSlips.map((item) => (
                 <option key={item.id} value={item.id}>

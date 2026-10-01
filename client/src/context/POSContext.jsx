@@ -122,7 +122,7 @@ export function POSProvider({ children }) {
           : Array.isArray(res?.data)
           ? res.data
           : [];
-        if (Array.isArray(list)) {
+        if (Array.isArray(list) && list.length > 0) {
           const normalizedList = list.map((p) => ({
             ...p,
             id: p.id || p._id?.toString() || p.sku,
@@ -132,6 +132,16 @@ export function POSProvider({ children }) {
           }));
 
           setProducts(normalizedList);
+        } else {
+          const defaultFallback = [
+            { id: 'PRD-001', sku: 'PRD-001', name: 'Cow Milk (Fresh Raw & Chilled)', category: 'Milk', unit: 'per liter', source: 'Farm', price: 260, cost: 190, stock: 100, status: 'Active' },
+            { id: 'PRD-002', sku: 'PRD-002', name: 'Buffalo Milk (Fresh & High Fat)', category: 'Milk', unit: 'per liter', source: 'Farm', price: 290, cost: 228, stock: 100, status: 'Active' },
+            { id: 'PRD-003', sku: 'PRD-003', name: 'Fresh Dahi (Plain)', category: 'Dahi', unit: 'per kg', source: 'Farm', price: 320, cost: 220, stock: 50, status: 'Active' },
+            { id: 'PRD-004', sku: 'PRD-004', name: 'Sweet Dahi (Meetha)', category: 'Dahi', unit: 'per kg', source: 'Farm', price: 360, cost: 240, stock: 30, status: 'Active' },
+            { id: 'PRD-005', sku: 'PRD-005', name: 'Matka Dahi (Clay Pot)', category: 'Dahi', unit: 'per kg', source: 'Farm', price: 380, cost: 250, stock: 25, status: 'Active' },
+            { id: 'PRD-006', sku: 'PRD-006', name: 'Special Thick Dahi (Malai)', category: 'Dahi', unit: 'per kg', source: 'Farm', price: 350, cost: 230, stock: 20, status: 'Active' },
+          ];
+          setProducts(defaultFallback);
         }
       } catch (err) {
         console.warn('POS live products API skipped:', err.message);
@@ -1081,6 +1091,14 @@ export function POSProvider({ children }) {
 
     setCompletedSaleReceipt(saleRecord);
     handleClearCart();
+
+    // Notify Dahi processing hub & inventory listeners of the live sale
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('pure_milk_bar_pos_sale_completed'));
+      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
+      window.dispatchEvent(new Event('pure_milk_bar_inventory_updated'));
+    }
+
     return saleRecord;
   };
 

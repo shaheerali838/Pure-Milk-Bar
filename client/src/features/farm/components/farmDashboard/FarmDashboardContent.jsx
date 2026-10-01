@@ -214,7 +214,7 @@ export default function FarmDashboardContent() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         
         {/* Farm Production Trend (7 Days) */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-[340px]">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-85">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Farm Production Trend (7 Days)</h3>
@@ -264,7 +264,7 @@ export default function FarmDashboardContent() {
         </div>
 
         {/* Current Lactation Yield by Animal */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-[340px]">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-85">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Current Lactation Yield by Animal</h3>
@@ -310,7 +310,7 @@ export default function FarmDashboardContent() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         
         {/* Farm Expenses */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col justify-between h-[340px]">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col justify-between h-85">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -338,7 +338,7 @@ export default function FarmDashboardContent() {
                 <div key={i} className="flex items-center justify-between text-xs font-bold text-slate-700">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-600" />
-                    <span className="truncate max-w-[140px]">{name}</span>
+                    <span className="truncate max-w-35">{name}</span>
                   </div>
                   <span className="font-mono text-slate-900">Rs. {amount.toLocaleString()}</span>
                 </div>
@@ -353,7 +353,7 @@ export default function FarmDashboardContent() {
         </div>
 
         {/* Farm Financial Performance (P&L Trend) */}
-        <div className="lg:col-span-2 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-[340px]">
+        <div className="lg:col-span-2 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-85">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Farm Financial Performance (P&L Trend)</h3>

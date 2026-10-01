@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
-  const { customers } = useCustomerContext();
+  const { customers, isLoading } = useCustomerContext();
   const { addLedgerEntry, getCustomerCalculatedStats } = useLedgerContext();
 
   return (
@@ -34,7 +34,20 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
             </TableRow>
           </TableHeader>
           <TableBody className="divide-y divide-slate-100 text-xs text-slate-700">
-            {customers.length === 0 ? (
+            {isLoading && customers.length === 0 ? (
+              Array.from({ length: 8 }).map((_, r) => (
+                <TableRow key={r} className="animate-pulse">
+                  <TableCell className="px-3 py-3"><div className="flex items-center gap-2"><div className="w-7 h-7 rounded-full bg-slate-200" /><div className="space-y-1"><div className="h-3.5 bg-slate-200 rounded w-24" /><div className="h-2.5 bg-slate-100 rounded w-16" /></div></div></TableCell>
+                  <TableCell className="px-3 py-3"><div className="h-3.5 bg-slate-200 rounded w-20" /></TableCell>
+                  <TableCell className="px-3 py-3"><div className="h-5 bg-slate-200 rounded-full w-14" /></TableCell>
+                  <TableCell className="px-3 py-3"><div className="h-3.5 bg-slate-200 rounded w-16" /></TableCell>
+                  <TableCell className="px-3 py-3"><div className="h-3.5 bg-slate-200 rounded w-20" /></TableCell>
+                  <TableCell className="px-3 py-3"><div className="h-5 bg-slate-200 rounded-full w-16" /></TableCell>
+                  <TableCell className="px-3 py-3"><div className="h-5 bg-slate-200 rounded-full w-14" /></TableCell>
+                  <TableCell className="px-3 py-3 text-right"><div className="h-5 bg-slate-200 rounded w-12 ml-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : customers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="px-3 py-8 text-center text-slate-400 font-medium">
                   No customers found. Click "+ Add New Customer" to add one!

@@ -37,21 +37,21 @@ export default function DahiBatchTable({ batches = [], onDeleteBatch, onViewDeta
     <div className="space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 h-[36px] shadow-xs">
+          <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 h-9 shadow-xs">
             <Search className="w-3.5 h-3.5 text-slate-400" />
             <input
               type="text"
               placeholder="Search batch ID, product..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="border-none outline-none bg-transparent text-xs text-slate-700 w-[180px]"
+              className="border-none outline-none bg-transparent text-xs text-slate-700 w-45"
             />
           </div>
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-[36px] px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#009689] shadow-xs cursor-pointer"
+            className="h-9 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#009689] shadow-xs cursor-pointer"
           >
             <option value="all">All Statuses</option>
             <option value="Completed">Completed</option>
@@ -118,10 +118,10 @@ export default function DahiBatchTable({ batches = [], onDeleteBatch, onViewDeta
                       variant="outline"
                       className={
                         'inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border-0 ' +
-                        (statusStyle[b.status] || 'bg-slate-100 text-slate-600')
+                        (b.stage === 'pos' ? 'bg-emerald-100 text-emerald-800' : (statusStyle[b.status] || 'bg-slate-100 text-slate-600'))
                       }
                     >
-                      {b.status}
+                      {b.stage === 'pos' ? 'Live at POS' : b.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="px-3.5 py-3">

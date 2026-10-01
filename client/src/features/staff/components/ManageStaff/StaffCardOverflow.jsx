@@ -1,11 +1,16 @@
 import React from 'react';
 import { Users, Banknote, Bike, Tractor, ShieldCheck } from 'lucide-react';
 import { useStaffContext } from '@/context/StaffContext';
+import { KpiGridSkeleton } from '@/components/ui/skeleton';
 
 export default function StaffCardOverflow() {
-  const { metrics = {} } = useStaffContext() || {};
+  const { metrics = {}, isLoading } = useStaffContext() || {};
 
   const totalStaff = metrics?.totalStaff ?? 0;
+
+  if (isLoading && totalStaff === 0) {
+    return <KpiGridSkeleton count={5} className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mb-2" />;
+  }
   const monthlySalaries = metrics?.monthlySalaries ?? 0;
   const totalDeliveryMen = metrics?.totalDeliveryMen ?? 0;
   const totalFarmWorkers = metrics?.totalFarmWorkers ?? 0;

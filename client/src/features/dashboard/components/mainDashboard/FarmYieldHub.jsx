@@ -112,7 +112,7 @@ export default function FarmYieldHub() {
         </div>
 
         {/* Net Contribution Pill Banner */}
-        <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-teal-500/15 flex items-center justify-between font-bold text-xs mb-4">
+        <div className="p-3 rounded-2xl bg-linear-to-r from-emerald-500/15 via-emerald-500/10 to-teal-500/15 flex items-center justify-between font-bold text-xs mb-4">
           <span className="text-slate-900 font-extrabold">
             Net Farm Contribution:
           </span>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, ShieldCheck, UserCheck, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, UserCheck, CheckCircle2, Loader2 } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { usePOSContext } from '../../../../context/POSContext';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { Card } from '@/components/ui/card';
 export default function EditCustomerView({ customer, onBack }) {
   const { updateCustomer } = useCustomerContext();
   const { products = [] } = usePOSContext();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     id: '',
@@ -111,27 +112,34 @@ export default function EditCustomerView({ customer, onBack }) {
 
     const formattedSubscription = `${subQty} ${subUnit} ${selectedProduct?.name || 'Cow Milk'}`.trim();
 
-    updateCustomer({
-      ...customer,
-      name: formData.name,
-      area: formData.area || 'Model Town',
-      phone: formData.phone,
-      onlineAccount: formData.onlineAccount || formData.phone,
-      cnicNumber: formData.cnicNumber || '',
-      idType: formData.idType,
-      verificationStatus: formData.verificationStatus,
-      address: formData.address || '',
-      deliveryFee: formData.deliveryFee !== '' ? (Number(formData.deliveryFee) || 0) : 0,
-      secondaryPhone: formData.secondaryPhone || '',
-      referenceName: formData.referenceName || '',
-      subscription: formattedSubscription,
-      creditLimit: Number(formData.creditLimit) || 0,
-      khataBalance: Number(formData.khataBalance) || 0,
-      paymentMode: formData.paymentMode,
-      status: formData.status,
-    });
+    setIsSubmitting(true);
+    try {
+      updateCustomer({
+        ...customer,
+        name: formData.name,
+        area: formData.area || 'Model Town',
+        phone: formData.phone,
+        onlineAccount: formData.onlineAccount || formData.phone,
+        cnicNumber: formData.cnicNumber || '',
+        idType: formData.idType,
+        verificationStatus: formData.verificationStatus,
+        address: formData.address || '',
+        deliveryFee: formData.deliveryFee !== '' ? (Number(formData.deliveryFee) || 0) : 0,
+        secondaryPhone: formData.secondaryPhone || '',
+        referenceName: formData.referenceName || '',
+        subscription: formattedSubscription,
+        creditLimit: Number(formData.creditLimit) || 0,
+        khataBalance: Number(formData.khataBalance) || 0,
+        paymentMode: formData.paymentMode,
+        status: formData.status,
+      });
 
-    onBack();
+      onBack();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -524,17 +532,28 @@ export default function EditCustomerView({ customer, onBack }) {
               variant="outline"
               size="sm"
               onClick={onBack}
-              className="px-4 py-1.5 h-8 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl"
+              disabled={isSubmitting}
+              className="px-4 py-1.5 h-8 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl disabled:opacity-50"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               size="sm"
-              className="px-6 py-1.5 h-8 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+              disabled={isSubmitting}
+              className="px-6 py-1.5 h-8 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Update Customer Profile
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Updating Customer...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Update Customer Profile
+                </>
+              )}
             </Button>
           </div>
         </form>

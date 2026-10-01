@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from "react";
 import {
   FileText,
   Calendar,
@@ -11,8 +11,8 @@ import {
   Moon,
   DollarSign,
   TrendingUp,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableHeader,
@@ -20,48 +20,60 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 
-import { useAnimalContext } from '@/context/AnimalContext';
-import { useExpense } from '@/context/ExpenseContext';
-import { usePOSContext } from '@/context/POSContext';
-import { exportMultiSectionCSV } from '@/utils/csvExport';
+import { useAnimalContext } from "@/context/AnimalContext";
+import { useExpense } from "@/context/ExpenseContext";
+import { usePOSContext } from "@/context/POSContext";
+import { exportMultiSectionCSV } from "@/utils/csvExport";
+import { PageSkeleton } from "@/components/ui/skeleton";
 
 const getTodayDateStr = () => {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
 const normalizeDate = (dateVal) => {
-  if (!dateVal) return '';
-  if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateVal)) return dateVal.slice(0, 10);
+  if (!dateVal) return "";
+  if (typeof dateVal === "string" && /^\d{4}-\d{2}-\d{2}/.test(dateVal))
+    return dateVal.slice(0, 10);
   const d = new Date(dateVal);
   if (isNaN(d.getTime())) return String(dateVal).slice(0, 10);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
 export default function DailySheet() {
   const [date, setDate] = useState(() => getTodayDateStr());
   const [isLocked, setIsLocked] = useState(false);
-  const [shiftFilter, setShiftFilter] = useState('All'); // 'All' | 'Morning' | 'Evening'
+  const [shiftFilter, setShiftFilter] = useState("All"); // 'All' | 'Morning' | 'Evening'
 
-  const { animals, milkingLogs } = useAnimalContext();
+  const { animals = [], milkingLogs = [], isLoading } = useAnimalContext();
   const { expenses } = useExpense();
   const { farmSalesHistory = [], salesHistory = [] } = usePOSContext() || {};
+
+  if (isLoading && animals.length === 0) {
+    return <PageSkeleton />;
+  }
 
   const todayStr = getTodayDateStr();
   const isToday = date === todayStr;
 
   const handlePrevDay = () => {
-    const parts = (date || '').split('-').map(Number);
-    const cur = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
+    const parts = (date || "").split("-").map(Number);
+    const cur =
+      parts.length === 3
+        ? new Date(parts[0], parts[1] - 1, parts[2])
+        : new Date();
     cur.setDate(cur.getDate() - 1);
     setDate(normalizeDate(cur));
   };
 
   const handleNextDay = () => {
-    const parts = (date || '').split('-').map(Number);
-    const cur = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
+    const parts = (date || "").split("-").map(Number);
+    const cur =
+      parts.length === 3
+        ? new Date(parts[0], parts[1] - 1, parts[2])
+        : new Date();
     cur.setDate(cur.getDate() + 1);
     setDate(normalizeDate(cur));
   };
@@ -69,43 +81,47 @@ export default function DailySheet() {
   // Aggregate Data
   const { milkingRows, expenseRows, totals } = useMemo(() => {
     const dayMilkingLogs = (milkingLogs || []).filter(
-      (log) => normalizeDate(log.date) === date
+      (log) => normalizeDate(log.date) === date,
     );
 
     const aggregatedMilking = {};
-    (animals || []).filter(a => a.lactationStatus === 'Milking').forEach(a => {
-      aggregatedMilking[a.tag] = {
-        tag: a.tag,
-        name: a.name || a.tag,
-        species: a.species,
-        morningLiters: 0,
-        eveningLiters: 0,
-        healthStatus: a.healthStatus || 'Healthy',
-      };
-    });
+    (animals || [])
+      .filter((a) => a.lactationStatus === "Milking")
+      .forEach((a) => {
+        aggregatedMilking[a.tag] = {
+          tag: a.tag,
+          name: a.name || a.tag,
+          species: a.species,
+          morningLiters: 0,
+          eveningLiters: 0,
+          healthStatus: a.healthStatus || "Healthy",
+        };
+      });
 
-    dayMilkingLogs.forEach(log => {
+    dayMilkingLogs.forEach((log) => {
       const tag = log.animalTag || log.tag || log.animal?.tag;
       if (aggregatedMilking[tag]) {
         const yieldAmount = parseFloat(log.yieldLiters || log.yield) || 0;
-        const shift = (log.shift || '').toLowerCase();
-        if (shift === 'morning') {
+        const shift = (log.shift || "").toLowerCase();
+        if (shift === "morning") {
           aggregatedMilking[tag].morningLiters += yieldAmount;
-        } else if (shift === 'evening') {
+        } else if (shift === "evening") {
           aggregatedMilking[tag].eveningLiters += yieldAmount;
         }
       }
     });
 
-    const allCalculatedMilkingRows = Object.values(aggregatedMilking).map(row => ({
-      ...row,
-      totalLiters: row.morningLiters + row.eveningLiters
-    }));
+    const allCalculatedMilkingRows = Object.values(aggregatedMilking).map(
+      (row) => ({
+        ...row,
+        totalLiters: row.morningLiters + row.eveningLiters,
+      }),
+    );
 
     // Filter by shift
     const calculatedMilkingRows = allCalculatedMilkingRows.filter((r) => {
-      if (shiftFilter === 'Morning') return r.morningLiters > 0;
-      if (shiftFilter === 'Evening') return r.eveningLiters > 0;
+      if (shiftFilter === "Morning") return r.morningLiters > 0;
+      if (shiftFilter === "Evening") return r.eveningLiters > 0;
       return true;
     });
 
@@ -116,89 +132,162 @@ export default function DailySheet() {
     });
 
     // 3. Process Farm POS Sales (Milk + Dahi) for the selected date
-    const activeFarmSales = farmSalesHistory.length > 0 ? farmSalesHistory : salesHistory;
+    const activeFarmSales =
+      farmSalesHistory.length > 0 ? farmSalesHistory : salesHistory;
     let totalFarmSales = 0;
     activeFarmSales.forEach((sale) => {
-      const sDate = normalizeDate(sale.date || sale.timestamp || sale.formattedDate);
+      const sDate = normalizeDate(
+        sale.date || sale.timestamp || sale.formattedDate,
+      );
       if (sDate === date) {
         (sale.items || []).forEach((item) => {
-          const src = (item.source || '').toLowerCase();
-          if (farmSalesHistory.length === 0 && src.includes('supplier')) return;
-          totalFarmSales += Number(item.subtotal || item.effectiveRevenue) || ((Number(item.quantity) || 0) * (Number(item.price) || 0));
+          const src = (item.source || "").toLowerCase();
+          if (farmSalesHistory.length === 0 && src.includes("supplier")) return;
+          totalFarmSales +=
+            Number(item.subtotal || item.effectiveRevenue) ||
+            (Number(item.quantity) || 0) * (Number(item.price) || 0);
         });
       }
     });
 
-    const totalMorning = calculatedMilkingRows.reduce((sum, r) => sum + r.morningLiters, 0);
-    const totalEvening = calculatedMilkingRows.reduce((sum, r) => sum + r.eveningLiters, 0);
+    const totalMorning = calculatedMilkingRows.reduce(
+      (sum, r) => sum + r.morningLiters,
+      0,
+    );
+    const totalEvening = calculatedMilkingRows.reduce(
+      (sum, r) => sum + r.eveningLiters,
+      0,
+    );
     const totalCollected = totalMorning + totalEvening;
-    
-    const totalExpenses = dayExpenses.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
+
+    const totalExpenses = dayExpenses.reduce(
+      (sum, r) => sum + (parseFloat(r.amount) || 0),
+      0,
+    );
     const dayNetProfit = totalFarmSales - totalExpenses;
 
     return {
       milkingRows: calculatedMilkingRows,
       expenseRows: dayExpenses,
-      totals: { totalCollected, totalMorning, totalEvening, totalExpenses, totalFarmSales, dayNetProfit, animalCount: calculatedMilkingRows.length }
+      totals: {
+        totalCollected,
+        totalMorning,
+        totalEvening,
+        totalExpenses,
+        totalFarmSales,
+        dayNetProfit,
+        animalCount: calculatedMilkingRows.length,
+      },
     };
-  }, [animals, milkingLogs, expenses, farmSalesHistory, salesHistory, date, shiftFilter]);
+  }, [
+    animals,
+    milkingLogs,
+    expenses,
+    farmSalesHistory,
+    salesHistory,
+    date,
+    shiftFilter,
+  ]);
 
   const handlePrint = () => window.print();
 
   const handleDownloadCSV = () => {
     // 1. Export Milking Data
-    const milkingHeaders = ['Animal Tag', 'Name', 'Species', 'Morning Yield (L)', 'Evening Yield (L)', 'Total Yield (L)', 'Health Status'];
-    const milkingCsvRows = milkingRows.map(r => [
+    const milkingHeaders = [
+      "Animal Tag",
+      "Name",
+      "Species",
+      "Morning Yield (L)",
+      "Evening Yield (L)",
+      "Total Yield (L)",
+      "Health Status",
+    ];
+    const milkingCsvRows = milkingRows.map((r) => [
       r.tag,
       r.name || r.tag,
-      r.species || 'Buffalo',
+      r.species || "Buffalo",
       r.morningLiters.toFixed(1),
       r.eveningLiters.toFixed(1),
       r.totalLiters.toFixed(1),
-      r.healthStatus || 'Healthy'
+      r.healthStatus || "Healthy",
     ]);
-    
+
     // 2. Export Expenses Data
-    const expenseHeaders = ['Expense ID', 'Date', 'Category', 'Amount (Rs)', 'Payment Mode', 'Authorized By'];
-    const expenseCsvRows = expenseRows.map(e => [
+    const expenseHeaders = [
+      "Expense ID",
+      "Date",
+      "Category",
+      "Amount (Rs)",
+      "Payment Mode",
+      "Authorized By",
+    ];
+    const expenseCsvRows = expenseRows.map((e) => [
       e.id,
       e.date,
       e.category,
       `Rs. ${Number(e.amount || 0).toLocaleString()}`,
-      e.paymentMethod || e.paymentMode || 'Cash',
-      e.authorizedBy || e.loggedBy || 'N/A'
+      e.paymentMethod || e.paymentMode || "Cash",
+      e.authorizedBy || e.loggedBy || "N/A",
     ]);
 
     exportMultiSectionCSV({
       filename: `Farm_Daily_Sheet_${date}`,
-      title: 'Pure Milk Bar ERP — Farm Daily Master Operations Sheet',
+      title: "Pure Milk Bar ERP — Farm Daily Master Operations Sheet",
       metadata: [
-        ['Sheet Date', date],
-        ['Total Herd Milking Yield', `${totals.totalCollected.toFixed(1)} Liters`],
-        ['Morning Milking Total', `${totals.totalMorning.toFixed(1)} Liters`],
-        ['Evening Milking Total', `${totals.totalEvening.toFixed(1)} Liters`],
-        ['Active Animals Milked', totals.animalCount],
-        ['Total Farm POS Sales', `Rs. ${Number(totals.totalFarmSales || 0).toLocaleString()}`],
-        ['Total Farm Expenses Today', `Rs. ${Number(totals.totalExpenses || 0).toLocaleString()}`],
-        ['Farm Net Profit (Bachat)', `Rs. ${Number(totals.dayNetProfit || 0).toLocaleString()}`],
+        ["Sheet Date", date],
+        [
+          "Total Herd Milking Yield",
+          `${totals.totalCollected.toFixed(1)} Liters`,
+        ],
+        ["Morning Milking Total", `${totals.totalMorning.toFixed(1)} Liters`],
+        ["Evening Milking Total", `${totals.totalEvening.toFixed(1)} Liters`],
+        ["Active Animals Milked", totals.animalCount],
+        [
+          "Total Farm POS Sales",
+          `Rs. ${Number(totals.totalFarmSales || 0).toLocaleString()}`,
+        ],
+        [
+          "Total Farm Expenses Today",
+          `Rs. ${Number(totals.totalExpenses || 0).toLocaleString()}`,
+        ],
+        [
+          "Farm Net Profit (Bachat)",
+          `Rs. ${Number(totals.dayNetProfit || 0).toLocaleString()}`,
+        ],
       ],
       sections: [
         {
-          title: 'Herd Milking Yield Register',
-          description: 'Animal-wise morning and evening milking production log',
+          title: "Herd Milking Yield Register",
+          description: "Animal-wise morning and evening milking production log",
           headers: milkingHeaders,
           rows: milkingCsvRows,
           summaryRows: [
-            ['TOTAL HERD YIELD', '', '', `${totals.totalMorning.toFixed(1)} L`, `${totals.totalEvening.toFixed(1)} L`, `${totals.totalCollected.toFixed(1)} Liters`, `Animals: ${milkingRows.length}`],
+            [
+              "TOTAL HERD YIELD",
+              "",
+              "",
+              `${totals.totalMorning.toFixed(1)} L`,
+              `${totals.totalEvening.toFixed(1)} L`,
+              `${totals.totalCollected.toFixed(1)} Liters`,
+              `Animals: ${milkingRows.length}`,
+            ],
           ],
         },
         {
-          title: 'Farm Operational Expenses Today',
-          description: 'Fodder, veterinary medicine, labor and maintenance vouchers',
+          title: "Farm Operational Expenses Today",
+          description:
+            "Fodder, veterinary medicine, labor and maintenance vouchers",
           headers: expenseHeaders,
           rows: expenseCsvRows,
           summaryRows: [
-            ['TOTAL EXPENSES', '', '', `Rs. ${Number(totals.totalExpenses || 0).toLocaleString()}`, '', `Vouchers: ${expenseRows.length}`],
+            [
+              "TOTAL EXPENSES",
+              "",
+              "",
+              `Rs. ${Number(totals.totalExpenses || 0).toLocaleString()}`,
+              "",
+              `Vouchers: ${expenseRows.length}`,
+            ],
           ],
         },
       ],
@@ -215,26 +304,29 @@ export default function DailySheet() {
             Farm Daily Master Sheet
           </h2>
           <p className="text-sm text-slate-500">
-            Daily milking logs, herd yield, and consolidated farm operating expenses.
+            Daily milking logs, herd yield, and consolidated farm operating
+            expenses.
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Shift Filter: All, Morning, Evening */}
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full text-xs font-semibold text-slate-600 shadow-2xs">
-            {['All', 'Morning', 'Evening'].map((s) => (
+            {["All", "Morning", "Evening"].map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setShiftFilter(s)}
                 className={`px-3 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1 ${
                   shiftFilter === s
-                    ? 'bg-white text-blue-600 shadow-xs font-bold'
-                    : 'hover:text-slate-900'
+                    ? "bg-white text-blue-600 shadow-xs font-bold"
+                    : "hover:text-slate-900"
                 }`}
               >
-                {s === 'Morning' && <Sun className="w-3 h-3 text-amber-500" />}
-                {s === 'Evening' && <Moon className="w-3 h-3 text-indigo-500" />}
+                {s === "Morning" && <Sun className="w-3 h-3 text-amber-500" />}
+                {s === "Evening" && (
+                  <Moon className="w-3 h-3 text-indigo-500" />
+                )}
                 <span>{s}</span>
               </button>
             ))}
@@ -303,7 +395,7 @@ export default function DailySheet() {
           <Button
             onClick={() => setIsLocked(!isLocked)}
             className="flex items-center gap-2 px-4 h-9.5 rounded-full text-white text-xs font-semibold shadow-xs"
-            style={{ backgroundColor: isLocked ? '#059669' : '#d97706' }}
+            style={{ backgroundColor: isLocked ? "#059669" : "#d97706" }}
           >
             {isLocked ? (
               <>
@@ -322,49 +414,49 @@ export default function DailySheet() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
         {[
           {
-            id: 'total_yield',
-            title: 'Total Farm Yield',
+            id: "total_yield",
+            title: "Total Farm Yield",
             amount: `${totals.totalCollected.toFixed(1)} L`,
             sub: `${totals.animalCount} Animals Milked`,
             icon: Droplets,
-            color: '#d97706',
-            badge: 'Yield',
+            color: "#d97706",
+            badge: "Yield",
           },
           {
-            id: 'farm_sales',
-            title: 'Farm POS Sales',
+            id: "farm_sales",
+            title: "Farm POS Sales",
             amount: `Rs. ${totals.totalFarmSales.toLocaleString()}`,
-            sub: 'Direct milk & Dahi sales',
+            sub: "Direct milk & Dahi sales",
             icon: DollarSign,
-            color: '#009966',
-            badge: 'Sales',
+            color: "#009966",
+            badge: "Sales",
           },
           {
-            id: 'total_expenses',
-            title: 'Total Farm Expenses',
+            id: "total_expenses",
+            title: "Total Farm Expenses",
             amount: `Rs. ${totals.totalExpenses.toLocaleString()}`,
-            sub: 'Feed, labor & vet vouchers',
+            sub: "Feed, labor & vet vouchers",
             icon: CheckCircle2,
-            color: '#e11d48',
-            badge: 'Expense',
+            color: "#e11d48",
+            badge: "Expense",
           },
           {
-            id: 'net_profit',
-            title: 'Farm Net Profit',
-            amount: `${totals.dayNetProfit >= 0 ? '+' : '-'} Rs. ${Math.abs(totals.dayNetProfit).toLocaleString()}`,
-            sub: 'Sales - Expenses',
+            id: "net_profit",
+            title: "Farm Net Profit",
+            amount: `${totals.dayNetProfit >= 0 ? "+" : "-"} Rs. ${Math.abs(totals.dayNetProfit).toLocaleString()}`,
+            sub: "Sales - Expenses",
             icon: TrendingUp,
-            color: totals.dayNetProfit >= 0 ? '#059669' : '#dc2626',
-            badge: 'Bachat',
+            color: totals.dayNetProfit >= 0 ? "#059669" : "#dc2626",
+            badge: "Bachat",
           },
           {
-            id: 'active_animals',
-            title: 'Active Animals',
+            id: "active_animals",
+            title: "Active Animals",
             amount: totals.animalCount,
             sub: `${totals.totalMorning.toFixed(0)}L M | ${totals.totalEvening.toFixed(0)}L E`,
             icon: FileText,
-            color: '#2563eb',
-            badge: 'Herd',
+            color: "#2563eb",
+            badge: "Herd",
           },
         ].map(({ id, title, amount, sub, icon: Icon, color, badge }) => (
           <div
@@ -389,7 +481,9 @@ export default function DailySheet() {
                 {amount}
               </p>
               <p className="text-xs font-bold text-slate-800">{title}</p>
-              <p className="text-[10px] font-medium text-slate-400 line-clamp-1">{sub}</p>
+              <p className="text-[10px] font-medium text-slate-400 line-clamp-1">
+                {sub}
+              </p>
             </div>
           </div>
         ))}
@@ -441,7 +535,9 @@ export default function DailySheet() {
                     className="hover:bg-slate-50/60 transition-colors duration-150"
                   >
                     <TableCell className="py-3.5 px-4">
-                      <div className="font-bold text-slate-900 font-display">{row.name}</div>
+                      <div className="font-bold text-slate-900 font-display">
+                        {row.name}
+                      </div>
                       <div className="text-[11px] text-slate-400 font-mono">
                         {row.tag}
                       </div>
@@ -452,11 +548,15 @@ export default function DailySheet() {
                     </TableCell>
 
                     <TableCell className="py-3.5 px-4 text-right tabular text-xs">
-                      <span className="font-bold text-slate-800">{row.morningLiters.toFixed(1)} L</span>
+                      <span className="font-bold text-slate-800">
+                        {row.morningLiters.toFixed(1)} L
+                      </span>
                     </TableCell>
 
                     <TableCell className="py-3.5 px-4 text-right tabular text-xs">
-                      <span className="font-bold text-slate-800">{row.eveningLiters.toFixed(1)} L</span>
+                      <span className="font-bold text-slate-800">
+                        {row.eveningLiters.toFixed(1)} L
+                      </span>
                     </TableCell>
 
                     <TableCell className="py-3.5 px-4 text-right font-bold text-slate-900 tabular">
@@ -472,7 +572,10 @@ export default function DailySheet() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-slate-500">
+                  <TableCell
+                    colSpan={6}
+                    className="py-8 text-center text-slate-500"
+                  >
                     No milking records found.
                   </TableCell>
                 </TableRow>
@@ -485,7 +588,8 @@ export default function DailySheet() {
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-4 text-slate-600">
             <span>
-              Total Filtered Volume: <strong>{totals.totalCollected.toFixed(1)} Liters</strong>
+              Total Filtered Volume:{" "}
+              <strong>{totals.totalCollected.toFixed(1)} Liters</strong>
             </span>
           </div>
         </div>
@@ -542,7 +646,7 @@ export default function DailySheet() {
                     </TableCell>
 
                     <TableCell className="py-3.5 px-4 font-medium text-slate-600 text-xs truncate max-w-50">
-                      {row.description || '—'}
+                      {row.description || "—"}
                     </TableCell>
 
                     <TableCell className="py-3.5 px-4 text-right font-bold text-slate-900 tabular">
@@ -551,14 +655,17 @@ export default function DailySheet() {
 
                     <TableCell className="py-3.5 px-4 text-center">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
-                        {row.paymentMethod || row.paymentMode || 'Cash'}
+                        {row.paymentMethod || row.paymentMode || "Cash"}
                       </span>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-8 text-center text-slate-500">
+                  <TableCell
+                    colSpan={5}
+                    className="py-8 text-center text-slate-500"
+                  >
                     No farm expenses logged for {date}.
                   </TableCell>
                 </TableRow>
@@ -570,7 +677,9 @@ export default function DailySheet() {
         {/* Footer Summary */}
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-end gap-2 text-xs">
           <div className="text-right">
-            <span className="text-slate-500 font-medium mr-2">Total Expenses:</span>
+            <span className="text-slate-500 font-medium mr-2">
+              Total Expenses:
+            </span>
             <span className="text-base font-bold text-slate-900 tabular font-display">
               Rs. {totals.totalExpenses.toLocaleString()}
             </span>

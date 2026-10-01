@@ -232,7 +232,7 @@ export default function TotalFinancialSummary() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-indigo-600 flex items-center justify-center text-white shadow-2xs">
+            <div className="w-8 h-8 rounded-xl bg-linear-to-tr from-emerald-600 via-teal-600 to-indigo-600 flex items-center justify-center text-white shadow-2xs">
               <DollarSign className="w-4 h-4" />
             </div>
             <div>
@@ -272,7 +272,7 @@ export default function TotalFinancialSummary() {
       {/* Main Aggregation Banner: Total Business Net Profit */}
       <div className={`p-5 rounded-2xl border transition-all ${
         isBusinessProfitable
-          ? 'bg-gradient-to-r from-emerald-50/80 via-teal-50/50 to-indigo-50/40 border-emerald-200'
+          ? 'bg-linear-to-r from-emerald-50/80 via-teal-50/50 to-indigo-50/40 border-emerald-200'
           : 'bg-rose-50/70 border-rose-200'
       }`}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

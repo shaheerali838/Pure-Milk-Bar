@@ -15,6 +15,8 @@ import {
   Landmark,
   Smartphone,
   CreditCard,
+  Lock,
+  Loader2,
 } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
@@ -30,6 +32,7 @@ export default function PaySupplierModal({
 }) {
   const { intakeLogs = [], updateIntake } = useIntakeContext();
   const { suppliers = [], recordSupplierPayout } = useSupplierContext();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Find target slip & supplier
   const targetSlip = slip || (intakeLogs.find((l) => l.settlement !== 'Paid') || null);
@@ -71,6 +74,7 @@ export default function PaySupplierModal({
 
   // Default payment amount is the slip's pending amount (or total supplier pending)
   const maxPayable = slipPendingAmount > 0 ? slipPendingAmount : supplierTotalPending;
+  const [payType, setPayType] = useState('full'); // 'full' | 'half' | 'custom'
   const [payAmount, setPayAmount] = useState(() => (maxPayable > 0 ? String(maxPayable) : '0'));
   const [paymentMethod, setPaymentMethod] = useState(() => {
     const pref = matchedSupplier?.paymentMethod || 'Cash';
@@ -84,9 +88,13 @@ export default function PaySupplierModal({
 
   useEffect(() => {
     if (maxPayable > 0) {
-      setPayAmount(String(maxPayable));
+      if (payType === 'full') {
+        setPayAmount(String(maxPayable));
+      } else if (payType === 'half') {
+        setPayAmount(String(Math.round(maxPayable / 2)));
+      }
     }
-  }, [maxPayable]);
+  }, [maxPayable, payType]);
 
   const numPay = Math.min(maxPayable, Math.max(0, parseFloat(payAmount) || 0));
   const remainingSlipPending = Math.max(0, slipPendingAmount - numPay);
@@ -94,11 +102,17 @@ export default function PaySupplierModal({
 
   // Quick button helpers
   const handleSelectFull = () => {
+    setPayType('full');
     setPayAmount(String(maxPayable));
   };
 
   const handleSelectHalf = () => {
+    setPayType('half');
     setPayAmount(String(Math.round(maxPayable / 2)));
+  };
+
+  const handleSelectCustom = () => {
+    setPayType('custom');
   };
 
   const handleConfirmPayment = (e) => {
@@ -108,39 +122,47 @@ export default function PaySupplierModal({
       return;
     }
 
-    // 1. If paying against a specific intake slip, update that slip
-    if (targetSlip) {
-      const newPaid = alreadyPaidOnSlip + numPay;
-      const newPending = Math.max(0, totalCost - newPaid);
-      const newSettlement = newPending <= 0 ? 'Paid' : newPaid > 0 ? 'Partial' : 'Pending';
+    setIsSubmitting(true);
+    try {
+      // 1. If paying against a specific intake slip, update that slip
+      if (targetSlip) {
+        const newPaid = alreadyPaidOnSlip + numPay;
+        const newPending = Math.max(0, totalCost - newPaid);
+        const newSettlement = newPending <= 0 ? 'Paid' : newPaid > 0 ? 'Partial' : 'Pending';
 
-      updateIntake(targetSlip.id, {
-        paidAmount: newPaid,
-        pendingAmount: newPending,
-        settlement: newSettlement,
-        paymentMethod,
-        paymentNotes: paymentNote,
-        referenceNumber,
-      });
+        updateIntake(targetSlip.id, {
+          paidAmount: newPaid,
+          pendingAmount: newPending,
+          settlement: newSettlement,
+          paymentMethod,
+          paymentNotes: paymentNote,
+          referenceNumber,
+        });
+      }
+
+      // Direct advances are separate from intake settlements; settled slips are already reflected in intakeLogs.
+      if (!targetSlip && matchedSupplier && recordSupplierPayout) {
+        recordSupplierPayout({
+          supplierId: matchedSupplier.id,
+          amount: numPay,
+          method: paymentMethod,
+          referenceNumber,
+          notes: paymentNote || `Owner advance for ${supplierName}`,
+        });
+      }
+
+      toast.success(
+        `Paid Rs. ${numPay.toLocaleString()} via ${paymentMethod} to ${supplierName}. Pending balance reduced!`
+      );
+
+      if (onPaymentSuccess) onPaymentSuccess();
+      if (onClose) onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error('Payment disbursement failed');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Direct advances are separate from intake settlements; settled slips are already reflected in intakeLogs.
-    if (!targetSlip && matchedSupplier && recordSupplierPayout) {
-      recordSupplierPayout({
-        supplierId: matchedSupplier.id,
-        amount: numPay,
-        method: paymentMethod,
-        referenceNumber,
-        notes: paymentNote || `Owner advance for ${supplierName}`,
-      });
-    }
-
-    toast.success(
-      `Paid Rs. ${numPay.toLocaleString()} via ${paymentMethod} to ${supplierName}. Pending balance reduced!`
-    );
-
-    if (onPaymentSuccess) onPaymentSuccess();
-    if (onClose) onClose();
   };
 
   return (
@@ -180,7 +202,7 @@ export default function PaySupplierModal({
         {/* Modal Body */}
         <form onSubmit={handleConfirmPayment} className="p-6 space-y-4">
           {/* Supplier Name & Prior Total Pending Balance */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/60 via-emerald-100/30 to-white border border-emerald-200/80 flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-linear-to-br from-emerald-50/60 via-emerald-100/30 to-white border border-emerald-200/80 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-white border border-emerald-200 flex items-center justify-center text-emerald-700 font-bold text-sm shadow-xs">
                 <User className="w-5 h-5" />
@@ -245,36 +267,57 @@ export default function PaySupplierModal({
             </div>
           )}
 
-          {/* Quick Payment Selection: Full (100%) vs Half (50%) */}
+          {/* Quick Payment Selection: Full (100%), Half (50%), Custom */}
           <div>
             <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-2">
-              Quick Payment Selection
+              Payment Amount Type
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={handleSelectFull}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  numPay === maxPayable && maxPayable > 0
+                className={`py-2 px-2 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
+                  payType === 'full' && maxPayable > 0
                     ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                     : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-300'
                 }`}
               >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Pay Full (100%): Rs. {maxPayable.toLocaleString()}</span>
+                <div className="flex items-center gap-1 font-extrabold">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Full (100%)</span>
+                </div>
+                <span className="text-[10.5px] opacity-90 font-mono">Rs. {maxPayable.toLocaleString()}</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleSelectHalf}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  numPay === Math.round(maxPayable / 2) && maxPayable > 0
+                className={`py-2 px-2 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
+                  payType === 'half' && maxPayable > 0
                     ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                     : 'bg-white text-slate-700 border-slate-200 hover:bg-blue-50 hover:border-blue-300'
                 }`}
               >
-                <Coins className="w-3.5 h-3.5" />
-                <span>Pay Half (50%): Rs. {Math.round(maxPayable / 2).toLocaleString()}</span>
+                <div className="flex items-center gap-1 font-extrabold">
+                  <Coins className="w-3.5 h-3.5" />
+                  <span>Half (50%)</span>
+                </div>
+                <span className="text-[10.5px] opacity-90 font-mono">Rs. {Math.round(maxPayable / 2).toLocaleString()}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSelectCustom}
+                className={`py-2 px-2 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
+                  payType === 'custom'
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                    : 'bg-white text-slate-700 border-slate-200 hover:bg-purple-50 hover:border-purple-300'
+                }`}
+              >
+                <div className="flex items-center gap-1 font-extrabold">
+                  <span>Custom</span>
+                </div>
+                <span className="text-[10.5px] opacity-90 font-mono">Editable Rs.</span>
               </button>
             </div>
           </div>
@@ -363,11 +406,18 @@ export default function PaySupplierModal({
             </div>
           </div>
 
-          {/* Custom Paid Amount Input Field */}
+          {/* Paid Amount Input Field (Locked when Full/Half payment is selected) */}
           <div>
-            <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1.5">
-              Enter Amount to Pay Now (Rs.) *
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
+                Amount to Disburse (Rs.) *
+              </label>
+              {payType !== 'custom' && (
+                <span className="text-[10.5px] font-bold text-emerald-700 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                  <Lock className="w-3 h-3" /> Locked ({payType === 'full' ? 'Full Settlement' : 'Half Settlement'})
+                </span>
+              )}
+            </div>
             <div className="relative">
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
                 PKR
@@ -377,10 +427,15 @@ export default function PaySupplierModal({
                 min="1"
                 step="1"
                 required
+                readOnly={payType !== 'custom'}
                 value={payAmount}
                 onChange={(e) => setPayAmount(e.target.value)}
                 placeholder="Enter amount"
-                className="w-full h-[46px] pl-13 pr-3.5 rounded-2xl border border-slate-200 text-lg font-black text-slate-900 outline-none focus:border-emerald-600 shadow-2xs tabular"
+                className={`w-full h-11.5 pl-13 pr-3.5 rounded-2xl border text-lg font-black shadow-2xs tabular ${
+                  payType !== 'custom'
+                    ? 'bg-slate-100 text-slate-600 border-slate-300 cursor-not-allowed'
+                    : 'bg-white text-slate-900 border-slate-200 outline-none focus:border-emerald-600'
+                }`}
               />
             </div>
           </div>
@@ -421,18 +476,29 @@ export default function PaySupplierModal({
               type="button"
               variant="outline"
               onClick={onClose}
-              className="h-[40px] px-5 rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer"
+              disabled={isSubmitting}
+              className="h-10 px-5 rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer disabled:opacity-50"
             >
               Cancel
             </Button>
 
             <Button
               type="submit"
-              className="h-[40px] px-6 rounded-full text-xs font-semibold text-white shadow-sm flex items-center gap-2 cursor-pointer hover:brightness-110"
+              disabled={isSubmitting}
+              className="h-10 px-6 rounded-full text-xs font-semibold text-white shadow-sm flex items-center gap-2 cursor-pointer hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ backgroundColor: '#009966' }}
             >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Confirm &amp; Disburse Payment</span>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Disbursing Payment...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Confirm &amp; Disburse Payment</span>
+                </>
+              )}
             </Button>
           </div>
         </form>

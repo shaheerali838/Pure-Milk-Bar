@@ -22,8 +22,91 @@ class ProductService {
     return product;
   }
 
-  async getAllProducts(query) {
-    const { page, limit, category, unit, isAvailableForPos, isAvailableForDelivery, search } = query;
+  async getAllProducts(query = {}) {
+    const page = Math.max(1, parseInt(query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(query.limit, 10) || 100));
+    const { category, unit, isAvailableForPos, isAvailableForDelivery, search } = query;
+
+    // Check if product database is empty and auto-seed core dairy products
+    const initialCount = await Product.countDocuments();
+    if (initialCount === 0) {
+      const defaultProducts = [
+        {
+          sku: 'PRD-001',
+          name: 'Cow Milk (Fresh Raw & Chilled)',
+          category: 'Milk',
+          unit: 'LITER',
+          price: 260,
+          costPrice: 190,
+          currentStock: 100,
+          minimumAlertStock: 10,
+          isAvailableForPos: true,
+          isAvailableForDelivery: true,
+        },
+        {
+          sku: 'PRD-002',
+          name: 'Buffalo Milk (Fresh & High Fat)',
+          category: 'Milk',
+          unit: 'LITER',
+          price: 290,
+          costPrice: 228,
+          currentStock: 100,
+          minimumAlertStock: 10,
+          isAvailableForPos: true,
+          isAvailableForDelivery: true,
+        },
+        {
+          sku: 'PRD-003',
+          name: 'Fresh Dahi (Plain)',
+          category: 'Dahi',
+          unit: 'KG',
+          price: 320,
+          costPrice: 220,
+          currentStock: 50,
+          minimumAlertStock: 5,
+          isAvailableForPos: true,
+          isAvailableForDelivery: true,
+        },
+        {
+          sku: 'PRD-004',
+          name: 'Sweet Dahi (Meetha)',
+          category: 'Dahi',
+          unit: 'KG',
+          price: 360,
+          costPrice: 240,
+          currentStock: 30,
+          minimumAlertStock: 5,
+          isAvailableForPos: true,
+          isAvailableForDelivery: true,
+        },
+        {
+          sku: 'PRD-005',
+          name: 'Matka Dahi (Clay Pot)',
+          category: 'Dahi',
+          unit: 'KG',
+          price: 380,
+          costPrice: 250,
+          currentStock: 25,
+          minimumAlertStock: 5,
+          isAvailableForPos: true,
+          isAvailableForDelivery: true,
+        },
+        {
+          sku: 'PRD-006',
+          name: 'Special Thick Dahi (Malai)',
+          category: 'Dahi',
+          unit: 'KG',
+          price: 350,
+          costPrice: 230,
+          currentStock: 20,
+          minimumAlertStock: 5,
+          isAvailableForPos: true,
+          isAvailableForDelivery: true,
+        },
+      ];
+
+      await Product.insertMany(defaultProducts).catch(() => {});
+    }
 
     // Build filter object
     const filter = {};

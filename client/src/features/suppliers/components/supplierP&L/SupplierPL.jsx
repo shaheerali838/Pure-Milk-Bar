@@ -436,7 +436,7 @@ export default function SupplierPL() {
                 setCustomDate(e.target.value);
                 if (e.target.value) setPeriodFilter('');
               }}
-              className="h-[36px] pl-8 pr-3 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-700 shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-[#0092b8] focus:border-[#0092b8] transition cursor-pointer"
+              className="h-9 pl-8 pr-3 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-700 shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-[#0092b8] focus:border-[#0092b8] transition cursor-pointer"
             />
           </div>
 
@@ -444,7 +444,7 @@ export default function SupplierPL() {
           <button
             type="button"
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 h-[36px] px-4 rounded-full text-white text-xs font-bold bg-[#009966] hover:bg-[#008055] transition-all shadow-xs hover:shadow-sm active:translate-y-0 cursor-pointer"
+            className="flex items-center gap-1.5 h-9 px-4 rounded-full text-white text-xs font-bold bg-[#009966] hover:bg-[#008055] transition-all shadow-xs hover:shadow-sm active:translate-y-0 cursor-pointer"
             title="Export full P&L report as CSV"
           >
             <Download className="w-3.5 h-3.5 stroke-[2.5]" />

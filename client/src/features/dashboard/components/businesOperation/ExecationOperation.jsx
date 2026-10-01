@@ -23,7 +23,7 @@ export const ExecationOperation = () => {
             <NavLink
               key={to}
               to={to}
-              className="flex items-center justify-center gap-2 px-4 h-[38px] sm:h-[40px] rounded-full whitespace-nowrap shrink-0 transition-all duration-150 hover:brightness-110 cursor-pointer"
+              className="flex items-center justify-center gap-2 px-4 h-9.5 sm:h-10 rounded-full whitespace-nowrap shrink-0 transition-all duration-150 hover:brightness-110 cursor-pointer"
               style={{
                 background: isActive ? color : `${color}dd`,
                 border: isActive ? '2px solid rgba(255,255,255,0.45)' : '2px solid transparent',

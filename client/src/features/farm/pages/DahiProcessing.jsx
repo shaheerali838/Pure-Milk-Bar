@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Layers, Plus, Search, CheckCircle2, Clock, XCircle, X } from "lucide-react";
+import { Layers, Plus, Search, CheckCircle2, Clock, XCircle, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -17,6 +17,7 @@ import { toast } from "sonner";
 export default function DahiProcessing() {
   const [batches, setBatches] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmittingBatch, setIsSubmittingBatch] = useState(false);
 
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -98,6 +99,7 @@ export default function DahiProcessing() {
       stage: newBatch.status === "In Progress" ? "incubating" : "pos",
     };
 
+    setIsSubmittingBatch(true);
     try {
       const created = await farmService.createProcessingBatch(payload);
       const normalized = {
@@ -119,23 +121,25 @@ export default function DahiProcessing() {
       setBatches((prev) => [normalized, ...prev]);
       window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
       toast.success(`Processing batch for ${payload.product} created successfully!`);
+
+      setIsModalOpen(false);
+      setNewBatch({
+        product: "Dahi (Plain)",
+        source: "Both (Mixed)",
+        milkUsed: "",
+        farmMilkUsed: "",
+        supplierMilkUsed: "",
+        output: "",
+        fat: "4.5",
+        date: new Date().toISOString().split("T")[0],
+        status: "Completed",
+      });
     } catch (err) {
       console.error("Failed to create batch via API:", err);
       toast.error(err.response?.data?.message || err.message || "Failed to create processing batch in database");
+    } finally {
+      setIsSubmittingBatch(false);
     }
-
-    setIsModalOpen(false);
-    setNewBatch({
-      product: "Dahi (Plain)",
-      source: "Both (Mixed)",
-      milkUsed: "",
-      farmMilkUsed: "",
-      supplierMilkUsed: "",
-      output: "",
-      fat: "4.5",
-      date: new Date().toISOString().split("T")[0],
-      status: "Completed",
-    });
   };
 
   const filtered = batches.filter(
@@ -149,10 +153,10 @@ export default function DahiProcessing() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-display text-base font-bold text-slate-800 mb-0.5">
-            Dahi & Value-Add Processing
+            Dahi Processing
           </h3>
           <p className="text-sm text-slate-500">
-            Track all dahi, lassi, paneer and dairy conversion batches
+            Track all dahi production batches, milk inputs, and yields
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -160,7 +164,7 @@ export default function DahiProcessing() {
             <Search className="w-3.5 h-3.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search batch or product..."
+              placeholder="Search dahi batch..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="border-none outline-none bg-transparent text-[13px] text-slate-700 w-45"
@@ -194,7 +198,7 @@ export default function DahiProcessing() {
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="px-4 py-8 text-center text-slate-400 text-xs font-medium">
-                  No processing batches recorded yet. Click <strong>New Batch</strong> to start a dairy production run.
+                  No dahi processing batches recorded yet. Click <strong>New Batch</strong> to start a dahi production run.
                 </TableCell>
               </TableRow>
             ) : (
@@ -241,7 +245,7 @@ export default function DahiProcessing() {
                 <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
                   <Layers className="w-4 h-4" />
                 </div>
-                <h4 className="font-bold text-slate-900 text-sm">Create New Processing Batch</h4>
+                <h4 className="font-bold text-slate-900 text-sm">Create New Dahi Batch</h4>
               </div>
               <button
                 type="button"
@@ -254,7 +258,7 @@ export default function DahiProcessing() {
 
             <form onSubmit={handleAddBatch} className="space-y-3">
               <div>
-                <label className="block text-[11.5px] font-bold text-slate-700 mb-1">Product Type</label>
+                <label className="block text-[11.5px] font-bold text-slate-700 mb-1">Dahi Type / Variant</label>
                 <select
                   value={newBatch.product}
                   onChange={(e) => setNewBatch({ ...newBatch, product: e.target.value })}
@@ -262,11 +266,8 @@ export default function DahiProcessing() {
                 >
                   <option value="Dahi (Plain)">Dahi (Plain)</option>
                   <option value="Dahi (Sweet / Meethi)">Dahi (Sweet / Meethi)</option>
-                  <option value="Lassi (Sweet)">Lassi (Sweet)</option>
-                  <option value="Lassi (Salted / Namkeen)">Lassi (Salted / Namkeen)</option>
-                  <option value="Paneer">Paneer</option>
-                  <option value="Khoya / Mawa">Khoya / Mawa</option>
-                  <option value="Desi Ghee">Desi Ghee</option>
+                  <option value="Dahi (Special / Matka)">Dahi (Special / Matka)</option>
+                  <option value="Dahi (Low Fat / Skimmed)">Dahi (Low Fat / Skimmed)</option>
                 </select>
               </div>
 
@@ -385,10 +386,10 @@ export default function DahiProcessing() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11.5px] font-bold text-slate-700 mb-1">Estimated Output</label>
+                  <label className="block text-[11.5px] font-bold text-slate-700 mb-1">Estimated Output (kg)</label>
                   <input
                     type="text"
-                    placeholder="e.g. 90 kg / 60 bottles"
+                    placeholder="e.g. 90 kg"
                     value={newBatch.output}
                     onChange={(e) => setNewBatch({ ...newBatch, output: e.target.value })}
                     className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
@@ -438,17 +439,26 @@ export default function DahiProcessing() {
                   variant="outline"
                   size="sm"
                   onClick={() => setIsModalOpen(false)}
-                  className="text-xs"
+                  disabled={isSubmittingBatch}
+                  className="text-xs disabled:opacity-50"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   size="sm"
-                  className="text-xs font-bold text-white cursor-pointer"
+                  disabled={isSubmittingBatch}
+                  className="text-xs font-bold text-white cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5"
                   style={{ background: "#009689" }}
                 >
-                  Save Batch
+                  {isSubmittingBatch ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Creating Batch...</span>
+                    </>
+                  ) : (
+                    'Save Batch'
+                  )}
                 </Button>
               </div>
             </form>
