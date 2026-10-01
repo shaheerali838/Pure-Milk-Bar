@@ -26,8 +26,9 @@ import ProductChannelBreakdown from './ProductChannelBreakdown';
 
 export default function SupplierPL() {
   const { intakeLogs = [] } = useIntakeContext();
-  const { salesHistory = [], products: catalogProducts = [] } = usePOSContext();
+  const { supplierSalesHistory = [], salesHistory = [], products: catalogProducts = [] } = usePOSContext();
   const { deliveries = [] } = useDeliveryContext();
+  const { expenses: allExpenses = [] } = useSourcExpenseContext() || {};
   const settingsCtx = useSettingsContext?.();
   const settingsPricing = settingsCtx?.settings?.pricing || {};
 
@@ -56,103 +57,80 @@ export default function SupplierPL() {
     return intakeLogs;
   }, [intakeLogs, customDate, periodFilter, todayStr, currentMonthStr]);
 
+  const activeSupplierSales = supplierSalesHistory.length > 0 ? supplierSalesHistory : salesHistory;
   const filteredSales = useMemo(() => {
+    return activeSupplierSales.filter((sale) => {
+      const sDate = sale.formattedDate
+        ? new Date(sale.formattedDate).toISOString().split('T')[0]
+        : (sale.timestamp ? sale.timestamp.split('T')[0] : (sale.date || ''));
+      if (customDate) return sDate === customDate;
+      if (periodFilter === 'Today') return sDate === todayStr;
+      if (periodFilter === 'This Month') return sDate.startsWith(currentMonthStr);
+      return true;
+    });
+  }, [activeSupplierSales, customDate, periodFilter, todayStr, currentMonthStr]);
+
+  const filteredExpenses = useMemo(() => {
     if (customDate) {
-      return salesHistory.filter((sale) => {
-        const sDate = sale.formattedDate
-          ? new Date(sale.formattedDate).toISOString().split('T')[0]
-          : (sale.timestamp ? sale.timestamp.split('T')[0] : (sale.date || ''));
-        return sDate === customDate;
-      });
+      return allExpenses.filter((e) => e.date === customDate);
     }
     if (periodFilter === 'Today') {
-      return salesHistory.filter((sale) => {
-        const sDate = sale.formattedDate
-          ? new Date(sale.formattedDate).toISOString().split('T')[0]
-          : (sale.timestamp ? sale.timestamp.split('T')[0] : (sale.date || ''));
-        return sDate === todayStr;
-      });
+      return allExpenses.filter((e) => e.date === todayStr);
     }
     if (periodFilter === 'This Month') {
-      return salesHistory.filter((sale) => {
-        const sDate = sale.formattedDate
-          ? new Date(sale.formattedDate).toISOString().split('T')[0]
-          : (sale.timestamp ? sale.timestamp.split('T')[0] : (sale.date || ''));
-        return sDate.startsWith(currentMonthStr);
-      });
+      return allExpenses.filter((e) => (e.date || '').startsWith(currentMonthStr));
     }
-    return salesHistory;
-  }, [salesHistory, customDate, periodFilter, todayStr, currentMonthStr]);
+    return allExpenses;
+  }, [allExpenses, customDate, periodFilter, todayStr, currentMonthStr]);
 
-  // 2. Real Milk Procurement Streams Dynamically From Intake Records (NO CREAM, NO EXPENSES)
+  // Compute Supplier Milk and Dahi Sales strictly isolated from filtered sales
+  const { supplierMilkSales, supplierMilkVolume, supplierDahiSales, supplierDahiVolume, totalSupplierSales } = useMemo(() => {
+    let mSales = 0;
+    let mVol = 0;
+    let dSales = 0;
+    let dVol = 0;
+
+    filteredSales.forEach((sale) => {
+      (sale.items || []).forEach((item) => {
+        const iName = (item.name || '').toLowerCase();
+        const cat = (item.category || '').toLowerCase();
+        const qty = Number(item.quantity) || 0;
+        const sub = Number(item.subtotal || item.effectiveRevenue) || (qty * (Number(item.price || item.unitPrice) || 0));
+
+        const isDahi = iName.includes('dahi') || cat.includes('dahi') || iName.includes('yogurt') || cat.includes('yogurt');
+        if (isDahi) {
+          dSales += sub;
+          dVol += qty;
+        } else {
+          mSales += sub;
+          mVol += qty;
+        }
+      });
+    });
+
+    return {
+      supplierMilkSales: mSales,
+      supplierMilkVolume: mVol,
+      supplierDahiSales: dSales,
+      supplierDahiVolume: dVol,
+      totalSupplierSales: mSales + dSales,
+    };
+  }, [filteredSales]);
+
+  // 2. Real Milk Procurement Streams Dynamically From Intake Records
   const productStreams = useMemo(() => {
-    // Separate intake logs by stream criteria
-    const cowLogs = filteredIntakeLogs.filter(
-      (i) =>
-        (i.milkType && i.milkType.toLowerCase().includes('cow')) ||
-        (i.notes && i.notes.toLowerCase().includes('cow')) ||
-        (i.supplierName && i.supplierName.toLowerCase().includes('chaudhry')) ||
-        (i.fat !== undefined && Number(i.fat) < 5.0)
-    );
-
-    const buffaloLogs = filteredIntakeLogs.filter(
-      (i) =>
-        !cowLogs.includes(i) && (
-          (i.milkType && (i.milkType.toLowerCase().includes('buffalo') || i.milkType.toLowerCase().includes('buff'))) ||
-          (i.notes && i.notes.toLowerCase().includes('buffalo')) ||
-          (i.supplierName && i.supplierName.toLowerCase().includes('ahmad')) ||
-          (i.fat !== undefined && Number(i.fat) >= 6.0)
-        )
-    );
-
-    const chilledLogs = filteredIntakeLogs.filter(
-      (i) => !cowLogs.includes(i) && !buffaloLogs.includes(i)
-    );
+    const buffaloLogs = [...filteredIntakeLogs];
 
     // Real Sourced Volumes (Liters) from IntakeContext
-    const cowVolume = cowLogs.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
     const buffaloVolume = buffaloLogs.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
-    const chilledVolume = chilledLogs.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
 
     // Real Base Sourcing Costs (Rs.) from IntakeContext
-    const cowCost = cowLogs.reduce((sum, r) => sum + (Number(r.totalCost) || 0), 0);
     const buffaloCost = buffaloLogs.reduce((sum, r) => sum + (Number(r.totalCost) || 0), 0);
-    const chilledCost = chilledLogs.reduce((sum, r) => sum + (Number(r.totalCost) || 0), 0);
 
     // Real Payments & Pending Balances
-    const cowPaid = cowLogs.reduce((sum, r) => sum + (Number(r.paidAmount) || 0), 0);
     const buffaloPaid = buffaloLogs.reduce((sum, r) => sum + (Number(r.paidAmount) || 0), 0);
-    const chilledPaid = chilledLogs.reduce((sum, r) => sum + (Number(r.paidAmount) || 0), 0);
-
-    const cowPending = cowLogs.reduce((sum, r) => sum + (Number(r.pendingAmount) || 0), 0);
     const buffaloPending = buffaloLogs.reduce((sum, r) => sum + (Number(r.pendingAmount) || 0), 0);
-    const chilledPending = chilledLogs.reduce((sum, r) => sum + (Number(r.pendingAmount) || 0), 0);
 
-    // Real Sales recorded for Supplier Milk from POS orders (if any)
-    const getRealSalesForStream = (keywords) => {
-      let revenue = 0;
-      let volume = 0;
-      filteredSales.forEach((sale) => {
-        (sale.items || []).forEach((item) => {
-          const iName = (item.name || '').toLowerCase();
-          const src = item.source || '';
-          const matches = keywords.some((kw) => iName.includes(kw));
-          if (matches && (src === 'Supplier' || iName.includes('supplier') || iName.includes('buffalo'))) {
-            const qty = Number(item.quantity) || 0;
-            const sub = Number(item.subtotal) || qty * (Number(item.price || item.unitPrice) || 0);
-            revenue += sub;
-            volume += qty;
-          }
-        });
-      });
-      return { revenue, volume };
-    };
-
-    const cowSales = getRealSalesForStream(['cow']);
-    const buffaloSales = getRealSalesForStream(['buffalo', 'buff']);
-    const chilledSales = getRealSalesForStream(['chilled', 'tanker', 'pasteurized']);
-
-    // Build real shift breakdown for intake channels
     const buildIntakeChannels = (logs, totalVol, totalCostVal) => {
       const morningLogs = logs.filter((l) => (l.shift || '').toLowerCase().includes('morning') || (l.time || '').toLowerCase().includes('morning'));
       const eveningLogs = logs.filter((l) => (l.shift || '').toLowerCase().includes('evening') || (l.time || '').toLowerCase().includes('evening'));
@@ -219,29 +197,6 @@ export default function SupplierPL() {
 
     const streams = [
       {
-        id: 'LINE-COW-01',
-        streamName: 'Sourced Cow Milk',
-        category: 'Raw Sourced Milk',
-        sourceType: 'Supplier Milk Procurement',
-        originDetails: 'Direct Supplier Intake & Collection Routes',
-        sourcedVolume: cowVolume,
-        unit: 'L',
-        baseCost: cowCost,
-        paidAmount: cowPaid,
-        pendingAmount: cowPending,
-        avgPurchaseRate: cowVolume > 0 ? cowCost / cowVolume : 0,
-        resaleRevenue: cowSales.revenue,
-        soldVolume: cowSales.volume,
-        avgResaleRate: cowSales.volume > 0 ? Math.round(cowSales.revenue / cowSales.volume) : 0,
-        grossMargin: Math.max(0, cowSales.revenue - (cowSales.volume * (cowVolume > 0 ? cowCost / cowVolume : 0))),
-        grossMarginPercent: cowSales.revenue > 0 ? Math.round(((cowSales.revenue - (cowSales.volume * (cowCost / cowVolume))) / cowSales.revenue) * 100) : 0,
-        allocatedOverhead: 0,
-        netProfit: Math.max(0, cowSales.revenue - (cowSales.volume * (cowVolume > 0 ? cowCost / cowVolume : 0))),
-        realizationPerUnit: cowVolume > 0 ? cowCost / cowVolume : 0,
-        channels: buildIntakeChannels(cowLogs, cowVolume, cowCost),
-        logsCount: cowLogs.length,
-      },
-      {
         id: 'LINE-BUF-02',
         streamName: 'Sourced Buffalo Milk',
         category: 'Raw Sourced Milk',
@@ -253,89 +208,102 @@ export default function SupplierPL() {
         paidAmount: buffaloPaid,
         pendingAmount: buffaloPending,
         avgPurchaseRate: buffaloVolume > 0 ? buffaloCost / buffaloVolume : 0,
-        resaleRevenue: buffaloSales.revenue,
-        soldVolume: buffaloSales.volume,
-        avgResaleRate: buffaloSales.volume > 0 ? Math.round(buffaloSales.revenue / buffaloSales.volume) : 0,
-        grossMargin: Math.max(0, buffaloSales.revenue - (buffaloSales.volume * (buffaloVolume > 0 ? buffaloCost / buffaloVolume : 0))),
-        grossMarginPercent: buffaloSales.revenue > 0 ? Math.round(((buffaloSales.revenue - (buffaloSales.volume * (buffaloCost / buffaloVolume))) / buffaloSales.revenue) * 100) : 0,
+        resaleRevenue: supplierMilkSales,
+        soldVolume: supplierMilkVolume,
+        avgResaleRate: supplierMilkVolume > 0 ? Math.round(supplierMilkSales / supplierMilkVolume) : 0,
+        grossMargin: supplierMilkSales - buffaloCost,
+        grossMarginPercent: supplierMilkSales > 0 ? Math.round(((supplierMilkSales - buffaloCost) / supplierMilkSales) * 100) : 0,
         allocatedOverhead: 0,
-        netProfit: Math.max(0, buffaloSales.revenue - (buffaloSales.volume * (buffaloVolume > 0 ? buffaloCost / buffaloVolume : 0))),
+        netProfit: supplierMilkSales - buffaloCost,
         realizationPerUnit: buffaloVolume > 0 ? buffaloCost / buffaloVolume : 0,
         channels: buildIntakeChannels(buffaloLogs, buffaloVolume, buffaloCost),
         logsCount: buffaloLogs.length,
       },
     ];
 
-    if (chilledVolume > 0) {
+    if (supplierDahiSales > 0 || supplierDahiVolume > 0) {
       streams.push({
-        id: 'LINE-CHL-03',
-        streamName: 'Standardized Chilled Milk',
+        id: 'LINE-DAHI-SUP',
+        streamName: 'Supplier & Mixed Dahi (Supplier Share)',
         category: 'Processed & Chilled',
-        sourceType: 'Bulk Intake Sourcing',
-        originDetails: 'Chilled Milk Sourcing & Tankers',
-        sourcedVolume: chilledVolume,
-        unit: 'L',
-        baseCost: chilledCost,
-        paidAmount: chilledPaid,
-        pendingAmount: chilledPending,
-        avgPurchaseRate: chilledVolume > 0 ? chilledCost / chilledVolume : 0,
-        resaleRevenue: chilledSales.revenue,
-        soldVolume: chilledSales.volume,
-        avgResaleRate: chilledSales.volume > 0 ? Math.round(chilledSales.revenue / chilledSales.volume) : 0,
-        grossMargin: Math.max(0, chilledSales.revenue - (chilledSales.volume * (chilledVolume > 0 ? chilledCost / chilledVolume : 0))),
-        grossMarginPercent: chilledSales.revenue > 0 ? Math.round(((chilledSales.revenue - (chilledSales.volume * (chilledCost / chilledVolume))) / chilledSales.revenue) * 100) : 0,
+        sourceType: 'Dahi Value Addition',
+        originDetails: 'Supplier-Sourced & Mixed Batch Dahi Conversion',
+        sourcedVolume: supplierDahiVolume,
+        unit: 'kg',
+        baseCost: 0,
+        paidAmount: 0,
+        pendingAmount: 0,
+        avgPurchaseRate: 0,
+        resaleRevenue: supplierDahiSales,
+        soldVolume: supplierDahiVolume,
+        avgResaleRate: supplierDahiVolume > 0 ? Math.round(supplierDahiSales / supplierDahiVolume) : 320,
+        grossMargin: supplierDahiSales,
+        grossMarginPercent: 100,
         allocatedOverhead: 0,
-        netProfit: Math.max(0, chilledSales.revenue - (chilledSales.volume * (chilledVolume > 0 ? chilledCost / chilledVolume : 0))),
-        realizationPerUnit: chilledVolume > 0 ? chilledCost / chilledVolume : 0,
-        channels: buildIntakeChannels(chilledLogs, chilledVolume, chilledCost),
-        logsCount: chilledLogs.length,
+        netProfit: supplierDahiSales,
+        realizationPerUnit: supplierDahiVolume > 0 ? Math.round(supplierDahiSales / supplierDahiVolume) : 320,
+        channels: [
+          {
+            channelName: 'POS Counter & Delivery Dahi Sales',
+            channelSubtext: 'Supplier portion of Dahi sales',
+            volume: supplierDahiVolume,
+            cost: 0,
+            avgRate: 0,
+            sharePercent: 100,
+            revenue: supplierDahiSales,
+            grossMargin: supplierDahiSales,
+          },
+        ],
+        logsCount: 1,
       });
     }
 
     return streams;
-  }, [filteredIntakeLogs, filteredSales]);
+  }, [filteredIntakeLogs, supplierMilkSales, supplierMilkVolume, supplierDahiSales, supplierDahiVolume]);
 
-  // 3. Aggregate Summary Data for the 6 Cards
+  // 3. Aggregate Summary Data for the Cards
+  // CRITICAL FORMULA: (Supplier Milk Sales + Supplier Dahi Sales) - Supplier Purchase Cost - Supplier Expenses = Supplier Net Profit
   const summaryData = useMemo(() => {
-    const totalVolume = productStreams.reduce((acc, p) => acc + (p.sourcedVolume || 0), 0);
-    const totalSupplierCost = productStreams.reduce((acc, p) => acc + (p.baseCost || 0), 0);
-    const totalPaid = productStreams.reduce((acc, p) => acc + (p.paidAmount || 0), 0);
-    const totalPending = productStreams.reduce((acc, p) => acc + (p.pendingAmount || 0), 0);
-    const totalRealizedSales = productStreams.reduce((acc, p) => acc + (p.resaleRevenue || 0), 0);
-    const totalRealSoldVolume = productStreams.reduce((acc, p) => acc + (p.soldVolume || 0), 0);
-    const totalGross = Math.max(0, productStreams.reduce((acc, p) => acc + (p.grossMargin || 0), 0));
+    const totalVolume = filteredIntakeLogs.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
+    const totalSupplierCost = filteredIntakeLogs.reduce((sum, r) => sum + (Number(r.totalCost) || 0), 0);
+    const totalPaid = filteredIntakeLogs.reduce((sum, r) => sum + (Number(r.paidAmount) || 0), 0);
+    const totalPending = filteredIntakeLogs.reduce((sum, r) => sum + (Number(r.pendingAmount) || 0), 0);
+    const totalRealizedSales = totalSupplierSales;
+    const totalExpenses = filteredExpenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+
+    const supplierNetProfit = totalSupplierSales - totalSupplierCost - totalExpenses;
+    const totalGross = totalSupplierSales - totalSupplierCost;
 
     const avgPurchaseRate = totalVolume > 0 ? totalSupplierCost / totalVolume : 0;
-    const avgResalePerLiter = totalRealSoldVolume > 0 ? totalRealizedSales / totalRealSoldVolume : 0;
+    const avgResalePerLiter = supplierMilkVolume > 0 ? supplierMilkSales / supplierMilkVolume : 0;
     const grossMarginPercent = totalRealizedSales > 0 ? Math.round((totalGross / totalRealizedSales) * 100) : 0;
-
-    const cowStream = productStreams.find((p) => p.id === 'LINE-COW-01');
-    const buffStream = productStreams.find((p) => p.id === 'LINE-BUF-02');
 
     return {
       income: totalRealizedSales,
       cost: totalSupplierCost,
       gross: totalGross,
-      logistics: 0,
-      net: totalGross,
+      logistics: totalExpenses,
+      net: supplierNetProfit,
       realizationPerLiter: avgPurchaseRate,
       totalVolume,
-      cowVolume: cowStream?.sourcedVolume || 0,
-      buffaloVolume: buffStream?.sourcedVolume || 0,
+      buffaloVolume: totalVolume,
       avgPurchaseRate,
       avgResalePerLiter,
-      overheadPerLiter: 0,
+      overheadPerLiter: totalVolume > 0 ? totalExpenses / totalVolume : 0,
       grossMarginPercent,
-      netMarginPercent: grossMarginPercent,
+      netMarginPercent: totalRealizedSales > 0 ? Math.round((supplierNetProfit / totalRealizedSales) * 100) : 0,
       paidSpend: totalPaid,
       pendingSpend: totalPending,
-      realSoldVolume: totalRealSoldVolume,
+      realSoldVolume: supplierMilkVolume,
+      dahiSoldVolume: supplierDahiVolume,
+      milkSales: supplierMilkSales,
+      dahiSales: supplierDahiSales,
       products: productStreams,
       intakeRecords: filteredIntakeLogs,
-      expenses: [],
-      expenseVouchersCount: 0,
+      expenses: filteredExpenses,
+      expenseVouchersCount: filteredExpenses.length,
     };
-  }, [productStreams, filteredIntakeLogs]);
+  }, [productStreams, filteredIntakeLogs, filteredExpenses, totalSupplierSales, supplierMilkSales, supplierDahiSales, supplierMilkVolume, supplierDahiVolume]);
 
   // 4. Data for Bar Chart ('Procurement Cost & Volume by Stream')
   const barChartData = useMemo(() => {

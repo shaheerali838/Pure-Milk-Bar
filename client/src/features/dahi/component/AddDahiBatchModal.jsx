@@ -12,7 +12,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
 
   const [formData, setFormData] = useState({
     product: 'Fresh Dahi (Yogurt)',
-    source: 'Farm & Supplier Mix',
+    source: 'Both (Mixed)',
     milkUsed: '',
     farmMilkUsed: '',
     supplierMilkUsed: '',
@@ -45,7 +45,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
       fVal = '0';
       sVal = String(total);
     } else {
-      // Split proportionally based on available sourcing
+      // Both (Mixed)
       const sumAvail = availFarm + availSupplier;
       const fPortion = sumAvail > 0 ? Math.round(total * (availFarm / sumAvail)) : Math.round(total / 2);
       fVal = String(fPortion);
@@ -135,8 +135,30 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
       return;
     }
 
-    const farmPortion = parseFloat(formData.farmMilkUsed) || (formData.source === 'Farm Milk' ? rawVal : 0);
-    const supPortion = parseFloat(formData.supplierMilkUsed) || (formData.source === 'Supplier Milk' ? rawVal : 0);
+    const farmPortion = formData.source === 'Farm Milk' 
+      ? rawVal 
+      : formData.source === 'Supplier Milk' 
+        ? 0 
+        : (parseFloat(formData.farmMilkUsed) || 0);
+    const supPortion = formData.source === 'Supplier Milk' 
+      ? rawVal 
+      : formData.source === 'Farm Milk' 
+        ? 0 
+        : (parseFloat(formData.supplierMilkUsed) || 0);
+
+    const totalUsed = farmPortion + supPortion || rawVal;
+    let farmRatio = 1;
+    let supplierRatio = 0;
+    if (formData.source === 'Farm Milk') {
+      farmRatio = 1;
+      supplierRatio = 0;
+    } else if (formData.source === 'Supplier Milk') {
+      farmRatio = 0;
+      supplierRatio = 1;
+    } else {
+      farmRatio = totalUsed > 0 ? Number((farmPortion / totalUsed).toFixed(4)) : 0.5;
+      supplierRatio = totalUsed > 0 ? Number((supPortion / totalUsed).toFixed(4)) : 0.5;
+    }
 
     onAddBatch({
       ...formData,
@@ -144,6 +166,8 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
       milkUsedVal: rawVal,
       farmMilkUsed: farmPortion,
       supplierMilkUsed: supPortion,
+      farmRatio,
+      supplierRatio,
       output: formData.output ? `${formData.output} kg` : `${(rawVal * 0.985).toFixed(1)} kg`,
       outputVal: parseFloat(formData.output) || Number((rawVal * 0.985).toFixed(1)),
       fat: '4.5%',
@@ -262,9 +286,9 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                   onChange={(e) => handleSourceChange(e.target.value)}
                   className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-medium cursor-pointer"
                 >
-                  <option value="Farm & Supplier Mix">Farm &amp; Supplier Mix ({availTotal} kg total)</option>
-                  <option value="Farm Milk">Farm Fresh Milk ({availFarm} kg available)</option>
-                  <option value="Supplier Milk">Supplier Procured Milk ({availSupplier} kg available)</option>
+                  <option value="Both (Mixed)">Both (Mixed) — Farm + Supplier ({availTotal} kg total)</option>
+                  <option value="Farm Milk">Farm Milk (Only Farm P&amp;L — {availFarm} kg available)</option>
+                  <option value="Supplier Milk">Supplier Milk (Only Supplier P&amp;L — {availSupplier} kg available)</option>
                 </select>
               </div>
             </div>
@@ -285,7 +309,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                    Total Milk Input (kg) <span className="text-rose-500">*</span>
+                    Total Milk Input (kg/L) <span className="text-rose-500">*</span>
                   </label>
                   {currentMax > 0 && (
                     <button
@@ -317,48 +341,74 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                     Input exceeds available {formData.source} limit of {currentMax} kg
                   </p>
                 )}
+                {formData.source === 'Farm Milk' && (
+                  <p className="text-[11px] text-emerald-700 font-semibold mt-1">
+                    ✓ 100% Sales &amp; Calculations will go strictly to <strong>Farm P&amp;L</strong>
+                  </p>
+                )}
+                {formData.source === 'Supplier Milk' && (
+                  <p className="text-[11px] text-blue-700 font-semibold mt-1">
+                    ✓ 100% Sales &amp; Calculations will go strictly to <strong>Supplier P&amp;L</strong>
+                  </p>
+                )}
               </div>
 
               {/* If mixed, breakout inputs */}
-              {formData.source === 'Farm & Supplier Mix' ? (
-                <div className="grid grid-cols-2 gap-2.5 p-2 bg-slate-50/80 border border-slate-200/80 rounded-xl">
-                  <div>
-                    <label className="block text-[10.5px] font-bold text-emerald-800 uppercase tracking-wider mb-0.5">
-                      Farm Portion
-                    </label>
-                    <div className="relative">
-                       <span className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-[10px]">
-                         kg
-                       </span>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={formData.farmMilkUsed}
-                        onChange={(e) => handleFarmPortionChange(e.target.value)}
-                        className="w-full h-8 pl-2 pr-6 text-xs border border-slate-200 rounded-lg bg-white font-medium"
-                      />
+              {formData.source === 'Both (Mixed)' || formData.source === 'Farm & Supplier Mix' ? (
+                <div className="p-2.5 bg-slate-50/90 border border-slate-200/90 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-slate-700">Enter Exact Liter Ratio:</span>
+                    {parseFloat(formData.milkUsed) > 0 && (
+                      <span className="font-bold text-emerald-700 text-[10.5px]">
+                        Farm: {Math.round(((parseFloat(formData.farmMilkUsed) || 0) / (parseFloat(formData.milkUsed) || 1)) * 100)}% | 
+                        Supplier: {Math.round(((parseFloat(formData.supplierMilkUsed) || 0) / (parseFloat(formData.milkUsed) || 1)) * 100)}%
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10.5px] font-bold text-emerald-800 uppercase tracking-wider mb-0.5">
+                        Farm Milk (L)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-slate-400 font-bold text-[10px]">
+                          kg
+                        </span>
+                        <input
+                          type="number"
+                          step="0.5"
+                          required
+                          value={formData.farmMilkUsed}
+                          onChange={(e) => handleFarmPortionChange(e.target.value)}
+                          className="w-full h-8 pl-2 pr-6 text-xs border border-emerald-300 rounded-lg bg-white font-medium focus:ring-1 focus:ring-emerald-500"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10.5px] font-bold text-blue-800 uppercase tracking-wider mb-0.5">
+                        Supplier Milk (L)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-slate-400 font-bold text-[10px]">
+                          kg
+                        </span>
+                        <input
+                          type="number"
+                          step="0.5"
+                          required
+                          value={formData.supplierMilkUsed}
+                          onChange={(e) => handleSupplierPortionChange(e.target.value)}
+                          className="w-full h-8 pl-2 pr-6 text-xs border border-blue-300 rounded-lg bg-white font-medium focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-[10.5px] font-bold text-blue-800 uppercase tracking-wider mb-0.5">
-                      Supplier Portion
-                    </label>
-                    <div className="relative">
-                       <span className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-slate-400 font-bold text-[10px]">
-                         kg
-                       </span>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={formData.supplierMilkUsed}
-                        onChange={(e) => handleSupplierPortionChange(e.target.value)}
-                        className="w-full h-8 pl-2 pr-6 text-xs border border-slate-200 rounded-lg bg-white font-medium"
-                      />
-                    </div>
-                  </div>
+                  <p className="text-[10px] text-slate-500 leading-tight">
+                    * Future POS sales of this batch will split revenue between Farm &amp; Supplier P&amp;L according to this exact liter ratio.
+                  </p>
                 </div>
               ) : (
-                 <div className="hidden md:block"></div>
+                <div className="hidden md:block"></div>
               )}
             </div>
           </div>

@@ -50,9 +50,8 @@ const parseYield = (val) => {
 };
 
 export default function FarmPL() {
-  // 1. Dynamic Context Consumption (Strict: No hardcoded dummy data)
   const { expenses = [], totals: expenseTotals } = useExpense();
-  const { salesHistory = [], products = [], inventoryMetrics = {} } = usePOSContext();
+  const { farmSalesHistory = [], salesHistory = [], products = [], inventoryMetrics = {} } = usePOSContext();
   const { animals = [] } = useAnimalContext();
   const { deliveries = [] } = useDeliveryContext();
 
@@ -103,9 +102,10 @@ export default function FarmPL() {
     return false;
   };
 
-  // 3. Filter Sales and Expenses dynamically based on selected date
+  // 3. Filter Sales and Expenses dynamically based on selected date (Farm Sales & Mixed Dahi Farm-Share only)
+  const activeFarmSales = farmSalesHistory.length > 0 ? farmSalesHistory : salesHistory;
   const filteredSales = useMemo(() => {
-    return salesHistory.filter((sale) => {
+    return activeFarmSales.filter((sale) => {
       const saleDate = sale.formattedDate
         ? new Date(sale.formattedDate).toISOString().split('T')[0]
         : (sale.timestamp ? sale.timestamp.split('T')[0] : (sale.date || ''));
@@ -121,21 +121,15 @@ export default function FarmPL() {
       }
       return true; // 'all'
     });
-  }, [salesHistory, dateFilterMode, selectedDate, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
+  }, [activeFarmSales, dateFilterMode, selectedDate, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter((exp) => {
       const expDate = exp.date || '';
-      if (dateFilterMode === 'today') {
-        return expDate === todayISO;
-      }
-      if (dateFilterMode === 'this_month') {
-        return isDateInMonthlyCycle(expDate);
-      }
-      if (dateFilterMode === 'custom' && selectedDate) {
-        return expDate === selectedDate;
-      }
-      return true; // 'all'
+      if (dateFilterMode === 'today') return expDate === todayISO;
+      if (dateFilterMode === 'this_month') return isDateInMonthlyCycle(expDate);
+      if (dateFilterMode === 'custom' && selectedDate) return expDate === selectedDate;
+      return true;
     });
   }, [expenses, dateFilterMode, selectedDate, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
 
@@ -529,7 +523,12 @@ export default function FarmPL() {
       maintenanceCost,
       transportCost,
     };
-  }, [filteredSales, filteredExpenses, animals]);
+  }, [
+    filteredSales,
+    filteredExpenses,
+    animals,
+    currentMonthISO,
+  ]);
 
   // 5. CSV Export Feature
   const handleExportCSV = () => {

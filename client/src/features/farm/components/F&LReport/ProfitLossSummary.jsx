@@ -25,7 +25,7 @@ export default function ProfitLossSummary({
   const dairyProducts = Number(incomeData.dairyProducts) || 0;
   const totalFarmIncome = milkSales + dairyProducts;
 
-  // Direct Production Costs (Feed & Packing)
+  // Direct Production Costs (Feed & Packaging)
   const charaFodder = Number(directCostsData.charaFodder) || 0;
   const wandaSilage = Number(directCostsData.wandaSilage) || 0;
   const packagingCosts = Number(directCostsData.packagingCosts) || 0;
@@ -34,7 +34,7 @@ export default function ProfitLossSummary({
   // Subtotal Line: Gross Profit
   const grossProfit = totalFarmIncome - totalDirectCosts;
 
-  // Farm Running Expenses (Labor, Vet & Bills)
+  // Farm Running Expenses (Labor, Vet, Bills, Maintenance)
   const veterinary = Number(runningExpensesData.veterinary) || 0;
   const laborWages = Number(runningExpensesData.laborWages) || 0;
   const electricity = Number(runningExpensesData.electricity) || 0;
@@ -42,7 +42,7 @@ export default function ProfitLossSummary({
   const transport = Number(runningExpensesData.transport) || 0;
   const totalRunningExpenses = veterinary + laborWages + electricity + maintenance + transport;
 
-  // Final Result Line: Total Net Profit (Take-Home Earnings)
+  // Final Result Line: Farm Net Profit (Take-Home Earnings)
   const totalNetProfit = grossProfit - totalRunningExpenses;
   const netMargin = totalFarmIncome > 0 ? ((totalNetProfit / totalFarmIncome) * 100).toFixed(1) : '0.0';
 

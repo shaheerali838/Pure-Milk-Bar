@@ -159,14 +159,7 @@ export default function SupplierPLCardDetailSidebar({
               <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider font-display">
                 Procured Volume by Milk Stream
               </h4>
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                  <p className="text-[10px] font-bold text-blue-800 uppercase">Sourced Cow Milk</p>
-                  <p className="text-base font-extrabold text-blue-700 font-mono mt-0.5">
-                    {Number(summaryData.cowVolume || 0).toLocaleString()} L
-                  </p>
-                  <p className="text-[10px] text-blue-600">Direct Farm Supplier Intake</p>
-                </div>
+              <div className="grid grid-cols-1 gap-2.5">
                 <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl">
                   <p className="text-[10px] font-bold text-purple-800 uppercase">Sourced Buffalo Milk</p>
                   <p className="text-base font-extrabold text-purple-700 font-mono mt-0.5">
@@ -288,24 +281,42 @@ export default function SupplierPLCardDetailSidebar({
             </div>
           )}
 
-          {/* 4. RATE DETAIL */}
-          {cardType === 'rate' && (
+          {/* 4. EXPENSES DETAIL */}
+          {cardType === 'expenses' && (
             <div className="space-y-3">
               <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider font-display">
-                Procurement Rate Analysis
+                Sourcing Expenses Analysis
               </h4>
-              <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                <div className="p-3 bg-white border border-slate-200 rounded-xl">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold">Weighted Avg Rate</p>
-                  <p className="text-base font-extrabold text-purple-700 font-mono mt-0.5">
-                    Rs. {Number(summaryData.avgPurchaseRate || 0).toFixed(1)} / L
-                  </p>
-                </div>
-                <div className="p-3 bg-white border border-slate-200 rounded-xl">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold">Total Volume</p>
-                  <p className="text-base font-extrabold text-blue-700 font-mono mt-0.5">
-                    {Number(summaryData.totalVolume || 0).toLocaleString()} L
-                  </p>
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                <p className="text-[10px] font-bold text-amber-800 uppercase">Total Sourcing Overhead</p>
+                <p className="text-xl font-extrabold text-amber-700 font-mono mt-0.5">
+                  Rs. {Number(summaryData.logistics || 0).toLocaleString()}
+                </p>
+                <p className="text-[10px] text-amber-600">Calculated from {summaryData.expenseVouchersCount || 0} Vouchers</p>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                <p className="text-xs font-bold text-slate-800 uppercase tracking-wider font-display">
+                  Expense Vouchers
+                </p>
+                <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                  {summaryData.expenses && summaryData.expenses.length === 0 ? (
+                    <p className="text-xs text-slate-400 text-center py-4">No supplier expenses recorded for this period.</p>
+                  ) : (
+                    summaryData.expenses && summaryData.expenses.map((e) => (
+                      <div key={e.id} className="p-2 bg-white rounded-lg border border-slate-200/80 flex items-center justify-between text-xs">
+                        <div>
+                          <p className="font-bold text-slate-800">{e.category}</p>
+                          <p className="text-[10px] text-slate-400">{e.date} &bull; {e.paymentMode}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-mono font-bold text-amber-700 block">
+                            Rs. {Number(e.amount).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -415,6 +426,63 @@ export default function SupplierPLCardDetailSidebar({
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* 8. NET PROFIT DETAIL */}
+          {cardType === 'net' && (
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider font-display">
+                Net Profit / Loss (Bachat) Analysis
+              </h4>
+              
+              <div className={`p-4 border rounded-xl flex items-center justify-center flex-col text-center ${
+                (summaryData.net || 0) >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+              }`}>
+                <p className={`text-[10px] font-bold uppercase ${
+                  (summaryData.net || 0) >= 0 ? 'text-emerald-800' : 'text-rose-800'
+                }`}>
+                  Total Realized Net Profit
+                </p>
+                <p className={`text-2xl font-extrabold font-mono mt-1 ${
+                  (summaryData.net || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                }`}>
+                  {(summaryData.net || 0) >= 0 ? '+' : '-'} Rs. {Number(Math.abs(summaryData.net || 0)).toLocaleString()}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {(summaryData.realSoldVolume || 0) > 0
+                    ? `Calculated from ${summaryData.realSoldVolume} Liters sold to customers`
+                    : 'No supplier milk customer sales recorded yet.'}
+                </p>
+              </div>
+
+              {/* Step-by-step summary box matching formula: (Milk Sales + Dahi Sales) - Purchase Cost - Expenses = Net Profit */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
+                <div className="flex justify-between py-1 border-b border-slate-200/80">
+                  <span className="font-semibold text-slate-700">Supplier POS Sales (Milk + Dahi)</span>
+                  <span className="font-mono font-bold text-emerald-700">
+                    + Rs. {Number(summaryData.income || 0).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-200/80">
+                  <span className="font-semibold text-slate-700">Supplier Milk Purchase Cost</span>
+                  <span className="font-mono font-bold text-rose-600">
+                    - Rs. {Number(summaryData.cost || 0).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-200/80">
+                  <span className="font-semibold text-slate-700">Supplier Sourcing Expenses</span>
+                  <span className="font-mono font-bold text-amber-700">
+                    - Rs. {Number(summaryData.logistics || 0).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between pt-1.5 font-extrabold text-sm text-slate-900">
+                  <span>Supplier Net Profit</span>
+                  <span className={`font-mono ${(summaryData.net || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    = Rs. {Number(summaryData.net || 0).toLocaleString()}
+                  </span>
+                </div>
               </div>
             </div>
           )}

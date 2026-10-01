@@ -28,13 +28,36 @@ export function DahiProvider({ children }) {
     try {
       const data = await farmService.getProcessingBatches();
       const list = Array.isArray(data) ? data : data?.batches || [];
-      const normalized = list.map((b) => ({
-        ...b,
-        id: b._id || b.id || b.batchNumber,
-        batchNumber: b.batchNumber || b.id,
-        outputVal: Number(b.outputQuantity || b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0,
-        milkUsedVal: Number(b.milkUsedQuantity || b.milkUsedVal) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0,
-      }));
+      const normalized = list.map((b) => {
+        const farmUsed = Number(b.farmMilkUsed) || 0;
+        const supUsed = Number(b.supplierMilkUsed) || 0;
+        const totUsed = farmUsed + supUsed || Number(b.milkUsedQuantity || b.milkUsedVal) || 0;
+        const src = (b.source || '').toLowerCase();
+        let fRatio = 1;
+        let sRatio = 0;
+        if (src.includes('farm') && !src.includes('supplier') && !src.includes('mix') && !src.includes('both')) {
+          fRatio = 1;
+          sRatio = 0;
+        } else if (src.includes('supplier') && !src.includes('farm') && !src.includes('mix') && !src.includes('both')) {
+          fRatio = 0;
+          sRatio = 1;
+        } else {
+          fRatio = totUsed > 0 && farmUsed > 0 ? Number((farmUsed / totUsed).toFixed(4)) : (b.farmRatio !== undefined ? Number(b.farmRatio) : 0.5);
+          sRatio = totUsed > 0 && supUsed > 0 ? Number((supUsed / totUsed).toFixed(4)) : (b.supplierRatio !== undefined ? Number(b.supplierRatio) : 0.5);
+        }
+
+        return {
+          ...b,
+          id: b._id || b.id || b.batchNumber,
+          batchNumber: b.batchNumber || b.id,
+          outputVal: Number(b.outputQuantity || b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0,
+          milkUsedVal: Number(b.milkUsedQuantity || b.milkUsedVal) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0,
+          farmMilkUsed: farmUsed,
+          supplierMilkUsed: supUsed,
+          farmRatio: fRatio,
+          supplierRatio: sRatio,
+        };
+      });
       setBatches(normalized);
     } catch (err) {
       console.warn('Failed to fetch processing batches from database API:', err.message);
@@ -262,14 +285,30 @@ export function DahiProvider({ children }) {
 
     const initialStage = formData.status === 'Completed' || formData.stage === 'pos' ? 'pos' : 'incubating';
 
+    const totalMilkUsed = farmPortion + supPortion || rawMilkNum;
+    let farmRatio = 1;
+    let supplierRatio = 0;
+    if (formData.source === 'Farm Milk') {
+      farmRatio = 1;
+      supplierRatio = 0;
+    } else if (formData.source === 'Supplier Milk') {
+      farmRatio = 0;
+      supplierRatio = 1;
+    } else {
+      farmRatio = totalMilkUsed > 0 ? Number((farmPortion / totalMilkUsed).toFixed(4)) : 0.5;
+      supplierRatio = totalMilkUsed > 0 ? Number((supPortion / totalMilkUsed).toFixed(4)) : 0.5;
+    }
+
     const payload = {
       product: formData.product || 'Dahi (Plain)',
       milkUsed: rawMilkNum,
       milkUsedQuantity: rawMilkNum,
       milkUsedLiters: rawMilkNum,
-      source: formData.source || 'Farm & Supplier Mix',
+      source: formData.source || 'Both (Mixed)',
       farmMilkUsed: farmPortion,
       supplierMilkUsed: supPortion,
+      farmRatio,
+      supplierRatio,
       output: calculatedOutput,
       outputQuantity: numOutput,
       fat: formData.fat ? String(formData.fat).replace('%', '') : '4.5',

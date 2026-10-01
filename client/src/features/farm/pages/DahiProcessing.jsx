@@ -22,7 +22,10 @@ export default function DahiProcessing() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newBatch, setNewBatch] = useState({
     product: "Dahi (Plain)",
+    source: "Both (Mixed)",
     milkUsed: "",
+    farmMilkUsed: "",
+    supplierMilkUsed: "",
     output: "",
     fat: "4.5",
     date: new Date().toISOString().split("T")[0],
@@ -50,13 +53,44 @@ export default function DahiProcessing() {
   const handleAddBatch = async (e) => {
     e.preventDefault();
 
+    const rawMilkNum = Number(newBatch.milkUsed) || 0;
+    const farmPortion = newBatch.source === 'Farm Milk' 
+      ? rawMilkNum 
+      : newBatch.source === 'Supplier Milk' 
+        ? 0 
+        : (parseFloat(newBatch.farmMilkUsed) || 0);
+    const supPortion = newBatch.source === 'Supplier Milk' 
+      ? rawMilkNum 
+      : newBatch.source === 'Farm Milk' 
+        ? 0 
+        : (parseFloat(newBatch.supplierMilkUsed) || 0);
+
+    const totalUsed = farmPortion + supPortion || rawMilkNum;
+    let farmRatio = 1;
+    let supplierRatio = 0;
+    if (newBatch.source === 'Farm Milk') {
+      farmRatio = 1;
+      supplierRatio = 0;
+    } else if (newBatch.source === 'Supplier Milk') {
+      farmRatio = 0;
+      supplierRatio = 1;
+    } else {
+      farmRatio = totalUsed > 0 ? Number((farmPortion / totalUsed).toFixed(4)) : 0.5;
+      supplierRatio = totalUsed > 0 ? Number((supPortion / totalUsed).toFixed(4)) : 0.5;
+    }
+
     const payload = {
       product: newBatch.product,
-      milkUsed: Number(newBatch.milkUsed) || 0,
-      milkUsedLiters: Number(newBatch.milkUsed) || 0,
-      milkUsedQuantity: Number(newBatch.milkUsed) || 0,
-      output: newBatch.output || `${Math.round((parseFloat(newBatch.milkUsed) || 0) * 0.9)} kg`,
-      outputQuantity: parseFloat(newBatch.output) || Math.round((parseFloat(newBatch.milkUsed) || 0) * 0.9),
+      source: newBatch.source || "Both (Mixed)",
+      farmMilkUsed: farmPortion,
+      supplierMilkUsed: supPortion,
+      farmRatio,
+      supplierRatio,
+      milkUsed: rawMilkNum,
+      milkUsedLiters: rawMilkNum,
+      milkUsedQuantity: rawMilkNum,
+      output: newBatch.output || `${Math.round(rawMilkNum * 0.9)} kg`,
+      outputQuantity: parseFloat(newBatch.output) || Math.round(rawMilkNum * 0.9),
       fat: Number(newBatch.fat) || 4.5,
       fatPercentage: Number(newBatch.fat) || 4.5,
       date: newBatch.date || new Date().toISOString().split("T")[0],
@@ -69,6 +103,11 @@ export default function DahiProcessing() {
       const normalized = {
         ...created,
         id: created.batchNumber || created.id || created._id || `DAH-${Date.now()}`,
+        source: payload.source,
+        farmMilkUsed: payload.farmMilkUsed,
+        supplierMilkUsed: payload.supplierMilkUsed,
+        farmRatio: payload.farmRatio,
+        supplierRatio: payload.supplierRatio,
         milkUsed: `${payload.milkUsed} L`,
         output: payload.output,
         fat: `${payload.fat}%`,
@@ -88,7 +127,10 @@ export default function DahiProcessing() {
     setIsModalOpen(false);
     setNewBatch({
       product: "Dahi (Plain)",
+      source: "Both (Mixed)",
       milkUsed: "",
+      farmMilkUsed: "",
+      supplierMilkUsed: "",
       output: "",
       fat: "4.5",
       date: new Date().toISOString().split("T")[0],
@@ -228,16 +270,117 @@ export default function DahiProcessing() {
                 </select>
               </div>
 
+              <div>
+                <label className="block text-[11.5px] font-bold text-slate-700 mb-1">
+                  Milk Sourcing <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={newBatch.source}
+                  onChange={(e) => {
+                    const src = e.target.value;
+                    const tot = parseFloat(newBatch.milkUsed) || 0;
+                    let f = '0';
+                    let s = '0';
+                    if (src === 'Farm Milk') {
+                      f = String(tot);
+                      s = '0';
+                    } else if (src === 'Supplier Milk') {
+                      f = '0';
+                      s = String(tot);
+                    } else {
+                      f = String(Math.round(tot / 2));
+                      s = String(Math.max(0, tot - Math.round(tot / 2)));
+                    }
+                    setNewBatch({ ...newBatch, source: src, farmMilkUsed: f, supplierMilkUsed: s });
+                  }}
+                  className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 bg-white"
+                >
+                  <option value="Both (Mixed)">Both (Mixed) — Proportional P&amp;L Ratio</option>
+                  <option value="Farm Milk">Farm Milk (100% to Farm P&amp;L)</option>
+                  <option value="Supplier Milk">Supplier Milk (100% to Supplier P&amp;L)</option>
+                </select>
+              </div>
+
+              {/* Conditional mixed breakout fields */}
+              {(newBatch.source === 'Both (Mixed)' || newBatch.source === 'Farm & Supplier Mix') && (
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-[11px] font-bold">
+                    <span className="text-slate-700">Enter Ratio Liters:</span>
+                    {parseFloat(newBatch.milkUsed) > 0 && (
+                      <span className="text-teal-700 text-[10.5px]">
+                        Farm: {Math.round(((parseFloat(newBatch.farmMilkUsed) || 0) / (parseFloat(newBatch.milkUsed) || 1)) * 100)}% | 
+                        Supplier: {Math.round(((parseFloat(newBatch.supplierMilkUsed) || 0) / (parseFloat(newBatch.milkUsed) || 1)) * 100)}%
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10.5px] font-bold text-emerald-800 mb-0.5">Farm Milk (L)</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        placeholder="e.g. 50"
+                        value={newBatch.farmMilkUsed}
+                        onChange={(e) => {
+                          const f = parseFloat(e.target.value) || 0;
+                          const s = parseFloat(newBatch.supplierMilkUsed) || 0;
+                          const tot = f + s;
+                          setNewBatch({
+                            ...newBatch,
+                            farmMilkUsed: e.target.value,
+                            milkUsed: tot > 0 ? String(tot) : '',
+                            output: tot > 0 ? `${Math.round(tot * 0.9)} kg` : '',
+                          });
+                        }}
+                        className="w-full h-8 px-2 text-xs border border-emerald-300 rounded-lg bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10.5px] font-bold text-blue-800 mb-0.5">Supplier Milk (L)</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        placeholder="e.g. 50"
+                        value={newBatch.supplierMilkUsed}
+                        onChange={(e) => {
+                          const s = parseFloat(e.target.value) || 0;
+                          const f = parseFloat(newBatch.farmMilkUsed) || 0;
+                          const tot = f + s;
+                          setNewBatch({
+                            ...newBatch,
+                            supplierMilkUsed: e.target.value,
+                            milkUsed: tot > 0 ? String(tot) : '',
+                            output: tot > 0 ? `${Math.round(tot * 0.9)} kg` : '',
+                          });
+                        }}
+                        className="w-full h-8 px-2 text-xs border border-blue-300 rounded-lg bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[11.5px] font-bold text-slate-700 mb-1">Milk Input (Liters)</label>
+                  <label className="block text-[11.5px] font-bold text-slate-700 mb-1">Total Milk Input (Liters)</label>
                   <input
                     type="number"
                     step="0.1"
                     required
                     placeholder="e.g. 100"
                     value={newBatch.milkUsed}
-                    onChange={(e) => setNewBatch({ ...newBatch, milkUsed: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const num = parseFloat(val) || 0;
+                      if (newBatch.source === 'Farm Milk') {
+                        setNewBatch({ ...newBatch, milkUsed: val, farmMilkUsed: val, supplierMilkUsed: '0', output: `${Math.round(num * 0.9)} kg` });
+                      } else if (newBatch.source === 'Supplier Milk') {
+                        setNewBatch({ ...newBatch, milkUsed: val, farmMilkUsed: '0', supplierMilkUsed: val, output: `${Math.round(num * 0.9)} kg` });
+                      } else {
+                        const f = Math.round(num / 2);
+                        setNewBatch({ ...newBatch, milkUsed: val, farmMilkUsed: String(f), supplierMilkUsed: String(Math.max(0, num - f)), output: `${Math.round(num * 0.9)} kg` });
+                      }
+                    }}
                     className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                   />
                 </div>

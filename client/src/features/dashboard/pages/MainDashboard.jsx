@@ -16,6 +16,7 @@ import FarmYieldHub from '../components/mainDashboard/FarmYieldHub';
 import SupplierProcurementHub from '../components/mainDashboard/SupplierProcurementHub';
 import DahiProcessingHub from '../components/mainDashboard/DahiProcessingHub';
 import ProfitLossSnapshot from '../components/mainDashboard/ProfitLossSnapshot';
+import TotalFinancialSummary from '../components/mainDashboard/TotalFinancialSummary';
 import MilkProductionAndFlow from '../components/mainDashboard/MilkProductionAndFlow';
 import SalesAndReceivablesSection from '../components/mainDashboard/SalesAndReceivablesSection';
 import DashboardFooterSummary from '../components/mainDashboard/DashboardFooterSummary';
@@ -88,7 +89,12 @@ export default function MainDashboard() {
         <DahiProcessingHub />
       </section>
 
-      {/* 4. Profit & Loss Snapshot Component */}
+      {/* 4. Total Financial Summary (Aggregated Profit & Segregated Breakdowns) */}
+      <section aria-label="Total Financial Summary">
+        <TotalFinancialSummary />
+      </section>
+
+      {/* 5. Profit & Loss Snapshot Component */}
       <section aria-label="Financial Profit & Loss Snapshot">
         <ProfitLossSnapshot />
       </section>

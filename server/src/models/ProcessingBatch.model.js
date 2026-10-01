@@ -81,6 +81,18 @@ const processingBatchSchema = new Schema(
       default: 0,
       min: 0,
     },
+    farmRatio: {
+      type: Number,
+      default: 0.5,
+      min: 0,
+      max: 1,
+    },
+    supplierRatio: {
+      type: Number,
+      default: 0.5,
+      min: 0,
+      max: 1,
+    },
     posRate: {
       type: String,
       trim: true,

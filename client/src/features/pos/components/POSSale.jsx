@@ -43,6 +43,7 @@ export default function POSSale() {
     handleUpdatePrice,
     handleRemoveFromCart,
     handleClearCart,
+    handleUpdateItemSource,
     executeKhataPayment,
 
     // 2 Primary Categories: 'walkin' | 'delivery'
@@ -286,6 +287,26 @@ export default function POSSale() {
                             className="w-12 text-center bg-white border border-slate-200 rounded px-1 py-0.2 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-indigo-400"
                           />
                           <span>/{unitLabel}</span>
+                        </div>
+                        {/* Interactive Source Tag (Farm / Supplier / Mixed) */}
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <select
+                            value={item.source || 'Farm'}
+                            onChange={(e) => handleUpdateItemSource && handleUpdateItemSource(item.id, e.target.value)}
+                            className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded border cursor-pointer focus:outline-none ${
+                              item.source === 'Supplier'
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : item.source === 'Mixed'
+                                ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            }`}
+                          >
+                            <option value="Farm">🌿 Farm (P&amp;L)</option>
+                            <option value="Supplier">🚚 Supplier (P&amp;L)</option>
+                            <option value="Mixed">
+                              ⚖️ Mixed ({Math.round((item.farmRatio ?? 0.5) * 100)}% : {Math.round((item.supplierRatio ?? 0.5) * 100)}%)
+                            </option>
+                          </select>
                         </div>
                       </div>
                     </div>
