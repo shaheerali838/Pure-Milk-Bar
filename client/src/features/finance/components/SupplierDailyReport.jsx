@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { Calendar, Truck, ArrowRight, Droplets, DollarSign, CheckCircle2, TrendingUp, Users, AlertCircle } from 'lucide-react';
+import { Calendar, Truck, ArrowRight, Droplets, DollarSign, CheckCircle2, TrendingUp, Users, AlertCircle, Receipt, Scale } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { usePOSContext } from '@/context/POSContext';
-import { useExpense } from '@/context/ExpenseContext';
+import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 
 // Safe date normalization helper
 const normalizeDateStr = (rawDate) => {
@@ -23,9 +23,9 @@ const normalizeDateStr = (rawDate) => {
 
 export default function SupplierDailyReport() {
   const { intakeLogs = [], totals: intakeTotals = {} } = useIntakeContext() || {};
-  const { suppliers = [], totals: supplierTotals = {} } = useSupplierContext() || {};
-  const { salesHistory = [], inventoryMetrics = {} } = usePOSContext() || {};
-  const { totals: expenseTotals = {} } = useExpense() || {};
+  const { suppliers = [] } = useSupplierContext() || {};
+  const { supplierSalesHistory = [], salesHistory = [], inventoryMetrics = {} } = usePOSContext() || {};
+  const { expenses = [] } = useSourcExpenseContext() || {};
 
   const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week'
 
@@ -37,7 +37,7 @@ export default function SupplierDailyReport() {
     );
   }, [suppliers]);
 
-  // Aggregate by Date
+  // Aggregate by Date (Purchases, POS Sales, Sourcing Expenses & Net Profit)
   const aggregatedByDate = useMemo(() => {
     const dates = {};
     const todayStr = normalizeDateStr(new Date());
@@ -52,8 +52,14 @@ export default function SupplierDailyReport() {
           pendingAmount: 0,
           supplierMilkSalesQty: 0,
           supplierMilkSalesRev: 0,
+          supplierDahiSalesQty: 0,
+          supplierDahiSalesRev: 0,
+          supplierTotalSalesRev: 0,
+          supplierExpensesTotal: 0,
+          supplierNetProfit: 0,
           intakeEntries: [],
           saleItems: [],
+          expenseItems: [],
         };
       }
     };
@@ -61,7 +67,7 @@ export default function SupplierDailyReport() {
     // Always initialize today
     initDate(todayStr);
 
-    // 1. Supplier Intakes
+    // 1. Supplier Intakes / Purchases
     intakeLogs.forEach((log) => {
       const d = normalizeDateStr(log.date || log.createdAt);
       initDate(d);
@@ -78,9 +84,10 @@ export default function SupplierDailyReport() {
       dates[d].intakeEntries.push(log);
     });
 
-    // 2. POS Sales (Supplier Milk)
-    salesHistory.forEach((sale) => {
-      const d = normalizeDateStr(sale.date || sale.timestamp || sale.createdAt);
+    // 2. POS Sales (Supplier Milk & Supplier Dahi / Mixed Supplier Share)
+    const activeSupplierSales = supplierSalesHistory.length > 0 ? supplierSalesHistory : salesHistory;
+    activeSupplierSales.forEach((sale) => {
+      const d = normalizeDateStr(sale.date || sale.timestamp || sale.createdAt || sale.formattedDate);
       initDate(d);
 
       (sale.items || []).forEach((item) => {
@@ -88,28 +95,44 @@ export default function SupplierDailyReport() {
         const cat = (item.category || '').toLowerCase();
         const source = (item.source || '').toLowerCase();
         const qty = Number(item.quantity) || 0;
-        const sub = Number(item.subtotal) || (qty * (Number(item.price) || 0));
+        const sub = Number(item.subtotal || item.effectiveRevenue) || (qty * (Number(item.price) || 0));
 
-        const isSupplier =
-          source.includes('supplier') ||
-          name.includes('supplier') ||
-          name.includes('sourced') ||
-          name.includes('chilled') ||
-          cat.includes('supplier') ||
-          cat.includes('sourced');
-        const isDahi = name.includes('dahi') || cat.includes('dahi') || name.includes('curd');
+        // If not using pre-segregated supplier collection, skip farm items
+        if (supplierSalesHistory.length === 0 && source.includes('farm')) return;
 
-        if (!isDahi && isSupplier) {
+        const isDahi = name.includes('dahi') || cat.includes('dahi') || name.includes('yogurt') || cat.includes('yogurt');
+
+        if (isDahi) {
+          dates[d].supplierDahiSalesQty += qty;
+          dates[d].supplierDahiSalesRev += sub;
+        } else {
           dates[d].supplierMilkSalesQty += qty;
           dates[d].supplierMilkSalesRev += sub;
-          dates[d].saleItems.push({
-            name: item.name,
-            quantity: qty,
-            price: Number(item.price) || 0,
-            subtotal: sub,
-          });
         }
+        dates[d].supplierTotalSalesRev += sub;
+        dates[d].saleItems.push({
+          name: item.name,
+          quantity: qty,
+          price: Number(item.price) || 0,
+          subtotal: sub,
+          isDahi,
+        });
       });
+    });
+
+    // 3. Sourcing Expenses
+    expenses.forEach((exp) => {
+      const d = normalizeDateStr(exp.date || exp.createdAt);
+      initDate(d);
+      const amt = Number(exp.amount) || 0;
+      dates[d].supplierExpensesTotal += amt;
+      dates[d].expenseItems.push(exp);
+    });
+
+    // Compute Net Profit for each date:
+    // (Supplier Milk Sales + Supplier Dahi Sales) - Supplier Purchase Cost - Supplier Expenses = Net Profit
+    Object.values(dates).forEach((day) => {
+      day.supplierNetProfit = day.supplierTotalSalesRev - day.totalCost - day.supplierExpensesTotal;
     });
 
     const list = Object.values(dates).sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -126,9 +149,9 @@ export default function SupplierDailyReport() {
     }
 
     return list;
-  }, [intakeLogs, salesHistory, dateFilter]);
+  }, [intakeLogs, supplierSalesHistory, salesHistory, expenses, dateFilter]);
 
-  // Overall Totals
+  // Overall totals across the aggregated view
   const overallTotals = useMemo(() => {
     return aggregatedByDate.reduce(
       (acc, day) => {
@@ -136,8 +159,11 @@ export default function SupplierDailyReport() {
         acc.totalCost += day.totalCost;
         acc.totalPaid += day.paidAmount;
         acc.totalPending += day.pendingAmount;
-        acc.totalSalesQty += day.supplierMilkSalesQty;
-        acc.totalSalesRev += day.supplierMilkSalesRev;
+        acc.totalMilkSalesQty += day.supplierMilkSalesQty;
+        acc.totalDahiSalesQty += day.supplierDahiSalesQty;
+        acc.totalSalesRev += day.supplierTotalSalesRev;
+        acc.totalExpenses += day.supplierExpensesTotal;
+        acc.totalNetProfit += day.supplierNetProfit;
         return acc;
       },
       {
@@ -145,26 +171,29 @@ export default function SupplierDailyReport() {
         totalCost: 0,
         totalPaid: 0,
         totalPending: 0,
-        totalSalesQty: 0,
+        totalMilkSalesQty: 0,
+        totalDahiSalesQty: 0,
         totalSalesRev: 0,
+        totalExpenses: 0,
+        totalNetProfit: 0,
       }
     );
   }, [aggregatedByDate]);
 
-  const currentAvailableStock = Number(inventoryMetrics.rawSupplierMilkStock) || Math.max(0, overallTotals.totalIntake - overallTotals.totalSalesQty);
-  const avgRate = overallTotals.totalIntake > 0 ? (overallTotals.totalCost / overallTotals.totalIntake).toFixed(1) : '220.0';
+  const avgPurchaseRate = overallTotals.totalIntake > 0 ? (overallTotals.totalCost / overallTotals.totalIntake).toFixed(1) : '240';
+  const overallMargin = overallTotals.totalSalesRev > 0 ? Math.round((overallTotals.totalNetProfit / overallTotals.totalSalesRev) * 100) : 0;
 
   return (
     <div className="space-y-4 animate-in fade-in duration-150">
-      {/* 1. Header & Date Filter Bar */}
+      {/* 1. Header & Filter Bar */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-sm sm:text-base font-bold text-slate-900 font-display flex items-center gap-2">
             <Truck className="w-4.5 h-4.5 text-blue-600" />
-            Supplier Procurement &amp; Daily Intake Report
+            Supplier Daily Procurement, Sales &amp; Expenses Report
           </h2>
           <p className="text-[11px] text-slate-500 mt-0.5">
-            Sourcing reconciliation across {suppliers.length} registered suppliers ({suppliers.filter((s) => s.status === 'Active').length} active)
+            Real-time purchased milk intake, POS resale (milk + Dahi), sourcing overhead, and net profit
           </p>
         </div>
 
@@ -173,7 +202,7 @@ export default function SupplierDailyReport() {
           <button
             type="button"
             onClick={() => setDateFilter('today')}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               dateFilter === 'today'
                 ? 'bg-white text-blue-700 shadow-xs font-bold'
                 : 'text-slate-600 hover:text-slate-900'
@@ -184,7 +213,7 @@ export default function SupplierDailyReport() {
           <button
             type="button"
             onClick={() => setDateFilter('week')}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               dateFilter === 'week'
                 ? 'bg-white text-blue-700 shadow-xs font-bold'
                 : 'text-slate-600 hover:text-slate-900'
@@ -195,7 +224,7 @@ export default function SupplierDailyReport() {
           <button
             type="button"
             onClick={() => setDateFilter('all')}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               dateFilter === 'all'
                 ? 'bg-white text-blue-700 shadow-xs font-bold'
                 : 'text-slate-600 hover:text-slate-900'
@@ -206,55 +235,72 @@ export default function SupplierDailyReport() {
         </div>
       </div>
 
-      {/* 2. Top Summary KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* 2. Top Summary KPI Cards (Purchases, POS Sales, Expenses, Net Profit, Balance Due) */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Liquid Procured</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Procured Volume</span>
           <div className="flex items-baseline gap-1.5 mt-1">
             <span className="text-xl font-black font-mono text-blue-700">{overallTotals.totalIntake.toFixed(1)}</span>
             <span className="text-xs font-semibold text-slate-500">Liters</span>
           </div>
-          <span className="text-[10px] text-slate-400 mt-1 block">Avg Procurement: Rs. {avgRate}/L</span>
+          <span className="text-[10px] text-slate-400 mt-1 block">Cost: Rs. {overallTotals.totalCost.toLocaleString()} (@ Rs. {avgPurchaseRate}/L)</span>
         </div>
 
         <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Available Supplier Stock</span>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-xl font-black font-mono text-blue-800">{currentAvailableStock.toFixed(1)}</span>
-            <span className="text-xs font-semibold text-slate-500">Liters</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Supplier POS Sales</span>
+          <div className="flex items-baseline gap-1 mt-1">
+            <span className="text-xl font-black font-mono text-emerald-700">Rs. {overallTotals.totalSalesRev.toLocaleString()}</span>
           </div>
-          <span className="text-[10px] text-blue-600 font-medium mt-1 block">In chillers &amp; storage</span>
-        </div>
-
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Supplier Milk Sold</span>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-xl font-black font-mono text-slate-800">{overallTotals.totalSalesQty.toFixed(1)}</span>
-            <span className="text-xs font-semibold text-slate-500">Liters</span>
-          </div>
-          <span className="text-[10px] text-slate-400 mt-1 block">Revenue: Rs. {overallTotals.totalSalesRev.toLocaleString()}</span>
-        </div>
-
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Procurement Cost &amp; Due</span>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-xl font-black font-mono text-indigo-700">Rs. {overallTotals.totalCost.toLocaleString()}</span>
-          </div>
-          <span className="text-[10px] text-rose-500 font-medium mt-1 block">
-            Pending Payout: Rs. {overallTotals.totalPending.toLocaleString()}
+          <span className="text-[10px] text-slate-500 mt-1 block">
+            {overallTotals.totalMilkSalesQty.toFixed(1)}L Milk • {overallTotals.totalDahiSalesQty.toFixed(1)}kg Dahi
           </span>
+        </div>
+
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Sourcing Expenses</span>
+          <div className="flex items-baseline gap-1 mt-1">
+            <span className="text-xl font-black font-mono text-amber-700">Rs. {overallTotals.totalExpenses.toLocaleString()}</span>
+          </div>
+          <span className="text-[10px] text-amber-600 font-medium mt-1 block">Collection &amp; chilling overhead</span>
+        </div>
+
+        <div className={`border rounded-2xl p-3.5 shadow-2xs ${
+          overallTotals.totalNetProfit >= 0 ? 'bg-blue-50/50 border-blue-200' : 'bg-rose-50/50 border-rose-200'
+        }`}>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Supplier Net Profit (Bachat)</span>
+          <div className="flex items-baseline gap-1.5 mt-1">
+            <span className={`text-xl font-black font-mono ${
+              overallTotals.totalNetProfit >= 0 ? 'text-blue-700' : 'text-rose-700'
+            }`}>
+              {overallTotals.totalNetProfit >= 0 ? '+' : '-'} Rs. {Math.abs(overallTotals.totalNetProfit).toLocaleString()}
+            </span>
+            <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+              overallTotals.totalNetProfit >= 0 ? 'bg-blue-100 text-blue-800' : 'bg-rose-100 text-rose-800'
+            }`}>
+              {overallMargin}%
+            </span>
+          </div>
+          <span className="text-[10px] text-slate-500 mt-1 block font-mono">Formula: Sales - Cost - Exp</span>
+        </div>
+
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Supplier Balance Due</span>
+          <div className="flex items-baseline gap-1 mt-1">
+            <span className="text-xl font-black font-mono text-amber-700">Rs. {overallTotals.totalPending.toLocaleString()}</span>
+          </div>
+          <span className="text-[10px] text-slate-400 mt-1 block">Paid Settled: Rs. {overallTotals.totalPaid.toLocaleString()}</span>
         </div>
       </div>
 
-      {/* 3. Daily Breakdown Cards */}
+      {/* 3. Daily Breakdown Cards (Purchases, POS Sales, Expenses & Net Profit) */}
       <div className="space-y-4">
         {aggregatedByDate.map((day) => {
-          const balance = Math.max(0, day.supplierIntake - day.supplierMilkSalesQty);
           const isToday = day.date === normalizeDateStr(new Date());
+          const isProfitable = day.supplierNetProfit >= 0;
 
           return (
             <div key={day.date} className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
-              {/* Card Header */}
+              {/* Header Bar */}
               <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-200/90 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2 text-slate-800">
                   <Calendar className="w-4 h-4 text-blue-600" />
@@ -275,77 +321,78 @@ export default function SupplierDailyReport() {
 
                 <div className="flex items-center gap-4 text-xs">
                   <div className="flex items-center gap-1.5 text-slate-600">
-                    <span className="font-medium text-slate-400">Procurement Cost:</span>
-                    <strong className="font-bold font-mono text-slate-800">
-                      Rs. {day.totalCost.toLocaleString()}
+                    <span className="font-medium text-slate-400">Purchases:</span>
+                    <strong className="font-bold font-mono text-rose-600">
+                      - Rs. {day.totalCost.toLocaleString()}
                     </strong>
                   </div>
                   <div className="flex items-center gap-1.5 text-slate-600">
-                    <span className="font-medium text-slate-400">Sales Revenue:</span>
-                    <strong className="font-bold font-mono text-blue-700">
-                      Rs. {day.supplierMilkSalesRev.toLocaleString()}
+                    <span className="font-medium text-slate-400">Sales:</span>
+                    <strong className="font-bold font-mono text-emerald-700">
+                      + Rs. {day.supplierTotalSalesRev.toLocaleString()}
+                    </strong>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-slate-600">
+                    <span className="font-medium text-slate-400">Expenses:</span>
+                    <strong className="font-bold font-mono text-amber-700">
+                      - Rs. {day.supplierExpensesTotal.toLocaleString()}
+                    </strong>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium text-slate-400">Net:</span>
+                    <strong className={`font-bold font-mono px-2 py-0.5 rounded ${
+                      isProfitable ? 'bg-blue-100 text-blue-800' : 'bg-rose-100 text-rose-800'
+                    }`}>
+                      {isProfitable ? '+' : '-'} Rs. {Math.abs(day.supplierNetProfit).toLocaleString()}
                     </strong>
                   </div>
                 </div>
               </div>
 
-              {/* Data Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200/70 text-xs">
-                {/* Left: Supplier Intakes */}
+              {/* Data Grid: 3 Columns (Procurement/Purchases, POS Resale, Expenses) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-200/70 text-xs">
+                {/* Col 1: Sourced Procurement Intake */}
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
                       <Droplets className="w-3.5 h-3.5 text-blue-600" />
-                      Supplier Milk Intake
+                      Supplier Milk Purchases
                     </div>
                     <span className="text-[11px] font-semibold text-slate-400">
-                      {day.intakeEntries.length} Intakes Recorded
+                      {day.intakeEntries.length} Intake Slips
                     </span>
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Total Liquid Intake</span>
+                      <span className="text-slate-500">Procured Volume</span>
                       <span className="font-mono font-bold text-blue-700 text-sm">
                         {day.supplierIntake.toFixed(1)} L
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Procurement Spend</span>
-                      <span className="font-mono font-bold text-slate-800 text-sm">
+                      <span className="text-slate-500">Purchase Total Cost</span>
+                      <span className="font-mono font-bold text-rose-600 text-sm">
                         Rs. {day.totalCost.toLocaleString()}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Settled vs Pending</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-emerald-700">
-                          Rs. {day.paidAmount.toLocaleString()}
-                        </span>
-                        {day.pendingAmount > 0 && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                            Due: Rs. {day.pendingAmount.toLocaleString()}
-                          </span>
-                        )}
-                      </div>
+                    <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100">
+                      <span className="text-slate-500">Paid: Rs. {day.paidAmount.toLocaleString()}</span>
+                      <span className="font-bold text-amber-700">Due: Rs. {day.pendingAmount.toLocaleString()}</span>
                     </div>
 
                     {day.intakeEntries.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-slate-100 space-y-1">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                          Recorded Intakes
+                          Intake Slips ({day.intakeEntries.length})
                         </span>
-                        <div className="max-h-24 overflow-y-auto space-y-1">
-                          {day.intakeEntries.slice(0, 4).map((entry, idx) => (
+                        <div className="max-h-20 overflow-y-auto space-y-1">
+                          {day.intakeEntries.map((log, idx) => (
                             <div key={idx} className="flex items-center justify-between text-[11px] text-slate-600">
-                              <span>
-                                {entry.supplierName || 'Supplier'} ({entry.shift || 'Shift'}) &times; {entry.quantity} L
-                              </span>
-                              <span className="font-mono font-semibold text-slate-800">
-                                Rs. {(entry.totalCost || entry.totalAmount || 0).toLocaleString()}
-                              </span>
+                              <span className="truncate pr-1">{log.supplierName || 'Supplier'} ({log.quantity}L)</span>
+                              <span className="font-mono font-semibold text-slate-800 shrink-0">Rs. {Number(log.totalCost).toLocaleString()}</span>
                             </div>
                           ))}
                         </div>
@@ -354,12 +401,12 @@ export default function SupplierDailyReport() {
                   </div>
                 </div>
 
-                {/* Right: Supplier Milk Sales */}
-                <div className="p-4 space-y-3 bg-blue-50/20">
+                {/* Col 2: POS Resale (Milk + Dahi) */}
+                <div className="p-4 space-y-3 bg-emerald-50/20">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
-                      <DollarSign className="w-3.5 h-3.5 text-blue-600" />
-                      Supplier Milk POS Sales
+                      <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                      Supplier POS Sales (Milk &amp; Dahi)
                     </div>
                     <span className="text-[11px] font-semibold text-slate-400">
                       {day.saleItems.length} Sales Items
@@ -368,32 +415,32 @@ export default function SupplierDailyReport() {
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Liquid Milk Sold</span>
+                      <span className="text-slate-500">Supplier Milk Sold</span>
                       <span className="font-mono font-bold text-slate-800 text-sm">
-                        {day.supplierMilkSalesQty.toFixed(1)} L
+                        {day.supplierMilkSalesQty.toFixed(1)} L (Rs. {day.supplierMilkSalesRev.toLocaleString()})
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Sales Revenue</span>
-                      <span className="font-mono font-bold text-blue-800 text-sm">
-                        Rs. {day.supplierMilkSalesRev.toLocaleString()}
+                      <span className="text-slate-500">Supplier Dahi Sold</span>
+                      <span className="font-mono font-bold text-slate-800 text-sm">
+                        {day.supplierDahiSalesQty.toFixed(1)} kg (Rs. {day.supplierDahiSalesRev.toLocaleString()})
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Available Stock Remaining</span>
-                      <span className="font-mono font-bold text-blue-900 text-sm">
-                        {balance.toFixed(1)} L
+                    <div className="flex items-center justify-between pt-1 border-t border-emerald-100">
+                      <span className="text-slate-700 font-semibold">Total Day Resale</span>
+                      <span className="font-mono font-bold text-emerald-800 text-sm">
+                        Rs. {day.supplierTotalSalesRev.toLocaleString()}
                       </span>
                     </div>
 
                     {day.saleItems.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-blue-100 space-y-1">
-                        <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">
-                          Recent Sales Log
+                      <div className="mt-2 pt-2 border-t border-emerald-100 space-y-1">
+                        <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
+                          Sales Items Log
                         </span>
-                        <div className="max-h-24 overflow-y-auto space-y-1">
+                        <div className="max-h-20 overflow-y-auto space-y-1">
                           {day.saleItems.slice(0, 4).map((item, idx) => (
                             <div key={idx} className="flex items-center justify-between text-[11px] text-slate-600">
                               <span>{item.name} &times; {item.quantity}</span>
@@ -405,18 +452,67 @@ export default function SupplierDailyReport() {
                     )}
                   </div>
                 </div>
+
+                {/* Col 3: Sourcing Expenses & Net Profit */}
+                <div className="p-4 space-y-3 bg-amber-50/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
+                      <Receipt className="w-3.5 h-3.5 text-amber-600" />
+                      Sourcing Expenses
+                    </div>
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      {day.expenseItems.length} Vouchers
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Day Sourcing Overhead</span>
+                      <span className="font-mono font-bold text-amber-700 text-sm">
+                        Rs. {day.supplierExpensesTotal.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-amber-100">
+                      <span className="text-slate-700 font-semibold">Supplier Net Profit</span>
+                      <span className={`font-mono font-bold text-sm ${
+                        isProfitable ? 'text-blue-700' : 'text-rose-700'
+                      }`}>
+                        {isProfitable ? '+' : '-'} Rs. {Math.abs(day.supplierNetProfit).toLocaleString()}
+                      </span>
+                    </div>
+
+                    {day.expenseItems.length > 0 ? (
+                      <div className="mt-2 pt-2 border-t border-amber-100 space-y-1">
+                        <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">
+                          Expense Vouchers
+                        </span>
+                        <div className="max-h-20 overflow-y-auto space-y-1">
+                          {day.expenseItems.map((exp, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-[11px] text-slate-600">
+                              <span className="truncate pr-1">{exp.category || exp.title || 'Expense'}</span>
+                              <span className="font-mono font-semibold text-amber-700 shrink-0">Rs. {Number(exp.amount).toLocaleString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-400 italic pt-2">No overhead expenses for this date.</p>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              {/* Bottom Card Summary Bar */}
+              {/* Bottom Footer Bar */}
               <div className="bg-slate-900 px-4 py-2 text-white text-[11px] flex flex-wrap items-center justify-between gap-3">
                 <span className="text-slate-400">
                   Procurement Status:{' '}
                   <strong className="text-white ml-1 font-mono">
-                    {day.supplierIntake.toFixed(1)} L procured @ Rs. {(day.supplierIntake > 0 ? day.totalCost / day.supplierIntake : 220).toFixed(0)}/L
+                    {day.intakeEntries.length} In-Dock Batches
                   </strong>
                 </span>
                 <span className="text-blue-400 font-bold tracking-wide flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> RECONCILED WITH INTAKE REGISTRY
+                  <CheckCircle2 className="w-3.5 h-3.5" /> RECONCILED (SALES - PURCHASE COST - EXPENSES = NET PROFIT)
                 </span>
               </div>
             </div>

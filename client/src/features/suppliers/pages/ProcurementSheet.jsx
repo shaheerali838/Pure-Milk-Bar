@@ -25,6 +25,7 @@ import {
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
+import { usePOSContext } from '@/context/POSContext';
 import { exportMultiSectionCSV } from '@/utils/csvExport';
 
 const getTodayDateStr = () => {
@@ -48,6 +49,7 @@ export default function ProcurementSheet() {
   const { intakeLogs } = useIntakeContext();
   const { suppliers } = useSupplierContext();
   const { expenses } = useSourcExpenseContext();
+  const { supplierSalesHistory = [], salesHistory = [] } = usePOSContext() || {};
 
   const todayStr = getTodayDateStr();
   const isToday = date === todayStr;
@@ -163,12 +165,39 @@ export default function ProcurementSheet() {
       ? (dayLogs.reduce((sum, log) => sum + (parseFloat(log.fat) || 0), 0) / dayLogs.length).toFixed(2)
       : 0;
 
+    // Supplier POS Sales for the selected date
+    const activeSupplierSales = supplierSalesHistory.length > 0 ? supplierSalesHistory : salesHistory;
+    let daySupplierSales = 0;
+    activeSupplierSales.forEach((sale) => {
+      const sDate = normalizeDate(sale.date || sale.timestamp || sale.formattedDate);
+      if (sDate === date) {
+        (sale.items || []).forEach((item) => {
+          const src = (item.source || '').toLowerCase();
+          if (supplierSalesHistory.length === 0 && src.includes('farm')) return;
+          daySupplierSales += Number(item.subtotal || item.effectiveRevenue) || ((Number(item.quantity) || 0) * (Number(item.price) || 0));
+        });
+      }
+    });
+
+    const totalDayExpenses = (expenses || []).filter(e => normalizeDate(e.date) === date).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const daySupplierNetProfit = daySupplierSales - totalNetPayable - totalDayExpenses;
+
     return {
       rows: calculatedRows,
       routeSummaries: routeSummariesArr,
-      totals: { totalCollected, totalMorning, totalEvening, totalNetPayable, avgFat, farmersCount: calculatedRows.length }
+      totals: {
+        totalCollected,
+        totalMorning,
+        totalEvening,
+        totalNetPayable,
+        avgFat,
+        farmersCount: calculatedRows.length,
+        totalSupplierSales: daySupplierSales,
+        totalExpenses: totalDayExpenses,
+        daySupplierNetProfit,
+      },
     };
-  }, [intakeLogs, date, shiftFilter]);
+  }, [intakeLogs, expenses, supplierSalesHistory, salesHistory, date, shiftFilter]);
 
   const handlePrint = () => window.print();
 
@@ -208,7 +237,10 @@ export default function ProcurementSheet() {
       metadata: [
         ['Sheet Date', date],
         ['Total Sourced Volume', `${totals.totalCollected.toFixed(1)} Liters`],
-        ['Total Net Payable', `Rs. ${totals.totalNetPayable.toLocaleString()}`],
+        ['Total Procurement Cost (Purchases)', `Rs. ${totals.totalNetPayable.toLocaleString()}`],
+        ['Supplier POS Sales (Milk + Dahi)', `Rs. ${totals.totalSupplierSales.toLocaleString()}`],
+        ['Sourcing Overhead Expenses', `Rs. ${totals.totalExpenses.toLocaleString()}`],
+        ['Supplier Net Profit (Bachat)', `Rs. ${totals.daySupplierNetProfit.toLocaleString()}`],
         ['Average Fat %', `${totals.avgFat}%`],
         ['Active Suppliers Count', totals.farmersCount],
       ],
@@ -348,53 +380,53 @@ export default function ProcurementSheet() {
         </div>
       </div>
 
-      {/* Primary KPI Ribbon */}
+      {/* Primary KPI Ribbon (Purchases, POS Sales, Expenses, Net Profit, Quality) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
         {[
           {
             id: 'total_procured',
-            title: 'Total Procured Today',
+            title: 'Procured Volume',
             amount: `${totals.totalCollected.toFixed(1)} L`,
-            sub: `${totals.farmersCount} Total farmers intake`,
+            sub: `${totals.farmersCount} Farmers intake`,
             icon: Droplets,
             color: '#009966',
             badge: 'Intake',
           },
           {
-            id: 'morning_session',
-            title: 'Morning Session',
-            amount: `${totals.totalMorning.toFixed(1)} L`,
-            sub: `${totals.totalCollected > 0 ? ((totals.totalMorning / totals.totalCollected) * 100).toFixed(1) : 0}% of day`,
-            icon: Droplets,
-            color: '#155dfc',
-            badge: 'Morning',
-          },
-          {
-            id: 'evening_session',
-            title: 'Evening Session',
-            amount: `${totals.totalEvening.toFixed(1)} L`,
-            sub: `${totals.totalCollected > 0 ? ((totals.totalEvening / totals.totalCollected) * 100).toFixed(1) : 0}% of day`,
-            icon: Droplets,
-            color: '#8b5cf6',
-            badge: 'Evening',
-          },
-          {
-            id: 'average_fat',
-            title: 'Average Fat',
-            amount: `${totals.avgFat}%`,
-            sub: 'Calculated over all batches',
-            icon: Layers,
-            color: '#0092b8',
-            badge: 'Quality',
-          },
-          {
             id: 'total_payable',
-            title: 'Total Payable Today',
+            title: 'Milk Purchases',
             amount: `Rs. ${totals.totalNetPayable.toLocaleString()}`,
-            sub: 'Net after deductions',
+            sub: 'Procurement cost',
             icon: DollarSign,
             color: '#d97706',
-            badge: 'Finance',
+            badge: 'Purchase',
+          },
+          {
+            id: 'supplier_sales',
+            title: 'Supplier POS Sales',
+            amount: `Rs. ${totals.totalSupplierSales.toLocaleString()}`,
+            sub: 'Resale milk + Dahi',
+            icon: TrendingUp,
+            color: '#009966',
+            badge: 'Sales',
+          },
+          {
+            id: 'supplier_expenses',
+            title: 'Sourcing Expenses',
+            amount: `Rs. ${totals.totalExpenses.toLocaleString()}`,
+            sub: 'Chilling & transit',
+            icon: DollarSign,
+            color: '#e11d48',
+            badge: 'Expense',
+          },
+          {
+            id: 'net_profit',
+            title: 'Supplier Net Profit',
+            amount: `${totals.daySupplierNetProfit >= 0 ? '+' : '-'} Rs. ${Math.abs(totals.daySupplierNetProfit).toLocaleString()}`,
+            sub: 'Sales - Purchases - Exp',
+            icon: TrendingUp,
+            color: totals.daySupplierNetProfit >= 0 ? '#059669' : '#dc2626',
+            badge: 'Bachat',
           },
         ].map(({ id, title, amount, sub, icon: Icon, color, badge }) => (
           <div

@@ -22,6 +22,7 @@ import {
 
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useExpense } from '@/context/ExpenseContext';
+import { usePOSContext } from '@/context/POSContext';
 import { exportMultiSectionCSV } from '@/utils/csvExport';
 
 const getTodayDateStr = () => {
@@ -44,6 +45,7 @@ export default function DailySheet() {
 
   const { animals, milkingLogs } = useAnimalContext();
   const { expenses } = useExpense();
+  const { farmSalesHistory = [], salesHistory = [] } = usePOSContext() || {};
 
   const todayStr = getTodayDateStr();
   const isToday = date === todayStr;
@@ -111,18 +113,33 @@ export default function DailySheet() {
       return eDate === date;
     });
 
+    // 3. Process Farm POS Sales (Milk + Dahi) for the selected date
+    const activeFarmSales = farmSalesHistory.length > 0 ? farmSalesHistory : salesHistory;
+    let totalFarmSales = 0;
+    activeFarmSales.forEach((sale) => {
+      const sDate = normalizeDate(sale.date || sale.timestamp || sale.formattedDate);
+      if (sDate === date) {
+        (sale.items || []).forEach((item) => {
+          const src = (item.source || '').toLowerCase();
+          if (farmSalesHistory.length === 0 && src.includes('supplier')) return;
+          totalFarmSales += Number(item.subtotal || item.effectiveRevenue) || ((Number(item.quantity) || 0) * (Number(item.price) || 0));
+        });
+      }
+    });
+
     const totalMorning = calculatedMilkingRows.reduce((sum, r) => sum + r.morningLiters, 0);
     const totalEvening = calculatedMilkingRows.reduce((sum, r) => sum + r.eveningLiters, 0);
     const totalCollected = totalMorning + totalEvening;
     
     const totalExpenses = dayExpenses.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
+    const dayNetProfit = totalFarmSales - totalExpenses;
 
     return {
       milkingRows: calculatedMilkingRows,
       expenseRows: dayExpenses,
-      totals: { totalCollected, totalMorning, totalEvening, totalExpenses, animalCount: calculatedMilkingRows.length }
+      totals: { totalCollected, totalMorning, totalEvening, totalExpenses, totalFarmSales, dayNetProfit, animalCount: calculatedMilkingRows.length }
     };
-  }, [animals, milkingLogs, expenses, date, shiftFilter]);
+  }, [animals, milkingLogs, expenses, farmSalesHistory, salesHistory, date, shiftFilter]);
 
   const handlePrint = () => window.print();
 
@@ -159,7 +176,9 @@ export default function DailySheet() {
         ['Morning Milking Total', `${totals.totalMorning.toFixed(1)} Liters`],
         ['Evening Milking Total', `${totals.totalEvening.toFixed(1)} Liters`],
         ['Active Animals Milked', totals.animalCount],
+        ['Total Farm POS Sales', `Rs. ${Number(totals.totalFarmSales || 0).toLocaleString()}`],
         ['Total Farm Expenses Today', `Rs. ${Number(totals.totalExpenses || 0).toLocaleString()}`],
+        ['Farm Net Profit (Bachat)', `Rs. ${Number(totals.dayNetProfit || 0).toLocaleString()}`],
       ],
       sections: [
         {
@@ -297,12 +316,12 @@ export default function DailySheet() {
         </div>
       </div>
 
-      {/* Primary KPI Ribbon */}
+      {/* Primary KPI Ribbon (Yield, POS Sales, Expenses, Net Profit, Herd) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
         {[
           {
             id: 'total_yield',
-            title: 'Total Farm Yield Today',
+            title: 'Total Farm Yield',
             amount: `${totals.totalCollected.toFixed(1)} L`,
             sub: `${totals.animalCount} Animals Milked`,
             icon: Droplets,
@@ -310,40 +329,40 @@ export default function DailySheet() {
             badge: 'Yield',
           },
           {
-            id: 'morning_milking',
-            title: 'Morning Milking',
-            amount: `${totals.totalMorning.toFixed(1)} L`,
-            sub: `${totals.totalCollected > 0 ? ((totals.totalMorning / totals.totalCollected) * 100).toFixed(1) : 0}% of day`,
-            icon: Droplets,
+            id: 'farm_sales',
+            title: 'Farm POS Sales',
+            amount: `Rs. ${totals.totalFarmSales.toLocaleString()}`,
+            sub: 'Direct milk & Dahi sales',
+            icon: DollarSign,
             color: '#009966',
-            badge: 'Morning',
-          },
-          {
-            id: 'evening_milking',
-            title: 'Evening Milking',
-            amount: `${totals.totalEvening.toFixed(1)} L`,
-            sub: `${totals.totalCollected > 0 ? ((totals.totalEvening / totals.totalCollected) * 100).toFixed(1) : 0}% of day`,
-            icon: Droplets,
-            color: '#155dfc',
-            badge: 'Evening',
-          },
-          {
-            id: 'active_animals',
-            title: 'Active Milking Animals',
-            amount: totals.animalCount,
-            sub: 'Currently lactating',
-            icon: FileText,
-            color: '#2563eb',
-            badge: 'Herd',
+            badge: 'Sales',
           },
           {
             id: 'total_expenses',
             title: 'Total Farm Expenses',
             amount: `Rs. ${totals.totalExpenses.toLocaleString()}`,
-            sub: 'Logged today',
+            sub: 'Feed, labor & vet vouchers',
             icon: CheckCircle2,
             color: '#e11d48',
             badge: 'Expense',
+          },
+          {
+            id: 'net_profit',
+            title: 'Farm Net Profit',
+            amount: `${totals.dayNetProfit >= 0 ? '+' : '-'} Rs. ${Math.abs(totals.dayNetProfit).toLocaleString()}`,
+            sub: 'Sales - Expenses',
+            icon: TrendingUp,
+            color: totals.dayNetProfit >= 0 ? '#059669' : '#dc2626',
+            badge: 'Bachat',
+          },
+          {
+            id: 'active_animals',
+            title: 'Active Animals',
+            amount: totals.animalCount,
+            sub: `${totals.totalMorning.toFixed(0)}L M | ${totals.totalEvening.toFixed(0)}L E`,
+            icon: FileText,
+            color: '#2563eb',
+            badge: 'Herd',
           },
         ].map(({ id, title, amount, sub, icon: Icon, color, badge }) => (
           <div

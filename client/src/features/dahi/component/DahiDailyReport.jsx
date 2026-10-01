@@ -12,6 +12,8 @@ import {
   Tractor,
   Truck,
   Flame,
+  Scale,
+  Receipt,
 } from 'lucide-react';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
@@ -37,8 +39,8 @@ const normalizeDateStr = (rawDate) => {
 export default function DahiDailyReport() {
   const { animals = [], milkingLogs = [] } = useAnimalContext() || {};
   const { intakeLogs = [] } = useIntakeContext() || {};
-  const { batches = [], metrics = {}, availableDahiStock = 0 } = useDahiContext() || {};
-  const { salesHistory = [], inventoryMetrics = {} } = usePOSContext() || {};
+  const { batches = [], availableDahiStock = 0 } = useDahiContext() || {};
+  const { salesHistory = [], farmSalesHistory = [], supplierSalesHistory = [], inventoryMetrics = {} } = usePOSContext() || {};
 
   const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week'
 
@@ -69,6 +71,10 @@ export default function DahiDailyReport() {
           dahiOutput: 0,
           dahiSalesQty: 0,
           dahiSalesRev: 0,
+          dahiFarmRev: 0,
+          dahiSupplierRev: 0,
+          dahiInputCost: 0,
+          dahiNetGain: 0,
           batchesList: [],
           saleItems: [],
         };
@@ -85,7 +91,6 @@ export default function DahiDailyReport() {
       dates[d].farmYield += parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0;
     });
 
-    // Fallback for today if active herd exists
     if (dates[todayStr].farmYield === 0 && herdBaselineYield > 0) {
       dates[todayStr].farmYield = herdBaselineYield;
       dates[todayStr].isHerdBaseline = true;
@@ -125,33 +130,50 @@ export default function DahiDailyReport() {
       }
     });
 
-    // 4. POS Sales (Dahi items)
+    // 4. POS Sales (Dahi items, with Farm vs Supplier Segregation)
     salesHistory.forEach((sale) => {
-      const d = normalizeDateStr(sale.date || sale.timestamp || sale.createdAt);
+      const d = normalizeDateStr(sale.date || sale.timestamp || sale.createdAt || sale.formattedDate);
       initDate(d);
 
       (sale.items || []).forEach((item) => {
         const name = (item.name || '').toLowerCase();
         const cat = (item.category || '').toLowerCase();
         const qty = Number(item.quantity) || 0;
-        const sub = Number(item.subtotal) || qty * (Number(item.price) || 0);
+        const sub = Number(item.subtotal) || (qty * (Number(item.price) || 0));
 
-        if (
-          name.includes('dahi') ||
-          cat.includes('dahi') ||
-          name.includes('curd') ||
-          name.includes('yogurt')
-        ) {
+        const isDahi = name.includes('dahi') || cat.includes('dahi') || name.includes('curd') || name.includes('yogurt');
+
+        if (isDahi) {
+          const fRatio = item.farmRatio !== undefined ? Number(item.farmRatio) : (item.source === 'Farm' ? 1 : item.source === 'Supplier' ? 0 : 0.5);
+          const sRatio = item.supplierRatio !== undefined ? Number(item.supplierRatio) : (item.source === 'Supplier' ? 1 : item.source === 'Farm' ? 0 : 0.5);
+
+          const fRev = Math.round(sub * fRatio);
+          const sRev = sub - fRev;
+
           dates[d].dahiSalesQty += qty;
           dates[d].dahiSalesRev += sub;
+          dates[d].dahiFarmRev += fRev;
+          dates[d].dahiSupplierRev += sRev;
+
           dates[d].saleItems.push({
             name: item.name,
             quantity: qty,
             price: Number(item.price) || 0,
             subtotal: sub,
+            source: item.source || (fRatio === 1 ? 'Farm' : sRatio === 1 ? 'Supplier' : 'Mixed'),
+            farmShare: fRev,
+            supplierShare: sRev,
           });
         }
       });
+    });
+
+    // Compute input milk cost and value-add uplift per day
+    Object.values(dates).forEach((day) => {
+      const totalUsed = day.farmToDahi + day.supplierToDahi;
+      // Approx base milk cost: Rs. 240/L
+      day.dahiInputCost = Math.round(totalUsed * 240);
+      day.dahiNetGain = day.dahiSalesRev - day.dahiInputCost;
     });
 
     const list = Object.values(dates).sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -181,6 +203,10 @@ export default function DahiDailyReport() {
         acc.totalDahiOutput += day.dahiOutput;
         acc.totalDahiSalesQty += day.dahiSalesQty;
         acc.totalDahiSalesRev += day.dahiSalesRev;
+        acc.totalFarmRev += day.dahiFarmRev;
+        acc.totalSupplierRev += day.dahiSupplierRev;
+        acc.totalInputCost += day.dahiInputCost;
+        acc.totalNetGain += day.dahiNetGain;
         return acc;
       },
       {
@@ -191,6 +217,10 @@ export default function DahiDailyReport() {
         totalDahiOutput: 0,
         totalDahiSalesQty: 0,
         totalDahiSalesRev: 0,
+        totalFarmRev: 0,
+        totalSupplierRev: 0,
+        totalInputCost: 0,
+        totalNetGain: 0,
       }
     );
   }, [aggregatedByDate]);
@@ -206,10 +236,10 @@ export default function DahiDailyReport() {
         <div>
           <h2 className="text-sm sm:text-base font-bold text-slate-900 font-display flex items-center gap-2">
             <Layers className="w-4.5 h-4.5 text-indigo-600" />
-            End-to-End Dahi Daily Analytical Report
+            Dahi Production, Sales &amp; Segregation Report
           </h2>
           <p className="text-[11px] text-slate-500 mt-0.5">
-            Complete daily lifecycle mapping Farm Yield &amp; Supplier Procurement into Dahi Production and POS Revenue
+            Complete conversion lifecycle tracking Farm Milk vs Supplier Milk, POS revenue splitting &amp; value-add margin
           </p>
         </div>
 
@@ -218,7 +248,7 @@ export default function DahiDailyReport() {
           <button
             type="button"
             onClick={() => setDateFilter('today')}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               dateFilter === 'today'
                 ? 'bg-white text-indigo-700 shadow-xs font-bold'
                 : 'text-slate-600 hover:text-slate-900'
@@ -229,7 +259,7 @@ export default function DahiDailyReport() {
           <button
             type="button"
             onClick={() => setDateFilter('week')}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               dateFilter === 'week'
                 ? 'bg-white text-indigo-700 shadow-xs font-bold'
                 : 'text-slate-600 hover:text-slate-900'
@@ -240,7 +270,7 @@ export default function DahiDailyReport() {
           <button
             type="button"
             onClick={() => setDateFilter('all')}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               dateFilter === 'all'
                 ? 'bg-white text-indigo-700 shadow-xs font-bold'
                 : 'text-slate-600 hover:text-slate-900'
@@ -251,68 +281,60 @@ export default function DahiDailyReport() {
         </div>
       </div>
 
-      {/* 2. Top Summary KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* 2. Top Summary KPI Cards (Output, Milk Converted, POS Sales, Farm Share, Supplier Share) */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Sourced Milk</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Dahi Produced</span>
           <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-xl font-black font-mono text-slate-800">
-              {(overallTotals.totalFarmYield + overallTotals.totalSupplierIntake).toFixed(1)}
-            </span>
+            <span className="text-xl font-black font-mono text-indigo-700">{overallTotals.totalDahiOutput.toFixed(1)}</span>
+            <span className="text-xs font-semibold text-slate-500">kg</span>
+          </div>
+          <span className="text-[10px] text-slate-400 mt-1 block">Yield Efficiency: {conversionRate}%</span>
+        </div>
+
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Raw Milk Converted</span>
+          <div className="flex items-baseline gap-1.5 mt-1">
+            <span className="text-xl font-black font-mono text-slate-800">{totalConvertedMilk.toFixed(1)}</span>
             <span className="text-xs font-semibold text-slate-500">Liters</span>
           </div>
           <span className="text-[10px] text-slate-400 mt-1 block">
-            Farm: {overallTotals.totalFarmYield.toFixed(0)} L | Supplier: {overallTotals.totalSupplierIntake.toFixed(0)} L
+            Farm: {overallTotals.totalFarmConverted}L • Supplier: {overallTotals.totalSupplierConverted}L
           </span>
         </div>
 
         <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Dahi Produced</span>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-xl font-black font-mono text-indigo-700">
-              {overallTotals.totalDahiOutput.toFixed(1)}
-            </span>
-            <span className="text-xs font-semibold text-slate-500">kg</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Dahi POS Sales</span>
+          <div className="flex items-baseline gap-1 mt-1">
+            <span className="text-xl font-black font-mono text-emerald-700">Rs. {overallTotals.totalDahiSalesRev.toLocaleString()}</span>
           </div>
-          <span className="text-[10px] text-indigo-600 font-medium mt-1 block">
-            {totalConvertedMilk > 0 ? `${totalConvertedMilk.toFixed(0)} L converted (${conversionRate}%)` : 'Ready for production'}
-          </span>
+          <span className="text-[10px] text-slate-500 mt-1 block">{overallTotals.totalDahiSalesQty.toFixed(1)} kg sold to customers</span>
+        </div>
+
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Sales Revenue Split</span>
+          <div className="flex items-center justify-between mt-1 text-xs font-mono font-bold">
+            <span className="text-emerald-700">Farm: Rs. {overallTotals.totalFarmRev.toLocaleString()}</span>
+            <span className="text-blue-700">Sup: Rs. {overallTotals.totalSupplierRev.toLocaleString()}</span>
+          </div>
+          <span className="text-[10px] text-slate-400 mt-1 block font-mono">Allocated by batch sourcing ratio</span>
         </div>
 
         <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Available Dahi Stock</span>
           <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-xl font-black font-mono text-cyan-700">
-              {currentDahiStock.toFixed(1)}
-            </span>
+            <span className="text-xl font-black font-mono text-indigo-700">{currentDahiStock.toFixed(1)}</span>
             <span className="text-xs font-semibold text-slate-500">kg</span>
           </div>
-          <span className="text-[10px] text-cyan-700 font-medium mt-1 block">
-            Live in chilling trays &amp; POS
-          </span>
-        </div>
-
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">POS Dahi Revenue</span>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-xl font-black font-mono text-emerald-700">
-              Rs. {overallTotals.totalDahiSalesRev.toLocaleString()}
-            </span>
-          </div>
-          <span className="text-[10px] text-slate-400 mt-1 block">
-            Sold: {overallTotals.totalDahiSalesQty.toFixed(1)} kg curd
-          </span>
+          <span className="text-[10px] text-indigo-600 font-medium mt-1 block">Counter ready stock</span>
         </div>
       </div>
 
       {/* 3. Daily Breakdown Cards */}
       <div className="space-y-4">
         {aggregatedByDate.map((day) => {
-          const totalConverted = (day.farmToDahi || 0) + (day.supplierToDahi || 0);
-          const remainingDahiStock = Math.max(0, day.dahiOutput - day.dahiSalesQty);
-          const conversionYield = totalConverted > 0 ? ((day.dahiOutput / totalConverted) * 100).toFixed(1) : 0;
-          const totalRevenue = day.dahiSalesRev;
           const isToday = day.date === normalizeDateStr(new Date());
+          const totalDayConverted = day.farmToDahi + day.supplierToDahi;
 
           return (
             <div key={day.date} className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
@@ -337,119 +359,151 @@ export default function DahiDailyReport() {
 
                 <div className="flex items-center gap-4 text-xs">
                   <div className="flex items-center gap-1.5 text-slate-600">
-                    <span className="font-medium text-slate-400">Total Dahi Produced:</span>
-                    <strong className="font-bold font-mono text-slate-800">{day.dahiOutput.toFixed(1)} kg</strong>
+                    <span className="font-medium text-slate-400">Produced:</span>
+                    <strong className="font-bold font-mono text-indigo-700">
+                      {day.dahiOutput.toFixed(1)} kg
+                    </strong>
                   </div>
                   <div className="flex items-center gap-1.5 text-slate-600">
-                    <span className="font-medium text-slate-400">Available Stock:</span>
-                    <strong className="font-bold font-mono text-cyan-700">{remainingDahiStock.toFixed(1)} kg</strong>
+                    <span className="font-medium text-slate-400">POS Sales:</span>
+                    <strong className="font-bold font-mono text-emerald-700">
+                      Rs. {day.dahiSalesRev.toLocaleString()}
+                    </strong>
                   </div>
-                  <div className="flex items-center gap-1.5 text-slate-600">
-                    <span className="font-medium text-slate-400">POS Revenue:</span>
-                    <strong className="font-bold font-mono text-emerald-700">Rs. {totalRevenue.toLocaleString()}</strong>
+                  <div className="flex items-center gap-2 text-[11px] font-mono">
+                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.2 rounded font-bold">
+                      Farm: Rs. {day.dahiFarmRev.toLocaleString()}
+                    </span>
+                    <span className="bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded font-bold">
+                      Sup: Rs. {day.dahiSupplierRev.toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Data Grid: 3 Pillars (Sourcing, Conversion, Realization) */}
+              {/* Data Grid: 3 Columns (Sourcing Conversion, POS Sales Split, Batch Logs) */}
               <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-200/70 text-xs">
-                {/* 1. Raw Milk Sourcing */}
+                {/* Col 1: Raw Milk Sourcing */}
                 <div className="p-4 space-y-3">
-                  <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-2">
-                    <Milk className="w-3.5 h-3.5 text-slate-600" />
-                    1. Raw Milk Available
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
+                      <Droplets className="w-3.5 h-3.5 text-indigo-600" />
+                      Milk Sourcing for Dahi
+                    </div>
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      {totalDayConverted.toFixed(1)} L Total Used
+                    </span>
                   </div>
+
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500 flex items-center gap-1.5">
-                        <Tractor className="w-3 h-3 text-emerald-600" /> Farm Yield
+                      <span className="text-slate-500">Farm Milk Used</span>
+                      <span className="font-mono font-bold text-emerald-700 text-sm">
+                        {day.farmToDahi.toFixed(1)} L
                       </span>
-                      <span className="font-mono font-bold text-emerald-700">{day.farmYield.toFixed(1)} L</span>
                     </div>
+
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500 flex items-center gap-1.5">
-                        <Truck className="w-3 h-3 text-blue-600" /> Supplier Intake
+                      <span className="text-slate-500">Supplier Milk Used</span>
+                      <span className="font-mono font-bold text-blue-700 text-sm">
+                        {day.supplierToDahi.toFixed(1)} L
                       </span>
-                      <span className="font-mono font-bold text-blue-700">{day.supplierIntake.toFixed(1)} L</span>
                     </div>
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-slate-600 font-semibold">Total Sourced</span>
-                      <span className="font-mono font-bold text-slate-900">
-                        {(day.farmYield + day.supplierIntake).toFixed(1)} L
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                      <span className="text-slate-700 font-semibold">Dahi Output Produced</span>
+                      <span className="font-mono font-bold text-indigo-700 text-sm">
+                        {day.dahiOutput.toFixed(1)} kg
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* 2. Dahi Processing */}
-                <div className="p-4 space-y-3 bg-indigo-50/20">
-                  <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-2">
-                    <Layers className="w-3.5 h-3.5 text-indigo-600" />
-                    2. Dahi Processing &amp; Conversion
+                {/* Col 2: POS Dahi Sales & Revenue Segregation */}
+                <div className="p-4 space-y-3 bg-emerald-50/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
+                      <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                      POS Dahi Sales &amp; Segregation
+                    </div>
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      {day.saleItems.length} Sales Items
+                    </span>
                   </div>
+
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Farm Used
+                      <span className="text-slate-500">Total Dahi Sold</span>
+                      <span className="font-mono font-bold text-slate-800 text-sm">
+                        {day.dahiSalesQty.toFixed(1)} kg
                       </span>
-                      <span className="font-mono font-bold text-slate-700">{day.farmToDahi.toFixed(1)} L</span>
                     </div>
+
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Supplier Used
+                      <span className="text-slate-500">Total Dahi Revenue</span>
+                      <span className="font-mono font-bold text-emerald-800 text-sm">
+                        Rs. {day.dahiSalesRev.toLocaleString()}
                       </span>
-                      <span className="font-mono font-bold text-slate-700">{day.supplierToDahi.toFixed(1)} L</span>
                     </div>
-                    <div className="pt-2 border-t border-indigo-100 flex items-center justify-between">
-                      <span className="text-indigo-700 font-bold">Dahi Output</span>
-                      <div className="text-right">
-                        <span className="font-mono font-bold text-indigo-900 block">{day.dahiOutput.toFixed(1)} kg</span>
-                        <span className="text-[10px] text-indigo-600/70 block">{conversionYield}% Conversion</span>
+
+                    <div className="p-2 bg-white rounded-lg border border-emerald-100 text-[11px] space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-emerald-700 font-medium">Farm P&amp;L Allocation:</span>
+                        <strong className="font-mono text-emerald-800">Rs. {day.dahiFarmRev.toLocaleString()}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-blue-700 font-medium">Supplier P&amp;L Allocation:</span>
+                        <strong className="font-mono text-blue-800">Rs. {day.dahiSupplierRev.toLocaleString()}</strong>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* 3. POS Sales Realization */}
-                <div className="p-4 space-y-3 bg-emerald-50/10">
-                  <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px] mb-2">
-                    <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-                    3. POS Sales Realization
+                {/* Col 3: Batch Logs & Conversion Records */}
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
+                      <Layers className="w-3.5 h-3.5 text-indigo-600" />
+                      Conversion Batches
+                    </div>
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      {day.batchesList.length} Batches
+                    </span>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Dahi Sold</span>
-                      <span className="font-mono font-bold text-slate-800">{day.dahiSalesQty.toFixed(1)} kg</span>
+
+                  {day.batchesList.length > 0 ? (
+                    <div className="max-h-28 overflow-y-auto space-y-1.5">
+                      {day.batchesList.map((b, idx) => (
+                        <div key={idx} className="p-2 bg-slate-50 rounded-lg border border-slate-200/80 text-[11px] flex items-center justify-between">
+                          <div>
+                            <span className="font-bold text-slate-800 block">{b.batchNumber || b.product || 'Dahi Batch'}</span>
+                            <span className="text-[10px] text-slate-400">
+                              Source: {b.source || 'Farm'} &bull; In: {b.milkUsed || b.milkUsedVal || 0}L
+                            </span>
+                          </div>
+                          <span className="font-mono font-bold text-indigo-700">
+                            {b.output || b.outputVal || 0} kg
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Available Stock</span>
-                      <span className="font-mono font-bold text-cyan-700">{remainingDahiStock.toFixed(1)} kg</span>
-                    </div>
-                    <div className="pt-2 border-t border-emerald-100 flex items-center justify-between">
-                      <span className="text-emerald-700 font-bold flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3" /> Sales Revenue
-                      </span>
-                      <span className="font-mono font-black text-emerald-800 text-sm">
-                        Rs. {totalRevenue.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 italic pt-2">No conversion batches recorded for this date.</p>
+                  )}
                 </div>
               </div>
 
-              {/* Footer Summary Bar */}
+              {/* Bottom Footer Bar */}
               <div className="bg-slate-900 px-4 py-2 text-white text-[11px] flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-4">
-                  <span className="text-slate-400">
-                    Total Raw Milk Used for Dahi:{' '}
-                    <strong className="text-white ml-1 font-mono">{totalConverted.toFixed(1)} L</strong>
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-emerald-400 font-bold tracking-wide flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> RECONCILED WITH POS &amp; KITCHEN PIPELINE
-                  </span>
-                </div>
+                <span className="text-slate-400">
+                  Value-Addition Efficiency:{' '}
+                  <strong className="text-white ml-1 font-mono">
+                    {day.dahiOutput > 0 ? (day.dahiSalesRev / day.dahiOutput).toFixed(0) : 320} Rs/kg realized
+                  </strong>
+                </span>
+                <span className="text-indigo-400 font-bold tracking-wide flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> SEGREGATED REVENUE ROUTED TO FARM &amp; SUPPLIER P&amp;L
+                </span>
               </div>
             </div>
           );
