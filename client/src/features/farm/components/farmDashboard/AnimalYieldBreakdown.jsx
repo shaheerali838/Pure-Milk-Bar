@@ -14,12 +14,17 @@ const parseYield = (val) => {
 };
 
 export default function AnimalYieldBreakdown({ onSelectAnimal }) {
-  const { animals = [] } = useAnimalContext();
+  const { animals = [], milkingLogs = [] } = useAnimalContext();
   const { staffList = [] } = useStaffContext();
   const farmWorkers = staffList.filter(s => s.role?.toLowerCase().includes('farm') || s.role?.toLowerCase().includes('milker') || s.role?.toLowerCase().includes('herdsman') || s.role?.toLowerCase().includes('worker'));
   const navigate = useNavigate();
 
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+
+  const now = new Date();
+  const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const isoTodayStr = now.toISOString().split("T")[0];
+  const todayDateFormatted = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
   const handleAnimalClick = (animal) => {
     const animalId = animal.id || animal.tag;
@@ -36,7 +41,7 @@ export default function AnimalYieldBreakdown({ onSelectAnimal }) {
         <div className="flex items-center gap-2">
           <Droplets className="w-5 h-5 text-emerald-600 fill-emerald-100" />
           <h3 className="text-base font-black text-emerald-900 tracking-tight">
-            Today's Milking Register (24-Aug-2026)
+            Today's Milking Register ({todayDateFormatted})
           </h3>
         </div>
 
@@ -75,20 +80,28 @@ export default function AnimalYieldBreakdown({ onSelectAnimal }) {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {animals.map((animal, idx) => {
-              const morning = parseYield(animal.morningYield);
-              const evening = parseYield(animal.eveningYield);
-              const total = morning + evening > 0 ? morning + evening : parseYield(animal.totalDailyYield);
+              // Find today's specific logs for this animal
+              const morningLog = (milkingLogs || []).find((l) => {
+                const d = (l.date || '').split('T')[0];
+                const tagMatch = l.animalTag === animal.tag || l.tag === animal.tag || String(l.animalId?._id || l.animalId) === String(animal.id || animal._id);
+                return (d === localTodayStr || d === isoTodayStr) && tagMatch && (l.shift || '').toLowerCase() === 'morning';
+              });
+              const eveningLog = (milkingLogs || []).find((l) => {
+                const d = (l.date || '').split('T')[0];
+                const tagMatch = l.animalTag === animal.tag || l.tag === animal.tag || String(l.animalId?._id || l.animalId) === String(animal.id || animal._id);
+                return (d === localTodayStr || d === isoTodayStr) && tagMatch && (l.shift || '').toLowerCase() === 'evening';
+              });
+
+              const morning = morningLog ? (parseFloat(morningLog.yieldLiters || morningLog.yield) || 0) : 0;
+              const evening = eveningLog ? (parseFloat(eveningLog.yieldLiters || eveningLog.yield) || 0) : 0;
+              const total = morning + evening;
               const isBuffalo = animal.species?.toLowerCase().includes("buffalo");
 
               const milkerName = farmWorkers.length > 0 
                 ? farmWorkers[idx % farmWorkers.length]?.name 
                 : "";
               
-              const healthNote = animal.tag === "COW-B" 
-                ? "High peak lactation yield."
-                : isBuffalo 
-                ? "Premium fat yield." 
-                : "Normal health, fed standard silage.";
+              const healthNote = animal.healthStatus || "Healthy";
 
               return (
                 <tr

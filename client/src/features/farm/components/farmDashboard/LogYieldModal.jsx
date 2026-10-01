@@ -1,13 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Loader2, User } from "lucide-react";
 import { toast } from "sonner";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { useStaffContext } from "../../../../context/StaffContext";
+import { useStaffPayrollContext } from "../../../../context/StaffPayrollContext";
 
 export default function LogYieldModal({ isOpen, onClose }) {
-  const { animals = [], updateAnimal } = useAnimalContext();
-  const { staffList = [] } = useStaffContext();
-  const farmWorkers = staffList.filter(s => s.role?.toLowerCase().includes('farm') || s.role?.toLowerCase().includes('milker') || s.role?.toLowerCase().includes('herdsman') || s.role?.toLowerCase().includes('worker'));
+  const { animals = [], updateAnimal, saveMilkingShift } = useAnimalContext();
+  const staffCtx = useStaffContext();
+  const payrollCtx = useStaffPayrollContext();
+
+  const rawStaffList = (payrollCtx?.staffList?.length > 0 ? payrollCtx.staffList : staffCtx?.staffList) || [];
+  
+  // Filter for farm/milking/labor roles, or fallback to all registered staff
+  const farmWorkers = rawStaffList.filter((s) => {
+    const r = (s.role || "").toLowerCase();
+    return (
+      r.includes("farm") ||
+      r.includes("milk") ||
+      r.includes("herd") ||
+      r.includes("work") ||
+      r.includes("labor") ||
+      r.includes("oper") ||
+      r.includes("staff") ||
+      r.includes("manag") ||
+      r.includes("superv")
+    );
+  });
+  const availableStaff = farmWorkers.length > 0 ? farmWorkers : rawStaffList;
 
   const [formData, setFormData] = useState({
     tag: animals[0]?.tag || "",
@@ -15,12 +35,19 @@ export default function LogYieldModal({ isOpen, onClose }) {
     evening: "7.0",
     milker: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (farmWorkers.length > 0 && !formData.milker) {
-      setFormData(prev => ({ ...prev, milker: farmWorkers[0].name }));
+    if (animals.length > 0 && !formData.tag) {
+      setFormData((prev) => ({ ...prev, tag: animals[0].tag }));
     }
-  }, [farmWorkers, formData.milker]);
+  }, [animals, formData.tag]);
+
+  useEffect(() => {
+    if (availableStaff.length > 0 && !formData.milker) {
+      setFormData((prev) => ({ ...prev, milker: availableStaff[0].name }));
+    }
+  }, [availableStaff, formData.milker]);
 
   if (!isOpen) return null;
 
@@ -28,27 +55,58 @@ export default function LogYieldModal({ isOpen, onClose }) {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const targetAnimal = animals.find((a) => a.tag === formData.tag);
+    const mVal = parseFloat(formData.morning) || 0;
+    const eVal = parseFloat(formData.evening) || 0;
 
-    if (targetAnimal && updateAnimal) {
-      updateAnimal(targetAnimal.id, {
-        ...targetAnimal,
-        morningYield: `${formData.morning} L`,
-        eveningYield: `${formData.evening} L`,
-      });
+    if (mVal <= 0 && eVal <= 0) {
+      toast.error("Please enter a valid morning or evening yield (liters)");
+      return;
     }
 
-    toast.success(`Milking yield log saved for ${formData.tag || "animal"}!`);
-    onClose();
+    setIsSubmitting(true);
+    try {
+      if (targetAnimal && updateAnimal) {
+        await updateAnimal(targetAnimal._id || targetAnimal.id, {
+          ...targetAnimal,
+          morningYield: mVal,
+          eveningYield: eVal,
+          expectedDailyYield: mVal + eVal,
+          dailyAvgYield: (mVal + eVal) / 2,
+        });
+      }
+
+      // Persist to MilkingLogs / MilkingShift API
+      if (saveMilkingShift) {
+        const todayDate = new Date().toISOString().split("T")[0];
+        const selectedWorker = availableStaff.find((s) => s.name === formData.milker || s.id === formData.milker);
+        const opId = selectedWorker?._id || selectedWorker?.id || undefined;
+
+        if (mVal > 0) {
+          await saveMilkingShift("Morning", todayDate, { [formData.tag]: mVal }, opId);
+        }
+        if (eVal > 0) {
+          await saveMilkingShift("Evening", todayDate, { [formData.tag]: eVal }, opId);
+        }
+      }
+
+      toast.success(`Milking yield log saved for ${formData.tag || "animal"}!`);
+      onClose();
+    } catch (err) {
+      console.error("Failed to save milking log:", err);
+      toast.error("Failed to save milking log to database");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="bg-white rounded-3xl max-w-lg w-full p-5 shadow-2xl border border-slate-100">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-extrabold text-slate-900">Log Farm Milking Yield</h3>
+          <h3 className="text-xl font-extrabold text-slate-900 font-display">Log Farm Milking Yield</h3>
           <button
             type="button"
             onClick={onClose}
@@ -93,38 +151,59 @@ export default function LogYieldModal({ isOpen, onClose }) {
             />
           </div>
 
-          {farmWorkers.length > 0 && (
-            <div>
-              <label className="block text-slate-700 font-bold mb-1">
-                Herdsman / Milker Name
-              </label>
+          {/* Milker / Herdsman Selection */}
+          <div>
+            <label className="flex items-center justify-between text-slate-700 font-bold mb-1">
+              <span>Herdsman / Milker Name</span>
+              <span className="text-[10px] text-slate-400 font-normal">
+                {availableStaff.length} registered staff available
+              </span>
+            </label>
+            {availableStaff.length > 0 ? (
               <select
                 value={formData.milker}
                 onChange={(e) => handleChange("milker", e.target.value)}
                 className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2 text-slate-800 font-bold focus:outline-none focus:border-emerald-500"
               >
-                {farmWorkers.map((worker) => (
-                  <option key={worker.id} value={worker.name}>
-                    {worker.name} ({worker.role})
+                {availableStaff.map((worker) => (
+                  <option key={worker.id || worker._id} value={worker.name}>
+                    {worker.name} ({worker.role || "Staff Member"})
                   </option>
                 ))}
               </select>
-            </div>
-          )}
+            ) : (
+              <input
+                type="text"
+                placeholder="Enter Milker / Herdsman Name"
+                value={formData.milker}
+                onChange={(e) => handleChange("milker", e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2 text-slate-800 font-bold focus:outline-none focus:border-emerald-500"
+              />
+            )}
+          </div>
 
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-slate-600 hover:text-slate-800 font-bold text-xs cursor-pointer"
+              disabled={isSubmitting}
+              className="px-4 py-2 text-slate-600 hover:text-slate-800 font-bold text-xs cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2 rounded-full bg-[#007a5e] hover:bg-[#00634c] text-white font-extrabold text-xs shadow-sm transition-all cursor-pointer"
+              disabled={isSubmitting}
+              className="flex items-center gap-1.5 px-6 py-2 rounded-full bg-[#007a5e] hover:bg-[#00634c] disabled:opacity-60 disabled:cursor-not-allowed text-white font-extrabold text-xs shadow-sm transition-all cursor-pointer"
             >
-              Save Milking Log
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Saving Yield...</span>
+                </>
+              ) : (
+                "Save Milking Log"
+              )}
             </button>
           </div>
         </form>

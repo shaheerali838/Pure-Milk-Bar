@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Phone, Smartphone, Milk, CreditCard, Shield, MapPin, ShieldCheck, UserCheck } from 'lucide-react';
+import { X, Phone, Smartphone, Milk, CreditCard, Shield, MapPin, ShieldCheck, UserCheck, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -7,9 +7,12 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
   if (!isOpen || !customer) return null;
 
   const initial = customer.name ? customer.name.charAt(0).toUpperCase() : 'C';
+  const creditLimit = Number(customer.creditLimit || 10000);
+  const khataBalance = Number(customer.khataBalance ?? customer.currentBalance ?? 0);
+  const isLimitExceeded = creditLimit > 0 && khataBalance >= creditLimit;
   const khataPercent = Math.min(
     100,
-    Math.round(((customer.khataBalance || 0) / (customer.creditLimit || 10000)) * 100)
+    Math.round((khataBalance / creditLimit) * 100)
   );
 
   return (
@@ -21,7 +24,7 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
               {initial}
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <h3 className="text-xs font-bold text-slate-800 leading-tight font-display">{customer.name}</h3>
                 <span
                   className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold ${
@@ -32,6 +35,11 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
                 >
                   {customer.verificationStatus || 'Verified'}
                 </span>
+                {isLimitExceeded && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[8px] font-black bg-rose-100 text-rose-800 border border-rose-300 uppercase">
+                    ⚠️ Over Limit
+                  </span>
+                )}
               </div>
               <p className="text-[10px] text-slate-400 flex items-center gap-0.5 mt-0.5 leading-none">
                 <MapPin className="w-2.5 h-2.5 text-slate-400" />
@@ -52,6 +60,18 @@ export default function ViewCustomerModal({ customer, isOpen, onClose }) {
         </div>
 
         <div className="p-3.5 space-y-2.5 text-xs text-slate-700 max-h-[82vh] overflow-y-auto">
+          {/* Credit Limit Alert Banner */}
+          {isLimitExceeded && (
+            <div className="p-2.5 bg-rose-50 border border-rose-300 rounded-lg text-rose-800 text-xs flex items-start gap-2 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-rose-950">⚠️ Credit Limit Reached / Exceeded!</p>
+                <p className="text-[10px] text-rose-700 mt-0.5">
+                  Assigned limit is <span className="font-bold font-mono">PKR {creditLimit.toLocaleString()}</span>. Current dues are <span className="font-bold font-mono text-rose-950">PKR {khataBalance.toLocaleString()}</span>.
+                </p>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
             <div>
               <span className="text-[9px] font-bold uppercase text-slate-400 tracking-wider flex items-center gap-1">

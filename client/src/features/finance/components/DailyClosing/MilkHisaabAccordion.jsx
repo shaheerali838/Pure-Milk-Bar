@@ -38,14 +38,14 @@ export default function MilkHisaabAccordion({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                Milk Hisaab (Mass Balance Breakdown)
+                Milk Reconciliation (Mass Balance)
               </h3>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
-                {formatL(expectedClosing)} Expected
+                {formatL(expectedClosing)} Closing
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Complete formula audit: Inflows (Farm + Suppliers) minus Outflows (Counter, Deliveries, Dahi, Wastage)
+              Audit balance: Total Inflows (Farm + Suppliers) minus Total Outflows (Counter, Deliveries, Processing, Wastage)
             </p>
           </div>
         </div>
@@ -82,21 +82,21 @@ export default function MilkHisaabAccordion({
             <div className="bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl p-4 space-y-2.5">
               <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
                 <ArrowDown className="w-3.5 h-3.5 text-emerald-600" />
-                Milk Inflows (Aamad)
+                Milk Inflows (Received)
               </div>
 
               <div className="space-y-1.5 text-xs sm:text-sm">
                 <div className="flex justify-between text-slate-600 dark:text-slate-300">
-                  <span>1. Kal Se Bacha (Opening Tank Stock)</span>
+                  <span>1. Opening Stock (From Yesterday)</span>
                   <span className="font-semibold text-slate-900 dark:text-white">{formatL(openingStock)}</span>
                 </div>
                 <div className="flex justify-between text-slate-600 dark:text-slate-300">
                   <span>2. Farm Milking Production</span>
-                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">+{formatL(farmProduction)}</span>
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">{formatL(farmProduction)}</span>
                 </div>
                 <div className="flex justify-between text-slate-600 dark:text-slate-300">
-                  <span>3. Supplier Milk Intake Inflow</span>
-                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">+{formatL(supplierInflow)}</span>
+                  <span>3. Supplier Milk Intake</span>
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">{formatL(supplierInflow)}</span>
                 </div>
 
                 <div className="pt-2 border-t border-emerald-200 dark:border-emerald-800/60 flex justify-between font-bold text-emerald-900 dark:text-emerald-200">
@@ -110,30 +110,30 @@ export default function MilkHisaabAccordion({
             <div className="bg-rose-50/40 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-800/40 rounded-xl p-4 space-y-2.5">
               <div className="text-xs font-bold text-rose-800 dark:text-rose-300 uppercase tracking-wider flex items-center gap-1.5">
                 <ArrowUp className="w-3.5 h-3.5 text-rose-600" />
-                Milk Outflows (Kharcha & Sales)
+                Milk Outflows (Sales & Usage)
               </div>
 
               <div className="space-y-1.5 text-xs sm:text-sm">
                 <div className="flex justify-between text-slate-600 dark:text-slate-300">
                   <span>4. POS Counter Walk-in Sales</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">-{formatL(counterSales)}</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">{formatL(counterSales)}</span>
                 </div>
                 <div className="flex justify-between text-slate-600 dark:text-slate-300">
                   <span>5. Doorstep Delivery Runs</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">-{formatL(doorstepSales)}</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">{formatL(doorstepSales)}</span>
                 </div>
                 <div className="flex justify-between text-slate-600 dark:text-slate-300">
-                  <span>6. Dahi & Processing Used</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">-{formatL(processingUsed)}</span>
+                  <span>6. Processing & Value-Add Used</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">{formatL(processingUsed)}</span>
                 </div>
                 <div className="flex justify-between text-slate-600 dark:text-slate-300">
                   <span>7. Spoilage & Wastage</span>
-                  <span className="font-semibold text-rose-600 dark:text-rose-400">-{formatL(wastage)}</span>
+                  <span className="font-semibold text-rose-600 dark:text-rose-400">{formatL(wastage)}</span>
                 </div>
 
                 <div className="pt-2 border-t border-rose-200 dark:border-rose-800/60 flex justify-between font-bold text-rose-900 dark:text-rose-200">
                   <span>Total Milk Deductions</span>
-                  <span>-{formatL(totalOut)}</span>
+                  <span>{formatL(totalOut)}</span>
                 </div>
               </div>
             </div>
@@ -142,11 +142,11 @@ export default function MilkHisaabAccordion({
           {/* Bottom Formula Banner */}
           <div className="p-3 bg-slate-900 text-white rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs sm:text-sm">
             <span className="text-slate-300">
-              Formula: <span className="text-emerald-400">{formatL(totalAvailable)} (Available)</span> −{' '}
+              Formula: <span className="text-emerald-400">{formatL(totalAvailable)} (Available)</span> &minus;{' '}
               <span className="text-rose-400">{formatL(totalOut)} (Outflows)</span>
             </span>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-300">Expected Closing in Tanks:</span>
+              <span className="font-semibold text-slate-300">Expected Closing:</span>
               <span className="font-black text-emerald-400 text-base">{formatL(expectedClosing)}</span>
             </div>
           </div>

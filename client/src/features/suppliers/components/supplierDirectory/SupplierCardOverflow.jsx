@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { Users, Droplets, DollarSign, Receipt, Clock, ChevronRight } from 'lucide-react';
 import { useSupplierContext } from '@/context/SupplierContext';
+import { KpiGridSkeleton } from '@/components/ui/skeleton';
 import SupplierCardDetailModal from './SupplierCardDetailModal';
 
 export default function SupplierCardOverflow({ onSelectSupplier }) {
-  const { totals, suppliers, settleSupplierBalance } = useSupplierContext();
+  const { totals, suppliers, settleSupplierBalance, isLoading } = useSupplierContext();
   const [activeModalCard, setActiveModalCard] = useState(null);
+
+  if (isLoading && suppliers.length === 0) {
+    return <KpiGridSkeleton count={5} className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mb-4" />;
+  }
 
   const statCards = [
     {

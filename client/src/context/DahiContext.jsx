@@ -27,7 +27,11 @@ export function DahiProvider({ children }) {
     setIsLoading(true);
     try {
       const data = await farmService.getProcessingBatches();
-      const list = Array.isArray(data) ? data : data?.batches || [];
+      const rawList = Array.isArray(data) ? data : data?.batches || [];
+      const list = rawList.filter((b) => {
+        const p = (b.product || '').toLowerCase();
+        return p.includes('dahi') || p.includes('yogurt') || p.includes('curd') || (!p.includes('milk') && !p.includes('pasteur'));
+      });
       const normalized = list.map((b) => {
         const farmUsed = Number(b.farmMilkUsed) || 0;
         const supUsed = Number(b.supplierMilkUsed) || 0;
@@ -68,10 +72,22 @@ export function DahiProvider({ children }) {
 
   useEffect(() => {
     fetchBatches();
+
+    const handleUpdate = () => {
+      fetchBatches();
+    };
+
+    window.addEventListener('pure_milk_bar_dahi_updated', handleUpdate);
+    window.addEventListener('pure_milk_bar_pos_sale_completed', handleUpdate);
+
+    return () => {
+      window.removeEventListener('pure_milk_bar_dahi_updated', handleUpdate);
+      window.removeEventListener('pure_milk_bar_pos_sale_completed', handleUpdate);
+    };
   }, [fetchBatches]);
 
   // =========================================================================
-  // 1. LIVE SOURCING NUMBERS (Milking Logs + Herd Yield + Supplier Intakes)
+  // 1. LIVE SOURCING NUMBERS (Milking Logs + Supplier Intakes)
   // =========================================================================
   const realFarmYield = useMemo(() => {
     let logSum = 0;
@@ -79,20 +95,8 @@ export function DahiProvider({ children }) {
       logSum = milkingLogs.reduce((acc, log) => acc + (parseFloat(log.yieldLiters || log.yield) || 0), 0);
     }
 
-    let baselineSum = 0;
-    if (Array.isArray(animals) && animals.length > 0) {
-      baselineSum = animals.reduce((acc, a) => {
-        const totalDaily = parseFloat(a.totalDailyYield || 0);
-        if (totalDaily > 0) return acc + totalDaily;
-        const morning = parseFloat(a.morningYield || 0);
-        const evening = parseFloat(a.eveningYield || 0);
-        return acc + (morning + evening);
-      }, 0);
-    }
-
-    const resolved = logSum > 0 ? logSum : baselineSum;
-    return Number(resolved.toFixed(1));
-  }, [animals, milkingLogs]);
+    return Number(logSum.toFixed(1));
+  }, [milkingLogs]);
 
   // Real supplier procurement intake
   const realSupplierIntake = useMemo(() => {

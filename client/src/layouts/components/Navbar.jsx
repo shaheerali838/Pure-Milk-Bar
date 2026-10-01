@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { ChevronRight, Milk, Search, Download, ShoppingCart, Bell, Menu } from 'lucide-react';
+import { ChevronRight, Milk, Search, Download, ShoppingCart, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
@@ -163,9 +163,9 @@ export default function Navbar({ onToggleSidebar }) {
       return crumbs;
     }
 
-    if (pathname.startsWith('/proccessing')) {
-      crumbs.push({ label: 'Processing & Batching', to: '/proccessing' });
-      crumbs.push({ label: 'Dahi & Milk Processing', to: '/proccessing' });
+    if (pathname.startsWith('/proccessing') || pathname.startsWith('/dahi') || pathname.startsWith('/processing')) {
+      crumbs.push({ label: 'Processing & Batching', to: '/dahi' });
+      crumbs.push({ label: 'Dahi Processing', to: '/dahi' });
       return crumbs;
     }
 
@@ -293,17 +293,6 @@ export default function Navbar({ onToggleSidebar }) {
             />
           </div>
         </div>
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="relative h-7 w-7 text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
-          title="Notifications"
-        >
-          <Bell className="w-3.5 h-3.5" />
-          <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
-        </Button>
       </div>
 
       <ExportCSVModal

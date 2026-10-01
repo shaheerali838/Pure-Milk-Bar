@@ -27,17 +27,6 @@ export default function FarmDailyReport() {
 
   const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week'
 
-  // 1. Calculate active herd daily baseline yield
-  const herdBaselineYield = useMemo(() => {
-    return animals.reduce((sum, a) => {
-      const totalDaily = parseFloat(a.totalDailyYield || 0);
-      if (totalDaily > 0) return sum + totalDaily;
-      const morning = parseFloat(a.morningYield || 0);
-      const evening = parseFloat(a.eveningYield || 0);
-      return sum + (morning + evening);
-    }, 0);
-  }, [animals]);
-
   const milkingAnimalsCount = useMemo(() => {
     return animals.filter(
       (a) => a.lactationStatus === 'Milking' || parseFloat(a.totalDailyYield) > 0
@@ -79,12 +68,6 @@ export default function FarmDailyReport() {
       dates[d].farmYield += y;
       dates[d].shiftLogs.push(log);
     });
-
-    // If today's yield in logs is 0, but active herd has daily capacity, initialize with herd yield
-    if (dates[todayStr].farmYield === 0 && herdBaselineYield > 0) {
-      dates[todayStr].farmYield = herdBaselineYield;
-      dates[todayStr].isHerdBaseline = true;
-    }
 
     // POS Sales (Direct Farm Milk and Farm Dahi / Mixed Farm Share)
     const activeFarmSales = farmSalesHistory.length > 0 ? farmSalesHistory : salesHistory;

@@ -10,6 +10,10 @@ import KhataEntry from '../../../models/KhataEntry.model.js';
 import WastageLog from '../../../models/WastageLog.model.js';
 import Product from '../../../models/Product.model.js';
 import VehicleFuelLog from '../../../models/VehicleFuelLog.model.js';
+import Staff from '../../../models/Staff.model.js';
+import Supplier from '../../../models/Supplier.model.js';
+import Customer from '../../../models/Customer.model.js';
+import Animal from '../../../models/Animal.model.js';
 import User from '../../../models/User.model.js';
 import AuditLog from '../../../models/AuditLog.model.js';
 import { getPktDayRange, getPktDateRange, getPktTodayString } from '../../../utils/dateUtils.js';
@@ -109,31 +113,53 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
     openingSource = { type: 'MANUAL', date: null };
   }
 
-  // 2. Farm Milk Production Yield (MilkingYieldLog)
-  const yieldResult = await MilkingYieldLog.aggregate([
-    { $match: { date: { $gte: startOfDay, $lte: endOfDay } } },
-    { $group: { _id: null, totalYield: { $sum: '$yieldLiters' } } },
-  ]);
-  const farmProduction = Number((yieldResult[0]?.totalYield || 0).toFixed(2));
+  // 2. Farm Milk Production Yield (MilkingYieldLog) with shifts & animal breakdown
+  const yieldLogs = await MilkingYieldLog.find({
+    date: { $gte: startOfDay, $lte: endOfDay },
+  })
+    .populate('animalId', 'tagNumber name type status')
+    .populate('operatorId', 'name username')
+    .lean();
+
+  let morningYield = 0;
+  let eveningYield = 0;
+  yieldLogs.forEach((y) => {
+    const qty = Number(y.yieldLiters) || 0;
+    if (y.shift === 'MORNING') morningYield += qty;
+    else if (y.shift === 'EVENING') eveningYield += qty;
+  });
+  const farmProduction = Number((morningYield + eveningYield).toFixed(2));
+  const animalsMilkedCount = new Set(
+    yieldLogs.map((y) => (y.animalId?._id ? y.animalId._id.toString() : y.animalId?.toString() || y._id.toString()))
+  ).size;
 
   // 3. Supplier Milk Procurement Intake (MilkProcurement)
-  const procurementResult = await MilkProcurement.aggregate([
-    {
-      $match: {
-        date: { $gte: startOfDay, $lte: endOfDay },
-        status: 'ACCEPTED',
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        totalProcured: { $sum: '$quantityLiters' },
-        totalCashPaid: { $sum: '$amountPaid' },
-      },
-    },
-  ]);
-  const supplierInflow = Number((procurementResult[0]?.totalProcured || 0).toFixed(2));
-  const supplierCashPaid = Number((procurementResult[0]?.totalCashPaid || 0).toFixed(2));
+  const procurementLogs = await MilkProcurement.find({
+    date: { $gte: startOfDay, $lte: endOfDay },
+    status: 'ACCEPTED',
+  })
+    .populate('supplierId', 'name phone address')
+    .lean();
+
+  let supplierInflow = 0;
+  let supplierCashPaid = 0;
+  let supplierTotalBill = 0;
+  let supplierTotalDue = 0;
+
+  procurementLogs.forEach((p) => {
+    const qty = Number(p.quantityLiters) || 0;
+    const paid = Number(p.amountPaid) || 0;
+    const bill = Number(p.totalAmount) || (qty * (Number(p.ratePerLiter) || 0));
+    const due = Number(p.amountDue) || Math.max(0, bill - paid);
+    supplierInflow += qty;
+    supplierCashPaid += paid;
+    supplierTotalBill += bill;
+    supplierTotalDue += due;
+  });
+  supplierInflow = Number(supplierInflow.toFixed(2));
+  supplierCashPaid = Number(supplierCashPaid.toFixed(2));
+  supplierTotalBill = Number(supplierTotalBill.toFixed(2));
+  supplierTotalDue = Number(supplierTotalDue.toFixed(2));
 
   // 4. Products Catalog lookup for exact product unit and category matching
   const allProducts = await Product.find({}).lean();
@@ -147,13 +173,20 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
   // 5. Orders Aggregation (POS Counter Sales, Deliveries, Split, Online, Khata)
   const orders = await Order.find({
     date: { $gte: startOfDay, $lte: endOfDay },
-  }).lean();
+  })
+    .populate('cashierId', 'name username')
+    .populate('customerId', 'name mobile')
+    .lean();
 
   let counterSalesMilk = 0;
   let counterCash = 0;
   let counterOnline = 0;
   let creditGivenFromOrders = 0;
   let grossRevenue = 0;
+  let posCashOrdersCount = 0;
+  let posOnlineOrdersCount = 0;
+  let posKhataOrdersCount = 0;
+  let posSplitOrdersCount = 0;
 
   // Track product-wise quantities sold & revenue
   const productStats = new Map();
@@ -182,11 +215,14 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
 
     // Payment collection breakdown
     if (order.paymentMethod === 'CASH') {
+      posCashOrdersCount += 1;
       const netCash = (Number(order.amountReceived) || 0) - (Number(order.changeGiven) || 0);
       counterCash += netCash > 0 ? netCash : orderTotal;
     } else if (order.paymentMethod === 'ONLINE') {
+      posOnlineOrdersCount += 1;
       counterOnline += orderTotal;
     } else if (order.paymentMethod === 'SPLIT') {
+      posSplitOrdersCount += 1;
       const splitCash = Number(order.splitPaymentMeta?.cashAmount) || 0;
       const splitOnline = Number(order.splitPaymentMeta?.onlineAmount) || 0;
       const splitKhata = Number(order.splitPaymentMeta?.khataAmount) || 0;
@@ -194,6 +230,7 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
       counterOnline += splitOnline;
       creditGivenFromOrders += splitKhata;
     } else if (order.paymentMethod === 'KHATA') {
+      posKhataOrdersCount += 1;
       creditGivenFromOrders += orderTotal;
     }
 
@@ -234,77 +271,42 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
   });
 
   // 6. Deliveries Dispatch (DeliveryRun)
-  const deliveriesResult = await DeliveryRun.aggregate([
-    {
-      $match: {
-        date: { $gte: startOfDay, $lte: endOfDay },
-        status: { $in: ['DELIVERED', 'PENDING'] },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        totalDeliveredMilk: {
-          $sum: {
-            $cond: [{ $eq: ['$status', 'DELIVERED'] }, '$qtyLiters', 0],
-          },
-        },
-        totalCodCash: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$status', 'DELIVERED'] },
-                  { $in: ['$paymentMode', ['CASH', 'COD']] },
-                ],
-              },
-              { $ifNull: ['$codAmountToCollect', '$amountPaid'] },
-              0,
-            ],
-          },
-        },
-        totalDeliveryOnline: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$status', 'DELIVERED'] },
-                  { $eq: ['$paymentMode', 'ONLINE'] },
-                ],
-              },
-              '$amountPaid',
-              0,
-            ],
-          },
-        },
-        totalDeliveryKhataDue: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ['$status', 'DELIVERED'] },
-                  { $eq: ['$paymentMode', 'KHATA'] },
-                ],
-              },
-              '$amountDue',
-              0,
-            ],
-          },
-        },
-      },
-    },
-  ]);
+  const deliveryRuns = await DeliveryRun.find({
+    date: { $gte: startOfDay, $lte: endOfDay },
+  })
+    .populate('riderId', 'name username mobile')
+    .lean();
 
-  const doorstepSalesMilk = Number((deliveriesResult[0]?.totalDeliveredMilk || 0).toFixed(2));
-  const deliveryCodCash = Number((deliveriesResult[0]?.totalCodCash || 0).toFixed(2));
-  const deliveryOnline = Number((deliveriesResult[0]?.totalDeliveryOnline || 0).toFixed(2));
-  const deliveryKhataDue = Number((deliveriesResult[0]?.totalDeliveryKhataDue || 0).toFixed(2));
+  let doorstepSalesMilk = 0;
+  let deliveryCodCash = 0;
+  let deliveryOnline = 0;
+  let deliveryKhataDue = 0;
+
+  deliveryRuns.forEach((run) => {
+    if (run.status === 'DELIVERED') {
+      doorstepSalesMilk += Number(run.qtyLiters) || 0;
+      if (['CASH', 'COD'].includes(run.paymentMode)) {
+        deliveryCodCash += Number(run.codAmountToCollect || run.amountPaid || 0);
+      } else if (run.paymentMode === 'ONLINE') {
+        deliveryOnline += Number(run.amountPaid || 0);
+      } else if (run.paymentMode === 'KHATA') {
+        deliveryKhataDue += Number(run.amountDue || 0);
+      }
+    }
+  });
+
+  doorstepSalesMilk = Number(doorstepSalesMilk.toFixed(2));
+  deliveryCodCash = Number(deliveryCodCash.toFixed(2));
+  deliveryOnline = Number(deliveryOnline.toFixed(2));
+  deliveryKhataDue = Number(deliveryKhataDue.toFixed(2));
 
   // 7. Processing Batches (Dahi / Value-add production)
   const processingBatches = await ProcessingBatch.find({
     date: { $gte: startOfDay, $lte: endOfDay },
     status: { $nin: ['Failed', 'FAILED'] },
-  }).lean();
+  })
+    .populate('operatorId', 'name username')
+    .lean();
 
   let processingMilkUsed = 0;
   processingBatches.forEach((batch) => {
@@ -329,7 +331,9 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
   // 8. Spoilage & Wastage (WastageLog)
   const wastageLogs = await WastageLog.find({
     date: { $gte: startOfDay, $lte: endOfDay },
-  }).lean();
+  })
+    .populate('recordedBy', 'name username')
+    .lean();
 
   let milkWastage = 0;
   wastageLogs.forEach((w) => {
@@ -354,18 +358,20 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
   // 9. Khata Customer Recoveries (Cash & Online)
   const khataEntries = await KhataEntry.find({
     date: { $gte: startOfDay, $lte: endOfDay },
-    transactionType: 'CREDIT',
-    paymentMethod: { $nin: ['ADJUSTMENT', null] },
-  }).lean();
+  })
+    .populate('customerId', 'name mobile address')
+    .lean();
 
   let khataRecoveredCash = 0;
   let khataRecoveredOnline = 0;
   khataEntries.forEach((entry) => {
-    const credit = Number(entry.creditAmount) || 0;
-    if (entry.paymentMethod === 'ONLINE' || entry.paymentMethod === 'CHEQUE') {
-      khataRecoveredOnline += credit;
-    } else {
-      khataRecoveredCash += credit;
+    if (entry.transactionType === 'CREDIT' && !['ADJUSTMENT', null].includes(entry.paymentMethod)) {
+      const credit = Number(entry.creditAmount) || 0;
+      if (entry.paymentMethod === 'ONLINE' || entry.paymentMethod === 'CHEQUE') {
+        khataRecoveredOnline += credit;
+      } else {
+        khataRecoveredCash += credit;
+      }
     }
   });
   khataRecoveredCash = Number(khataRecoveredCash.toFixed(2));
@@ -374,7 +380,9 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
   // 10. Operational Expenses by Category (Wages, Feed, Fuel, Misc)
   const expenses = await Expense.find({
     date: { $gte: startOfDay, $lte: endOfDay },
-  }).lean();
+  })
+    .populate('loggedByUserId', 'name username')
+    .lean();
 
   // Check fuel logs for vehicle costs
   const fuelLogs = await VehicleFuelLog.find({
@@ -396,11 +404,11 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
     if (isCash) expenseCashTotal += amt;
     else expenseNonCashTotal += amt;
 
-    if (cat === 'SALARIES') {
+    if (cat === 'SALARIES' || cat === 'WAGES') {
       wagesExpense += amt;
     } else if (cat === 'FEED') {
       feedExpense += amt;
-    } else if (cat === 'TRANSPORT') {
+    } else if (cat === 'TRANSPORT' || cat === 'FUEL') {
       fuelExpense += amt;
     } else {
       miscExpense += amt;
@@ -411,7 +419,7 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
   fuelLogs.forEach((f) => {
     const cost = Number(f.costRupees) || 0;
     const hasMatchingExpense = expenses.some(
-      (e) => e.category === 'TRANSPORT' && Math.abs(e.amountRupees - cost) < 1
+      (e) => (e.category === 'TRANSPORT' || e.category === 'FUEL') && Math.abs(e.amountRupees - cost) < 1
     );
     if (!hasMatchingExpense) {
       fuelExpense += cost;
@@ -421,7 +429,13 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
 
   const totalExpenses = Number((expenseCashTotal + expenseNonCashTotal).toFixed(2));
 
-  // 11. Milk Mass Balance Calculations
+  // 11. Staff on Duty & Labor tracking
+  const staffList = await Staff.find({ status: { $ne: 'Terminated' } })
+    .select('staffCode name role mobile shift status dailySalary monthlySalary')
+    .lean();
+  const activeStaffCount = staffList.filter((s) => s.status === 'Active' || s.status === 'Off Duty').length;
+
+  // 12. Milk Mass Balance Calculations
   const totalAvailableMilk = Number((openingMilkStock + farmProduction + supplierInflow).toFixed(2));
   const totalMilkOut = Number(
     (counterSalesMilk + doorstepSalesMilk + processingMilkUsed + milkWastage).toFixed(2)
@@ -429,7 +443,7 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
   const expectedClosingMilk = Number((totalAvailableMilk - totalMilkOut).toFixed(2));
   const isMilkNegative = expectedClosingMilk < 0;
 
-  // 12. Financial Cash & Profit Calculations
+  // 13. Financial Cash & Profit Calculations
   const totalCollected = Number(
     (counterCash + counterOnline + deliveryCodCash + deliveryOnline + khataRecoveredCash + khataRecoveredOnline).toFixed(2)
   );
@@ -476,7 +490,174 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
   const nonProductExpenses = totalExpenses; // Overheads (wages, rent, transport, misc)
   const estimatedProfit = Number((grossRevenue - estimatedCogs - nonProductExpenses).toFixed(2));
 
-  // 13. System Warnings
+  // 14. Module Breakdown / Detailed Logs across entire software
+  const moduleBreakdown = {
+    yields: {
+      totalYield: farmProduction,
+      morningYield: Number(morningYield.toFixed(2)),
+      eveningYield: Number(eveningYield.toFixed(2)),
+      animalsMilkedCount,
+      logs: yieldLogs.map((y) => ({
+        id: y._id,
+        tagNumber: y.animalId?.tagNumber || 'N/A',
+        animalName: y.animalId?.name || 'Animal',
+        type: y.animalId?.type || 'Cow',
+        shift: y.shift,
+        yieldLiters: y.yieldLiters,
+        operator: y.operatorId?.name || y.operatorId?.username || 'Milker',
+        notes: y.notes || '',
+      })),
+    },
+    procurement: {
+      totalLiters: supplierInflow,
+      totalBill: supplierTotalBill,
+      totalPaid: supplierCashPaid,
+      totalDue: supplierTotalDue,
+      logs: procurementLogs.map((p) => ({
+        id: p._id,
+        supplierName: p.supplierId?.name || 'Local Supplier',
+        supplierPhone: p.supplierId?.phone || '',
+        batchNumber: p.batchNumber,
+        quantityLiters: p.quantityLiters,
+        fatPercentage: p.fatPercentage || 0,
+        lrReading: p.lrReading || 0,
+        ratePerLiter: p.ratePerLiter,
+        totalAmount: p.totalAmount,
+        amountPaid: p.amountPaid,
+        amountDue: p.amountDue || Math.max(0, (p.totalAmount || 0) - (p.amountPaid || 0)),
+        paymentStatus: p.paymentStatus,
+      })),
+    },
+    processing: {
+      totalMilkUsed: processingMilkUsed,
+      batchesCount: processingBatches.length,
+      logs: processingBatches.map((b) => ({
+        id: b._id,
+        batchCode: b.batchNumber || b.batchCode || 'PB',
+        product: b.product,
+        milkUsedLiters: b.milkUsedLiters,
+        outputQuantity: b.outputQuantity,
+        outputUnit: b.outputUnit || 'KG',
+        stage: b.stage || 'Completed',
+        status: b.status,
+        notes: b.notes || '',
+      })),
+    },
+    orders: {
+      totalCount: orders.length,
+      grossRevenue: Number(grossRevenue.toFixed(2)),
+      cashOrdersCount: posCashOrdersCount,
+      onlineOrdersCount: posOnlineOrdersCount,
+      khataOrdersCount: posKhataOrdersCount,
+      splitOrdersCount: posSplitOrdersCount,
+      logs: orders.map((o) => ({
+        id: o._id,
+        receiptNumber: o.receiptNumber,
+        grandTotal: o.grandTotal,
+        paymentMethod: o.paymentMethod,
+        fulfillmentType: o.fulfillmentType,
+        customerName: o.customerNameSnapshot || o.customerId?.name || 'Walk-in Customer',
+        cashier: o.cashierId?.name || o.cashierId?.username || 'Cashier',
+        itemsCount: Array.isArray(o.items) ? o.items.length : 1,
+        itemsList: Array.isArray(o.items)
+          ? o.items.map((i) => `${i.quantity} ${i.unit || ''} ${i.name}`).join(', ')
+          : '',
+        amountReceived: o.amountReceived || 0,
+        changeGiven: o.changeGiven || 0,
+      })),
+    },
+    deliveries: {
+      totalDeliveredMilk: doorstepSalesMilk,
+      codCollected: deliveryCodCash,
+      onlinePaid: deliveryOnline,
+      khataDue: deliveryKhataDue,
+      runsCount: deliveryRuns.length,
+      logs: deliveryRuns.map((r) => ({
+        id: r._id,
+        runCode: r.runCode,
+        route: r.route,
+        shift: r.shift,
+        riderName: r.riderNameSnapshot || r.riderId?.name || 'Rider',
+        qtyLiters: r.qtyLiters,
+        status: r.status,
+        paymentMode: r.paymentMode,
+        codAmountToCollect: r.codAmountToCollect || 0,
+        amountPaid: r.amountPaid || 0,
+        amountDue: r.amountDue || 0,
+      })),
+    },
+    khata: {
+      recoveredCash: khataRecoveredCash,
+      recoveredOnline: khataRecoveredOnline,
+      totalRecovered: Number((khataRecoveredCash + khataRecoveredOnline).toFixed(2)),
+      creditGiven: totalCreditGiven,
+      logs: khataEntries.map((k) => ({
+        id: k._id,
+        voucherNumber: k.voucherNumber,
+        customerName: k.customerId?.name || 'Customer',
+        customerMobile: k.customerId?.mobile || '',
+        transactionType: k.transactionType,
+        description: k.description,
+        debitAmount: k.debitAmount || 0,
+        creditAmount: k.creditAmount || 0,
+        paymentMethod: k.paymentMethod || 'CASH',
+      })),
+    },
+    staff: {
+      activeStaffCount,
+      totalWagesPaid: wagesExpense,
+      logs: staffList.map((s) => ({
+        id: s._id,
+        staffCode: s.staffCode || 'STF',
+        name: s.name,
+        role: s.role,
+        shift: s.shift,
+        status: s.status,
+        dailySalary: s.dailySalary || Math.round((s.monthlySalary || 0) / 30),
+      })),
+    },
+    expenses: {
+      total: totalExpenses,
+      cashTotal: expenseCashTotal,
+      nonCashTotal: expenseNonCashTotal,
+      logs: expenses.map((e) => ({
+        id: e._id,
+        voucherNumber: e.voucherNumber,
+        title: e.title,
+        category: e.category,
+        amount: e.amountRupees,
+        paymentMethod: e.paymentMethod,
+        authorizedBy: e.authorizedBy || 'Admin',
+        loggedBy: e.loggedByUserId?.name || 'Staff',
+        description: e.description || e.notes || '',
+      })),
+    },
+    fuel: {
+      logs: fuelLogs.map((f) => ({
+        id: f._id,
+        vehicleNumber: f.vehicleNumber,
+        driverName: f.driverName,
+        liters: f.liters,
+        costRupees: f.costRupees,
+        station: f.station || 'Fuel Station',
+      })),
+    },
+    wastage: {
+      totalMilkWastage: milkWastage,
+      logs: wastageLogs.map((w) => ({
+        id: w._id,
+        type: w.type,
+        productName: w.productName,
+        quantity: w.quantity,
+        unit: w.unit,
+        reason: w.reason,
+        note: w.note || '',
+        recordedBy: w.recordedBy?.name || 'Staff',
+      })),
+    },
+  };
+
+  // 15. System Warnings
   const warnings = [];
   if (isMilkNegative) {
     warnings.push(`Milk stock is negative (${expectedClosingMilk} L): total sales & usage exceed available milk.`);
@@ -542,6 +723,7 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
       estimatedProfit,
     },
     products: productsArray,
+    breakdown: moduleBreakdown,
     warnings,
     // Backwards compatibility properties for legacy consumers
     startOfDay,
@@ -959,11 +1141,15 @@ export const confirmDailyClosingService = async (reqUser, payload = {}, ipAddres
 /**
  * Get light history of daily closings
  */
-export const getDailyClosingHistoryService = async (limit = 30) => {
+/**
+ * Get comprehensive history of daily closings
+ */
+export const getDailyClosingHistoryService = async (limit = 100) => {
   const closings = await DailyClosing.find({})
-    .populate('closedByUserId', 'name username')
+    .populate('closedByUserId', 'name username role')
+    .populate('approvedByUserId', 'name username role')
     .sort({ closingDate: -1 })
-    .limit(Number(limit) || 30)
+    .limit(Number(limit) || 100)
     .lean();
 
   return closings.map((c) => ({
@@ -971,14 +1157,22 @@ export const getDailyClosingHistoryService = async (limit = 30) => {
     date: getPktDayRange(c.closingDate).dateStr,
     status: c.status,
     closedAt: c.closedAt,
-    closedBy: c.closedByUserId?.name || 'Staff',
+    closedBy: c.closedByUserId?.name || c.closedByUserId?.username || 'Staff',
+    approvedBy: c.approvedByUserId?.name || null,
     expectedMilk: c.summarySnapshot?.milk?.expectedClosing ?? c.milkBalance?.theoreticalStock ?? 0,
     physicalMilk: c.physicalMilkDip ?? c.milkBalance?.physicalDipstick ?? 0,
     milkVariance: c.milkVariance ?? c.milkBalance?.varianceLiters ?? 0,
     totalCollected: c.summarySnapshot?.collections?.totalCollected ?? 0,
+    grossRevenue: c.summarySnapshot?.profit?.grossRevenue ?? 0,
+    totalExpenses: c.summarySnapshot?.expenses?.total ?? 0,
     estimatedProfit: c.summarySnapshot?.profit?.estimatedProfit ?? 0,
     expectedCash: c.summarySnapshot?.cash?.expectedInDrawer ?? c.financialBalance?.expectedCash ?? 0,
     physicalCash: c.physicalCash ?? c.financialBalance?.physicalCash ?? null,
+    cashVariance: c.cashVariance ?? 0,
+    varianceReason: c.varianceReason || null,
+    supervisorNotes: c.supervisorNotes || null,
+    summarySnapshot: c.summarySnapshot || null,
+    productStockSnapshot: c.productStockSnapshot || [],
   }));
 };
 

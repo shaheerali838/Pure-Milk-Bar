@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, Receipt, Clock, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useCustomerContext } from '@/context/CustomerContext';
+import { useLedgerContext } from '@/context/LedgerContext';
 import EditCustomerView from '../../customers/components/Customer_&_Accounts/EditCustomerView';
 import CustomerFinanceStats from '../components/CustomerFinanceLedger/CustomerFinanceStats';
 import CustomerFinanceLedgerTable from '../components/CustomerFinanceLedger/CustomerFinanceLedgerTable';
@@ -14,6 +16,9 @@ import ReceivablesAgingTable from '../components/ReceivablesAging/ReceivablesAgi
 import ReceivablesAgingDetailView from '../components/ReceivablesAging/ReceivablesAgingDetailView';
 
 export default function CustomerFinance() {
+  const { rawCustomers, refreshCustomers } = useCustomerContext();
+  const { fetchCustomerLedger } = useLedgerContext();
+
   const [activeTab, setActiveTab] = useState('accounts'); // 'accounts' | 'collections' | 'aging'
   const [currentView, setCurrentView] = useState('main'); // 'main' | 'detail' | 'payment' | 'edit' | 'agingDetail' | 'receipt'
   const [viewCustomer, setViewCustomer] = useState(null);
@@ -21,6 +26,20 @@ export default function CustomerFinance() {
   const [editCustomer, setEditCustomer] = useState(null);
   const [agingCustomer, setAgingCustomer] = useState(null);
   const [collectionReceipt, setCollectionReceipt] = useState(null);
+
+  // Refresh live customers and load live customer ledgers on mount
+  useEffect(() => {
+    if (refreshCustomers) refreshCustomers();
+  }, [refreshCustomers]);
+
+  useEffect(() => {
+    if (Array.isArray(rawCustomers) && rawCustomers.length > 0) {
+      rawCustomers.forEach((c) => {
+        const id = c.id || c._id;
+        if (id) fetchCustomerLedger(id);
+      });
+    }
+  }, [rawCustomers, fetchCustomerLedger]);
 
   if (currentView === 'detail' && viewCustomer) {
     return (

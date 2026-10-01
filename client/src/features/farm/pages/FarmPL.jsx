@@ -106,9 +106,26 @@ export default function FarmPL() {
   const activeFarmSales = farmSalesHistory.length > 0 ? farmSalesHistory : salesHistory;
   const filteredSales = useMemo(() => {
     return activeFarmSales.filter((sale) => {
-      const saleDate = sale.formattedDate
-        ? new Date(sale.formattedDate).toISOString().split('T')[0]
-        : (sale.timestamp ? sale.timestamp.split('T')[0] : (sale.date || ''));
+      let saleDate = '';
+      if (sale.date && /^\d{4}-\d{2}-\d{2}/.test(sale.date)) {
+        saleDate = sale.date.slice(0, 10);
+      } else if (sale.timestamp && /^\d{4}-\d{2}-\d{2}/.test(sale.timestamp)) {
+        saleDate = sale.timestamp.slice(0, 10);
+      } else if (sale.createdAt && /^\d{4}-\d{2}-\d{2}/.test(sale.createdAt)) {
+        saleDate = sale.createdAt.slice(0, 10);
+      } else {
+        const raw = sale.date || sale.timestamp || sale.createdAt || sale.formattedDate || '';
+        if (raw) {
+          const parsed = new Date(raw);
+          if (!isNaN(parsed.getTime())) {
+            try {
+              saleDate = parsed.toISOString().split('T')[0];
+            } catch {
+              saleDate = '';
+            }
+          }
+        }
+      }
 
       if (dateFilterMode === 'today') {
         return saleDate === todayISO;

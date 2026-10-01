@@ -60,9 +60,26 @@ export default function SupplierPL() {
   const activeSupplierSales = supplierSalesHistory.length > 0 ? supplierSalesHistory : salesHistory;
   const filteredSales = useMemo(() => {
     return activeSupplierSales.filter((sale) => {
-      const sDate = sale.formattedDate
-        ? new Date(sale.formattedDate).toISOString().split('T')[0]
-        : (sale.timestamp ? sale.timestamp.split('T')[0] : (sale.date || ''));
+      let sDate = '';
+      if (sale.date && /^\d{4}-\d{2}-\d{2}/.test(sale.date)) {
+        sDate = sale.date.slice(0, 10);
+      } else if (sale.timestamp && /^\d{4}-\d{2}-\d{2}/.test(sale.timestamp)) {
+        sDate = sale.timestamp.slice(0, 10);
+      } else if (sale.createdAt && /^\d{4}-\d{2}-\d{2}/.test(sale.createdAt)) {
+        sDate = sale.createdAt.slice(0, 10);
+      } else {
+        const raw = sale.date || sale.timestamp || sale.createdAt || sale.formattedDate || '';
+        if (raw) {
+          const parsed = new Date(raw);
+          if (!isNaN(parsed.getTime())) {
+            try {
+              sDate = parsed.toISOString().split('T')[0];
+            } catch {
+              sDate = '';
+            }
+          }
+        }
+      }
       if (customDate) return sDate === customDate;
       if (periodFilter === 'Today') return sDate === todayStr;
       if (periodFilter === 'This Month') return sDate.startsWith(currentMonthStr);
@@ -419,7 +436,7 @@ export default function SupplierPL() {
                 setCustomDate(e.target.value);
                 if (e.target.value) setPeriodFilter('');
               }}
-              className="h-[36px] pl-8 pr-3 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-700 shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-[#0092b8] focus:border-[#0092b8] transition cursor-pointer"
+              className="h-9 pl-8 pr-3 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-700 shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-[#0092b8] focus:border-[#0092b8] transition cursor-pointer"
             />
           </div>
 
@@ -427,7 +444,7 @@ export default function SupplierPL() {
           <button
             type="button"
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 h-[36px] px-4 rounded-full text-white text-xs font-bold bg-[#009966] hover:bg-[#008055] transition-all shadow-xs hover:shadow-sm active:translate-y-0 cursor-pointer"
+            className="flex items-center gap-1.5 h-9 px-4 rounded-full text-white text-xs font-bold bg-[#009966] hover:bg-[#008055] transition-all shadow-xs hover:shadow-sm active:translate-y-0 cursor-pointer"
             title="Export full P&L report as CSV"
           >
             <Download className="w-3.5 h-3.5 stroke-[2.5]" />

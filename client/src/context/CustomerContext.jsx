@@ -22,9 +22,9 @@ export function CustomerProvider({ children }) {
         ...c,
         id: c._id || c.id,
         deliveryFee: Number(c.deliveryFee) || 0,
-        khataBalance: Number(c.khataBalance ?? c.currentBalance ?? c.openingBalance) || 0,
-        currentBalance: Number(c.currentBalance ?? c.khataBalance ?? c.openingBalance) || 0,
-        openingBalance: Number(c.openingBalance ?? c.khataBalance ?? c.currentBalance) || 0,
+        khataBalance: Number(c.currentBalance !== undefined ? c.currentBalance : (c.khataBalance || 0)),
+        currentBalance: Number(c.currentBalance !== undefined ? c.currentBalance : (c.khataBalance || 0)),
+        openingBalance: Number(c.openingBalance) || 0,
       }));
       setCustomers(normalized);
     } catch (err) {
@@ -79,19 +79,43 @@ export function CustomerProvider({ children }) {
     }
   };
 
-  const updateCustomer = async (updatedCust) => {
+  const updateCustomer = async (updatedCust, skipBackend = false) => {
     const id = updatedCust._id || updatedCust.id;
-    try {
-      await customerService.updateCustomer(id, {
-        ...updatedCust,
-        deliveryFee: updatedCust.deliveryFee !== undefined ? Number(updatedCust.deliveryFee) || 0 : undefined,
-      });
-      setCustomers((prev) =>
-        prev.map((c) => ((c._id || c.id) === id ? { ...c, ...updatedCust, deliveryFee: Number(updatedCust.deliveryFee !== undefined ? updatedCust.deliveryFee : c.deliveryFee) || 0 } : c))
-      );
-    } catch (err) {
-      console.error('Failed to update customer via API:', err);
-      throw err;
+    // Immediate React state update for responsive UI
+    setCustomers((prev) =>
+      prev.map((c) =>
+        String(c._id || c.id) === String(id)
+          ? {
+              ...c,
+              ...updatedCust,
+              khataBalance: Number(
+                updatedCust.khataBalance ?? updatedCust.currentBalance ?? c.khataBalance ?? 0
+              ),
+              currentBalance: Number(
+                updatedCust.currentBalance ?? updatedCust.khataBalance ?? c.currentBalance ?? 0
+              ),
+              deliveryFee:
+                updatedCust.deliveryFee !== undefined
+                  ? Number(updatedCust.deliveryFee) || 0
+                  : c.deliveryFee,
+            }
+          : c
+      )
+    );
+
+    if (!skipBackend) {
+      const isObjectId = (val) => typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val);
+      if (isObjectId(String(id))) {
+        try {
+          await customerService.updateCustomer(id, {
+            ...updatedCust,
+            deliveryFee:
+              updatedCust.deliveryFee !== undefined ? Number(updatedCust.deliveryFee) || 0 : undefined,
+          });
+        } catch (err) {
+          console.warn('Backend customer update failed:', err.message);
+        }
+      }
     }
   };
 

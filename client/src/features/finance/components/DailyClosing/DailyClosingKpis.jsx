@@ -2,8 +2,9 @@ import React from 'react';
 import { Milk, ShoppingBag, Banknote, TrendingUp, AlertTriangle } from 'lucide-react';
 
 export default function DailyClosingKpis({
-  milkExpected = 0,
-  isMilkNegative = false,
+  milkSold = 0,
+  counterSales = 0,
+  doorstepSales = 0,
   totalSales = 0,
   moneyCollected = 0,
   estimatedProfit = 0,
@@ -15,13 +16,13 @@ export default function DailyClosingKpis({
   const kpiData = [
     {
       id: 'milk',
-      label: 'Milk in Tanks',
-      sublabel: isMilkNegative ? 'Warning: Negative Balance' : 'Theoretical Stock',
-      value: formatL(milkExpected),
+      label: 'Milk Sold',
+      sublabel: 'Counter + Deliveries',
+      value: formatL(milkSold),
       icon: Milk,
-      color: isMilkNegative ? 'text-rose-600 dark:text-rose-400' : 'text-sky-600 dark:text-sky-400',
-      bgColor: isMilkNegative ? 'bg-rose-50 dark:bg-rose-950/40' : 'bg-sky-50 dark:bg-sky-950/40',
-      borderColor: isMilkNegative ? 'border-rose-300 dark:border-rose-800' : 'border-slate-200 dark:border-slate-800',
+      color: 'text-sky-600 dark:text-sky-400',
+      bgColor: 'bg-sky-50 dark:bg-sky-950/40',
+      borderColor: 'border-slate-200 dark:border-slate-800',
     },
     {
       id: 'sales',
@@ -36,7 +37,7 @@ export default function DailyClosingKpis({
     {
       id: 'collected',
       label: 'Money Collected',
-      sublabel: 'Cash + Online (Wasool)',
+      sublabel: 'Cash + Online Collections',
       value: formatRs(moneyCollected),
       icon: Banknote,
       color: 'text-emerald-600 dark:text-emerald-400',
@@ -46,7 +47,7 @@ export default function DailyClosingKpis({
     {
       id: 'profit',
       label: 'Estimated Day Profit',
-      sublabel: 'Revenue - COGS - Expenses',
+      sublabel: 'Gross Revenue - Expenses',
       value: formatRs(estimatedProfit),
       icon: TrendingUp,
       color: estimatedProfit >= 0 ? 'text-teal-600 dark:text-teal-400' : 'text-rose-600 dark:text-rose-400',
@@ -77,10 +78,7 @@ export default function DailyClosingKpis({
               <div className={`text-xl sm:text-2xl font-black tracking-tight ${item.color}`}>
                 {item.value}
               </div>
-              <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 flex items-center gap-1">
-                {item.id === 'milk' && isMilkNegative && (
-                  <AlertTriangle className="w-3 h-3 text-rose-500 inline" />
-                )}
+              <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                 <span>{item.sublabel}</span>
               </div>
             </div>

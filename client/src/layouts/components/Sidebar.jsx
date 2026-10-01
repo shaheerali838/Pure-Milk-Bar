@@ -85,7 +85,7 @@ export default function Sidebar({ isOpen = false, onClose }) {
   // 3. Production Links
   const productionLinks = useMemo(() => {
     const all = [
-      { id: "processing", name: "Dahi & Milk Processing", icon: Layers, path: "/dahi", roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.FARM_SUPERVISOR] },
+      { id: "processing", name: "Dahi Processing", icon: Layers, path: "/dahi", roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.FARM_SUPERVISOR] },
       { id: "products", name: "Products & Pricing", icon: Milk, path: "/products", roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.FARM_SUPERVISOR] },
     ];
     return all.filter((l) => l.roles.includes(currentRole));
@@ -419,7 +419,7 @@ export default function Sidebar({ isOpen = false, onClose }) {
                       <h4 className="text-xs font-bold text-slate-900 truncate leading-tight">
                         {user.name}
                       </h4>
-                      <p className="text-[10px] text-slate-500 truncate max-w-[125px]" title={user.email}>
+                      <p className="text-[10px] text-slate-500 truncate max-w-31.25" title={user.email}>
                         {user.email}
                       </p>
                     </div>

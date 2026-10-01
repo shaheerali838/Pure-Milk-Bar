@@ -41,15 +41,37 @@ export function normalizeLedgerEntry(entry) {
     });
   }
 
-  // 2. Fulfillment Type (Walk-in vs Doorstep / COD vs Delivery Shift)
+  // If there is a delivery fee discrepancy between orderTotal and product items
+  const totalItemsSum = items.reduce((sum, it) => sum + Number(it.subtotal || it.total || (it.quantity * (it.price || it.unitPrice || 0)) || 0), 0);
+  const feeDiff = Math.round(Number(entry.orderTotal !== undefined ? entry.orderTotal : numDebit) - totalItemsSum);
+  if (items.length > 0 && feeDiff > 0 && !items.some((it) => /delivery|fee|charge/i.test(it.name))) {
+    items.push({
+      name: 'Doorstep Delivery Fee',
+      quantity: 1,
+      unit: 'Trip',
+      price: feeDiff,
+      subtotal: feeDiff,
+    });
+  }
+
+  const isOpeningEntry =
+    entry.type === 'OPENING' ||
+    entry.transactionType === 'OPENING' ||
+    entry.fulfillmentType === 'Opening Balance' ||
+    /Opening Balance/i.test(desc) ||
+    /Account Opening/i.test(desc) ||
+    /^KV-OP-/i.test(entry.voucherNumber || '') ||
+    /^OP-/i.test(entry.referenceTransactionId || '');
+
+  // 2. Fulfillment Type (Walk-in vs Doorstep / COD vs Delivery Shift vs Opening)
   let fulfillmentType = entry.fulfillmentType || '';
-  if (!fulfillmentType) {
+  if (isOpeningEntry) {
+    fulfillmentType = 'Opening Balance';
+  } else if (!fulfillmentType) {
     if (/doorstep/i.test(desc) || /delivery/i.test(desc) || /cod/i.test(desc) || /rider/i.test(desc)) {
       fulfillmentType = /cod/i.test(desc) || /cod/i.test(entry.method || '') ? 'Doorstep (COD)' : 'Doorstep Delivery';
     } else if (/counter/i.test(desc) || /walk-in/i.test(desc) || /store/i.test(desc) || /pos/i.test(desc)) {
       fulfillmentType = 'Walk-in Counter';
-    } else if (entry.type === 'OPENING' || entry.transactionType === 'OPENING') {
-      fulfillmentType = 'Opening Balance';
     } else if (numCredit > 0) {
       fulfillmentType = 'Payment Clearance';
     } else {
@@ -59,8 +81,8 @@ export function normalizeLedgerEntry(entry) {
 
   // 3. Payment Method & Channel
   let paymentMethod = entry.paymentMethod || entry.method || 'Cash';
-  if (entry.type === 'OPENING' || entry.transactionType === 'OPENING') {
-    paymentMethod = 'System Opening';
+  if (isOpeningEntry) {
+    paymentMethod = 'Opening Balance';
   } else if (/online/i.test(paymentMethod) || /easypaisa/i.test(paymentMethod) || /jazzcash/i.test(paymentMethod) || /bank/i.test(paymentMethod)) {
     paymentMethod = 'Online Payment';
   } else if (/cod/i.test(paymentMethod) || /cod/i.test(desc)) {
@@ -73,14 +95,18 @@ export function normalizeLedgerEntry(entry) {
   const orderTotal = Number(entry.orderTotal !== undefined ? entry.orderTotal : (numDebit > 0 ? numDebit : numCredit));
 
   let paidAmount = 0;
-  if (entry.paidAmount !== undefined) {
+  if (isOpeningEntry) {
+    paidAmount = numCredit > 0 ? numCredit : 0;
+  } else if (entry.paidAmount !== undefined) {
     paidAmount = Number(entry.paidAmount);
   } else if (numCredit > 0) {
     paidAmount = numCredit;
   }
 
   let remainingAmount = 0;
-  if (entry.remainingAmount !== undefined) {
+  if (isOpeningEntry) {
+    remainingAmount = numDebit > 0 ? numDebit : 0;
+  } else if (entry.remainingAmount !== undefined) {
     remainingAmount = Number(entry.remainingAmount);
   } else if (numDebit > 0) {
     remainingAmount = Math.max(0, numDebit - paidAmount);
@@ -88,8 +114,8 @@ export function normalizeLedgerEntry(entry) {
 
   // 5. Payment status badge
   let paymentStatus = 'Full Paid';
-  if (entry.type === 'OPENING' || entry.transactionType === 'OPENING') {
-    paymentStatus = 'Opening Balance';
+  if (isOpeningEntry) {
+    paymentStatus = numDebit > 0 ? 'Opening Due' : 'Advance Deposit';
   } else if (numCredit > 0) {
     paymentStatus = 'Payment Received';
   } else if (paidAmount > 0 && remainingAmount > 0) {
@@ -119,7 +145,8 @@ export function normalizeLedgerEntry(entry) {
     ...entry,
     id: entry.id || entry._id || entry.voucherNumber,
     date: entry.date ? (typeof entry.date === 'string' && entry.date.includes('T') ? entry.date.split('T')[0] : String(entry.date).slice(0, 10)) : new Date().toISOString().split('T')[0],
-    type: entry.transactionType || entry.type || (numDebit > 0 ? 'DEBIT' : 'CREDIT'),
+    type: isOpeningEntry ? 'OPENING' : (entry.transactionType || entry.type || (numDebit > 0 ? 'DEBIT' : 'CREDIT')),
+    isOpening: isOpeningEntry,
     debit: numDebit,
     credit: numCredit,
     runningBalance: Number(entry.runningBalance) || 0,
@@ -138,7 +165,7 @@ export function normalizeLedgerEntry(entry) {
 }
 
 export function LedgerProvider({ children }) {
-  const { customers = [], updateCustomer } = useCustomerContext() || {};
+  const { customers = [], updateCustomer, refreshCustomers } = useCustomerContext() || {};
 
   // In-memory ledger entries synced with backend database
   const [ledgers, setLedgers] = useState({});
@@ -186,22 +213,35 @@ export function LedgerProvider({ children }) {
 
       const normalized = rawEntries.map((e) => normalizeLedgerEntry(e));
 
-      // If customer has a positive current/opening balance but no transactions in DB yet, synthesize opening entry
       const customer = (customers || []).find((c) => String(c.id || c._id) === custId || String(c.id || c._id) === validObjectId);
-      const initialBal = Number(customer?.openingBalance ?? customer?.khataBalance ?? customer?.currentBalance) || 0;
+      const openingBal = Number(customer?.openingBalance || 0);
 
       let finalEntries = normalized;
-      if (finalEntries.length === 0 && initialBal > 0 && customer) {
+      const hasOpeningEntry = finalEntries.some(
+        (e) => e.isOpening || e.type === 'OPENING' || /opening/i.test(e.description || '') || /^KV-OP-/i.test(e.voucherNumber || '') || /^OP-/i.test(e.referenceTransactionId || '')
+      );
+
+      if (!hasOpeningEntry && openingBal > 0 && customer) {
+        const isAdvance = String(customer.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') || customer.openingPaymentMethod === 'CASH' || customer.openingPaymentMethod === 'ONLINE';
         finalEntries = [
+          ...finalEntries,
           normalizeLedgerEntry({
-            id: `txn-${customer._id || customer.id || custId}-init`,
-            date: customer.createdAt ? (typeof customer.createdAt === 'string' && customer.createdAt.includes('T') ? customer.createdAt.split('T')[0] : String(customer.createdAt).slice(0, 10)) : new Date().toISOString().split('T')[0],
-            description: 'Opening Balance',
+            id: `KV-OP-${customer.code || customer._id || custId}`,
+            date: customer.createdAt
+              ? (typeof customer.createdAt === 'string' && customer.createdAt.includes('T') ? customer.createdAt.split('T')[0] : String(customer.createdAt).slice(0, 10))
+              : new Date().toISOString().split('T')[0],
+            description: isAdvance ? 'Customer Account Initial Advance Deposit' : 'Customer Account Opening Balance (Previous Dues)',
             type: 'OPENING',
-            debit: 0,
-            credit: 0,
-            runningBalance: initialBal,
-            method: '-',
+            debitAmount: isAdvance ? 0 : openingBal,
+            creditAmount: isAdvance ? openingBal : 0,
+            debit: isAdvance ? 0 : openingBal,
+            credit: isAdvance ? openingBal : 0,
+            runningBalance: isAdvance ? 0 : openingBal,
+            fulfillmentType: isAdvance ? 'Advance Deposit' : 'Opening Balance',
+            paymentMethod: isAdvance ? 'Advance Cash' : 'Opening Balance',
+            orderTotal: openingBal,
+            paidAmount: isAdvance ? openingBal : 0,
+            remainingAmount: isAdvance ? 0 : openingBal,
           }),
         ];
       }
@@ -259,28 +299,26 @@ export function LedgerProvider({ children }) {
   ) => {
     const custId = String(customerId);
     const customer = (customers || []).find((c) => String(c.id || c._id) === custId);
-    let existingEntries = ledgers[custId] ? [...ledgers[custId]] : [];
-
-    const lastRunningBalance =
-      existingEntries.length > 0
-        ? Number(existingEntries[existingEntries.length - 1].runningBalance) || 0
-        : customer
-        ? Number(customer.khataBalance ?? customer.currentBalance) || 0
-        : 0;
+    let existingEntries = getLedgerForCustomer(custId) || [];
 
     const numDebit = Number(debit) || 0;
     const numCredit = Number(credit) || 0;
-    const newRunningBalance = Math.max(0, lastRunningBalance + numDebit - numCredit);
+
+    const currentStats = getCustomerCalculatedStats(custId);
+    const previousDue = currentStats.closingBalance;
+    const newRunningBalance = Math.max(0, previousDue + numDebit - numCredit);
 
     const calculatedOrderTotal = orderTotal !== undefined ? Number(orderTotal) : (numDebit > 0 ? numDebit : numCredit);
     const calculatedPaid = paidAmount !== undefined ? Number(paidAmount) : (numCredit > 0 ? numCredit : 0);
     const calculatedRemaining = remainingAmount !== undefined ? Number(remainingAmount) : (numDebit > 0 ? Math.max(0, numDebit - calculatedPaid) : 0);
 
+    const isOrderOrDebit = numDebit > 0 || (Array.isArray(items) && items.length > 0) || (orderTotal && Number(orderTotal) > 0);
+
     const newEntry = normalizeLedgerEntry({
       id: invoiceId || `txn-${Date.now()}`,
       date: date || new Date().toISOString().split('T')[0],
       description,
-      type: numDebit > 0 ? 'DEBIT' : 'CREDIT',
+      type: isOrderOrDebit ? 'DEBIT' : 'CREDIT',
       debit: numDebit,
       credit: numCredit,
       runningBalance: newRunningBalance,
@@ -290,12 +328,12 @@ export function LedgerProvider({ children }) {
       orderTotal: calculatedOrderTotal,
       paidAmount: calculatedPaid,
       remainingAmount: calculatedRemaining,
-      fulfillmentType: fulfillmentType || (numDebit > 0 ? 'Walk-in Counter' : 'Payment Clearance'),
+      fulfillmentType: fulfillmentType || (isOrderOrDebit ? 'Walk-in Counter' : 'Payment Clearance'),
       paymentMethod: paymentMethod || method,
       invoiceId: invoiceId || undefined,
     });
 
-    const updatedLedger = [...existingEntries, newEntry];
+    const updatedLedger = [newEntry, ...existingEntries.filter((e) => e.id !== newEntry.id)];
 
     const isObjectId = (val) => typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val);
     const validId = isObjectId(customer?._id || customer?.id || custId) ? String(customer?._id || customer?.id || custId) : null;
@@ -310,13 +348,16 @@ export function LedgerProvider({ children }) {
       ...(validId ? { [validId]: updatedLedger } : {}),
     }));
 
-    // Update customer's balance in CustomerContext
+    // Update customer's balance in CustomerContext local state immediately
     if (customer && updateCustomer) {
-      updateCustomer({
-        ...customer,
-        khataBalance: newRunningBalance,
-        currentBalance: newRunningBalance,
-      });
+      updateCustomer(
+        {
+          ...customer,
+          khataBalance: newRunningBalance,
+          currentBalance: newRunningBalance,
+        },
+        true
+      );
     }
 
     // Only post to api.finance.addKhataEntry if this is a MANUAL ledger entry (NOT from POS checkout)
@@ -346,14 +387,20 @@ export function LedgerProvider({ children }) {
           riderName: newEntry.riderName || null,
           deliveryAddress: newEntry.deliveryAddress || null,
         });
-        // Refresh real database statement after server write
+        // Refresh real database statement and customers after server write
         await fetchCustomerLedger(validId);
+        if (refreshCustomers) {
+          await refreshCustomers();
+        }
       } catch (e) {
-        console.warn('Manual Khata entry API call failed:', e);
+        console.error('Manual Khata entry API call failed:', e);
       }
     } else if (validId) {
       // For POS orders, trigger refresh from database shortly after order creation
-      setTimeout(() => fetchCustomerLedger(validId), 500);
+      setTimeout(() => {
+        fetchCustomerLedger(validId);
+        if (refreshCustomers) refreshCustomers();
+      }, 500);
     }
   };
 
@@ -391,11 +438,14 @@ export function LedgerProvider({ children }) {
     }));
 
     if (customer && updateCustomer) {
-      updateCustomer({
-        ...customer,
-        khataBalance: 0,
-        currentBalance: 0,
-      });
+      updateCustomer(
+        {
+          ...customer,
+          khataBalance: 0,
+          currentBalance: 0,
+        },
+        true
+      );
     }
 
     try {
@@ -409,14 +459,17 @@ export function LedgerProvider({ children }) {
           description: 'Khata Full Settlement & Clearance',
           paymentMethod: 'CASH',
         });
-        fetchCustomerLedger(validId);
+        await fetchCustomerLedger(validId);
+        if (refreshCustomers) {
+          await refreshCustomers();
+        }
       }
     } catch (e) {
       console.warn('Settle Khata API sync error:', e);
     }
   };
 
-  const getLedgerForCustomer = (customerId) => {
+  const getLedgerForCustomer = useCallback((customerId) => {
     if (!customerId) return [];
     const custId = String(customerId);
     if (ledgers[custId] && ledgers[custId].length > 0) {
@@ -452,7 +505,137 @@ export function LedgerProvider({ children }) {
     }
 
     return [];
-  };
+  }, [customers, ledgers]);
+
+  const getCustomerCalculatedStats = useCallback(
+    (customerId) => {
+      if (!customerId) {
+        return {
+          openingBalance: 0,
+          openingDate: '',
+          isAdvanceOpening: false,
+          totalCharged: 0,
+          chargedCount: 0,
+          totalPaid: 0,
+          paidCount: 0,
+          closingBalance: 0,
+          remainingAdvance: 0,
+        };
+      }
+
+      const custId = String(customerId);
+      const customer = (customers || []).find((c) => String(c.id || c._id) === custId);
+      const activeEntries = getLedgerForCustomer(customerId) || [];
+
+      let openingBalance = 0;
+      const openingEntry = activeEntries.find((e) => e.isOpening || e.type === 'OPENING');
+      const isAdvanceOpening =
+        openingEntry?.credit > 0 ||
+        String(customer?.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') ||
+        customer?.openingPaymentMethod === 'CASH' ||
+        customer?.openingPaymentMethod === 'ONLINE' ||
+        /advance/i.test(openingEntry?.description || '') ||
+        /advance/i.test(openingEntry?.fulfillmentType || '');
+
+      if (openingEntry) {
+        const rawVal = Number(
+          openingEntry.credit ||
+          openingEntry.debit ||
+          openingEntry.orderTotal ||
+          openingEntry.paidAmount ||
+          openingEntry.remainingAmount ||
+          customer?.openingBalance ||
+          0
+        );
+        openingBalance = rawVal;
+      } else if (customer && Number(customer.openingBalance || 0) > 0) {
+        openingBalance = Number(customer.openingBalance);
+      }
+
+      const openingDate = openingEntry
+        ? openingEntry.date
+        : customer?.createdAt
+        ? String(customer.createdAt).slice(0, 10)
+        : '';
+
+      const purchaseEntries = activeEntries.filter(
+        (e) => !e.isOpening && e.type !== 'OPENING' && !/opening/i.test(e.description || '')
+      );
+      const totalCharged = purchaseEntries.reduce((acc, e) => {
+        return (
+          acc +
+          Number(
+            e.debit ||
+              e.orderTotal ||
+              (e.items?.length > 0 ? e.items.reduce((s, it) => s + Number(it.subtotal || 0), 0) : 0)
+          )
+        );
+      }, 0);
+      const chargedCount = purchaseEntries.length;
+
+      const paymentEntries = activeEntries.filter(
+        (e) =>
+          !e.isOpening &&
+          e.type !== 'OPENING' &&
+          !/opening/i.test(e.description || '') &&
+          Number(e.credit) > 0
+      );
+      const totalPayments = paymentEntries.reduce((acc, e) => acc + (Number(e.credit) || 0), 0);
+      const paidCount = paymentEntries.length;
+
+      const effectiveDebits = totalCharged + (!isAdvanceOpening ? openingBalance : 0);
+      const totalPaid = totalPayments + (isAdvanceOpening ? openingBalance : 0);
+
+      let closingBalance = 0;
+      if (activeEntries.length > 0) {
+        closingBalance = Math.max(0, effectiveDebits - totalPaid);
+      } else if (customer) {
+        closingBalance = Number(
+          customer.khataBalance ?? customer.currentBalance ?? (isAdvanceOpening ? 0 : openingBalance)
+        );
+      }
+
+      const remainingAdvance = Math.max(0, totalPaid - effectiveDebits);
+
+      return {
+        openingBalance,
+        openingDate,
+        isAdvanceOpening,
+        totalCharged,
+        chargedCount,
+        totalPaid,
+        paidCount,
+        closingBalance,
+        remainingAdvance,
+      };
+    },
+    [customers, ledgers]
+  );
+
+  const getAllCustomersAggregates = useCallback(() => {
+    let totalAllDue = 0;
+    let totalAllPaid = 0;
+    let totalAllCharged = 0;
+    let khataAccountsCount = 0;
+
+    (customers || []).forEach((c) => {
+      const stats = getCustomerCalculatedStats(c.id || c._id);
+      totalAllDue += stats.closingBalance;
+      totalAllPaid += stats.totalPaid;
+      totalAllCharged += stats.totalCharged;
+      if (stats.closingBalance > 0) {
+        khataAccountsCount += 1;
+      }
+    });
+
+    return {
+      totalAllDue,
+      totalAllPaid,
+      totalAllCharged,
+      khataAccountsCount,
+      totalCustomersCount: (customers || []).length,
+    };
+  }, [customers, getCustomerCalculatedStats]);
 
   return (
     <LedgerContext.Provider
@@ -463,6 +646,8 @@ export function LedgerProvider({ children }) {
         addLedgerEntry,
         settleKhata,
         getLedgerForCustomer,
+        getCustomerCalculatedStats,
+        getAllCustomersAggregates,
       }}
     >
       {children}

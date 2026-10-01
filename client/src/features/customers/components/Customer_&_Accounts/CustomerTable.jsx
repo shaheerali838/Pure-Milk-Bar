@@ -14,8 +14,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
-  const { customers } = useCustomerContext();
-  const { addLedgerEntry } = useLedgerContext();
+  const { customers, isLoading } = useCustomerContext();
+  const { addLedgerEntry, getCustomerCalculatedStats } = useLedgerContext();
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
@@ -34,7 +34,20 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
             </TableRow>
           </TableHeader>
           <TableBody className="divide-y divide-slate-100 text-xs text-slate-700">
-            {customers.length === 0 ? (
+            {isLoading && customers.length === 0 ? (
+              Array.from({ length: 8 }).map((_, r) => (
+                <TableRow key={r} className="animate-pulse">
+                  <TableCell className="px-3 py-3"><div className="flex items-center gap-2"><div className="w-7 h-7 rounded-full bg-slate-200" /><div className="space-y-1"><div className="h-3.5 bg-slate-200 rounded w-24" /><div className="h-2.5 bg-slate-100 rounded w-16" /></div></div></TableCell>
+                  <TableCell className="px-3 py-3"><div className="h-3.5 bg-slate-200 rounded w-20" /></TableCell>
+                  <TableCell className="px-3 py-3"><div className="h-5 bg-slate-200 rounded-full w-14" /></TableCell>
+                  <TableCell className="px-3 py-3"><div className="h-3.5 bg-slate-200 rounded w-16" /></TableCell>
+                  <TableCell className="px-3 py-3"><div className="h-3.5 bg-slate-200 rounded w-20" /></TableCell>
+                  <TableCell className="px-3 py-3"><div className="h-5 bg-slate-200 rounded-full w-16" /></TableCell>
+                  <TableCell className="px-3 py-3"><div className="h-5 bg-slate-200 rounded-full w-14" /></TableCell>
+                  <TableCell className="px-3 py-3 text-right"><div className="h-5 bg-slate-200 rounded w-12 ml-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : customers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="px-3 py-8 text-center text-slate-400 font-medium">
                   No customers found. Click "+ Add New Customer" to add one!
@@ -43,9 +56,12 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
             ) : (
               customers.map((c) => {
                 const initial = c.name ? c.name.charAt(0).toUpperCase() : 'C';
+                const stats = getCustomerCalculatedStats ? getCustomerCalculatedStats(c.id || c._id) : null;
+                const khataBal = stats ? stats.closingBalance : Number(c.khataBalance ?? c.currentBalance ?? 0);
+                const creditLimit = Number(c.creditLimit || 10000);
                 const khataPercent = Math.min(
                   100,
-                  Math.round(((c.khataBalance || 0) / (c.creditLimit || 10000)) * 100)
+                  Math.round((khataBal / creditLimit) * 100)
                 );
 
                 return (
@@ -97,12 +113,19 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                     </TableCell>
 
                     <TableCell className="px-3.5 py-2">
-                      <div className="font-bold text-slate-900 leading-tight tabular">
-                        Rs. {(c.khataBalance || 0).toLocaleString()}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <div className="font-bold text-slate-900 leading-tight tabular">
+                          Rs. {khataBal.toLocaleString()}
+                        </div>
+                        {Number(c.creditLimit || 0) > 0 && khataBal >= Number(c.creditLimit) && (
+                          <span className="px-1.5 py-0.2 rounded text-[8px] font-black bg-rose-100 text-rose-800 border border-rose-300 uppercase">
+                            Over Limit
+                          </span>
+                        )}
                       </div>
                       <div className="w-16 bg-slate-100 h-1 rounded-full mt-1 overflow-hidden">
                         <div
-                          className="bg-amber-500 h-full rounded-full"
+                          className={`h-full rounded-full ${khataPercent >= 100 ? 'bg-rose-500' : 'bg-amber-500'}`}
                           style={{ width: `${khataPercent}%` }}
                         />
                       </div>
@@ -118,7 +141,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const balance = Number(c.khataBalance) || 0;
+                            const balance = khataBal;
                             if (balance <= 0) {
                               alert(`${c.name} has no outstanding khata balance.`);
                               return;
@@ -128,7 +151,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                                 `Clear and finish full Khata debt of Rs. ${balance.toLocaleString()} for ${c.name}?`
                               )
                             ) {
-                              addLedgerEntry(c.id, {
+                              addLedgerEntry(c.id || c._id, {
                                 description: 'Khata Full Settlement / Received',
                                 credit: balance,
                                 debit: 0,
@@ -139,7 +162,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                             }
                           }}
                           title={
-                            (Number(c.khataBalance) || 0) > 0
+                            khataBal > 0
                               ? 'Click to direct finish & clear Khata'
                               : 'Khata account (No outstanding debt)'
                           }

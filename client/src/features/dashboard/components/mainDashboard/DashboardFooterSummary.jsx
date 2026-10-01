@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom';
 export default function DashboardFooterSummary() {
   const { deliveries = [] } = useDeliveryContext();
   const { suppliers = [], totals: supplierTotals = {} } = useSupplierContext();
-  const { salesHistory = [] } = usePOSContext();
+  const { salesHistory = [], inventoryMetrics = {} } = usePOSContext();
   const { animals = [] } = useAnimalContext();
   const { totals: intakeTotals = {}, intakeLogs = [] } = useIntakeContext();
 
@@ -30,7 +30,7 @@ export default function DashboardFooterSummary() {
   const invoicesCount = salesHistory.length;
 
   // 4. Total Milk Inflow
-  const farmLiters = animals.reduce((s, a) => s + (parseFloat(a.totalDailyYield) || 0), 0);
+  const farmLiters = Number(inventoryMetrics?.totalFarmYield) || 0;
   const procuredLiters =
     intakeTotals.totalProcuredVolume !== undefined
       ? Number(intakeTotals.totalProcuredVolume)

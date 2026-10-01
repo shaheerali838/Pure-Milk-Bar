@@ -30,7 +30,8 @@ const milkingYieldLogSchema = new Schema(
     operatorId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "Operator User ID is required"],
+      required: false,
+      default: null,
       index: true,
     },
     notes: {

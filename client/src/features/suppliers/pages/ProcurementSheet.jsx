@@ -11,6 +11,7 @@ import {
   DollarSign,
   Sun,
   Moon,
+  TrendingUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +28,7 @@ import { useSupplierContext } from '@/context/SupplierContext';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
 import { exportMultiSectionCSV } from '@/utils/csvExport';
+import { PageSkeleton } from '@/components/ui/skeleton';
 
 const getTodayDateStr = () => {
   const d = new Date();
@@ -46,10 +48,14 @@ export default function ProcurementSheet() {
   const [isLocked, setIsLocked] = useState(false);
   const [shiftFilter, setShiftFilter] = useState('All'); // 'All' | 'Morning' | 'Evening'
 
-  const { intakeLogs } = useIntakeContext();
-  const { suppliers } = useSupplierContext();
+  const { intakeLogs, isLoading: isIntakeLoading } = useIntakeContext();
+  const { suppliers, isLoading: isSupplierLoading } = useSupplierContext();
   const { expenses } = useSourcExpenseContext();
   const { supplierSalesHistory = [], salesHistory = [] } = usePOSContext() || {};
+
+  if ((isIntakeLoading || isSupplierLoading) && intakeLogs.length === 0 && suppliers.length === 0) {
+    return <PageSkeleton />;
+  }
 
   const todayStr = getTodayDateStr();
   const isToday = date === todayStr;

@@ -11,7 +11,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
   const availTotal = Number(metrics.remainingTotalMilk ?? (availFarm + availSupplier).toFixed(1));
 
   const [formData, setFormData] = useState({
-    product: 'Fresh Dahi (Yogurt)',
+    product: 'Fresh Dahi (Plain)',
     source: 'Both (Mixed)',
     milkUsed: '',
     farmMilkUsed: '',
@@ -205,7 +205,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
       {/* Main form container */}
       <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs no-scrollbar">
         {/* Live Available Liquid Milk Card */}
-        <div className="mb-4 p-3 rounded-xl bg-gradient-to-r from-slate-50 via-emerald-50/20 to-blue-50/30 border border-slate-200/90 text-xs space-y-2 shadow-2xs">
+        <div className="mb-4 p-3 rounded-xl bg-linear-to-r from-slate-50 via-emerald-50/20 to-blue-50/30 border border-slate-200/90 text-xs space-y-2 shadow-2xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-slate-700 font-bold text-xs">
               <Droplets className="w-4 h-4 text-blue-600 shrink-0" />
@@ -244,31 +244,26 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Product Type <span className="text-rose-500">*</span>
+                  Dahi Product Type <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={formData.product}
                   onChange={(e) => {
                     const prod = e.target.value;
                     let defaultRate = 'Rs. 320 / kg';
-                    if (prod.includes('Cow Milk')) defaultRate = 'Rs. 260 / L';
-                    else if (prod.includes('Buffalo Milk')) defaultRate = 'Rs. 290 / L';
-                    else if (prod.includes('Lassi')) defaultRate = 'Rs. 200 / L';
-                    else if (prod.includes('Paneer')) defaultRate = 'Rs. 900 / kg';
-                    else if (prod.includes('Ghee')) defaultRate = 'Rs. 2400 / kg';
-                    else if (prod.includes('Sweet Dahi')) defaultRate = 'Rs. 360 / kg';
+                    if (prod.includes('Sweet Dahi')) defaultRate = 'Rs. 360 / kg';
+                    else if (prod.includes('Matka Dahi')) defaultRate = 'Rs. 380 / kg';
+                    else if (prod.includes('Low-Fat')) defaultRate = 'Rs. 300 / kg';
+                    else if (prod.includes('Special Thick')) defaultRate = 'Rs. 350 / kg';
                     setFormData({ ...formData, product: prod, posRate: defaultRate });
                   }}
                   className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-medium cursor-pointer"
                 >
-                  <option value="Fresh Dahi (Yogurt)">Fresh Dahi (Yogurt)</option>
+                  <option value="Fresh Dahi (Plain)">Fresh Dahi (Plain)</option>
                   <option value="Sweet Dahi (Meetha)">Sweet Dahi (Meetha)</option>
                   <option value="Matka Dahi (Clay Pot)">Matka Dahi (Clay Pot)</option>
-                  <option value="Cow Milk">Cow Milk (Chilled / Processed)</option>
-                  <option value="Buffalo Milk">Buffalo Milk (Chilled / Processed)</option>
-                  <option value="Sweet Lassi">Sweet Lassi</option>
-                  <option value="Fresh Paneer">Fresh Paneer</option>
-                  <option value="Desi Ghee">Desi Ghee</option>
+                  <option value="Low-Fat / Skimmed Dahi">Low-Fat / Skimmed Dahi</option>
+                  <option value="Special Thick Dahi (Malai)">Special Thick Dahi (Malai)</option>
                 </select>
               </div>
 

@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/table';
 
 export default function SupplierTable({ onView, onEdit }) {
-  const { suppliers, deleteSupplier, settleSupplierBalance } = useSupplierContext();
+  const { suppliers, deleteSupplier, settleSupplierBalance, isLoading } = useSupplierContext();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -56,7 +56,7 @@ export default function SupplierTable({ onView, onEdit }) {
       {/* Search and Status Filter Header */}
       <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row gap-3 items-center justify-between">
         {/* Search Input */}
-        <div className="flex items-center gap-2 w-full md:w-80 bg-slate-50 border border-slate-200 rounded-full px-3.5 h-[38px]">
+        <div className="flex items-center gap-2 w-full md:w-80 bg-slate-50 border border-slate-200 rounded-full px-3.5 h-9.5">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input
             type="text"
@@ -130,7 +130,21 @@ export default function SupplierTable({ onView, onEdit }) {
           </TableHeader>
 
           <TableBody className="divide-y divide-slate-100">
-            {filteredSuppliers.length === 0 ? (
+            {isLoading && suppliers.length === 0 ? (
+              Array.from({ length: 7 }).map((_, r) => (
+                <TableRow key={r} className="animate-pulse">
+                  <TableCell className="py-3.5 px-4"><div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-full bg-slate-200 shrink-0" /><div className="space-y-1"><div className="h-4 bg-slate-200 rounded w-28" /><div className="h-3 bg-slate-100 rounded w-16" /></div></div></TableCell>
+                  <TableCell className="py-3.5 px-4"><div className="h-4 bg-slate-200 rounded w-20" /></TableCell>
+                  <TableCell className="py-3.5 px-4"><div className="h-4 bg-slate-200 rounded w-24" /></TableCell>
+                  <TableCell className="py-3.5 px-4"><div className="h-4 bg-slate-200 rounded w-16" /></TableCell>
+                  <TableCell className="py-3.5 px-4 text-right"><div className="h-4 bg-slate-200 rounded w-14 ml-auto" /></TableCell>
+                  <TableCell className="py-3.5 px-4 text-right"><div className="h-4 bg-slate-200 rounded w-14 ml-auto" /></TableCell>
+                  <TableCell className="py-3.5 px-4 text-right"><div className="h-4 bg-slate-200 rounded w-16 ml-auto" /></TableCell>
+                  <TableCell className="py-3.5 px-4 text-center"><div className="h-5 bg-slate-200 rounded-full w-14 mx-auto" /></TableCell>
+                  <TableCell className="py-3.5 px-4 text-right"><div className="h-6 bg-slate-200 rounded w-16 ml-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : filteredSuppliers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-14 text-slate-400">
                   <div className="flex flex-col items-center justify-center gap-1.5">
@@ -334,7 +348,7 @@ export default function SupplierTable({ onView, onEdit }) {
               <button
                 type="button"
                 onClick={() => setSettlingSupplier(null)}
-                className="px-3.5 h-[34px] rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                className="px-3.5 h-8.5 rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -344,7 +358,7 @@ export default function SupplierTable({ onView, onEdit }) {
                   settleSupplierBalance(settlingSupplier.id);
                   setSettlingSupplier(null);
                 }}
-                className="px-4 h-[34px] rounded-full text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs cursor-pointer"
+                className="px-4 h-8.5 rounded-full text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs cursor-pointer"
               >
                 Confirm Settlement
               </button>
@@ -371,14 +385,14 @@ export default function SupplierTable({ onView, onEdit }) {
               <button
                 type="button"
                 onClick={() => setConfirmDeleteId(null)}
-                className="px-3.5 h-[34px] rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                className="px-3.5 h-8.5 rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={() => handleDelete(confirmDeleteId)}
-                className="px-4 h-[34px] rounded-full text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow-xs"
+                className="px-4 h-8.5 rounded-full text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow-xs"
               >
                 Yes, Delete
               </button>

@@ -20,13 +20,19 @@ export default function DahiKitchenPipeline({
 }) {
   const navigate = useNavigate();
 
-  const incubatingBatches = batches.filter(
+  const isDahi = (b) => {
+    const p = (b.product || '').toLowerCase();
+    return p.includes('dahi') || p.includes('yogurt') || p.includes('curd');
+  };
+  const dahiBatches = batches.filter(isDahi);
+
+  const incubatingBatches = dahiBatches.filter(
     (b) => b.stage === 'incubating' || b.status === 'In Progress'
   );
-  const chilledBatches = batches.filter(
+  const chilledBatches = dahiBatches.filter(
     (b) => b.stage === 'chilled' || (b.status === 'Completed' && b.stage !== 'pos')
   );
-  const posBatches = batches.filter((b) => b.stage === 'pos');
+  const posBatches = dahiBatches.filter((b) => b.stage === 'pos');
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -56,9 +62,18 @@ export default function DahiKitchenPipeline({
           {/* Cards List */}
           <div className="space-y-3">
             {incubatingBatches.length === 0 ? (
-              <div className="p-6 text-center text-slate-400 text-xs border border-dashed border-amber-200 rounded-xl bg-amber-50/20">
-                No batches currently incubating.
-              </div>
+              <button
+                type="button"
+                onClick={onOpenAddModal}
+                className="w-full p-6 text-center text-slate-500 text-xs border border-dashed border-amber-300 rounded-xl bg-amber-50/30 hover:bg-amber-50/70 hover:border-amber-400 hover:text-amber-800 transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 group shadow-2xs"
+              >
+                <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Plus className="w-4 h-4 stroke-[2.5]" />
+                </div>
+                <span className="font-semibold text-slate-600 group-hover:text-amber-900">
+                  No batches currently incubating.
+                </span>
+              </button>
             ) : (
               incubatingBatches.map((batch) => (
                 <div
@@ -235,54 +250,106 @@ export default function DahiKitchenPipeline({
                 No active stock placed at POS counter right now.
               </div>
             ) : (
-              posBatches.map((batch) => (
-                <div
-                  key={batch.id}
-                  className="bg-white border border-emerald-200/90 rounded-xl p-3 shadow-xs space-y-2.5 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900">{batch.product}</h4>
-                    </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                      🏬 Live at POS
-                    </span>
-                  </div>
+              posBatches.map((batch) => {
+                const batchTrans = parseFloat(String(batch.output || batch.outputVal || 0).replace(/[^\d.]/g, '')) || 0;
+                const totalPosTransferred = posBatches.reduce((acc, b) => {
+                  const val = parseFloat(String(b.output || b.outputVal || 0).replace(/[^\d.]/g, '')) || 0;
+                  return acc + val;
+                }, 0);
+                const globalPosSold = parseFloat(metrics?.dahiSoldInPOS || 0);
 
-                  <div className="space-y-1 text-xs pt-1 border-t border-slate-100">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500 text-[11px]">Stock Transferred:</span>
-                      <span className="font-bold text-slate-800">{batch.output || `${batch.outputVal || 0} kg`}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500 text-[11px]">Total Revenue Value:</span>
-                      <span className="font-bold text-emerald-700">{batch.revenueValue || 'Rs. 0'}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500 text-[11px]">Transferred At:</span>
-                      <span className="font-mono text-slate-600 text-[11px]">{batch.transferredAt || batch.time || '—'}</span>
-                    </div>
-                  </div>
+                const batchRatio = totalPosTransferred > 0 ? (batchTrans / totalPosTransferred) : 1;
+                const batchSold = Number(Math.min(batchTrans, globalPosSold * batchRatio).toFixed(1));
+                const batchRemaining = Math.max(0, Number((batchTrans - batchSold).toFixed(1)));
+                const pctSold = batchTrans > 0 ? Math.min(100, Math.round((batchSold / batchTrans) * 100)) : 0;
+                const isDepleted = batchRemaining <= 0;
+                const totalPosRev = parseFloat(String(metrics?.dahiSalesRevenue || '0').replace(/[^\d.]/g, '')) || 0;
+                const batchRevenue = Math.round(batchRatio * totalPosRev) || (batchSold > 0 ? Math.round(batchSold * 320) : 0);
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onMarkSoldOut(batch.id)}
-                      className="flex-1 py-1.5 px-3 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs transition-colors cursor-pointer text-center"
-                    >
-                      Mark Sold Out
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => window.print()}
-                      className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                      title="Print Stock Slip"
-                    >
-                      <Printer className="w-4 h-4" />
-                    </button>
+                return (
+                  <div
+                    key={batch.id}
+                    className="bg-white border border-emerald-200/90 rounded-xl p-3 shadow-xs space-y-2.5 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900">{batch.product}</h4>
+                        <p className="text-[10px] font-mono text-slate-400 mt-0.5">{batch.id}</p>
+                      </div>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+                          isDepleted
+                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        }`}
+                      >
+                        {isDepleted ? (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            Sold Out
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            🏬 Live at POS
+                          </>
+                        )}
+                      </span>
+                    </div>
+
+                    {/* Progress Bar of Sold vs Remaining */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[10px] font-bold">
+                        <span className="text-slate-500">POS Sales Progress:</span>
+                        <span className="text-emerald-700">{pctSold}% Sold ({batchSold} kg)</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                          style={{ width: `${pctSold}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 text-xs pt-1 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 text-[11px]">Transferred Stock:</span>
+                        <span className="font-bold text-slate-800">{batch.output || `${batchTrans} kg`}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 text-[11px]">Remaining at POS:</span>
+                        <span className={`font-black ${isDepleted ? 'text-rose-600' : 'text-emerald-600'}`}>
+                          {batchRemaining} kg
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 text-[11px]">Live POS Revenue:</span>
+                        <span className="font-bold text-slate-900">
+                          Rs. {batchRevenue.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onMarkSoldOut(batch.id)}
+                        className="flex-1 py-1.5 px-3 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs transition-colors cursor-pointer text-center"
+                      >
+                        Mark Sold Out
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                        title="Print Stock Slip"
+                      >
+                        <Printer className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

@@ -7,8 +7,39 @@ export default function ViewTransactionModal({ transaction: rawTxn, customer, is
   if (!isOpen || !rawTxn) return null;
 
   const txn = normalizeLedgerEntry(rawTxn);
-  const isDebit = txn.debit > 0;
-  const isCredit = txn.credit > 0;
+  const isOpening = txn.isOpening || txn.type === 'OPENING' || /opening/i.test(txn.description || '');
+  const isAdvanceOpening =
+    isOpening &&
+    (Number(txn.credit) > 0 ||
+      txn.fulfillmentType === 'Advance Deposit' ||
+      String(customer?.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') ||
+      customer?.openingPaymentMethod === 'CASH' ||
+      customer?.openingPaymentMethod === 'ONLINE' ||
+      /advance/i.test(txn.description || ''));
+
+  const rawOpeningVal = Number(
+    txn.credit ||
+    txn.debit ||
+    txn.orderTotal ||
+    txn.paidAmount ||
+    customer?.openingBalance ||
+    0
+  );
+
+  const displayOrderTotal = isAdvanceOpening
+    ? rawOpeningVal
+    : Number(txn.orderTotal || txn.debit || txn.credit || 0);
+
+  const displayPaidAmount = isAdvanceOpening
+    ? rawOpeningVal
+    : Number(txn.paidAmount || (Number(txn.credit) > 0 ? txn.credit : 0));
+
+  const displayBalanceDue = isAdvanceOpening
+    ? 0
+    : Number(txn.remainingAmount || (Number(txn.debit) > 0 ? Number(txn.debit) - Number(txn.paidAmount || 0) : 0));
+
+  const isDebit = Number(txn.debit) > 0 && !isAdvanceOpening;
+  const isCredit = Number(txn.credit) > 0 || isAdvanceOpening;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
@@ -17,13 +48,19 @@ export default function ViewTransactionModal({ transaction: rawTxn, customer, is
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-2.5">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${
-              isDebit ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+              isAdvanceOpening ? 'bg-emerald-100 text-emerald-800' : isOpening ? 'bg-slate-100 text-slate-800' : isDebit ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
             }`}>
-              {isDebit ? 'DR' : 'CR'}
+              {isAdvanceOpening ? 'ADV' : isOpening ? 'OP' : isDebit ? 'DR' : 'CR'}
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-800 font-display">
-                {isDebit ? 'Purchase / Khata Debit Slip' : 'Payment Received Voucher'}
+                {isAdvanceOpening
+                  ? 'Customer Initial Advance Cash Deposit'
+                  : isOpening
+                  ? 'Customer Account Opening Balance'
+                  : isDebit
+                  ? 'Purchase / Khata Debit Slip'
+                  : 'Payment Received Voucher'}
               </h3>
               <p className="text-[10px] text-slate-400 font-mono tabular">{txn.id || txn.invoiceId || 'N/A'}</p>
             </div>
@@ -44,21 +81,25 @@ export default function ViewTransactionModal({ transaction: rawTxn, customer, is
           {/* Top Amount Banner */}
           <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
             <div>
-              <span className="text-[10px] font-bold uppercase text-slate-400 block">Total Order Bill</span>
+              <span className="text-[10px] font-bold uppercase text-slate-400 block">
+                {isAdvanceOpening ? 'Advance Deposit' : 'Total Order Bill'}
+              </span>
               <span className="text-sm font-black text-slate-900 font-mono">
-                Rs. {Number(txn.orderTotal || txn.debit || 0).toLocaleString()}
+                Rs. {displayOrderTotal.toLocaleString()}
               </span>
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase text-emerald-600 block">Paid (Wasool)</span>
+              <span className="text-[10px] font-bold uppercase text-emerald-600 block">
+                {isAdvanceOpening ? 'Amount Received' : 'Paid Amount'}
+              </span>
               <span className="text-sm font-black text-emerald-600 font-mono">
-                Rs. {Number(txn.paidAmount || (isCredit ? txn.credit : 0)).toLocaleString()}
+                Rs. {displayPaidAmount.toLocaleString()}
               </span>
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase text-rose-600 block">Khata Due (Baqi)</span>
+              <span className="text-[10px] font-bold uppercase text-rose-600 block">Balance Due</span>
               <span className="text-sm font-black text-rose-600 font-mono">
-                Rs. {Number(txn.remainingAmount || (isDebit ? txn.debit : 0)).toLocaleString()}
+                Rs. {displayBalanceDue.toLocaleString()}
               </span>
             </div>
           </div>
@@ -80,18 +121,21 @@ export default function ViewTransactionModal({ transaction: rawTxn, customer, is
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {txn.items.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50">
-                      <td className="px-3 py-1.5 font-medium text-slate-800">{item.name}</td>
-                      <td className="px-3 py-1.5 text-center font-mono text-slate-600">
-                        {item.quantity} {item.unit || ''}
-                      </td>
-                      <td className="px-3 py-1.5 text-right font-mono text-slate-600">Rs. {Number(item.rate || 0).toLocaleString()}</td>
-                      <td className="px-3 py-1.5 text-right font-mono font-bold text-slate-900">
-                        Rs. {Number(item.subtotal || item.total || (item.quantity * item.rate) || 0).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
+                  {txn.items.map((item, idx) => {
+                    const unitRate = Number(item.unitPrice || item.price || item.rate || (item.quantity > 0 && item.subtotal ? item.subtotal / item.quantity : 0));
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50/50">
+                        <td className="px-3 py-1.5 font-medium text-slate-800">{item.name}</td>
+                        <td className="px-3 py-1.5 text-center font-mono text-slate-600">
+                          {item.quantity} {item.unit || ''}
+                        </td>
+                        <td className="px-3 py-1.5 text-right font-mono text-slate-600">Rs. {unitRate.toLocaleString()}</td>
+                        <td className="px-3 py-1.5 text-right font-mono font-bold text-slate-900">
+                          Rs. {Number(item.subtotal || item.total || (item.quantity * unitRate) || 0).toLocaleString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -126,13 +170,13 @@ export default function ViewTransactionModal({ transaction: rawTxn, customer, is
             <div className="flex justify-between items-center py-0.5 text-[11px]">
               <span className="text-slate-400 font-medium">Payment Mode:</span>
               <span className="inline-flex items-center gap-1 font-bold text-emerald-700">
-                <CreditCard className="w-3 h-3" /> {txn.paymentMethod || txn.method || 'Cash / Khata'}
+                <CreditCard className="w-3 h-3" /> {isAdvanceOpening ? 'Advance Cash Deposit' : (txn.paymentMethod || txn.method || 'Cash / Khata')}
               </span>
             </div>
             <div className="flex justify-between items-center py-0.5 text-[11px] pt-1 border-t border-slate-100">
               <span className="text-slate-500 font-bold">Resulting Khata Balance:</span>
               <span className="font-mono font-black text-slate-900">
-                Rs. {Number(txn.runningBalance || 0).toLocaleString()}
+                Rs. {Number(customer?.currentBalance !== undefined ? customer.currentBalance : (txn.runningBalance || 0)).toLocaleString()}
               </span>
             </div>
           </div>

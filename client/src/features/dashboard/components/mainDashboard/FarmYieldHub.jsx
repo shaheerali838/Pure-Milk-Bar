@@ -1,43 +1,58 @@
-import React from 'react';
-import { Tractor, ArrowRight } from 'lucide-react';
-import { useAnimalContext } from '@/context/AnimalContext';
-import { useExpense } from '@/context/ExpenseContext';
-import { usePOSContext } from '@/context/POSContext';
-import { Link, useNavigate } from 'react-router-dom';
+import React from "react";
+import { Tractor, ArrowRight } from "lucide-react";
+import { useAnimalContext } from "@/context/AnimalContext";
+import { useExpense } from "@/context/ExpenseContext";
+import { usePOSContext } from "@/context/POSContext";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function FarmYieldHub() {
   const navigate = useNavigate();
-  const { animals = [] } = useAnimalContext();
+  const { animals = [], milkingLogs = [] } = useAnimalContext();
   const { totals: expenseTotals = {} } = useExpense();
   const { products = [], inventoryMetrics = {} } = usePOSContext();
 
   // Milking animals count
   const milkingAnimals = animals.filter(
-    (a) => a.lactationStatus === 'Milking' || parseFloat(a.totalDailyYield) > 0
+    (a) => a.lactationStatus === "Milking",
   );
 
-  const totalFarmYield = animals.reduce(
-    (sum, a) => sum + (parseFloat(a.totalDailyYield) || 0),
-    0
-  );
+  const now = new Date();
+  const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const isoTodayStr = now.toISOString().split("T")[0];
+  const todayLogs = (milkingLogs || []).filter((l) => {
+    if (!l.date) return false;
+    const d = l.date.split("T")[0];
+    return d === localTodayStr || d === isoTodayStr;
+  });
+
+  const totalFarmYield = todayLogs.length > 0
+    ? todayLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0)
+    : (Number(inventoryMetrics.totalFarmYield) || 0);
 
   // Valuation: Farm milk value @ retail milk rate
   const milkProduct = products.find(
-    (p) => (p.category || '').toLowerCase().includes('milk') || (p.name || '').toLowerCase().includes('milk')
+    (p) =>
+      (p.category || "").toLowerCase().includes("milk") ||
+      (p.name || "").toLowerCase().includes("milk"),
   );
-  const milkRate = Number(inventoryMetrics.milkPrice) || Number(milkProduct?.price) || 180;
+  const milkRate =
+    Number(inventoryMetrics.milkPrice) || Number(milkProduct?.price) || 180;
   const farmValuation = Math.round(totalFarmYield * milkRate);
 
   // Feed expenses from expense context
-  const feedExpenses = Number(expenseTotals.feedSeedFarming) || Number(expenseTotals.totalFarmExpense) || 0;
+  const feedExpenses =
+    Number(expenseTotals.feedSeedFarming) ||
+    Number(expenseTotals.totalFarmExpense) ||
+    0;
 
   // Net Margin
   const netMargin = farmValuation - feedExpenses;
-  const marginPercent = farmValuation > 0 ? ((netMargin / farmValuation) * 100).toFixed(1) : '0.0';
+  const marginPercent =
+    farmValuation > 0 ? ((netMargin / farmValuation) * 100).toFixed(1) : "0.0";
 
   return (
     <div
-      onClick={() => navigate('/farm')}
+      onClick={() => navigate("/farm")}
       className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer group select-none relative overflow-hidden"
     >
       {/* Ambient Top Glow */}
@@ -67,28 +82,37 @@ export default function FarmYieldHub() {
         {/* Metric Data Rows */}
         <div className="py-3.5 space-y-2">
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
-            <span className="text-slate-600 text-xs font-semibold">Milk Yield Today</span>
+            <span className="text-slate-600 text-xs font-semibold">
+              Milk Yield Today
+            </span>
             <span className="font-mono font-bold text-slate-900 text-xs tabular">
-              {totalFarmYield.toFixed(1)} L ({milkingAnimals.length} In-Milk Herd)
+              {totalFarmYield.toFixed(1)} L ({milkingAnimals.length} In-Milk
+              Herd)
             </span>
           </div>
 
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
-            <span className="text-slate-600 text-xs font-semibold">Internal Valuation</span>
+            <span className="text-slate-600 text-xs font-semibold">
+              Internal Valuation
+            </span>
             <span className="font-mono font-bold text-emerald-700 text-xs tabular">
               Rs. {farmValuation.toLocaleString()}
             </span>
           </div>
 
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
-            <span className="text-slate-600 text-xs font-semibold">Farm Milk Stock</span>
+            <span className="text-slate-600 text-xs font-semibold">
+              Farm Milk Stock
+            </span>
             <span className="font-mono font-bold text-emerald-700 text-xs tabular">
               {inventoryMetrics?.farmMilkStock || 0} L (Chiller)
             </span>
           </div>
 
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
-            <span className="text-slate-600 text-xs font-semibold">Feed &amp; Barn Expenses</span>
+            <span className="text-slate-600 text-xs font-semibold">
+              Feed &amp; Barn Expenses
+            </span>
             <span className="font-mono font-bold text-rose-600 text-xs tabular">
               Rs. {feedExpenses.toLocaleString()}
             </span>
@@ -96,10 +120,14 @@ export default function FarmYieldHub() {
         </div>
 
         {/* Net Contribution Pill Banner */}
-        <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-teal-500/15 flex items-center justify-between font-bold text-xs mb-4">
-          <span className="text-slate-900 font-extrabold">Net Farm Contribution:</span>
+        <div className="p-3 rounded-2xl bg-linear-to-r from-emerald-500/15 via-emerald-500/10 to-teal-500/15 flex items-center justify-between font-bold text-xs mb-4">
+          <span className="text-slate-900 font-extrabold">
+            Net Farm Contribution:
+          </span>
           <span className="font-mono font-black text-emerald-700 text-sm tabular">
-            {netMargin >= 0 ? `+Rs. ${netMargin.toLocaleString()}` : `-Rs. ${Math.abs(netMargin).toLocaleString()}`}
+            {netMargin >= 0
+              ? `+Rs. ${netMargin.toLocaleString()}`
+              : `-Rs. ${Math.abs(netMargin).toLocaleString()}`}
           </span>
         </div>
       </div>

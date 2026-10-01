@@ -20,6 +20,7 @@ import {
   Banknote,
   Smartphone,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { usePOSContext } from "@/context/POSContext";
 import { Card } from "@/components/ui/card";
@@ -28,6 +29,7 @@ import POSDeliverySection from "./POSDeliverySection";
 
 export default function POSSale() {
   const [searchParams] = useSearchParams();
+  const [isProcessingSale, setIsProcessingSale] = React.useState(false);
 
   const {
     cart = [],
@@ -1021,13 +1023,21 @@ export default function POSSale() {
         ) : (
           <button
             type="button"
-            onClick={() => {
-              const result = handleCompleteSale();
-              if (result) {
-                toast.success('Sale completed successfully!');
+            disabled={isProcessingSale}
+            onClick={async () => {
+              setIsProcessingSale(true);
+              try {
+                const result = await handleCompleteSale();
+                if (result) {
+                  toast.success('Sale completed successfully!');
+                }
+              } catch (err) {
+                console.error(err);
+              } finally {
+                setIsProcessingSale(false);
               }
             }}
-            className={`w-full py-2.5 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer ${
+            className={`w-full py-2.5 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
               saleCategory === "walkin"
                 ? walkinCustomerType === "registered"
                   ? "bg-[#7e22ce] hover:bg-[#6b21a8]"
@@ -1035,8 +1045,17 @@ export default function POSSale() {
                 : "bg-[#2563eb] hover:bg-[#1d4ed8]"
             }`}
           >
-            <CheckCircle2 className="w-4 h-4" />
-            Complete Sale &bull; Rs. {netPayable.toLocaleString()}
+            {isProcessingSale ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Processing Sale &bull; Rs. {netPayable.toLocaleString()}</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Complete Sale &bull; Rs. {netPayable.toLocaleString()}</span>
+              </>
+            )}
           </button>
         )}
       </div>

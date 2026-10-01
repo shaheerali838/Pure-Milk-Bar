@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle2, DollarSign, ArrowRight } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, DollarSign, ArrowRight, Loader2 } from 'lucide-react';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,37 +12,33 @@ import {
 } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 
-export default function RecordPaymentView({ customer, onBack }) {
+const getLocalDateString = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export default function RecordPaymentView({ customer, prefillAmount, onBack }) {
   const { addLedgerEntry } = useLedgerContext();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const totalDue = Math.max(0, Number(customer?.khataBalance || 0));
 
-  const [paymentType, setPaymentType] = useState('partial'); // 'partial' | 'full'
-  const [formData, setFormData] = useState({
-    description: 'Partial Payment Received',
-    amount: '',
-    method: 'Cash',
-    reference: '',
-    date: new Date().toISOString().split('T')[0],
-    notes: '',
-  });
+  // Default to Partial Payment mode so users can enter custom amounts or choose presets
+  const [paymentType, setPaymentType] = useState('partial');
 
-  useEffect(() => {
-    if (customer) {
-      if (paymentType === 'full' && totalDue > 0) {
-        setFormData((prev) => ({
-          ...prev,
-          amount: String(totalDue),
-          description: 'Full Payment Received',
-        }));
-      } else if (paymentType === 'partial') {
-        setFormData((prev) => ({
-          ...prev,
-          description: 'Partial Payment Received',
-        }));
-      }
-    }
-  }, [customer, paymentType, totalDue]);
+  const [formData, setFormData] = useState(() => {
+    const initAmt = prefillAmount ? String(prefillAmount) : '';
+    return {
+      description: 'Partial Payment Received',
+      amount: initAmt,
+      method: 'Cash',
+      reference: '',
+      date: getLocalDateString(),
+      notes: '',
+    };
+  });
 
   if (!customer) return null;
 
@@ -60,6 +56,7 @@ export default function RecordPaymentView({ customer, onBack }) {
     } else {
       setFormData((prev) => ({
         ...prev,
+        amount: prev.amount === String(totalDue) ? '' : prev.amount,
         description: 'Partial Payment Received',
       }));
     }
@@ -78,28 +75,36 @@ export default function RecordPaymentView({ customer, onBack }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.amount || Number(formData.amount) <= 0) return;
+    const payAmt = Number(formData.amount);
+    if (!payAmt || payAmt <= 0) return;
 
     const desc = formData.reference
       ? `${formData.description} - ${formData.method} (${formData.reference})`
       : `${formData.description} - ${formData.method}`;
 
-    await addLedgerEntry(customer._id || customer.id, {
-      description: desc,
-      debit: 0,
-      credit: Number(formData.amount),
-      date: formData.date,
-      method: formData.method,
-      notes: formData.notes,
-      paymentType: paymentType,
-      paidAmount: Number(formData.amount),
-      remainingAmount: remainingBalance,
-      orderTotal: Number(formData.amount),
-      fulfillmentType: 'Payment Clearance',
-      paymentMethod: formData.method,
-    });
+    setIsSubmitting(true);
+    try {
+      await addLedgerEntry(customer._id || customer.id, {
+        description: desc,
+        debit: 0,
+        credit: payAmt,
+        date: formData.date || getLocalDateString(),
+        method: formData.method,
+        notes: formData.notes,
+        paymentType: paymentType,
+        paidAmount: payAmt,
+        remainingAmount: remainingBalance,
+        orderTotal: 0,
+        fulfillmentType: 'Payment Clearance',
+        paymentMethod: formData.method,
+      });
 
-    onBack();
+      onBack();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -294,17 +299,28 @@ export default function RecordPaymentView({ customer, onBack }) {
               variant="outline"
               size="sm"
               onClick={onBack}
-              className="px-4 py-1.5 h-8 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl"
+              disabled={isSubmitting}
+              className="px-4 py-1.5 h-8 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl disabled:opacity-50"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               size="sm"
-              className="px-6 py-1.5 h-8 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+              disabled={isSubmitting}
+              className="px-6 py-1.5 h-8 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Confirm &amp; Record Payment
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Recording Payment...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Confirm &amp; Record Payment
+                </>
+              )}
             </Button>
           </div>
         </form>

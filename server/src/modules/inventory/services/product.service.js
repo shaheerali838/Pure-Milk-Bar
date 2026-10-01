@@ -22,8 +22,10 @@ class ProductService {
     return product;
   }
 
-  async getAllProducts(query) {
-    const { page, limit, category, unit, isAvailableForPos, isAvailableForDelivery, search } = query;
+  async getAllProducts(query = {}) {
+    const page = Math.max(1, parseInt(query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(query.limit, 10) || 100));
+    const { category, unit, isAvailableForPos, isAvailableForDelivery, search } = query;
 
     // Build filter object
     const filter = {};

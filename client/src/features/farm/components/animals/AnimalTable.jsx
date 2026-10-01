@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table';
 
 export default function AnimalTable({ onSelectAnimal }) {
-  const { animals, deleteAnimal } = useAnimalContext();
+  const { animals, deleteAnimal, isLoading } = useAnimalContext();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('All');
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -42,7 +42,7 @@ export default function AnimalTable({ onSelectAnimal }) {
     <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
       {/* Search and Filter Header */}
       <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row gap-3 items-center justify-between">
-        <div className="flex items-center gap-2 w-full md:w-80 bg-slate-50 border border-slate-200 rounded-full px-3.5 h-[38px]">
+        <div className="flex items-center gap-2 w-full md:w-80 bg-slate-50 border border-slate-200 rounded-full px-3.5 h-9.5">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input
             type="text"
@@ -84,7 +84,19 @@ export default function AnimalTable({ onSelectAnimal }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAnimals.length === 0 ? (
+            {isLoading && animals.length === 0 ? (
+              Array.from({ length: 7 }).map((_, r) => (
+                <TableRow key={r} className="animate-pulse">
+                  <TableCell className="py-3"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-slate-200 shrink-0" /><div className="space-y-1"><div className="h-4 bg-slate-200 rounded w-20" /><div className="h-3 bg-slate-100 rounded w-14" /></div></div></TableCell>
+                  <TableCell className="py-3"><div className="h-4 bg-slate-200 rounded w-24" /></TableCell>
+                  <TableCell className="py-3"><div className="h-4 bg-slate-200 rounded w-16" /></TableCell>
+                  <TableCell className="py-3"><div className="h-4 bg-slate-200 rounded w-14" /></TableCell>
+                  <TableCell className="py-3"><div className="h-4 bg-slate-200 rounded w-14" /></TableCell>
+                  <TableCell className="py-3"><div className="h-5 bg-slate-200 rounded-full w-16" /></TableCell>
+                  <TableCell className="py-3 text-right"><div className="h-6 bg-slate-200 rounded w-16 ml-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : filteredAnimals.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-32 text-center">
                   <div className="flex flex-col items-center justify-center text-slate-400">

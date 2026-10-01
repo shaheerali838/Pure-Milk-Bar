@@ -205,7 +205,7 @@ export default function DeliveryDetailView({ delivery, onBack }) {
             )}
             {(Number(delivery.amountDue) > 0 || codAmount > 0) && (
               <div className="flex justify-between py-0.5 border-b border-slate-100">
-                <span className="text-slate-400">Due / Baqi to Collect:</span>
+                <span className="text-slate-400">Due to Collect:</span>
                 <span className="font-bold text-rose-600 font-mono tabular">
                   Rs. {(Number(delivery.amountDue) || codAmount).toLocaleString()}
                 </span>

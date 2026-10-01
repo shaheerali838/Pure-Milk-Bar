@@ -24,7 +24,7 @@ export default function SupplierProcurementHub() {
       : intakeLogs.reduce((sum, item) => sum + (parseFloat(item.totalCost) || 0), 0);
 
   const avgProcurementRate =
-    procuredVolume > 0 ? directCost / procuredVolume : 228;
+    procuredVolume > 0 ? directCost / procuredVolume : 0;
 
   // Collection transport / van diesel overheads from expense records
   const collectionDiesel =
@@ -42,7 +42,7 @@ export default function SupplierProcurementHub() {
     supplierTotals.activeSuppliers ??
     suppliers.filter((s) => s.status === 'Active').length;
 
-  const sourcingMarginPct = grossValue > 0 ? ((netContribution / grossValue) * 100).toFixed(1) : '8.1';
+  const sourcingMarginPct = grossValue > 0 ? ((netContribution / grossValue) * 100).toFixed(1) : '0.0';
 
   return (
     <div

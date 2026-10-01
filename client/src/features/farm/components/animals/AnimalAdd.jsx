@@ -90,6 +90,88 @@ export default function AnimalAdd({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleMorningChange = (e) => {
+    const val = e.target.value;
+    const mNum = parseFloat(val);
+    const eNum = parseFloat(formData.eveningYield);
+
+    let nextExpected = formData.expectedYield;
+    if (val === "" && (!formData.eveningYield || formData.eveningYield === "")) {
+      nextExpected = "";
+    } else {
+      const total = (isNaN(mNum) ? 0 : mNum) + (isNaN(eNum) ? 0 : eNum);
+      nextExpected = total > 0 || val !== "" || formData.eveningYield !== "" ? String(parseFloat(total.toFixed(2))) : "";
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      morningYield: val,
+      expectedYield: nextExpected,
+    }));
+  };
+
+  const handleEveningChange = (e) => {
+    const val = e.target.value;
+    const mNum = parseFloat(formData.morningYield);
+    const eNum = parseFloat(val);
+
+    let nextExpected = formData.expectedYield;
+    if (val === "" && (!formData.morningYield || formData.morningYield === "")) {
+      nextExpected = "";
+    } else {
+      const total = (isNaN(mNum) ? 0 : mNum) + (isNaN(eNum) ? 0 : eNum);
+      nextExpected = total > 0 || val !== "" || formData.morningYield !== "" ? String(parseFloat(total.toFixed(2))) : "";
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      eveningYield: val,
+      expectedYield: nextExpected,
+    }));
+  };
+
+  const handleExpectedChange = (e) => {
+    const val = e.target.value;
+    if (val === "") {
+      setFormData((prev) => ({
+        ...prev,
+        expectedYield: "",
+      }));
+      return;
+    }
+
+    const expNum = parseFloat(val);
+    if (isNaN(expNum)) {
+      setFormData((prev) => ({ ...prev, expectedYield: val }));
+      return;
+    }
+
+    const mNum = parseFloat(formData.morningYield);
+    const eNum = parseFloat(formData.eveningYield);
+
+    let nextMorning = formData.morningYield;
+    let nextEvening = formData.eveningYield;
+
+    if (!isNaN(mNum) && mNum > 0 && isNaN(eNum)) {
+      nextEvening = String(Math.max(0, parseFloat((expNum - mNum).toFixed(2))));
+    } else if (!isNaN(eNum) && eNum > 0 && isNaN(mNum)) {
+      nextMorning = String(Math.max(0, parseFloat((expNum - eNum).toFixed(2))));
+    } else if (!isNaN(mNum) && !isNaN(eNum) && (mNum > 0 || eNum > 0)) {
+      nextEvening = String(Math.max(0, parseFloat((expNum - mNum).toFixed(2))));
+    } else {
+      const half = parseFloat((expNum / 2).toFixed(2));
+      nextMorning = String(half);
+      nextEvening = String(parseFloat((expNum - half).toFixed(2)));
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      expectedYield: val,
+      morningYield: nextMorning,
+      eveningYield: nextEvening,
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -273,7 +355,8 @@ export default function AnimalAdd({
                     min="0"
                     name="morningYield"
                     value={formData.morningYield}
-                    onChange={handleChange}
+                    onChange={handleMorningChange}
+                    onWheel={(e) => e.target.blur()}
                     placeholder="8.5"
                     className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
                   />
@@ -294,7 +377,8 @@ export default function AnimalAdd({
                     min="0"
                     name="eveningYield"
                     value={formData.eveningYield}
-                    onChange={handleChange}
+                    onChange={handleEveningChange}
+                    onWheel={(e) => e.target.blur()}
                     placeholder="7.0"
                     className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
                   />
@@ -315,7 +399,8 @@ export default function AnimalAdd({
                     min="0"
                     name="expectedYield"
                     value={formData.expectedYield}
-                    onChange={handleChange}
+                    onChange={handleExpectedChange}
+                    onWheel={(e) => e.target.blur()}
                     placeholder="15.5"
                     className="w-full pl-3 pr-12 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
                   />

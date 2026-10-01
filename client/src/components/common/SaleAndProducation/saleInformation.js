@@ -5,9 +5,9 @@ import { Layers, ShoppingCart, Bike, Milk } from "lucide-react";
 export const saleInformation = [
     {
       id: 'Sale',
-      name: 'Dahi & Milk Proccessing',
+      name: 'Dahi Processing',
       icon: Layers,
-      path: '/proccessing',
+      path: '/dahi',
       iconBg: 'bg-[#f0f4f9]',
       iconColor: 'text-[#486581]',
       iconBorder: 'border border-[#e2e8f0]',

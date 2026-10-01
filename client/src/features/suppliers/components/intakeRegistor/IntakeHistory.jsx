@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { Badge } from '@/components/ui/badge';
+import { TableSkeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableHeader,
@@ -42,7 +43,7 @@ const normalizeDate = (dateVal) => {
 };
 
 export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
-  const { intakeLogs, deleteIntake } = useIntakeContext();
+  const { intakeLogs, deleteIntake, isLoading } = useIntakeContext();
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState('All'); // 'All' | 'Today' | 'Custom'
   const [customDate, setCustomDate] = useState('');
@@ -200,7 +201,7 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
       {/* Search and Filters Header */}
       <div className="p-4 border-b border-slate-100 flex flex-col xl:flex-row gap-3 items-start xl:items-center justify-between">
         {/* Search Input */}
-        <div className="flex items-center gap-2 w-full xl:w-72 bg-slate-50 border border-slate-200 rounded-full px-3.5 h-[38px]">
+        <div className="flex items-center gap-2 w-full xl:w-72 bg-slate-50 border border-slate-200 rounded-full px-3.5 h-9.5">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input
             type="text"
@@ -251,7 +252,7 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
           </div>
 
           {/* Date Picker Input */}
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-full px-3 h-[32px] text-xs text-slate-700">
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-full px-3 h-8 text-xs text-slate-700">
             <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <input
               type="date"
@@ -319,7 +320,7 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
           <button
             type="button"
             onClick={() => onPaySupplier && onPaySupplier(null)}
-            className="flex items-center gap-1.5 px-3.5 h-[32px] rounded-full text-xs font-bold text-white bg-[#009966] hover:brightness-110 shadow-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 h-8 rounded-full text-xs font-bold text-white bg-[#009966] hover:brightness-110 shadow-xs transition-all cursor-pointer"
             title="Disburse payment to a supplier"
           >
             <Wallet className="w-3.5 h-3.5" />
@@ -364,7 +365,21 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
           </TableHeader>
 
           <TableBody className="divide-y divide-slate-100">
-            {groupedRecords.length === 0 ? (
+            {isLoading && intakeLogs.length === 0 ? (
+              Array.from({ length: 7 }).map((_, r) => (
+                <TableRow key={r} className="animate-pulse">
+                  <TableCell className="py-3.5 px-4"><div className="h-4 bg-slate-200 rounded w-24 mb-1" /><div className="h-3 bg-slate-100 rounded w-16" /></TableCell>
+                  <TableCell className="py-3.5 px-4"><div className="h-4 bg-slate-200 rounded w-32 mb-1" /><div className="h-3 bg-slate-100 rounded w-20" /></TableCell>
+                  <TableCell className="py-3.5 px-4 text-center"><div className="h-5 bg-slate-200 rounded-full w-16 mx-auto" /></TableCell>
+                  <TableCell className="py-3.5 px-4 text-right"><div className="h-4 bg-slate-200 rounded w-16 ml-auto" /></TableCell>
+                  <TableCell className="py-3.5 px-4 text-right"><div className="h-4 bg-slate-200 rounded w-14 ml-auto" /></TableCell>
+                  <TableCell className="py-3.5 px-4 text-right"><div className="h-4 bg-slate-200 rounded w-20 ml-auto" /></TableCell>
+                  <TableCell className="py-3.5 px-4 text-center"><div className="h-5 bg-slate-200 rounded-full w-14 mx-auto" /></TableCell>
+                  <TableCell className="py-3.5 px-4 text-center"><div className="h-5 bg-slate-200 rounded-full w-16 mx-auto" /></TableCell>
+                  <TableCell className="py-3.5 px-4 text-right"><div className="h-6 bg-slate-200 rounded w-16 ml-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : groupedRecords.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-12 text-slate-400">
                   <Droplets className="w-8 h-8 mx-auto text-slate-300 mb-2 opacity-50" />
@@ -756,14 +771,14 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
               <button
                 type="button"
                 onClick={() => setConfirmDeleteId(null)}
-                className="px-3.5 h-[34px] rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                className="px-3.5 h-8.5 rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={() => handleDelete(confirmDeleteId)}
-                className="px-4 h-[34px] rounded-full text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow-xs cursor-pointer"
+                className="px-4 h-8.5 rounded-full text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow-xs cursor-pointer"
               >
                 Yes, Delete
               </button>

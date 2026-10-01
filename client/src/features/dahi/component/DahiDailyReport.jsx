@@ -44,17 +44,6 @@ export default function DahiDailyReport() {
 
   const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week'
 
-  // Baseline farm yield from active herd
-  const herdBaselineYield = useMemo(() => {
-    return animals.reduce((sum, a) => {
-      const totalDaily = parseFloat(a.totalDailyYield || 0);
-      if (totalDaily > 0) return sum + totalDaily;
-      const morning = parseFloat(a.morningYield || 0);
-      const evening = parseFloat(a.eveningYield || 0);
-      return sum + (morning + evening);
-    }, 0);
-  }, [animals]);
-
   // Aggregate end-to-end data by date
   const aggregatedByDate = useMemo(() => {
     const dates = {};
@@ -90,11 +79,6 @@ export default function DahiDailyReport() {
       initDate(d);
       dates[d].farmYield += parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0;
     });
-
-    if (dates[todayStr].farmYield === 0 && herdBaselineYield > 0) {
-      dates[todayStr].farmYield = herdBaselineYield;
-      dates[todayStr].isHerdBaseline = true;
-    }
 
     // 2. Supplier Intake
     intakeLogs.forEach((log) => {

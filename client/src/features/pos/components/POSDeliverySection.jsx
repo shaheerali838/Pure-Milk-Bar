@@ -7,6 +7,7 @@ import {
   Smartphone,
   CreditCard,
   Fuel,
+  AlertCircle,
 } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 import FuelLogForm from '@/features/deliveries/components/FuelLogForm';
@@ -229,7 +230,7 @@ export default function POSDeliverySection() {
           </div>
 
           {activeCustomer && (
-            <div className="p-2 bg-white rounded-lg border border-blue-100 space-y-1">
+            <div className="p-2 bg-white rounded-lg border border-blue-100 space-y-1.5">
               <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                 <span>{activeCustomer.name}</span>
                 <div className="flex items-center gap-2">
@@ -243,6 +244,14 @@ export default function POSDeliverySection() {
                   </span>
                 </div>
               </div>
+
+              {Number(activeCustomer.creditLimit || 0) > 0 && Number(activeCustomer.khataBalance || 0) >= Number(activeCustomer.creditLimit) && (
+                <div className="p-1.5 bg-rose-50 border border-rose-300 rounded-md text-[10px] text-rose-800 font-bold flex items-center gap-1.5 animate-in fade-in">
+                  <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                  <span>⚠️ Credit Limit Exceeded! (Limit: PKR {Number(activeCustomer.creditLimit).toLocaleString()})</span>
+                </div>
+              )}
+
               <div className="text-[10px] text-slate-500">
                 <span>{activeCustomer.phone} · {activeCustomer.area || 'Model Town'}</span>
                 {activeCustomer.shift && <span> · Shift: {activeCustomer.shift}</span>}
@@ -483,7 +492,7 @@ export default function POSDeliverySection() {
                 <span className="text-xs font-black text-emerald-700 font-mono">Rs. {codCalcPaid.toLocaleString()}</span>
               </div>
               <div className="p-2 bg-white rounded-lg border border-rose-200">
-                <span className="text-[9px] uppercase font-bold text-rose-600 block">Baqi / Khata Due</span>
+                <span className="text-[9px] uppercase font-bold text-rose-600 block">Credit Due</span>
                 <span className="text-xs font-black text-rose-700 font-mono">Rs. {codCalcRemaining.toLocaleString()}</span>
               </div>
             </div>

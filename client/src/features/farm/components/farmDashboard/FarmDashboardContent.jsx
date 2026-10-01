@@ -53,18 +53,13 @@ export default function FarmDashboardContent() {
     if (todayLogs.length > 0) {
       return todayLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
     }
-    return animals.reduce((sum, animal) => {
-      const morning = parseYield(animal.morningYield);
-      const evening = parseYield(animal.eveningYield);
-      const total = morning + evening > 0 ? morning + evening : parseYield(animal.totalDailyYield);
-      return sum + total;
-    }, 0);
-  }, [animals, milkingLogs]);
+    return 0;
+  }, [milkingLogs]);
 
   // Available live farm stock in cold room / chiller
   const availableFarmStock = useMemo(() => {
     const rawPos = parseFloat(posCtx?.inventoryMetrics?.farmMilkStock ?? posCtx?.inventoryMetrics?.rawFarmMilkStock);
-    if (!isNaN(rawPos) && rawPos > 0) {
+    if (!isNaN(rawPos)) {
       return rawPos;
     }
     return totalFarmYield;
@@ -113,7 +108,26 @@ export default function FarmDashboardContent() {
 
       // Check real sales for day 'd.key' from posCtx?.salesHistory
       const salesForDay = (posCtx?.salesHistory || []).filter((s) => {
-        const sDate = s.formattedDate ? new Date(s.formattedDate).toISOString().split('T')[0] : (s.date || '').split('T')[0];
+        let sDate = '';
+        if (s.date && /^\d{4}-\d{2}-\d{2}/.test(s.date)) {
+          sDate = s.date.slice(0, 10);
+        } else if (s.timestamp && /^\d{4}-\d{2}-\d{2}/.test(s.timestamp)) {
+          sDate = s.timestamp.slice(0, 10);
+        } else if (s.createdAt && /^\d{4}-\d{2}-\d{2}/.test(s.createdAt)) {
+          sDate = s.createdAt.slice(0, 10);
+        } else {
+          const raw = s.date || s.timestamp || s.createdAt || s.formattedDate || '';
+          if (raw) {
+            const parsed = new Date(raw);
+            if (!isNaN(parsed.getTime())) {
+              try {
+                sDate = parsed.toISOString().split('T')[0];
+              } catch {
+                sDate = '';
+              }
+            }
+          }
+        }
         return sDate === d.key;
       });
       const dayRevenue = salesForDay.reduce((sum, s) => {
@@ -195,7 +209,7 @@ export default function FarmDashboardContent() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         
         {/* Farm Production Trend (7 Days) */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-[340px]">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-85">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Farm Production Trend (7 Days)</h3>
@@ -245,7 +259,7 @@ export default function FarmDashboardContent() {
         </div>
 
         {/* Current Lactation Yield by Animal */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-[340px]">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-85">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Current Lactation Yield by Animal</h3>
@@ -291,7 +305,7 @@ export default function FarmDashboardContent() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         
         {/* Farm Expenses */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col justify-between h-[340px]">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col justify-between h-85">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -319,7 +333,7 @@ export default function FarmDashboardContent() {
                 <div key={i} className="flex items-center justify-between text-xs font-bold text-slate-700">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-600" />
-                    <span className="truncate max-w-[140px]">{name}</span>
+                    <span className="truncate max-w-35">{name}</span>
                   </div>
                   <span className="font-mono text-slate-900">Rs. {amount.toLocaleString()}</span>
                 </div>
@@ -334,7 +348,7 @@ export default function FarmDashboardContent() {
         </div>
 
         {/* Farm Financial Performance (P&L Trend) */}
-        <div className="lg:col-span-2 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-[340px]">
+        <div className="lg:col-span-2 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-85">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Farm Financial Performance (P&L Trend)</h3>
