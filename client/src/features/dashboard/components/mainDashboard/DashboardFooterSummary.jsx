@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom';
 export default function DashboardFooterSummary() {
   const { deliveries = [] } = useDeliveryContext();
   const { suppliers = [], totals: supplierTotals = {} } = useSupplierContext();
-  const { salesHistory = [] } = usePOSContext();
+  const { salesHistory = [], inventoryMetrics = {} } = usePOSContext();
   const { animals = [] } = useAnimalContext();
   const { totals: intakeTotals = {}, intakeLogs = [] } = useIntakeContext();
 
