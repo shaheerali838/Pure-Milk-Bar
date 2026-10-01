@@ -53,7 +53,7 @@ export default function ProfitLossSnapshot() {
   const isPositive = netProfit >= 0;
 
   // Milk Discrepancy / Variance Calculation
-  const totalFarmMilk = animals.reduce((s, a) => s + (parseFloat(a.totalDailyYield) || 0), 0);
+  const totalFarmMilk = Number(inventoryMetrics.totalFarmYield) || 0;
   const totalProcured =
     intakeTotals.totalProcuredVolume !== undefined
       ? Number(intakeTotals.totalProcuredVolume)
