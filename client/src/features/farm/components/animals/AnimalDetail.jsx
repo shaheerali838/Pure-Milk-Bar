@@ -121,11 +121,12 @@ export default function AnimalDetail({
         .sort((a, b) => b.date.localeCompare(a.date));
     }
 
-    // Fallback: If no logs recorded yet in database for this animal, derive from animal.history
+    // If no logs recorded yet in database for this animal, check animal.history
     if (animal.history && Array.isArray(animal.history) && animal.history.length > 0) {
       const list = [];
-      animal.history.forEach((h, idx) => {
-        const dateStr = normalizeDate(h.date) || `2026-08-${String(18 + idx).padStart(2, '0')}`;
+      animal.history.forEach((h) => {
+        const dateStr = normalizeDate(h.date);
+        if (!dateStr) return;
         if (h.morning !== undefined && h.morning !== null) {
           const mYield = parseFloat(h.morning) || 0;
           list.push({
@@ -166,55 +167,7 @@ export default function AnimalDetail({
       return list.sort((a, b) => b.date.localeCompare(a.date));
     }
 
-    // Generate recent demo intake history for this single animal
-    const demoDates = [
-      getTodayDateStr(),
-      new Date(Date.now() - 86400000).toISOString().split('T')[0],
-      new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0],
-      new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0],
-      new Date(Date.now() - 86400000 * 4).toISOString().split('T')[0],
-    ];
-
-    const demoList = [];
-    demoDates.forEach((d, idx) => {
-      const mVar = idx % 2 === 0 ? 0.4 : -0.3;
-      const eVar = idx % 2 === 0 ? -0.2 : 0.3;
-      const mActual = parseFloat((mExp + mVar).toFixed(1));
-      const eActual = parseFloat((eExp + eVar).toFixed(1));
-
-      demoList.push({
-        id: `demo-${animal.tag}-${d}-M`,
-        date: d,
-        shift: 'Morning',
-        actualYield: mActual,
-        expectedYield: mExp,
-        variance: mVar,
-        fat: isBuff ? 6.8 : 4.5,
-        snf: 8.6,
-        lr: 28.5,
-        milkedBy: 'Morning Milker',
-        chiller: 'Chiller-1',
-        status: 'Verified',
-        notes: 'Daily herd collection',
-      });
-      demoList.push({
-        id: `demo-${animal.tag}-${d}-E`,
-        date: d,
-        shift: 'Evening',
-        actualYield: eActual,
-        expectedYield: eExp,
-        variance: eVar,
-        fat: isBuff ? 7.0 : 4.7,
-        snf: 8.8,
-        lr: 28.5,
-        milkedBy: 'Evening Milker',
-        chiller: 'Chiller-1',
-        status: 'Verified',
-        notes: 'Daily herd collection',
-      });
-    });
-
-    return demoList;
+    return [];
   }, [animal, milkingLogs]);
 
   // Filtered logs based on shift and date filters
@@ -299,19 +252,6 @@ export default function AnimalDetail({
     }
     return 'bg-emerald-50 text-emerald-700 border-emerald-200';
   };
-
-  const chartData =
-    animal.history && animal.history.length > 0
-      ? animal.history
-      : [
-          { date: '18 Aug', morning: 8.2, evening: 7.0 },
-          { date: '19 Aug', morning: 8.8, evening: 7.3 },
-          { date: '20 Aug', morning: 8.0, evening: 6.8 },
-          { date: '21 Aug', morning: 9.1, evening: 7.5 },
-          { date: '22 Aug', morning: 8.5, evening: 7.2 },
-          { date: '23 Aug', morning: 8.9, evening: 7.4 },
-          { date: '24 Aug', morning: 8.5, evening: 7.2 },
-        ];
 
   return (
     <div className="space-y-4 animate-in fade-in duration-150 pb-8">
