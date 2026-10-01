@@ -11,6 +11,7 @@ import {
   DollarSign,
   Sun,
   Moon,
+  TrendingUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {

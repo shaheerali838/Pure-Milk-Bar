@@ -9,6 +9,8 @@ import {
   Droplets,
   Sun,
   Moon,
+  DollarSign,
+  TrendingUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -187,7 +189,7 @@ export default function DailySheet() {
           headers: milkingHeaders,
           rows: milkingCsvRows,
           summaryRows: [
-            ['TOTAL HERD YIELD', '', '', `${totals.totalMorning.toFixed(1)} L`, `${totals.totalEvening.toFixed(1)} L`, `${totals.totalCollected.toFixed(1)} Liters`, `Animals: ${calculatedMilkingRows.length}`],
+            ['TOTAL HERD YIELD', '', '', `${totals.totalMorning.toFixed(1)} L`, `${totals.totalEvening.toFixed(1)} L`, `${totals.totalCollected.toFixed(1)} Liters`, `Animals: ${milkingRows.length}`],
           ],
         },
         {
