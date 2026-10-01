@@ -69,19 +69,20 @@ export default function LogYieldModal({ isOpen, onClose }) {
     setIsSubmitting(true);
     try {
       if (targetAnimal && updateAnimal) {
-        await updateAnimal(targetAnimal.id, {
+        await updateAnimal(targetAnimal._id || targetAnimal.id, {
           ...targetAnimal,
-          morningYield: `${mVal} L`,
-          eveningYield: `${eVal} L`,
-          totalDailyYield: `${(mVal + eVal).toFixed(1)} L`,
+          morningYield: mVal,
+          eveningYield: eVal,
+          expectedDailyYield: mVal + eVal,
+          dailyAvgYield: (mVal + eVal) / 2,
         });
       }
 
       // Persist to MilkingLogs / MilkingShift API
       if (saveMilkingShift) {
         const todayDate = new Date().toISOString().split("T")[0];
-        const selectedWorker = availableStaff.find((s) => s.name === formData.milker);
-        const opId = selectedWorker?.id || selectedWorker?._id || formData.milker || undefined;
+        const selectedWorker = availableStaff.find((s) => s.name === formData.milker || s.id === formData.milker);
+        const opId = selectedWorker?._id || selectedWorker?.id || undefined;
 
         if (mVal > 0) {
           await saveMilkingShift("Morning", todayDate, { [formData.tag]: mVal }, opId);

@@ -205,12 +205,12 @@ export function AnimalProvider({ children }) {
       const shiftDate = typeof arg2 === 'string' ? arg2 : typeof arg3 === 'string' ? arg3 : new Date().toISOString().split('T')[0];
       const shiftEntries = (typeof arg2 === 'object' && arg2 !== null) ? arg2 : (typeof arg3 === 'object' && arg3 !== null) ? arg3 : {};
 
-      const promises = Object.entries(shiftEntries).map(([tag, yieldVal]) => {
+      const promises = Object.entries(shiftEntries).map(async ([tag, yieldVal]) => {
         const val = parseFloat(yieldVal);
         if (isNaN(val) || val <= 0) return null;
-        const animal = animals.find((a) => a.tag === tag);
+        const animal = animals.find((a) => a.tag === tag || a.tagNumber === tag || String(a.id) === String(tag) || String(a._id) === String(tag));
         const payload = {
-          animalId: animal?._id || animal?.id,
+          animalId: animal?._id || animal?.id || undefined,
           animalTag: tag,
           shift: (shiftName || 'Morning').toUpperCase(),
           date: shiftDate || new Date().toISOString().split('T')[0],
@@ -220,8 +220,17 @@ export function AnimalProvider({ children }) {
         return farmService.createMilkingLog(payload);
       });
 
-      await Promise.allSettled(promises.filter(Boolean));
+      const validPromises = promises.filter(Boolean);
+      if (validPromises.length === 0) return [];
+
+      const results = await Promise.allSettled(validPromises);
+      const errors = results.filter((r) => r.status === 'rejected');
+      if (errors.length > 0 && errors.length === validPromises.length) {
+        throw new Error(errors[0].reason?.message || 'Failed to save milking logs to database');
+      }
+
       await fetchAnimalsAndLogs();
+      return results;
     } catch (err) {
       console.error('Failed to save milking shift:', err);
       throw err;

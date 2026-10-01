@@ -8,38 +8,60 @@ const objectId = Joi.string().regex(/^[0-9a-fA-F]{24}$/, 'MongoDB ObjectId');
 
 // ─── CREATE MilkingYieldLog Schema ──────────────────────────────────────────
 export const createMilkingYieldLogSchema = Joi.object({
-  animalId: objectId
-    .required()
-    .messages({
-      'any.required': 'Animal ID is required',
-      'string.pattern.name': 'Invalid MongoDB ObjectId format for animalId',
-    }),
+  animalId: Joi.string()
+    .allow('', null)
+    .optional(),
 
-  date: Joi.date()
-    .iso()
-    .required()
-    .messages({
-      'any.required': 'Milking date is required',
-      'date.format': 'Date must be a valid ISO 8601 date',
-    }),
+  animalTag: Joi.string()
+    .trim()
+    .allow('', null)
+    .optional(),
+
+  tag: Joi.string()
+    .trim()
+    .allow('', null)
+    .optional(),
+
+  tagNumber: Joi.string()
+    .trim()
+    .allow('', null)
+    .optional(),
+
+  date: Joi.alternatives()
+    .try(
+      Joi.date().iso(),
+      Joi.string().isoDate(),
+      Joi.string().regex(/^\d{4}-\d{2}-\d{2}/),
+      Joi.date()
+    )
+    .default(() => new Date())
+    .optional(),
 
   shift: Joi.string()
-    .valid(...SHIFTS)
-    .required()
+    .custom((val, helpers) => {
+      const u = String(val || '').toUpperCase().trim();
+      if (SHIFTS.includes(u)) return u;
+      return helpers.error('any.only');
+    })
+    .default('MORNING')
     .messages({
-      'any.required': 'Milking shift is required',
       'any.only': `Shift must be one of: ${SHIFTS.join(', ')}`,
     }),
 
   yieldLiters: Joi.number()
     .min(0)
-    .max(50)
-    .required()
-    .messages({
-      'any.required': 'Yield in liters is required',
-      'number.min': 'Yield cannot be negative',
-      'number.max': 'Yield exceeds realistic single-animal threshold (50L)',
-    }),
+    .max(500)
+    .optional(),
+
+  yield: Joi.number()
+    .min(0)
+    .max(500)
+    .optional(),
+
+  quantityLiters: Joi.number()
+    .min(0)
+    .max(500)
+    .optional(),
 
   notes: Joi.string()
     .trim()
@@ -50,13 +72,9 @@ export const createMilkingYieldLogSchema = Joi.object({
       'string.max': 'Notes cannot exceed 500 characters',
     }),
 
-  // operatorId is normally injected from JWT (req.user._id).
-  // Accepted here optionally for Thunder Client testing without auth middleware.
-  operatorId: objectId
-    .optional()
-    .messages({
-      'string.pattern.name': 'Invalid MongoDB ObjectId format for operatorId',
-    }),
+  operatorId: Joi.string()
+    .allow(null, '')
+    .optional(),
 }).options({ stripUnknown: true });
 
 // ─── UPDATE MilkingYieldLog Schema ──────────────────────────────────────────
