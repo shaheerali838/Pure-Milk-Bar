@@ -20,7 +20,7 @@ export default function DeliveryFinanceStats({
     0
   );
   const totalRevenue = filteredDeliveries.reduce(
-    (sum, d) => sum + (Number(d.codAmountToCollect || d.amountPaid || 0)),
+    (sum, d) => sum + (Number(d.codAmountToCollect) || 0),
     0
   );
   const totalFuelCost = filteredFuelLogs.reduce(

@@ -37,7 +37,13 @@ export default function CollectionPayoutsStats() {
     const entries = getLedgerForCustomer(custId) || [];
     entries.forEach((entry) => {
       const credit = Number(entry.credit) || 0;
-      if (credit > 0) {
+      const isOpeningAdvance =
+        entry.isOpening ||
+        entry.type === 'OPENING' ||
+        /opening/i.test(entry.description || '') ||
+        /advance deposit/i.test(entry.description || '');
+
+      if (credit > 0 && !isOpeningAdvance) {
         collectionsRecorded += 1;
         totalRecoveredAllTime += credit;
         if (isDateToday(entry.date) || isDateToday(entry.createdAt)) {

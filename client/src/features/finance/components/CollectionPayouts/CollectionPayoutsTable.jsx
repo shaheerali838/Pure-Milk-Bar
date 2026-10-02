@@ -27,7 +27,13 @@ function getAllCollections(customerList, getLedgerForCustomer) {
     const custId = customer._id || customer.id;
     const entries = getLedgerForCustomer(custId) || [];
     entries.forEach((entry) => {
-      if (Number(entry.credit) > 0) {
+      const isOpeningAdvance =
+        entry.isOpening ||
+        entry.type === 'OPENING' ||
+        /opening/i.test(entry.description || '') ||
+        /advance deposit/i.test(entry.description || '');
+
+      if (Number(entry.credit) > 0 && !isOpeningAdvance) {
         rows.push({ customer, entry });
       }
     });

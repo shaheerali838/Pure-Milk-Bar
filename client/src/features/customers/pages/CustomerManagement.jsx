@@ -6,10 +6,11 @@ import CustomerFilters from '../components/Customer_&_Accounts/CustomerFilters';
 import CustomerTable from '../components/Customer_&_Accounts/CustomerTable';
 import AddNewCustomerView from '../components/Customer_&_Accounts/AddNewCustomerView';
 import EditCustomerView from '../components/Customer_&_Accounts/EditCustomerView';
+import CustomerAdvancePaymentsView from '../components/Customer_&_Accounts/CustomerAdvancePaymentsView';
 
 export default function CustomerManagement() {
   const navigate = useNavigate();
-  const [currentView, setCurrentView] = useState('list'); // 'list' | 'add' | 'edit'
+  const [currentView, setCurrentView] = useState('list'); // 'list' | 'add' | 'edit' | 'advance'
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   if (currentView === 'add') {
@@ -28,10 +29,19 @@ export default function CustomerManagement() {
     );
   }
 
+  if (currentView === 'advance') {
+    return (
+      <CustomerAdvancePaymentsView
+        onBack={() => setCurrentView('list')}
+        onOpenAddCustomer={() => setCurrentView('add')}
+      />
+    );
+  }
+
   return (
     <div className="space-y-2.5">
       <CustomerHeader onOpenAddModal={() => setCurrentView('add')} />
-      <CustomerStatsCards />
+      <CustomerStatsCards onOpenAdvanceDetails={() => setCurrentView('advance')} />
       <CustomerFilters />
       <CustomerTable
         onViewCustomer={(cust) => {

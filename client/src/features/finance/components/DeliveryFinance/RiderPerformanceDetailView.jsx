@@ -47,7 +47,7 @@ export default function RiderPerformanceDetailView({
     0
   );
   const totalCodCollected = deliveries.reduce(
-    (sum, d) => sum + (Number(d.codAmountToCollect || d.amountPaid || 0)),
+    (sum, d) => sum + (Number(d.codAmountToCollect) || 0),
     0
   );
   const totalFuelLiters = fuelLogs.reduce((sum, f) => sum + (Number(f.liters) || 0), 0);

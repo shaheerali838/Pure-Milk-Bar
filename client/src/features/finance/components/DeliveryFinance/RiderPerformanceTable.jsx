@@ -52,7 +52,7 @@ export default function RiderPerformanceTable({
       0
     );
     const totalCodCollected = staffDeliveries.reduce(
-      (sum, d) => sum + (Number(d.codAmountToCollect || d.amountPaid || 0)),
+      (sum, d) => sum + (Number(d.codAmountToCollect) || 0),
       0
     );
 

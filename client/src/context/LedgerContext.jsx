@@ -530,10 +530,8 @@ export function LedgerProvider({ children }) {
       let openingBalance = 0;
       const openingEntry = activeEntries.find((e) => e.isOpening || e.type === 'OPENING');
       const isAdvanceOpening =
-        openingEntry?.credit > 0 ||
+        (openingEntry && Number(openingEntry.credit) > 0) ||
         String(customer?.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') ||
-        customer?.openingPaymentMethod === 'CASH' ||
-        customer?.openingPaymentMethod === 'ONLINE' ||
         /advance/i.test(openingEntry?.description || '') ||
         /advance/i.test(openingEntry?.fulfillmentType || '');
 
@@ -584,8 +582,23 @@ export function LedgerProvider({ children }) {
       const paidCount = paymentEntries.length;
 
       const effectiveDebits = totalCharged + (!isAdvanceOpening ? openingBalance : 0);
-      const totalPaid = totalPayments + (isAdvanceOpening ? openingBalance : 0);
 
+      // 1. Advance deposits breakdown (strict check: opening balance must be > 0 if isAdvanceOpening)
+      const initialAdvance = (isAdvanceOpening && openingBalance > 0) ? openingBalance : 0;
+      const advanceDepositPayments = paymentEntries
+        .filter((e) => /advance/i.test(e.description || '') || /advance/i.test(e.paymentMethod || ''))
+        .reduce((sum, e) => sum + (Number(e.credit) || 0), 0);
+      const totalAdvanceDeposited = initialAdvance + advanceDepositPayments;
+
+      // 2. Regular repayments for orders / khata dues
+      const regularRepayments = paymentEntries
+        .filter((e) => !/advance/i.test(e.description || '') && !/advance/i.test(e.paymentMethod || ''))
+        .reduce((sum, e) => sum + (Number(e.credit) || 0), 0);
+
+      // 3. Total gross payments recorded (cash inflow)
+      const totalPaid = totalPayments + initialAdvance;
+
+      // 4. Closing dues balance
       let closingBalance = 0;
       if (activeEntries.length > 0) {
         closingBalance = Math.max(0, effectiveDebits - totalPaid);
@@ -595,7 +608,15 @@ export function LedgerProvider({ children }) {
         );
       }
 
+      // 5. Advance consumption & remaining balances
+      const consumedAdvance = Math.max(0, Math.min(totalAdvanceDeposited, totalCharged));
       const remainingAdvance = Math.max(0, totalPaid - effectiveDebits);
+
+      // 6. Realized payments collected (Earned revenue: Consumed advance + regular bill repayments)
+      // Unearned advance deposit does NOT enter realized payments until items are purchased!
+      const realizedPaid = consumedAdvance + regularRepayments;
+
+      const isAdvanceCustomer = totalAdvanceDeposited > 0 || (isAdvanceOpening && openingBalance > 0) || remainingAdvance > 0;
 
       return {
         openingBalance,
@@ -604,9 +625,13 @@ export function LedgerProvider({ children }) {
         totalCharged,
         chargedCount,
         totalPaid,
+        realizedPaid,
         paidCount,
         closingBalance,
+        totalAdvanceDeposited,
         remainingAdvance,
+        consumedAdvance,
+        isAdvanceCustomer,
       };
     },
     [customers, ledgers]
@@ -616,15 +641,26 @@ export function LedgerProvider({ children }) {
     let totalAllDue = 0;
     let totalAllPaid = 0;
     let totalAllCharged = 0;
+    let totalAllAdvanceReceived = 0;
+    let totalRemainingAdvance = 0;
+    let totalConsumedAdvance = 0;
     let khataAccountsCount = 0;
+    let advanceAccountsCount = 0;
 
     (customers || []).forEach((c) => {
       const stats = getCustomerCalculatedStats(c.id || c._id);
       totalAllDue += stats.closingBalance;
-      totalAllPaid += stats.totalPaid;
+      totalAllPaid += stats.realizedPaid;
       totalAllCharged += stats.totalCharged;
+      totalAllAdvanceReceived += stats.totalAdvanceDeposited;
+      totalRemainingAdvance += stats.remainingAdvance;
+      totalConsumedAdvance += stats.consumedAdvance;
+
       if (stats.closingBalance > 0) {
         khataAccountsCount += 1;
+      }
+      if (stats.isAdvanceCustomer) {
+        advanceAccountsCount += 1;
       }
     });
 
@@ -632,7 +668,11 @@ export function LedgerProvider({ children }) {
       totalAllDue,
       totalAllPaid,
       totalAllCharged,
+      totalAllAdvanceReceived,
+      totalRemainingAdvance,
+      totalConsumedAdvance,
       khataAccountsCount,
+      advanceAccountsCount,
       totalCustomersCount: (customers || []).length,
     };
   }, [customers, getCustomerCalculatedStats]);

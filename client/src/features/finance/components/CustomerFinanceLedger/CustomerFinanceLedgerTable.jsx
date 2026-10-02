@@ -34,20 +34,24 @@ export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayme
     const custId = customer._id || customer.id;
     const entries = getLedgerForCustomer(custId) || [];
     const stats = getCustomerCalculatedStats ? getCustomerCalculatedStats(custId) : null;
-    const totalPaid = stats ? stats.totalPaid : entries.reduce((sum, e) => sum + (Number(e.credit) || 0), 0);
-    const lastPaymentEntry = [...entries].reverse().find((e) => Number(e.credit) > 0);
+    const totalPaid = stats ? stats.realizedPaid : 0;
+    const remainingAdvance = stats ? stats.remainingAdvance : 0;
+    const lastPaymentEntry = [...entries].reverse().find((e) => Number(e.credit) > 0 && !e.isOpening && e.type !== 'OPENING');
     const outstanding = stats && stats.closingBalance !== undefined ? stats.closingBalance : getCustomerDueBalance(customer);
 
     let overallStatus = 'Credit Overdue';
-    if (outstanding === 0) overallStatus = 'Paid Up';
+    if (remainingAdvance > 0) overallStatus = 'Advance Active';
+    else if (outstanding === 0) overallStatus = 'Paid Up';
     else if (totalPaid > 0) overallStatus = 'Half-Paid';
 
     const lastPaymentDate = lastPaymentEntry
       ? lastPaymentEntry.date
-      : (customer.createdAt || 'Opening');
+      : (customer.createdAt ? String(customer.createdAt).slice(0, 10) : '—');
 
     const lastPaymentLabel = lastPaymentEntry
       ? (lastPaymentEntry.method || 'Online Payment')
+      : remainingAdvance > 0
+      ? 'Advance Deposit'
       : 'Credit (No Payment)';
 
     const custCode = `CUST-${String(custId).slice(-4) || String(index + 1).padStart(4, '0')}`;
@@ -56,6 +60,7 @@ export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayme
       customer,
       custCode,
       totalPaid,
+      remainingAdvance,
       outstanding,
       lastPaymentDate,
       lastPaymentLabel,
@@ -254,7 +259,9 @@ export default function CustomerFinanceLedgerTable({ onViewDetail, onRecordPayme
                       <TableCell className="px-3.5 py-2 text-center whitespace-nowrap">
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                            overallStatus === 'Paid Up'
+                            overallStatus === 'Advance Active'
+                              ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold'
+                              : overallStatus === 'Paid Up'
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
                               : overallStatus === 'Half-Paid'
                               ? 'bg-amber-50 text-amber-700 border-amber-200/60'
