@@ -2,46 +2,87 @@ import React from 'react';
 import { DollarSign, CreditCard, Clock, CheckCircle2 } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
+import { useDeliveryContext } from '../../../../context/DeliveryContext';
 
 export default function CollectionPayoutsStats() {
-  const { totalKhataReceivable, rawCustomers } = useCustomerContext();
-  const { ledgers } = useLedgerContext();
+  const { totalKhataReceivable, rawCustomers, customers } = useCustomerContext();
+  const { getLedgerForCustomer, getAllCustomersAggregates } = useLedgerContext();
+  const { deliveries = [] } = useDeliveryContext() || {};
 
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const todayUTC = now.toISOString().split('T')[0];
 
-  // Flat collection rows
+  const isDateToday = (d) => {
+    if (!d) return false;
+    const str = typeof d === 'string' ? d.split('T')[0] : String(d).slice(0, 10);
+    return str === todayLocal || str === todayUTC;
+  };
+
+  const customerList = (rawCustomers && rawCustomers.length > 0) ? rawCustomers : (customers || []);
+
+  const aggregates = getAllCustomersAggregates ? getAllCustomersAggregates() : null;
+  const effectiveTotalDue = (aggregates && aggregates.totalAllDue > 0)
+    ? aggregates.totalAllDue
+    : totalKhataReceivable;
+
+  // Flat collection rows & verification
   let totalRecoveredToday = 0;
-  let pendingClearance = 0;
+  let totalRecoveredAllTime = 0;
+  let pendingBankTransfers = 0;
   let collectionsRecorded = 0;
 
-  (rawCustomers || []).forEach((customer) => {
-    const entries = ledgers[String(customer.id)] || [];
+  customerList.forEach((customer) => {
+    const custId = customer._id || customer.id;
+    const entries = getLedgerForCustomer(custId) || [];
     entries.forEach((entry) => {
       const credit = Number(entry.credit) || 0;
-      if (credit > 0) {
+      const isOpeningAdvance =
+        entry.isOpening ||
+        entry.type === 'OPENING' ||
+        /opening/i.test(entry.description || '') ||
+        /advance deposit/i.test(entry.description || '');
+
+      if (credit > 0 && !isOpeningAdvance) {
         collectionsRecorded += 1;
-        if (entry.date === today) {
+        totalRecoveredAllTime += credit;
+        if (isDateToday(entry.date) || isDateToday(entry.createdAt)) {
           totalRecoveredToday += credit;
         }
-        if (entry.method === 'Bank' || entry.method === 'Bank Transfer') {
-          pendingClearance += credit;
+        const methodUpper = String(entry.method || entry.paymentMethod || '').toUpperCase();
+        const isPendingMethod =
+          methodUpper.includes('BANK') ||
+          methodUpper.includes('CHEQUE') ||
+          methodUpper.includes('TRANSFER') ||
+          entry.status === 'PENDING' ||
+          entry.paymentStatus === 'Pending';
+
+        if (isPendingMethod) {
+          pendingBankTransfers += credit;
         }
       }
     });
   });
 
+  // Pending COD collections from active/pending delivery runs
+  const pendingRiderCod = (deliveries || [])
+    .filter((d) => (d.status === 'PENDING' || d.status === 'OUT_FOR_DELIVERY') && (Number(d.codAmountToCollect) > 0 || Number(d.amountDue) > 0))
+    .reduce((sum, d) => sum + (Number(d.codAmountToCollect || d.amountDue) || 0), 0);
+
+  const pendingClearance = pendingBankTransfers + pendingRiderCod;
+
   const statCards = [
     {
       label: "Total Recovered Today",
       value: `Rs. ${totalRecoveredToday.toLocaleString()}`,
-      sub: "Direct Khata cash & online",
+      sub: totalRecoveredToday > 0 ? "Direct Khata cash & online today" : `All-time: Rs. ${totalRecoveredAllTime.toLocaleString()}`,
       icon: DollarSign,
       color: "#009966",
       badge: "Today's Recovery",
     },
     {
       label: "Outstanding Khata Dues",
-      value: `Rs. ${totalKhataReceivable.toLocaleString()}`,
+      value: `Rs. ${Number(effectiveTotalDue).toLocaleString()}`,
       sub: "Receivables from customers",
       icon: CreditCard,
       color: "#e11d48",
@@ -50,7 +91,9 @@ export default function CollectionPayoutsStats() {
     {
       label: "Pending Clearance",
       value: `Rs. ${pendingClearance.toLocaleString()}`,
-      sub: "Unconfirmed vouchers / bank",
+      sub: pendingClearance > 0
+        ? (pendingRiderCod > 0 ? `Rs. ${pendingRiderCod.toLocaleString()} Rider COD + Bank` : "Bank transfers & unverified vouchers")
+        : "All collections & vouchers cleared",
       icon: Clock,
       color: "#f59e0b",
       badge: "Verification",

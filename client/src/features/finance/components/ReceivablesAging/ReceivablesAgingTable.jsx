@@ -59,18 +59,23 @@ function getAgingBuckets(entries, customerKhataBalance) {
 }
 
 export default function ReceivablesAgingTable({ onViewDetail, onRecordPayment, onEditCustomer }) {
-  const { rawCustomers } = useCustomerContext();
-  const { getLedgerForCustomer } = useLedgerContext();
+  const { rawCustomers, customers, getCustomerDueBalance } = useCustomerContext();
+  const { getLedgerForCustomer, getCustomerCalculatedStats } = useLedgerContext();
 
   const [searchQuery, setSearchQuery] = useState('');
 
+  const customerList = (rawCustomers && rawCustomers.length > 0) ? rawCustomers : (customers || []);
+
   // Only customers with outstanding balance > 0
-  const customersWithDues = (rawCustomers || [])
-    .filter((c) => Number(c.khataBalance || 0) > 0)
+  const customersWithDues = customerList
     .map((customer) => {
-      const entries = getLedgerForCustomer(customer.id) || [];
-      const buckets = getAgingBuckets(entries, customer.khataBalance);
-      const total = Number(customer.khataBalance || 0);
+      const custId = customer._id || customer.id;
+      const entries = getLedgerForCustomer(custId) || [];
+      const stats = getCustomerCalculatedStats ? getCustomerCalculatedStats(custId) : null;
+      const total = stats && stats.closingBalance > 0
+        ? stats.closingBalance
+        : (getCustomerDueBalance ? getCustomerDueBalance(customer) : (Number(customer.currentBalance ?? customer.khataBalance ?? 0)));
+      const buckets = getAgingBuckets(entries, total);
 
       let risk = 'Low';
       if (buckets.d90plus > 0) risk = 'High';
@@ -82,7 +87,8 @@ export default function ReceivablesAgingTable({ onViewDetail, onRecordPayment, o
         total,
         risk,
       };
-    });
+    })
+    .filter((item) => item.total > 0);
 
   const filteredRows = customersWithDues.filter(({ customer }) => {
     const term = searchQuery.toLowerCase();
@@ -210,7 +216,7 @@ export default function ReceivablesAgingTable({ onViewDetail, onRecordPayment, o
 
                   return (
                     <TableRow
-                      key={customer.id}
+                      key={customer._id || customer.id}
                       onClick={() => onViewDetail && onViewDetail(customer, buckets)}
                       title={`Click to view aging breakdown for ${customer.name}`}
                       className="hover:bg-amber-50/40 transition-colors cursor-pointer group select-none"

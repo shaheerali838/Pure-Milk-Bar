@@ -6,13 +6,6 @@ import User from '../models/User.model.js';
 
 export const seedAdmin = async (force = false) => {
     try {
-        // If users already exist in the database and force is not set, skip seeding
-        const existingUsersCount = await User.countDocuments();
-        if (existingUsersCount > 0 && !force) {
-            console.log(`[Auth Seed] Database already contains ${existingUsersCount} registered user(s). Seeding skipped.`);
-            return true;
-        }
-
         const salt = await bcrypt.genSalt(10);
 
         const demoAccounts = [

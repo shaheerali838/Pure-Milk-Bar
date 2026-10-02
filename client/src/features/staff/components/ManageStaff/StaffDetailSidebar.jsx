@@ -23,7 +23,7 @@ import {
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
 import { useAuth } from '@/context/AuthContext';
 import { ROLES } from '@/config/rbac.config';
-import adminService from '@/services/adminService';
+import adminService from '../../../../services/adminService.js';
 
 export default function StaffDetailSidebar({ staff, isOpen, onClose }) {
   const { user } = useAuth();

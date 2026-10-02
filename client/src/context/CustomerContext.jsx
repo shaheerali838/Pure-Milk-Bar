@@ -1,7 +1,31 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import customerService from '@/services/customerService';
+import customerService from '../services/customerService.js';
 
 const CustomerContext = createContext();
+
+export const getCustomerDueBalance = (c) => {
+  if (!c) return 0;
+  
+  // Direct explicit balances
+  const curBal = Number(c.currentBalance);
+  const khataBal = Number(c.khataBalance);
+  
+  // If positive value exists in either field
+  if (!isNaN(curBal) && curBal > 0) return curBal;
+  if (!isNaN(khataBal) && khataBal > 0) return khataBal;
+
+  // Check opening balance if not an advance deposit
+  const openingBal = Number(c.openingBalance) || 0;
+  const openingMethod = String(c.openingPaymentMethod || '').toUpperCase();
+  const isAdvance = openingMethod.includes('ADVANCE') || openingMethod === 'CASH' || openingMethod === 'ONLINE';
+  if (openingBal > 0 && !isAdvance) {
+    return openingBal;
+  }
+
+  if (!isNaN(curBal) && curBal >= 0) return curBal;
+  if (!isNaN(khataBal) && khataBal >= 0) return khataBal;
+  return 0;
+};
 
 export function CustomerProvider({ children }) {
   const [customers, setCustomers] = useState([]);
@@ -15,17 +39,20 @@ export function CustomerProvider({ children }) {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await customerService.getCustomers();
+      const data = await customerService.getCustomers({ limit: 1000 });
       const list = Array.isArray(data) ? data : data?.customers || [];
       // Normalize _id to id if needed
-      const normalized = list.map((c) => ({
-        ...c,
-        id: c._id || c.id,
-        deliveryFee: Number(c.deliveryFee) || 0,
-        khataBalance: Number(c.currentBalance !== undefined ? c.currentBalance : (c.khataBalance || 0)),
-        currentBalance: Number(c.currentBalance !== undefined ? c.currentBalance : (c.khataBalance || 0)),
-        openingBalance: Number(c.openingBalance) || 0,
-      }));
+      const normalized = list.map((c) => {
+        const computedDue = getCustomerDueBalance(c);
+        return {
+          ...c,
+          id: c._id || c.id,
+          deliveryFee: Number(c.deliveryFee) || 0,
+          khataBalance: computedDue,
+          currentBalance: computedDue,
+          openingBalance: Number(c.openingBalance) || 0,
+        };
+      });
       setCustomers(normalized);
     } catch (err) {
       console.error('Failed to fetch live customers from API:', err);
@@ -148,14 +175,14 @@ export function CustomerProvider({ children }) {
   };
 
   const totalKhataReceivable = customers.reduce(
-    (acc, c) => acc + (Number(c.khataBalance || c.currentBalance) || 0),
+    (acc, c) => acc + getCustomerDueBalance(c),
     0
   );
   const activeAccountsCount = customers.filter(
     (c) => (c.status || '').toLowerCase() === 'active'
   ).length;
   const withKhataBalCount = customers.filter(
-    (c) => Number(c.khataBalance || c.currentBalance) > 0
+    (c) => getCustomerDueBalance(c) > 0
   ).length;
 
   const filteredCustomers = customers.filter((c) => {

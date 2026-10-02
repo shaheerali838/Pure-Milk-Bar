@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useCustomerContext } from '@/context/CustomerContext';
 import { useLedgerContext } from '@/context/LedgerContext';
 import EditCustomerView from '../../customers/components/Customer_&_Accounts/EditCustomerView';
+import CustomerAdvancePaymentsView from '../../customers/components/Customer_&_Accounts/CustomerAdvancePaymentsView';
 import CustomerFinanceStats from '../components/CustomerFinanceLedger/CustomerFinanceStats';
 import CustomerFinanceLedgerTable from '../components/CustomerFinanceLedger/CustomerFinanceLedgerTable';
 import CustomerFinanceDetailView from '../components/CustomerFinanceLedger/CustomerFinanceDetailView';
@@ -20,7 +21,7 @@ export default function CustomerFinance() {
   const { fetchCustomerLedger } = useLedgerContext();
 
   const [activeTab, setActiveTab] = useState('accounts'); // 'accounts' | 'collections' | 'aging'
-  const [currentView, setCurrentView] = useState('main'); // 'main' | 'detail' | 'payment' | 'edit' | 'agingDetail' | 'receipt'
+  const [currentView, setCurrentView] = useState('main'); // 'main' | 'detail' | 'payment' | 'edit' | 'agingDetail' | 'receipt' | 'advance'
   const [viewCustomer, setViewCustomer] = useState(null);
   const [paymentCustomer, setPaymentCustomer] = useState(null);
   const [editCustomer, setEditCustomer] = useState(null);
@@ -40,6 +41,14 @@ export default function CustomerFinance() {
       });
     }
   }, [rawCustomers, fetchCustomerLedger]);
+
+  if (currentView === 'advance') {
+    return (
+      <CustomerAdvancePaymentsView
+        onBack={() => setCurrentView('main')}
+      />
+    );
+  }
 
   if (currentView === 'detail' && viewCustomer) {
     return (
@@ -183,7 +192,7 @@ export default function CustomerFinance() {
 
       {activeTab === 'accounts' && (
         <div className="space-y-2.5">
-          <CustomerFinanceStats />
+          <CustomerFinanceStats onOpenAdvanceDetails={() => setCurrentView('advance')} />
           <CustomerFinanceLedgerTable
             onViewDetail={(cust) => {
               setViewCustomer(cust);

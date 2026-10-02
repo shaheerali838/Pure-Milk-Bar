@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Phone, MapPin, DollarSign, Calendar, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { useLedgerContext } from '../../../../context/LedgerContext';
+import { getCustomerDueBalance } from '../../../../context/CustomerContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,15 +15,17 @@ import {
 } from '@/components/ui/table';
 
 export default function CustomerFinanceDetailView({ customer, onBack, onRecordPayment }) {
-  const { getLedgerForCustomer } = useLedgerContext();
+  const { getLedgerForCustomer, getCustomerCalculatedStats } = useLedgerContext();
 
   if (!customer) return null;
 
-  const entries = getLedgerForCustomer(customer.id) || [];
-  const outstanding = Math.max(0, Number(customer?.khataBalance || 0));
-  const totalPaid = entries.reduce((sum, e) => sum + (Number(e.credit) || 0), 0);
+  const custId = customer._id || customer.id;
+  const entries = getLedgerForCustomer(custId) || [];
+  const stats = getCustomerCalculatedStats ? getCustomerCalculatedStats(custId) : null;
+  const outstanding = stats && stats.closingBalance !== undefined ? stats.closingBalance : getCustomerDueBalance(customer);
+  const totalPaid = stats ? stats.totalPaid : entries.reduce((sum, e) => sum + (Number(e.credit) || 0), 0);
   const initial = customer.name ? customer.name.charAt(0).toUpperCase() : 'C';
-  const custCode = `CUST-${String(customer.id).slice(-4)}`;
+  const custCode = `CUST-${String(custId).slice(-4)}`;
 
   const lastTxn = entries.length > 0 ? entries[entries.length - 1] : null;
   const lastTxnDate = lastTxn ? lastTxn.date : (customer.createdAt || new Date().toISOString().split('T')[0]);

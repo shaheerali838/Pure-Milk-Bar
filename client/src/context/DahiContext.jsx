@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 import { useAnimalContext } from './AnimalContext';
 import { useIntakeContext } from './IntakeContext';
 import { usePOSContext } from './POSContext';
-import farmService from '@/services/farmService';
+import farmService from '../services/farmService.js';
 import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
 
 const DahiContext = createContext(null);

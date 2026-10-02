@@ -3,42 +3,76 @@ import { Truck, Clock, CheckCircle2, Banknote } from 'lucide-react';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 
 export default function DeliveryStats() {
-  const { deliveries } = useDeliveryContext();
+  const { deliveries = [] } = useDeliveryContext();
 
-  const todayISO = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const todayUTC = now.toISOString().split('T')[0];
 
-  const todayDeliveriesCount = deliveries.filter(
-    (d) => d.date && d.date.split('T')[0] === todayISO
+  const isToday = (d) => {
+    if (!d) return false;
+    try {
+      const str = typeof d === 'string' ? d.split('T')[0] : String(d).slice(0, 10);
+      if (str === todayLocal || str === todayUTC) return true;
+      const dateObj = new Date(d);
+      if (isNaN(dateObj.getTime())) return false;
+      const yr = dateObj.getFullYear();
+      const mo = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const da = String(dateObj.getDate()).padStart(2, '0');
+      const parsedLocal = `${yr}-${mo}-${da}`;
+      const parsedUTC = dateObj.toISOString().split('T')[0];
+      return parsedLocal === todayLocal || parsedUTC === todayUTC;
+    } catch {
+      const str = typeof d === 'string' ? d.split('T')[0] : String(d).slice(0, 10);
+      return str === todayLocal || str === todayUTC;
+    }
+  };
+
+  const todayDeliveries = deliveries.filter(
+    (d) => isToday(d.date) || isToday(d.createdAt)
+  );
+
+  const todayCount = todayDeliveries.length;
+  const todayPending = todayDeliveries.filter(
+    (d) => d.status === 'PENDING' || d.status === 'OUT_FOR_DELIVERY'
   ).length;
+  const todayDelivered = todayDeliveries.filter((d) => d.status === 'DELIVERED').length;
 
-  const pendingCount = deliveries.filter((d) => d.status === 'PENDING').length;
-  const deliveredCount = deliveries.filter((d) => d.status === 'DELIVERED').length;
+  const allPending = deliveries.filter(
+    (d) => d.status === 'PENDING' || d.status === 'OUT_FOR_DELIVERY'
+  ).length;
+  const allDelivered = deliveries.filter((d) => d.status === 'DELIVERED').length;
 
+  // Pending COD calculation: include deliveries not yet paid or not delivered
   const codToCollect = deliveries
-    .filter((d) => d.status !== 'DELIVERED')
-    .reduce((acc, d) => acc + (Number(d.codAmountToCollect) || 0), 0);
+    .filter((d) => d.status !== 'DELIVERED' || d.paymentStatus === 'UNPAID' || d.paymentStatus === 'PARTIAL')
+    .reduce((acc, d) => acc + (Number(d.codAmountToCollect || d.amountDue) || 0), 0);
+
+  const todayCodToCollect = todayDeliveries
+    .filter((d) => d.status !== 'DELIVERED' || d.paymentStatus === 'UNPAID' || d.paymentStatus === 'PARTIAL')
+    .reduce((acc, d) => acc + (Number(d.codAmountToCollect || d.amountDue) || 0), 0);
 
   const statCards = [
     {
       label: "TODAY'S DELIVERIES",
-      value: `${todayDeliveriesCount}`,
-      sub: 'Scheduled for today',
+      value: `${todayCount}`,
+      sub: todayCount > 0 ? `${todayDelivered} done · ${todayPending} in route` : `All-time: ${deliveries.length} drops`,
       icon: Truck,
       color: '#155dfc',
       badge: 'Today',
     },
     {
       label: 'PENDING',
-      value: `${pendingCount}`,
-      sub: 'Awaiting delivery',
+      value: `${allPending}`,
+      sub: todayPending > 0 ? `${todayPending} scheduled today` : 'Awaiting delivery runs',
       icon: Clock,
       color: '#f59e0b',
       badge: 'In Route',
     },
     {
       label: 'DELIVERED',
-      value: `${deliveredCount}`,
-      sub: 'Successfully completed',
+      value: `${allDelivered}`,
+      sub: todayDelivered > 0 ? `${todayDelivered} completed today` : 'Successfully completed',
       icon: CheckCircle2,
       color: '#009966',
       badge: 'Done',
@@ -46,7 +80,7 @@ export default function DeliveryStats() {
     {
       label: 'COD TO COLLECT',
       value: `Rs. ${codToCollect.toLocaleString()}`,
-      sub: 'Pending cash on delivery',
+      sub: todayCodToCollect > 0 ? `Rs. ${todayCodToCollect.toLocaleString()} pending today` : 'Pending cash on delivery',
       icon: Banknote,
       color: '#e11d48',
       badge: 'Cash Due',

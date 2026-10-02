@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Wallet, CheckCircle2, DollarSign, ArrowRight } from 'lucide-react';
 import { useLedgerContext } from '../../../../context/LedgerContext';
+import { getCustomerDueBalance } from '../../../../context/CustomerContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,9 +14,11 @@ import {
 import { Card } from '@/components/ui/card';
 
 export default function CustomerFinanceRecordPaymentView({ customer, onBack }) {
-  const { addLedgerEntry } = useLedgerContext();
+  const { addLedgerEntry, getCustomerCalculatedStats } = useLedgerContext();
 
-  const outstanding = Math.max(0, Number(customer?.khataBalance || 0));
+  const custId = customer?._id || customer?.id;
+  const stats = getCustomerCalculatedStats ? getCustomerCalculatedStats(custId) : null;
+  const outstanding = stats && stats.closingBalance !== undefined ? stats.closingBalance : getCustomerDueBalance(customer);
 
   const [paymentType, setPaymentType] = useState('half'); // 'partial' | 'half' | 'full'
   const [formData, setFormData] = useState({

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import adminService from '@/services/adminService';
+import adminService from '../services/adminService.js';
 
 const StaffContext = createContext();
 

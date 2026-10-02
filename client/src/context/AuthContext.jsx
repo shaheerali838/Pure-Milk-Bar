@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { ROLES, PERMISSIONS, ROLE_PERMISSIONS } from '@/config/rbac.config';
+import { ROLES, PERMISSIONS, ROLE_PERMISSIONS } from '../config/rbac.config.js';
+import { API_BASE_URL } from '../services/api.js';
 
 const AuthContext = createContext(null);
 
@@ -126,7 +127,7 @@ export const AuthProvider = ({ children }) => {
     try {
       // 1. Try backend API login first
       try {
-        const response = await fetch('/api/v1/auth/login', {
+        const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: cleanIdentifier, password: cleanPassword }),

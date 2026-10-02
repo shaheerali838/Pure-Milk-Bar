@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useStaffContext } from './StaffContext';
-import api from '@/services/api';
+import api from '../services/api.js';
 
 const PayrollContext = createContext();
 

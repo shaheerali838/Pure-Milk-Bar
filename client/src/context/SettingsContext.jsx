@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import adminService from '@/services/adminService';
+import adminService from '../services/adminService.js';
 
 const SettingsContext = createContext();
 

@@ -21,12 +21,19 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-function getAllCollections(rawCustomers, ledgers) {
+function getAllCollections(customerList, getLedgerForCustomer) {
   const rows = [];
-  (rawCustomers || []).forEach((customer) => {
-    const entries = ledgers[String(customer.id)] || [];
+  (customerList || []).forEach((customer) => {
+    const custId = customer._id || customer.id;
+    const entries = getLedgerForCustomer(custId) || [];
     entries.forEach((entry) => {
-      if (Number(entry.credit) > 0) {
+      const isOpeningAdvance =
+        entry.isOpening ||
+        entry.type === 'OPENING' ||
+        /opening/i.test(entry.description || '') ||
+        /advance deposit/i.test(entry.description || '');
+
+      if (Number(entry.credit) > 0 && !isOpeningAdvance) {
         rows.push({ customer, entry });
       }
     });
@@ -35,13 +42,14 @@ function getAllCollections(rawCustomers, ledgers) {
 }
 
 export default function CollectionPayoutsTable({ onViewReceipt, onRecordPayment, onEditCustomer }) {
-  const { rawCustomers } = useCustomerContext();
-  const { ledgers } = useLedgerContext();
+  const { rawCustomers, customers } = useCustomerContext();
+  const { getLedgerForCustomer } = useLedgerContext();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
 
-  const allCollections = getAllCollections(rawCustomers, ledgers);
+  const customerList = (rawCustomers && rawCustomers.length > 0) ? rawCustomers : (customers || []);
+  const allCollections = getAllCollections(customerList, getLedgerForCustomer);
 
   const filteredRows = allCollections.filter(({ customer, entry }) => {
     const term = searchQuery.toLowerCase();
@@ -52,7 +60,13 @@ export default function CollectionPayoutsTable({ onViewReceipt, onRecordPayment,
       (entry.notes && entry.notes.toLowerCase().includes(term)) ||
       (entry.description && entry.description.toLowerCase().includes(term));
 
-    const isPending = entry.method === 'Bank' || entry.method === 'Bank Transfer';
+    const methodUpper = String(entry.method || entry.paymentMethod || '').toUpperCase();
+    const isPending =
+      methodUpper.includes('BANK') ||
+      methodUpper.includes('CHEQUE') ||
+      methodUpper.includes('TRANSFER') ||
+      entry.status === 'PENDING' ||
+      entry.paymentStatus === 'Pending';
     const status = isPending ? 'Pending' : 'Confirmed';
 
     const matchesStatus =
@@ -178,7 +192,13 @@ export default function CollectionPayoutsTable({ onViewReceipt, onRecordPayment,
               ) : (
                 filteredRows.map(({ customer, entry }, idx) => {
                   const refCode = entry.ref || (entry.id ? `TXN-${String(entry.id).slice(-4)}` : `VCH-${idx + 1}`);
-                  const isPending = entry.method === 'Bank' || entry.method === 'Bank Transfer';
+                  const methodUpper = String(entry.method || entry.paymentMethod || '').toUpperCase();
+                  const isPending =
+                    methodUpper.includes('BANK') ||
+                    methodUpper.includes('CHEQUE') ||
+                    methodUpper.includes('TRANSFER') ||
+                    entry.status === 'PENDING' ||
+                    entry.paymentStatus === 'Pending';
                   const paymentType = Number(entry.credit) >= 5000 ? 'Full Payment' : 'Partial Payment';
 
                   return (

@@ -3,18 +3,32 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, CreditCard, Milk, ArrowRight, DollarSign, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useLedgerContext } from '@/context/LedgerContext';
 
 export default function ReceivablesAgingDetailView({ customer, buckets, onBack, onRecordPayment }) {
   const navigate = useNavigate();
+  let ledgerCtx = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    ledgerCtx = useLedgerContext();
+  } catch (_) {}
 
   if (!customer) return null;
 
-  const total = Number(customer.khataBalance || 0);
+  const stats = ledgerCtx?.getCustomerCalculatedStats
+    ? ledgerCtx.getCustomerCalculatedStats(customer.id || customer._id)
+    : null;
 
   const b0_30 = buckets?.d0_30 || 0;
   const b31_60 = buckets?.d31_60 || 0;
   const b61_90 = buckets?.d61_90 || 0;
   const b90plus = buckets?.d90plus || 0;
+
+  const total = stats && stats.closingBalance > 0
+    ? stats.closingBalance
+    : (b0_30 + b31_60 + b61_90 + b90plus) > 0
+    ? (b0_30 + b31_60 + b61_90 + b90plus)
+    : Number(customer.currentBalance ?? customer.khataBalance ?? 0);
 
   let riskLabel = 'Low Risk (0-30 Days)';
   let riskBadgeColor = 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30';

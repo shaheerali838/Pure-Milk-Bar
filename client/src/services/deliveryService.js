@@ -3,8 +3,8 @@ import api from './api';
 export const deliveryService = {
   // Deliveries / Runs
   getDeliveries: async (params = {}) => {
-    const res = await api.get('/api/v1/deliveries', params, { fallback: [] });
-    return res.data || res.deliveries || res || [];
+    const res = await api.get('/api/v1/deliveries', { limit: 1000, ...params }, { fallback: [] });
+    return res.data?.deliveryRuns || res.data?.deliveries || res.data || res.deliveries || (Array.isArray(res) ? res : []);
   },
 
   getDeliveryById: async (id) => {

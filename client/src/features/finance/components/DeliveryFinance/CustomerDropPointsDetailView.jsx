@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useLedgerContext } from '@/context/LedgerContext';
 
 export default function CustomerDropPointsDetailView({
   customer,
@@ -28,7 +29,20 @@ export default function CustomerDropPointsDetailView({
   timeRangeLabel = 'Selected Period',
   onBack,
 }) {
+  let ledgerCtx = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    ledgerCtx = useLedgerContext();
+  } catch (_) {}
+
   if (!customer) return null;
+
+  const stats = ledgerCtx?.getCustomerCalculatedStats
+    ? ledgerCtx.getCustomerCalculatedStats(customer.id || customer._id)
+    : null;
+
+  const dynamicKhataDue = stats ? Number(stats.closingBalance) || 0 : (Number(customer.khataBalance ?? customer.currentBalance) || 0);
+  const remainingAdvance = stats ? Number(stats.remainingAdvance) || 0 : 0;
 
   const totalRuns = deliveries.length;
   const totalLiters = deliveries.reduce((sum, d) => sum + (Number(d.qtyLiters) || 0), 0);
@@ -95,12 +109,12 @@ export default function CustomerDropPointsDetailView({
           </div>
         </div>
 
-        <div className="flex items-center gap-5 text-right">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-right">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Total Volume
             </span>
-            <p className="text-lg font-black font-display text-emerald-300 tabular leading-tight">
+            <p className="text-base sm:text-lg font-black font-display text-emerald-300 tabular leading-tight">
               {totalLiters.toFixed(1)} L
             </p>
             <p className="text-[10px] text-slate-400">{totalRuns} drop runs</p>
@@ -109,10 +123,21 @@ export default function CustomerDropPointsDetailView({
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               COD Paid
             </span>
-            <p className="text-lg font-black font-display text-emerald-400 tabular leading-tight">
+            <p className="text-base sm:text-lg font-black font-display text-emerald-400 tabular leading-tight">
               Rs. {totalCod.toLocaleString()}
             </p>
             <p className="text-[10px] text-slate-400">{totalBottles} bottles returned</p>
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+              Dynamic Khata
+            </span>
+            <p className={`text-base sm:text-lg font-black font-display tabular leading-tight ${dynamicKhataDue > 0 ? 'text-amber-400' : remainingAdvance > 0 ? 'text-blue-400' : 'text-emerald-400'}`}>
+              {dynamicKhataDue > 0 ? `Rs. ${dynamicKhataDue.toLocaleString()}` : remainingAdvance > 0 ? `Adv: Rs. ${remainingAdvance.toLocaleString()}` : 'Cleared (Rs. 0)'}
+            </p>
+            <p className="text-[10px] text-slate-400">
+              {dynamicKhataDue > 0 ? 'Pending Khata Due' : remainingAdvance > 0 ? 'Advance Credit' : 'Zero Balance'}
+            </p>
           </div>
         </div>
       </div>
