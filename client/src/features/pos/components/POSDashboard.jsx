@@ -72,7 +72,7 @@ export default function POSDashboard() {
     const isCow = name.includes('cow');
     const isBuff = name.includes('buffalo');
 
-    if (cat.includes('dahi') || name.includes('dahi')) {
+    if (cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt') || cat.includes('curd') || name.includes('curd')) {
       const liveDahi = Number(inventoryMetrics?.totalDahiStock);
       if (!isNaN(liveDahi) && liveDahi >= 0) return liveDahi;
       return Number(prod.stock) || 0;

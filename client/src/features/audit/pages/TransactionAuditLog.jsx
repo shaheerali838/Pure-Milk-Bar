@@ -3,6 +3,7 @@ import { ShieldCheck, History } from 'lucide-react';
 import { useAuditContext } from '@/context/AuditContext';
 import { Typography } from '@/components/common/Typography';
 import AuditLogStats from '../components/AuditLogStats';
+import DahiAuditCard from '../components/DahiAuditCard';
 import AuditLogTable from '../components/AuditLogTable';
 import AuditLogDetailView from '../components/AuditLogDetailView';
 
@@ -54,6 +55,9 @@ export default function TransactionAuditLog() {
 
       {/* 4 Stat Cards */}
       <AuditLogStats />
+
+      {/* Dahi & Value-Add Processing Dedicated Audit Card */}
+      <DahiAuditCard />
 
       {/* Searchable and Filterable Audit Table */}
       <AuditLogTable

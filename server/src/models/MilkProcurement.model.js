@@ -37,16 +37,16 @@ const milkProcurementSchema = new Schema(
     },
     fatPercentage: {
       type: Number,
-      required: [true, 'FAT percentage is required'],
+      default: 0,
       min: [0, 'FAT cannot be negative'],
     },
     lactometerReading: {
       type: Number,
-      required: [true, 'Lactometer Reading (LR) is required'],
+      default: 0,
     },
     snfCalculated: {
       type: Number,
-      required: [true, 'Calculated SNF is required'],
+      default: 0,
     },
     ratePerLiter: {
       type: Number,

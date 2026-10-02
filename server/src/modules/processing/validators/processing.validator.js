@@ -73,7 +73,7 @@ const batchQuerySchema = Joi.object({
   startDate: Joi.date().iso(),
   endDate: Joi.date().iso(),
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(200).default(50),
+  limit: Joi.number().integer().min(1).max(10000).default(50),
   sortBy: Joi.string().trim().default('date'),
   sortOrder: Joi.string().trim().valid('asc', 'desc').default('desc'),
 });

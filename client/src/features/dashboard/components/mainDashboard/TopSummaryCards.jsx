@@ -56,11 +56,12 @@ export default function TopSummaryCards() {
   // 5. Today's POS Sales Revenue
   const todayISO = new Date().toISOString().split('T')[0];
   const todaySales = salesHistory.filter((s) => {
-    const saleDate = s.timestamp ? s.timestamp.split('T')[0] : (s.formattedDate ? s.formattedDate.split('T')[0] : '');
-    return saleDate === todayISO;
+    const raw = s.date || s.timestamp || s.formattedDate || '';
+    const saleDate = raw.includes('T') ? raw.split('T')[0] : (raw.includes('-') ? raw.slice(0, 10) : '');
+    return saleDate === todayISO || s.date === todayISO;
   });
-  const todaySalesRevenue = (todaySales.length > 0 ? todaySales : salesHistory).reduce(
-    (sum, s) => sum + (Number(s.netPayable) || 0),
+  const todaySalesRevenue = todaySales.reduce(
+    (sum, s) => sum + (Number(s.netPayable || s.totalAmount || s.grandTotal) || 0),
     0
   );
 

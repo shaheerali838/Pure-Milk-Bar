@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import farmService from '@/services/farmService';
+import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
 
 const AnimalContext = createContext();
 
@@ -104,6 +105,20 @@ export function AnimalProvider({ children }) {
 
   useEffect(() => {
     fetchAnimalsAndLogs();
+
+    const unsubscribe = subscribeToSync((event) => {
+      if (
+        event === 'pure_milk_bar_milking_updated' ||
+        event === 'pure_milk_bar_inventory_updated' ||
+        event === 'pure_milk_bar_pos_sale_completed'
+      ) {
+        fetchAnimalsAndLogs();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [fetchAnimalsAndLogs]);
 
   // Add Animal via API
@@ -134,6 +149,8 @@ export function AnimalProvider({ children }) {
       const normalized = normalizeAnimal(created || payload);
 
       setAnimals((prev) => [normalized, ...prev.filter((animal) => animal.tag !== normalized.tag)]);
+      broadcastSync('pure_milk_bar_milking_updated');
+      broadcastSync('pure_milk_bar_inventory_updated');
       return normalized;
     } catch (err) {
       console.error('Failed to create animal via API:', err);
@@ -153,6 +170,8 @@ export function AnimalProvider({ children }) {
           return a;
         })
       );
+      broadcastSync('pure_milk_bar_milking_updated');
+      broadcastSync('pure_milk_bar_inventory_updated');
     } catch (err) {
       console.error('Failed to update animal via API:', err);
       throw err;
@@ -164,6 +183,8 @@ export function AnimalProvider({ children }) {
     try {
       setAnimals((prev) => prev.filter((a) => String(a._id || a.id) !== String(id) && String(a.tag) !== String(id)));
       await farmService.deleteAnimal(id);
+      broadcastSync('pure_milk_bar_milking_updated');
+      broadcastSync('pure_milk_bar_inventory_updated');
     } catch (err) {
       console.error('Failed to delete animal:', err);
       throw err;
@@ -175,6 +196,8 @@ export function AnimalProvider({ children }) {
     try {
       setMilkingLogs((prev) => prev.filter((log) => String(log._id || log.id) !== String(id)));
       await farmService.deleteMilkingLog(id);
+      broadcastSync('pure_milk_bar_milking_updated');
+      broadcastSync('pure_milk_bar_inventory_updated');
     } catch (err) {
       console.error('Failed to delete milking log:', err);
       throw err;
@@ -193,6 +216,8 @@ export function AnimalProvider({ children }) {
           return log;
         })
       );
+      broadcastSync('pure_milk_bar_milking_updated');
+      broadcastSync('pure_milk_bar_inventory_updated');
     } catch (err) {
       console.error('Failed to update milking log via API:', err);
       throw err;
@@ -230,6 +255,8 @@ export function AnimalProvider({ children }) {
       }
 
       await fetchAnimalsAndLogs();
+      broadcastSync('pure_milk_bar_milking_updated');
+      broadcastSync('pure_milk_bar_inventory_updated');
       return results;
     } catch (err) {
       console.error('Failed to save milking shift:', err);

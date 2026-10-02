@@ -98,7 +98,7 @@ export const updateMilkingYieldLogSchema = Joi.object({
 // ─── QUERY Params Schema ────────────────────────────────────────────────────
 export const getMilkingYieldLogsQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(10000).default(20),
   animalId: objectId,
   shift: Joi.string().valid(...SHIFTS),
   startDate: Joi.date().iso(),

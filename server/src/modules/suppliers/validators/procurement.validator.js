@@ -53,23 +53,16 @@ export const createProcurementSchema = Joi.object({
 
   fatPercentage: Joi.number()
     .min(0)
-    .required()
-    .messages({
-      'any.required': 'FAT percentage is required',
-      'number.min': 'FAT percentage cannot be negative',
-    }),
+    .default(0)
+    .optional(),
 
   lactometerReading: Joi.number()
-    .required()
-    .messages({
-      'any.required': 'Lactometer reading (LR) is required',
-    }),
+    .default(0)
+    .optional(),
 
   snfCalculated: Joi.number()
-    .required()
-    .messages({
-      'any.required': 'Calculated SNF is required',
-    }),
+    .default(0)
+    .optional(),
 
   ratePerLiter: Joi.number()
     .min(0)
@@ -137,7 +130,7 @@ export const updateProcurementSchema = Joi.object({
 // ─── QUERY Params Schema ─────────────────────────────────────────────────────
 export const getProcurementsQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(10000).default(20),
   supplierId: Joi.alternatives().try(objectId, Joi.string().allow('', null)),
   shift: Joi.string().valid(...SHIFTS).allow('', null),
   status: Joi.string().valid(...STATUSES).allow('', null),

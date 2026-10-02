@@ -186,7 +186,7 @@ export const updateAnimalSchema = Joi.object({
 // ─── QUERY Params Schema ────────────────────────────────────────────────────
 export const getAnimalsQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(200).default(100),
+  limit: Joi.number().integer().min(1).max(10000).default(100),
   type: Joi.string(),
   healthStatus: Joi.string(),
   lactationStage: Joi.string(),

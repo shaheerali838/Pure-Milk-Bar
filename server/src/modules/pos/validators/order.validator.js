@@ -111,7 +111,7 @@ export const createOrderSchema = Joi.object({
 // ─── QUERY Orders Schema ──────────────────────────────────────────────────────
 export const getOrdersQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(10000).default(20),
   search: Joi.string().trim().max(100).optional(),
   fulfillmentType: Joi.string().valid(...FULFILLMENT_TYPES).optional(),
   paymentMethod: Joi.string().valid(...PAYMENT_METHODS).optional(),

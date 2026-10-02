@@ -32,7 +32,7 @@ export default function DahiKitchenPipeline({
   const chilledBatches = dahiBatches.filter(
     (b) => b.stage === 'chilled' || (b.status === 'Completed' && b.stage !== 'pos')
   );
-  const posBatches = dahiBatches.filter((b) => b.stage === 'pos');
+  const posBatches = dahiBatches.filter((b) => b.stage === 'pos' || b.stage === 'sold_out');
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

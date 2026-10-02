@@ -117,6 +117,18 @@ class OrderService {
           await Product.findByIdAndUpdate(item.productId, {
             $inc: { currentStock: -Number(item.quantity) },
           });
+        } else if (item.name || item.sku) {
+          await Product.findOneAndUpdate(
+            {
+              $or: [
+                ...(item.name ? [{ name: new RegExp(`^${item.name.trim()}$`, 'i') }] : []),
+                ...(item.sku ? [{ sku: item.sku }] : []),
+              ],
+            },
+            {
+              $inc: { currentStock: -Number(item.quantity) },
+            }
+          );
         }
       }
     }
@@ -244,7 +256,7 @@ class OrderService {
     }
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10) || 20));
+    const limitNum = Math.max(1, Math.min(10000, parseInt(limit, 10) || 20));
     const skip = (pageNum - 1) * limitNum;
     const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
 

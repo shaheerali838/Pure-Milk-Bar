@@ -16,7 +16,7 @@ const runValidation = (schema, data, next) => {
 // 1. Get Audit Logs Query Schema
 const getAuditLogsQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(10000).default(20),
   userId: Joi.string().trim().hex().length(24).allow('', null),
   action: Joi.string().trim().max(100).allow('', null),
   resource: Joi.string().trim().max(100).allow('', null),
