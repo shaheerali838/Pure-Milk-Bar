@@ -11,6 +11,7 @@ import {
   Moon,
   DollarSign,
   TrendingUp,
+  Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,7 @@ import {
 import { useAnimalContext } from "@/context/AnimalContext";
 import { useExpense } from "@/context/ExpenseContext";
 import { usePOSContext } from "@/context/POSContext";
+import { useDahiContext } from "@/context/DahiContext";
 import { exportMultiSectionCSV } from "@/utils/csvExport";
 import { PageSkeleton } from "@/components/ui/skeleton";
 
@@ -50,6 +52,7 @@ export default function DailySheet() {
   const { animals = [], milkingLogs = [], isLoading } = useAnimalContext();
   const { expenses } = useExpense();
   const { farmSalesHistory = [], salesHistory = [] } = usePOSContext() || {};
+  const { batches = [] } = useDahiContext() || {};
 
   if (isLoading && animals.length === 0) {
     return <PageSkeleton />;
@@ -79,7 +82,7 @@ export default function DailySheet() {
   };
 
   // Aggregate Data
-  const { milkingRows, expenseRows, totals } = useMemo(() => {
+  const { milkingRows, expenseRows, dahiRows, totals } = useMemo(() => {
     const dayMilkingLogs = (milkingLogs || []).filter(
       (log) => normalizeDate(log.date) === date,
     );
@@ -150,6 +153,27 @@ export default function DailySheet() {
       }
     });
 
+    // 4. Process Dahi & Processing Batches for the selected date
+    const dayDahiBatches = (batches || []).filter((b) => {
+      const bDate = normalizeDate(b.date || b.batchDate || b.createdAt);
+      return bDate === date;
+    });
+
+    const totalDahiProduced = dayDahiBatches.reduce(
+      (sum, b) => sum + (Number(b.outputVal || b.outputQuantity || b.output) || 0),
+      0
+    );
+
+    const totalDahiMilkUsed = dayDahiBatches.reduce(
+      (sum, b) => sum + (Number(b.milkUsedVal || b.milkUsedQuantity || b.milkUsed) || 0),
+      0
+    );
+
+    const totalDahiFarmMilk = dayDahiBatches.reduce(
+      (sum, b) => sum + (Number(b.farmMilkUsed) || 0),
+      0
+    );
+
     const totalMorning = calculatedMilkingRows.reduce(
       (sum, r) => sum + r.morningLiters,
       0,
@@ -169,6 +193,7 @@ export default function DailySheet() {
     return {
       milkingRows: calculatedMilkingRows,
       expenseRows: dayExpenses,
+      dahiRows: dayDahiBatches,
       totals: {
         totalCollected,
         totalMorning,
@@ -177,6 +202,10 @@ export default function DailySheet() {
         totalFarmSales,
         dayNetProfit,
         animalCount: calculatedMilkingRows.length,
+        totalDahiProduced,
+        totalDahiMilkUsed,
+        totalDahiFarmMilk,
+        dahiBatchesCount: dayDahiBatches.length,
       },
     };
   }, [
@@ -185,6 +214,7 @@ export default function DailySheet() {
     expenses,
     farmSalesHistory,
     salesHistory,
+    batches,
     date,
     shiftFilter,
   ]);
@@ -230,6 +260,26 @@ export default function DailySheet() {
       e.authorizedBy || e.loggedBy || "N/A",
     ]);
 
+    // 3. Export Dahi Batches Data
+    const dahiHeaders = [
+      "Batch ID",
+      "Product / Flavor",
+      "Farm Milk (L)",
+      "Supplier Milk (L)",
+      "Total Milk Used (L)",
+      "Dahi Output (kg)",
+      "Yield Status",
+    ];
+    const dahiCsvRows = (dahiRows || []).map((b) => [
+      b.batchNumber || b.id,
+      b.product || b.variant || "Dahi (Plain)",
+      Number(b.farmMilkUsed || 0).toFixed(1),
+      Number(b.supplierMilkUsed || 0).toFixed(1),
+      Number(b.milkUsedVal || b.milkUsedQuantity || b.milkUsed || 0).toFixed(1),
+      `${Number(b.outputVal || b.outputQuantity || b.output || 0).toFixed(1)} kg`,
+      b.status || "Completed",
+    ]);
+
     exportMultiSectionCSV({
       filename: `Farm_Daily_Sheet_${date}`,
       title: "Pure Milk Bar ERP — Farm Daily Master Operations Sheet",
@@ -242,6 +292,9 @@ export default function DailySheet() {
         ["Morning Milking Total", `${totals.totalMorning.toFixed(1)} Liters`],
         ["Evening Milking Total", `${totals.totalEvening.toFixed(1)} Liters`],
         ["Active Animals Milked", totals.animalCount],
+        ["Dahi Batches Processed", `${totals.dahiBatchesCount} Batches`],
+        ["Total Dahi Produced", `${totals.totalDahiProduced.toFixed(1)} kg`],
+        ["Farm Milk Used for Dahi", `${totals.totalDahiFarmMilk.toFixed(1)} Liters`],
         [
           "Total Farm POS Sales",
           `Rs. ${Number(totals.totalFarmSales || 0).toLocaleString()}`,
@@ -270,6 +323,23 @@ export default function DailySheet() {
               `${totals.totalEvening.toFixed(1)} L`,
               `${totals.totalCollected.toFixed(1)} Liters`,
               `Animals: ${milkingRows.length}`,
+            ],
+          ],
+        },
+        {
+          title: "Dahi & Value-Add Processing Batches",
+          description: "Daily Dahi conversion batches, milk inputs, and output yields",
+          headers: dahiHeaders,
+          rows: dahiCsvRows,
+          summaryRows: [
+            [
+              "TOTAL DAHI PROCESSED",
+              `${totals.dahiBatchesCount} Batches`,
+              `${totals.totalDahiFarmMilk.toFixed(1)} L`,
+              `${(totals.totalDahiMilkUsed - totals.totalDahiFarmMilk).toFixed(1)} L`,
+              `${totals.totalDahiMilkUsed.toFixed(1)} L`,
+              `${totals.totalDahiProduced.toFixed(1)} kg`,
+              "Verified",
             ],
           ],
         },
@@ -410,8 +480,8 @@ export default function DailySheet() {
         </div>
       </div>
 
-      {/* Primary KPI Ribbon (Yield, POS Sales, Expenses, Net Profit, Herd) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+      {/* Primary KPI Ribbon (Yield, Dahi Processing, POS Sales, Expenses, Net Profit, Herd) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
         {[
           {
             id: "total_yield",
@@ -421,6 +491,15 @@ export default function DailySheet() {
             icon: Droplets,
             color: "#d97706",
             badge: "Yield",
+          },
+          {
+            id: "dahi_produced",
+            title: "Dahi Produced",
+            amount: `${totals.totalDahiProduced.toFixed(1)} kg`,
+            sub: `${totals.dahiBatchesCount} Batches (${totals.totalDahiFarmMilk.toFixed(0)}L Milk)`,
+            icon: Layers,
+            color: "#009689",
+            badge: "Dahi",
           },
           {
             id: "farm_sales",
@@ -433,7 +512,7 @@ export default function DailySheet() {
           },
           {
             id: "total_expenses",
-            title: "Total Farm Expenses",
+            title: "Total Expenses",
             amount: `Rs. ${totals.totalExpenses.toLocaleString()}`,
             sub: "Feed, labor & vet vouchers",
             icon: CheckCircle2,
@@ -590,6 +669,123 @@ export default function DailySheet() {
             <span>
               Total Filtered Volume:{" "}
               <strong>{totals.totalCollected.toFixed(1)} Liters</strong>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Dahi & Value-Add Dairy Processing Batches Table */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden mt-4">
+        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="font-bold text-slate-900 font-display text-sm sm:text-base">
+                Daily Dahi &amp; Processing Batches
+              </h4>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                {dahiRows.length} Batches
+              </span>
+            </div>
+            <p className="text-xs text-slate-500">
+              Value-add dairy processing runs, milk converted into Dahi, and produced output.
+            </p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <Table className="w-full text-left text-xs sm:text-sm">
+            <TableHeader className="bg-slate-50/80 border-b border-slate-200">
+              <TableRow>
+                <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                  Batch ID
+                </TableHead>
+                <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                  Product / Flavor
+                </TableHead>
+                <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
+                  Farm Milk (L)
+                </TableHead>
+                <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
+                  Supplier Milk (L)
+                </TableHead>
+                <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
+                  Total Milk Used
+                </TableHead>
+                <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
+                  Produced Output
+                </TableHead>
+                <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-center">
+                  Status
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody className="divide-y divide-slate-100">
+              {dahiRows.length > 0 ? (
+                dahiRows.map((batch, idx) => (
+                  <TableRow
+                    key={batch.id || idx}
+                    className="hover:bg-slate-50/60 transition-colors duration-150"
+                  >
+                    <TableCell className="py-3.5 px-4 font-mono text-xs font-bold text-slate-900">
+                      {batch.batchNumber || batch.id}
+                    </TableCell>
+
+                    <TableCell className="py-3.5 px-4 font-semibold text-slate-800 text-xs">
+                      {batch.product || batch.variant || "Dahi (Plain)"}
+                    </TableCell>
+
+                    <TableCell className="py-3.5 px-4 text-right font-medium text-slate-700 tabular text-xs">
+                      {Number(batch.farmMilkUsed || 0).toFixed(1)} L
+                    </TableCell>
+
+                    <TableCell className="py-3.5 px-4 text-right font-medium text-slate-700 tabular text-xs">
+                      {Number(batch.supplierMilkUsed || 0).toFixed(1)} L
+                    </TableCell>
+
+                    <TableCell className="py-3.5 px-4 text-right font-bold text-slate-900 tabular text-xs">
+                      {Number(batch.milkUsedVal || batch.milkUsedQuantity || batch.milkUsed || 0).toFixed(1)} L
+                    </TableCell>
+
+                    <TableCell className="py-3.5 px-4 text-right font-black text-teal-700 tabular text-xs">
+                      {Number(batch.outputVal || batch.outputQuantity || batch.output || 0).toFixed(1)} kg
+                    </TableCell>
+
+                    <TableCell className="py-3.5 px-4 text-center">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+                        {batch.status || "Completed"}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="py-8 text-center text-slate-500"
+                  >
+                    No Dahi processing batches recorded for {date}.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Footer Summary */}
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-4 text-slate-600">
+            <span>
+              Total Milk Converted to Dahi:{" "}
+              <strong className="text-slate-900">{totals.totalDahiMilkUsed.toFixed(1)} Liters</strong>
+            </span>
+          </div>
+          <div className="text-right">
+            <span className="text-slate-500 font-medium mr-2">
+              Total Dahi Produced:
+            </span>
+            <span className="text-base font-bold text-teal-700 tabular font-display">
+              {totals.totalDahiProduced.toFixed(1)} kg
             </span>
           </div>
         </div>

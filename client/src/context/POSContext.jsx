@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useCustomerContext } from './CustomerContext';
 import { useLedgerContext } from './LedgerContext';
 import { useAnimalContext } from './AnimalContext';
@@ -10,8 +10,22 @@ import { estimateDistanceKm } from '../features/pos/utils/estimateDeliveryDistan
 import posService from '../services/posService.js';
 import { toast } from 'sonner';
 import farmService from '../services/farmService.js';
+import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
 
 const POSContext = createContext();
+
+// Helper to determine if a given date or timestamp matches today in local calendar
+export const isTodayDate = (dateVal) => {
+  if (!dateVal) return false;
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return false;
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+};
 
 // Helper to identify and purge any legacy dummy sales records (e.g. INV-1025..1028, mock names)
 export const isLegacyDummySale = (sale) => {
@@ -36,7 +50,6 @@ export const isLegacyDummySale = (sale) => {
   return isDummyId || isDummyCustomer;
 };
 
-
 // Delivery Staff with Vehicle Types (Dynamically populated from DeliveryStaffContext)
 export const deliveryRidersList = [];
 
@@ -58,8 +71,98 @@ export function POSProvider({ children }) {
   // Version counter to trigger re-renders on local storage events
   const [posSyncVersion, setPosSyncVersion] = useState(0);
 
+  // Live sales history state & orders fetcher
+  const [salesHistory, setSalesHistory] = useState([]);
+  const [isLoadingSales, setIsLoadingSales] = useState(false);
+
+  // Products state strictly from database
+  const [products, setProducts] = useState([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
+  const loadProducts = useCallback(async () => {
+    try {
+      setIsLoadingProducts(true);
+      const res = await posService.getProducts({ limit: 1000 });
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.products)
+        ? res.products
+        : Array.isArray(res?.data)
+        ? res.data
+        : [];
+      if (Array.isArray(list) && list.length > 0) {
+        const normalizedList = list.map((p) => ({
+          ...p,
+          id: p.id || p._id?.toString() || p.sku,
+          sku: p.sku || p.id || p._id?.toString(),
+          cost: p.costPrice !== undefined ? p.costPrice : p.cost,
+          unit: p.unit === 'KG' ? 'per kg' : p.unit === 'LITER' ? 'per liter' : p.unit === 'PACKET' ? 'per packet' : p.unit === 'PIECE' ? 'per piece' : p.unit || 'per kg',
+        }));
+        setProducts(normalizedList);
+      } else {
+        setProducts([]);
+      }
+    } catch (err) {
+      console.warn('POS live products API notice:', err.message);
+      setProducts([]);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }, []);
+
+  const fetchOrders = useCallback(async () => {
+    try {
+      setIsLoadingSales(true);
+      const data = await posService.getOrders({ limit: 10000 });
+      const list = Array.isArray(data) ? data : data?.orders || data?.data || [];
+      const normalized = list
+        .filter((order) => !isLegacyDummySale(order))
+        .map((order) => {
+          const items = (order.items || []).map((i) => ({
+            ...i,
+            id: i.productId || i._id || i.id,
+            name: i.name,
+            category: i.category || (i.name && i.name.toLowerCase().includes('dahi') ? 'Dahi' : (i.name && (i.name.toLowerCase().includes('milk') || i.name.toLowerCase().includes('cow') || i.name.toLowerCase().includes('buffalo')) ? 'Milk' : 'General')),
+            quantity: Number(i.quantity) || 0,
+            price: Number(i.unitPrice || i.price) || 0,
+            cost: Number(i.cost) || 0,
+            source: i.source || 'Farm',
+            subtotal: Number(i.subtotal) || ((Number(i.quantity) || 0) * (Number(i.unitPrice || i.price) || 0)),
+          }));
+          return {
+            ...order,
+            invoiceId: order.receiptNumber || order.orderNumber || order.invoiceId || (order._id ? `INV-${String(order._id).slice(-6)}` : `INV-${Date.now()}`),
+            id: order._id || order.id,
+            timestamp: order.createdAt || new Date().toISOString(),
+            formattedTime: order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+            formattedDate: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '',
+            items,
+            itemCount: items.reduce((c, i) => c + (Number(i.quantity) || 0), 0),
+            subtotal: Number(order.subtotal) || 0,
+            deliveryCharge: Number(order.deliveryFee) || 0,
+            discount: Number(order.discountAmount) || 0,
+            netPayable: Number(order.grandTotal || order.netPayable || 0),
+            saleCategory: order.fulfillmentType === 'DOORSTEP' ? 'delivery' : 'walkin',
+            paymentMethod: (order.paymentMethod || 'cash').toLowerCase(),
+            customer: order.customerId ? { id: order.customerId?._id || order.customerId, name: order.customerNameSnapshot } : null,
+            walkinCustomer: order.walkinCustomer || (!order.customerId ? {
+              name: order.customerNameSnapshot || 'Walk-in Customer',
+              phone: order.customerPhoneSnapshot || 'N/A',
+            } : null),
+            notes: order.notes || '',
+          };
+        });
+      setSalesHistory(normalized);
+    } catch (err) {
+      console.warn('POS live order fetch notice:', err.message);
+      setSalesHistory([]);
+    } finally {
+      setIsLoadingSales(false);
+    }
+  }, []);
+
   const [processingBatches, setProcessingBatches] = useState([]);
-  const loadProcessingBatches = React.useCallback(async () => {
+  const loadProcessingBatches = useCallback(async () => {
     try {
       const res = await farmService.getProcessingBatches();
       const list = Array.isArray(res) ? res : res?.batches || res?.data || [];
@@ -69,23 +172,70 @@ export function POSProvider({ children }) {
     }
   }, []);
 
+  // Universal Real-Time Synchronizer across tabs, windows, and focus events
   useEffect(() => {
+    // 1. Initial immediate fetches on mount
+    fetchOrders();
     loadProcessingBatches();
+    loadProducts();
+
     const handleSync = () => {
       setPosSyncVersion((v) => v + 1);
+      fetchOrders();
       loadProcessingBatches();
+      loadProducts();
+      if (typeof animalCtx?.refreshAnimals === 'function') {
+        animalCtx.refreshAnimals();
+      }
+      if (typeof intakeCtx?.refreshIntakes === 'function') {
+        intakeCtx.refreshIntakes();
+      }
+      if (typeof refreshCustomers === 'function') {
+        refreshCustomers();
+      }
     };
+
+    // 2. Subscribe to universal cross-tab BroadcastChannel sync engine
+    const unsubscribeBroadcast = subscribeToSync(() => {
+      handleSync();
+    });
+
+    // 3. Local window event listeners
     window.addEventListener('pure_milk_bar_milking_updated', handleSync);
+    window.addEventListener('pure_milk_bar_intake_updated', handleSync);
     window.addEventListener('pure_milk_bar_dahi_updated', handleSync);
     window.addEventListener('pure_milk_bar_sales_updated', handleSync);
-    window.addEventListener('storage', handleSync);
+    window.addEventListener('pure_milk_bar_pos_sale_completed', handleSync);
+    window.addEventListener('pure_milk_bar_inventory_updated', handleSync);
+    window.addEventListener('pure_milk_bar_daily_closing_updated', handleSync);
+    window.addEventListener('focus', handleSync);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleSync();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // 4. Lightweight 3-second heartbeat for continuous state integrity
+    const heartbeatInterval = setInterval(() => {
+      handleSync();
+    }, 3000);
+
     return () => {
+      clearInterval(heartbeatInterval);
+      unsubscribeBroadcast();
       window.removeEventListener('pure_milk_bar_milking_updated', handleSync);
+      window.removeEventListener('pure_milk_bar_intake_updated', handleSync);
       window.removeEventListener('pure_milk_bar_dahi_updated', handleSync);
       window.removeEventListener('pure_milk_bar_sales_updated', handleSync);
-      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('pure_milk_bar_pos_sale_completed', handleSync);
+      window.removeEventListener('pure_milk_bar_inventory_updated', handleSync);
+      window.removeEventListener('pure_milk_bar_daily_closing_updated', handleSync);
+      window.removeEventListener('focus', handleSync);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [loadProcessingBatches]);
+  }, [loadProcessingBatches, fetchOrders, loadProducts, animalCtx, intakeCtx, refreshCustomers]);
 
   // Dynamic riders derived from live delivery staff context
   const dynamicRiders = React.useMemo(() => {
@@ -103,46 +253,6 @@ export function POSProvider({ children }) {
     }
     return [];
   }, [staffList]);
-
-  // =========================================================================
-  // 1. PRODUCTS STATE - Always ensures Cow Milk, Buffalo Milk, and Dahi exist
-  // =========================================================================
-  const [products, setProducts] = useState([]);
-  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
-
-  useEffect(() => {
-    async function loadProducts() {
-      try {
-        setIsLoadingProducts(true);
-        const res = await posService.getProducts();
-        const list = Array.isArray(res)
-          ? res
-          : Array.isArray(res?.products)
-          ? res.products
-          : Array.isArray(res?.data)
-          ? res.data
-          : [];
-        if (Array.isArray(list) && list.length > 0) {
-          const normalizedList = list.map((p) => ({
-            ...p,
-            id: p.id || p._id?.toString() || p.sku,
-            sku: p.sku || p.id || p._id?.toString(),
-            cost: p.costPrice !== undefined ? p.costPrice : p.cost,
-            unit: p.unit === 'KG' ? 'per kg' : p.unit === 'LITER' ? 'per liter' : p.unit === 'PACKET' ? 'per packet' : p.unit === 'PIECE' ? 'per piece' : p.unit || 'per kg',
-          }));
-
-          setProducts(normalizedList);
-        } else {
-          setProducts([]);
-        }
-      } catch (err) {
-        console.warn('POS live products API skipped:', err.message);
-      } finally {
-        setIsLoadingProducts(false);
-      }
-    }
-    loadProducts();
-  }, [posSyncVersion]);
 
   // Track product being edited (null = adding new product)
   const [editingProduct, setEditingProduct] = useState(null);
@@ -635,67 +745,8 @@ export function POSProvider({ children }) {
   }, [deliverySubType, activeCustomer]);
 
   // =========================================================================
-  // =========================================================================
   // 3. SALES & INVOICES (Synced with live database)
   // =========================================================================
-  const [salesHistory, setSalesHistory] = useState([]);
-  const [isLoadingSales, setIsLoadingSales] = useState(false);
-
-  // Fetch live orders from backend API on mount & updates
-  const fetchOrders = React.useCallback(async () => {
-    try {
-      setIsLoadingSales(true);
-      const data = await posService.getOrders();
-      const list = Array.isArray(data) ? data : data?.orders || data?.data || [];
-      const normalized = list
-        .filter((order) => !isLegacyDummySale(order))
-        .map((order) => {
-          const items = (order.items || []).map((i) => ({
-            ...i,
-            id: i.productId || i._id || i.id,
-            name: i.name,
-            quantity: Number(i.quantity) || 0,
-            price: Number(i.unitPrice || i.price) || 0,
-            cost: Number(i.cost) || 0,
-            source: i.source || 'Farm',
-            subtotal: Number(i.subtotal) || ((Number(i.quantity) || 0) * (Number(i.unitPrice || i.price) || 0)),
-          }));
-          return {
-            ...order,
-            invoiceId: order.receiptNumber || order.orderNumber || order.invoiceId || (order._id ? `INV-${String(order._id).slice(-6)}` : `INV-${Date.now()}`),
-            id: order._id || order.id,
-            timestamp: order.createdAt || new Date().toISOString(),
-            formattedTime: order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-            formattedDate: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '',
-            items,
-            itemCount: items.reduce((c, i) => c + (Number(i.quantity) || 0), 0),
-            subtotal: Number(order.subtotal) || 0,
-            deliveryCharge: Number(order.deliveryFee) || 0,
-            discount: Number(order.discountAmount) || 0,
-            netPayable: Number(order.grandTotal || order.netPayable || 0),
-            saleCategory: order.fulfillmentType === 'DOORSTEP' ? 'delivery' : 'walkin',
-            paymentMethod: (order.paymentMethod || 'cash').toLowerCase(),
-            customer: order.customerId ? { id: order.customerId?._id || order.customerId, name: order.customerNameSnapshot } : null,
-            walkinCustomer: order.walkinCustomer || (!order.customerId ? {
-              name: order.customerNameSnapshot || 'Walk-in Customer',
-              phone: order.customerPhoneSnapshot || 'N/A',
-            } : null),
-            notes: order.notes || '',
-          };
-        });
-      setSalesHistory(normalized);
-    } catch (err) {
-      console.warn('POS live order fetch notice:', err.message);
-      setSalesHistory([]);
-    } finally {
-      setIsLoadingSales(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders, posSyncVersion]);
-
   const [completedSaleReceipt, setCompletedSaleReceipt] = useState(null);
 
   const handleCompleteSale = () => {
@@ -726,9 +777,10 @@ export function POSProvider({ children }) {
 
     const saleRecord = {
       invoiceId,
+      date: todayDate,
       timestamp: new Date().toISOString(),
       formattedTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      formattedDate: new Date().toLocaleDateString(),
+      formattedDate: todayDate,
       items: cart.map((i) => {
         const qty = Number(i.quantity) || 0;
         const rate = Number(i.price) || 0;
@@ -1048,6 +1100,7 @@ export function POSProvider({ children }) {
             productId: isObjectId(i.id) ? i.id : null,
             name: i.name || 'Product',
             sku: i.sku || null,
+            category: i.category || (i.name?.toLowerCase().includes('dahi') ? 'Dahi' : 'Milk'),
             unit: String(i.unit || 'PIECE').toUpperCase().includes('L') ? 'LITER' : String(i.unit || 'PIECE').toUpperCase().includes('KG') ? 'KG' : 'PIECE',
             quantity: qty,
             unitPrice: price,
@@ -1085,16 +1138,24 @@ export function POSProvider({ children }) {
         if (typeof refreshCustomers === 'function') {
           refreshCustomers();
         }
+        if (typeof fetchOrders === 'function') {
+          fetchOrders();
+        }
       })
       .catch((err) => console.warn('Background POS order sync error:', err));
     } catch (e) {
       console.warn('POS API order sync error:', e);
     }
 
-    // Deduct sold quantities from active products stock
+    // Deduct sold quantities from active products stock immediately
     setProducts((prevProducts) =>
       prevProducts.map((prod) => {
-        const soldInCart = cart.find((i) => i.id === prod.id || i.sku === prod.sku);
+        const soldInCart = cart.find(
+          (i) =>
+            i.id === prod.id ||
+            i.sku === prod.sku ||
+            (prod.name && i.name && prod.name.trim().toLowerCase() === i.name.trim().toLowerCase())
+        );
         if (soldInCart) {
           const qty = Number(soldInCart.quantity) || 0;
           return {
@@ -1106,15 +1167,12 @@ export function POSProvider({ children }) {
       })
     );
 
-    setCompletedSaleReceipt(saleRecord);
-    handleClearCart();
-
-    // Notify Dahi processing hub & inventory listeners of the live sale
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('pure_milk_bar_pos_sale_completed'));
-      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
-      window.dispatchEvent(new Event('pure_milk_bar_inventory_updated'));
-    }
+    // Broadcast live sale event across all windows and open tabs
+    broadcastSync('pure_milk_bar_pos_sale_completed', { invoiceId, netPayable });
+    broadcastSync('pure_milk_bar_sales_updated');
+    broadcastSync('pure_milk_bar_dahi_updated');
+    broadcastSync('pure_milk_bar_inventory_updated');
+    broadcastSync('pure_milk_bar_daily_closing_updated');
 
     return saleRecord;
   };
@@ -1219,11 +1277,14 @@ export function POSProvider({ children }) {
       const unitPrice = Number(item.price) || 0;
       const lineTotal = Number(item.subtotal) || (qty * unitPrice);
 
-      if (cat.includes('milk') || name.includes('milk')) {
+      const isDahi = cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt') || cat.includes('curd') || name.includes('curd');
+      const isMilk = !isDahi && (cat.includes('milk') || name.includes('milk') || cat.includes('cow') || cat.includes('buffalo') || name.includes('cow') || name.includes('buffalo'));
+
+      if (isMilk) {
         totalMilkSold += qty;
         totalMilkPrice += lineTotal > 0 ? lineTotal : (qty * (unitPrice || activeMilkPrice));
       }
-      if (cat.includes('dahi') || name.includes('dahi')) {
+      if (isDahi) {
         totalDahiSold += qty;
         totalDahiPrice += lineTotal > 0 ? lineTotal : (qty * (unitPrice || activeDahiPrice));
       }
@@ -1617,6 +1678,7 @@ export function POSProvider({ children }) {
   let farmMilkConvertedToDahi = 0;
   let supplierMilkConvertedToDahi = 0;
   let totalDahiTransferredToPOS = 0;
+  let totalDahiChilledInKitchen = 0;
   let processedCowMilkStock = 0;
   let processedBuffaloMilkStock = 0;
   let totalProcessedMilk = 0;
@@ -1624,7 +1686,7 @@ export function POSProvider({ children }) {
 
   (processingBatches || []).forEach((b) => {
     const pName = (b.product || '').toLowerCase();
-    const isDahi = pName.includes('dahi') || pName.includes('yogurt');
+    const isDahi = pName.includes('dahi') || pName.includes('yogurt') || pName.includes('curd');
     const isMilk = pName.includes('milk') && !isDahi;
     const isCow = pName.includes('cow');
     const isBuff = pName.includes('buffalo');
@@ -1655,12 +1717,18 @@ export function POSProvider({ children }) {
 
     const bStatus = String(b.status || '').toLowerCase();
     const bStage = String(b.stage || '').toLowerCase();
-    const isReady = ['completed', 'ready_for_pos', 'pos'].includes(bStatus) || ['pos', 'chilled', 'completed'].includes(bStage);
+    const isTransferredToPOS = bStage === 'pos' || bStatus === 'pos' || bStatus === 'ready_for_pos';
+    const isChilledInKitchen = bStage === 'chilled' || (bStatus === 'completed' && !isTransferredToPOS);
+    const isReadyMilk = isTransferredToPOS || ['completed', 'ready_for_pos'].includes(bStatus) || ['completed'].includes(bStage);
 
-    if (isReady && outNum > 0) {
+    if (outNum > 0) {
       if (isDahi) {
-        totalDahiTransferredToPOS += outNum;
-      } else if (isMilk) {
+        if (isTransferredToPOS) {
+          totalDahiTransferredToPOS += outNum;
+        } else if (isChilledInKitchen) {
+          totalDahiChilledInKitchen += outNum;
+        }
+      } else if (isMilk && isReadyMilk) {
         totalProcessedMilk += outNum;
         if (isCow) {
           processedCowMilkStock += outNum;
@@ -1673,8 +1741,10 @@ export function POSProvider({ children }) {
       }
 
       // Track by specific product name for general inventory products
-      const rawName = b.product || 'Product';
-      batchProductStockMap[rawName] = (batchProductStockMap[rawName] || 0) + outNum;
+      if (isTransferredToPOS) {
+        const rawName = b.product || 'Product';
+        batchProductStockMap[rawName] = (batchProductStockMap[rawName] || 0) + outNum;
+      }
     }
   });
 
@@ -1691,8 +1761,9 @@ export function POSProvider({ children }) {
   let todaySupplierBuffaloMilkSold = 0;
 
   salesHistory.forEach((sale) => {
-    const saleDateStr = sale.timestamp ? String(sale.timestamp).split('T')[0] : (sale.date ? String(sale.date).split('T')[0] : '');
-    const isToday = !saleDateStr || saleDateStr === todayDateStr || saleDateStr === localTodayDateStr;
+    const isToday = !sale.timestamp && !sale.date && !sale.createdAt
+      ? true
+      : (isTodayDate(sale.timestamp) || isTodayDate(sale.date) || isTodayDate(sale.createdAt));
 
     if (isToday) {
       (sale.items || []).forEach((item) => {
@@ -1725,8 +1796,8 @@ export function POSProvider({ children }) {
   let todaySupplierBuffaloIntake = 0;
   
   (intakeLogs || []).forEach((item) => {
-    const logDate = item.date ? String(item.date).split('T')[0] : '';
-    if (logDate === todayDateStr || logDate === localTodayDateStr) {
+    const isLogToday = isTodayDate(item.date || item.createdAt);
+    if (isLogToday) {
       const qty = Number(item.quantity || item.quantityLiters) || 0;
       const type = (item.milkType || '').toUpperCase();
       todaySupplierIntake += qty;
@@ -1896,6 +1967,7 @@ export function POSProvider({ children }) {
           totalDahi: availableDahiStock % 1 === 0 ? availableDahiStock.toFixed(0) : availableDahiStock.toFixed(1),
           totalDahiStock: availableDahiStock % 1 === 0 ? availableDahiStock.toFixed(0) : availableDahiStock.toFixed(1),
           totalDahiTransferred: totalDahiTransferredToPOS % 1 === 0 ? totalDahiTransferredToPOS.toFixed(0) : totalDahiTransferredToPOS.toFixed(1),
+          chilledDahiStock: totalDahiChilledInKitchen % 1 === 0 ? totalDahiChilledInKitchen.toFixed(0) : totalDahiChilledInKitchen.toFixed(1),
           rawFarmMilkStock: remainingFarmMilk,
           rawFarmCowMilkStock: remainingFarmCowMilk,
           rawFarmBuffaloMilkStock: remainingFarmBuffaloMilk,
@@ -1904,6 +1976,7 @@ export function POSProvider({ children }) {
           rawSupplierBuffaloMilkStock: remainingSupplierBuffaloMilk,
           rawTotalMilkStock: remainingTotalMilk,
           rawDahiStock: availableDahiStock,
+          rawChilledDahiStock: totalDahiChilledInKitchen,
           milkSold: (totalMilkSold % 1 === 0 ? totalMilkSold.toFixed(0) : totalMilkSold.toFixed(2)),
           dahiSold: (totalDahiSold % 1 === 0 ? totalDahiSold.toFixed(0) : totalDahiSold.toFixed(2)),
           totalMilkPrice,

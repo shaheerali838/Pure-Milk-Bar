@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import supplierService from '../services/supplierService';
+import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
 
 const IntakeContext = createContext(null);
 
@@ -54,6 +55,20 @@ export function IntakeProvider({ children }) {
 
   useEffect(() => {
     fetchIntakes();
+
+    const unsubscribe = subscribeToSync((event) => {
+      if (
+        event === 'pure_milk_bar_intake_updated' ||
+        event === 'pure_milk_bar_inventory_updated' ||
+        event === 'pure_milk_bar_pos_sale_completed'
+      ) {
+        fetchIntakes();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [fetchIntakes]);
 
   // Add Single Intake Record via API
@@ -62,9 +77,9 @@ export function IntakeProvider({ children }) {
       const qty = parseFloat(newRecord.quantity) || 0;
       const rate = parseFloat(newRecord.ratePerLiter) || 220;
       const cost = parseFloat((qty * rate).toFixed(2));
-      const fatVal = parseFloat(newRecord.fat) || 4.5;
-      const lrVal = parseFloat(newRecord.lr) || 28.0;
-      const snfVal = parseFloat(((lrVal / 4) + 0.25 * fatVal + 0.35).toFixed(2));
+      const fatVal = parseFloat(newRecord.fat) || 0;
+      const lrVal = parseFloat(newRecord.lr) || 0;
+      const snfVal = parseFloat(newRecord.snf) || 0;
 
       const payload = {
         supplierId: newRecord.supplierId,
@@ -106,6 +121,9 @@ export function IntakeProvider({ children }) {
       };
 
       setIntakeLogs((prev) => [normalized, ...prev]);
+
+      broadcastSync('pure_milk_bar_intake_updated');
+      broadcastSync('pure_milk_bar_inventory_updated');
 
       return normalized;
     } catch (err) {
@@ -245,6 +263,8 @@ export function IntakeProvider({ children }) {
     try {
       await supplierService.deleteProcurement(id);
       setIntakeLogs((prev) => prev.filter((log) => log.id !== id && log._id !== id));
+      broadcastSync('pure_milk_bar_intake_updated');
+      broadcastSync('pure_milk_bar_inventory_updated');
     } catch (err) {
       console.error('Backend delete intake failed:', err);
       throw err;

@@ -147,10 +147,6 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
     }
   };
 
-  const fatVal = parseFloat(formData.fat) || 0;
-  const lrVal = parseFloat(formData.lr) || 0;
-  const snfPreview = (lrVal / 4 + 0.25 * fatVal + 0.35).toFixed(2);
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.supplierName) {

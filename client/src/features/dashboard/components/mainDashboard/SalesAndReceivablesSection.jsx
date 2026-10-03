@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-} from 'recharts';
+} from "recharts";
 import {
   ShoppingBag,
   CreditCard,
@@ -21,12 +21,12 @@ import {
   User,
   Clock,
   ChevronRight,
-} from 'lucide-react';
-import { usePOSContext } from '@/context/POSContext';
-import { useCustomerContext } from '@/context/CustomerContext';
-import { useExpense } from '@/context/ExpenseContext';
-import { useIntakeContext } from '@/context/IntakeContext';
-import { Link, useNavigate } from 'react-router-dom';
+} from "lucide-react";
+import { usePOSContext } from "@/context/POSContext";
+import { useCustomerContext } from "@/context/CustomerContext";
+import { useExpense } from "@/context/ExpenseContext";
+import { useIntakeContext } from "@/context/IntakeContext";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function SalesAndReceivablesSection() {
   const navigate = useNavigate();
@@ -41,23 +41,26 @@ export default function SalesAndReceivablesSection() {
     const dateMap = {};
 
     salesHistory.forEach((s) => {
-      let dayKey = '';
+      let dayKey = "";
       if (s.timestamp) {
         const d = new Date(s.timestamp);
         if (!isNaN(d.getTime())) {
-          dayKey = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+          dayKey = d.toLocaleDateString("en-US", {
+            day: "numeric",
+            month: "short",
+          });
         }
       } else if (s.formattedDate) {
         dayKey = s.formattedDate;
       }
-      if (!dayKey) dayKey = 'Today';
+      if (!dayKey) dayKey = "Today";
 
       if (!dateMap[dayKey]) {
         dateMap[dayKey] = { day: dayKey, cash: 0, credit: 0 };
       }
 
       const amt = Number(s.netPayable) || 0;
-      if (s.paymentMethod === 'khata' || s.paymentMethod === 'credit') {
+      if (s.paymentMethod === "khata" || s.paymentMethod === "credit") {
         dateMap[dayKey].credit += amt;
       } else {
         dateMap[dayKey].cash += amt;
@@ -75,7 +78,7 @@ export default function SalesAndReceivablesSection() {
       const d = new Date();
       d.setDate(d.getDate() - i);
       fallbackDays.push({
-        day: d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
+        day: d.toLocaleDateString("en-US", { day: "numeric", month: "short" }),
         cash: 0,
         credit: 0,
       });
@@ -88,24 +91,32 @@ export default function SalesAndReceivablesSection() {
     const dateMap = {};
 
     expenses.forEach((exp) => {
-      let dayKey = '';
+      let dayKey = "";
       if (exp.date) {
         const d = new Date(exp.date);
         if (!isNaN(d.getTime())) {
-          dayKey = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+          dayKey = d.toLocaleDateString("en-US", {
+            day: "numeric",
+            month: "short",
+          });
         } else {
           dayKey = exp.date;
         }
       }
-      if (!dayKey) dayKey = 'Recent';
+      if (!dayKey) dayKey = "Recent";
 
       if (!dateMap[dayKey]) {
         dateMap[dayKey] = { day: dayKey, farm: 0, shop: 0 };
       }
 
       const amt = Number(exp.amount) || 0;
-      const cat = (exp.category || '').toLowerCase();
-      if (cat.includes('feed') || cat.includes('farm') || cat.includes('seed') || cat.includes('chara')) {
+      const cat = (exp.category || "").toLowerCase();
+      if (
+        cat.includes("feed") ||
+        cat.includes("farm") ||
+        cat.includes("seed") ||
+        cat.includes("chara")
+      ) {
         dateMap[dayKey].farm += amt;
       } else {
         dateMap[dayKey].shop += amt;
@@ -123,7 +134,7 @@ export default function SalesAndReceivablesSection() {
       const d = new Date();
       d.setDate(d.getDate() - i);
       fallbackDays.push({
-        day: d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
+        day: d.toLocaleDateString("en-US", { day: "numeric", month: "short" }),
         farm: 0,
         shop: 0,
       });
@@ -137,14 +148,21 @@ export default function SalesAndReceivablesSection() {
       const customerName =
         s.activeCustomer?.name ||
         s.walkinName ||
-        (s.saleCategory === 'delivery' ? 'Home Delivery' : 'Walk-in Counter');
+        (s.saleCategory === "delivery" ? "Home Delivery" : "Walk-in Counter");
 
       return {
-        invoice: s.invoiceId || `INV-${(s.id || '').toString().slice(-4)}`,
+        invoice: s.invoiceId || `INV-${(s.id || "").toString().slice(-4)}`,
         customer: customerName,
-        time: s.formattedTime || (s.timestamp ? new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'),
+        time:
+          s.formattedTime ||
+          (s.timestamp
+            ? new Date(s.timestamp).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "—"),
         total: Number(s.netPayable) || 0,
-        method: s.paymentMethod ? s.paymentMethod.toUpperCase() : 'CASH',
+        method: s.paymentMethod ? s.paymentMethod.toUpperCase() : "CASH",
         balance: s.activeCustomer?.khataBalance || 0,
         rawSale: s,
       };
@@ -184,7 +202,8 @@ export default function SalesAndReceivablesSection() {
                 <span>Sales — Cash vs. Credit Inflows</span>
               </h3>
               <p className="text-[11px] text-slate-500">
-                Comparison of upfront liquid cash receipts vs. customer khata receivables
+                Comparison of upfront liquid cash receipts vs. customer khata
+                receivables
               </p>
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -194,16 +213,36 @@ export default function SalesAndReceivablesSection() {
 
           <div className="h-57.5 w-full pt-3">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={salesCashCreditData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="day" tickLine={false} axisLine={{ stroke: '#e2e8f0' }} tick={{ fill: '#64748b', fontSize: 11 }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+              <BarChart
+                data={salesCashCreditData}
+                margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#f1f5f9"
+                />
+                <XAxis
+                  dataKey="day"
+                  tickLine={false}
+                  axisLine={{ stroke: "#e2e8f0" }}
+                  tick={{ fill: "#64748b", fontSize: 11 }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: "#64748b", fontSize: 11 }}
+                />
                 <Tooltip
                   formatter={(val, name) => [
                     `Rs. ${val.toLocaleString()}`,
-                    name === 'cash' ? 'Cash / Online' : 'Khata Credit',
+                    name === "cash" ? "Cash / Online" : "Khata Credit",
                   ]}
-                  contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "1px solid #e2e8f0",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                  }}
                 />
                 <Legend
                   verticalAlign="top"
@@ -212,12 +251,22 @@ export default function SalesAndReceivablesSection() {
                   iconSize={8}
                   formatter={(val) => (
                     <span className="text-[11px] font-semibold text-slate-600">
-                      {val === 'cash' ? 'Cash & Instant' : 'Khata Credit'}
+                      {val === "cash" ? "Cash & Instant" : "Khata Credit"}
                     </span>
                   )}
                 />
-                <Bar dataKey="cash" fill="#009966" radius={[6, 6, 0, 0]} name="cash" />
-                <Bar dataKey="credit" fill="#f59e0b" radius={[6, 6, 0, 0]} name="credit" />
+                <Bar
+                  dataKey="cash"
+                  fill="#009966"
+                  radius={[6, 6, 0, 0]}
+                  name="cash"
+                />
+                <Bar
+                  dataKey="credit"
+                  fill="#f59e0b"
+                  radius={[6, 6, 0, 0]}
+                  name="credit"
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -232,7 +281,8 @@ export default function SalesAndReceivablesSection() {
                 <span>Expenses — Shop vs. Farm Operations</span>
               </h3>
               <p className="text-[11px] text-slate-500">
-                Operating expenditures trend comparing cattle upkeep with retail counter costs
+                Operating expenditures trend comparing cattle upkeep with retail
+                counter costs
               </p>
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
@@ -242,16 +292,38 @@ export default function SalesAndReceivablesSection() {
 
           <div className="h-57.5 w-full pt-3">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={expensesShopFarmData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="day" tickLine={false} axisLine={{ stroke: '#e2e8f0' }} tick={{ fill: '#64748b', fontSize: 11 }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+              <LineChart
+                data={expensesShopFarmData}
+                margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#f1f5f9"
+                />
+                <XAxis
+                  dataKey="day"
+                  tickLine={false}
+                  axisLine={{ stroke: "#e2e8f0" }}
+                  tick={{ fill: "#64748b", fontSize: 11 }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: "#64748b", fontSize: 11 }}
+                />
                 <Tooltip
                   formatter={(val, name) => [
                     `Rs. ${val.toLocaleString()}`,
-                    name === 'farm' ? 'Farm & Livestock' : 'Retail Shop & Utilities',
+                    name === "farm"
+                      ? "Farm & Livestock"
+                      : "Retail Shop & Utilities",
                   ]}
-                  contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "1px solid #e2e8f0",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                  }}
                 />
                 <Legend
                   verticalAlign="top"
@@ -260,7 +332,7 @@ export default function SalesAndReceivablesSection() {
                   iconSize={8}
                   formatter={(val) => (
                     <span className="text-[11px] font-semibold text-slate-600">
-                      {val === 'farm' ? 'Farm Expenses' : 'Shop Expenses'}
+                      {val === "farm" ? "Farm Expenses" : "Supplier Expenses"}
                     </span>
                   )}
                 />
@@ -269,7 +341,7 @@ export default function SalesAndReceivablesSection() {
                   dataKey="farm"
                   stroke="#10b981"
                   strokeWidth={2.5}
-                  dot={{ r: 3, fill: '#10b981' }}
+                  dot={{ r: 3, fill: "#10b981" }}
                   name="farm"
                 />
                 <Line
@@ -277,7 +349,7 @@ export default function SalesAndReceivablesSection() {
                   dataKey="shop"
                   stroke="#9333ea"
                   strokeWidth={2.5}
-                  dot={{ r: 3, fill: '#9333ea' }}
+                  dot={{ r: 3, fill: "#9333ea" }}
                   name="shop"
                 />
               </LineChart>
@@ -310,9 +382,12 @@ export default function SalesAndReceivablesSection() {
             {recentSales.length === 0 ? (
               <div className="py-12 text-center flex flex-col items-center justify-center">
                 <Receipt className="w-8 h-8 stroke-1 text-slate-300 mb-2" />
-                <p className="text-xs font-semibold text-slate-700">No Sales Recorded Yet</p>
+                <p className="text-xs font-semibold text-slate-700">
+                  No Sales Recorded Yet
+                </p>
                 <p className="text-[11px] text-slate-400 max-w-xs mt-0.5">
-                  Completed sales from POS Counter and Deliveries will appear here automatically.
+                  Completed sales from POS Counter and Deliveries will appear
+                  here automatically.
                 </p>
                 <Link
                   to="/pos"
@@ -337,7 +412,10 @@ export default function SalesAndReceivablesSection() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {recentSales.map((sale, i) => (
-                      <tr key={i} className="hover:bg-slate-50/70 transition-colors">
+                      <tr
+                        key={i}
+                        className="hover:bg-slate-50/70 transition-colors"
+                      >
                         <td className="py-2.5 px-3 font-mono font-bold text-blue-700">
                           {sale.invoice}
                         </td>
@@ -350,11 +428,11 @@ export default function SalesAndReceivablesSection() {
                         <td className="py-2.5 px-3">
                           <span
                             className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                              sale.method === 'KHATA'
-                                ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                                : sale.method === 'ONLINE'
-                                ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                                : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              sale.method === "KHATA"
+                                ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                : sale.method === "ONLINE"
+                                  ? "bg-blue-100 text-blue-800 border border-blue-200"
+                                  : "bg-emerald-100 text-emerald-800 border border-emerald-200"
                             }`}
                           >
                             {sale.method}
@@ -366,7 +444,7 @@ export default function SalesAndReceivablesSection() {
                         <td className="py-2.5 px-3 text-right">
                           <button
                             type="button"
-                            onClick={() => navigate('/pos')}
+                            onClick={() => navigate("/pos")}
                             className="text-[11px] font-semibold text-slate-500 hover:text-emerald-700 transition-colors cursor-pointer"
                           >
                             View &rarr;
@@ -407,7 +485,10 @@ export default function SalesAndReceivablesSection() {
                 </div>
               ) : (
                 topReceivables.map((cust) => (
-                  <div key={cust.id} className="p-2.5 rounded-xl bg-slate-50/70 border border-slate-200/80 space-y-1.5">
+                  <div
+                    key={cust.id}
+                    className="p-2.5 rounded-xl bg-slate-50/70 border border-slate-200/80 space-y-1.5"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -426,17 +507,19 @@ export default function SalesAndReceivablesSection() {
                         <div
                           className={`h-full rounded-full transition-all ${
                             cust.pct > 80
-                              ? 'bg-rose-500'
+                              ? "bg-rose-500"
                               : cust.pct > 50
-                              ? 'bg-amber-500'
-                              : 'bg-blue-500'
+                                ? "bg-amber-500"
+                                : "bg-blue-500"
                           }`}
                           style={{ width: `${Math.max(5, cust.pct)}%` }}
                         />
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-slate-400">
                         <span>Limit: Rs. {cust.limit.toLocaleString()}</span>
-                        <span className="font-semibold text-slate-600">{cust.pct}% used</span>
+                        <span className="font-semibold text-slate-600">
+                          {cust.pct}% used
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -447,7 +530,9 @@ export default function SalesAndReceivablesSection() {
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
             <span className="text-slate-500">Aging Khata Health</span>
-            <span className="font-bold text-amber-700">Follow-up Recommended</span>
+            <span className="font-bold text-amber-700">
+              Follow-up Recommended
+            </span>
           </div>
         </div>
       </div>

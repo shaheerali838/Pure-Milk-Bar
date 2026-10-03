@@ -21,7 +21,9 @@ export default function POSCardOverflow({ onSelectSource }) {
       id: 'dahi_stock',
       title: 'Dahi Counter Stock',
       amount: `${inventoryMetrics?.totalDahi ?? 0} kg`,
-      sub: `Transferred: ${inventoryMetrics?.totalDahiTransferred || 0} kg from kitchen`,
+      sub: Number(inventoryMetrics?.chilledDahiStock || 0) > 0
+        ? `Transferred: ${inventoryMetrics?.totalDahiTransferred || 0} kg (${inventoryMetrics?.chilledDahiStock || 0} kg chilled in kitchen)`
+        : `Transferred: ${inventoryMetrics?.totalDahiTransferred || 0} kg from kitchen`,
       icon: Milk,
       color: '#0284c7',
       badge: 'Dahi Stock',

@@ -11,6 +11,7 @@ import {
 import DailyClosingHeader from '../components/DailyClosing/DailyClosingHeader';
 import DailyClosingKpis from '../components/DailyClosing/DailyClosingKpis';
 import ProductStockFlowTable from '../components/DailyClosing/ProductStockFlowTable';
+import DailyDahiStatusCard from '../components/DailyClosing/DailyDahiStatusCard';
 import MilkHisaabAccordion from '../components/DailyClosing/MilkHisaabAccordion';
 import PhysicalMilkCheckCard from '../components/DailyClosing/PhysicalMilkCheckCard';
 import MoneyInAndOutBlock from '../components/DailyClosing/MoneyInAndOutBlock';
@@ -99,24 +100,36 @@ export default function DailyClosing() {
     loadSummary(true);
   }, [loadSummary]);
 
-  // Window Focus & 60s background polling (when status is Open)
+  // Window Focus, 30s background polling & Instant Event Sync on POS sales and actions
   useEffect(() => {
-    const handleFocus = () => {
+    const handleSync = () => {
       if (summaryData?.status === 'OPEN' || !summaryData?.status) {
         loadSummary(false);
       }
     };
 
-    window.addEventListener('focus', handleFocus);
+    window.addEventListener('focus', handleSync);
+    window.addEventListener('pure_milk_bar_pos_sale_completed', handleSync);
+    window.addEventListener('pure_milk_bar_sales_updated', handleSync);
+    window.addEventListener('pure_milk_bar_dahi_updated', handleSync);
+    window.addEventListener('pure_milk_bar_inventory_updated', handleSync);
+    window.addEventListener('pure_milk_bar_daily_closing_updated', handleSync);
+    window.addEventListener('storage', handleSync);
 
     const interval = setInterval(() => {
       if (summaryData?.status === 'OPEN' || !summaryData?.status) {
         loadSummary(false);
       }
-    }, 60000);
+    }, 30000);
 
     return () => {
-      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('focus', handleSync);
+      window.removeEventListener('pure_milk_bar_pos_sale_completed', handleSync);
+      window.removeEventListener('pure_milk_bar_sales_updated', handleSync);
+      window.removeEventListener('pure_milk_bar_dahi_updated', handleSync);
+      window.removeEventListener('pure_milk_bar_inventory_updated', handleSync);
+      window.removeEventListener('pure_milk_bar_daily_closing_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
       clearInterval(interval);
     };
   }, [summaryData?.status, loadSummary]);
@@ -304,7 +317,14 @@ export default function DailyClosing() {
         isClosed={isClosed}
       />
 
-      {/* 4. Physical Milk Dipstick Check Card */}
+      {/* 4. Dahi & Dairy Processing All-Day Status Card & Live Batches */}
+      <DailyDahiStatusCard
+        selectedDate={selectedDate}
+        breakdown={summaryData?.breakdown}
+        isClosed={isClosed}
+      />
+
+      {/* 5. Physical Milk Dipstick Check Card */}
       <PhysicalMilkCheckCard
         physicalMilk={physicalMilk}
         onPhysicalMilkChange={setPhysicalMilk}

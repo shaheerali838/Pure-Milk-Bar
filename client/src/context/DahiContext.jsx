@@ -3,6 +3,7 @@ import { useAnimalContext } from './AnimalContext';
 import { useIntakeContext } from './IntakeContext';
 import { usePOSContext } from './POSContext';
 import farmService from '../services/farmService.js';
+import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
 
 const DahiContext = createContext(null);
 
@@ -73,16 +74,19 @@ export function DahiProvider({ children }) {
   useEffect(() => {
     fetchBatches();
 
-    const handleUpdate = () => {
-      fetchBatches();
-    };
-
-    window.addEventListener('pure_milk_bar_dahi_updated', handleUpdate);
-    window.addEventListener('pure_milk_bar_pos_sale_completed', handleUpdate);
+    const unsubscribe = subscribeToSync((event) => {
+      if (
+        event === 'pure_milk_bar_dahi_updated' ||
+        event === 'pure_milk_bar_pos_sale_completed' ||
+        event === 'pure_milk_bar_sales_updated' ||
+        event === 'pure_milk_bar_inventory_updated'
+      ) {
+        fetchBatches();
+      }
+    });
 
     return () => {
-      window.removeEventListener('pure_milk_bar_dahi_updated', handleUpdate);
-      window.removeEventListener('pure_milk_bar_pos_sale_completed', handleUpdate);
+      unsubscribe();
     };
   }, [fetchBatches]);
 
@@ -188,7 +192,8 @@ export function DahiProvider({ children }) {
       (sale.items || []).forEach((item) => {
         const name = (item.name || '').toLowerCase();
         const cat = (item.category || '').toLowerCase();
-        if (name.includes('dahi') || cat.includes('dahi')) {
+        const isDahiItem = name.includes('dahi') || cat.includes('dahi') || name.includes('yogurt') || cat.includes('yogurt') || name.includes('curd') || cat.includes('curd');
+        if (isDahiItem) {
           const qty = Number(item.quantity) || 0;
           const price = Number(item.price) || 0;
           const sub = Number(item.subtotal) || (qty * price);
@@ -326,7 +331,8 @@ export function DahiProvider({ children }) {
     try {
       const backendRes = await farmService.createProcessingBatch(payload);
       createdRecord = backendRes?.batch || backendRes?.data || backendRes;
-      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
+      broadcastSync('pure_milk_bar_dahi_updated');
+      broadcastSync('pure_milk_bar_inventory_updated');
     } catch (e) {
       console.warn('Backend API createProcessingBatch error:', e.message);
     }
@@ -390,7 +396,8 @@ export function DahiProvider({ children }) {
 
     try {
       await farmService.updateProcessingBatch(batchId, { stage: 'chilled', status: 'Completed' });
-      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
+      broadcastSync('pure_milk_bar_dahi_updated');
+      broadcastSync('pure_milk_bar_inventory_updated');
     } catch (e) {
       console.warn('Backend API updateProcessingBatch error:', e.message);
     }
@@ -421,8 +428,8 @@ export function DahiProvider({ children }) {
 
     try {
       await farmService.updateProcessingBatch(batchId, { stage: 'pos', status: 'Completed' });
-      // Trigger cross-context re-render for POS stock update
-      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
+      broadcastSync('pure_milk_bar_dahi_updated');
+      broadcastSync('pure_milk_bar_inventory_updated');
     } catch (e) {
       console.warn('Backend API updateProcessingBatch error:', e.message);
     }

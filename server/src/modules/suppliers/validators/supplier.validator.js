@@ -130,7 +130,7 @@ export const updateSupplierSchema = Joi.object({
 // ─── GET Suppliers Query Schema ─────────────────────────────────────────────
 export const getSuppliersQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(50),
+  limit: Joi.number().integer().min(1).max(10000).default(50),
   milkType: Joi.string().valid(...MILK_TYPES),
   isActive: Joi.boolean(),
   search: Joi.string().trim().max(50),

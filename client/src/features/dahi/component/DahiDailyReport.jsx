@@ -174,7 +174,7 @@ export default function DahiDailyReport() {
     }
 
     return list;
-  }, [milkingLogs, intakeLogs, batches, salesHistory, herdBaselineYield, dateFilter]);
+  }, [milkingLogs, intakeLogs, batches, salesHistory, dateFilter]);
 
   // Overall Totals
   const overallTotals = useMemo(() => {
