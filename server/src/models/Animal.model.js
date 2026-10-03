@@ -65,7 +65,27 @@ const animalSchema = new Schema(
       type: Number,
       default: 0,
     },
+    expectedMorningYield: {
+      type: Number,
+      default: 0,
+    },
+    expectedEveningYield: {
+      type: Number,
+      default: 0,
+    },
     expectedDailyYield: {
+      type: Number,
+      default: 0,
+    },
+    purchaseMorningYield: {
+      type: Number,
+      default: 0,
+    },
+    purchaseEveningYield: {
+      type: Number,
+      default: 0,
+    },
+    purchaseExpectedYield: {
       type: Number,
       default: 0,
     },

@@ -88,14 +88,7 @@ class MilkingYieldLogService {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    // 5. Update the animal's current shift yield and update/append intake record in intakeHistory
-    const updateYield = {};
-    if (shift === 'MORNING') {
-      updateYield.morningYield = yieldAmount;
-    } else if (shift === 'EVENING') {
-      updateYield.eveningYield = yieldAmount;
-    }
-
+    // 5. Update/append intake record in intakeHistory while preserving animal's purchase benchmark yields
     const dateStr = data.date
       ? (typeof data.date === 'string' && data.date.includes('T') ? data.date.split('T')[0] : String(data.date).slice(0, 10))
       : logDate.toISOString().split('T')[0];
@@ -130,14 +123,12 @@ class MilkingYieldLogService {
         { _id: animal._id },
         {
           $set: {
-            ...updateYield,
             [`intakeHistory.${existingIndex}`]: { ...existingHistory[existingIndex], ...newIntake },
           },
         }
       );
     } else {
       await Animal.findByIdAndUpdate(animal._id, {
-        $set: updateYield,
         $push: { intakeHistory: newIntake },
       });
     }

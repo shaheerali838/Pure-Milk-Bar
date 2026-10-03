@@ -85,11 +85,15 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
   // Process registered animals from context
   const cattleList = animals.map((a, idx) => {
     const isBuff = a.species && a.species.toLowerCase().includes("buffalo");
-    const mVal = parseFloat(a.morningYield || 0);
-    const eVal = parseFloat(a.eveningYield || 0);
-    const expVal = parseFloat(a.expectedYield || a.totalDailyYield || 0);
+    
+    // Strictly read purchase / registration benchmark quantity
+    const mBenchmark = parseFloat(a.expectedMorningYield ?? a.purchaseMorningYield ?? a.morningYield ?? 0);
+    const eBenchmark = parseFloat(a.expectedEveningYield ?? a.purchaseEveningYield ?? a.eveningYield ?? 0);
+    const expBenchmark = parseFloat(a.expectedDailyYield ?? a.purchaseExpectedYield ?? a.expectedYield ?? (mBenchmark + eBenchmark) ?? 0);
 
-    const expectedDaily = expVal > 0 ? expVal : (mVal + eVal > 0 ? mVal + eVal : 15.0);
+    const expectedDaily = expBenchmark > 0 ? expBenchmark : (mBenchmark + eBenchmark > 0 ? mBenchmark + eBenchmark : 15.0);
+    const avgMorning = mBenchmark > 0 ? mBenchmark : parseFloat((expectedDaily / 2).toFixed(1));
+    const avgEvening = eBenchmark > 0 ? eBenchmark : parseFloat((expectedDaily / 2).toFixed(1));
 
     let displayName = a.tag;
     if (a.tag.startsWith("COW-")) {
@@ -104,8 +108,8 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
       name: displayName,
       type: isBuff ? "Buffalo" : "Cow",
       expectedDaily,
-      avgMorning: mVal > 0 ? mVal : parseFloat((expectedDaily / 2).toFixed(1)),
-      avgEvening: eVal > 0 ? eVal : parseFloat((expectedDaily / 2).toFixed(1)),
+      avgMorning,
+      avgEvening,
     };
   });
 

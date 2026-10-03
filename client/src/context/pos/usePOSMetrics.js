@@ -40,25 +40,77 @@ export function usePOSMetrics({
       }
     });
 
+    const seenEntries = new Set();
+
     if (Array.isArray(milkingLogs) && milkingLogs.length > 0) {
       milkingLogs.forEach((log) => {
-        const y = parseFloat(log.yieldLiters || log.yield) || 0;
+        const y = parseFloat(log.yieldLiters || log.yield || log.quantityLiters) || 0;
         const tag = (log.animalTag || log.tag || log.animalId?.tagNumber || log.animalId?.tag || '').toUpperCase();
         const rawId = String(log.animalId?._id || log.animalId || '');
-        const animalObj = animals.find(a => String(a.id || a._id) === rawId || (tag && (String(a.tag || a.tagNumber).toUpperCase() === tag)));
+        const dateStr = log.date ? (typeof log.date === 'string' && log.date.includes('T') ? log.date.split('T')[0] : String(log.date).slice(0, 10)) : '';
+        const shiftStr = (log.shift || 'Morning').toUpperCase();
+        const dedupeKey = `${tag || rawId}-${dateStr}-${shiftStr}`;
 
-        const isCow = (animalObj?.type || '').toUpperCase() === 'COW' ||
-                      (animalObj?.species || '').toLowerCase().includes('cow') ||
+        if (!seenEntries.has(dedupeKey) && y > 0) {
+          seenEntries.add(dedupeKey);
+          const animalObj = animals.find(a => String(a.id || a._id) === rawId || (tag && (String(a.tag || a.tagNumber).toUpperCase() === tag)));
+
+          const isCow = (animalObj?.type || '').toUpperCase() === 'COW' ||
+                        (animalObj?.species || '').toLowerCase().includes('cow') ||
+                        cowTagSet.has(tag) ||
+                        cowTagSet.has(rawId) ||
+                        tag.startsWith('COW') ||
+                        (log.animalId?.type || '').toUpperCase() === 'COW';
+
+          logSum += y;
+          if (isCow) {
+            cowLogs += y;
+          } else {
+            buffLogs += y;
+          }
+        }
+      });
+    }
+
+    // Incorporate any animal intakeHistory entries not present in milkingLogs
+    if (Array.isArray(animals) && animals.length > 0) {
+      animals.forEach((animal) => {
+        const tag = (animal.tag || animal.tagNumber || '').toUpperCase();
+        const id = String(animal.id || animal._id || '');
+        const isCow = (animal.type || '').toUpperCase() === 'COW' ||
+                      (animal.species || '').toLowerCase().includes('cow') ||
                       cowTagSet.has(tag) ||
-                      cowTagSet.has(rawId) ||
-                      tag.startsWith('COW') ||
-                      (log.animalId?.type || '').toUpperCase() === 'COW';
+                      cowTagSet.has(id) ||
+                      tag.startsWith('COW');
 
-        logSum += y;
-        if (isCow) {
-          cowLogs += y;
-        } else {
-          buffLogs += y;
+        const history = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
+        if (history.length > 0) {
+          history.forEach((h) => {
+            if (!h) return;
+            const dateStr = h.date ? (typeof h.date === 'string' && h.date.includes('T') ? h.date.split('T')[0] : String(h.date).slice(0, 10)) : '';
+            const shiftStr = (h.shift || (h.morning > 0 ? 'Morning' : 'Evening') || 'Morning').toUpperCase();
+            const dedupeKey = `${tag || id}-${dateStr}-${shiftStr}`;
+            const y = Number(h.quantityLiters ?? h.yieldLiters ?? h.yield ?? (shiftStr === 'EVENING' ? h.evening : h.morning) ?? 0) || 0;
+
+            if (!seenEntries.has(dedupeKey) && y > 0) {
+              seenEntries.add(dedupeKey);
+              logSum += y;
+              if (isCow) {
+                cowLogs += y;
+              } else {
+                buffLogs += y;
+              }
+            }
+          });
+        } else if (logSum === 0) {
+          const m = parseFloat(animal.morningYield || 0);
+          const e = parseFloat(animal.eveningYield || 0);
+          const daily = m + e;
+          if (daily > 0) {
+            logSum += daily;
+            if (isCow) cowLogs += daily;
+            else buffLogs += daily;
+          }
         }
       });
     }

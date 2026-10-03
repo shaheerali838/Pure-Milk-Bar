@@ -23,8 +23,9 @@ const defaultAnimalContextValue = {
 const AnimalContext = createContext(defaultAnimalContextValue);
 
 const normalizeAnimal = (animal, history = []) => {
-  const morning = parseFloat(animal.morningYield || animal.avgMorningYield || 0);
-  const evening = parseFloat(animal.eveningYield || animal.avgEveningYield || 0);
+  const morning = parseFloat(animal.expectedMorningYield ?? animal.purchaseMorningYield ?? animal.morningYield ?? animal.avgMorningYield ?? 0);
+  const evening = parseFloat(animal.expectedEveningYield ?? animal.purchaseEveningYield ?? animal.eveningYield ?? animal.avgEveningYield ?? 0);
+  const expDaily = parseFloat(animal.expectedDailyYield ?? animal.purchaseExpectedYield ?? animal.expectedYield ?? (morning + evening) ?? 0);
 
   // Preserve all intake history records from database (animal.intakeHistory) + logs
   const dbIntakeHistory = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : [];
@@ -78,9 +79,13 @@ const normalizeAnimal = (animal, history = []) => {
     tagNumber: animal.tagNumber || animal.tag,
     species: animal.species || animal.breed || 'Cow',
     lactationStatus: animal.lactationStatus || animal.status || 'Milking',
+    expectedMorningYield: morning,
+    expectedEveningYield: evening,
+    expectedDailyYield: expDaily,
     morningYield: `${morning.toFixed(1)} L`,
     eveningYield: `${evening.toFixed(1)} L`,
-    totalDailyYield: `${(morning + evening).toFixed(1)} L`,
+    expectedYield: `${expDaily.toFixed(1)} L`,
+    totalDailyYield: `${expDaily.toFixed(1)} L`,
     image: animal.image || null,
     intakeHistory: allEntries,
     history: allEntries,
@@ -150,15 +155,64 @@ export function AnimalProvider({ children }) {
         });
       });
 
-      const normalizedLogs = logList.map((log) => ({
-        ...log,
-        id: log._id || log.id || `LOG-${Date.now()}`,
-        animalTag: log.animalTag || log.tag || log.animal?.tag || log.animalId?.tagNumber || log.animalId?.tag || 'COW-01',
-        shift: log.shift ? (log.shift.charAt(0).toUpperCase() + log.shift.slice(1).toLowerCase()) : 'Morning',
-        yieldLiters: parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0,
-        yield: parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0,
-        date: log.date ? log.date.split('T')[0] : new Date().toISOString().split('T')[0],
-      }));
+      const normalizedLogs = [];
+      const seenLogKeys = new Set();
+
+      // 1. Add records from API logList
+      logList.forEach((log) => {
+        const tag = log.animalTag || log.tag || log.animal?.tag || log.animalId?.tagNumber || log.animalId?.tag || 'COW-01';
+        const dateStr = log.date ? (typeof log.date === 'string' && log.date.includes('T') ? log.date.split('T')[0] : String(log.date).slice(0, 10)) : new Date().toISOString().split('T')[0];
+        const rawShift = log.shift || 'Morning';
+        const normShift = rawShift.charAt(0).toUpperCase() + rawShift.slice(1).toLowerCase();
+        const yVal = parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0;
+        const key = `${tag.toUpperCase()}-${dateStr}-${normShift.toUpperCase()}`;
+
+        if (!seenLogKeys.has(key)) {
+          seenLogKeys.add(key);
+          normalizedLogs.push({
+            ...log,
+            id: log._id || log.id || `LOG-${Date.now()}-${tag}`,
+            animalTag: tag,
+            shift: normShift,
+            yieldLiters: yVal,
+            yield: yVal,
+            quantityLiters: yVal,
+            date: dateStr,
+          });
+        }
+      });
+
+      // 2. Also incorporate intake history records from animal documents
+      animalList.forEach((animal) => {
+        const tag = (animal.tagNumber || animal.tag || 'COW-01').toUpperCase();
+        const animalHist = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
+        animalHist.forEach((item) => {
+          if (!item) return;
+          const dateStr = item.date ? (typeof item.date === 'string' && item.date.includes('T') ? item.date.split('T')[0] : String(item.date).slice(0, 10)) : '';
+          const rawShift = item.shift || (item.morning > 0 ? 'Morning' : 'Evening') || 'Morning';
+          const normShift = rawShift.charAt(0).toUpperCase() + rawShift.slice(1).toLowerCase();
+          const yVal = Number(item.quantityLiters ?? item.yieldLiters ?? item.yield ?? (normShift === 'Evening' ? item.evening : item.morning) ?? 0) || 0;
+          const key = `${tag}-${dateStr}-${normShift.toUpperCase()}`;
+
+          if (dateStr && yVal > 0 && !seenLogKeys.has(key)) {
+            seenLogKeys.add(key);
+            normalizedLogs.push({
+              id: item._id || item.id || `INTAKE-${tag}-${dateStr}-${normShift}`,
+              animalId: animal._id || animal.id,
+              animalTag: animal.tag || animal.tagNumber || tag,
+              shift: normShift,
+              yieldLiters: yVal,
+              yield: yVal,
+              quantityLiters: yVal,
+              date: dateStr,
+              operatorId: item.operatorId || null,
+              operator: item.operator || '',
+              notes: item.notes || '',
+              createdAt: item.createdAt || new Date().toISOString(),
+            });
+          }
+        });
+      });
 
       const normalized = animalList.map((animal) => {
         const idKey = String(animal._id || animal.id || '');
@@ -200,6 +254,7 @@ export function AnimalProvider({ children }) {
     try {
       const morning = parseFloat(formData.morningYield || 0);
       const evening = parseFloat(formData.eveningYield || 0);
+      const expected = parseFloat(formData.expectedYield || (morning + evening) || 0);
 
       const animalType = (formData.species || formData.type || 'Cow').toUpperCase() === 'BUFFALO' ? 'BUFFALO' : 'COW';
       const payload = {
@@ -210,7 +265,12 @@ export function AnimalProvider({ children }) {
         breed: formData.breed || formData.species || 'Sahiwal',
         lactationStage: formData.lactationStatus || 'EARLY',
         purchasePrice: parseFloat(formData.purchasePrice) || 0,
-        expectedDailyYield: morning + evening,
+        expectedDailyYield: expected,
+        expectedMorningYield: morning,
+        expectedEveningYield: evening,
+        purchaseMorningYield: morning,
+        purchaseEveningYield: evening,
+        purchaseExpectedYield: expected,
         morningYield: morning,
         eveningYield: evening,
         healthStatus: formData.healthStatus || 'HEALTHY',
@@ -289,7 +349,7 @@ export function AnimalProvider({ children }) {
         });
       }
 
-      // Append into animal intakeHistory in Context API state (never overwrite previous data)
+      // Append into animal intakeHistory in Context API state (preserving purchase benchmark yields)
       setAnimals((prev) =>
         prev.map((animal) => {
           if (String(animal.id) === String(animalId) || String(animal._id) === String(animalId) || animal.tag === animalId) {
@@ -297,8 +357,6 @@ export function AnimalProvider({ children }) {
             const updatedHistory = [newIntake, ...currentHistory];
             return {
               ...animal,
-              morningYield: normShift.toUpperCase() === 'MORNING' ? `${val.toFixed(1)} L` : animal.morningYield,
-              eveningYield: normShift.toUpperCase() === 'EVENING' ? `${val.toFixed(1)} L` : animal.eveningYield,
               intakeHistory: updatedHistory,
               history: updatedHistory,
             };
@@ -306,6 +364,27 @@ export function AnimalProvider({ children }) {
           return animal;
         })
       );
+
+      // Optimistically add to milkingLogs
+      const newLogEntry = {
+        id: newIntake.id,
+        _id: newIntake.id,
+        animalId: targetAnimal?._id || targetAnimal?.id || animalId,
+        animalTag: targetAnimal?.tag || targetAnimal?.tagNumber || animalId,
+        shift: normShift,
+        yieldLiters: val,
+        yield: val,
+        quantityLiters: val,
+        date: dateStr,
+        fat: intakeData.fat || null,
+        snf: intakeData.snf || null,
+        notes: intakeData.notes || '',
+        operator: intakeData.operator || intakeData.milker || '',
+        createdAt: newIntake.createdAt,
+      };
+      setMilkingLogs((prev) => [newLogEntry, ...(prev || [])]);
+      broadcastSync('pure_milk_bar_milking_updated');
+      broadcastSync('pure_milk_bar_inventory_updated');
 
       return newIntake;
     } catch (err) {
@@ -391,7 +470,7 @@ export function AnimalProvider({ children }) {
         throw new Error(errors[0].reason?.message || 'Failed to save milking logs to database');
       }
 
-      // Append new intake records to animals in Context API (preserving previous history)
+      // Append new intake records to animals in Context API (preserving purchase benchmark yields)
       const normShift = shiftName ? (shiftName.charAt(0).toUpperCase() + shiftName.slice(1).toLowerCase()) : 'Morning';
       setAnimals((prev) =>
         prev.map((animal) => {
@@ -403,8 +482,8 @@ export function AnimalProvider({ children }) {
               shift: normShift,
               quantityLiters: val,
               yieldLiters: val,
-              morning: normShift === 'Morning' ? val : parseFloat(animal.morningYield || 0),
-              evening: normShift === 'Evening' ? val : parseFloat(animal.eveningYield || 0),
+              morning: normShift === 'Morning' ? val : parseFloat(animal.expectedMorningYield ?? animal.morningYield ?? 0),
+              evening: normShift === 'Evening' ? val : parseFloat(animal.expectedEveningYield ?? animal.eveningYield ?? 0),
               notes: 'Milking shift entry',
               createdAt: new Date().toISOString(),
             };
@@ -412,8 +491,6 @@ export function AnimalProvider({ children }) {
             const updatedHistory = [newIntake, ...currentHistory];
             return {
               ...animal,
-              morningYield: normShift === 'Morning' ? `${val.toFixed(1)} L` : animal.morningYield,
-              eveningYield: normShift === 'Evening' ? `${val.toFixed(1)} L` : animal.eveningYield,
               intakeHistory: updatedHistory,
               history: updatedHistory,
             };
@@ -422,10 +499,43 @@ export function AnimalProvider({ children }) {
         })
       );
 
+      // Optimistically prepend/update milking logs in context state for immediate dashboard reactivity
+      const newLogs = Object.entries(shiftEntries)
+        .filter(([_, yieldVal]) => !isNaN(parseFloat(yieldVal)) && parseFloat(yieldVal) > 0)
+        .map(([tag, yieldVal]) => {
+          const val = parseFloat(yieldVal);
+          const animal = animals.find((a) => a.tag === tag || a.tagNumber === tag || String(a.id) === String(tag) || String(a._id) === String(tag));
+          return {
+            id: `LOG-${Date.now()}-${tag}-${normShift}`,
+            _id: `LOG-${Date.now()}-${tag}-${normShift}`,
+            animalId: animal?._id || animal?.id || tag,
+            animalTag: tag,
+            shift: normShift,
+            yieldLiters: val,
+            yield: val,
+            quantityLiters: val,
+            date: shiftDate,
+            notes: 'Milking shift entry',
+            createdAt: new Date().toISOString(),
+          };
+        });
+
+      if (newLogs.length > 0) {
+        setMilkingLogs((prev) => {
+          const filtered = (prev || []).filter((l) => {
+            const lTag = (l.animalTag || l.tag || '').toUpperCase();
+            const lDate = l.date ? (typeof l.date === 'string' && l.date.includes('T') ? l.date.split('T')[0] : String(l.date).slice(0, 10)) : '';
+            const lShift = (l.shift || '').toUpperCase();
+            return !(lDate === shiftDate && lShift === normShift.toUpperCase() && newLogs.some(nl => nl.animalTag.toUpperCase() === lTag));
+          });
+          return [...newLogs, ...filtered];
+        });
+      }
+
       // Sync latest from DB & broadcast events
-      await fetchAnimalsAndLogs();
       broadcastSync('pure_milk_bar_milking_updated');
       broadcastSync('pure_milk_bar_inventory_updated');
+      fetchAnimalsAndLogs().catch((e) => console.warn('Background sync warning:', e));
       return results;
     } catch (err) {
       console.error('Failed to save milking shift:', err);

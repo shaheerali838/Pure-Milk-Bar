@@ -75,15 +75,16 @@ export default function MilkProductionAndFlow() {
           ? logDateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
           : log.date;
         if (log.date === day || logLabel === day) {
-          farmDayYield += Number(log.yieldLiters || log.yield) || 0;
+          farmDayYield += Number(log.yieldLiters || log.yield || log.quantityLiters) || 0;
         }
       });
 
       if (farmDayYield === 0) {
         animals.forEach((animal) => {
-          const historyEntry = (animal.history || []).find((h) => h.date === day);
+          const historyList = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
+          const historyEntry = historyList.find((h) => h.date === day);
           if (historyEntry) {
-            farmDayYield += (Number(historyEntry.morning) || 0) + (Number(historyEntry.evening) || 0);
+            farmDayYield += Number(historyEntry.quantityLiters || historyEntry.yieldLiters || historyEntry.yield || ((Number(historyEntry.morning) || 0) + (Number(historyEntry.evening) || 0))) || 0;
           }
         });
       }
