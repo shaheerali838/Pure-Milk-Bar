@@ -65,9 +65,9 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
         (animal.species && animal.species.toLowerCase().includes('buffalo')) ||
         (log.animalTag && log.animalTag.startsWith('BUF'));
 
-      const mVal = parseFloat(animal.morningYield || 0);
-      const eVal = parseFloat(animal.eveningYield || 0);
-      const expVal = parseFloat(animal.expectedYield || animal.totalDailyYield || 0);
+      const mVal = parseFloat(animal.expectedMorningYield ?? animal.purchaseMorningYield ?? animal.morningYield ?? 0);
+      const eVal = parseFloat(animal.expectedEveningYield ?? animal.purchaseEveningYield ?? animal.eveningYield ?? 0);
+      const expVal = parseFloat(animal.expectedDailyYield ?? animal.purchaseExpectedYield ?? animal.expectedYield ?? (mVal + eVal) ?? 0);
 
       const dailyExpected = expVal > 0 ? expVal : (mVal + eVal > 0 ? mVal + eVal : 15.0);
       const isMorning = (log.shift || '').toLowerCase().includes('morning');

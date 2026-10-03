@@ -39,7 +39,7 @@ export const farmService = {
 
   // Milking Yield Logs
   getMilkingLogs: async (params = {}) => {
-    const res = await api.get('/api/farm/milking-logs', params, { fallback: [] });
+    const res = await api.get('/api/farm/milking-logs', { limit: 1000, ...params }, { fallback: [] });
     return res.data || res.logs || res || [];
   },
 

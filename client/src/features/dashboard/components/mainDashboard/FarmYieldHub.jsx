@@ -20,13 +20,14 @@ export default function FarmYieldHub() {
   const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const isoTodayStr = now.toISOString().split("T")[0];
   const todayLogs = (milkingLogs || []).filter((l) => {
-    if (!l.date) return false;
-    const d = l.date.split("T")[0];
+    const rawDate = l.date || l.createdAt;
+    if (!rawDate) return false;
+    const d = typeof rawDate === 'string' && rawDate.includes('T') ? rawDate.split('T')[0] : String(rawDate).slice(0, 10);
     return d === localTodayStr || d === isoTodayStr;
   });
 
   const totalFarmYield = todayLogs.length > 0
-    ? todayLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0)
+    ? todayLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0)
     : (Number(inventoryMetrics.totalFarmYield) || 0);
 
   // Valuation: Farm milk value @ retail milk rate
