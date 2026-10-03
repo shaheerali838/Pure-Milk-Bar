@@ -455,40 +455,6 @@ export default function AnimalCardOverflow() {
           </div>
         </div>
       )}
-
-      {/* Right Sidebar Slideover Drawer for Animal Details & Milking History */}
-      {selectedAnimalId && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div
-            onClick={() => setSelectedAnimalId(null)}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-300"
-          />
-          <div className="fixed inset-y-0 right-0 max-w-full flex pl-4 sm:pl-10">
-            <div className="w-screen max-w-4xl bg-white shadow-2xl flex flex-col transform transition ease-in-out duration-300 overflow-y-auto">
-              <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md px-6 py-3.5 border-b border-slate-200 flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider font-display flex items-center gap-2">
-                  <Beef className="w-4 h-4 text-emerald-600" />
-                  <span>Livestock Detail &amp; Milking History</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedAnimalId(null)}
-                  className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer"
-                  title="Close Sidebar"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <AnimalDetail
-                animalId={selectedAnimalId}
-                onClose={() => setSelectedAnimalId(null)}
-                onBack={() => setSelectedAnimalId(null)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }

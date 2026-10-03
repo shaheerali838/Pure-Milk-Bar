@@ -244,6 +244,47 @@ export default function AnimalDetail({
     });
   }, [animalLogs, shiftFilter, dateFilter, customDate]);
 
+  // 7-day milk production history chart data
+  const chartData = useMemo(() => {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const displayDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      days.push({ dateStr, date: displayDate, morning: 0, evening: 0 });
+    }
+
+    if (!animal) return days;
+
+    const mBase = parseFloat(animal.morningYield) || 0;
+    const eBase = parseFloat(animal.eveningYield) || 0;
+
+    (animalLogs || []).forEach((log) => {
+      const logDate = log.date;
+      const dayItem = days.find((d) => d.dateStr === logDate);
+      const shift = (log.shift || '').toLowerCase();
+      const yieldVal = parseFloat(log.actualYield ?? log.quantityLiters ?? log.yield ?? 0) || 0;
+      if (dayItem) {
+        if (shift === 'morning') {
+          dayItem.morning = yieldVal;
+        } else if (shift === 'evening') {
+          dayItem.evening = yieldVal;
+        }
+      }
+    });
+
+    const hasAnyLogged = days.some((d) => d.morning > 0 || d.evening > 0);
+    if (!hasAnyLogged && (mBase > 0 || eBase > 0)) {
+      days.forEach((d) => {
+        d.morning = mBase;
+        d.evening = eBase;
+      });
+    }
+
+    return days;
+  }, [animalLogs, animal]);
+
   const morningCount = animalLogs.filter((l) => l.shift?.toLowerCase() === 'morning').length;
   const eveningCount = animalLogs.filter((l) => l.shift?.toLowerCase() === 'evening').length;
 
