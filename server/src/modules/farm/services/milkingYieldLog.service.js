@@ -70,17 +70,25 @@ class MilkingYieldLogService {
     const shift = (data.shift || 'MORNING').toUpperCase();
     const yieldAmount = Number(data.yieldLiters ?? data.yield ?? data.quantityLiters ?? 0) || 0;
 
-    // 4. Create the milking log without overwriting previous history
-    const milkingLog = await MilkingYieldLog.create({
-      animalId: animal._id,
-      date: logDate,
-      shift: shift,
-      yieldLiters: yieldAmount,
-      operatorId: resolvedOperatorId,
-      notes: data.notes || null,
-    });
+    // 4. Create or update the milking log (upsert based on animal, date, and shift)
+    const milkingLog = await MilkingYieldLog.findOneAndUpdate(
+      {
+        animalId: animal._id,
+        date: { $gte: startOfDay, $lte: endOfDay },
+        shift: shift,
+      },
+      {
+        $set: {
+          date: logDate,
+          yieldLiters: yieldAmount,
+          operatorId: resolvedOperatorId,
+          ...(data.notes ? { notes: data.notes } : {}),
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
 
-    // 5. Update the animal's current shift yield and APPEND new intake record to intakeHistory ($push)
+    // 5. Update the animal's current shift yield and update/append intake record in intakeHistory
     const updateYield = {};
     if (shift === 'MORNING') {
       updateYield.morningYield = yieldAmount;
@@ -92,11 +100,23 @@ class MilkingYieldLogService {
       ? (typeof data.date === 'string' && data.date.includes('T') ? data.date.split('T')[0] : String(data.date).slice(0, 10))
       : logDate.toISOString().split('T')[0];
 
+    const normShiftName = shift === 'EVENING' ? 'Evening' : 'Morning';
+
+    // Check if an entry already exists in animal's intakeHistory for this date & shift
+    const existingHistory = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : [];
+    const existingIndex = existingHistory.findIndex((h) => {
+      const hDate = h.date ? (typeof h.date === 'string' && h.date.includes('T') ? h.date.split('T')[0] : String(h.date).slice(0, 10)) : '';
+      const hShift = (h.shift || 'Morning').toLowerCase();
+      return hDate === dateStr && hShift === normShiftName.toLowerCase();
+    });
+
     const newIntake = {
       date: dateStr,
-      shift: shift === 'EVENING' ? 'Evening' : 'Morning',
+      shift: normShiftName,
       quantityLiters: yieldAmount,
       yieldLiters: yieldAmount,
+      morning: normShiftName === 'Morning' ? yieldAmount : (existingIndex >= 0 ? (existingHistory[existingIndex].morning || 0) : 0),
+      evening: normShiftName === 'Evening' ? yieldAmount : (existingIndex >= 0 ? (existingHistory[existingIndex].evening || 0) : 0),
       fat: Number(data.fat) || null,
       snf: Number(data.snf) || null,
       notes: data.notes || null,
@@ -105,10 +125,22 @@ class MilkingYieldLogService {
       createdAt: new Date(),
     };
 
-    await Animal.findByIdAndUpdate(animal._id, {
-      $set: updateYield,
-      $push: { intakeHistory: newIntake },
-    });
+    if (existingIndex >= 0) {
+      await Animal.updateOne(
+        { _id: animal._id },
+        {
+          $set: {
+            ...updateYield,
+            [`intakeHistory.${existingIndex}`]: { ...existingHistory[existingIndex], ...newIntake },
+          },
+        }
+      );
+    } else {
+      await Animal.findByIdAndUpdate(animal._id, {
+        $set: updateYield,
+        $push: { intakeHistory: newIntake },
+      });
+    }
 
     // 6. Recalculate the animal's daily average yield (last 30 days)
     await this._recalculateAnimalAvgYield(animal._id);

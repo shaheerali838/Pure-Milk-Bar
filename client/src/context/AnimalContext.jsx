@@ -385,6 +385,12 @@ export function AnimalProvider({ children }) {
       const validPromises = promises.filter(Boolean);
       if (validPromises.length === 0) return [];
 
+      const results = await Promise.allSettled(validPromises);
+      const errors = results.filter((r) => r.status === 'rejected');
+      if (errors.length > 0 && errors.length === validPromises.length) {
+        throw new Error(errors[0].reason?.message || 'Failed to save milking logs to database');
+      }
+
       // Append new intake records to animals in Context API (preserving previous history)
       const normShift = shiftName ? (shiftName.charAt(0).toUpperCase() + shiftName.slice(1).toLowerCase()) : 'Morning';
       setAnimals((prev) =>
