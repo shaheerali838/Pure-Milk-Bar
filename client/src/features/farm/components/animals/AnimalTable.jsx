@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Edit, Trash2, CheckCircle2, AlertTriangle, Eye, Activity, Filter } from 'lucide-react';
+import { Search, Edit, Trash2, CheckCircle2, AlertTriangle, Eye, Activity, Filter, Calendar } from 'lucide-react';
 import { useAnimalContext } from '../../../../context/AnimalContext';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -83,6 +83,7 @@ export default function AnimalTable({ onSelectAnimal, onEditAnimal }) {
             <TableRow className="border-b-slate-100">
               <TableHead className="font-bold text-slate-600 h-11 text-xs">Profile</TableHead>
               <TableHead className="font-bold text-slate-600 h-11 text-xs">Type & Breed</TableHead>
+              <TableHead className="font-bold text-slate-600 h-11 text-xs">Registered Date</TableHead>
               <TableHead className="font-bold text-slate-600 h-11 text-xs">Lactation State</TableHead>
               <TableHead className="font-bold text-slate-600 h-11 text-xs">Morning Yield</TableHead>
               <TableHead className="font-bold text-slate-600 h-11 text-xs">Evening Yield</TableHead>
@@ -96,6 +97,7 @@ export default function AnimalTable({ onSelectAnimal, onEditAnimal }) {
                 <TableRow key={r} className="animate-pulse">
                   <TableCell className="py-3"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-slate-200 shrink-0" /><div className="space-y-1"><div className="h-4 bg-slate-200 rounded w-20" /><div className="h-3 bg-slate-100 rounded w-14" /></div></div></TableCell>
                   <TableCell className="py-3"><div className="h-4 bg-slate-200 rounded w-24" /></TableCell>
+                  <TableCell className="py-3"><div className="h-4 bg-slate-200 rounded w-20" /></TableCell>
                   <TableCell className="py-3"><div className="h-4 bg-slate-200 rounded w-16" /></TableCell>
                   <TableCell className="py-3"><div className="h-4 bg-slate-200 rounded w-14" /></TableCell>
                   <TableCell className="py-3"><div className="h-4 bg-slate-200 rounded w-14" /></TableCell>
@@ -105,7 +107,7 @@ export default function AnimalTable({ onSelectAnimal, onEditAnimal }) {
               ))
             ) : filteredAnimals.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center">
+                <TableCell colSpan={8} className="h-32 text-center">
                   <div className="flex flex-col items-center justify-center text-slate-400">
                     <Filter className="w-8 h-8 mb-2 opacity-20" />
                     <p className="text-[13px] font-medium">No animals found</p>
@@ -141,6 +143,15 @@ export default function AnimalTable({ onSelectAnimal, onEditAnimal }) {
                     <div>
                       <p className="text-[13px] font-bold text-slate-700">{animal.species}</p>
                       <p className="text-xs text-slate-500">{animal.breed || 'Unknown'}</p>
+                    </div>
+                  </TableCell>
+
+                  <TableCell className="py-3">
+                    <div className="flex items-center gap-1.5 text-slate-700">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span className="text-[12px] font-mono font-semibold text-slate-800">
+                        {animal.acquisitionDate || (animal.createdAt ? String(animal.createdAt).split('T')[0] : '—')}
+                      </span>
                     </div>
                   </TableCell>
 

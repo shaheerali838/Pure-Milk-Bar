@@ -436,6 +436,10 @@ export default function AnimalDetail({
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   {animal.lactationStatus || 'Milking'}
                 </span>
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                  <Calendar className="w-3 h-3 text-slate-500" />
+                  Registered: {animal.acquisitionDate || (animal.createdAt ? String(animal.createdAt).split('T')[0] : 'Recently')}
+                </span>
               </div>
             </div>
           </div>
@@ -803,7 +807,8 @@ export default function AnimalDetail({
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   <th className="px-4 py-3">Animal ID / Tag</th>
-                  <th className="px-4 py-3">Date &amp; Shift</th>
+                  <th className="px-4 py-3">Intake Date</th>
+                  <th className="px-4 py-3">Milking Shift</th>
                   <th className="px-4 py-3">Quantity (Liters)</th>
                   <th className="px-4 py-3">Expected Benchmark</th>
                   <th className="px-4 py-3">Yield Variance</th>
@@ -816,7 +821,7 @@ export default function AnimalDetail({
               <tbody className="divide-y divide-slate-100">
                 {filteredAnimalLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-10 text-center text-slate-400 font-medium">
+                    <td colSpan={10} className="px-4 py-10 text-center text-slate-400 font-medium">
                       No {shiftFilter !== 'All' ? shiftFilter.toLowerCase() : ''} milking history records found for {animal.tag}.
                     </td>
                   </tr>
@@ -840,8 +845,26 @@ export default function AnimalDetail({
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-mono font-bold text-slate-800">{log.date}</span>
-                          <span className="flex items-center gap-1 text-[10px] text-slate-500 font-semibold mt-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span className="font-mono font-bold text-slate-800 text-[12px] whitespace-nowrap">
+                              {log.date || 'Today'}
+                            </span>
+                          </div>
+                          {log.createdAt && (
+                            <span className="block text-[10px] text-slate-400 font-mono pl-5">
+                              {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                              isMorn
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                            }`}
+                          >
                             {isMorn ? (
                               <Sun className="w-3 h-3 text-amber-500" />
                             ) : (
@@ -962,6 +985,12 @@ export default function AnimalDetail({
                 <div className="flex justify-between items-center p-3 bg-white">
                   <span className="text-slate-500">Animal Tag / Identifier:</span>
                   <span className="font-bold text-slate-900 font-mono">{animal.tag} {animal.name && `(${animal.name})`}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-white">
+                  <span className="text-slate-500 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-slate-400" /> Intake Date:
+                  </span>
+                  <span className="font-mono font-bold text-slate-900">{selectedRecord.date} ({selectedRecord.shift} Shift)</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-slate-50/50">
                   <span className="text-slate-500">Species / Breed:</span>

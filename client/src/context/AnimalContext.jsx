@@ -72,6 +72,11 @@ const normalizeAnimal = (animal, history = []) => {
     return timeB - timeA;
   });
 
+  // Format and preserve animal registration date
+  const regDate = animal.acquisitionDate 
+    ? (typeof animal.acquisitionDate === 'string' && animal.acquisitionDate.includes('T') ? animal.acquisitionDate.split('T')[0] : String(animal.acquisitionDate).slice(0, 10))
+    : (animal.createdAt ? (typeof animal.createdAt === 'string' && animal.createdAt.includes('T') ? animal.createdAt.split('T')[0] : String(animal.createdAt).slice(0, 10)) : '');
+
   return {
     ...animal,
     id: animal._id || animal.id,
@@ -83,6 +88,7 @@ const normalizeAnimal = (animal, history = []) => {
     morningYield: `${morning.toFixed(1)} L`,
     eveningYield: `${evening.toFixed(1)} L`,
     totalDailyYield: `${(morning + evening).toFixed(1)} L`,
+    acquisitionDate: regDate,
     image: animal.image || null,
     intakeHistory: allEntries,
     history: allEntries,
