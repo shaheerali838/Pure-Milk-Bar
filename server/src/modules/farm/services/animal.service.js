@@ -126,7 +126,20 @@ class AnimalService {
       );
     }
 
-    const animal = await Animal.findByIdAndUpdate(id, updatePayload, {
+    // Preserve intakeHistory: if newIntake is passed, use $push instead of overwriting array
+    const mongoUpdate = {};
+    if (updatePayload.newIntake) {
+      mongoUpdate.$push = { intakeHistory: updatePayload.newIntake };
+      delete updatePayload.newIntake;
+    }
+    // Prevent accidental wipe of intakeHistory if empty array was submitted
+    if (Array.isArray(updatePayload.intakeHistory) && updatePayload.intakeHistory.length === 0) {
+      delete updatePayload.intakeHistory;
+    }
+
+    mongoUpdate.$set = updatePayload;
+
+    const animal = await Animal.findByIdAndUpdate(id, mongoUpdate, {
       new: true,
       runValidators: true,
     }).lean();
@@ -136,6 +149,46 @@ class AnimalService {
     }
 
     return animal;
+  }
+
+  async addIntakeRecord(id, intakeData) {
+    const animal = await Animal.findById(id);
+    if (!animal) {
+      throw new AppError("Animal not found", 404, "ANIMAL_NOT_FOUND");
+    }
+
+    const shift = (intakeData.shift || "MORNING").toUpperCase();
+    const qty = Number(intakeData.quantityLiters ?? intakeData.yieldLiters ?? intakeData.yield ?? 0) || 0;
+    const dateStr = intakeData.date
+      ? (typeof intakeData.date === 'string' && intakeData.date.includes('T') ? intakeData.date.split('T')[0] : String(intakeData.date).slice(0, 10))
+      : new Date().toISOString().split("T")[0];
+
+    const newIntake = {
+      date: dateStr,
+      shift: shift === "EVENING" ? "Evening" : "Morning",
+      quantityLiters: qty,
+      yieldLiters: qty,
+      fat: Number(intakeData.fat) || null,
+      snf: Number(intakeData.snf) || null,
+      notes: intakeData.notes || null,
+      operator: intakeData.operator || intakeData.milker || null,
+      createdAt: new Date(),
+    };
+
+    const updateFields = {};
+    if (shift === "MORNING") updateFields.morningYield = qty;
+    if (shift === "EVENING") updateFields.eveningYield = qty;
+
+    const updated = await Animal.findByIdAndUpdate(
+      id,
+      {
+        $set: updateFields,
+        $push: { intakeHistory: newIntake },
+      },
+      { new: true }
+    ).lean();
+
+    return { animal: updated, newIntake };
   }
 
   async deleteAnimal(id) {

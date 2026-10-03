@@ -9,7 +9,9 @@ import {
   DollarSign,
   Receipt,
   PiggyBank,
+  Users,
 } from 'lucide-react';
+import { useStaffContext } from '@/context/StaffContext';
 
 export default function MoneyInAndOutBlock({
   collections = {},
@@ -27,14 +29,39 @@ export default function MoneyInAndOutBlock({
   const khataOnline = collections.khataRecoveredOnline || 0;
   const totalCollected = collections.totalCollected || (counterCash + counterOnline + codCash + khataCash + khataOnline);
 
+  const { salaryPayments = [] } = useStaffContext();
+  const todayISO = React.useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  // Today's staff salary disbursements
+  const todaysStaffPayments = React.useMemo(() => {
+    return (salaryPayments || []).filter((p) => {
+      const pDate = p.date ? p.date.slice(0, 10) : '';
+      return pDate === todayISO;
+    });
+  }, [salaryPayments, todayISO]);
+
+  const todaysStaffCashTotal = React.useMemo(() => {
+    return todaysStaffPayments
+      .filter((p) => !p.paymentMethod || p.paymentMethod.toUpperCase() === 'CASH')
+      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  }, [todaysStaffPayments]);
+
+  const todaysStaffTotal = React.useMemo(() => {
+    return todaysStaffPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  }, [todaysStaffPayments]);
+
   const expenseItems = expenses.items || [];
   const expenseCashTotal = expenses.cashTotal || 0;
   const expenseTotal = expenses.total || 0;
 
+  const hasBackendWages = expenseItems.some((e) => e.key === 'wages' && Number(e.amount) > 0);
+  const effectiveExpenseCashTotal = hasBackendWages ? expenseCashTotal : (expenseCashTotal + todaysStaffCashTotal);
+  const effectiveExpenseTotal = hasBackendWages ? expenseTotal : (expenseTotal + todaysStaffTotal);
+
   const openingCash = cash.openingCash || 0;
   const cashIn = cash.cashIn || (counterCash + codCash + khataCash);
-  const cashOut = cash.cashOut || expenseCashTotal;
-  const expectedInDrawer = cash.expectedInDrawer ?? (openingCash + cashIn - cashOut);
+  const cashOut = cash.cashOut !== undefined ? (hasBackendWages ? cash.cashOut : cash.cashOut + todaysStaffCashTotal) : effectiveExpenseCashTotal;
+  const expectedInDrawer = cash.expectedInDrawer !== undefined ? (hasBackendWages ? cash.expectedInDrawer : cash.expectedInDrawer - todaysStaffCashTotal) : (openingCash + cashIn - cashOut);
 
   const estimatedProfit = profit.estimatedProfit ?? 0;
 
@@ -140,12 +167,30 @@ export default function MoneyInAndOutBlock({
               Money Out (Operating Expenses)
             </span>
             <span className="text-xs font-bold text-rose-700 dark:text-rose-400">
-              Total: {formatRs(expenseTotal)}
+              Total: {formatRs(effectiveExpenseTotal)}
             </span>
           </div>
 
           <div className="space-y-2 text-xs sm:text-sm">
-            {expenseItems.map((exp, idx) => (
+            {/* Distinct Staff Salary Payments Outflow */}
+            {todaysStaffPayments.map((p, idx) => (
+              <div
+                key={`staff-pay-${p.id || idx}`}
+                className="flex justify-between items-center py-1.5 px-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60"
+              >
+                <span className="text-purple-900 dark:text-purple-200 font-bold flex items-center gap-2">
+                  <Users className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                  Cash Out: Staff Payment - {p.staffName} ({p.paymentMethod || 'CASH'})
+                </span>
+                <span className="font-black text-rose-700 dark:text-rose-400 font-mono text-xs">
+                  - {formatRs(p.amount)}
+                </span>
+              </div>
+            ))}
+
+            {expenseItems
+              .filter((exp) => !(hasBackendWages && todaysStaffPayments.length > 0 && exp.key === 'wages'))
+              .map((exp, idx) => (
               <div key={exp.key || idx} className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
                   <Receipt className="w-3.5 h-3.5 text-slate-400" />
@@ -159,7 +204,7 @@ export default function MoneyInAndOutBlock({
 
             <div className="flex justify-between pt-1 text-xs text-slate-500">
               <span>Cash Paid from Drawer</span>
-              <span className="font-bold text-rose-600 dark:text-rose-400">{formatRs(expenseCashTotal)}</span>
+              <span className="font-bold text-rose-600 dark:text-rose-400">{formatRs(effectiveExpenseCashTotal)}</span>
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -17,39 +17,84 @@ import { useCustomerContext } from "@/context/CustomerContext";
 import { useAnimalContext } from "@/context/AnimalContext";
 import { Link } from "react-router-dom";
 
+import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
+import { useDahiContext } from '@/context/DahiContext';
+import { getPktTodayString, getPktDaysAgoString } from '@/utils/dateUtils';
+
 export default function ProfitLossSnapshot() {
   const [timeRange, setTimeRange] = useState("today"); // 'today' | 'week' | 'month'
 
   const { salesHistory = [], inventoryMetrics = {} } = usePOSContext();
-  const { totals: expenseTotals = {} } = useExpense();
-  const { totals: intakeTotals = {} } = useIntakeContext();
+  const { expenses: farmExpensesList = [], totals: expenseTotals = {} } = useExpense();
+  const { intakeLogs = [], totals: intakeTotals = {} } = useIntakeContext();
+  const { expenses: supplierExpensesList = [] } = useSourcExpenseContext() || {};
+  const { batches: processingBatches = [] } = useDahiContext() || {};
   const { totalKhataReceivable = 0 } = useCustomerContext();
-  const { animals = [] } = useAnimalContext();
 
-  // Multipliers for timeframes
-  const multiplier = timeRange === "today" ? 1 : timeRange === "week" ? 7 : 30;
+  const todayStr = useMemo(() => getPktTodayString(), []);
+  const weekStartStr = useMemo(() => getPktDaysAgoString(7), []);
+  const monthStartStr = useMemo(() => getPktDaysAgoString(30), []);
 
-  // Base daily income & expenses calculated dynamically:
-  const baseDailySales = salesHistory.reduce(
-    (sum, s) => sum + (Number(s.netPayable) || 0),
-    0,
-  );
+  const parseCleanDate = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
+      return val.slice(0, 10);
+    }
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    return '';
+  };
 
-  const baseProcurementSpend = Number(intakeTotals.totalIntakeSpend) || 0;
-  const baseFarmExpense =
-    Number(expenseTotals.feedSeedFarming) ||
-    Number(expenseTotals.totalFarmExpense) ||
-    0;
-  const baseShopExpense =
-    (Number(expenseTotals.fuelTransportRepairs) || 0) +
-    (Number(expenseTotals.salariesKitchenMess) || 0);
+  const isMatchingTimeframe = (dateVal) => {
+    const cleanDate = parseCleanDate(dateVal);
+    if (!cleanDate) return true;
 
-  // Multiplied values according to active time range
-  const totalIncome = Math.round(baseDailySales * multiplier);
-  const totalProcurement = Math.round(baseProcurementSpend * multiplier);
-  const totalFarmExp = Math.round(baseFarmExpense * multiplier);
-  const totalShopExp = Math.round(baseShopExpense * multiplier);
-  const totalExpense = totalProcurement + totalFarmExp + totalShopExp;
+    if (timeRange === 'today') {
+      return cleanDate === todayStr;
+    }
+    if (timeRange === 'week') {
+      return cleanDate >= weekStartStr;
+    }
+    if (timeRange === 'month') {
+      return cleanDate >= monthStartStr;
+    }
+    return true;
+  };
+
+  // Filtered Income & Expense Calculations
+  const filteredSales = salesHistory.filter((s) => isMatchingTimeframe(s.timestamp || s.date || s.createdAt || s.formattedDate));
+  const activeSalesList = (timeRange === 'today' && filteredSales.length === 0) ? salesHistory : filteredSales;
+  const totalIncome = Math.round(activeSalesList.reduce((sum, s) => sum + (Number(s.netPayable) || Number(s.subtotal) || 0), 0));
+
+  const filteredIntakes = intakeLogs.filter((log) => isMatchingTimeframe(log.date));
+  const activeIntakesList = (timeRange === 'today' && filteredIntakes.length === 0) ? intakeLogs : filteredIntakes;
+  const totalProcurement = Math.round(activeIntakesList.reduce((sum, log) => sum + (Number(log.totalCost || log.totalAmount) || 0), 0));
+
+  const filteredFarmExp = farmExpensesList.filter((exp) => isMatchingTimeframe(exp.date));
+  const activeFarmExpList = (timeRange === 'today' && filteredFarmExp.length === 0) ? farmExpensesList : filteredFarmExp;
+  const totalFarmExp = Math.round(activeFarmExpList.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0));
+
+  const filteredShopExp = supplierExpensesList.filter((exp) => isMatchingTimeframe(exp.date));
+  const activeShopExpList = (timeRange === 'today' && filteredShopExp.length === 0) ? supplierExpensesList : filteredShopExp;
+  const totalShopExp = Math.round(activeShopExpList.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0));
+
+  let totalDahiDeltaCost = 0;
+  processingBatches.forEach((b) => {
+    if (!isMatchingTimeframe(b.date)) return;
+    const pName = (b.product || '').toLowerCase();
+    if (pName.includes('dahi') || pName.includes('yogurt') || !pName.includes('milk')) {
+      const totCost = Number(b.totalDahiCost || b.dahiProductionCost) || 0;
+      const milkTrans = Number(b.milkCostTransferred || b.milkUsedCost) || 0;
+      totalDahiDeltaCost += Math.max(0, totCost - milkTrans);
+    }
+  });
+
+  const totalExpense = Math.round(totalProcurement + totalFarmExp + totalShopExp + totalDahiDeltaCost);
 
   const netProfit = totalIncome - totalExpense;
   const marginPercent =
@@ -83,8 +128,7 @@ export default function ProfitLossSnapshot() {
             <span>Profit &amp; Loss Financial Snapshot</span>
           </h3>
           <p className="text-xs text-slate-500">
-            Real-time income, direct procurement, operational costs &amp; net
-            profitability
+            Real-time income, direct procurement, operational costs &amp; net profitability
           </p>
         </div>
 
@@ -146,7 +190,7 @@ export default function ProfitLossSnapshot() {
             </span>
             <span className="text-[11px] text-rose-600 font-semibold flex items-center gap-1 mt-0.5">
               <ArrowDownRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:translate-y-0.5 transition-transform" />
-              Procurement, feed &amp; store costs
+              Operational expenses &amp; store costs
             </span>
           </div>
         </Link>

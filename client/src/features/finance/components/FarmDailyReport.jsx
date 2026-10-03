@@ -3,6 +3,7 @@ import { Calendar, Activity, ArrowRight, Droplets, DollarSign, Tractor, CheckCir
 import { useAnimalContext } from '@/context/AnimalContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useExpense } from '@/context/ExpenseContext';
+import { useDahiContext } from '@/context/DahiContext';
 
 // Safe date normalization helper
 const normalizeDateStr = (rawDate) => {
@@ -24,6 +25,7 @@ export default function FarmDailyReport() {
   const { animals = [], milkingLogs = [] } = useAnimalContext() || {};
   const { farmSalesHistory = [], salesHistory = [], inventoryMetrics = {} } = usePOSContext() || {};
   const { expenses = [], totals: expenseTotals = {} } = useExpense() || {};
+  const { batches = [] } = useDahiContext() || {};
 
   const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week'
 
@@ -47,6 +49,8 @@ export default function FarmDailyReport() {
           farmMilkSalesRev: 0,
           farmDahiSalesQty: 0,
           farmDahiSalesRev: 0,
+          farmMilkConvertedToDahi: 0,
+          farmDahiProductionCost: 0,
           farmTotalSalesRev: 0,
           farmExpensesTotal: 0,
           farmNetProfit: 0,
@@ -105,6 +109,30 @@ export default function FarmDailyReport() {
       });
     });
 
+    // Dahi Batches (Farm milk used and Dahi production costs)
+    batches.forEach((b) => {
+      const src = (b.source || '').toLowerCase();
+      const isSupplierOnly = src.includes('supplier') && !src.includes('farm') && !src.includes('mix') && !src.includes('both');
+      if (isSupplierOnly) return;
+
+      const d = normalizeDateStr(b.date || b.createdAt);
+      initDate(d);
+
+      const numUsed = Number(b.milkUsedVal) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0;
+      let fUsed = 0;
+      if (b.farmMilkUsed !== undefined) {
+        fUsed = Number(b.farmMilkUsed) || 0;
+      } else if (src.includes('farm') && !src.includes('supplier')) {
+        fUsed = numUsed;
+      } else {
+        fUsed = Math.round(numUsed * (b.farmRatio !== undefined ? Number(b.farmRatio) : 0.5));
+      }
+
+      const fCost = Number(b.farmMilkCost) || Math.round(fUsed * (Number(b.unitCost) || 150));
+      dates[d].farmMilkConvertedToDahi += fUsed;
+      dates[d].farmDahiProductionCost += fCost;
+    });
+
     // Farm Expenses
     expenses.forEach((exp) => {
       const d = normalizeDateStr(exp.date || exp.createdAt);
@@ -114,9 +142,9 @@ export default function FarmDailyReport() {
       dates[d].expenseItems.push(exp);
     });
 
-    // Compute Net Profit for each date: Sales - Expenses
+    // Compute Net Profit for each date: Sales - Expenses - Dahi Production Cost
     Object.values(dates).forEach((day) => {
-      day.farmNetProfit = day.farmTotalSalesRev - day.farmExpensesTotal;
+      day.farmNetProfit = day.farmTotalSalesRev - day.farmExpensesTotal - day.farmDahiProductionCost;
     });
 
     const list = Object.values(dates).sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -133,7 +161,7 @@ export default function FarmDailyReport() {
     }
 
     return list;
-  }, [milkingLogs, farmSalesHistory, salesHistory, expenses, herdBaselineYield, dateFilter]);
+  }, [milkingLogs, farmSalesHistory, salesHistory, expenses, batches, dateFilter]);
 
   // Overall totals across the aggregated view
   const overallTotals = useMemo(() => {
@@ -142,16 +170,19 @@ export default function FarmDailyReport() {
         acc.totalYield += day.farmYield;
         acc.totalMilkSalesQty += day.farmMilkSalesQty;
         acc.totalDahiSalesQty += day.farmDahiSalesQty;
+        acc.totalFarmMilkConvertedToDahi += (day.farmMilkConvertedToDahi || 0);
+        acc.totalDahiProductionCost += (day.farmDahiProductionCost || 0);
         acc.totalSalesRev += day.farmTotalSalesRev;
         acc.totalExpenses += day.farmExpensesTotal;
         acc.totalNetProfit += day.farmNetProfit;
         return acc;
       },
-      { totalYield: 0, totalMilkSalesQty: 0, totalDahiSalesQty: 0, totalSalesRev: 0, totalExpenses: 0, totalNetProfit: 0 }
+      { totalYield: 0, totalMilkSalesQty: 0, totalDahiSalesQty: 0, totalFarmMilkConvertedToDahi: 0, totalDahiProductionCost: 0, totalSalesRev: 0, totalExpenses: 0, totalNetProfit: 0 }
     );
   }, [aggregatedByDate]);
 
-  const currentAvailableStock = Number(inventoryMetrics.rawFarmMilkStock) || Math.max(0, overallTotals.totalYield - overallTotals.totalMilkSalesQty);
+  // Formula: Available Farm Stock = Total Farm Intake - (Milk Sold + Milk Converted to Dahi)
+  const currentAvailableStock = Number(inventoryMetrics.rawAvailableFarmStock ?? inventoryMetrics.availableFarmStock ?? inventoryMetrics.rawFarmMilkStock) || Math.max(0, overallTotals.totalYield - (overallTotals.totalMilkSalesQty + overallTotals.totalFarmMilkConvertedToDahi));
   const overallMargin = overallTotals.totalSalesRev > 0 ? Math.round((overallTotals.totalNetProfit / overallTotals.totalSalesRev) * 100) : 0;
 
   return (
@@ -267,8 +298,10 @@ export default function FarmDailyReport() {
       {/* 3. Daily Breakdown Cards (Production, Sales, Expenses & Net Profit) */}
       <div className="space-y-4">
         {aggregatedByDate.map((day) => {
-          const balance = Math.max(0, day.farmYield - day.farmMilkSalesQty);
           const isToday = day.date === normalizeDateStr(new Date());
+          const balance = isToday
+            ? currentAvailableStock
+            : Math.max(0, day.farmYield - (day.farmMilkSalesQty + (day.farmMilkConvertedToDahi || 0)));
           const isProfitable = day.farmNetProfit >= 0;
 
           return (

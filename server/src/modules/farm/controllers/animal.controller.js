@@ -61,6 +61,17 @@ class AnimalController {
     }
   }
 
+  async addIntakeRecord(req, res, next) {
+    try {
+      const params = req._validated?.params || req.params;
+      const result = await animalService.addIntakeRecord(params.id, req.body);
+
+      return sendSuccess(res, 201, 'Intake record added successfully', result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async deleteAnimal(req, res, next) {
     try {
       const params = req._validated?.params || req.params;

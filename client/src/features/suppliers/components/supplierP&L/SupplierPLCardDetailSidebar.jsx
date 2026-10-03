@@ -186,9 +186,6 @@ export default function SupplierPLCardDetailSidebar({
                         <span className="font-mono font-bold text-blue-700 block">
                           {r.quantity} Liters
                         </span>
-                        <span className="text-[10px] text-slate-500">
-                          @ Rs. {r.ratePerLiter}/L
-                        </span>
                       </div>
                     </div>
                   ))}
@@ -227,9 +224,6 @@ export default function SupplierPLCardDetailSidebar({
                       <div className="text-right">
                         <span className="font-mono font-bold text-emerald-700 block">
                           Paid: Rs. {Number(r.paidAmount || 0).toLocaleString()}
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          Total: Rs. {Number(r.totalCost).toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -271,7 +265,6 @@ export default function SupplierPLCardDetailSidebar({
                           <span className="font-mono font-bold text-rose-600 block">
                             Due: Rs. {Number(r.pendingAmount).toLocaleString()}
                           </span>
-                          <span className="text-[10px] text-slate-400">Total: Rs. {Number(r.totalCost).toLocaleString()}</span>
                         </div>
                       </div>
                     ))
@@ -326,7 +319,7 @@ export default function SupplierPLCardDetailSidebar({
           {cardType === 'cost' && (
             <div className="space-y-3">
               <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider font-display">
-                Supplier Procurement Ledger
+                Supplier Intake Settlement Ledger
               </h4>
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
@@ -342,34 +335,6 @@ export default function SupplierPLCardDetailSidebar({
                     Rs. {Number(summaryData.pendingSpend || 0).toLocaleString()}
                   </p>
                   <p className="text-[10px] text-amber-600">Due for Settlement</p>
-                </div>
-              </div>
-
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
-                <p className="text-xs font-bold text-slate-800 uppercase tracking-wider font-display">
-                  Intake Slips Breakdown ({summaryData.intakeRecords?.length || 0})
-                </p>
-                <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
-                  {summaryData.intakeRecords && summaryData.intakeRecords.map((r) => (
-                    <div key={r.id} className="p-2 bg-white rounded-lg border border-slate-200/80 flex items-center justify-between text-xs">
-                      <div>
-                        <p className="font-bold text-slate-800">{r.supplierName}</p>
-                        <p className="text-[10px] text-slate-400">
-                          {r.date} &bull; {r.shift} &bull; {r.quantity} L @ Rs. {r.ratePerLiter} (Fat {r.fat}%)
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-mono font-bold text-rose-600 block">
-                          Rs. {Number(r.totalCost).toLocaleString()}
-                        </span>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${
-                          r.settlement === 'Paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                        }`}>
-                          {r.settlement}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
@@ -420,9 +385,8 @@ export default function SupplierPLCardDetailSidebar({
                         + Rs. {Number(p.grossMargin).toLocaleString()} ({p.grossMarginPercent}%)
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 text-[11px] text-slate-500 pt-1 border-t border-slate-100">
-                      <span>Sourced Cost: Rs. {Number(p.baseCost).toLocaleString()}</span>
-                      <span className="text-right">Resale Rev: Rs. {Number(p.resaleRevenue).toLocaleString()}</span>
+                    <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-100 text-right">
+                      <span>Resale Rev: Rs. {Number(p.resaleRevenue).toLocaleString()}</span>
                     </div>
                   </div>
                 ))}
@@ -457,24 +421,12 @@ export default function SupplierPLCardDetailSidebar({
                 </p>
               </div>
 
-              {/* Step-by-step summary box matching formula: (Milk Sales + Dahi Sales) - Purchase Cost - Expenses = Net Profit */}
+              {/* Clean Summary Box */}
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
                 <div className="flex justify-between py-1 border-b border-slate-200/80">
                   <span className="font-semibold text-slate-700">Supplier POS Sales (Milk + Dahi)</span>
                   <span className="font-mono font-bold text-emerald-700">
                     + Rs. {Number(summaryData.income || 0).toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-200/80">
-                  <span className="font-semibold text-slate-700">Supplier Milk Purchase Cost</span>
-                  <span className="font-mono font-bold text-rose-600">
-                    - Rs. {Number(summaryData.cost || 0).toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-200/80">
-                  <span className="font-semibold text-slate-700">Supplier Sourcing Expenses</span>
-                  <span className="font-mono font-bold text-amber-700">
-                    - Rs. {Number(summaryData.logistics || 0).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between pt-1.5 font-extrabold text-sm text-slate-900">

@@ -50,10 +50,7 @@ const milkingYieldLogSchema = new Schema(
   },
 );
 
-milkingYieldLogSchema.index(
-  { animalId: 1, date: 1, shift: 1 },
-  { unique: true },
-);
+milkingYieldLogSchema.index({ animalId: 1, date: 1, shift: 1 });
 milkingYieldLogSchema.index({ date: -1, shift: 1 });
 milkingYieldLogSchema.index({ createdAt: -1 });
 

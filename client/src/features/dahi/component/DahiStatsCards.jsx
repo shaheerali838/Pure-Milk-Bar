@@ -1,7 +1,11 @@
 import React from 'react';
 import { Droplets, Layers, Milk, TrendingUp, ShoppingBag, ChevronRight } from 'lucide-react';
+import { usePOSContext } from '@/context/POSContext';
 
 export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
+  const { businessFinancialMetrics = {} } = usePOSContext() || {};
+  const { totalDahiRevenue = 0, totalDahiProductionCost = 0, totalDahiNetProfit = 0 } = businessFinancialMetrics;
+
   const {
     totalMilkSourced = '0.0',
     farmSourced = '0',
@@ -13,12 +17,8 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
     farmConverted = '0',
     supplierConverted = '0',
     dahiProduced = '0.0',
-    conversionYield = '0.0',
-    valueAddProfit = '0',
     dahiSoldInPOS = '0.0',
-    dahiSalesRevenue = '0',
     dahiSalesOrdersCount = 0,
-    dahiRealizedExtraProfit = '0',
     dahiPOSStock = '0.0',
     dahiTransferredToPOS = '0.0',
   } = metrics;
@@ -59,19 +59,19 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
       id: 'dahi_sales',
       title: 'POS Dahi Sales',
       amount: `${dahiSoldInPOS} kg Sold`,
-      sub: `Revenue: Rs. ${dahiSalesRevenue} (${dahiSalesOrdersCount} sales)`,
+      sub: `Revenue: Rs. ${totalDahiRevenue.toLocaleString()} (${dahiSalesOrdersCount} sales)`,
       icon: ShoppingBag,
       color: '#4f39f6',
       badge: 'Live Sales',
     },
     {
       id: 'profit',
-      title: 'Dahi Extra Profit',
-      amount: `+Rs. ${dahiRealizedExtraProfit !== '0' ? dahiRealizedExtraProfit : valueAddProfit}`,
-      sub: '+Rs. 60/kg value-add vs raw milk',
+      title: 'Dahi Net Profit',
+      amount: `Rs. ${totalDahiNetProfit.toLocaleString()}`,
+      sub: `${totalDahiRevenue > 0 ? Math.round((totalDahiNetProfit / totalDahiRevenue) * 100) : 0}% Net Margin • Realized Gain`,
       icon: TrendingUp,
       color: '#10b981',
-      badge: 'Extra Profit',
+      badge: 'Specific P&L',
     },
   ];
 

@@ -26,7 +26,7 @@ import ProductChannelBreakdown from './ProductChannelBreakdown';
 
 export default function SupplierPL() {
   const { intakeLogs = [] } = useIntakeContext();
-  const { supplierSalesHistory = [], salesHistory = [], products: catalogProducts = [] } = usePOSContext();
+  const { supplierSalesHistory = [], salesHistory = [], products: catalogProducts = [], supplierSalesMetrics } = usePOSContext();
   const { deliveries = [] } = useDeliveryContext();
   const { expenses: allExpenses = [] } = useSourcExpenseContext() || {};
   const settingsCtx = useSettingsContext?.();
@@ -57,7 +57,7 @@ export default function SupplierPL() {
     return intakeLogs;
   }, [intakeLogs, customDate, periodFilter, todayStr, currentMonthStr]);
 
-  const activeSupplierSales = supplierSalesHistory.length > 0 ? supplierSalesHistory : salesHistory;
+  const activeSupplierSales = supplierSalesHistory;
   const filteredSales = useMemo(() => {
     return activeSupplierSales.filter((sale) => {
       let sDate = '';
@@ -254,11 +254,11 @@ export default function SupplierPL() {
         resaleRevenue: supplierDahiSales,
         soldVolume: supplierDahiVolume,
         avgResaleRate: supplierDahiVolume > 0 ? Math.round(supplierDahiSales / supplierDahiVolume) : 320,
-        grossMargin: supplierDahiSales,
-        grossMarginPercent: 100,
+        grossMargin: supplierDahiSales - (supplierSalesMetrics?.dahiProductionCost || 0),
+        grossMarginPercent: supplierDahiSales > 0 ? Math.round(((supplierDahiSales - (supplierSalesMetrics?.dahiProductionCost || 0)) / supplierDahiSales) * 100) : 0,
         allocatedOverhead: 0,
-        netProfit: supplierDahiSales,
-        realizationPerUnit: supplierDahiVolume > 0 ? Math.round(supplierDahiSales / supplierDahiVolume) : 320,
+        netProfit: supplierDahiSales - (supplierSalesMetrics?.dahiProductionCost || 0),
+        realizationPerUnit: supplierDahiVolume > 0 ? Math.round((supplierDahiSales - (supplierSalesMetrics?.dahiProductionCost || 0)) / supplierDahiVolume) : 0,
         channels: [
           {
             channelName: 'POS Counter & Delivery Dahi Sales',
@@ -334,13 +334,13 @@ export default function SupplierPL() {
     }));
   }, [productStreams]);
 
-  // 5. Data for Donut Chart ('Procurement Cost Allocation')
+  // 5. Data for Donut Chart ('Sales Revenue Allocation')
   const donutChartData = useMemo(() => {
     return productStreams
-      .filter((p) => p.baseCost > 0)
+      .filter((p) => p.resaleRevenue > 0)
       .map((p) => ({
         name: p.streamName,
-        value: p.baseCost,
+        value: p.resaleRevenue,
       }));
   }, [productStreams]);
 
@@ -351,11 +351,10 @@ export default function SupplierPL() {
       'Category',
       'Supply Source',
       'Sourced Volume (L)',
-      'Procurement Cost (Rs)',
-      'Avg Purchase Rate (Rs/L)',
       'Amount Paid (Rs)',
       'Pending Balance (Rs)',
       'Realized Resale (Rs)',
+      'Net Profit (Rs)',
     ];
 
     const rows = productStreams.map((p) => [
@@ -363,11 +362,10 @@ export default function SupplierPL() {
       p.category,
       p.sourceType,
       p.sourcedVolume,
-      `Rs. ${Number(p.baseCost || 0).toLocaleString()}`,
-      `Rs. ${p.avgPurchaseRate ? p.avgPurchaseRate.toFixed(1) : '0'}`,
       `Rs. ${Number(p.paidAmount || 0).toLocaleString()}`,
       `Rs. ${Number(p.pendingAmount || 0).toLocaleString()}`,
       `Rs. ${Number(p.resaleRevenue || 0).toLocaleString()}`,
+      `Rs. ${Number((p.resaleRevenue || 0) - (p.baseCost || 0)).toLocaleString()}`,
     ]);
 
     exportTableToCSV({
@@ -376,10 +374,10 @@ export default function SupplierPL() {
       metadata: [
         ['Period Filter', customDate ? `Date: ${customDate}` : periodFilter],
         ['Total Procured Volume', `${summaryData.totalVolume} L`],
-        ['Total Procurement Cost', `Rs. ${summaryData.cost}`],
         ['Total Paid to Suppliers', `Rs. ${summaryData.paidSpend}`],
         ['Supplier Balance Due', `Rs. ${summaryData.pendingSpend}`],
-        ['Average Purchase Rate', `Rs. ${summaryData.avgPurchaseRate.toFixed(1)}/L`],
+        ['Realized Sales Revenue', `Rs. ${summaryData.income}`],
+        ['Net Realized Profit', `Rs. ${summaryData.net}`],
       ],
       headers,
       rows,
@@ -458,6 +456,54 @@ export default function SupplierPL() {
         summaryData={summaryData}
         onSelectCard={(cardType) => setActiveCardDetail(cardType)}
       />
+
+      {/* Dahi Value-Add Section (Identical to Farm P&L logic) */}
+      {supplierSalesMetrics && supplierSalesMetrics.milkCostTransferred > 0 && (
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 tracking-tight font-display flex items-center gap-2">
+                <Layers className="w-4 h-4 text-blue-600" />
+                Supplier Dahi Value-Add (Processing Analysis)
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
+                supplierSalesMetrics.dahiNetProfit >= 0
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-rose-50 text-rose-700 border-rose-200'
+              }`}>
+                {supplierSalesMetrics.dahiNetProfit >= 0 ? 'Profitable' : 'Loss-Making'}
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-blue-200/70 bg-blue-50/30 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
+                  <Layers className="w-3.5 h-3.5" />
+                </span>
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-blue-900">
+                    Dahi Value-Add (Processing Analysis)
+                  </h3>
+                </div>
+              </div>
+              <p className={`text-lg font-black tabular ${supplierSalesMetrics.dahiNetProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {supplierSalesMetrics.dahiNetProfit >= 0 ? '+' : '-'} Rs. {Math.abs(supplierSalesMetrics.dahiNetProfit).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-blue-200/50 text-xs">
+              <div className="flex justify-between items-center py-1 border-b border-blue-100/60 bg-white/40 px-2 rounded font-semibold">
+                <span className="text-slate-700">Total Realized Dahi Sales</span>
+                <span className="font-bold text-emerald-700 tabular">+ Rs. {Math.round(supplierSalesMetrics.dahiRevenue).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 3. Charts Component (Bar Chart & Donut Chart) */}
       <SupplierPLCharts

@@ -108,7 +108,7 @@ export default function POSSale() {
     handleCompleteSale,
     inventoryMetrics = {},
     products = [],
-  } = usePOSContext();
+  } = usePOSContext() || {};
 
   const getProductDisplayStock = (prodId) => {
     const prod = products.find(p => p.id === prodId) || {};
@@ -125,11 +125,12 @@ export default function POSSale() {
 
     if (cat.includes('milk') || name.includes('milk')) {
       if (isCow) {
+        // Strictly Farm Cow Milk only! Supplier doodh isme add nahi hoga.
         const farmCow = Number(inventoryMetrics?.farmCowMilkStock) || 0;
-        const supCow = Number(inventoryMetrics?.supplierCowMilkStock) || 0;
-        return farmCow + supCow;
+        return farmCow;
       }
       if (isBuff) {
+        // Combined Buffalo Milk Card: Farm Buffalo + Supplier Buffalo
         const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock) || 0;
         const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock) || 0;
         return farmBuff + supBuff;

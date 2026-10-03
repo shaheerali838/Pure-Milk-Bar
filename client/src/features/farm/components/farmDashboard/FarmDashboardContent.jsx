@@ -57,13 +57,20 @@ export default function FarmDashboardContent() {
   }, [milkingLogs]);
 
   // Available live farm stock in cold room / chiller
+  // Formula: Available Farm Stock = Total Farm Intake - (Total Farm Milk Sold in POS + Total Farm Milk Converted to Dahi)
   const availableFarmStock = useMemo(() => {
-    const rawPos = parseFloat(posCtx?.inventoryMetrics?.farmMilkStock ?? posCtx?.inventoryMetrics?.rawFarmMilkStock);
-    if (!isNaN(rawPos)) {
-      return rawPos;
+    const rawPos = parseFloat(
+      posCtx?.inventoryMetrics?.availableFarmStock ??
+      posCtx?.inventoryMetrics?.rawAvailableFarmStock ??
+      posCtx?.inventoryMetrics?.farmMilkStock ??
+      posCtx?.inventoryMetrics?.rawFarmMilkStock
+    );
+    if (!isNaN(rawPos) && rawPos >= 0) {
+      return Math.max(0, rawPos);
     }
-    return totalFarmYield;
-  }, [posCtx?.inventoryMetrics, totalFarmYield]);
+    const farmSold = Number(posCtx?.farmSalesMetrics?.milkSold) || 0;
+    return Math.max(0, totalFarmYield - farmSold);
+  }, [posCtx?.inventoryMetrics, posCtx?.farmSalesMetrics?.milkSold, totalFarmYield]);
 
   const avgAnimalYield = totalAnimals > 0 ? totalFarmYield / totalAnimals : 0;
 
@@ -106,8 +113,8 @@ export default function FarmDashboardContent() {
         });
       }
 
-      // Check real sales for day 'd.key' from posCtx?.salesHistory
-      const salesForDay = (posCtx?.salesHistory || []).filter((s) => {
+      // Check real sales for day 'd.key' from posCtx?.farmSalesHistory
+      const salesForDay = (posCtx?.farmSalesHistory || []).filter((s) => {
         let sDate = '';
         if (s.date && /^\d{4}-\d{2}-\d{2}/.test(s.date)) {
           sDate = s.date.slice(0, 10);
@@ -131,12 +138,10 @@ export default function FarmDashboardContent() {
         return sDate === d.key;
       });
       const dayRevenue = salesForDay.reduce((sum, s) => {
-        const farmItems = (s.items || []).filter(i => (i.source || '').toLowerCase() === 'farm' || !i.source);
-        return sum + farmItems.reduce((isum, item) => isum + (Number(item.subtotal) || (Number(item.quantity || 0) * Number(item.price || 0))), 0);
+        return sum + (s.items || []).reduce((isum, item) => isum + (Number(item.effectiveRevenue || item.subtotal) || (Number(item.quantity || 0) * Number(item.price || 0))), 0);
       }, 0);
       const dayCost = salesForDay.reduce((sum, s) => {
-        const farmItems = (s.items || []).filter(i => (i.source || '').toLowerCase() === 'farm' || !i.source);
-        return sum + farmItems.reduce((isum, item) => isum + (Number(item.quantity || 0) * (Number(item.cost) || 0)), 0);
+        return sum + (s.items || []).reduce((isum, item) => isum + (Number(item.quantity || 0) * (Number(item.cost || item.costPrice) || 0)), 0);
       }, 0);
       const dayProfit = Math.max(0, dayRevenue - dayCost);
 
@@ -149,7 +154,7 @@ export default function FarmDashboardContent() {
         profit: Math.round(dayProfit),
       };
     });
-  }, [milkingLogs, animals, posCtx?.salesHistory]);
+  }, [milkingLogs, animals, posCtx?.farmSalesHistory]);
 
   // Data for Current Lactation Yield by Animal
   const animalBarData = useMemo(() => {

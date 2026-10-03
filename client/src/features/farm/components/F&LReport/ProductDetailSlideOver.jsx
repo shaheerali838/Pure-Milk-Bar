@@ -26,9 +26,11 @@ export default function ProductDetailSlideOver({ product, onClose, onBack }) {
   } = product;
 
   const lowerName = (name || '').toLowerCase();
-  const isCow = lowerName.includes('cow');
-  const isBuffalo = lowerName.includes('buffalo');
-  const isProcessed = lowerName.includes('processed') || lowerName.includes('value-added');
+  const lowerCategory = (category || '').toLowerCase();
+  const isCow = lowerName.includes('cow') || lowerCategory.includes('cow');
+  const isBuffalo = lowerName.includes('buffalo') || lowerCategory.includes('buffalo');
+  const isDahi = lowerName.includes('dahi') || lowerName.includes('yogurt') || lowerCategory.includes('dahi') || lowerCategory.includes('yogurt');
+  const isProcessed = lowerName.includes('processed') || lowerName.includes('value-added') || lowerCategory.includes('processed');
 
   const badgeColor = isCow ? 'bg-blue-100 text-blue-700'
     : isBuffalo ? 'bg-indigo-100 text-indigo-700'
@@ -67,7 +69,7 @@ export default function ProductDetailSlideOver({ product, onClose, onBack }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -101,24 +103,6 @@ export default function ProductDetailSlideOver({ product, onClose, onBack }) {
           <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
             <span className="text-slate-500">Total Inflow</span>
             <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full text-[10px]">Realized</span>
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Direct Cost</span>
-              <span className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                <DollarSign className="w-3.5 h-3.5" />
-              </span>
-            </div>
-            <p className="text-2xl sm:text-3xl font-black text-amber-600 tabular">
-              {fmt(directCost)}
-            </p>
-          </div>
-          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-            <span className="text-slate-500">Feed &amp; Direct</span>
-            <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full text-[10px]">COGS Base</span>
           </div>
         </div>
 

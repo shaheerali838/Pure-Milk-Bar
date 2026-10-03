@@ -7,11 +7,14 @@ import {
   ShoppingBag,
   ArrowDownLeft,
   ChevronRight,
+  DollarSign,
+  TrendingUp,
 } from 'lucide-react';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useLedgerContext } from '@/context/LedgerContext';
+import { getPktTodayString } from '@/utils/dateUtils';
 
 import { Link } from 'react-router-dom';
 import { KpiGridSkeleton } from '@/components/ui/skeleton';
@@ -19,7 +22,7 @@ import { KpiGridSkeleton } from '@/components/ui/skeleton';
 export default function TopSummaryCards() {
   const { animals = [], isLoading: isAnimalsLoading } = useAnimalContext();
   const { intakeLogs = [], totals: intakeTotals = {}, isLoading: isIntakeLoading } = useIntakeContext();
-  const { salesHistory = [], inventoryMetrics = {} } = usePOSContext();
+  const { salesHistory = [], inventoryMetrics = {}, businessFinancialMetrics = {} } = usePOSContext();
   const { ledgers = {} } = useLedgerContext();
 
   if (isAnimalsLoading && isIntakeLoading && animals.length === 0 && intakeLogs.length === 0) {
@@ -47,16 +50,15 @@ export default function TopSummaryCards() {
   // 3. Total Milk Sourced (Farm + Procurement)
   const totalMilkSourced = totalFarmMilk + totalProcuredMilk;
 
-  // 4. Dahi & Value-Add Converted
-  const dahiMilkEquivalent =
-    parseFloat(inventoryMetrics.totalDahi) ||
-    parseFloat(inventoryMetrics.dahiSold) ||
-    0;
+  const farmNetProfit = Number(businessFinancialMetrics.farmNetProfit) || 0;
+  const supplierNetProfit = Number(businessFinancialMetrics.supplierNetProfit) || 0;
+  const totalNetProfit = Number(businessFinancialMetrics.totalBusinessNetProfit) || 0;
+  const netMargin = Number(businessFinancialMetrics.totalBusinessMargin) || 0;
 
-  // 5. Today's POS Sales Revenue
-  const todayISO = new Date().toISOString().split('T')[0];
+  // 5. Today's POS Sales Revenue (in PKT timezone)
+  const todayISO = getPktTodayString();
   const todaySales = salesHistory.filter((s) => {
-    const raw = s.date || s.timestamp || s.formattedDate || '';
+    const raw = s.date || s.timestamp || s.formattedDate || s.createdAt || '';
     const saleDate = raw.includes('T') ? raw.split('T')[0] : (raw.includes('-') ? raw.slice(0, 10) : '');
     return saleDate === todayISO || s.date === todayISO;
   });
@@ -81,6 +83,36 @@ export default function TopSummaryCards() {
   const totalDahiStock = inventoryMetrics?.totalDahiStock ?? '0';
 
   const cards = [
+    {
+      id: 'total-net-profit',
+      title: 'Total Business Net Profit',
+      value: `${totalNetProfit >= 0 ? '+' : '-'}Rs. ${Math.abs(totalNetProfit).toLocaleString()}`,
+      subtitle: `${netMargin}% Consolidated Margin`,
+      icon: DollarSign,
+      color: totalNetProfit >= 0 ? '#059669' : '#dc2626',
+      tag: 'Main P&L',
+      to: '/farm/pl',
+    },
+    {
+      id: 'farm-net-profit',
+      title: 'Farm Net Profit',
+      value: `${farmNetProfit >= 0 ? '+' : '-'}Rs. ${Math.abs(farmNetProfit).toLocaleString()}`,
+      subtitle: `In-House Dairy P&L`,
+      icon: TrendingUp,
+      color: farmNetProfit >= 0 ? '#009966' : '#dc2626',
+      tag: 'Farm P&L',
+      to: '/farm/pl',
+    },
+    {
+      id: 'supplier-net-profit',
+      title: 'Supplier Net Profit',
+      value: `${supplierNetProfit >= 0 ? '+' : '-'}Rs. ${Math.abs(supplierNetProfit).toLocaleString()}`,
+      subtitle: `Procurement P&L`,
+      icon: TrendingUp,
+      color: supplierNetProfit >= 0 ? '#0284c7' : '#dc2626',
+      tag: 'Supplier P&L',
+      to: '/farm/pl',
+    },
     {
       id: 'available-milk-stock',
       title: 'Available Milk Stock',
@@ -110,36 +142,6 @@ export default function TopSummaryCards() {
       color: '#155dfc',
       tag: 'Combined Inflow',
       to: '/supplier/intake',
-    },
-    {
-      id: 'farm-production',
-      title: 'Farm Production',
-      value: `${totalFarmMilk.toFixed(1)} L`,
-      subtitle: `${milkingAnimalsCount} active milking herd`,
-      icon: Beef,
-      color: '#009966',
-      tag: 'Internal Herd',
-      to: '/farm',
-    },
-    {
-      id: 'purchased-milk',
-      title: 'Purchased Milk',
-      value: `${totalProcuredMilk.toFixed(1)} L`,
-      subtitle: `Avg: Rs. ${Math.round(avgPurchaseRate)}/L`,
-      icon: Truck,
-      color: '#4f39f6',
-      tag: `${intakeLogs.length} Batches`,
-      to: '/supplier/intake',
-    },
-    {
-      id: 'dahi-value-add',
-      title: 'Dahi & Value-Add',
-      value: `${dahiMilkEquivalent.toFixed(0)} kg`,
-      subtitle: 'Value add conversion',
-      icon: Layers,
-      color: '#0092b8',
-      tag: 'Processing',
-      to: '/farm/processing',
     },
     {
       id: 'todays-sales',
@@ -204,3 +206,4 @@ export default function TopSummaryCards() {
     </div>
   );
 }
+

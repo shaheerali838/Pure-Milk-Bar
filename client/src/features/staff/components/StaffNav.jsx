@@ -5,6 +5,7 @@ import {
   Users,
   CheckSquare,
   FileSpreadsheet,
+  DollarSign,
 } from 'lucide-react';
 
 export const STAFF_NAV_TABS = [
@@ -30,6 +31,14 @@ export const STAFF_NAV_TABS = [
     label: 'Attendance',
     icon: CheckSquare,
     color: '#155dfc', // Blue
+  },
+  {
+    id: 'salary',
+    to: '/staff/salary',
+    aliasTo: '/staff/payroll',
+    label: 'Salary Payment',
+    icon: DollarSign,
+    color: '#7c3aed', // Purple
   },
   {
     id: 'dailysheet',
@@ -66,6 +75,11 @@ export default function StaffNav() {
             isActive =
               pathname.startsWith('/staff/attendance') ||
               pathname.startsWith('/finance/staff/attendance');
+          } else if (id === 'salary') {
+            isActive =
+              pathname.startsWith('/staff/salary') ||
+              pathname.startsWith('/staff/payroll') ||
+              pathname.startsWith('/finance/staff/salary');
           } else if (id === 'dailysheet') {
             isActive =
               pathname.startsWith('/staff/dailysheet') ||

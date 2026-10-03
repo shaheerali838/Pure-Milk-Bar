@@ -21,11 +21,11 @@ export function ExpenseProvider({ children }) {
     const [expenses, setExpenses] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Fetch live farm expenses from database API
+    // Fetch live farm & shop expenses from database API
     const fetchExpenses = useCallback(async () => {
         setIsLoading(true);
         try {
-            const res = await api.finance.getExpenses({ scope: 'FARM', limit: 1000 }, { skipCache: true });
+            const res = await api.finance.getExpenses({ limit: 2000 }, { skipCache: true });
             const list = Array.isArray(res)
                 ? res
                 : Array.isArray(res?.data?.expenses)
@@ -45,12 +45,14 @@ export function ExpenseProvider({ children }) {
                     date: exp.date ? String(exp.date).split('T')[0] : new Date().toISOString().split('T')[0],
                     description: exp.description || exp.notes || exp.title || '',
                     authorizedBy: exp.authorizedBy || 'Admin',
+                    scope: exp.scope || 'FARM',
+                    expenseEntity: exp.scope || 'FARM',
                 }));
 
                 setExpenses(normalized);
             }
         } catch (err) {
-            console.warn('Failed to load farm expenses from database API:', err.message);
+            console.warn('Failed to load expenses from database API:', err.message);
         } finally {
             setIsLoading(false);
         }
@@ -67,6 +69,7 @@ export function ExpenseProvider({ children }) {
             id: tempId,
             date: expense.date || new Date().toISOString().split('T')[0],
             amount: Number(expense.amount) || 0,
+            scope: (expense.expenseEntity || 'FARM').toUpperCase(),
         };
         setExpenses(prev => [newExpense, ...prev]);
 
@@ -87,9 +90,9 @@ export function ExpenseProvider({ children }) {
         // Sync to backend database
         try {
             const res = await api.finance.createExpense({
-                scope: 'FARM',
+                scope: (expense.expenseEntity || 'FARM').toUpperCase(),
                 category: mappedCategory,
-                title: expense.description || expense.category || 'Farm Expense',
+                title: expense.description || expense.category || 'Expense',
                 amount: Number(expense.amount) || 0,
                 amountRupees: Number(expense.amount) || 0,
                 date: expense.date || new Date().toISOString().split('T')[0],
@@ -144,45 +147,57 @@ export function ExpenseProvider({ children }) {
 
     const totals = useMemo(() => {
         let totalFarmExpense = 0;
+        let totalShopExpense = 0;
+        let totalSupplierExpense = 0;
         let feedSeedFarming = 0;
         let fuelTransportRepairs = 0;
         let salariesKitchenMess = 0;
 
         expenses.forEach(exp => {
             const amt = Number(exp.amount) || 0;
-            totalFarmExpense += amt;
-            
+            const scope = String(exp.scope || exp.expenseEntity || 'FARM').toUpperCase();
             const cat = String(exp.category || '').toUpperCase();
 
-            if (
-                cat.includes('FEED') ||
-                cat.includes('SEED') ||
-                cat.includes('VETERINARY') ||
-                cat.includes('LIVESTOCK') ||
-                cat.includes('DAIRY')
-            ) {
-                feedSeedFarming += amt;
-            } else if (
-                cat.includes('FUEL') ||
-                cat.includes('MACHINERY') ||
-                cat.includes('ELECTRICITY') ||
-                cat.includes('SHED') ||
-                cat.includes('HARDWARE') ||
-                cat.includes('TRANSPORT') ||
-                cat.includes('MAINTENANCE') ||
-                cat.includes('UTILITIES')
-            ) {
-                fuelTransportRepairs += amt;
-            } else if (
-                cat.includes('SALAR') ||
-                cat.includes('KITCHEN')
-            ) {
-                salariesKitchenMess += amt;
+            // Strict segregation by entity tag
+            if (scope === 'FARM') {
+                totalFarmExpense += amt;
+                
+                if (
+                    cat.includes('FEED') ||
+                    cat.includes('SEED') ||
+                    cat.includes('VETERINARY') ||
+                    cat.includes('LIVESTOCK') ||
+                    cat.includes('DAIRY')
+                ) {
+                    feedSeedFarming += amt;
+                } else if (
+                    cat.includes('FUEL') ||
+                    cat.includes('MACHINERY') ||
+                    cat.includes('ELECTRICITY') ||
+                    cat.includes('SHED') ||
+                    cat.includes('HARDWARE') ||
+                    cat.includes('TRANSPORT') ||
+                    cat.includes('MAINTENANCE') ||
+                    cat.includes('UTILITIES')
+                ) {
+                    fuelTransportRepairs += amt;
+                } else if (
+                    cat.includes('SALAR') ||
+                    cat.includes('KITCHEN')
+                ) {
+                    salariesKitchenMess += amt;
+                }
+            } else if (scope === 'SHOP') {
+                totalShopExpense += amt;
+            } else if (scope === 'SUPPLIER') {
+                totalSupplierExpense += amt;
             }
         });
 
         return {
             totalFarmExpense,
+            totalShopExpense,
+            totalSupplierExpense,
             feedSeedFarming,
             fuelTransportRepairs,
             salariesKitchenMess

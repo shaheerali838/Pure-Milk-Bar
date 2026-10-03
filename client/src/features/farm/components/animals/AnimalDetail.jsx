@@ -69,44 +69,141 @@ export default function AnimalDetail({
       String(a.tag).toLowerCase() === String(animalId).toLowerCase()
   );
 
-  // Filter logs strictly belonging to THIS specific cow or buffalo
+  // Filter & merge all intake and milking history strictly belonging to THIS specific cow or buffalo
   const animalLogs = useMemo(() => {
     if (!animal) return [];
     const tag = (animal.tag || '').trim().toLowerCase();
     const id = String(animal.id || animal._id || '');
     const name = (animal.name || '').trim().toLowerCase();
 
-    // Match only records belonging to THIS specific animal (same cow or buffalo)
-    const matched = (milkingLogs || []).filter((log) => {
-      const logTag = (log.animalTag || log.tag || log.animal?.tag || log.animalId?.tagNumber || log.animalId?.tag || '').trim().toLowerCase();
-      const logId = String(log.animalId?._id || log.animalId || log.animal?._id || log.animal?.id || '');
-      const logName = (log.animalName || '').trim().toLowerCase();
-
-      return (
-        (tag && logTag === tag) ||
-        (id && logId === id) ||
-        (name && logName === name && name !== 'cow' && name !== 'buffalo')
-      );
-    });
-
     const isBuff = (animal.species || '').toLowerCase().includes('buffalo');
     const mExp = parseFloat(animal.morningYield || 0) || (isBuff ? 9.0 : 8.0);
     const eExp = parseFloat(animal.eveningYield || 0) || (isBuff ? 7.5 : 7.0);
 
-    if (matched.length > 0) {
-      return matched
-        .map((log) => {
-          const isMorning = (log.shift || '').toLowerCase().includes('morning');
-          const actual = parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0;
-          const expected = isMorning ? mExp : eExp;
-          const variance = parseFloat((actual - expected).toFixed(1));
-          const dateStr = normalizeDate(log.date) || getTodayDateStr();
+    const mergedList = [];
+    const seenMap = new Set();
 
-          return {
-            id: log.id || log._id || `${animal.tag}-${dateStr}-${log.shift}`,
+    // 1. Process intakeHistory stored on the Animal document
+    const rawIntakeHistory = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : [];
+    rawIntakeHistory.forEach((h) => {
+      const dateStr = normalizeDate(h.date) || getTodayDateStr();
+      const rawShift = h.shift || (h.morning > 0 ? 'Morning' : 'Evening') || 'Morning';
+      const shift = rawShift.charAt(0).toUpperCase() + rawShift.slice(1).toLowerCase();
+      const isMorning = shift === 'Morning';
+      const actual = parseFloat(h.quantityLiters ?? h.yieldLiters ?? h.yield ?? (isMorning ? h.morning : h.evening) ?? 0) || 0;
+      const expected = isMorning ? mExp : eExp;
+      const variance = parseFloat((actual - expected).toFixed(1));
+      const key = `${dateStr}-${shift}-${actual}`;
+
+      if (!seenMap.has(key)) {
+        seenMap.add(key);
+        mergedList.push({
+          id: h._id || h.id || `INTAKE-${animal.tag}-${dateStr}-${shift}`,
+          date: dateStr,
+          shift,
+          actualYield: actual,
+          quantityLiters: actual,
+          expectedYield: expected,
+          variance,
+          fat: h.fat || (isBuff ? 6.8 : 4.5),
+          snf: h.snf || 8.6,
+          lr: h.lr || 28.5,
+          milkedBy: h.operator || h.milkedBy || (isMorning ? 'Morning Milker' : 'Evening Milker'),
+          chiller: h.chiller || 'Dock Chiller-1',
+          status: h.status || 'Verified',
+          notes: h.notes || 'Recorded intake',
+          createdAt: h.createdAt || new Date(dateStr).toISOString(),
+        });
+      }
+    });
+
+    // 2. Process legacy animal.history if present
+    if (Array.isArray(animal.history)) {
+      animal.history.forEach((h) => {
+        const dateStr = normalizeDate(h.date);
+        if (!dateStr) return;
+
+        if (h.morning !== undefined && h.morning !== null) {
+          const mYield = parseFloat(h.morning) || 0;
+          const key = `${dateStr}-Morning-${mYield}`;
+          if (!seenMap.has(key)) {
+            seenMap.add(key);
+            mergedList.push({
+              id: `hist-${animal.tag}-${dateStr}-M`,
+              date: dateStr,
+              shift: 'Morning',
+              actualYield: mYield,
+              quantityLiters: mYield,
+              expectedYield: mExp,
+              variance: parseFloat((mYield - mExp).toFixed(1)),
+              fat: isBuff ? 6.8 : 4.5,
+              snf: 8.6,
+              lr: 28.5,
+              milkedBy: h.operator || 'Morning Milker',
+              chiller: 'Dock Chiller-1',
+              status: 'Verified',
+              notes: h.notes || 'Historical intake record',
+              createdAt: h.createdAt || new Date(dateStr).toISOString(),
+            });
+          }
+        }
+
+        if (h.evening !== undefined && h.evening !== null) {
+          const eYield = parseFloat(h.evening) || 0;
+          const key = `${dateStr}-Evening-${eYield}`;
+          if (!seenMap.has(key)) {
+            seenMap.add(key);
+            mergedList.push({
+              id: `hist-${animal.tag}-${dateStr}-E`,
+              date: dateStr,
+              shift: 'Evening',
+              actualYield: eYield,
+              quantityLiters: eYield,
+              expectedYield: eExp,
+              variance: parseFloat((eYield - eExp).toFixed(1)),
+              fat: isBuff ? 7.1 : 4.8,
+              snf: 8.8,
+              lr: 28.5,
+              milkedBy: h.operator || 'Evening Milker',
+              chiller: 'Dock Chiller-1',
+              status: 'Verified',
+              notes: h.notes || 'Historical intake record',
+              createdAt: h.createdAt || new Date(dateStr).toISOString(),
+            });
+          }
+        }
+      });
+    }
+
+    // 3. Match from milkingLogs collection
+    (milkingLogs || []).forEach((log) => {
+      const logTag = (log.animalTag || log.tag || log.animal?.tag || log.animalId?.tagNumber || log.animalId?.tag || '').trim().toLowerCase();
+      const logId = String(log.animalId?._id || log.animalId || log.animal?._id || log.animal?.id || '');
+      const logName = (log.animalName || '').trim().toLowerCase();
+
+      const isMatch = (
+        (tag && logTag === tag) ||
+        (id && logId === id) ||
+        (name && logName === name && name !== 'cow' && name !== 'buffalo')
+      );
+
+      if (isMatch) {
+        const isMorning = (log.shift || '').toLowerCase().includes('morning');
+        const shift = isMorning ? 'Morning' : 'Evening';
+        const actual = parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0;
+        const expected = isMorning ? mExp : eExp;
+        const variance = parseFloat((actual - expected).toFixed(1));
+        const dateStr = normalizeDate(log.date) || getTodayDateStr();
+        const key = `${dateStr}-${shift}-${actual}`;
+
+        if (!seenMap.has(key)) {
+          seenMap.add(key);
+          mergedList.push({
+            id: log.id || log._id || `${animal.tag}-${dateStr}-${shift}`,
             date: dateStr,
-            shift: isMorning ? 'Morning' : 'Evening',
+            shift,
             actualYield: actual,
+            quantityLiters: actual,
             expectedYield: expected,
             variance,
             fat: log.fat || (isBuff ? 6.8 : 4.5),
@@ -115,59 +212,20 @@ export default function AnimalDetail({
             milkedBy: log.operatorId?.name || log.milkedBy || (isMorning ? 'Morning Milker' : 'Evening Milker'),
             chiller: log.chiller || 'Dock Chiller-1',
             status: log.status || 'Verified',
-            notes: log.notes || '',
-          };
-        })
-        .sort((a, b) => b.date.localeCompare(a.date));
-    }
-
-    // If no logs recorded yet in database for this animal, check animal.history
-    if (animal.history && Array.isArray(animal.history) && animal.history.length > 0) {
-      const list = [];
-      animal.history.forEach((h) => {
-        const dateStr = normalizeDate(h.date);
-        if (!dateStr) return;
-        if (h.morning !== undefined && h.morning !== null) {
-          const mYield = parseFloat(h.morning) || 0;
-          list.push({
-            id: `hist-${animal.tag}-${dateStr}-M`,
-            date: dateStr,
-            shift: 'Morning',
-            actualYield: mYield,
-            expectedYield: mExp,
-            variance: parseFloat((mYield - mExp).toFixed(1)),
-            fat: isBuff ? 6.8 : 4.5,
-            snf: 8.6,
-            lr: 28.5,
-            milkedBy: 'Morning Milker',
-            chiller: 'Dock Chiller-1',
-            status: 'Verified',
-            notes: 'Historical intake record',
+            notes: log.notes || 'Milking log entry',
+            createdAt: log.createdAt || (log.date ? new Date(log.date).toISOString() : new Date().toISOString()),
           });
         }
-        if (h.evening !== undefined && h.evening !== null) {
-          const eYield = parseFloat(h.evening) || 0;
-          list.push({
-            id: `hist-${animal.tag}-${dateStr}-E`,
-            date: dateStr,
-            shift: 'Evening',
-            actualYield: eYield,
-            expectedYield: eExp,
-            variance: parseFloat((eYield - eExp).toFixed(1)),
-            fat: isBuff ? 7.1 : 4.8,
-            snf: 8.8,
-            lr: 28.5,
-            milkedBy: 'Evening Milker',
-            chiller: 'Dock Chiller-1',
-            status: 'Verified',
-            notes: 'Historical intake record',
-          });
-        }
-      });
-      return list.sort((a, b) => b.date.localeCompare(a.date));
-    }
+      }
+    });
 
-    return [];
+    // 4. Strict Descending Order: Latest entry sab se upar nazar aaye
+    return mergedList.sort((a, b) => {
+      const timeA = new Date(a.date || a.createdAt || 0).getTime();
+      const timeB = new Date(b.date || b.createdAt || 0).getTime();
+      if (timeB !== timeA) return timeB - timeA;
+      return String(b.shift).localeCompare(String(a.shift));
+    });
   }, [animal, milkingLogs]);
 
   // Filtered logs based on shift and date filters
@@ -566,11 +624,14 @@ export default function AnimalDetail({
                 <Droplets className="w-4 h-4 text-emerald-700" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900 font-display">
-                  Farm Milking &amp; Intake Records
+                <h3 className="text-base font-extrabold text-slate-900 font-display flex items-center gap-2">
+                  <span>Milking History</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    {animalLogs.length} Records
+                  </span>
                 </h3>
                 <p className="text-[11px] text-slate-500">
-                  Intake records for <strong className="text-slate-700">{animal.tag}</strong> {animal.name && `(${animal.name})`} • {animal.species || 'Livestock'}
+                  Complete intake history for <strong className="text-slate-700">{animal.tag}</strong> {animal.name && `(${animal.name})`} • Sorted latest entries first
                 </p>
               </div>
             </div>
@@ -685,10 +746,10 @@ export default function AnimalDetail({
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   <th className="px-4 py-3">Date &amp; Shift</th>
-                  <th className="px-4 py-3">Actual Intake Yield</th>
+                  <th className="px-4 py-3">Quantity (Liters)</th>
                   <th className="px-4 py-3">Expected Benchmark</th>
                   <th className="px-4 py-3">Yield Variance</th>
-                  <th className="px-4 py-3">Quality Test</th>
+                  <th className="px-4 py-3">Quality / Notes</th>
                   <th className="px-4 py-3">Operator / Station</th>
                   <th className="px-4 py-3 text-center">Status</th>
                   <th className="px-4 py-3 text-right">Details</th>
@@ -698,7 +759,7 @@ export default function AnimalDetail({
                 {filteredAnimalLogs.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-4 py-10 text-center text-slate-400 font-medium">
-                      No {shiftFilter !== 'All' ? shiftFilter.toLowerCase() : ''} intake records found for this {animal.species || 'animal'}.
+                      No {shiftFilter !== 'All' ? shiftFilter.toLowerCase() : ''} milking history records found for {animal.tag}.
                     </td>
                   </tr>
                 ) : (

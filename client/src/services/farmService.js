@@ -32,6 +32,11 @@ export const farmService = {
     return res.data || res;
   },
 
+  addAnimalIntake: async (id, intakeData) => {
+    const res = await api.post(`/api/farm/animals/${id}/intake`, intakeData);
+    return res.data || res;
+  },
+
   // Milking Yield Logs
   getMilkingLogs: async (params = {}) => {
     const res = await api.get('/api/farm/milking-logs', params, { fallback: [] });

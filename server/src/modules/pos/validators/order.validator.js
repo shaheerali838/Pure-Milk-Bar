@@ -33,7 +33,13 @@ const orderItemSchema = Joi.object({
     'any.required': 'Item subtotal is required',
     'number.min': 'Item subtotal cannot be negative',
   }),
-});
+  source: Joi.string().optional().allow('', null),
+  cost: Joi.number().min(0).optional().allow(null),
+  farmRatio: Joi.number().min(0).max(1).optional().allow(null),
+  supplierRatio: Joi.number().min(0).max(1).optional().allow(null),
+  farmRevenue: Joi.number().min(0).optional().allow(null),
+  supplierRevenue: Joi.number().min(0).optional().allow(null),
+}).unknown(true);
 
 // ─── Online Payment Metadata Schema ───────────────────────────────────────────
 const onlineTransferMetaSchema = Joi.object({

@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import adminService from '../services/adminService.js';
+import adminService from '@/services/adminService';
+import api from '@/services/api';
 
 const StaffContext = createContext();
 
 const STORAGE_KEY_STAFF = 'pure_milk_bar_staff';
+const STORAGE_KEY_SALARY = 'pure_milk_bar_staff_salary_payments';
 
 export const generateDefaultAttendanceMap = (absentDays = 0, totalDays = 30) => {
   const map = {};
@@ -31,6 +33,14 @@ export const generateDefaultAttendanceMap = (absentDays = 0, totalDays = 30) => 
 
 export function StaffProvider({ children }) {
   const [staffList, setStaffList] = useState([]);
+  const [salaryPayments, setSalaryPayments] = useState(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_SALARY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -448,7 +458,139 @@ export function StaffProvider({ children }) {
     });
   };
 
-  // 11. Computed Metrics for Dashboard Cards
+  // 11. Mark Attendance for a staff member on a specific date (or day of month)
+  const markAttendance = async (staffId, dateOrDay, status = 'present') => {
+    let dayNum = 1;
+    if (typeof dateOrDay === 'number') {
+      dayNum = dateOrDay;
+    } else if (typeof dateOrDay === 'string') {
+      if (dateOrDay.includes('-')) {
+        const parts = dateOrDay.split('-');
+        dayNum = parseInt(parts[2], 10) || new Date().getDate();
+      } else {
+        dayNum = parseInt(dateOrDay, 10) || new Date().getDate();
+      }
+    } else {
+      dayNum = new Date().getDate();
+    }
+    dayNum = Math.min(30, Math.max(1, dayNum));
+
+    setStaffList((prev) => {
+      const updated = prev.map((member) => {
+        if (String(member.id) === String(staffId) || String(member._id) === String(staffId)) {
+          const currentMap = member.attendanceMap && Object.keys(member.attendanceMap).length > 0
+            ? { ...member.attendanceMap }
+            : generateDefaultAttendanceMap(member.absentDays || 0);
+
+          currentMap[dayNum] = status;
+          const absentCount = Object.values(currentMap).filter((v) => v === 'absent').length;
+          const leaveCount = Object.values(currentMap).filter((v) => v === 'leave').length;
+          const presentCount = Object.values(currentMap).filter((v) => v === 'present').length;
+          const nextStatus = status === 'present' ? 'Active' : (status === 'leave' ? 'On Leave' : 'Inactive');
+
+          const dbId = member._id || member.id;
+          adminService.updateStaff(dbId, { status: nextStatus, attendanceMap: currentMap }).catch(() => {});
+
+          return {
+            ...member,
+            attendanceMap: currentMap,
+            absentDays: absentCount,
+            leaveDays: leaveCount,
+            presentDays: presentCount,
+            status: nextStatus,
+            active: status === 'present',
+          };
+        }
+        return member;
+      });
+      return updated;
+    });
+  };
+
+  // 12. Pay Salary to Staff Member
+  const paySalary = async ({ staffId, staffName, role, amount, date, paymentMethod = 'CASH', notes = '', monthYear, skipDirectBackendCreate = false }) => {
+    const payment = {
+      id: `SAL-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      staffId: String(staffId),
+      staffName: staffName || 'Staff Member',
+      role: role || 'Farm Labor',
+      amount: Number(amount) || 0,
+      date: date || new Date().toISOString().split('T')[0],
+      paymentMethod: paymentMethod ? String(paymentMethod).toUpperCase() : 'CASH',
+      notes: notes || '',
+      monthYear: monthYear || new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+      createdAt: new Date().toISOString(),
+    };
+
+    setSalaryPayments((prev) => {
+      const updated = [payment, ...prev];
+      try {
+        localStorage.setItem(STORAGE_KEY_SALARY, JSON.stringify(updated));
+      } catch (e) {
+        console.warn('Failed to save salary payments to localStorage:', e);
+      }
+      return updated;
+    });
+
+    // Also sync to backend finance expense if not already pushed via addExpense
+    if (!skipDirectBackendCreate) {
+      try {
+        await api.finance.createExpense({
+          scope: 'FARM',
+          category: 'SALARIES',
+          title: `Staff Salary: ${payment.staffName}`,
+          amount: Number(payment.amount) || 0,
+          amountRupees: Number(payment.amount) || 0,
+          paymentMethod: payment.paymentMethod,
+          date: payment.date,
+          description: `Staff salary disbursed to ${payment.staffName} (${payment.role}) for ${payment.monthYear}. ${notes || ''}`.trim(),
+          notes: notes || '',
+          authorizedBy: 'Admin',
+        });
+      } catch (err) {
+        console.warn('Backend sync salary expense notice:', err.message);
+      }
+    }
+
+    return payment;
+  };
+
+  // 13. Delete Salary Payment
+  const deleteSalaryPayment = (id) => {
+    setSalaryPayments((prev) => {
+      const updated = prev.filter((p) => String(p.id) !== String(id));
+      try {
+        localStorage.setItem(STORAGE_KEY_SALARY, JSON.stringify(updated));
+      } catch (e) {
+        console.warn('Failed to save salary payments to localStorage:', e);
+      }
+      return updated;
+    });
+  };
+
+  // 14. Total Staff Salary Paid
+  const totalStaffSalaryPaid = useMemo(() => {
+    return salaryPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  }, [salaryPayments]);
+
+  // 15. Unified Farm Data Object for Context / Farm linking
+  const farmData = useMemo(() => ({
+    staff: {
+      list: staffList,
+      attendance: staffList.map((s) => ({
+        id: s.id,
+        name: s.name,
+        role: s.role,
+        presentDays: s.presentDays,
+        absentDays: s.absentDays,
+        attendanceMap: s.attendanceMap,
+      })),
+      salaryPayments,
+      totalSalaryPaid: totalStaffSalaryPaid,
+    },
+  }), [staffList, salaryPayments, totalStaffSalaryPaid]);
+
+  // 16. Computed Metrics for Dashboard Cards
   const metrics = useMemo(() => {
     const totalStaff = staffList.length;
     const monthlySalaries = staffList.reduce(
@@ -484,13 +626,18 @@ export function StaffProvider({ children }) {
       totalDeliveryMen,
       totalFarmWorkers,
       totalSecurityGuards,
+      totalStaffSalaryPaid,
+      salaryPaymentsCount: salaryPayments.length,
     };
-  }, [staffList]);
+  }, [staffList, totalStaffSalaryPaid, salaryPayments]);
 
   return (
     <StaffContext.Provider
       value={{
         staffList,
+        salaryPayments,
+        totalStaffSalaryPaid,
+        farmData,
         metrics,
         isLoading,
         error,
@@ -505,6 +652,9 @@ export function StaffProvider({ children }) {
         markAllAttendance,
         markStaffToday,
         markEntireStaffToday,
+        markAttendance,
+        paySalary,
+        deleteSalaryPayment,
       }}
     >
       {children}
@@ -517,7 +667,10 @@ export function useStaffContext() {
   if (!context) {
     return {
       staffList: [],
-      metrics: { totalStaff: 0, totalFarmWorkers: 0, activeStaffCount: 0, inactiveStaffCount: 0 },
+      salaryPayments: [],
+      totalStaffSalaryPaid: 0,
+      farmData: { staff: { list: [], attendance: [], salaryPayments: [], totalSalaryPaid: 0 } },
+      metrics: { totalStaff: 0, totalFarmWorkers: 0, activeStaffCount: 0, inactiveStaffCount: 0, totalStaffSalaryPaid: 0 },
       addStaff: () => {},
       updateStaff: () => {},
       toggleStaffStatus: () => {},
@@ -526,6 +679,9 @@ export function useStaffContext() {
       markAllAttendance: () => {},
       markStaffToday: () => {},
       markEntireStaffToday: () => {},
+      markAttendance: () => {},
+      paySalary: () => {},
+      deleteSalaryPayment: () => {},
       deleteStaff: () => {},
     };
   }

@@ -15,17 +15,6 @@ export default function SupplierPLCards({ summaryData, onSelectCard }) {
 
   const cards = [
     {
-      id: 'cost',
-      title: 'Total Procurement Cost',
-      value: `Rs. ${Number(summaryData.cost || 0).toLocaleString()}`,
-      subtext: `Direct Milk Intake Spend`,
-      badge: `Avg Rs. ${Number(summaryData.avgPurchaseRate || 0).toFixed(1)}/L`,
-      badgeColor: 'text-rose-700 bg-rose-50 border-rose-200',
-      icon: Receipt,
-      iconColor: 'bg-rose-100 text-rose-700',
-      borderHover: 'hover:border-rose-300',
-    },
-    {
       id: 'volume',
       title: 'Total Procured Volume',
       value: `${Number(summaryData.totalVolume || 0).toLocaleString()} L`,
@@ -41,7 +30,7 @@ export default function SupplierPLCards({ summaryData, onSelectCard }) {
       title: 'Total Paid (Settled)',
       value: `Rs. ${Number(summaryData.paidSpend || 0).toLocaleString()}`,
       subtext: `Settled with Suppliers`,
-      badge: summaryData.cost > 0 && summaryData.paidSpend >= summaryData.cost ? 'Fully Settled' : 'Payment Disbursed',
+      badge: summaryData.paidSpend > 0 ? 'Payment Disbursed' : 'No Disbursements',
       badgeColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
       icon: DollarSign,
       iconColor: 'bg-emerald-100 text-emerald-700',
@@ -55,17 +44,6 @@ export default function SupplierPLCards({ summaryData, onSelectCard }) {
       badge: summaryData.pendingSpend > 0 ? 'Pending Settlement' : 'Clear Balance',
       badgeColor: summaryData.pendingSpend > 0 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-slate-600 bg-slate-50 border-slate-200',
       icon: Scale,
-      iconColor: 'bg-amber-100 text-amber-700',
-      borderHover: 'hover:border-amber-300',
-    },
-    {
-      id: 'expenses',
-      title: 'Sourcing Expenses',
-      value: `Rs. ${Number(summaryData.logistics || 0).toLocaleString()}`,
-      subtext: `${summaryData.expenseVouchersCount || 0} Expense Vouchers`,
-      badge: `Total Overhead`,
-      badgeColor: 'text-amber-700 bg-amber-50 border-amber-200',
-      icon: Receipt,
       iconColor: 'bg-amber-100 text-amber-700',
       borderHover: 'hover:border-amber-300',
     },
@@ -94,7 +72,7 @@ export default function SupplierPLCards({ summaryData, onSelectCard }) {
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-2.5">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
       {cards.map((card) => {
         const Icon = card.icon;
         const colorHex = card.iconColor.includes('emerald') ? '#059669' :

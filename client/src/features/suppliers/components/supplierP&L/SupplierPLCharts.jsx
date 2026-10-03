@@ -81,15 +81,15 @@ export default function SupplierPLCharts({ barData = [], donutData = [] }) {
             </div>
             <div>
               <h3 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
-                Revenue by Sourced Milk Stream
+                Revenue &amp; Net Profit by Sourced Stream
               </h3>
               <p className="text-[11px] text-slate-500">
-                Resale revenue realization vs. supplier procurement cost
+                Resale revenue realization and net profit (bachat)
               </p>
             </div>
           </div>
           <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
-            Resale vs Cost
+            Revenue vs Profit
           </span>
         </div>
 
@@ -130,9 +130,9 @@ export default function SupplierPLCharts({ barData = [], donutData = [] }) {
                   barSize={20}
                 />
                 <Bar
-                  dataKey="baseCost"
-                  name="Sourced Cost"
-                  fill="#f43f5e"
+                  dataKey="grossMargin"
+                  name="Net Profit (Bachat)"
+                  fill="#10b981"
                   radius={[4, 4, 0, 0]}
                   barSize={20}
                 />
@@ -142,7 +142,7 @@ export default function SupplierPLCharts({ barData = [], donutData = [] }) {
         </div>
       </div>
 
-      {/* 2. Right: Donut Chart ('Procurement Cost Allocation') */}
+      {/* 2. Right: Donut Chart ('Sales Revenue Allocation') */}
       <div className="lg:col-span-5 bg-white rounded-xl p-4 border border-slate-200/90 shadow-2xs flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-2">
@@ -152,10 +152,10 @@ export default function SupplierPLCharts({ barData = [], donutData = [] }) {
               </div>
               <div>
                 <h3 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
-                  Procurement Cost Allocation
+                  Sales Revenue Allocation
                 </h3>
                 <p className="text-[11px] text-slate-500">
-                  Total procurement spend breakdown
+                  Total resale revenue stream breakdown
                 </p>
               </div>
             </div>

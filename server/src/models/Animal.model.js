@@ -95,6 +95,53 @@ const animalSchema = new Schema(
       default: true,
       index: true,
     },
+    intakeHistory: [
+      {
+        date: {
+          type: String,
+          required: true,
+        },
+        shift: {
+          type: String,
+          required: true,
+          enum: ['MORNING', 'EVENING', 'Morning', 'Evening'],
+        },
+        quantityLiters: {
+          type: Number,
+          required: true,
+          default: 0,
+        },
+        yieldLiters: {
+          type: Number,
+          default: 0,
+        },
+        fat: {
+          type: Number,
+          default: null,
+        },
+        snf: {
+          type: Number,
+          default: null,
+        },
+        notes: {
+          type: String,
+          default: null,
+        },
+        operator: {
+          type: String,
+          default: null,
+        },
+        operatorId: {
+          type: Schema.Types.ObjectId,
+          ref: 'User',
+          default: null,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

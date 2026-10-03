@@ -19,7 +19,6 @@ export default function AddProduct({ onBack, product = null }) {
     unit: product ? product.unit || 'per liter' : 'per liter',
     source: product ? product.source || 'Farm' : 'Farm',
     price: product ? product.price ?? '' : '',
-    cost: product ? product.cost ?? '' : '',
     description: product ? product.description || '' : '',
   });
 
@@ -97,16 +96,14 @@ export default function AddProduct({ onBack, product = null }) {
         </div>
 
         <span
-          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-            isEditing
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${isEditing
               ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
               : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-          }`}
+            }`}
         >
           <span
-            className={`w-2 h-2 rounded-full ${
-              isEditing ? 'bg-indigo-500' : 'bg-emerald-500 animate-pulse'
-            }`}
+            className={`w-2 h-2 rounded-full ${isEditing ? 'bg-indigo-500' : 'bg-emerald-500 animate-pulse'
+              }`}
           ></span>
           {isEditing ? `Editing ${formData.name || 'Product'}` : 'New Product Entry'}
         </span>
@@ -158,7 +155,7 @@ export default function AddProduct({ onBack, product = null }) {
               <p className="text-[10px] text-slate-400 mt-1">Display title on POS screen and receipts</p>
             </div>
 
-            <div>
+            {/* <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Category <span className="text-rose-500">*</span>
               </label>
@@ -168,13 +165,14 @@ export default function AddProduct({ onBack, product = null }) {
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="w-full appearance-none px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition cursor-pointer pr-10"
                 >
-                  <option value="Milk">🥛 Fresh Milk</option>
-                  <option value="Dahi">🥣 Yogurt / Dahi</option>
-                  <option value="Lassi">🧃 Lassi</option>
+                  <option value="Cow Milk">Cow Milk</option>
+                  <option value="Buffalo Milk">Buffalo Milk</option>
+                  <option value="Dahi">Dahi</option>
+
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
-            </div>
+            </div> */}
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -186,8 +184,7 @@ export default function AddProduct({ onBack, product = null }) {
                   onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                   className="w-full appearance-none px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition cursor-pointer pr-10"
                 >
-                  <option value="Farm">🌾 Farm (In-House Herd)</option>
-                  <option value="Supplier">🚚 Supplier (Procured Sourcing)</option>
+                  <option value="Farm"> Farm (In-House Herd)</option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
@@ -232,26 +229,7 @@ export default function AddProduct({ onBack, product = null }) {
               <p className="text-[10px] text-slate-400 mt-1">Retail counter selling rate per unit</p>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Cost / Unit (RS)
-              </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
-                  Rs.
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={formData.cost}
-                  onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                  placeholder="115"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition font-mono tabular"
-                />
-              </div>
-              <p className="text-[10px] text-slate-400 mt-1">Estimated farm production or purchase cost</p>
-            </div>
+           
 
             <div className="md:col-span-2">
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -277,9 +255,8 @@ export default function AddProduct({ onBack, product = null }) {
             </button>
             <button
               type="submit"
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-white text-xs font-bold shadow-xs hover:shadow-md transition cursor-pointer ${
-                isEditing ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-[#009966] hover:bg-[#008055]'
-              }`}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-white text-xs font-bold shadow-xs hover:shadow-md transition cursor-pointer ${isEditing ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-[#009966] hover:bg-[#008055]'
+                }`}
             >
               <Check className="w-4 h-4 stroke-3" />
               {isEditing ? 'Update Product' : 'Save & Add Product'}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Droplets, Layers, TrendingUp, Receipt, DollarSign, ArrowUpRight } from 'lucide-react';
+import { Droplets, Layers, TrendingUp, Receipt, DollarSign, ArrowUpRight, Users } from 'lucide-react';
 
 export default function PLCardOverflow({
   rawMilkRevenue = 0,
@@ -11,6 +11,8 @@ export default function PLCardOverflow({
   grossRevenue = 0,
   totalFarmCost = 0,
   expensesCount = 0,
+  totalStaffSalaryPaid = 0,
+  salaryPaymentsCount = 0,
   netProfit = 0,
   netMargin = 0,
   profitPerLiter = 0,
@@ -48,9 +50,9 @@ export default function PLCardOverflow({
     },
     {
       id: 'farm_costs',
-      title: 'Farm Costs',
+      title: 'Farm Expenses',
       amount: fmt(totalFarmCost),
-      sub: `${expensesCount} Farm Bills Logged`,
+      sub: `${expensesCount} Expense Entries`,
       icon: Receipt,
       color: '#e11d48',
       badge: 'Expenses',

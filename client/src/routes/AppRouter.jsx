@@ -59,6 +59,7 @@ import ManageStaff from "../features/staff/pages/ManageStaff";
 import StaffAttendance from "../features/staff/pages/StaffAttendance";
 import StaffDailySheet from "../features/staff/pages/StaffDailySheet";
 import StaffAdd from "../features/staff/pages/StaffAdd";
+import SalaryPayment from "../features/staff/pages/SalaryPayment";
 
 // Global Settings
 import GlobalSettings from "../features/settings/pages/GlobalSettings";
@@ -178,6 +179,8 @@ export function AppRouter() {
                 <Route path="manage" element={<ManageStaff />} />
                 <Route path="add" element={<StaffAdd />} />
                 <Route path="attendance" element={<StaffAttendance />} />
+                <Route path="salary" element={<SalaryPayment />} />
+                <Route path="payroll" element={<SalaryPayment />} />
                 <Route path="dailysheet" element={<StaffDailySheet />} />
                 <Route path="daily-sheet" element={<StaffDailySheet />} />
               </Route>

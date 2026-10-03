@@ -341,8 +341,11 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
             </div>
           </div>
 
-          {/* Row 2: Quantity, Agreed Rate, Receiver, and Remarks (4 equal columns) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* Hidden rate field to maintain calculation and database logic */}
+          <input type="hidden" name="ratePerLiter" value={formData.ratePerLiter} />
+
+          {/* Row 2: Quantity, Receiver, and Remarks (3 equal columns) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1">
@@ -421,31 +424,6 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1 flex items-center justify-between">
-                <span>Agreed Rate (Rs. / L) *</span>
-                {isFullyPaid && <Lock className="w-3 h-3 text-emerald-700" />}
-              </label>
-              <input
-                type="number"
-                step="any"
-                min="1"
-                required
-                disabled={isFullyPaid}
-                readOnly={isFullyPaid}
-                placeholder="Enter rate"
-                value={formData.ratePerLiter}
-                onChange={(e) =>
-                  setFormData({ ...formData, ratePerLiter: e.target.value })
-                }
-                className={`w-full h-10 px-3.5 rounded-xl border border-slate-200 text-sm font-bold shadow-2xs tabular ${
-                  isFullyPaid
-                    ? "bg-slate-100 text-slate-500 cursor-not-allowed"
-                    : "text-slate-900 bg-white outline-none focus:border-blue-600"
-                }`}
-              />
-            </div>
-
-            <div>
               <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1">
                 Received &amp; Tested By
               </label>
@@ -476,16 +454,16 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
             </div>
           </div>
 
-          {/* Row 3: Full-Width Streamlined Delivery Cost Summary Banner */}
+          {/* Row 3: Full-Width Streamlined Delivery Volume Summary Banner */}
           <div className="p-3.5 rounded-xl bg-linear-to-r from-emerald-50 via-emerald-100/40 to-white border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
-                Total Delivery Payable Amount
+                Intake Volume Summary
               </span>
               <p className="text-xs text-emerald-700 font-medium">
-                {qty > 0 && rate > 0
-                  ? `${qty} Liters × Rs. ${rate.toFixed(2)}/L • Total: Rs. ${totalPurchaseCost.toLocaleString()}`
-                  : "Enter quantity and rate to calculate total"}
+                {qty > 0
+                  ? `${qty} Liters Recorded for ${formData.shift} Shift`
+                  : "Enter quantity to record milk intake"}
               </p>
             </div>
             {expectedQuota > 0 && qty > 0 && (

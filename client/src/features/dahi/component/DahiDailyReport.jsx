@@ -97,6 +97,9 @@ export default function DahiDailyReport() {
       dates[d].dahiOutput += numOutput;
       dates[d].batchesList.push(b);
 
+      const bCost = Number(b.dahiProductionCost || b.milkUsedCost) || ((Number(b.farmMilkCost) || 0) + (Number(b.supplierMilkCost) || 0)) || (numUsed * (Number(b.unitCost) || 150));
+      dates[d].dahiInputCost = (dates[d].dahiInputCost || 0) + bCost;
+
       if (b.farmMilkUsed !== undefined && b.supplierMilkUsed !== undefined) {
         dates[d].farmToDahi += Number(b.farmMilkUsed) || 0;
         dates[d].supplierToDahi += Number(b.supplierMilkUsed) || 0;
@@ -152,11 +155,13 @@ export default function DahiDailyReport() {
       });
     });
 
-    // Compute input milk cost and value-add uplift per day
+    // Compute input milk cost and actual net profit per day
+    // Formula: Total Dahi POS Sales - Dahi Production Cost = Actual Net Profit
     Object.values(dates).forEach((day) => {
       const totalUsed = day.farmToDahi + day.supplierToDahi;
-      // Approx base milk cost: Rs. 240/L
-      day.dahiInputCost = Math.round(totalUsed * 240);
+      if (!day.dahiInputCost || day.dahiInputCost === 0) {
+        day.dahiInputCost = Math.round(day.farmToDahi * 150 + day.supplierToDahi * 180);
+      }
       day.dahiNetGain = day.dahiSalesRev - day.dahiInputCost;
     });
 
