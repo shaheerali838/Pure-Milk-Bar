@@ -131,11 +131,13 @@ export const createStaffService = async (staffData, user) => {
   const contactPhone = (mobile || phone || '').trim();
   const email = (rawEmail || '').trim().toLowerCase();
 
-  // If phone is provided, verify uniqueness
-  if (contactPhone) {
-    const existingStaff = await Staff.findOne({ mobile: contactPhone });
-    if (existingStaff) {
-      const error = new Error(`Staff member with phone number '${contactPhone}' already exists.`);
+  // Allow shared mobile/phone numbers among staff members (e.g. family or farm contact)
+
+  // If email is provided, verify uniqueness
+  if (email) {
+    const existingStaffEmail = await Staff.findOne({ email });
+    if (existingStaffEmail) {
+      const error = new Error(`Staff member with email '${email}' already exists.`);
       error.statusCode = 409;
       throw error;
     }
@@ -181,14 +183,23 @@ export const createStaffService = async (staffData, user) => {
     // Check if user already exists
     let existingUser = await User.findOne({
       $or: [
-        { username: targetUsername },
+        ...(customUsername ? [{ username: targetUsername }] : []),
         ...(email ? [{ email }] : []),
       ],
     });
 
     if (existingUser) {
+      if (email && existingUser.email === email) {
+        const error = new Error(`A user account with email '${email}' already exists.`);
+        error.statusCode = 409;
+        throw error;
+      }
+      if (customUsername && existingUser.username === targetUsername) {
+        const error = new Error(`Username '${targetUsername}' is already taken.`);
+        error.statusCode = 409;
+        throw error;
+      }
       linkedUserDoc = existingUser;
-      // Update role/active if necessary
       linkedUserDoc.role = mappedRole;
       linkedUserDoc.isActive = true;
       if (email && !linkedUserDoc.email) linkedUserDoc.email = email;
@@ -299,7 +310,13 @@ export const sendStaffCredentialsService = async (staffId, customData = {}, user
   }
 
   // Update staff email if new one provided
-  if (customData.email && customData.email.trim() !== staff.email) {
+  if (customData.email && customData.email.trim().toLowerCase() !== staff.email) {
+    const emailExists = await Staff.findOne({ email: targetEmail, _id: { $ne: staff._id } });
+    if (emailExists) {
+      const error = new Error(`Staff member with email '${targetEmail}' already exists.`);
+      error.statusCode = 409;
+      throw error;
+    }
     staff.email = targetEmail;
     await staff.save();
   }
@@ -496,15 +513,20 @@ export const updateStaffService = async (staffId, updateData, user) => {
 
   const contactPhone = (updateData.mobile || updateData.phone || '').trim();
 
-  // If phone is modified, verify uniqueness
-  if (contactPhone && contactPhone !== staff.mobile) {
-    const phoneExists = await Staff.findOne({ mobile: contactPhone, _id: { $ne: staff._id } });
-    if (phoneExists) {
-      const error = new Error(`Phone number '${contactPhone}' is already assigned to another staff member.`);
+  if (contactPhone) {
+    updateData.mobile = contactPhone;
+  }
+
+  // If email is modified, verify uniqueness
+  const newEmail = updateData.email !== undefined ? (updateData.email || '').trim().toLowerCase() : undefined;
+  if (newEmail !== undefined && newEmail !== '' && newEmail !== staff.email) {
+    const emailExists = await Staff.findOne({ email: newEmail, _id: { $ne: staff._id } });
+    if (emailExists) {
+      const error = new Error(`Email '${newEmail}' is already assigned to another staff member.`);
       error.statusCode = 409;
       throw error;
     }
-    updateData.mobile = contactPhone;
+    updateData.email = newEmail;
   }
 
   if (updateData.monthlySalary !== undefined && updateData.dailySalary === undefined) {
