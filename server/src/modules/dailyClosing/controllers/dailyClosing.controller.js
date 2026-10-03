@@ -14,7 +14,7 @@ import {
   getDailyClosingReportService,
 } from '../services/dailyClosing.service.js';
 
-// 1. Get Daily Closing Summary (The master unified endpoint for today & period ranges)
+
 export const getDailyClosingSummary = async (req, res, next) => {
   try {
     const summary = await getDailyClosingSummaryService(req.query);
@@ -22,7 +22,7 @@ export const getDailyClosingSummary = async (req, res, next) => {
       success: true,
       message: 'Daily closing summary retrieved successfully',
       data: summary,
-      // Direct root spread compatibility for frontend consumers
+
       ...summary,
     });
   } catch (error) {
@@ -30,7 +30,7 @@ export const getDailyClosingSummary = async (req, res, next) => {
   }
 };
 
-// 2. Confirm and Lock Daily Closing (One-click save to DB)
+
 export const confirmDailyClosing = async (req, res, next) => {
   try {
     const result = await confirmDailyClosingService(req.user, req.body, req.ip);
@@ -87,9 +87,7 @@ export const getWastageLogs = async (req, res, next) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// EXISTING / LEGACY CONTROLLERS
-// ═══════════════════════════════════════════════════════════════════════════
+
 
 export const createDailyClosing = async (req, res, next) => {
   try {

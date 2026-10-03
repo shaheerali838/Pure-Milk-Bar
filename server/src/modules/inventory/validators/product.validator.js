@@ -59,9 +59,9 @@ export const createProductSchema = Joi.object({
 
   costPrice: Joi.number()
     .min(0)
-    .required()
+    .default(0)
+    .optional()
     .messages({
-      'any.required': 'Cost price is required',
       'number.min': 'Cost price cannot be negative',
     }),
 
