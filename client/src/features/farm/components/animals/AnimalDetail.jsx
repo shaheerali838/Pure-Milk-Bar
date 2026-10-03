@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from "react";
 import {
   ArrowLeft,
   Edit,
@@ -23,9 +23,9 @@ import {
   Clock,
   Plus,
   Loader2,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { useAnimalContext } from '../../../../context/AnimalContext';
+} from "lucide-react";
+import { toast } from "sonner";
+import { useAnimalContext } from "../../../../context/AnimalContext";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -34,20 +34,21 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-} from 'recharts';
-import AnimalAdd from './AnimalAdd';
+} from "recharts";
+import AnimalAdd from "./AnimalAdd";
 
 const getTodayDateStr = () => {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
 const normalizeDate = (dateVal) => {
-  if (!dateVal) return '';
-  if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateVal)) return dateVal.slice(0, 10);
+  if (!dateVal) return "";
+  if (typeof dateVal === "string" && /^\d{4}-\d{2}-\d{2}/.test(dateVal))
+    return dateVal.slice(0, 10);
   const d = new Date(dateVal);
   if (isNaN(d.getTime())) return String(dateVal).slice(0, 10);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
 export default function AnimalDetail({
@@ -57,23 +58,29 @@ export default function AnimalDetail({
   onEdit,
   onDelete,
 }) {
-  const { animals = [], milkingLogs = [], deleteAnimal, addAnimalIntake, saveMilkingShift } = useAnimalContext();
+  const {
+    animals = [],
+    milkingLogs = [],
+    deleteAnimal,
+    addAnimalIntake,
+    saveMilkingShift,
+  } = useAnimalContext();
   const handleBack = onBack || onClose;
 
   const [isEditingInline, setIsEditingInline] = useState(false);
-  const [shiftFilter, setShiftFilter] = useState('All');
-  const [dateFilter, setDateFilter] = useState('All');
-  const [customDate, setCustomDate] = useState('');
+  const [shiftFilter, setShiftFilter] = useState("All");
+  const [dateFilter, setDateFilter] = useState("All");
+  const [customDate, setCustomDate] = useState("");
   const [selectedRecord, setSelectedRecord] = useState(null);
 
   // Quick milk intake state directly for this animal
   const [isIntakeModalOpen, setIsIntakeModalOpen] = useState(false);
   const [intakeForm, setIntakeForm] = useState({
     date: getTodayDateStr(),
-    shift: 'Morning',
-    quantity: '',
-    milkedBy: 'Morning Milker',
-    notes: '',
+    shift: "Morning",
+    quantity: "",
+    milkedBy: "Morning Milker",
+    notes: "",
   });
   const [isSubmittingIntake, setIsSubmittingIntake] = useState(false);
 
@@ -81,19 +88,21 @@ export default function AnimalDetail({
     (a) =>
       String(a.id || a._id) === String(animalId) ||
       String(a._id || a.id) === String(animalId) ||
-      String(a.tag || a.tagNumber || '').toLowerCase() === String(animalId).toLowerCase() ||
-      String(a.tagNumber || a.tag || '').toLowerCase() === String(animalId).toLowerCase()
+      String(a.tag || a.tagNumber || "").toLowerCase() ===
+        String(animalId).toLowerCase() ||
+      String(a.tagNumber || a.tag || "").toLowerCase() ===
+        String(animalId).toLowerCase(),
   );
 
   // Filter & merge all intake and milking history strictly belonging to THIS specific cow or buffalo
   const animalLogs = useMemo(() => {
     if (!animal) return [];
-    const tag = (animal.tag || animal.tagNumber || '').trim().toLowerCase();
-    const animalMongoId = String(animal._id || '').toLowerCase();
-    const animalIdStr = String(animal.id || '').toLowerCase();
-    const name = (animal.name || '').trim().toLowerCase();
+    const tag = (animal.tag || animal.tagNumber || "").trim().toLowerCase();
+    const animalMongoId = String(animal._id || "").toLowerCase();
+    const animalIdStr = String(animal.id || "").toLowerCase();
+    const name = (animal.name || "").trim().toLowerCase();
 
-    const isBuff = (animal.species || '').toLowerCase().includes('buffalo');
+    const isBuff = (animal.species || "").toLowerCase().includes("buffalo");
     const mExp = parseFloat(animal.morningYield || 0) || (isBuff ? 9.0 : 8.0);
     const eExp = parseFloat(animal.eveningYield || 0) || (isBuff ? 7.5 : 7.0);
 
@@ -101,14 +110,26 @@ export default function AnimalDetail({
     const seenShiftDate = new Set();
 
     // 1. Process intakeHistory stored on the Animal document
-    const rawIntakeHistory = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : [];
+    const rawIntakeHistory = Array.isArray(animal.intakeHistory)
+      ? animal.intakeHistory
+      : [];
     rawIntakeHistory.forEach((h) => {
       if (!h) return;
       const dateStr = normalizeDate(h.date) || getTodayDateStr();
-      const rawShift = h.shift || (h.morning > 0 ? 'Morning' : (h.evening > 0 ? 'Evening' : 'Morning'));
-      const shift = rawShift.charAt(0).toUpperCase() + rawShift.slice(1).toLowerCase();
-      const isMorning = shift === 'Morning';
-      const actual = parseFloat(h.quantityLiters ?? h.yieldLiters ?? h.yield ?? (isMorning ? h.morning : h.evening) ?? 0) || 0;
+      const rawShift =
+        h.shift ||
+        (h.morning > 0 ? "Morning" : h.evening > 0 ? "Evening" : "Morning");
+      const shift =
+        rawShift.charAt(0).toUpperCase() + rawShift.slice(1).toLowerCase();
+      const isMorning = shift === "Morning";
+      const actual =
+        parseFloat(
+          h.quantityLiters ??
+            h.yieldLiters ??
+            h.yield ??
+            (isMorning ? h.morning : h.evening) ??
+            0,
+        ) || 0;
       const expected = isMorning ? mExp : eExp;
       const variance = parseFloat((actual - expected).toFixed(1));
       const shiftKey = `${dateStr}-${shift.toLowerCase()}`;
@@ -117,18 +138,21 @@ export default function AnimalDetail({
         seenShiftDate.add(shiftKey);
         mergedList.push({
           id: h._id || h.id || `INTAKE-${animal.tag}-${dateStr}-${shift}`,
-          animalId: animal._id || animal.id || '',
-          animalTag: animal.tag || animal.tagNumber || '',
+          animalId: animal._id || animal.id || "",
+          animalTag: animal.tag || animal.tagNumber || "",
           date: dateStr,
           shift,
           actualYield: actual,
           quantityLiters: actual,
           expectedYield: expected,
           variance,
-          milkedBy: h.operator || h.milkedBy || (isMorning ? 'Morning Milker' : 'Evening Milker'),
-          chiller: h.chiller || 'Dock Chiller-1',
-          status: h.status || 'Verified',
-          notes: h.notes || 'Recorded intake',
+          milkedBy:
+            h.operator ||
+            h.milkedBy ||
+            (isMorning ? "Morning Milker" : "Evening Milker"),
+          chiller: h.chiller || "Dock Chiller-1",
+          status: h.status || "Verified",
+          notes: h.notes || "Recorded intake",
           createdAt: h.createdAt || new Date(dateStr).toISOString(),
         });
       }
@@ -136,21 +160,39 @@ export default function AnimalDetail({
 
     // 2. Match from milkingLogs collection (for logs not yet in animal.intakeHistory)
     (milkingLogs || []).forEach((log) => {
-      const logTag = (log.animalTag || log.tag || log.animal?.tag || log.animalId?.tagNumber || log.animalId?.tag || '').trim().toLowerCase();
-      const logId = String(log.animalId?._id || log.animalId?.id || log.animalId || log.animal?._id || log.animal?.id || '').toLowerCase();
-      const logName = (log.animalName || '').trim().toLowerCase();
+      const logTag = (
+        log.animalTag ||
+        log.tag ||
+        log.animal?.tag ||
+        log.animalId?.tagNumber ||
+        log.animalId?.tag ||
+        ""
+      )
+        .trim()
+        .toLowerCase();
+      const logId = String(
+        log.animalId?._id ||
+          log.animalId?.id ||
+          log.animalId ||
+          log.animal?._id ||
+          log.animal?.id ||
+          "",
+      ).toLowerCase();
+      const logName = (log.animalName || "").trim().toLowerCase();
 
-      const isMatch = (
-        (tag && (logTag === tag || logTag === (animal.tagNumber || '').trim().toLowerCase())) ||
+      const isMatch =
+        (tag &&
+          (logTag === tag ||
+            logTag === (animal.tagNumber || "").trim().toLowerCase())) ||
         (animalMongoId && logId === animalMongoId) ||
         (animalIdStr && logId === animalIdStr) ||
-        (name && logName === name && name !== 'cow' && name !== 'buffalo')
-      );
+        (name && logName === name && name !== "cow" && name !== "buffalo");
 
       if (isMatch) {
-        const isMorning = (log.shift || '').toLowerCase().includes('morning');
-        const shift = isMorning ? 'Morning' : 'Evening';
-        const actual = parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0;
+        const isMorning = (log.shift || "").toLowerCase().includes("morning");
+        const shift = isMorning ? "Morning" : "Evening";
+        const actual =
+          parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0;
         const expected = isMorning ? mExp : eExp;
         const variance = parseFloat((actual - expected).toFixed(1));
         const dateStr = normalizeDate(log.date) || getTodayDateStr();
@@ -160,19 +202,26 @@ export default function AnimalDetail({
           seenShiftDate.add(shiftKey);
           mergedList.push({
             id: log.id || log._id || `${animal.tag}-${dateStr}-${shift}`,
-            animalId: animal._id || animal.id || '',
-            animalTag: animal.tag || animal.tagNumber || '',
+            animalId: animal._id || animal.id || "",
+            animalTag: animal.tag || animal.tagNumber || "",
             date: dateStr,
             shift,
             actualYield: actual,
             quantityLiters: actual,
             expectedYield: expected,
             variance,
-            milkedBy: log.operatorId?.name || log.milkedBy || (isMorning ? 'Morning Milker' : 'Evening Milker'),
-            chiller: log.chiller || 'Dock Chiller-1',
-            status: log.status || 'Verified',
-            notes: log.notes || 'Milking log entry',
-            createdAt: log.createdAt || (log.date ? new Date(log.date).toISOString() : new Date().toISOString()),
+            milkedBy:
+              log.operatorId?.name ||
+              log.milkedBy ||
+              (isMorning ? "Morning Milker" : "Evening Milker"),
+            chiller: log.chiller || "Dock Chiller-1",
+            status: log.status || "Verified",
+            notes: log.notes || "Milking log entry",
+            createdAt:
+              log.createdAt ||
+              (log.date
+                ? new Date(log.date).toISOString()
+                : new Date().toISOString()),
           });
         }
       }
@@ -190,13 +239,16 @@ export default function AnimalDetail({
   // Filtered logs based on shift and date filters
   const filteredAnimalLogs = useMemo(() => {
     return animalLogs.filter((log) => {
-      if (shiftFilter !== 'All' && log.shift.toLowerCase() !== shiftFilter.toLowerCase()) {
+      if (
+        shiftFilter !== "All" &&
+        log.shift.toLowerCase() !== shiftFilter.toLowerCase()
+      ) {
         return false;
       }
-      if (dateFilter === 'Today') {
+      if (dateFilter === "Today") {
         const today = getTodayDateStr();
         if (log.date !== today) return false;
-      } else if (dateFilter === 'Custom' && customDate) {
+      } else if (dateFilter === "Custom" && customDate) {
         if (log.date !== customDate) return false;
       }
       return true;
@@ -209,8 +261,11 @@ export default function AnimalDetail({
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      const displayDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const displayDate = d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
       days.push({ dateStr, date: displayDate, morning: 0, evening: 0 });
     }
 
@@ -222,12 +277,14 @@ export default function AnimalDetail({
     (animalLogs || []).forEach((log) => {
       const logDate = log.date;
       const dayItem = days.find((d) => d.dateStr === logDate);
-      const shift = (log.shift || '').toLowerCase();
-      const yieldVal = parseFloat(log.actualYield ?? log.quantityLiters ?? log.yield ?? 0) || 0;
+      const shift = (log.shift || "").toLowerCase();
+      const yieldVal =
+        parseFloat(log.actualYield ?? log.quantityLiters ?? log.yield ?? 0) ||
+        0;
       if (dayItem) {
-        if (shift === 'morning') {
+        if (shift === "morning") {
           dayItem.morning = yieldVal;
-        } else if (shift === 'evening') {
+        } else if (shift === "evening") {
           dayItem.evening = yieldVal;
         }
       }
@@ -244,53 +301,12 @@ export default function AnimalDetail({
     return days;
   }, [animalLogs, animal]);
 
-  const morningCount = animalLogs.filter((l) => l.shift?.toLowerCase() === 'morning').length;
-  const eveningCount = animalLogs.filter((l) => l.shift?.toLowerCase() === 'evening').length;
-
-  // 7-Day Milk Production History chart data for AreaChart
-  const chartData = useMemo(() => {
-    if (!animal) return [];
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      const key = `${yyyy}-${mm}-${dd}`;
-      const label = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-      days.push({ key, label });
-    }
-
-    return days.map((d) => {
-      const logsForDay = (animalLogs || []).filter((log) => {
-        const logDate = log.date ? log.date.split('T')[0] : '';
-        return logDate === d.key;
-      });
-
-      let morning = logsForDay
-        .filter((l) => (l.shift || '').toLowerCase() === 'morning')
-        .reduce((sum, l) => sum + (parseFloat(l.actualYield ?? l.quantityLiters ?? l.yield) || 0), 0);
-
-      let evening = logsForDay
-        .filter((l) => (l.shift || '').toLowerCase() === 'evening')
-        .reduce((sum, l) => sum + (parseFloat(l.actualYield ?? l.quantityLiters ?? l.yield) || 0), 0);
-
-      if (morning === 0 && evening === 0 && Array.isArray(animal.history)) {
-        const histEntry = animal.history.find((h) => normalizeDate(h.date) === d.key);
-        if (histEntry) {
-          morning = parseFloat(histEntry.morning || 0);
-          evening = parseFloat(histEntry.evening || 0);
-        }
-      }
-
-      return {
-        date: d.label,
-        morning: parseFloat(morning.toFixed(1)),
-        evening: parseFloat(evening.toFixed(1)),
-      };
-    });
-  }, [animal, animalLogs]);
+  const morningCount = animalLogs.filter(
+    (l) => l.shift?.toLowerCase() === "morning",
+  ).length;
+  const eveningCount = animalLogs.filter(
+    (l) => l.shift?.toLowerCase() === "evening",
+  ).length;
 
   if (!animal) {
     return (
@@ -328,7 +344,7 @@ export default function AnimalDetail({
   const handleDelete = () => {
     if (
       window.confirm(
-        `Are you sure you want to remove animal "${animal.tag}" from the livestock registry?`
+        `Are you sure you want to remove animal "${animal.tag}" from the livestock registry?`,
       )
     ) {
       if (onDelete) {
@@ -352,7 +368,7 @@ export default function AnimalDetail({
     e.preventDefault();
     const qty = parseFloat(intakeForm.quantity);
     if (isNaN(qty) || qty <= 0) {
-      toast.error('Please enter a valid milk quantity in liters');
+      toast.error("Please enter a valid milk quantity in liters");
       return;
     }
 
@@ -368,31 +384,38 @@ export default function AnimalDetail({
           notes: intakeForm.notes,
         });
       } else if (saveMilkingShift) {
-        await saveMilkingShift(intakeForm.shift, intakeForm.date, { [animal.tag]: qty }, intakeForm.milkedBy);
+        await saveMilkingShift(
+          intakeForm.shift,
+          intakeForm.date,
+          { [animal.tag]: qty },
+          intakeForm.milkedBy,
+        );
       }
-      toast.success(`Successfully recorded ${qty} L ${intakeForm.shift} milk intake for ${animal.tag}!`);
+      toast.success(
+        `Successfully recorded ${qty} L ${intakeForm.shift} milk intake for ${animal.tag}!`,
+      );
       setIsIntakeModalOpen(false);
       setIntakeForm({
         date: getTodayDateStr(),
-        shift: 'Morning',
-        quantity: '',
-        milkedBy: 'Morning Milker',
-        notes: '',
+        shift: "Morning",
+        quantity: "",
+        milkedBy: "Morning Milker",
+        notes: "",
       });
     } catch (err) {
-      console.error('Failed to record intake:', err);
-      toast.error('Failed to record milk intake');
+      console.error("Failed to record intake:", err);
+      toast.error("Failed to record milk intake");
     } finally {
       setIsSubmittingIntake(false);
     }
   };
 
   const getSpeciesBadgeStyle = (species) => {
-    const s = (species || '').toLowerCase();
-    if (s.includes('buffalo')) {
-      return 'bg-blue-50 text-blue-700 border-blue-200';
+    const s = (species || "").toLowerCase();
+    if (s.includes("buffalo")) {
+      return "bg-blue-50 text-blue-700 border-blue-200";
     }
-    return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    return "bg-emerald-50 text-emerald-700 border-emerald-200";
   };
 
   return (
@@ -413,7 +436,8 @@ export default function AnimalDetail({
               Livestock Profile — {animal.tag}
             </h1>
             <p className="text-xs text-slate-500">
-              Tag: {animal.tag} • Registered on {animal.acquisitionDate || 'Recently'}
+              Tag: {animal.tag} • Registered on{" "}
+              {animal.acquisitionDate || "Recently"}
             </p>
           </div>
         </div>
@@ -468,18 +492,22 @@ export default function AnimalDetail({
               <div className="flex items-center gap-2 mt-1.5">
                 <span
                   className={`inline-block text-xs font-bold px-2.5 py-0.5 rounded-md border ${getSpeciesBadgeStyle(
-                    animal.species
+                    animal.species,
                   )}`}
                 >
-                  {animal.species || 'Cow (Sahiwal)'}
+                  {animal.species || "Cow (Sahiwal)"}
                 </span>
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  {animal.lactationStatus || 'Milking'}
+                  {animal.lactationStatus || "Milking"}
                 </span>
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                   <Calendar className="w-3 h-3 text-slate-500" />
-                  Registered: {animal.acquisitionDate || (animal.createdAt ? String(animal.createdAt).split('T')[0] : 'Recently')}
+                  Registered:{" "}
+                  {animal.acquisitionDate ||
+                    (animal.createdAt
+                      ? String(animal.createdAt).split("T")[0]
+                      : "Recently")}
                 </span>
               </div>
             </div>
@@ -491,7 +519,7 @@ export default function AnimalDetail({
                 Total Daily Milk Yield
               </span>
               <span className="text-2xl font-black text-emerald-700 font-mono">
-                {animal.totalDailyYield || '—'}
+                {animal.totalDailyYield || "—"}
               </span>
             </div>
           </div>
@@ -505,7 +533,7 @@ export default function AnimalDetail({
               Morning Yield
             </div>
             <p className="text-base font-black text-slate-900 font-mono">
-              {animal.morningYield || '0.0 L'}
+              {animal.morningYield || "0.0 L"}
             </p>
           </div>
 
@@ -515,7 +543,7 @@ export default function AnimalDetail({
               Evening Yield
             </div>
             <p className="text-base font-black text-slate-900 font-mono">
-              {animal.eveningYield || '0.0 L'}
+              {animal.eveningYield || "0.0 L"}
             </p>
           </div>
 
@@ -525,7 +553,7 @@ export default function AnimalDetail({
               Expected Yield
             </div>
             <p className="text-base font-bold text-slate-800 font-mono">
-              {animal.expectedYield || animal.totalDailyYield || '15.0 L'}
+              {animal.expectedYield || animal.totalDailyYield || "15.0 L"}
             </p>
           </div>
 
@@ -535,7 +563,7 @@ export default function AnimalDetail({
               Acquisition Date
             </div>
             <p className="text-sm font-bold text-slate-800 font-mono">
-              {animal.acquisitionDate || 'Recently'}
+              {animal.acquisitionDate || "Recently"}
             </p>
           </div>
         </div>
@@ -566,21 +594,22 @@ export default function AnimalDetail({
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-slate-500">Species &amp; Breed:</span>
                   <span className="font-bold text-slate-800">
-                    {animal.species || 'Cow (Sahiwal)'}
+                    {animal.species || "Cow (Sahiwal)"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-slate-500">Lactation Status:</span>
                   <span className="font-bold text-emerald-700">
-                    {animal.lactationStatus || 'Milking'}
+                    {animal.lactationStatus || "Milking"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-slate-500 flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-slate-400" /> Health Status:
+                    <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />{" "}
+                    Health Status:
                   </span>
                   <span className="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                    {animal.healthStatus || 'Healthy & Vaccinated'}
+                    {animal.healthStatus || "Healthy & Vaccinated"}
                   </span>
                 </div>
               </div>
@@ -596,13 +625,13 @@ export default function AnimalDetail({
                 <div className="flex justify-between items-center pt-1.5">
                   <span className="text-slate-500">Acquisition Price:</span>
                   <span className="font-mono font-bold text-slate-900">
-                    {animal.purchasePrice || 'Rs 200,000'}
+                    {animal.purchasePrice || "Rs 200,000"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-slate-500">Date Registered:</span>
                   <span className="font-mono font-medium text-slate-800">
-                    {animal.acquisitionDate || 'Recently'}
+                    {animal.acquisitionDate || "Recently"}
                   </span>
                 </div>
                 <div className="flex justify-between items-start pt-2">
@@ -610,7 +639,8 @@ export default function AnimalDetail({
                     <FileText className="w-3.5 h-3.5 text-slate-400" /> Notes:
                   </span>
                   <span className="text-slate-700 font-normal text-right pl-3">
-                    {animal.notes || 'No additional remarks recorded for this animal.'}
+                    {animal.notes ||
+                      "No additional remarks recorded for this animal."}
                   </span>
                 </div>
               </div>
@@ -636,34 +666,58 @@ export default function AnimalDetail({
                   margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                 >
                   <defs>
-                    <linearGradient id="morningGrad" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient
+                      id="morningGrad"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
                       <stop offset="5%" stopColor="#00a86b" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#00a86b" stopOpacity={0.0} />
+                      <stop
+                        offset="95%"
+                        stopColor="#00a86b"
+                        stopOpacity={0.0}
+                      />
                     </linearGradient>
-                    <linearGradient id="eveningGrad" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient
+                      id="eveningGrad"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
                       <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
+                      <stop
+                        offset="95%"
+                        stopColor="#3b82f6"
+                        stopOpacity={0.0}
+                      />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#f1f5f9"
+                  />
                   <XAxis
                     dataKey="date"
-                    tick={{ fontSize: 10, fill: '#64748b' }}
-                    axisLine={{ stroke: '#e2e8f0' }}
+                    tick={{ fontSize: 10, fill: "#64748b" }}
+                    axisLine={{ stroke: "#e2e8f0" }}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fontSize: 10, fill: '#64748b' }}
+                    tick={{ fontSize: 10, fill: "#64748b" }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#1e293b',
-                      color: '#fff',
-                      borderRadius: '8px',
-                      fontSize: '11px',
-                      border: 'none',
+                      backgroundColor: "#1e293b",
+                      color: "#fff",
+                      borderRadius: "8px",
+                      fontSize: "11px",
+                      border: "none",
                     }}
                   />
                   <Area
@@ -690,13 +744,20 @@ export default function AnimalDetail({
 
             <div className="flex items-center justify-between text-[11px] text-slate-500 px-2 pt-1 border-t border-slate-200/60">
               <span className="flex items-center gap-1.5 font-medium">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#00a86b]" /> Morning Yield
+                <span className="w-2.5 h-2.5 rounded-full bg-[#00a86b]" />{" "}
+                Morning Yield
               </span>
               <span className="flex items-center gap-1.5 font-medium">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Evening Yield
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />{" "}
+                Evening Yield
               </span>
               <span className="font-mono font-bold text-slate-700">
-                Avg: {((parseFloat(animal.morningYield || 0) + parseFloat(animal.eveningYield || 0)) || 15.0).toFixed(1)} L/day
+                Avg:{" "}
+                {(
+                  parseFloat(animal.morningYield || 0) +
+                    parseFloat(animal.eveningYield || 0) || 15.0
+                ).toFixed(1)}{" "}
+                L/day
               </span>
             </div>
           </div>
@@ -719,7 +780,10 @@ export default function AnimalDetail({
                   </span>
                 </h3>
                 <p className="text-[11px] text-slate-500">
-                  Complete intake history for <strong className="text-slate-700">{animal.tag}</strong> {animal.name && `(${animal.name})`} • Sorted latest entries first
+                  Complete intake history for{" "}
+                  <strong className="text-slate-700">{animal.tag}</strong>{" "}
+                  {animal.name && `(${animal.name})`} • Sorted latest entries
+                  first
                 </p>
               </div>
             </div>
@@ -730,7 +794,10 @@ export default function AnimalDetail({
               <button
                 type="button"
                 onClick={() => {
-                  setIntakeForm((prev) => ({ ...prev, date: getTodayDateStr() }));
+                  setIntakeForm((prev) => ({
+                    ...prev,
+                    date: getTodayDateStr(),
+                  }));
                   setIsIntakeModalOpen(true);
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer"
@@ -745,13 +812,13 @@ export default function AnimalDetail({
                 <button
                   type="button"
                   onClick={() => {
-                    setDateFilter('All');
-                    setCustomDate('');
+                    setDateFilter("All");
+                    setCustomDate("");
                   }}
                   className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                    dateFilter === 'All'
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-100'
+                    dateFilter === "All"
+                      ? "bg-slate-900 text-white shadow-xs"
+                      : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
                   All Dates
@@ -759,13 +826,13 @@ export default function AnimalDetail({
                 <button
                   type="button"
                   onClick={() => {
-                    setDateFilter('Today');
-                    setCustomDate('');
+                    setDateFilter("Today");
+                    setCustomDate("");
                   }}
                   className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                    dateFilter === 'Today'
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-100'
+                    dateFilter === "Today"
+                      ? "bg-slate-900 text-white shadow-xs"
+                      : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
                   Today
@@ -780,7 +847,7 @@ export default function AnimalDetail({
                   value={customDate}
                   onChange={(e) => {
                     setCustomDate(e.target.value);
-                    setDateFilter(e.target.value ? 'Custom' : 'All');
+                    setDateFilter(e.target.value ? "Custom" : "All");
                   }}
                   className="bg-transparent border-none outline-none text-xs font-medium cursor-pointer"
                 />
@@ -788,8 +855,8 @@ export default function AnimalDetail({
                   <button
                     type="button"
                     onClick={() => {
-                      setCustomDate('');
-                      setDateFilter('All');
+                      setCustomDate("");
+                      setDateFilter("All");
                     }}
                     className="text-slate-400 hover:text-slate-600 text-xs font-bold ml-1 cursor-pointer"
                     title="Clear date"
@@ -803,11 +870,11 @@ export default function AnimalDetail({
               <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-2xs">
                 <button
                   type="button"
-                  onClick={() => setShiftFilter('All')}
+                  onClick={() => setShiftFilter("All")}
                   className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
-                    shiftFilter === 'All'
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-100'
+                    shiftFilter === "All"
+                      ? "bg-slate-900 text-white shadow-xs"
+                      : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
                   All ({animalLogs.length})
@@ -815,11 +882,11 @@ export default function AnimalDetail({
 
                 <button
                   type="button"
-                  onClick={() => setShiftFilter('Morning')}
+                  onClick={() => setShiftFilter("Morning")}
                   className={`px-3 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                    shiftFilter === 'Morning'
-                      ? 'bg-amber-500 text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-100'
+                    shiftFilter === "Morning"
+                      ? "bg-amber-500 text-white shadow-xs"
+                      : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
                   <Sun className="w-3 h-3 text-amber-300" />
@@ -828,11 +895,11 @@ export default function AnimalDetail({
 
                 <button
                   type="button"
-                  onClick={() => setShiftFilter('Evening')}
+                  onClick={() => setShiftFilter("Evening")}
                   className={`px-3 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                    shiftFilter === 'Evening'
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-100'
+                    shiftFilter === "Evening"
+                      ? "bg-indigo-600 text-white shadow-xs"
+                      : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
                   <Moon className="w-3 h-3 text-indigo-200" />
@@ -862,13 +929,18 @@ export default function AnimalDetail({
               <tbody className="divide-y divide-slate-100">
                 {filteredAnimalLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-4 py-10 text-center text-slate-400 font-medium">
-                      No {shiftFilter !== 'All' ? shiftFilter.toLowerCase() : ''} milking history records found for {animal.tag}.
+                    <td
+                      colSpan={10}
+                      className="px-4 py-10 text-center text-slate-400 font-medium"
+                    >
+                      No{" "}
+                      {shiftFilter !== "All" ? shiftFilter.toLowerCase() : ""}{" "}
+                      milking history records found for {animal.tag}.
                     </td>
                   </tr>
                 ) : (
                   filteredAnimalLogs.map((log) => {
-                    const isMorn = log.shift === 'Morning';
+                    const isMorn = log.shift === "Morning";
                     const isPositive = log.variance >= 0;
 
                     return (
@@ -881,20 +953,29 @@ export default function AnimalDetail({
                           <span className="font-mono font-bold text-slate-900 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-[11px] inline-block">
                             {log.animalTag || animal.tag}
                           </span>
-                          <span className="block text-[10px] text-slate-400 font-mono mt-0.5" title={log.animalId || animal._id || animal.id}>
-                            ID: {String(log.animalId || animal._id || animal.id || '').slice(-6)}
+                          <span
+                            className="block text-[10px] text-slate-400 font-mono mt-0.5"
+                            title={log.animalId || animal._id || animal.id}
+                          >
+                            ID:{" "}
+                            {String(
+                              log.animalId || animal._id || animal.id || "",
+                            ).slice(-6)}
                           </span>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5">
                             <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                             <span className="font-mono font-bold text-slate-800 text-[12px] whitespace-nowrap">
-                              {log.date || 'Today'}
+                              {log.date || "Today"}
                             </span>
                           </div>
                           {log.createdAt && (
                             <span className="block text-[10px] text-slate-400 font-mono pl-5">
-                              {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(log.createdAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
                             </span>
                           )}
                         </td>
@@ -902,8 +983,8 @@ export default function AnimalDetail({
                           <span
                             className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                               isMorn
-                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : "bg-indigo-50 text-indigo-700 border border-indigo-200"
                             }`}
                           >
                             {isMorn ? (
@@ -924,24 +1005,27 @@ export default function AnimalDetail({
                           <span
                             className={`inline-flex items-center gap-1 font-mono font-bold text-xs px-2 py-0.5 rounded-md ${
                               isPositive
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : "bg-rose-50 text-rose-700 border border-rose-200"
                             }`}
                           >
-                            {isPositive ? `+${log.variance.toFixed(1)}` : log.variance.toFixed(1)} L
+                            {isPositive
+                              ? `+${log.variance.toFixed(1)}`
+                              : log.variance.toFixed(1)}{" "}
+                            L
                           </span>
                         </td>
-                        
+
                         <td className="px-4 py-3 text-slate-700 font-medium">
-                          {log.milkedBy || 'Milker'}
+                          {log.milkedBy || "Milker"}
                           <span className="block text-[10px] text-slate-400 font-normal">
-                            {log.chiller || 'Chiller-1'}
+                            {log.chiller || "Chiller-1"}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-center">
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                             <Check className="w-3 h-3 stroke-[2.5]" />
-                            {log.status || 'Verified'}
+                            {log.status || "Verified"}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -974,10 +1058,12 @@ export default function AnimalDetail({
               <div className="flex items-center gap-3">
                 <div
                   className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                    selectedRecord.shift === 'Morning' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'
+                    selectedRecord.shift === "Morning"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-indigo-100 text-indigo-700"
                   }`}
                 >
-                  {selectedRecord.shift === 'Morning' ? (
+                  {selectedRecord.shift === "Morning" ? (
                     <Sun className="w-5 h-5" />
                   ) : (
                     <Moon className="w-5 h-5" />
@@ -1024,32 +1110,50 @@ export default function AnimalDetail({
 
               <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden text-xs">
                 <div className="flex justify-between items-center p-3 bg-white">
-                  <span className="text-slate-500">Animal Tag / Identifier:</span>
-                  <span className="font-bold text-slate-900 font-mono">{animal.tag} {animal.name && `(${animal.name})`}</span>
+                  <span className="text-slate-500">
+                    Animal Tag / Identifier:
+                  </span>
+                  <span className="font-bold text-slate-900 font-mono">
+                    {animal.tag} {animal.name && `(${animal.name})`}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-white">
                   <span className="text-slate-500 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" /> Intake Date:
+                    <Calendar className="w-3.5 h-3.5 text-slate-400" /> Intake
+                    Date:
                   </span>
-                  <span className="font-mono font-bold text-slate-900">{selectedRecord.date} ({selectedRecord.shift} Shift)</span>
+                  <span className="font-mono font-bold text-slate-900">
+                    {selectedRecord.date} ({selectedRecord.shift} Shift)
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-slate-50/50">
                   <span className="text-slate-500">Species / Breed:</span>
-                  <span className="font-medium text-slate-800">{animal.species || 'Cow'}</span>
+                  <span className="font-medium text-slate-800">
+                    {animal.species || "Cow"}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-white">
                   <span className="text-slate-500">Yield Variance:</span>
-                  <span className={`font-mono font-bold ${selectedRecord.variance >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                    {selectedRecord.variance >= 0 ? `+${selectedRecord.variance.toFixed(1)}` : selectedRecord.variance.toFixed(1)} Liters
+                  <span
+                    className={`font-mono font-bold ${selectedRecord.variance >= 0 ? "text-emerald-700" : "text-rose-600"}`}
+                  >
+                    {selectedRecord.variance >= 0
+                      ? `+${selectedRecord.variance.toFixed(1)}`
+                      : selectedRecord.variance.toFixed(1)}{" "}
+                    Liters
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-slate-50/50">
                   <span className="text-slate-500">Milked By:</span>
-                  <span className="font-medium text-slate-800">{selectedRecord.milkedBy}</span>
+                  <span className="font-medium text-slate-800">
+                    {selectedRecord.milkedBy}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-white">
                   <span className="text-slate-500">Chiller Destination:</span>
-                  <span className="font-medium text-slate-800">{selectedRecord.chiller}</span>
+                  <span className="font-medium text-slate-800">
+                    {selectedRecord.chiller}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1089,7 +1193,12 @@ export default function AnimalDetail({
                     Record Milk Intake
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Animal Tag: <strong className="text-slate-800 font-mono">{animal.tag}</strong> • ID: <span className="font-mono">{animal._id || animal.id}</span>
+                    Animal Tag:{" "}
+                    <strong className="text-slate-800 font-mono">
+                      {animal.tag}
+                    </strong>{" "}
+                    • ID:{" "}
+                    <span className="font-mono">{animal._id || animal.id}</span>
                   </p>
                 </div>
               </div>
@@ -1114,7 +1223,7 @@ export default function AnimalDetail({
                   </span>
                 </div>
                 <span className="font-mono text-xs font-semibold text-emerald-700 bg-white px-2 py-1 rounded border border-emerald-200">
-                  {animal.species || 'Cow'}
+                  {animal.species || "Cow"}
                 </span>
               </div>
 
@@ -1128,7 +1237,9 @@ export default function AnimalDetail({
                     type="date"
                     required
                     value={intakeForm.date}
-                    onChange={(e) => setIntakeForm({ ...intakeForm, date: e.target.value })}
+                    onChange={(e) =>
+                      setIntakeForm({ ...intakeForm, date: e.target.value })
+                    }
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   />
                 </div>
@@ -1140,7 +1251,9 @@ export default function AnimalDetail({
                   </label>
                   <select
                     value={intakeForm.shift}
-                    onChange={(e) => setIntakeForm({ ...intakeForm, shift: e.target.value })}
+                    onChange={(e) =>
+                      setIntakeForm({ ...intakeForm, shift: e.target.value })
+                    }
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   >
                     <option value="Morning">Morning Shift</option>
@@ -1162,7 +1275,9 @@ export default function AnimalDetail({
                     required
                     placeholder="e.g. 10.5"
                     value={intakeForm.quantity}
-                    onChange={(e) => setIntakeForm({ ...intakeForm, quantity: e.target.value })}
+                    onChange={(e) =>
+                      setIntakeForm({ ...intakeForm, quantity: e.target.value })
+                    }
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   />
                   <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">
@@ -1180,7 +1295,9 @@ export default function AnimalDetail({
                   type="text"
                   placeholder="e.g. Morning Milker"
                   value={intakeForm.milkedBy}
-                  onChange={(e) => setIntakeForm({ ...intakeForm, milkedBy: e.target.value })}
+                  onChange={(e) =>
+                    setIntakeForm({ ...intakeForm, milkedBy: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
@@ -1194,7 +1311,9 @@ export default function AnimalDetail({
                   type="text"
                   placeholder="e.g. Verified farm dock intake"
                   value={intakeForm.notes}
-                  onChange={(e) => setIntakeForm({ ...intakeForm, notes: e.target.value })}
+                  onChange={(e) =>
+                    setIntakeForm({ ...intakeForm, notes: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
