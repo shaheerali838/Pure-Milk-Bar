@@ -201,10 +201,7 @@ export default function SalesAndReceivablesSection() {
                 <ShoppingBag className="w-4 h-4 text-[#009966]" />
                 <span>Sales — Cash vs. Credit Inflows</span>
               </h3>
-              <p className="text-[11px] text-slate-500">
-                Comparison of upfront liquid cash receipts vs. customer khata
-                receivables
-              </p>
+             
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
               POS Ledger
@@ -280,10 +277,7 @@ export default function SalesAndReceivablesSection() {
                 <Receipt className="w-4 h-4 text-purple-600" />
                 <span>Expenses — Shop vs. Farm Operations</span>
               </h3>
-              <p className="text-[11px] text-slate-500">
-                Operating expenditures trend comparing cattle upkeep with retail
-                counter costs
-              </p>
+              
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
               Overheads

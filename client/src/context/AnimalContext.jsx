@@ -39,10 +39,12 @@ const normalizeAnimal = (animal, history = []) => {
     const dateStr = item.date
       ? (typeof item.date === 'string' && item.date.includes('T') ? item.date.split('T')[0] : String(item.date).slice(0, 10))
       : '';
-    const rawShift = item.shift || (item.morning > 0 ? 'Morning' : 'Evening') || 'Morning';
+    if (!dateStr) return;
+
+    const rawShift = item.shift || (item.morning > 0 ? 'Morning' : (item.evening > 0 ? 'Evening' : 'Morning'));
     const normShift = rawShift.charAt(0).toUpperCase() + rawShift.slice(1).toLowerCase();
     const qty = Number(item.quantityLiters ?? item.yieldLiters ?? item.yield ?? (normShift === 'Evening' ? item.evening : item.morning) ?? 0) || 0;
-    const key = `${dateStr}-${normShift}-${qty}`;
+    const key = `${dateStr}-${normShift.toLowerCase()}`;
 
     if (!seenKeys.has(key)) {
       seenKeys.add(key);
@@ -52,8 +54,8 @@ const normalizeAnimal = (animal, history = []) => {
         shift: normShift,
         quantityLiters: qty,
         yieldLiters: qty,
-        morning: normShift === 'Morning' ? qty : (item.morning || 0),
-        evening: normShift === 'Evening' ? qty : (item.evening || 0),
+        morning: normShift === 'Morning' ? qty : 0,
+        evening: normShift === 'Evening' ? qty : 0,
         fat: item.fat || null,
         snf: item.snf || null,
         notes: item.notes || '',
@@ -294,7 +296,12 @@ export function AnimalProvider({ children }) {
         prev.map((animal) => {
           if (String(animal.id) === String(animalId) || String(animal._id) === String(animalId) || animal.tag === animalId) {
             const currentHistory = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : [];
-            const updatedHistory = [newIntake, ...currentHistory];
+            const filteredHistory = currentHistory.filter((h) => {
+              const hDate = h.date ? (typeof h.date === 'string' && h.date.includes('T') ? h.date.split('T')[0] : String(h.date).slice(0, 10)) : '';
+              const hShift = (h.shift || '').toLowerCase();
+              return !(hDate === dateStr && hShift === normShift.toLowerCase());
+            });
+            const updatedHistory = [newIntake, ...filteredHistory];
             return {
               ...animal,
               morningYield: normShift.toUpperCase() === 'MORNING' ? `${val.toFixed(1)} L` : animal.morningYield,
@@ -398,18 +405,23 @@ export function AnimalProvider({ children }) {
           const val = parseFloat(shiftEntries[animal.tag] || shiftEntries[animal.tagNumber]);
           if (!isNaN(val) && val > 0) {
             const newIntake = {
-              id: `INTAKE-${Date.now()}-${animal.tag}`,
+              id: `INTAKE-${shiftDate}-${normShift}-${animal.tag}`,
               date: shiftDate,
               shift: normShift,
               quantityLiters: val,
               yieldLiters: val,
-              morning: normShift === 'Morning' ? val : parseFloat(animal.morningYield || 0),
-              evening: normShift === 'Evening' ? val : parseFloat(animal.eveningYield || 0),
+              morning: normShift === 'Morning' ? val : 0,
+              evening: normShift === 'Evening' ? val : 0,
               notes: 'Milking shift entry',
               createdAt: new Date().toISOString(),
             };
             const currentHistory = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : [];
-            const updatedHistory = [newIntake, ...currentHistory];
+            const filteredHistory = currentHistory.filter((h) => {
+              const hDate = h.date ? (typeof h.date === 'string' && h.date.includes('T') ? h.date.split('T')[0] : String(h.date).slice(0, 10)) : '';
+              const hShift = (h.shift || '').toLowerCase();
+              return !(hDate === shiftDate && hShift === normShift.toLowerCase());
+            });
+            const updatedHistory = [newIntake, ...filteredHistory];
             return {
               ...animal,
               morningYield: normShift === 'Morning' ? `${val.toFixed(1)} L` : animal.morningYield,

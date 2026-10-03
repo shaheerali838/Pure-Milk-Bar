@@ -83,9 +83,7 @@ export default function SupplierPLCharts({ barData = [], donutData = [] }) {
               <h3 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
                 Revenue &amp; Net Profit by Sourced Stream
               </h3>
-              <p className="text-[11px] text-slate-500">
-                Resale revenue realization and net profit (bachat)
-              </p>
+             
             </div>
           </div>
           <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
@@ -154,9 +152,7 @@ export default function SupplierPLCharts({ barData = [], donutData = [] }) {
                 <h3 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
                   Sales Revenue Allocation
                 </h3>
-                <p className="text-[11px] text-slate-500">
-                  Total resale revenue stream breakdown
-                </p>
+              
               </div>
             </div>
             <span className="text-[10px] font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">

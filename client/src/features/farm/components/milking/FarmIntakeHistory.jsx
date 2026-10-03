@@ -397,9 +397,7 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
             <h3 className="text-sm font-bold text-slate-900 font-display">
               Farm Milking &amp; Intake Records
             </h3>
-            <p className="text-xs text-slate-400">
-              Click any row to open the complete Yield &amp; Variance Detail Sheet
-            </p>
+            
           </div>
           <span className="text-xs font-bold text-slate-500">
             Showing <strong className="text-slate-800">{filteredLogs.length}</strong> entries
@@ -733,12 +731,7 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
               </div>
 
               {/* Variance Analysis Note */}
-              <div className="p-3 bg-amber-50/60 border border-amber-200 rounded-xl text-amber-900 leading-relaxed text-[11px]">
-                <strong>Farm Variance Logic:</strong>{' '}
-                {selectedRecord.variance >= 0
-                  ? `Yield exceeds benchmark target by +${selectedRecord.variance.toFixed(1)} liters. Cattle is performing at peak lactation health.`
-                  : `Yield is below benchmark by ${selectedRecord.variance.toFixed(1)} liters. Check feed nutrition, water availability, or lactation curve.`}
-              </div>
+             
             </div>
 
             {/* Modal Footer */}

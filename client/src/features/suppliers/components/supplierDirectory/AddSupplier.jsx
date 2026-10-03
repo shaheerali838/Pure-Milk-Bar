@@ -20,8 +20,6 @@ import ImageUpload from '@/components/common/ImageUpload';
 const SUPPLIER_TYPES = [
   'Commercial Dairy Farm',
   'Individual Farmer',
-  'Dairy Cooperative',
-  'Middleman / Collection Center',
 ];
 
 const STATUS_OPTIONS = ['Active', 'On Hold', 'Inactive'];
@@ -31,8 +29,8 @@ const initialForm = {
   contact: '',
   area: '',
   supplierType: 'Commercial Dairy Farm',
-  ratePerLiter: '228',
-  avgLiters: '10',
+  ratePerLiter: '',
+  avgLiters: '',
   address: '',
   status: 'Active',
   paymentMethod: 'Cash / Direct Settlement',
@@ -57,8 +55,8 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
         contact: editSupplier.contact || '',
         area: editSupplier.area || '',
         supplierType: editSupplier.supplierType || 'Commercial Dairy Farm',
-        ratePerLiter: editSupplier.ratePerLiter !== undefined ? String(editSupplier.ratePerLiter) : '228',
-        avgLiters: editSupplier.avgLiters !== undefined ? String(editSupplier.avgLiters) : '10',
+        ratePerLiter: editSupplier.ratePerLiter !== undefined ? String(editSupplier.ratePerLiter) : '',
+        avgLiters: editSupplier.avgLiters !== undefined ? String(editSupplier.avgLiters) : '',
         address: editSupplier.address || '',
         status: editSupplier.status || 'Active',
         paymentMethod: editSupplier.paymentMethod || 'Cash / Direct Settlement',
@@ -301,8 +299,6 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
                   </span>
                   <input
                     type="number"
-                    step="0.5"
-                    min="0"
                     required
                     name="ratePerLiter"
                     value={formData.ratePerLiter}
@@ -328,7 +324,7 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
                     name="avgLiters"
                     value={formData.avgLiters}
                     onChange={handleChange}
-                    placeholder="Enter commission"
+                    placeholder="Enter Expected Daily Supply"
                     className="w-full pl-3 pr-12 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#00a86b] focus:border-[#00a86b] transition font-mono font-medium"
                   />
                 </div>
@@ -346,9 +342,8 @@ export default function AddSupplier({ onCancel, onBack, editSupplier = null }) {
                 >
                   <option value="Cash / Direct Settlement">Cash / Direct Settlement</option>
                   <option value="Weekly Settlement">Weekly Settlement</option>
-                  <option value="Bi-Weekly Settlement">Bi-Weekly Settlement</option>
                   <option value="Monthly Invoice">Monthly Invoice</option>
-                  <option value="Bank / Mobile Wallet">Bank / Mobile Wallet</option>
+                  <option value="Bank / Online Transfer">Bank / Online Transfer</option>
                 </select>
               </div>
 

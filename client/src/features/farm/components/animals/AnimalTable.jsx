@@ -11,11 +11,10 @@ import {
   TableCell,
 } from '@/components/ui/table';
 
-export default function AnimalTable({ onSelectAnimal }) {
+export default function AnimalTable({ onSelectAnimal, onEditAnimal }) {
   const { animals, deleteAnimal, isLoading } = useAnimalContext();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('All');
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const filteredAnimals = animals.filter((a) => {
     const q = search.toLowerCase();
@@ -33,9 +32,17 @@ export default function AnimalTable({ onSelectAnimal }) {
     return matchesSearch && matchesFilter;
   });
 
-  const handleDelete = (id) => {
-    deleteAnimal(id);
-    setConfirmDeleteId(null);
+  const handleDelete = async (animal) => {
+    const id = animal.id || animal._id;
+    const tag = animal.tag || animal.tagNumber || animal.name || 'this animal';
+    if (window.confirm(`Are you sure you want to remove animal "${tag}" from the livestock registry?`)) {
+      try {
+        await deleteAnimal(id);
+      } catch (err) {
+        console.error('Failed to delete animal:', err);
+        alert(err?.response?.data?.message || err?.message || 'Failed to delete animal');
+      }
+    }
   };
 
   return (
@@ -174,46 +181,38 @@ export default function AnimalTable({ onSelectAnimal }) {
                   </TableCell>
 
                   <TableCell className="py-3 text-right">
-                    {confirmDeleteId === animal.id ? (
-                      <div className="flex justify-end items-center gap-2 animate-in fade-in slide-in-from-right-2">
-                        <button
-                          onClick={() => handleDelete(animal.id)}
-                          className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full hover:bg-red-700 transition"
-                        >
-                          Delete
-                        </button>
-                        <button
-                          onClick={() => setConfirmDeleteId(null)}
-                          className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full hover:bg-slate-200 transition"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex justify-end gap-1">
-                        <button
-                          onClick={() => onSelectAnimal && onSelectAnimal(animal.id)}
-                          className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-                          title="View Details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => onSelectAnimal && onSelectAnimal(animal.id)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                          title="Edit Animal"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setConfirmDeleteId(animal.id)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                          title="Delete Animal"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => onSelectAnimal && onSelectAnimal(animal.id || animal._id)}
+                        className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                        title="View Details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onEditAnimal) {
+                            onEditAnimal(animal);
+                          } else if (onSelectAnimal) {
+                            onSelectAnimal(animal.id || animal._id);
+                          }
+                        }}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                        title="Edit Animal"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(animal)}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        title="Delete Animal"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

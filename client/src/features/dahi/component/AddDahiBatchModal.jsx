@@ -432,9 +432,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                       </div>
                     </div>
                   </div>
-                  <p className="text-[10px] text-slate-500 leading-tight">
-                    * Future POS sales of this batch will split revenue between Farm &amp; Supplier P&amp;L according to this exact liter ratio.
-                  </p>
+                  
                 </div>
               ) : (
                 <div className="hidden"></div>

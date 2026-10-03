@@ -483,6 +483,13 @@ export default function AnimalCardOverflow() {
                 animalId={selectedAnimalId}
                 onClose={() => setSelectedAnimalId(null)}
                 onBack={() => setSelectedAnimalId(null)}
+                onEdit={(animal) => {
+                  setEditAnimal(animal);
+                  setSelectedAnimalId(null);
+                }}
+                onDelete={() => {
+                  setSelectedAnimalId(null);
+                }}
               />
             </div>
           </div>

@@ -373,10 +373,7 @@ export default function DailySheet() {
             <FileText className="w-5 h-5 text-[#d97706]" />
             Farm Daily Master Sheet
           </h2>
-          <p className="text-sm text-slate-500">
-            Daily milking logs, herd yield, and consolidated farm operating
-            expenses.
-          </p>
+         
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -575,9 +572,7 @@ export default function DailySheet() {
             <h4 className="font-bold text-slate-900 font-display text-sm sm:text-base">
               Daily Farm Milking Log
             </h4>
-            <p className="text-xs text-slate-500">
-              Shift-wise milking volume per animal.
-            </p>
+            
           </div>
         </div>
 
@@ -686,9 +681,7 @@ export default function DailySheet() {
                 {dahiRows.length} Batches
               </span>
             </div>
-            <p className="text-xs text-slate-500">
-              Value-add dairy processing runs, milk converted into Dahi, and produced output.
-            </p>
+            
           </div>
         </div>
 
@@ -798,9 +791,7 @@ export default function DailySheet() {
             <h4 className="font-bold text-slate-900 font-display text-sm sm:text-base">
               Farm Expenses Today
             </h4>
-            <p className="text-xs text-slate-500">
-              Breakdown of daily farm operating costs and overheads.
-            </p>
+            
           </div>
         </div>
 
