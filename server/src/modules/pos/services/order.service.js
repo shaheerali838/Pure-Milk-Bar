@@ -114,6 +114,7 @@ class OrderService {
     if (Array.isArray(order.items) && order.items.length > 0) {
       for (const item of order.items) {
         let prod = null;
+        if (item.productId && mongoose.Types.ObjectId.isValid(item.productId)) {
           prod = await Product.findById(item.productId);
         }
         if (!prod && item.sku) {
