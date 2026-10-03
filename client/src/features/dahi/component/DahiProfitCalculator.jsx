@@ -54,9 +54,6 @@ export default function DahiProfitCalculator() {
             <h3 className="text-sm font-bold text-slate-900 font-display">
               Simple Dahi Profit &amp; Yield Calculator
             </h3>
-            <p className="text-[11.5px] text-slate-500">
-              Calculate milk-to-dahi conversion margins, processing expenses &amp; net uplift
-            </p>
           </div>
         </div>
         <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">

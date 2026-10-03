@@ -21,7 +21,10 @@ import {
   Eye,
   CheckCircle2,
   Clock,
+  Plus,
+  Loader2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAnimalContext } from '../../../../context/AnimalContext';
 import {
   ResponsiveContainer,
@@ -54,7 +57,7 @@ export default function AnimalDetail({
   onEdit,
   onDelete,
 }) {
-  const { animals = [], milkingLogs = [], deleteAnimal } = useAnimalContext();
+  const { animals = [], milkingLogs = [], deleteAnimal, addAnimalIntake, saveMilkingShift } = useAnimalContext();
   const handleBack = onBack || onClose;
 
   const [isEditingInline, setIsEditingInline] = useState(false);
@@ -63,17 +66,31 @@ export default function AnimalDetail({
   const [customDate, setCustomDate] = useState('');
   const [selectedRecord, setSelectedRecord] = useState(null);
 
+  // Quick milk intake state directly for this animal
+  const [isIntakeModalOpen, setIsIntakeModalOpen] = useState(false);
+  const [intakeForm, setIntakeForm] = useState({
+    date: getTodayDateStr(),
+    shift: 'Morning',
+    quantity: '',
+    milkedBy: 'Morning Milker',
+    notes: '',
+  });
+  const [isSubmittingIntake, setIsSubmittingIntake] = useState(false);
+
   const animal = animals.find(
     (a) =>
-      String(a.id) === String(animalId) ||
-      String(a.tag).toLowerCase() === String(animalId).toLowerCase()
+      String(a.id || a._id) === String(animalId) ||
+      String(a._id || a.id) === String(animalId) ||
+      String(a.tag || a.tagNumber || '').toLowerCase() === String(animalId).toLowerCase() ||
+      String(a.tagNumber || a.tag || '').toLowerCase() === String(animalId).toLowerCase()
   );
 
   // Filter & merge all intake and milking history strictly belonging to THIS specific cow or buffalo
   const animalLogs = useMemo(() => {
     if (!animal) return [];
-    const tag = (animal.tag || '').trim().toLowerCase();
-    const id = String(animal.id || animal._id || '');
+    const tag = (animal.tag || animal.tagNumber || '').trim().toLowerCase();
+    const animalMongoId = String(animal._id || '').toLowerCase();
+    const animalIdStr = String(animal.id || '').toLowerCase();
     const name = (animal.name || '').trim().toLowerCase();
 
     const isBuff = (animal.species || '').toLowerCase().includes('buffalo');
@@ -81,33 +98,33 @@ export default function AnimalDetail({
     const eExp = parseFloat(animal.eveningYield || 0) || (isBuff ? 7.5 : 7.0);
 
     const mergedList = [];
-    const seenMap = new Set();
+    const seenShiftDate = new Set();
 
     // 1. Process intakeHistory stored on the Animal document
     const rawIntakeHistory = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : [];
     rawIntakeHistory.forEach((h) => {
+      if (!h) return;
       const dateStr = normalizeDate(h.date) || getTodayDateStr();
-      const rawShift = h.shift || (h.morning > 0 ? 'Morning' : 'Evening') || 'Morning';
+      const rawShift = h.shift || (h.morning > 0 ? 'Morning' : (h.evening > 0 ? 'Evening' : 'Morning'));
       const shift = rawShift.charAt(0).toUpperCase() + rawShift.slice(1).toLowerCase();
       const isMorning = shift === 'Morning';
       const actual = parseFloat(h.quantityLiters ?? h.yieldLiters ?? h.yield ?? (isMorning ? h.morning : h.evening) ?? 0) || 0;
       const expected = isMorning ? mExp : eExp;
       const variance = parseFloat((actual - expected).toFixed(1));
-      const key = `${dateStr}-${shift}-${actual}`;
+      const shiftKey = `${dateStr}-${shift.toLowerCase()}`;
 
-      if (!seenMap.has(key)) {
-        seenMap.add(key);
+      if (!seenShiftDate.has(shiftKey)) {
+        seenShiftDate.add(shiftKey);
         mergedList.push({
           id: h._id || h.id || `INTAKE-${animal.tag}-${dateStr}-${shift}`,
+          animalId: animal._id || animal.id || '',
+          animalTag: animal.tag || animal.tagNumber || '',
           date: dateStr,
           shift,
           actualYield: actual,
           quantityLiters: actual,
           expectedYield: expected,
           variance,
-          fat: h.fat || (isBuff ? 6.8 : 4.5),
-          snf: h.snf || 8.6,
-          lr: h.lr || 28.5,
           milkedBy: h.operator || h.milkedBy || (isMorning ? 'Morning Milker' : 'Evening Milker'),
           chiller: h.chiller || 'Dock Chiller-1',
           status: h.status || 'Verified',
@@ -117,73 +134,16 @@ export default function AnimalDetail({
       }
     });
 
-    // 2. Process legacy animal.history if present
-    if (Array.isArray(animal.history)) {
-      animal.history.forEach((h) => {
-        const dateStr = normalizeDate(h.date);
-        if (!dateStr) return;
-
-        if (h.morning !== undefined && h.morning !== null) {
-          const mYield = parseFloat(h.morning) || 0;
-          const key = `${dateStr}-Morning-${mYield}`;
-          if (!seenMap.has(key)) {
-            seenMap.add(key);
-            mergedList.push({
-              id: `hist-${animal.tag}-${dateStr}-M`,
-              date: dateStr,
-              shift: 'Morning',
-              actualYield: mYield,
-              quantityLiters: mYield,
-              expectedYield: mExp,
-              variance: parseFloat((mYield - mExp).toFixed(1)),
-              fat: isBuff ? 6.8 : 4.5,
-              snf: 8.6,
-              lr: 28.5,
-              milkedBy: h.operator || 'Morning Milker',
-              chiller: 'Dock Chiller-1',
-              status: 'Verified',
-              notes: h.notes || 'Historical intake record',
-              createdAt: h.createdAt || new Date(dateStr).toISOString(),
-            });
-          }
-        }
-
-        if (h.evening !== undefined && h.evening !== null) {
-          const eYield = parseFloat(h.evening) || 0;
-          const key = `${dateStr}-Evening-${eYield}`;
-          if (!seenMap.has(key)) {
-            seenMap.add(key);
-            mergedList.push({
-              id: `hist-${animal.tag}-${dateStr}-E`,
-              date: dateStr,
-              shift: 'Evening',
-              actualYield: eYield,
-              quantityLiters: eYield,
-              expectedYield: eExp,
-              variance: parseFloat((eYield - eExp).toFixed(1)),
-              fat: isBuff ? 7.1 : 4.8,
-              snf: 8.8,
-              lr: 28.5,
-              milkedBy: h.operator || 'Evening Milker',
-              chiller: 'Dock Chiller-1',
-              status: 'Verified',
-              notes: h.notes || 'Historical intake record',
-              createdAt: h.createdAt || new Date(dateStr).toISOString(),
-            });
-          }
-        }
-      });
-    }
-
-    // 3. Match from milkingLogs collection
+    // 2. Match from milkingLogs collection (for logs not yet in animal.intakeHistory)
     (milkingLogs || []).forEach((log) => {
       const logTag = (log.animalTag || log.tag || log.animal?.tag || log.animalId?.tagNumber || log.animalId?.tag || '').trim().toLowerCase();
-      const logId = String(log.animalId?._id || log.animalId || log.animal?._id || log.animal?.id || '');
+      const logId = String(log.animalId?._id || log.animalId?.id || log.animalId || log.animal?._id || log.animal?.id || '').toLowerCase();
       const logName = (log.animalName || '').trim().toLowerCase();
 
       const isMatch = (
-        (tag && logTag === tag) ||
-        (id && logId === id) ||
+        (tag && (logTag === tag || logTag === (animal.tagNumber || '').trim().toLowerCase())) ||
+        (animalMongoId && logId === animalMongoId) ||
+        (animalIdStr && logId === animalIdStr) ||
         (name && logName === name && name !== 'cow' && name !== 'buffalo')
       );
 
@@ -194,21 +154,20 @@ export default function AnimalDetail({
         const expected = isMorning ? mExp : eExp;
         const variance = parseFloat((actual - expected).toFixed(1));
         const dateStr = normalizeDate(log.date) || getTodayDateStr();
-        const key = `${dateStr}-${shift}-${actual}`;
+        const shiftKey = `${dateStr}-${shift.toLowerCase()}`;
 
-        if (!seenMap.has(key)) {
-          seenMap.add(key);
+        if (!seenShiftDate.has(shiftKey)) {
+          seenShiftDate.add(shiftKey);
           mergedList.push({
             id: log.id || log._id || `${animal.tag}-${dateStr}-${shift}`,
+            animalId: animal._id || animal.id || '',
+            animalTag: animal.tag || animal.tagNumber || '',
             date: dateStr,
             shift,
             actualYield: actual,
             quantityLiters: actual,
             expectedYield: expected,
             variance,
-            fat: log.fat || (isBuff ? 6.8 : 4.5),
-            snf: log.snf || 8.6,
-            lr: log.lr || 28.5,
             milkedBy: log.operatorId?.name || log.milkedBy || (isMorning ? 'Morning Milker' : 'Evening Milker'),
             chiller: log.chiller || 'Dock Chiller-1',
             status: log.status || 'Verified',
@@ -219,7 +178,7 @@ export default function AnimalDetail({
       }
     });
 
-    // 4. Strict Descending Order: Latest entry sab se upar nazar aaye
+    // 3. Strict Descending Order: Latest entry at the top
     return mergedList.sort((a, b) => {
       const timeA = new Date(a.date || a.createdAt || 0).getTime();
       const timeB = new Date(b.date || b.createdAt || 0).getTime();
@@ -288,6 +247,51 @@ export default function AnimalDetail({
   const morningCount = animalLogs.filter((l) => l.shift?.toLowerCase() === 'morning').length;
   const eveningCount = animalLogs.filter((l) => l.shift?.toLowerCase() === 'evening').length;
 
+  // 7-Day Milk Production History chart data for AreaChart
+  const chartData = useMemo(() => {
+    if (!animal) return [];
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const key = `${yyyy}-${mm}-${dd}`;
+      const label = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+      days.push({ key, label });
+    }
+
+    return days.map((d) => {
+      const logsForDay = (animalLogs || []).filter((log) => {
+        const logDate = log.date ? log.date.split('T')[0] : '';
+        return logDate === d.key;
+      });
+
+      let morning = logsForDay
+        .filter((l) => (l.shift || '').toLowerCase() === 'morning')
+        .reduce((sum, l) => sum + (parseFloat(l.actualYield ?? l.quantityLiters ?? l.yield) || 0), 0);
+
+      let evening = logsForDay
+        .filter((l) => (l.shift || '').toLowerCase() === 'evening')
+        .reduce((sum, l) => sum + (parseFloat(l.actualYield ?? l.quantityLiters ?? l.yield) || 0), 0);
+
+      if (morning === 0 && evening === 0 && Array.isArray(animal.history)) {
+        const histEntry = animal.history.find((h) => normalizeDate(h.date) === d.key);
+        if (histEntry) {
+          morning = parseFloat(histEntry.morning || 0);
+          evening = parseFloat(histEntry.evening || 0);
+        }
+      }
+
+      return {
+        date: d.label,
+        morning: parseFloat(morning.toFixed(1)),
+        evening: parseFloat(evening.toFixed(1)),
+      };
+    });
+  }, [animal, animalLogs]);
+
   if (!animal) {
     return (
       <div className="p-8 bg-slate-50 min-h-[400px] flex flex-col items-center justify-center space-y-3">
@@ -341,6 +345,45 @@ export default function AnimalDetail({
       onEdit(animal);
     } else {
       setIsEditingInline(true);
+    }
+  };
+
+  const handleIntakeSubmit = async (e) => {
+    e.preventDefault();
+    const qty = parseFloat(intakeForm.quantity);
+    if (isNaN(qty) || qty <= 0) {
+      toast.error('Please enter a valid milk quantity in liters');
+      return;
+    }
+
+    setIsSubmittingIntake(true);
+    try {
+      if (addAnimalIntake) {
+        await addAnimalIntake(animal.id || animal._id, {
+          date: intakeForm.date,
+          shift: intakeForm.shift,
+          quantityLiters: qty,
+          yieldLiters: qty,
+          operator: intakeForm.milkedBy,
+          notes: intakeForm.notes,
+        });
+      } else if (saveMilkingShift) {
+        await saveMilkingShift(intakeForm.shift, intakeForm.date, { [animal.tag]: qty }, intakeForm.milkedBy);
+      }
+      toast.success(`Successfully recorded ${qty} L ${intakeForm.shift} milk intake for ${animal.tag}!`);
+      setIsIntakeModalOpen(false);
+      setIntakeForm({
+        date: getTodayDateStr(),
+        shift: 'Morning',
+        quantity: '',
+        milkedBy: 'Morning Milker',
+        notes: '',
+      });
+    } catch (err) {
+      console.error('Failed to record intake:', err);
+      toast.error('Failed to record milk intake');
+    } finally {
+      setIsSubmittingIntake(false);
     }
   };
 
@@ -433,6 +476,10 @@ export default function AnimalDetail({
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   {animal.lactationStatus || 'Milking'}
+                </span>
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                  <Calendar className="w-3 h-3 text-slate-500" />
+                  Registered: {animal.acquisitionDate || (animal.createdAt ? String(animal.createdAt).split('T')[0] : 'Recently')}
                 </span>
               </div>
             </div>
@@ -677,8 +724,22 @@ export default function AnimalDetail({
               </div>
             </div>
 
-            {/* Filter Controls: Date & Shift */}
+            {/* Filter Controls: Date & Shift & Record Action */}
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Direct Intake Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIntakeForm((prev) => ({ ...prev, date: getTodayDateStr() }));
+                  setIsIntakeModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer"
+                title={`Record Milk Intake for ${animal.tag}`}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Intake Milk
+              </button>
+
               {/* Date Filter: All / Today */}
               <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-2xs">
                 <button
@@ -786,7 +847,9 @@ export default function AnimalDetail({
             <table className="w-full border-collapse text-left text-xs">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  <th className="px-4 py-3">Date &amp; Shift</th>
+                  <th className="px-4 py-3">Animal ID / Tag</th>
+                  <th className="px-4 py-3">Intake Date</th>
+                  <th className="px-4 py-3">Milking Shift</th>
                   <th className="px-4 py-3">Quantity (Liters)</th>
                   <th className="px-4 py-3">Expected Benchmark</th>
                   <th className="px-4 py-3">Yield Variance</th>
@@ -799,7 +862,7 @@ export default function AnimalDetail({
               <tbody className="divide-y divide-slate-100">
                 {filteredAnimalLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-slate-400 font-medium">
+                    <td colSpan={10} className="px-4 py-10 text-center text-slate-400 font-medium">
                       No {shiftFilter !== 'All' ? shiftFilter.toLowerCase() : ''} milking history records found for {animal.tag}.
                     </td>
                   </tr>
@@ -815,8 +878,34 @@ export default function AnimalDetail({
                         className="hover:bg-slate-50/80 cursor-pointer transition-colors group"
                       >
                         <td className="px-4 py-3">
-                          <span className="font-mono font-bold text-slate-800">{log.date}</span>
-                          <span className="flex items-center gap-1 text-[10px] text-slate-500 font-semibold mt-0.5">
+                          <span className="font-mono font-bold text-slate-900 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-[11px] inline-block">
+                            {log.animalTag || animal.tag}
+                          </span>
+                          <span className="block text-[10px] text-slate-400 font-mono mt-0.5" title={log.animalId || animal._id || animal.id}>
+                            ID: {String(log.animalId || animal._id || animal.id || '').slice(-6)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span className="font-mono font-bold text-slate-800 text-[12px] whitespace-nowrap">
+                              {log.date || 'Today'}
+                            </span>
+                          </div>
+                          {log.createdAt && (
+                            <span className="block text-[10px] text-slate-400 font-mono pl-5">
+                              {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                              isMorn
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                            }`}
+                          >
                             {isMorn ? (
                               <Sun className="w-3 h-3 text-amber-500" />
                             ) : (
@@ -842,9 +931,7 @@ export default function AnimalDetail({
                             {isPositive ? `+${log.variance.toFixed(1)}` : log.variance.toFixed(1)} L
                           </span>
                         </td>
-                        <td className="px-4 py-3 font-mono text-[11px] text-slate-600">
-                          Fat: {log.fat}% • SNF: {log.snf}%
-                        </td>
+                        
                         <td className="px-4 py-3 text-slate-700 font-medium">
                           {log.milkedBy || 'Milker'}
                           <span className="block text-[10px] text-slate-400 font-normal">
@@ -940,6 +1027,12 @@ export default function AnimalDetail({
                   <span className="text-slate-500">Animal Tag / Identifier:</span>
                   <span className="font-bold text-slate-900 font-mono">{animal.tag} {animal.name && `(${animal.name})`}</span>
                 </div>
+                <div className="flex justify-between items-center p-3 bg-white">
+                  <span className="text-slate-500 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-slate-400" /> Intake Date:
+                  </span>
+                  <span className="font-mono font-bold text-slate-900">{selectedRecord.date} ({selectedRecord.shift} Shift)</span>
+                </div>
                 <div className="flex justify-between items-center p-3 bg-slate-50/50">
                   <span className="text-slate-500">Species / Breed:</span>
                   <span className="font-medium text-slate-800">{animal.species || 'Cow'}</span>
@@ -949,14 +1042,6 @@ export default function AnimalDetail({
                   <span className={`font-mono font-bold ${selectedRecord.variance >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                     {selectedRecord.variance >= 0 ? `+${selectedRecord.variance.toFixed(1)}` : selectedRecord.variance.toFixed(1)} Liters
                   </span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-slate-50/50">
-                  <span className="text-slate-500">Fat Percentage:</span>
-                  <span className="font-mono font-bold text-slate-900">{selectedRecord.fat}%</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-white">
-                  <span className="text-slate-500">SNF / Lactometer (LR):</span>
-                  <span className="font-mono font-bold text-slate-900">{selectedRecord.snf}% • LR {selectedRecord.lr}</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-slate-50/50">
                   <span className="text-slate-500">Milked By:</span>
@@ -979,6 +1064,170 @@ export default function AnimalDetail({
                 Close Slip
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Record Milk Intake Modal */}
+      {isIntakeModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in"
+          onClick={() => !isSubmittingIntake && setIsIntakeModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-slate-200 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                  <Droplets className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 font-display">
+                    Record Milk Intake
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Animal Tag: <strong className="text-slate-800 font-mono">{animal.tag}</strong> • ID: <span className="font-mono">{animal._id || animal.id}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsIntakeModalOpen(false)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleIntakeSubmit} className="p-6 space-y-4">
+              <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200/70 flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-bold text-emerald-800 uppercase block">
+                    Target Livestock
+                  </span>
+                  <span className="text-sm font-bold text-emerald-950 font-display">
+                    {animal.tag} {animal.name && `(${animal.name})`}
+                  </span>
+                </div>
+                <span className="font-mono text-xs font-semibold text-emerald-700 bg-white px-2 py-1 rounded border border-emerald-200">
+                  {animal.species || 'Cow'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Date */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1 block">
+                    Intake Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={intakeForm.date}
+                    onChange={(e) => setIntakeForm({ ...intakeForm, date: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </div>
+
+                {/* Shift */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1 block">
+                    Shift
+                  </label>
+                  <select
+                    value={intakeForm.shift}
+                    onChange={(e) => setIntakeForm({ ...intakeForm, shift: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  >
+                    <option value="Morning">Morning Shift</option>
+                    <option value="Evening">Evening Shift</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Quantity Liters */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 mb-1 block">
+                  Milk Intake Quantity (Liters) *
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0.1"
+                    required
+                    placeholder="e.g. 10.5"
+                    value={intakeForm.quantity}
+                    onChange={(e) => setIntakeForm({ ...intakeForm, quantity: e.target.value })}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                  <span className="absolute right-3 top-2.5 text-xs font-bold text-slate-400">
+                    Liters
+                  </span>
+                </div>
+              </div>
+
+              {/* Milker / Operator */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 mb-1 block">
+                  Milker / Operator Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Morning Milker"
+                  value={intakeForm.milkedBy}
+                  onChange={(e) => setIntakeForm({ ...intakeForm, milkedBy: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 mb-1 block">
+                  Remarks / Notes (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Verified farm dock intake"
+                  value={intakeForm.notes}
+                  onChange={(e) => setIntakeForm({ ...intakeForm, notes: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Modal Actions */}
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  disabled={isSubmittingIntake}
+                  onClick={() => setIsIntakeModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingIntake}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmittingIntake ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      Save Intake
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -189,18 +189,7 @@ export default function TotalFinancialSummary() {
     const netProfit = totalSales - totalFarmExpenses;
     const margin = totalSales > 0 ? Math.round((netProfit / totalSales) * 100) : 0;
 
-    return {
-      milkSales,
-      dahiSales,
-      totalSales,
-      totalExpenses: generalFarmExpenses,
-      staffSalaryPaid,
-      totalFarmExpenses,
-      netProfit,
-      margin,
-      processingDeltaCost: dahiCosts.farmProcessingDeltaCost,
-      dahiCost: dahiCosts.farmDahiCost,
-    };
+    return {milkSales,dahiSales,totalSales,totalExpenses: generalFarmExpenses,staffSalaryPaid,totalFarmExpenses,netProfit,margin,processingDeltaCost: dahiCosts.farmProcessingDeltaCost,dahiCost: dahiCosts.farmDahiCost,};
   }, [farmSalesHistory, farmExpensesList, salaryPayments, dahiCosts, period, todayStr, currentMonthStr]);
 
   // 2. SUPPLIER METRICS CALCULATION
@@ -278,9 +267,6 @@ export default function TotalFinancialSummary() {
               <h2 className="text-base sm:text-lg font-black text-slate-900 font-display tracking-tight">
                 Total Financial Summary &amp; Profit Aggregation
               </h2>
-              <p className="text-xs text-slate-500">
-                Consolidated P&amp;L: Farm Net Profit + Supplier Net Profit
-              </p>
             </div>
           </div>
         </div>
@@ -322,22 +308,15 @@ export default function TotalFinancialSummary() {
               }`}>
                 {isBusinessProfitable ? 'Profitable Operations' : 'Net Business Deficit'}
               </span>
-              <span className="text-xs text-slate-500 font-medium">
-                Consolidated Bottom-Line
-              </span>
+               <p className="text-xs font-semibold text-slate-600">Total Business Net Profit</p>
+
             </div>
 
-            <p className="text-xs font-semibold text-slate-600">Total Business Net Profit</p>
             <div className="flex items-baseline gap-3 mt-1">
               <span className={`text-3xl sm:text-4xl font-black font-display tracking-tight tabular ${
                 isBusinessProfitable ? 'text-emerald-700' : 'text-rose-700'
               }`}>
-                {totalBusinessNetProfit >= 0 ? '+' : '-'} Rs. {Math.abs(totalBusinessNetProfit).toLocaleString()}
-              </span>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-md border ${
-                isBusinessProfitable ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-rose-100 text-rose-800 border-rose-200'
-              }`}>
-                {totalBusinessMargin}% Margin
+                {totalBusinessNetProfit >= 0 ? 'Profit' : 'loss'} Rs. {Math.abs(totalBusinessNetProfit).toLocaleString()}
               </span>
             </div>
             <p className="text-[11px] text-slate-500 mt-1 font-mono">
@@ -489,9 +468,7 @@ export default function TotalFinancialSummary() {
               </div>
             </div>
             
-            <p className="text-[10px] text-slate-400 font-mono pt-2 border-t border-amber-100/50 mt-4">
-              Note: This is a highlighted view. Profits are already routed to Farm/Supplier P&amp;L above.
-            </p>
+            
           </div>
         </div>
       </div>

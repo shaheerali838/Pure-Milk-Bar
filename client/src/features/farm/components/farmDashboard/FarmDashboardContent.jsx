@@ -18,6 +18,7 @@ import {
 } from "recharts";
 import FarmCardOverflow from "./FarmCardOverflow";
 import AnimalDetail from "../animals/AnimalDetail";
+import AnimalAdd from "../animals/AnimalAdd";
 import AnimalTable from "../animals/AnimalTable";
 import { useNavigate } from "react-router-dom";
 
@@ -34,6 +35,7 @@ export default function FarmDashboardContent() {
   const products = posCtx?.products || [];
   const { expenses = [], totals = {} } = useExpense();
   const [selectedAnimalId, setSelectedAnimalId] = useState(null);
+  const [editAnimal, setEditAnimal] = useState(null);
   const navigate = useNavigate();
 
   // Metrics
@@ -192,6 +194,23 @@ export default function FarmDashboardContent() {
         animalId={selectedAnimalId}
         onBack={() => setSelectedAnimalId(null)}
         onClose={() => setSelectedAnimalId(null)}
+        onEdit={(animal) => {
+          setEditAnimal(animal);
+          setSelectedAnimalId(null);
+        }}
+        onDelete={() => {
+          setSelectedAnimalId(null);
+        }}
+      />
+    );
+  }
+
+  if (editAnimal) {
+    return (
+      <AnimalAdd
+        editingAnimal={editAnimal}
+        onBack={() => setEditAnimal(null)}
+        onSuccess={() => setEditAnimal(null)}
       />
     );
   }
@@ -218,7 +237,6 @@ export default function FarmDashboardContent() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Farm Production Trend (7 Days)</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Own livestock morning vs. evening milking yield</p>
             </div>
             <div className="flex items-center gap-2">
               <button 
@@ -268,7 +286,6 @@ export default function FarmDashboardContent() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Current Lactation Yield by Animal</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Individual cow and buffalo daily output</p>
             </div>
             <div className="flex items-center gap-2">
               <button 
@@ -315,7 +332,6 @@ export default function FarmDashboardContent() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Farm Expenses</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Cattle maintenance, feed & healthcare allocation</p>
               </div>
               <div className="flex items-center gap-2">
                 <button 
@@ -357,7 +373,6 @@ export default function FarmDashboardContent() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Farm Financial Performance (P&L Trend)</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Farm revenue contribution vs. direct farm operating costs</p>
             </div>
             <button 
               onClick={() => navigate('/finance')}
@@ -394,7 +409,10 @@ export default function FarmDashboardContent() {
 
       {/* Grid Row 3: Herd Table */}
       <div className="mt-4">
-        <AnimalTable onSelectAnimal={setSelectedAnimalId} />
+        <AnimalTable
+          onSelectAnimal={(id) => setSelectedAnimalId(id)}
+          onEditAnimal={(animal) => setEditAnimal(animal)}
+        />
       </div>
 
     </div>

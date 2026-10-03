@@ -491,7 +491,7 @@ export default function SupplierPL() {
                 </div>
               </div>
               <p className={`text-lg font-black tabular ${supplierSalesMetrics.dahiNetProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                {supplierSalesMetrics.dahiNetProfit >= 0 ? '+' : '-'} Rs. {Math.abs(supplierSalesMetrics.dahiNetProfit).toLocaleString()}
+                {supplierSalesMetrics.dahiNetProfit >= 0 ? 'Profit' : 'Loss'} Rs. {Math.abs(supplierSalesMetrics.dahiNetProfit).toLocaleString()}
               </p>
             </div>
 

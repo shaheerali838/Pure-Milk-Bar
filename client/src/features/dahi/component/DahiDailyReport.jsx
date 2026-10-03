@@ -1,20 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import {
-  Calendar,
-  Layers,
-  Milk,
-  Droplets,
-  DollarSign,
-  TrendingUp,
-  Activity,
-  ArrowRight,
-  CheckCircle2,
-  Tractor,
-  Truck,
-  Flame,
-  Scale,
-  Receipt,
-} from 'lucide-react';
+import {Calendar,Layers,Milk,Droplets,DollarSign,TrendingUp,Activity,ArrowRight,CheckCircle2,Tractor,Truck,Flame,Scale,Receipt,} from 'lucide-react';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useDahiContext } from '@/context/DahiContext';
@@ -227,9 +212,7 @@ export default function DahiDailyReport() {
             <Layers className="w-4.5 h-4.5 text-indigo-600" />
             Dahi Production, Sales &amp; Segregation Report
           </h2>
-          <p className="text-[11px] text-slate-500 mt-0.5">
-            Complete conversion lifecycle tracking Farm Milk vs Supplier Milk, POS revenue splitting &amp; value-add margin
-          </p>
+          
         </div>
 
         {/* Date Filter Buttons */}

@@ -63,14 +63,12 @@ export default function SupplierProcurementHub() {
               <h3 className="text-sm font-extrabold text-slate-900 font-display leading-tight">
                 Supplier Milk Procurement
               </h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                External dairy sourcing &amp; transit
-              </p>
+             
             </div>
           </div>
-          <span className="px-3 py-1 rounded-full text-[11px] font-black bg-blue-50 text-blue-700 shrink-0">
+          {/* <span className="px-3 py-1 rounded-full text-[11px] font-black bg-blue-50 text-blue-700 shrink-0">
             +{sourcingMarginPct}% Margin
-          </span>
+          </span> */}
         </div>
 
         {/* Metric Data Rows */}

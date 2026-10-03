@@ -14,7 +14,6 @@ const tabs = [
   { to: '/farm',            label: 'Dashboard',        icon: LayoutDashboard, color: '#1a2340' },
   { to: '/farm/animals',    label: 'Animals & Herd',    icon: Beef,            color: '#009966' },
   { to: '/farm/milking',    label: 'Milking Register',  icon: Droplets,        color: '#155dfc' },
-  { to: '/farm/processing', label: 'Dahi & Processing', icon: Layers,          color: '#009689' },
   { to: '/farm/expenses',   label: 'Farm Expenses',     icon: Receipt,         color: '#4f39f6' },
   { to: '/farm/pl',         label: 'Farm P&L',          icon: TrendingUp,      color: '#0092b8' },
   { to: '/farm/dailysheet', label: 'Daily Sheet',       icon: FileText,        color: '#d97706' },

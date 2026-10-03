@@ -82,9 +82,7 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
           <h1 className="text-xl font-bold text-slate-900 tracking-tight font-display">
             Products &amp; Pricing
           </h1>
-          <p className="text-xs text-slate-500">
-            Catalog of dairy products, unit rates, and pricing rules
-          </p>
+         
         </div>
 
         {isAdmin && (
@@ -94,7 +92,7 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
             className="flex items-center gap-1.5 px-4 py-2 bg-[#009966] hover:bg-[#008055] text-white rounded-full text-xs font-bold shadow-xs cursor-pointer transition"
           >
             <Plus className="w-4 h-4" />
-            + Add Product
+             Add Product
           </button>
         )}
       </div>

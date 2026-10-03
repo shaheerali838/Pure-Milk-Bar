@@ -39,9 +39,7 @@ export default function SupplierPLTable({
             <h3 className="text-xs font-bold text-slate-900 font-display uppercase tracking-wider">
               Sourced Milk Streams &amp; Procurement Ledger
             </h3>
-            <p className="text-[11px] text-slate-500">
-              Click any stream row to inspect shift batches, supplier costs, and intake volumes
-            </p>
+            
           </div>
         </div>
 

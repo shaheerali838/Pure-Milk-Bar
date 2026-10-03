@@ -70,14 +70,11 @@ export default function FarmYieldHub() {
               <h3 className="text-sm font-extrabold text-slate-900 font-display leading-tight">
                 Farm Livestock &amp; Yield
               </h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Internal herd yield &amp; feed costs
-              </p>
             </div>
           </div>
-          <span className="px-3 py-1 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 shrink-0">
+          {/* <span className="px-3 py-1 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 shrink-0">
             +{marginPercent}% Margin
-          </span>
+          </span> */}
         </div>
 
         {/* Metric Data Rows */}
