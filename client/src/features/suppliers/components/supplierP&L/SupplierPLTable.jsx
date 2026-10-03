@@ -72,16 +72,15 @@ export default function SupplierPLTable({
               <th className="py-2.5 px-3.5">Product Stream</th>
               <th className="py-2.5 px-3.5">Category</th>
               <th className="py-2.5 px-3.5 text-right">Sourced Volume</th>
-              <th className="py-2.5 px-3.5 text-right">Procurement Cost</th>
-              <th className="py-2.5 px-3.5 text-right">Avg Purchase Rate</th>
               <th className="py-2.5 px-3.5 text-right">Realized POS Sales</th>
+              <th className="py-2.5 px-3.5 text-right">Net Profit (Bachat)</th>
               <th className="py-2.5 px-3.5 text-center">Details</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredProducts.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
+                <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
                   No sourced milk lines found in this category.
                 </td>
               </tr>
@@ -133,33 +132,23 @@ export default function SupplierPLTable({
                       </p>
                     </td>
 
-                    {/* 4. Procurement Cost */}
-                    <td className="py-3 px-3.5 text-right whitespace-nowrap">
-                      <p className="font-bold font-mono text-rose-700">
-                        Rs. {Number(p.baseCost || 0).toLocaleString()}
-                      </p>
-                      <p className="text-[10px] text-slate-400">
-                        Paid: Rs. {Number(p.paidAmount || 0).toLocaleString()}
-                      </p>
-                    </td>
-
-                    {/* 5. Avg Purchase Rate */}
-                    <td className="py-3 px-3.5 text-right whitespace-nowrap">
-                      <span className="font-bold font-mono text-slate-900 block">
-                        Rs. {Number(p.avgPurchaseRate || 0).toFixed(1)}/{p.unit || 'L'}
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        Direct Intake Rate
-                      </span>
-                    </td>
-
-                    {/* 6. Realized POS Sales */}
+                    {/* 4. Realized POS Sales */}
                     <td className="py-3 px-3.5 text-right whitespace-nowrap">
                       <p className="font-bold font-mono text-emerald-700">
                         Rs. {Number(p.resaleRevenue || 0).toLocaleString()}
                       </p>
                       <p className="text-[10px] text-slate-400">
                         {p.soldVolume > 0 ? `${p.soldVolume} L Sold` : '0 L Sold'}
+                      </p>
+                    </td>
+
+                    {/* 5. Net Profit */}
+                    <td className="py-3 px-3.5 text-right whitespace-nowrap">
+                      <p className="font-bold font-mono text-emerald-700">
+                        +Rs. {Number(p.netProfit || 0).toLocaleString()}
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        {p.grossMarginPercent || 0}% Bachat
                       </p>
                     </td>
 

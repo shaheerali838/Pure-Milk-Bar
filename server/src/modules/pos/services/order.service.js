@@ -110,13 +110,24 @@ class OrderService {
     const order = await Order.create(newOrderPayload);
 
     // 7. Inventory Stock Adjustment
-    // Deduct stock for all items connected to tracked inventory products
+    // Deduct stock for all items connected to tracked inventory products (strictly zero-validated)
     if (Array.isArray(order.items) && order.items.length > 0) {
       for (const item of order.items) {
+        let prod = null;
         if (item.productId && mongoose.Types.ObjectId.isValid(item.productId)) {
-          await Product.findByIdAndUpdate(item.productId, {
-            $inc: { currentStock: -Number(item.quantity) },
-          });
+          prod = await Product.findById(item.productId);
+        }
+        if (!prod && item.sku) {
+          prod = await Product.findOne({ sku: item.sku });
+        }
+        if (!prod && item.name) {
+          const nameRegex = new RegExp(`^${item.name.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i');
+          prod = await Product.findOne({ name: nameRegex });
+        }
+        if (prod) {
+          const qty = Number(item.quantity) || 0;
+          prod.currentStock = Math.max(0, Number(((prod.currentStock || 0) - qty).toFixed(2)));
+          await prod.save();
         }
       }
     }

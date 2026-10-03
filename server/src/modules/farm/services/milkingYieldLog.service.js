@@ -70,34 +70,45 @@ class MilkingYieldLogService {
     const shift = (data.shift || 'MORNING').toUpperCase();
     const yieldAmount = Number(data.yieldLiters ?? data.yield ?? data.quantityLiters ?? 0) || 0;
 
-    // 4. Upsert the milking log to prevent MongoDB 11000 duplicate key errors
-    const milkingLog = await MilkingYieldLog.findOneAndUpdate(
-      {
-        animalId: animal._id,
-        shift: shift,
-        date: { $gte: startOfDay, $lte: endOfDay },
-      },
-      {
-        $set: {
-          animalId: animal._id,
-          date: logDate,
-          shift: shift,
-          yieldLiters: yieldAmount,
-          operatorId: resolvedOperatorId,
-          notes: data.notes || null,
-        },
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    // 4. Create the milking log without overwriting previous history
+    const milkingLog = await MilkingYieldLog.create({
+      animalId: animal._id,
+      date: logDate,
+      shift: shift,
+      yieldLiters: yieldAmount,
+      operatorId: resolvedOperatorId,
+      notes: data.notes || null,
+    });
 
-    // 5. Update the animal's morning/evening yield in DB
+    // 5. Update the animal's current shift yield and APPEND new intake record to intakeHistory ($push)
     const updateYield = {};
     if (shift === 'MORNING') {
       updateYield.morningYield = yieldAmount;
     } else if (shift === 'EVENING') {
       updateYield.eveningYield = yieldAmount;
     }
-    await Animal.findByIdAndUpdate(animal._id, { $set: updateYield });
+
+    const dateStr = data.date
+      ? (typeof data.date === 'string' && data.date.includes('T') ? data.date.split('T')[0] : String(data.date).slice(0, 10))
+      : logDate.toISOString().split('T')[0];
+
+    const newIntake = {
+      date: dateStr,
+      shift: shift === 'EVENING' ? 'Evening' : 'Morning',
+      quantityLiters: yieldAmount,
+      yieldLiters: yieldAmount,
+      fat: Number(data.fat) || null,
+      snf: Number(data.snf) || null,
+      notes: data.notes || null,
+      operator: data.operator || data.milker || null,
+      operatorId: resolvedOperatorId,
+      createdAt: new Date(),
+    };
+
+    await Animal.findByIdAndUpdate(animal._id, {
+      $set: updateYield,
+      $push: { intakeHistory: newIntake },
+    });
 
     // 6. Recalculate the animal's daily average yield (last 30 days)
     await this._recalculateAnimalAvgYield(animal._id);

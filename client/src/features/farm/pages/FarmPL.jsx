@@ -18,6 +18,7 @@ import { useExpense } from '@/context/ExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
+import { useStaffContext } from '@/context/StaffContext';
 import { exportMultiSectionCSV } from '@/utils/csvExport';
 
 import PLCardOverflow from '../components/F&LReport/PLCardOverflow';
@@ -29,6 +30,7 @@ import RawMilkDetail from '../components/F&LReport/RawMilkDetail';
 import ValueAddedDetail from '../components/F&LReport/ValueAddedDetail';
 import GrossRevenueDetail from '../components/F&LReport/GrossRevenueDetail';
 import FarmCostsDetail from '../components/F&LReport/FarmCostsDetail';
+import StaffSalaryDetail from '../components/F&LReport/StaffSalaryDetail';
 import NetProfitDetail from '../components/F&LReport/NetProfitDetail';
 import ProductDetailSlideOver from '../components/F&LReport/ProductDetailSlideOver';
 
@@ -51,9 +53,10 @@ const parseYield = (val) => {
 
 export default function FarmPL() {
   const { expenses = [], totals: expenseTotals } = useExpense();
-  const { farmSalesHistory = [], salesHistory = [], products = [], inventoryMetrics = {} } = usePOSContext();
+  const { farmSalesHistory = [], salesHistory = [], products = [], inventoryMetrics = {}, farmSalesMetrics } = usePOSContext();
   const { animals = [] } = useAnimalContext();
   const { deliveries = [] } = useDeliveryContext();
+  const { salaryPayments = [], deleteSalaryPayment } = useStaffContext();
 
   // 2. Filter & Date State
   const [dateFilterMode, setDateFilterMode] = useState('all'); // 'all' | 'today' | 'this_month' | 'custom'
@@ -103,7 +106,7 @@ export default function FarmPL() {
   };
 
   // 3. Filter Sales and Expenses dynamically based on selected date (Farm Sales & Mixed Dahi Farm-Share only)
-  const activeFarmSales = farmSalesHistory.length > 0 ? farmSalesHistory : salesHistory;
+  const activeFarmSales = farmSalesHistory;
   const filteredSales = useMemo(() => {
     return activeFarmSales.filter((sale) => {
       let saleDate = '';
@@ -142,6 +145,9 @@ export default function FarmPL() {
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter((exp) => {
+      const scope = String(exp.scope || exp.expenseEntity || 'FARM').toUpperCase();
+      if (scope !== 'FARM') return false;
+
       const expDate = exp.date || '';
       if (dateFilterMode === 'today') return expDate === todayISO;
       if (dateFilterMode === 'this_month') return isDateInMonthlyCycle(expDate);
@@ -149,6 +155,20 @@ export default function FarmPL() {
       return true;
     });
   }, [expenses, dateFilterMode, selectedDate, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
+
+  const filteredSalaries = useMemo(() => {
+    return salaryPayments.filter((sal) => {
+      const salDate = sal.date ? sal.date.slice(0, 10) : '';
+      if (dateFilterMode === 'today') return salDate === todayISO;
+      if (dateFilterMode === 'this_month') return isDateInMonthlyCycle(salDate);
+      if (dateFilterMode === 'custom' && selectedDate) return salDate === selectedDate;
+      return true;
+    });
+  }, [salaryPayments, dateFilterMode, selectedDate, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
+
+  const totalStaffSalaryPaidInPeriod = useMemo(() => {
+    return filteredSalaries.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  }, [filteredSalaries]);
 
   // 4. Dynamic Financial & Product Stream Calculations
   const calculatedMetrics = useMemo(() => {
@@ -414,9 +434,13 @@ export default function FarmPL() {
 
     filteredExpenses.forEach((exp) => {
       const amt = Number(exp.amount) || 0;
-      totalFarmCost += amt;
       const c = (exp.category || '').toLowerCase();
       const desc = (exp.description || '').toLowerCase();
+
+      const isSalaryRecord = c.includes('salar') || c.includes('wage');
+      if (!isSalaryRecord) {
+        totalFarmCost += amt;
+      }
 
       if (c.includes('feed') || c.includes('fodder') || c.includes('silage') || c.includes('wanda') || c.includes('chara') || c.includes('toori') || c.includes('khal')) {
         catAmounts['Cattle Feed & Fodder'] += amt;
@@ -431,9 +455,11 @@ export default function FarmPL() {
       } else if (c.includes('veterinary') || c.includes('medicine') || c.includes('doctor') || c.includes('ai')) {
         catAmounts['Veterinary & Medicine'] += amt;
         vetCost += amt;
-      } else if (c.includes('salaries') || c.includes('labor') || c.includes('labour') || c.includes('wages') || c.includes('mess')) {
-        catAmounts['Labor & Wages'] += amt;
-        laborCost += amt;
+      } else if (isSalaryRecord || c.includes('labor') || c.includes('labour') || c.includes('mess')) {
+        if (!isSalaryRecord) {
+          catAmounts['Labor & Wages'] += amt;
+          laborCost += amt;
+        }
       } else if (c.includes('electricity') || c.includes('utilities') || c.includes('energy') || c.includes('power')) {
         catAmounts['Energy & Utilities'] += amt;
         electricityCost += amt;
@@ -445,6 +471,11 @@ export default function FarmPL() {
         transportCost += amt;
       }
     });
+
+    // Explicitly add Total Staff Salary Paid into Labor & Wages and Total Farm Expenses
+    catAmounts['Labor & Wages'] += totalStaffSalaryPaidInPeriod;
+    laborCost += totalStaffSalaryPaidInPeriod;
+    totalFarmCost += totalStaffSalaryPaidInPeriod;
 
     // If costs fell mostly in feed, ensure chara & wanda are populated
     if (charaFodderCost === 0 && wandaSilageCost > 0) {
@@ -524,6 +555,8 @@ export default function FarmPL() {
       wholesaleShare,
       wholesaleVolume,
       totalFarmCost,
+      totalStaffSalaryPaid: totalStaffSalaryPaidInPeriod,
+      salaryPaymentsCount: filteredSalaries.length,
       expensesCount: filteredExpenses.length,
       categoryBreakdown,
       netProfit,
@@ -545,6 +578,8 @@ export default function FarmPL() {
     filteredExpenses,
     animals,
     currentMonthISO,
+    totalStaffSalaryPaidInPeriod,
+    filteredSalaries.length,
   ]);
 
   // 5. CSV Export Feature
@@ -732,6 +767,19 @@ export default function FarmPL() {
     );
   }
 
+  if (activeCardDrawer === 'staff_salary') {
+    return (
+      <StaffSalaryDetail
+        data={{
+          totalStaffSalaryPaid: calculatedMetrics.totalStaffSalaryPaid,
+          salaryPayments: filteredSalaries,
+        }}
+        onBack={() => setActiveCardDrawer(null)}
+        onDeletePayment={deleteSalaryPayment}
+      />
+    );
+  }
+
   if (activeCardDrawer === 'net_profit') {
     return (
       <NetProfitDetail
@@ -872,6 +920,8 @@ export default function FarmPL() {
         valueAddedMargin={calculatedMetrics.valueAddedMarginPercent}
         grossRevenue={calculatedMetrics.grossRevenue}
         totalFarmCost={calculatedMetrics.totalFarmCost}
+        totalStaffSalaryPaid={calculatedMetrics.totalStaffSalaryPaid}
+        salaryPaymentsCount={calculatedMetrics.salaryPaymentsCount}
         expensesCount={calculatedMetrics.expensesCount}
         netProfit={calculatedMetrics.netProfit}
         netMargin={calculatedMetrics.netMargin}
@@ -901,17 +951,13 @@ export default function FarmPL() {
           milkSales: calculatedMetrics.rawMilkRevenue,
           dairyProducts: calculatedMetrics.valueAddedRevenue,
         }}
-        directCostsData={{
-          charaFodder: calculatedMetrics.charaFodderCost,
-          wandaSilage: calculatedMetrics.wandaSilageCost,
-          packagingCosts: calculatedMetrics.valueAddedPackagingCost,
-        }}
-        runningExpensesData={{
-          veterinary: calculatedMetrics.vetCost,
-          laborWages: calculatedMetrics.laborCost,
-          electricity: calculatedMetrics.electricityCost,
-          maintenance: calculatedMetrics.maintenanceCost,
-          transport: calculatedMetrics.transportCost,
+        expenses={filteredExpenses}
+        totalStaffSalaryPaid={calculatedMetrics.totalStaffSalaryPaid}
+        dahiData={{
+          milkCostTransferred: farmSalesMetrics?.milkCostTransferred || 0,
+          totalDahiCost: farmSalesMetrics?.dahiProductionCost || 0,
+          dahiSales: farmSalesMetrics?.dahiRevenue || 0,
+          dahiNetProfit: farmSalesMetrics?.dahiNetProfit || 0,
         }}
       />
 

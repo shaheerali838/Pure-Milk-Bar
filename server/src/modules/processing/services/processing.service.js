@@ -31,6 +31,11 @@ export const createBatchService = async (batchData, userId) => {
     supplierMilkUsed = 0,
     posRate = 'Rs. 320 / kg',
     costEstimate = 0,
+    unitCost,
+    milkUsedCost,
+    farmMilkCost,
+    supplierMilkCost,
+    dahiProductionCost,
     notes = '',
   } = batchData;
 
@@ -48,6 +53,11 @@ export const createBatchService = async (batchData, userId) => {
 
   const resolvedStage = stage || (['completed', 'ready_for_pos', 'pos'].includes(String(status).toLowerCase()) ? 'pos' : 'incubating');
 
+  const resolvedUnitCost = Number(unitCost) || (String(source).toLowerCase().includes('supplier') ? 180 : 150);
+  const resolvedFarmCost = farmMilkCost !== undefined ? Number(farmMilkCost) : Math.round(Number(farmMilkUsed || 0) * 150);
+  const resolvedSupplierCost = supplierMilkCost !== undefined ? Number(supplierMilkCost) : Math.round(Number(supplierMilkUsed || 0) * 180);
+  const resolvedMilkUsedCost = Number(milkUsedCost || dahiProductionCost || costEstimate) || (resolvedFarmCost + resolvedSupplierCost) || Math.round(resolvedMilkUsed * resolvedUnitCost);
+
   const newBatch = await ProcessingBatch.create({
     batchNumber,
     product: product.trim(),
@@ -63,21 +73,95 @@ export const createBatchService = async (batchData, userId) => {
     farmMilkUsed: Number(farmMilkUsed) || 0,
     supplierMilkUsed: Number(supplierMilkUsed) || 0,
     posRate: posRate || 'Rs. 320 / kg',
-    costEstimate: Number(costEstimate) || 0,
+    costEstimate: resolvedMilkUsedCost,
+    milkUsedCost: resolvedMilkUsedCost,
+    unitCost: resolvedUnitCost,
+    farmMilkCost: resolvedFarmCost,
+    supplierMilkCost: resolvedSupplierCost,
+    dahiProductionCost: resolvedMilkUsedCost,
     notes: (notes || '').trim(),
     operatorId: userId || null,
   });
 
-  // If batch is completed or ready for POS, increment matching Product stock if exists
-  if (resolvedStage === 'pos' || ['completed', 'ready_for_pos'].includes(String(status).toLowerCase())) {
-    try {
-      const Product = (await import('../../../models/Product.model.js')).default;
+  // If batch is completed or ready for POS, increment matching Dahi stock and deduct source milk stock
+  try {
+    const Product = (await import('../../../models/Product.model.js')).default;
+    
+    // 1. Increment Dahi product stock
+    if (resolvedStage === 'pos' || ['completed', 'ready_for_pos'].includes(String(status).toLowerCase())) {
       const productRegex = new RegExp(`^${product.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i');
       await Product.findOneAndUpdate(
-        { $or: [{ name: productRegex }, { sku: productRegex }] },
+        { $or: [{ name: productRegex }, { sku: productRegex }, { category: /dahi|yogurt/i }] },
         { $inc: { currentStock: resolvedOutputQty } }
       );
-    } catch (_) {}
+    }
+
+    // 2. Deduct source milk from Product inventory in database (strictly zero-validated, cannot be negative)
+    const fUsed = Number(farmMilkUsed) || 0;
+    const sUsed = Number(supplierMilkUsed) || 0;
+    const totalMilkToDeduct = resolvedMilkUsed;
+
+    if (totalMilkToDeduct > 0) {
+      const milkProducts = await Product.find({
+        $or: [
+          { category: /milk/i },
+          { name: /milk/i }
+        ]
+      });
+
+      const cowProd = milkProducts.find((p) => p.name.toLowerCase().includes('cow'));
+      const buffProd = milkProducts.find((p) => p.name.toLowerCase().includes('buffalo'));
+
+      if (fUsed > 0 && sUsed > 0) {
+        // Mixed batch: deduct farm portion from cow/buff, supplier portion from buff
+        if (cowProd && fUsed > 0) {
+          const deductCow = Math.min(Number(cowProd.currentStock) || 0, fUsed);
+          cowProd.currentStock = Math.max(0, Number(((cowProd.currentStock || 0) - deductCow).toFixed(2)));
+          await cowProd.save();
+          const remainderFarm = fUsed - deductCow;
+          if (remainderFarm > 0 && buffProd) {
+            buffProd.currentStock = Math.max(0, Number(((buffProd.currentStock || 0) - remainderFarm).toFixed(2)));
+          }
+        } else if (buffProd && fUsed > 0) {
+          buffProd.currentStock = Math.max(0, Number(((buffProd.currentStock || 0) - fUsed).toFixed(2)));
+        }
+
+        if (buffProd && sUsed > 0) {
+          buffProd.currentStock = Math.max(0, Number(((buffProd.currentStock || 0) - sUsed).toFixed(2)));
+          await buffProd.save();
+        }
+      } else if (fUsed > 0 || (source || '').toLowerCase().includes('farm')) {
+        // Farm milk deduction
+        const deductTarget = fUsed > 0 ? fUsed : totalMilkToDeduct;
+        let rem = deductTarget;
+        if (cowProd && rem > 0) {
+          const d = Math.min(Number(cowProd.currentStock) || 0, rem);
+          cowProd.currentStock = Math.max(0, Number(((cowProd.currentStock || 0) - d).toFixed(2)));
+          await cowProd.save();
+          rem -= d;
+        }
+        if (buffProd && rem > 0) {
+          buffProd.currentStock = Math.max(0, Number(((buffProd.currentStock || 0) - rem).toFixed(2)));
+          await buffProd.save();
+        }
+      } else {
+        // Supplier or Buffalo milk deduction
+        const deductTarget = sUsed > 0 ? sUsed : totalMilkToDeduct;
+        let rem = deductTarget;
+        if (buffProd && rem > 0) {
+          const d = Math.min(Number(buffProd.currentStock) || 0, rem);
+          buffProd.currentStock = Math.max(0, Number(((buffProd.currentStock || 0) - d).toFixed(2)));
+          await buffProd.save();
+          rem -= d;
+        }
+        if (cowProd && rem > 0) {
+          cowProd.currentStock = Math.max(0, Number(((cowProd.currentStock || 0) - rem).toFixed(2)));
+          await cowProd.save();
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Error adjusting product stocks on processing batch creation:', err);
   }
 
   return newBatch;
@@ -157,6 +241,12 @@ export const getAllBatchesService = async (queryParams = {}) => {
     outputQuantity: b.outputQuantity || 0,
     outputVal: b.outputQuantity || 0,
     milkUsedVal: b.milkUsedLiters || 0,
+    unitCost: b.unitCost || 150,
+    costEstimate: b.costEstimate || b.milkUsedCost || 0,
+    milkUsedCost: b.milkUsedCost || b.dahiProductionCost || b.costEstimate || 0,
+    farmMilkCost: b.farmMilkCost || 0,
+    supplierMilkCost: b.supplierMilkCost || 0,
+    dahiProductionCost: b.dahiProductionCost || b.milkUsedCost || b.costEstimate || 0,
     fat: `${b.fatPercentage || 0}%`,
     date: b.date ? new Date(b.date).toISOString().split('T')[0] : '',
   }));
@@ -198,6 +288,12 @@ export const getBatchByIdService = async (batchId) => {
     outputQuantity: batch.outputQuantity || 0,
     outputVal: batch.outputQuantity || 0,
     milkUsedVal: batch.milkUsedLiters || 0,
+    unitCost: batch.unitCost || 150,
+    costEstimate: batch.costEstimate || batch.milkUsedCost || 0,
+    milkUsedCost: batch.milkUsedCost || batch.dahiProductionCost || batch.costEstimate || 0,
+    farmMilkCost: batch.farmMilkCost || 0,
+    supplierMilkCost: batch.supplierMilkCost || 0,
+    dahiProductionCost: batch.dahiProductionCost || batch.milkUsedCost || batch.costEstimate || 0,
     fat: `${batch.fatPercentage || 0}%`,
     date: batch.date ? new Date(batch.date).toISOString().split('T')[0] : '',
   };
@@ -263,11 +359,34 @@ export const updateBatchService = async (batchId, updateData) => {
 
 // Delete processing batch
 export const deleteBatchService = async (batchId) => {
-  const batch = await ProcessingBatch.findByIdAndDelete(batchId);
+  const batch = await ProcessingBatch.findById(batchId);
   if (!batch) {
     throw new AppError('Processing batch not found.', 404, 'BATCH_NOT_FOUND');
   }
 
+  // Restore milk stock and deduct Dahi stock if created
+  try {
+    const Product = (await import('../../../models/Product.model.js')).default;
+    // 1. Deduct Dahi stock
+    if (batch.stage === 'pos' && batch.outputQuantity > 0) {
+      const productRegex = new RegExp(`^${(batch.product || 'dahi').replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i');
+      const dahiProd = await Product.findOne({ $or: [{ name: productRegex }, { category: /dahi|yogurt/i }] });
+      if (dahiProd) {
+        dahiProd.currentStock = Math.max(0, Number(((dahiProd.currentStock || 0) - batch.outputQuantity).toFixed(2)));
+        await dahiProd.save();
+      }
+    }
+    // 2. Restore milk stock
+    if (batch.milkUsedLiters > 0) {
+      const buffProd = await Product.findOne({ name: /buffalo/i });
+      if (buffProd) {
+        buffProd.currentStock = Number(((buffProd.currentStock || 0) + batch.milkUsedLiters).toFixed(2));
+        await buffProd.save();
+      }
+    }
+  } catch (_) {}
+
+  await ProcessingBatch.findByIdAndDelete(batchId);
   return { message: `Processing batch '${batch.batchNumber || batch._id}' deleted successfully.` };
 };
 

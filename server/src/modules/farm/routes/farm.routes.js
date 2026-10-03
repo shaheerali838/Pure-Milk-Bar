@@ -66,6 +66,12 @@ router.patch(
   animalController.updateAnimal
 );
 
+router.post(
+  '/animals/:id/intake',
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR', 'CASHIER'),
+  animalController.addIntakeRecord
+);
+
 router.delete(
   '/animals/:id',
   authorize('ADMIN', 'MANAGER'),

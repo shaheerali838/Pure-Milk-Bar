@@ -87,18 +87,11 @@ export default function DahiProfitCalculator() {
             />
           </div>
 
+          {/* Hidden cost inputs to preserve background calculation logic */}
+          <input type="hidden" value={milkCostPerLiter} />
+          <input type="hidden" value={cultureGasCost} />
+
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Milk Cost / Liter (Rs.)
-              </label>
-              <input
-                type="number"
-                value={milkCostPerLiter}
-                onChange={(e) => setMilkCostPerLiter(Number(e.target.value))}
-                className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#009689] font-medium"
-              />
-            </div>
             <div>
               <label className="block text-[11px] font-bold text-slate-700 mb-1">
                 Dahi Selling Rate / kg (Rs.)
@@ -107,20 +100,6 @@ export default function DahiProfitCalculator() {
                 type="number"
                 value={dahiSellingPricePerKg}
                 onChange={(e) => setDahiSellingPricePerKg(Number(e.target.value))}
-                className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#009689] font-medium"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                Culture, Gas &amp; Pot Cost (Rs.)
-              </label>
-              <input
-                type="number"
-                value={cultureGasCost}
-                onChange={(e) => setCultureGasCost(Number(e.target.value))}
                 className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#009689] font-medium"
               />
             </div>
@@ -151,11 +130,7 @@ export default function DahiProfitCalculator() {
               <span className="font-bold text-slate-900">{dahiOutputKg} kg</span>
             </div>
             <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-              <span className="text-slate-600">Raw Milk Input Cost:</span>
-              <span className="font-bold text-slate-900">Rs. {totalRawCost.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-              <span className="text-slate-600">Estimated Gross Revenue:</span>
+              <span className="text-slate-600">Estimated Sales Revenue:</span>
               <span className="font-bold text-slate-900">Rs. {grossRevenue.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center py-1 border-b border-slate-200/60">

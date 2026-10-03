@@ -27,6 +27,8 @@ export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
     supplierSalesMetrics,
     inventoryMetrics,
     salesHistory = [],
+    farmSalesHistory = [],
+    supplierSalesHistory = [],
   } = usePOSContext();
 
   const [activeTab, setActiveTab] = useState(
@@ -40,24 +42,7 @@ export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
   const currentMetrics = isSupplier ? supplierSalesMetrics : farmSalesMetrics;
 
   // Filter sales invoices for the active source
-  const filteredSales = salesHistory.filter((sale) => {
-    if (isAll) return true;
-    return (sale.items || []).some((item) => {
-      const itemSrc =
-        item.source ||
-        ((item.name &&
-          (item.name.toLowerCase().includes('supplier') ||
-            item.name.toLowerCase().includes('sourced') ||
-            item.name.toLowerCase().includes('chilled'))) ||
-        (item.category &&
-          (item.category.toLowerCase().includes('supplier') ||
-            item.category.toLowerCase().includes('sourced') ||
-            item.category.toLowerCase().includes('chilled')))
-          ? 'Supplier'
-          : 'Farm');
-      return itemSrc.toLowerCase() === activeTab.toLowerCase();
-    });
-  });
+  const filteredSales = isAll ? salesHistory : isSupplier ? supplierSalesHistory : farmSalesHistory;
 
   // Calculate combined metrics if in 'all' comparison mode
   const totalRev = isAll
@@ -235,26 +220,7 @@ export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
           </p>
         </div>
 
-        {/* Card 3: Total Milk Cost */}
-        <div className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-bold mb-1.5">
-            <span className="flex items-center gap-1.5 text-rose-700">
-              <Receipt className="w-4 h-4 text-rose-600" />
-              Total Milk Cost
-            </span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 font-semibold">
-              Expense
-            </span>
-          </div>
-          <p className="text-2xl font-black text-slate-900 font-mono tracking-tight">
-            Rs. {totalCost.toLocaleString()}
-          </p>
-          <p className="text-xs font-medium text-slate-500 mt-1">
-            {isSupplier ? 'Paid to dairy suppliers' : isFarm ? 'Farm feed & milking cost' : 'Sourcing & herd cost'}
-          </p>
-        </div>
-
-        {/* Card 4: Net Profit (Bachat) */}
+        {/* Card 3: Net Profit (Bachat) */}
         <div className="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-200 shadow-2xs">
           <div className="flex items-center justify-between text-xs font-bold mb-1.5">
             <span className="flex items-center gap-1.5 text-emerald-800">
@@ -283,7 +249,7 @@ export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
               Product Sales &amp; Rates Breakdown
             </h3>
             <p className="text-xs text-slate-500">
-              Details of every item sold with quantity, selling rate, cost, and profit earned.
+              Details of every item sold with quantity, selling rate, income, and profit earned.
             </p>
           </div>
           <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
@@ -305,9 +271,7 @@ export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
                 <th className="py-3 px-3.5">Source</th>
                 <th className="py-3 px-3.5 text-right">Quantity Sold</th>
                 <th className="py-3 px-3.5 text-right">Selling Rate</th>
-                <th className="py-3 px-3.5 text-right">Cost Price</th>
                 <th className="py-3 px-3.5 text-right">Total Income</th>
-                <th className="py-3 px-3.5 text-right">Total Cost</th>
                 <th className="py-3 px-3.5 text-right">Net Profit</th>
               </tr>
             </thead>
@@ -319,7 +283,7 @@ export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
                   ]
                 : currentMetrics.itemizedProducts) || []).length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-slate-400 text-xs">
+                  <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
                     No sales recorded yet for this channel.
                   </td>
                 </tr>
@@ -356,14 +320,8 @@ export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
                       <td className="py-3 px-3.5 text-right font-mono text-slate-700">
                         Rs. {p.avgRate}
                       </td>
-                      <td className="py-3 px-3.5 text-right font-mono text-slate-500">
-                        Rs. {p.unitCost || 0}
-                      </td>
                       <td className="py-3 px-3.5 text-right font-mono font-bold text-slate-900">
                         Rs. {Number(p.totalRevenue).toLocaleString()}
-                      </td>
-                      <td className="py-3 px-3.5 text-right font-mono text-rose-600 font-medium">
-                        Rs. {Number(p.totalCost).toLocaleString()}
                       </td>
                       <td className="py-3 px-3.5 text-right font-mono font-bold text-emerald-700">
                         +Rs. {pProfit.toLocaleString()}
@@ -424,39 +382,16 @@ export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
                 </td>
               </tr>
 
-              {/* Row 2: Milk Cost */}
-              <tr className="hover:bg-slate-50/60 transition-colors">
-                <td className="py-3 px-3.5 font-bold text-rose-800 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-rose-100 text-rose-800 flex items-center justify-center text-[10px] font-black">
-                    2
-                  </span>
-                  Milk Purchase / Feed Cost
-                </td>
-                <td className="py-3 px-3.5 text-slate-600">
-                  {isSupplier
-                    ? 'Actual purchase price paid for supplier milk intake'
-                    : isFarm
-                    ? 'Feed, fodder and direct milking cost for farm animals'
-                    : 'Combined procurement cost and dairy herd costs'}
-                </td>
-                <td className="py-3 px-3.5 text-right font-mono font-bold text-rose-600 text-sm">
-                  - Rs. {totalCost.toLocaleString()}
-                </td>
-                <td className="py-3 px-3.5 text-right font-mono text-rose-600">
-                  {baseUnitCost > 0 ? `Rs. ${baseUnitCost} / L` : '—'}
-                </td>
-              </tr>
-
-              {/* Row 3: Final Net Profit (Bachat) */}
+              {/* Row 2: Final Net Profit (Bachat) */}
               <tr className="bg-emerald-100/70 border-t-2 border-emerald-300 font-extrabold text-emerald-950">
                 <td className="py-3.5 px-3.5 text-sm flex items-center gap-1.5">
                   <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black">
-                    3
+                    2
                   </span>
                   Final Clean Net Profit
                 </td>
                 <td className="py-3.5 px-3.5 text-xs text-emerald-900 font-medium">
-                  Actual net profit after milk cost (Total Sales Revenue minus Milk Cost)
+                  Actual net profit earned from sales
                 </td>
                 <td className="py-3.5 px-3.5 text-right font-mono font-black text-emerald-800 text-base">
                   = Rs. {totalNet.toLocaleString()}

@@ -19,19 +19,23 @@ export default function FarmCardOverflow({
   const posCtx = usePOSContext?.();
   
   // Resilient calculation for Available Farm Stock (Cold room / Chiller):
-  // 1. Direct availableFarmStock prop if provided and positive
-  // 2. POS inventoryMetrics.farmMilkStock or rawFarmMilkStock if positive
-  // 3. Fallback to today's totalFarmYield
-  const parsedPropStock = parseFloat(availableFarmStock);
-  const parsedPosStock = parseFloat(posCtx?.inventoryMetrics?.farmMilkStock ?? posCtx?.inventoryMetrics?.rawFarmMilkStock);
+  // Formula: Available Farm Stock = Total Farm Intake - (Total Farm Milk Sold in POS + Total Farm Milk Converted to Dahi)
+  const parsedPropStock = availableFarmStock !== null && availableFarmStock !== undefined ? parseFloat(availableFarmStock) : NaN;
+  const parsedPosStock = parseFloat(
+    posCtx?.inventoryMetrics?.availableFarmStock ??
+    posCtx?.inventoryMetrics?.rawAvailableFarmStock ??
+    posCtx?.inventoryMetrics?.farmMilkStock ??
+    posCtx?.inventoryMetrics?.rawFarmMilkStock
+  );
 
   let effectiveStock = 0;
-  if (!isNaN(parsedPropStock) && parsedPropStock > 0) {
-    effectiveStock = parsedPropStock;
-  } else if (!isNaN(parsedPosStock) && parsedPosStock > 0) {
-    effectiveStock = parsedPosStock;
-  } else if (totalFarmYield > 0) {
-    effectiveStock = totalFarmYield;
+  if (!isNaN(parsedPropStock) && parsedPropStock >= 0) {
+    effectiveStock = Math.max(0, parsedPropStock);
+  } else if (!isNaN(parsedPosStock) && parsedPosStock >= 0) {
+    effectiveStock = Math.max(0, parsedPosStock);
+  } else {
+    const farmSold = Number(posCtx?.farmSalesMetrics?.milkSold) || 0;
+    effectiveStock = Math.max(0, totalFarmYield - farmSold);
   }
 
   const farmMilkStock = effectiveStock % 1 === 0 ? effectiveStock.toFixed(0) : effectiveStock.toFixed(1);

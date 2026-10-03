@@ -1,31 +1,9 @@
 import React, { useState } from 'react';
-import {
-  X,
-  Droplets,
-  Layers,
-  TrendingUp,
-  Scale,
-  DollarSign,
-  Receipt,
-  Truck,
-  Building2,
-  Calendar,
-  CheckCircle2,
-  ArrowUpRight,
-  ShoppingBag,
-  Store,
-  User,
-  Milk,
-} from 'lucide-react';
+import { X,Droplets,Layers,TrendingUp,Scale,DollarSign,Receipt,Truck,Building2,Calendar,CheckCircle2,ArrowUpRight,ShoppingBag,Store,User,Milk,} from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 
 export default function POSSalesSourcePLModal({ source = 'farm', onClose }) {
-  const {
-    farmSalesMetrics,
-    supplierSalesMetrics,
-    inventoryMetrics,
-    salesHistory = [],
-  } = usePOSContext();
+  const {farmSalesMetrics,supplierSalesMetrics,inventoryMetrics,salesHistory = [],farmSalesHistory = [],supplierSalesHistory = [],} = usePOSContext();
 
   const [activeTab, setActiveTab] = useState(source === 'supplier' ? 'supplier' : source === 'all' ? 'all' : 'farm');
 
@@ -36,18 +14,7 @@ export default function POSSalesSourcePLModal({ source = 'farm', onClose }) {
   const currentMetrics = isSupplier ? supplierSalesMetrics : farmSalesMetrics;
 
   // Filter sales invoices for the active source
-  const filteredSales = salesHistory.filter((sale) => {
-    if (isAll) return true;
-    return (sale.items || []).some((item) => {
-      const itemSrc = item.source || (
-        (item.name && (item.name.toLowerCase().includes('supplier') || item.name.toLowerCase().includes('sourced') || item.name.toLowerCase().includes('chilled'))) ||
-        (item.category && (item.category.toLowerCase().includes('supplier') || item.category.toLowerCase().includes('sourced') || item.category.toLowerCase().includes('chilled')))
-          ? 'Supplier'
-          : 'Farm'
-      );
-      return itemSrc.toLowerCase() === activeTab.toLowerCase();
-    });
-  });
+  const filteredSales = isAll ? salesHistory : isSupplier ? supplierSalesHistory : farmSalesHistory;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -255,13 +222,21 @@ export default function POSSalesSourcePLModal({ source = 'farm', onClose }) {
                   </p>
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                  <span>Avg Resale Rate:</span>
-                  <strong className="text-slate-800 font-mono">
-                    Rs. {isAll
-                      ? Math.round((farmSalesMetrics.dahiRevenue + supplierSalesMetrics.dahiRevenue) / (farmSalesMetrics.dahiSold + supplierSalesMetrics.dahiSold || 1))
-                      : Math.round(currentMetrics.dahiRevenue / (currentMetrics.dahiSold || 1))}/kg
-                  </strong>
+                <div className="mt-3 pt-2.5 border-t border-slate-100 space-y-1 text-[11px]">
+                  <div className="flex items-center justify-between text-slate-500">
+                    <span>Avg Resale Rate:</span>
+                    <strong className="text-slate-800 font-mono">
+                      Rs. {isAll
+                        ? Math.round((farmSalesMetrics.dahiRevenue + supplierSalesMetrics.dahiRevenue) / (farmSalesMetrics.dahiSold + supplierSalesMetrics.dahiSold || 1))
+                        : Math.round(currentMetrics.dahiRevenue / (currentMetrics.dahiSold || 1))}/kg
+                    </strong>
+                  </div>
+                  <div className="flex items-center justify-between font-bold pt-1 border-t border-dashed border-slate-200">
+                    <span className="text-slate-700">Actual Dahi Net Profit:</span>
+                    <strong className="text-emerald-700 font-mono">
+                      = Rs. {Number(isAll ? (farmSalesMetrics.dahiNetProfit || 0) + (supplierSalesMetrics.dahiNetProfit || 0) : (currentMetrics.dahiNetProfit || 0)).toLocaleString()}
+                    </strong>
+                  </div>
                 </div>
               </div>
             </div>
@@ -315,17 +290,8 @@ export default function POSSalesSourcePLModal({ source = 'farm', onClose }) {
                 </span>
               </div>
 
-              <div className="flex justify-between py-1 border-b border-slate-200 text-rose-600">
-                <span>
-                  2. Less: {isSupplier ? 'Direct Supplier Intake Purchase Spend' : isFarm ? 'Farm Feed, Fodder & Milking Cost' : 'Production & Procurement Cost (COGS)'}
-                </span>
-                <span className="font-mono font-bold">
-                  - Rs. {Number(isAll ? farmSalesMetrics.totalCost + supplierSalesMetrics.totalCost : currentMetrics.totalCost).toLocaleString()}
-                </span>
-              </div>
-
               <div className="flex justify-between py-1 border-b border-slate-200 bg-blue-50/60 px-2 rounded font-bold text-blue-900">
-                <span>3. Net Clean Profit (Bachat)</span>
+                <span>2. Net Clean Profit (Bachat)</span>
                 <span className="font-mono">
                   = Rs. {Number(isAll ? farmSalesMetrics.netProfit + supplierSalesMetrics.netProfit : currentMetrics.netProfit).toLocaleString()} ({isAll ? Math.round(((farmSalesMetrics.netProfit + supplierSalesMetrics.netProfit) / (farmSalesMetrics.totalRevenue + supplierSalesMetrics.totalRevenue || 1)) * 100) : currentMetrics.netMarginPercent}%)
                 </span>

@@ -103,6 +103,31 @@ const processingBatchSchema = new Schema(
       default: 0,
       min: [0, 'Cost estimate cannot be negative'],
     },
+    milkUsedCost: {
+      type: Number,
+      default: 0,
+      min: [0, 'Milk used cost cannot be negative'],
+    },
+    unitCost: {
+      type: Number,
+      default: 150,
+      min: [0, 'Unit cost cannot be negative'],
+    },
+    farmMilkCost: {
+      type: Number,
+      default: 0,
+      min: [0, 'Farm milk cost cannot be negative'],
+    },
+    supplierMilkCost: {
+      type: Number,
+      default: 0,
+      min: [0, 'Supplier milk cost cannot be negative'],
+    },
+    dahiProductionCost: {
+      type: Number,
+      default: 0,
+      min: [0, 'Dahi production cost cannot be negative'],
+    },
     notes: {
       type: String,
       trim: true,

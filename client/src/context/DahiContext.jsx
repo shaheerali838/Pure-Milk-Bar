@@ -3,6 +3,7 @@ import { useAnimalContext } from './AnimalContext';
 import { useIntakeContext } from './IntakeContext';
 import { usePOSContext } from './POSContext';
 import farmService from '@/services/farmService';
+import api from '@/services/api';
 
 const DahiContext = createContext(null);
 
@@ -251,126 +252,217 @@ export function DahiProvider({ children }) {
   // =========================================================================
   // 3. PIPELINE ACTIONS (Synced with database)
   // =========================================================================
-  const addBatch = useCallback(async (formData) => {
-    const rawMilkNum = parseFloat(formData.milkUsed) || 0;
-    const count = batches.length + 1;
-    const batchId = `BATCH-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${String(count).padStart(2, '0')}`;
-    const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    let farmPortion = 0;
-    let supPortion = 0;
-
-    if (formData.source === 'Farm Milk') {
-      farmPortion = rawMilkNum;
-      supPortion = 0;
-    } else if (formData.source === 'Supplier Milk') {
-      farmPortion = 0;
-      supPortion = rawMilkNum;
-    } else {
-      if (formData.farmMilkUsed !== undefined && formData.supplierMilkUsed !== undefined) {
-        farmPortion = parseFloat(formData.farmMilkUsed) || 0;
-        supPortion = parseFloat(formData.supplierMilkUsed) || 0;
-      } else {
-        const totalAvail = realFarmYield + realSupplierIntake;
-        const ratio = totalAvail > 0 ? realFarmYield / totalAvail : 0.5;
-        farmPortion = Math.round(rawMilkNum * ratio);
-        supPortion = Math.max(0, rawMilkNum - farmPortion);
+  // =========================================================================
+  // 3. PIPELINE ACTIONS (Synced with database & instant local state)
+  // =========================================================================
+  const convertToDahi = useCallback(
+    async (source, quantity, extraData = {}) => {
+      const qty = Math.max(0, Number(quantity) || 0);
+      if (qty <= 0) {
+        return { success: false, message: 'Invalid quantity specified for Dahi conversion.' };
       }
-    }
 
-    const calculatedOutput = formData.output
-      ? String(formData.output).endsWith('kg') ? String(formData.output) : `${formData.output} kg`
-      : `${(rawMilkNum * 0.985).toFixed(1)} kg`;
-    const numOutput = parseFloat(calculatedOutput) || Number((rawMilkNum * 0.985).toFixed(1));
+      const srcStr = String(source || 'Both (Mixed)').trim().toLowerCase();
+      let normSource = 'Both (Mixed)';
+      let farmPortion = 0;
+      let supPortion = 0;
 
-    const rateNum = parseFloat(String(formData.posRate || '').replace(/[^\d.]/g, '')) || 320;
-    const profitPerKg = Math.max(0, rateNum - 220);
-    const expectedProfitVal = Math.round(numOutput * profitPerKg);
+      if (srcStr.includes('farm') && !srcStr.includes('supplier') && !srcStr.includes('both') && !srcStr.includes('mix')) {
+        normSource = 'Farm Milk';
+        farmPortion = qty;
+        supPortion = 0;
+      } else if (srcStr.includes('supplier') && !srcStr.includes('farm') && !srcStr.includes('both') && !srcStr.includes('mix')) {
+        normSource = 'Supplier Milk';
+        farmPortion = 0;
+        supPortion = qty;
+      } else {
+        normSource = 'Both (Mixed)';
+        if (extraData.farmMilkUsed !== undefined && extraData.supplierMilkUsed !== undefined) {
+          farmPortion = Math.max(0, Number(extraData.farmMilkUsed) || 0);
+          supPortion = Math.max(0, Number(extraData.supplierMilkUsed) || 0);
+        } else {
+          const availF = Number(metrics.remainingFarmMilk ?? realFarmYield ?? 0);
+          const availS = Number(metrics.remainingSupplierMilk ?? realSupplierIntake ?? 0);
+          const totalAvail = availF + availS;
+          const ratio = totalAvail > 0 ? availF / totalAvail : 0.5;
+          farmPortion = Math.round(qty * ratio);
+          supPortion = Math.max(0, qty - farmPortion);
+        }
+      }
 
-    const initialStage = formData.status === 'Completed' || formData.stage === 'pos' ? 'pos' : 'incubating';
+      const count = batches.length + 1;
+      const batchId = `BATCH-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Date.now().toString().slice(-4)}`;
+      const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    const totalMilkUsed = farmPortion + supPortion || rawMilkNum;
-    let farmRatio = 1;
-    let supplierRatio = 0;
-    if (formData.source === 'Farm Milk') {
-      farmRatio = 1;
-      supplierRatio = 0;
-    } else if (formData.source === 'Supplier Milk') {
-      farmRatio = 0;
-      supplierRatio = 1;
-    } else {
-      farmRatio = totalMilkUsed > 0 ? Number((farmPortion / totalMilkUsed).toFixed(4)) : 0.5;
-      supplierRatio = totalMilkUsed > 0 ? Number((supPortion / totalMilkUsed).toFixed(4)) : 0.5;
-    }
+      const numOutput = extraData.outputQuantity !== undefined && extraData.outputQuantity !== null
+        ? Number(extraData.outputQuantity)
+        : extraData.output
+          ? (parseFloat(extraData.output) || Number((qty * 0.985).toFixed(1)))
+          : Number((qty * 0.985).toFixed(1));
+      const calculatedOutput = `${numOutput} kg`;
 
-    const payload = {
-      product: formData.product || 'Dahi (Plain)',
-      milkUsed: rawMilkNum,
-      milkUsedQuantity: rawMilkNum,
-      milkUsedLiters: rawMilkNum,
-      source: formData.source || 'Both (Mixed)',
-      farmMilkUsed: farmPortion,
-      supplierMilkUsed: supPortion,
-      farmRatio,
-      supplierRatio,
-      output: calculatedOutput,
-      outputQuantity: numOutput,
-      fat: formData.fat ? String(formData.fat).replace('%', '') : '4.5',
-      date: formData.date || new Date().toISOString().split('T')[0],
-      status: formData.status || 'Completed',
-      stage: initialStage,
-      posRate: formData.posRate || `Rs. ${rateNum} / kg`,
-    };
+      const totalMilkUsed = farmPortion + supPortion || qty;
+      let farmRatio = 1;
+      let supplierRatio = 0;
+      if (normSource === 'Farm Milk') {
+        farmRatio = 1;
+        supplierRatio = 0;
+      } else if (normSource === 'Supplier Milk') {
+        farmRatio = 0;
+        supplierRatio = 1;
+      } else {
+        farmRatio = totalMilkUsed > 0 ? Number((farmPortion / totalMilkUsed).toFixed(4)) : 0.5;
+        supplierRatio = totalMilkUsed > 0 ? Number((supPortion / totalMilkUsed).toFixed(4)) : 0.5;
+      }
 
-    let createdRecord = null;
-    try {
-      const backendRes = await farmService.createProcessingBatch(payload);
-      createdRecord = backendRes?.batch || backendRes?.data || backendRes;
-      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
-    } catch (e) {
-      console.warn('Backend API createProcessingBatch error:', e.message);
-    }
+      const resolvedUnitCost = Number(extraData.unitCost) || (normSource === 'Supplier Milk' ? 220 : 230);
+      const resolvedDahiCostRate = Number(extraData.dahiCostRate) || 250;
+      const resolvedFarmCost = Number(extraData.farmMilkCost) || (farmPortion * (normSource === 'Farm Milk' ? resolvedUnitCost : 230));
+      const resolvedSupplierCost = Number(extraData.supplierMilkCost) || (supPortion * (normSource === 'Supplier Milk' ? resolvedUnitCost : 220));
+      const resolvedMilkUsedCost = Number(extraData.milkCostTransferred || extraData.milkUsedCost || extraData.totalMilkCost) || (resolvedFarmCost + resolvedSupplierCost);
+      const resolvedDahiProductionCost = Number(extraData.totalDahiCost || extraData.dahiProductionCost) || Math.round(numOutput * resolvedDahiCostRate);
 
-    const newRecord = {
-      ...payload,
-      id: createdRecord?._id || createdRecord?.id || createdRecord?.batchNumber || batchId,
-      time: timeNow,
-      outputVal: numOutput,
-      milkUsedVal: rawMilkNum,
-      stage: initialStage,
-      posRate: formData.posRate ? `Rs. ${rateNum} / kg` : `Rs. ${rateNum} / kg`,
-      expectedProfit: `+Rs. ${expectedProfitVal.toLocaleString()}`,
-    };
+      const rateNum = parseFloat(String(extraData.posRate || '').replace(/[^\d.]/g, '')) || 300;
+      const expectedProfitVal = Math.round((numOutput * rateNum) - resolvedDahiProductionCost);
 
-    setBatches((prev) => [newRecord, ...prev]);
+      const initialStage = extraData.status === 'Completed' || extraData.stage === 'pos' ? 'pos' : (extraData.stage || 'pos');
 
-    // If initial stage is pos, sync directly into matching product stock in POS
-    if (initialStage === 'pos' && posCtx?.setProducts && numOutput > 0) {
-      posCtx.setProducts((prev) =>
-        prev.map((p) => {
-          const pName = (p.name || '').toLowerCase();
-          const targetName = (formData.product || '').toLowerCase();
-          if (
-            pName === targetName ||
-            (targetName.includes('cow') && pName.includes('cow')) ||
-            (targetName.includes('buffalo') && pName.includes('buffalo')) ||
-            (targetName.includes('dahi') && pName.includes('dahi')) ||
-            (targetName.includes('lassi') && pName.includes('lassi')) ||
-            (targetName.includes('paneer') && pName.includes('paneer')) ||
-            (targetName.includes('ghee') && pName.includes('ghee'))
-          ) {
-            return {
-              ...p,
-              stock: Number(((p.stock || 0) + numOutput).toFixed(1)),
-            };
-          }
-          return p;
-        })
-      );
-    }
+      const payload = {
+        product: extraData.product || 'Fresh Dahi (Plain)',
+        milkUsed: qty,
+        milkUsedQuantity: qty,
+        milkUsedLiters: qty,
+        source: normSource,
+        farmMilkUsed: farmPortion,
+        supplierMilkUsed: supPortion,
+        farmRatio,
+        supplierRatio,
+        unitCost: resolvedUnitCost,
+        dahiCostRate: resolvedDahiCostRate,
+        farmMilkCost: resolvedFarmCost,
+        supplierMilkCost: resolvedSupplierCost,
+        milkCostTransferred: resolvedMilkUsedCost,
+        milkUsedCost: resolvedMilkUsedCost,
+        totalDahiCost: resolvedDahiProductionCost,
+        dahiProductionCost: resolvedDahiProductionCost,
+        output: calculatedOutput,
+        outputQuantity: numOutput,
+        fat: extraData.fat ? String(extraData.fat).replace('%', '') : '4.5',
+        date: extraData.date || new Date().toISOString().split('T')[0],
+        status: extraData.status || 'Completed',
+        stage: initialStage,
+        posRate: extraData.posRate || `Rs. ${rateNum} / kg`,
+        notes: extraData.notes || '',
+      };
 
-    return newRecord;
-  }, [batches.length, realFarmYield, realSupplierIntake, posCtx]);
+      const newRecord = {
+        ...payload,
+        id: batchId,
+        _id: batchId,
+        time: timeNow,
+        outputVal: numOutput,
+        milkUsedVal: qty,
+        unitCost: resolvedUnitCost,
+        dahiCostRate: resolvedDahiCostRate,
+        farmMilkCost: resolvedFarmCost,
+        supplierMilkCost: resolvedSupplierCost,
+        milkCostTransferred: resolvedMilkUsedCost,
+        milkUsedCost: resolvedMilkUsedCost,
+        totalDahiCost: resolvedDahiProductionCost,
+        dahiProductionCost: resolvedDahiProductionCost,
+        expectedProfit: `${expectedProfitVal >= 0 ? '+' : '-'}Rs. ${Math.abs(expectedProfitVal).toLocaleString()}`,
+      };
+
+      // 1. Instantly update DahiContext local state
+      setBatches((prev) => [newRecord, ...prev]);
+
+      // 2. Instantly call Context API setters for stock deduction
+      if (typeof posCtx?.setFarmStock === 'function' && farmPortion > 0) {
+        posCtx.setFarmStock((prev) => Math.max(0, Number(((prev !== null ? prev : (posCtx?.inventoryMetrics?.rawFarmMilkStock ?? 0)) - farmPortion).toFixed(1))));
+      }
+      if (typeof posCtx?.setSupplierStock === 'function' && supPortion > 0) {
+        posCtx.setSupplierStock((prev) => Math.max(0, Number(((prev !== null ? prev : (posCtx?.inventoryMetrics?.rawSupplierMilkStock ?? 0)) - supPortion).toFixed(1))));
+      }
+
+      // 3. Instantly update POSContext (deduct source milk, increment Dahi, recalculate available stock)
+      if (typeof posCtx?.recordDahiConversion === 'function') {
+        posCtx.recordDahiConversion({
+          source: normSource,
+          quantity: qty,
+          farmMilkUsed: farmPortion,
+          supplierMilkUsed: supPortion,
+          outputQuantity: numOutput,
+          batch: newRecord,
+        });
+      } else if (posCtx?.setProducts) {
+        posCtx.setProducts((prev) =>
+          prev.map((p) => {
+            const pName = (p.name || '').toLowerCase();
+            const pCat = (p.category || '').toLowerCase();
+            const isDahi = pCat.includes('dahi') || pName.includes('dahi');
+            const isCow = pName.includes('cow');
+            const isBuff = pName.includes('buffalo');
+            const isMilk = !isDahi && (pCat.includes('milk') || pName.includes('milk'));
+
+            if (isDahi && numOutput > 0) {
+              return { ...p, stock: Number(((Number(p.stock) || 0) + numOutput).toFixed(2)) };
+            }
+            if (isMilk) {
+              if (isCow && farmPortion > 0) {
+                return { ...p, stock: Math.max(0, Number(((Number(p.stock) || 0) - farmPortion).toFixed(2))) };
+              }
+              if (isBuff) {
+                const deduct = (farmPortion > 0 && !isCow ? farmPortion : 0) + supPortion;
+                if (deduct > 0) {
+                  return { ...p, stock: Math.max(0, Number(((Number(p.stock) || 0) - deduct).toFixed(2))) };
+                }
+              }
+            }
+            return p;
+          })
+        );
+      }
+
+      // 3. Persist to MongoDB backend
+      try {
+        const backendRes = await farmService.createProcessingBatch(payload);
+        const created = backendRes?.batch || backendRes?.data || backendRes;
+        if (created?._id || created?.id) {
+          setBatches((prev) =>
+            prev.map((b) => (b.id === batchId ? { ...b, ...created, id: created._id || created.id } : b))
+          );
+        }
+      } catch (e) {
+        console.warn('Backend API createProcessingBatch error:', e.message);
+      }
+
+      // 4. Removed 'Milk Cost for Dahi' expense creation to prevent double counting.
+      // Final Entity Profit = All Revenues - All Real Costs.
+
+      // 5. Notify global listeners
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
+        window.dispatchEvent(new Event('pure_milk_bar_inventory_updated'));
+      }
+
+      return {
+        success: true,
+        batch: newRecord,
+        farmMilkDeducted: farmPortion,
+        supplierMilkDeducted: supPortion,
+        dahiProduced: numOutput,
+      };
+    },
+    [batches.length, metrics, realFarmYield, realSupplierIntake, posCtx]
+  );
+
+  const addBatch = useCallback(
+    async (formData) => {
+      const rawMilkNum = parseFloat(formData.milkUsedVal ?? formData.milkUsed) || 0;
+      return convertToDahi(formData.source, rawMilkNum, formData);
+    },
+    [convertToDahi]
+  );
 
   // Stage transition 1 -> 2: Move from Incubating to Chilled Storage
   const moveToChiller = useCallback(async (batchId) => {
@@ -497,6 +589,7 @@ export function DahiProvider({ children }) {
         metrics,
         refreshBatches: fetchBatches,
         addBatch,
+        convertToDahi,
         moveToChiller,
         sendToPOS,
         markSoldOut,

@@ -6,6 +6,8 @@ import { useIntakeContext } from '@/context/IntakeContext';
 import { useDahiContext } from '@/context/DahiContext';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { getPktTodayString } from '@/utils/dateUtils';
+
 export default function DahiProcessingHub() {
   const navigate = useNavigate();
   const { products = [], inventoryMetrics = {} } = usePOSContext();
@@ -13,10 +15,13 @@ export default function DahiProcessingHub() {
   const { totals: intakeTotals = {} } = useIntakeContext();
   const { batches: processingBatches = [] } = useDahiContext() || {};
 
-  const todayISO = new Date().toISOString().split('T')[0];
+  const todayISO = getPktTodayString();
 
   // Batches recorded for today or all active batches
-  const todayBatches = processingBatches.filter((b) => b.date === todayISO);
+  const todayBatches = processingBatches.filter((b) => {
+    const bDate = b.date ? String(b.date).slice(0, 10) : '';
+    return bDate === todayISO;
+  });
   const activeBatches = todayBatches.length > 0 ? todayBatches : processingBatches;
 
   // Processed products from context
@@ -31,12 +36,6 @@ export default function DahiProcessingHub() {
   );
   const milkPrice = Number(inventoryMetrics.milkPrice) || Number(milkProducts[0]?.price) || 210;
 
-  // Live conversion statistics calculated purely from batches or POS inventory
-  const rawMilkConverted = activeBatches.reduce((sum, b) => {
-    const rawVal = parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0;
-    return sum + rawVal;
-  }, 0) || (parseFloat(inventoryMetrics.totalDahi) ? parseFloat((parseFloat(inventoryMetrics.totalDahi) * 1.05).toFixed(1)) : 0);
-
   const dahiOutputKg = activeBatches.reduce((sum, b) => {
     const outVal = parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
     return sum + outVal;
@@ -49,11 +48,46 @@ export default function DahiProcessingHub() {
 
   let farmMilkPortion = 0;
   let supMilkPortion = 0;
-  if (totalAvailable > 0 && rawMilkConverted > 0) {
-    farmMilkPortion = Math.round((totalFarmMilk / totalAvailable) * rawMilkConverted);
-    supMilkPortion = Math.max(0, Math.round(rawMilkConverted - farmMilkPortion));
-  } else if (rawMilkConverted > 0) {
-    farmMilkPortion = Math.round(rawMilkConverted);
+  let rawMilkConverted = 0;
+
+  activeBatches.forEach((b) => {
+    const rawVal = parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || Number(b.milkUsedVal) || 0;
+    rawMilkConverted += rawVal;
+
+    const sourceStr = (b.source || '').toLowerCase();
+    
+    // Strict conditional checking based on source string to avoid garbage data
+    if (sourceStr === 'farm' || sourceStr === 'farm milk') {
+      farmMilkPortion += rawVal;
+      // supMilkPortion += 0; (forced to 0 by not adding)
+    } else if (sourceStr === 'supplier' || sourceStr === 'supplier milk') {
+      supMilkPortion += rawVal;
+      // farmMilkPortion += 0;
+    } else {
+      // Both / Mix scenario
+      const savedFarm = Number(b.farmMilkUsed);
+      const savedSup = Number(b.supplierMilkUsed);
+      if (!isNaN(savedFarm) && !isNaN(savedSup) && (savedFarm > 0 || savedSup > 0)) {
+        farmMilkPortion += savedFarm;
+        supMilkPortion += savedSup;
+      } else {
+        // Fallback ratio if no explicit split is saved
+        const fRatio = b.farmRatio !== undefined ? Number(b.farmRatio) : 0.5;
+        farmMilkPortion += Math.round(rawVal * fRatio);
+        supMilkPortion += Math.max(0, Math.round(rawVal - Math.round(rawVal * fRatio)));
+      }
+    }
+  });
+
+  if (rawMilkConverted === 0) {
+    // Fallback to POS context inventory metrics if no batches exist today
+    rawMilkConverted = parseFloat(inventoryMetrics.totalDahi) ? parseFloat((parseFloat(inventoryMetrics.totalDahi) * 1.05).toFixed(1)) : 0;
+    if (rawMilkConverted > 0 && totalAvailable > 0) {
+      farmMilkPortion = Math.round((totalFarmMilk / totalAvailable) * rawMilkConverted);
+      supMilkPortion = Math.max(0, Math.round(rawMilkConverted - farmMilkPortion));
+    } else if (rawMilkConverted > 0) {
+      farmMilkPortion = Math.round(rawMilkConverted);
+    }
   }
 
   // Yield %

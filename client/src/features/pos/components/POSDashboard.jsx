@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Search,
   Eye,
@@ -22,6 +22,7 @@ import POSWalkinHistoryModal from './POSWalkinHistoryModal';
 import POSDoorstepOrdersModal from './POSDoorstepOrdersModal';
 
 export default function POSDashboard() {
+  const context = usePOSContext() || {};
   const {
     products = [],
     cart = [],
@@ -29,8 +30,8 @@ export default function POSDashboard() {
     handleAddToCart,
     handleAddToCartByRupees,
     handleClearCart,
-    inventoryMetrics,
-  } = usePOSContext();
+    inventoryMetrics = {},
+  } = context;
 
   const { deliveries = [] } = useDeliveryContext();
 
@@ -50,20 +51,34 @@ export default function POSDashboard() {
   // Sales source P&L detail view state ('farm' | 'supplier' | 'all' | null)
   const [selectedSalesSource, setSelectedSalesSource] = useState(null);
 
-  // Filter products by search & category
-  const filteredProducts = products.filter((item) => {
-    const matchesSearch =
-      !searchTerm.trim() ||
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Filter products by search & category, ensuring strictly ONE single combined card for Buffalo Milk
+  const filteredProducts = useMemo(() => {
+    const matched = products.filter((item) => {
+      const matchesSearch =
+        !searchTerm.trim() ||
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesCat =
-      selectedCategory === 'all' ||
-      item.category.toLowerCase().includes(selectedCategory.toLowerCase());
+      const matchesCat =
+        selectedCategory === 'all' ||
+        item.category.toLowerCase().includes(selectedCategory.toLowerCase());
 
-    return matchesSearch && matchesCat;
-  });
+      return matchesSearch && matchesCat;
+    });
+
+    // Ensure strictly ONE single combined Buffalo Milk card is shown on POS screen
+    let seenBuffalo = false;
+    return matched.filter((item) => {
+      const name = (item.name || '').toLowerCase();
+      const isBuff = name.includes('buffalo');
+      if (isBuff) {
+        if (seenBuffalo) return false;
+        seenBuffalo = true;
+      }
+      return true;
+    });
+  }, [products, searchTerm, selectedCategory]);
 
   // Dynamically resolve real-time stock from live farm, supplier, and kitchen conversion metrics
   const getProductDisplayStock = (prod) => {
@@ -72,26 +87,28 @@ export default function POSDashboard() {
     const isCow = name.includes('cow');
     const isBuff = name.includes('buffalo');
 
-    if (cat.includes('dahi') || name.includes('dahi')) {
-      const liveDahi = Number(inventoryMetrics?.totalDahiStock);
+    if (cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt')) {
+      const liveDahi = Number(inventoryMetrics?.totalDahiStock ?? inventoryMetrics?.totalDahi ?? inventoryMetrics?.rawDahiStock);
       if (!isNaN(liveDahi) && liveDahi >= 0) return liveDahi;
-      return Number(prod.stock) || 0;
+      return Math.max(0, Number(prod.stock) || 0);
     }
 
     if (cat.includes('milk') || name.includes('milk')) {
       if (isCow) {
-        const farmCow = Number(inventoryMetrics?.farmCowMilkStock) || 0;
-        const supCow = Number(inventoryMetrics?.supplierCowMilkStock) || 0;
-        return farmCow + supCow;
+        // Strictly Farm Cow Milk only! Supplier milk is NOT added.
+        const farmCow = Number(inventoryMetrics?.farmCowMilkStock ?? inventoryMetrics?.rawFarmCowMilkStock);
+        if (!isNaN(farmCow) && farmCow >= 0) return farmCow;
+        return Math.max(0, Number(prod.stock) || 0);
       }
       if (isBuff) {
-        const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock) || 0;
-        const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock) || 0;
-        return farmBuff + supBuff;
+        // Combined Buffalo Milk Card: Farm Buffalo + Supplier Buffalo
+        const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock ?? inventoryMetrics?.rawFarmBuffaloMilkStock) || 0;
+        const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock ?? inventoryMetrics?.rawSupplierBuffaloMilkStock) || 0;
+        return Math.max(0, Number((farmBuff + supBuff).toFixed(1)));
       }
-      const liveTot = Number(inventoryMetrics?.totalMilkStock);
+      const liveTot = Number(inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock);
       if (!isNaN(liveTot) && liveTot >= 0) return liveTot;
-      return Number(prod.stock) || 0;
+      return Math.max(0, Number(prod.stock) || 0);
     }
 
     const batchSpecificStock = Number(inventoryMetrics?.productBatchStockMap?.[prod.name] || 0);
@@ -306,8 +323,10 @@ export default function POSDashboard() {
                   const prodId = product.id || product._id || product.sku || `prod-${idx}`;
                   const cartItem = cart.find((i) => i.id === prodId || (product.id && i.id === product.id));
                   const inCartQty = cartItem ? cartItem.quantity : 0;
-                  const isMilk = product.category?.toLowerCase().includes('milk');
-                  const isDahi = product.category?.toLowerCase().includes('dahi');
+                  const isMilk = product.category?.toLowerCase().includes('milk') || (product.name || '').toLowerCase().includes('milk');
+                  const isDahi = product.category?.toLowerCase().includes('dahi') || (product.name || '').toLowerCase().includes('dahi');
+                  const isCow = (product.name || '').toLowerCase().includes('cow');
+                  const isBuff = (product.name || '').toLowerCase().includes('buffalo');
                   const displayStock = getProductDisplayStock(product);
                   const unitLabel = product.unit?.replace('per ', '') || (isMilk ? 'L' : 'kg');
 
@@ -402,6 +421,18 @@ export default function POSDashboard() {
                               </>
                             )}
                           </p>
+                          {isMilk && isBuff && (
+                            <p className="text-[9px] text-slate-500 font-medium tracking-tight mt-0.5 flex items-center gap-1">
+                              <span className="font-semibold text-emerald-700">Farm: {Number(inventoryMetrics?.farmBuffaloMilkStock) || 0}L</span>
+                              <span className="text-slate-300">|</span>
+                              <span className="font-semibold text-amber-700">Supplier: {Number(inventoryMetrics?.supplierBuffaloMilkStock) || 0}L</span>
+                            </p>
+                          )}
+                          {isMilk && isCow && (
+                            <p className="text-[9px] text-blue-600 font-semibold tracking-tight mt-0.5">
+                              Strictly Farm Cow Milk
+                            </p>
+                          )}
                         </div>
                       </div>
 

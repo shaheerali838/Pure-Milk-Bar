@@ -83,13 +83,6 @@ export default function SupplierProcurementHub() {
           </div>
 
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
-            <span className="text-slate-600 text-xs font-semibold">Direct Sourcing Cost</span>
-            <span className="font-mono font-bold text-slate-900 text-xs tabular">
-              Rs. {directCost.toLocaleString()} (@ Rs. {Math.round(avgProcurementRate)}/L)
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
             <span className="text-slate-600 text-xs font-semibold">Supplier Milk Stock</span>
             <span className="font-mono font-bold text-blue-700 text-xs tabular">
               {inventoryMetrics?.supplierMilkStock || 0} L (Dock Chiller)
@@ -97,9 +90,9 @@ export default function SupplierProcurementHub() {
           </div>
 
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
-            <span className="text-slate-600 text-xs font-semibold">Transit &amp; Testing</span>
-            <span className="font-mono font-bold text-rose-600 text-xs tabular">
-              Rs. {collectionDiesel.toLocaleString()}
+            <span className="text-slate-600 text-xs font-semibold">Realized Resale Value</span>
+            <span className="font-mono font-bold text-emerald-700 text-xs tabular">
+              Rs. {grossValue.toLocaleString()}
             </span>
           </div>
         </div>

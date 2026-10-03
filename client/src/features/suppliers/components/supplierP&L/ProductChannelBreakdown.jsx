@@ -95,8 +95,8 @@ export default function ProductChannelBreakdown({ product, onClose }) {
               </span>
             </div>
 
-            {/* 3 Metric Tiles */}
-            <div className="grid grid-cols-3 gap-2 text-center">
+            {/* Metric Tiles */}
+            <div className="grid grid-cols-2 gap-2 text-center">
               <div className="bg-white p-2.5 rounded-lg border border-slate-200/70">
                 <p className="text-[10px] font-bold text-slate-500 uppercase">Sourced Volume</p>
                 <p className="text-sm font-extrabold text-slate-900 font-mono mt-0.5">
@@ -105,16 +105,9 @@ export default function ProductChannelBreakdown({ product, onClose }) {
               </div>
 
               <div className="bg-white p-2.5 rounded-lg border border-slate-200/70">
-                <p className="text-[10px] font-bold text-slate-500 uppercase">Base Sourcing Cost</p>
-                <p className="text-sm font-extrabold text-rose-600 font-mono mt-0.5">
-                  Rs. {Number(product.baseCost).toLocaleString()}
-                </p>
-              </div>
-
-              <div className="bg-white p-2.5 rounded-lg border border-slate-200/70">
-                <p className="text-[10px] font-bold text-slate-500 uppercase">Avg Purchase Rate</p>
-                <p className="text-sm font-extrabold text-slate-800 font-mono mt-0.5">
-                  Rs. {product.avgPurchaseRate ? Number(product.avgPurchaseRate).toFixed(1) : '—'} <span className="text-[10px] font-normal text-slate-500">/{product.unit || 'L'}</span>
+                <p className="text-[10px] font-bold text-slate-500 uppercase">Realized Resale</p>
+                <p className="text-sm font-extrabold text-emerald-700 font-mono mt-0.5">
+                  Rs. {Number(product.resaleRevenue).toLocaleString()}
                 </p>
               </div>
             </div>
@@ -236,12 +229,6 @@ export default function ProductChannelBreakdown({ product, onClose }) {
                 <span>Total Resale Revenue:</span>
                 <span className="font-mono font-bold text-white">
                   + Rs. {Number(product.resaleRevenue).toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between text-slate-300">
-                <span>Less: Base Supplier Procurement Cost:</span>
-                <span className="font-mono font-medium text-rose-300">
-                  - Rs. {Number(product.baseCost).toLocaleString()}
                 </span>
               </div>
             </div>

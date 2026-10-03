@@ -19,8 +19,9 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
     output: '',
     date: new Date().toISOString().split('T')[0],
     status: 'In Progress',
-    posRate: 'Rs. 320 / kg',
   });
+
+  const [unitCost, setUnitCost] = useState(230);
 
   // Maximum allowed for current source
   const currentMax =
@@ -160,17 +161,43 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
       supplierRatio = totalUsed > 0 ? Number((supPortion / totalUsed).toFixed(4)) : 0.5;
     }
 
+    const activeUnitCost = Number(unitCost) || (formData.source === 'Supplier Milk' ? 220 : 230);
+    const dahiCostRate = parseFloat(formData.dahiCostRate) || 250;
+    
+    const farmMilkCost = formData.source === 'Supplier Milk'
+      ? 0
+      : formData.source === 'Farm Milk'
+        ? Math.round(rawVal * activeUnitCost)
+        : Math.round(farmPortion * (formData.source === 'Farm Milk' ? activeUnitCost : 230));
+    const supplierMilkCost = formData.source === 'Farm Milk'
+      ? 0
+      : formData.source === 'Supplier Milk'
+        ? Math.round(rawVal * 220)
+        : Math.round(supPortion * 220);
+    
+    const milkCostTransferred = farmMilkCost + supplierMilkCost || Math.round(rawVal * activeUnitCost);
+    const numOutput = parseFloat(formData.output) || Number((rawVal * 0.985).toFixed(1));
+    const totalDahiCost = Math.round(numOutput * dahiCostRate);
+
     onAddBatch({
       ...formData,
-      milkUsed: `${rawVal} kg (${formData.source === 'Farm Milk' ? 'Farm' : formData.source === 'Supplier Milk' ? 'Supplier' : 'Mixed'})`,
+      unitCost: activeUnitCost,
+      dahiCostRate,
+      farmMilkCost,
+      supplierMilkCost,
+      milkCostTransferred,
+      milkUsedCost: milkCostTransferred,
+      dahiProductionCost: totalDahiCost,
+      totalDahiCost,
+      totalMilkCost: milkCostTransferred,
+      milkUsed: `${rawVal} L (${formData.source === 'Farm Milk' ? 'Farm' : formData.source === 'Supplier Milk' ? 'Supplier' : 'Mixed'})`,
       milkUsedVal: rawVal,
       farmMilkUsed: farmPortion,
       supplierMilkUsed: supPortion,
       farmRatio,
       supplierRatio,
-      output: formData.output ? `${formData.output} kg` : `${(rawVal * 0.985).toFixed(1)} kg`,
-      outputVal: parseFloat(formData.output) || Number((rawVal * 0.985).toFixed(1)),
-      fat: '4.5%',
+      output: formData.output ? `${formData.output} kg` : `${numOutput} kg`,
+      outputVal: numOutput,
     });
 
     onClose();
@@ -248,22 +275,11 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                 </label>
                 <select
                   value={formData.product}
-                  onChange={(e) => {
-                    const prod = e.target.value;
-                    let defaultRate = 'Rs. 320 / kg';
-                    if (prod.includes('Sweet Dahi')) defaultRate = 'Rs. 360 / kg';
-                    else if (prod.includes('Matka Dahi')) defaultRate = 'Rs. 380 / kg';
-                    else if (prod.includes('Low-Fat')) defaultRate = 'Rs. 300 / kg';
-                    else if (prod.includes('Special Thick')) defaultRate = 'Rs. 350 / kg';
-                    setFormData({ ...formData, product: prod, posRate: defaultRate });
-                  }}
+                  onChange={(e) => setFormData({ ...formData, product: e.target.value })}
                   className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-medium cursor-pointer"
                 >
                   <option value="Fresh Dahi (Plain)">Fresh Dahi (Plain)</option>
-                  <option value="Sweet Dahi (Meetha)">Sweet Dahi (Meetha)</option>
-                  <option value="Matka Dahi (Clay Pot)">Matka Dahi (Clay Pot)</option>
-                  <option value="Low-Fat / Skimmed Dahi">Low-Fat / Skimmed Dahi</option>
-                  <option value="Special Thick Dahi (Malai)">Special Thick Dahi (Malai)</option>
+    
                 </select>
               </div>
 
@@ -301,7 +317,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-              <div>
+              <div className='col-span-2 row-span-1 '>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                     Total Milk Input (kg/L) <span className="text-rose-500">*</span>
@@ -346,11 +362,29 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                     ✓ 100% Sales &amp; Calculations will go strictly to <strong>Supplier P&amp;L</strong>
                   </p>
                 )}
+                <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 mt-[21px]">
+                  Expected Dahi Output (kg) <span className="text-slate-400 lowercase font-medium">(optional)</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">kg</span>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    placeholder={`Est: ${(currentEntered * 0.985).toFixed(1)}`}
+                    value={formData.output}
+                    onChange={(e) => setFormData({ ...formData, output: e.target.value })}
+                    className="w-full h-9 pl-3 pr-8 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-medium text-emerald-700"
+                  />
+                </div>
+                
+              </div>
               </div>
 
               {/* If mixed, breakout inputs */}
               {formData.source === 'Both (Mixed)' || formData.source === 'Farm & Supplier Mix' ? (
-                <div className="p-2.5 bg-slate-50/90 border border-slate-200/90 rounded-xl space-y-2">
+                <div className="p-2.5 bg-slate-50/90 border border-slate-200/90 rounded-xl space-y-2 md:col-span-2">
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="font-bold text-slate-700">Enter Exact Liter Ratio:</span>
                     {parseFloat(formData.milkUsed) > 0 && (
@@ -403,7 +437,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                   </p>
                 </div>
               ) : (
-                <div className="hidden md:block"></div>
+                <div className="hidden"></div>
               )}
             </div>
           </div>

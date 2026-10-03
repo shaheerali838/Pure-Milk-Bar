@@ -29,6 +29,7 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
   const editingRecord = expenseId ? expenses.find(e => e.id === expenseId) : null;
 
   const [formData, setFormData] = useState({
+    expenseEntity: 'Farm',
     category: '',
     description: '',
     amount: '',
@@ -42,6 +43,7 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
   useEffect(() => {
     if (editingRecord) {
       setFormData({
+        expenseEntity: editingRecord.expenseEntity || editingRecord.scope || 'Farm',
         category: editingRecord.category || '',
         description: editingRecord.description || '',
         amount: editingRecord.amount || '',
@@ -92,7 +94,21 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
           <form id="record-expense-form" onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              <div className="md:col-span-2">
+              <div className="md:col-span-1">
+                <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1">Expense Entity *</label>
+                <select
+                  required
+                  value={formData.expenseEntity}
+                  onChange={(e) => setFormData({ ...formData, expenseEntity: e.target.value })}
+                  className="w-full h-[40px] px-3.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white outline-none focus:border-emerald-600 shadow-2xs cursor-pointer"
+                >
+                  <option value="Farm">Farm Expense</option>
+                  <option value="Shop">Shop Expense</option>
+                  <option value="Supplier">Supplier (Sourcing) Expense</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-1">
                 <label className="block font-bold text-slate-700 uppercase tracking-wider text-[11px] mb-1">Expense Category *</label>
                 <select
                   required
