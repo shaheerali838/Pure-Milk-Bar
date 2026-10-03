@@ -31,6 +31,7 @@ export default function POSDashboard() {
     handleAddToCartByRupees,
     handleClearCart,
     inventoryMetrics = {},
+    isSaleRefreshing = false,
   } = context;
 
   const { deliveries = [] } = useDeliveryContext();
@@ -121,6 +122,7 @@ export default function POSDashboard() {
 
   // Handle product click with in-UI out-of-stock warning (NO browser alert)
   const handleProductCardClick = (product) => {
+    if (isSaleRefreshing) return;
     const displayStock = getProductDisplayStock(product);
     const isMilk = (product.category || '').toLowerCase().includes('milk') || (product.name || '').toLowerCase().includes('milk');
     const isDahi = (product.category || '').toLowerCase().includes('dahi') || (product.name || '').toLowerCase().includes('dahi');
@@ -504,6 +506,31 @@ export default function POSDashboard() {
         isOpen={isDoorstepOrdersOpen}
         onClose={() => setIsDoorstepOrdersOpen(false)}
       />
+
+      {/* Full Page Sale Processing & Inventory Refresh Loading State */}
+      {isSaleRefreshing && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex flex-col items-center justify-center animate-in fade-in duration-200 select-none pointer-events-auto">
+          <div className="bg-white p-6 rounded-2xl shadow-2xl border border-slate-100 flex flex-col items-center text-center max-w-sm mx-4 space-y-4">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full border-4 border-emerald-100 border-t-emerald-600 animate-spin flex items-center justify-center"></div>
+              <div className="absolute inset-0 flex items-center justify-center text-2xl">
+                🥛
+              </div>
+            </div>
+            <div>
+              <h3 className="text-base font-black text-slate-900 font-display">
+                Applying Sale &amp; Refreshing...
+              </h3>
+              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                Updating real-time inventory, sales register, and customer balances. Please wait...
+              </p>
+            </div>
+            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+              <div className="bg-emerald-500 h-full w-2/3 animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

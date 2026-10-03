@@ -106,6 +106,7 @@ export default function POSSale() {
 
     // Sale Actions
     handleCompleteSale,
+    isSaleRefreshing = false,
     inventoryMetrics = {},
     products = [],
   } = usePOSContext() || {};
@@ -220,8 +221,9 @@ export default function POSSale() {
         {cart.length > 0 && (
           <button
             type="button"
+            disabled={isProcessingSale || isSaleRefreshing}
             onClick={handleClearCart}
-            className="text-xs font-semibold text-rose-500 hover:text-rose-700 flex items-center gap-1 transition cursor-pointer"
+            className="text-xs font-semibold text-rose-500 hover:text-rose-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
             Clear
@@ -1024,8 +1026,9 @@ export default function POSSale() {
         ) : (
           <button
             type="button"
-            disabled={isProcessingSale}
+            disabled={isProcessingSale || isSaleRefreshing}
             onClick={async () => {
+              if (isProcessingSale || isSaleRefreshing || cart.length === 0) return;
               setIsProcessingSale(true);
               try {
                 const result = await handleCompleteSale();
@@ -1034,6 +1037,7 @@ export default function POSSale() {
                 }
               } catch (err) {
                 console.error(err);
+                toast.error('Failed to complete sale. Please try again.');
               } finally {
                 setIsProcessingSale(false);
               }
@@ -1046,10 +1050,10 @@ export default function POSSale() {
                 : "bg-[#2563eb] hover:bg-[#1d4ed8]"
             }`}
           >
-            {isProcessingSale ? (
+            {isProcessingSale || isSaleRefreshing ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Processing Sale &bull; Rs. {netPayable.toLocaleString()}</span>
+                <span>Applying &amp; Syncing State...</span>
               </>
             ) : (
               <>
