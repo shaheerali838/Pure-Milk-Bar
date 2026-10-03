@@ -100,21 +100,31 @@ class AnimalService {
   }
 
   async updateAnimal(id, data) {
-    if (data.tagNumber) {
+    const updatePayload = { ...data };
+    const tagNumber = updatePayload.tagNumber || updatePayload.tag;
+
+    if (tagNumber) {
+      updatePayload.tagNumber = String(tagNumber).trim().toUpperCase();
       const existingAnimal = await Animal.findOne({
-        tagNumber: data.tagNumber,
+        tagNumber: updatePayload.tagNumber,
         _id: { $ne: id },
       });
       if (existingAnimal) {
         throw new AppError(
-          `Animal with tag number '${data.tagNumber}' already exists`,
+          `Animal with tag number '${updatePayload.tagNumber}' already exists`,
           409,
           "DUPLICATE_TAG_NUMBER",
         );
       }
     }
 
-    const updatePayload = { ...data };
+    if (updatePayload.species || updatePayload.type) {
+      const isBuffalo = String(updatePayload.species || updatePayload.type || "")
+        .toLowerCase()
+        .includes("buffalo");
+      updatePayload.type = isBuffalo ? "BUFFALO" : "COW";
+    }
+
     if (
       updatePayload.image &&
       typeof updatePayload.image === "string" &&

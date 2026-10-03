@@ -23,9 +23,9 @@ const defaultAnimalContextValue = {
 const AnimalContext = createContext(defaultAnimalContextValue);
 
 const normalizeAnimal = (animal, history = []) => {
-  const morning = parseFloat(animal.expectedMorningYield ?? animal.purchaseMorningYield ?? animal.morningYield ?? animal.avgMorningYield ?? 0);
-  const evening = parseFloat(animal.expectedEveningYield ?? animal.purchaseEveningYield ?? animal.eveningYield ?? animal.avgEveningYield ?? 0);
-  const expDaily = parseFloat(animal.expectedDailyYield ?? animal.purchaseExpectedYield ?? animal.expectedYield ?? (morning + evening) ?? 0);
+  const morning = parseFloat(animal.morningYield ?? animal.expectedMorningYield ?? animal.purchaseMorningYield ?? animal.avgMorningYield ?? 0);
+  const evening = parseFloat(animal.eveningYield ?? animal.expectedEveningYield ?? animal.purchaseEveningYield ?? animal.avgEveningYield ?? 0);
+  const expDaily = parseFloat(animal.expectedYield ?? animal.expectedDailyYield ?? animal.purchaseExpectedYield ?? (morning + evening) ?? 0);
 
   // Preserve all intake history records from database (animal.intakeHistory) + logs
   const dbIntakeHistory = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : [];
@@ -295,18 +295,44 @@ export function AnimalProvider({ children }) {
   // Update Animal via API (preserving intakeHistory)
   const updateAnimal = async (id, formData) => {
     try {
-      await farmService.updateAnimal(id, formData);
+      const morning = parseFloat(formData.morningYield) || 0;
+      const evening = parseFloat(formData.eveningYield) || 0;
+      const expected = parseFloat(formData.expectedYield) || (morning + evening);
+      const tag = (formData.tag || formData.tagNumber || '').trim().toUpperCase();
+      const isBuff = (formData.species || '').toLowerCase().includes('buffalo');
+
+      const payload = {
+        ...formData,
+        tag,
+        tagNumber: tag,
+        type: isBuff ? 'BUFFALO' : 'COW',
+        species: formData.species || (isBuff ? 'Buffalo (Nili Ravi)' : 'Cow (Sahiwal)'),
+        morningYield: morning,
+        eveningYield: evening,
+        expectedMorningYield: morning,
+        expectedEveningYield: evening,
+        expectedDailyYield: expected,
+        purchaseMorningYield: morning,
+        purchaseEveningYield: evening,
+        purchaseExpectedYield: expected,
+        purchasePrice: parseFloat(String(formData.purchasePrice).replace(/[^0-9.]/g, '')) || 0,
+      };
+
+      const res = await farmService.updateAnimal(id, payload);
+      const updatedData = res?.data?.animal || res?.animal || res?.data || res || {};
+
       setAnimals((prev) =>
         prev.map((a) => {
           if (String(a._id || a.id) === String(id)) {
             const existingHistory = a.intakeHistory || [];
-            return normalizeAnimal({ ...a, ...formData, tagNumber: formData.tag || a.tagNumber }, existingHistory);
+            return normalizeAnimal({ ...a, ...payload, ...updatedData }, existingHistory);
           }
           return a;
         })
       );
       broadcastSync('pure_milk_bar_milking_updated');
       broadcastSync('pure_milk_bar_inventory_updated');
+      return updatedData;
     } catch (err) {
       console.error('Failed to update animal via API:', err);
       throw err;

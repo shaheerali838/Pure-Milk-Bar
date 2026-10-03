@@ -160,6 +160,26 @@ export const updateAnimalSchema = Joi.object({
     .min(0)
     .allow(null, ''),
 
+  expectedMorningYield: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
+  expectedEveningYield: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
+  purchaseMorningYield: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
+  purchaseEveningYield: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
+  purchaseExpectedYield: Joi.number()
+    .min(0)
+    .allow(null, ''),
+
   purchasePrice: Joi.number()
     .min(0)
     .allow(null, ''),
@@ -181,6 +201,8 @@ export const updateAnimalSchema = Joi.object({
     .optional(),
 
   isActive: Joi.boolean(),
+
+  intakeHistory: Joi.array().optional(),
 }).options({ stripUnknown: true }).min(1);
 
 // ─── QUERY Params Schema ────────────────────────────────────────────────────
