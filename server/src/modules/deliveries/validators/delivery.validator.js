@@ -85,6 +85,11 @@ export const createDeliveryRunSchema = Joi.object({
     .valid('PENDING', 'DELIVERED', 'FAILED', 'SKIPPED')
     .default('PENDING'),
   deliveredAt: Joi.date().iso().allow(null),
+  customerPhone: Joi.string().trim().allow('', null).optional(),
+  deliverySubType: Joi.string().valid('ontime', 'monthly').optional().default('monthly'),
+  cashCollected: Joi.number().min(0).optional().default(0),
+  onlineCollected: Joi.number().min(0).optional().default(0),
+  notes: Joi.string().trim().allow('', null).optional(),
   bottlesReturned: Joi.number().min(0).default(0),
 
   // Optional inline fuel log booking per ADR-002
@@ -110,13 +115,21 @@ export const updateDeliveryRunSchema = Joi.object({
   staffType: Joi.string().valid('MOTORCYCLE_RIDER', 'WALKING_BOY', 'VAN_DRIVER'),
   customerId: Joi.string().pattern(objectIdPattern),
   customerName: Joi.string().trim().max(150),
+  customerPhone: Joi.string().trim().allow('', null),
+  deliverySubType: Joi.string().valid('ontime', 'monthly'),
   deliveryAddress: Joi.string().trim().max(300),
   itemDescription: Joi.string().trim().max(200),
   qtyLiters: Joi.number().positive().min(0.1),
-  paymentMode: Joi.string().valid('CASH', 'KHATA', 'ONLINE', 'PREPAID'),
+  paymentMode: Joi.string().valid('CASH', 'KHATA', 'ONLINE', 'PREPAID', 'SPLIT', 'COD'),
   codAmountToCollect: Joi.number().min(0),
+  amountPaid: Joi.number().min(0),
+  amountDue: Joi.number().min(0),
+  cashCollected: Joi.number().min(0),
+  onlineCollected: Joi.number().min(0),
+  paymentStatus: Joi.string().valid('PAID', 'PARTIAL', 'UNPAID'),
   status: Joi.string().valid('PENDING', 'DELIVERED', 'FAILED', 'SKIPPED'),
   deliveredAt: Joi.date().iso().allow(null),
+  notes: Joi.string().trim().allow('', null),
   bottlesReturned: Joi.number().min(0),
 }).min(1);
 
@@ -142,6 +155,13 @@ export const updateDeliveryStatusSchema = Joi.object({
   deliveredAt: Joi.date().iso().allow(null),
   bottlesReturned: Joi.number().min(0).default(0),
   codAmountToCollect: Joi.number().min(0),
+  amountPaid: Joi.number().min(0),
+  amountDue: Joi.number().min(0),
+  cashCollected: Joi.number().min(0),
+  onlineCollected: Joi.number().min(0),
+  paymentMode: Joi.string().valid('CASH', 'KHATA', 'ONLINE', 'PREPAID', 'SPLIT', 'COD'),
+  paymentStatus: Joi.string().valid('PAID', 'PARTIAL', 'UNPAID'),
+  notes: Joi.string().trim().allow('', null),
 });
 
 // ----------------------------------------------------

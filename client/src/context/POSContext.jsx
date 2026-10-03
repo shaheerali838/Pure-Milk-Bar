@@ -312,6 +312,11 @@ export function POSProvider({ children }) {
   const [walkinName, setWalkinName] = useState('');
   const [walkinPhone, setWalkinPhone] = useState('');
 
+  // On-Time Delivery Info (for random calling customers)
+  const [ontimeCustomerName, setOntimeCustomerName] = useState('');
+  const [ontimeCustomerPhone, setOntimeCustomerPhone] = useState('');
+  const [ontimeDeliveryArea, setOntimeDeliveryArea] = useState('');
+
   // Delivery Sub-Types: 'ontime' | 'monthly'
   const [deliverySubType, setDeliverySubType] = useState('ontime');
 
@@ -341,18 +346,12 @@ export function POSProvider({ children }) {
   const [collectEmptyBottles, setCollectEmptyBottles] = useState(false);
   const [linkedCustomerId, setLinkedCustomerId] = useState('');
 
-  // Auto-switch paymentMethod based on delivery subtype rules:
-  // - On-Time Delivery: Khata is not allowed (switch to COD or Cash)
-  // - Monthly Delivery: Cash is not allowed (switch to Khata)
+  // Auto-switch paymentMethod for deliveries to COD
   useEffect(() => {
     if (saleCategory === 'delivery') {
-      if (deliverySubType === 'ontime' && paymentMethod === 'khata') {
-        setPaymentMethod('cod');
-      } else if (deliverySubType === 'monthly' && paymentMethod === 'cash') {
-        setPaymentMethod('khata');
-      }
+      setPaymentMethod('cod');
     }
-  }, [saleCategory, deliverySubType, paymentMethod]);
+  }, [saleCategory, deliverySubType]);
 
   // Fuel Log state for delivery orders
   const [showFuelLog, setShowFuelLog] = useState(false);
@@ -574,6 +573,9 @@ export function POSProvider({ children }) {
     setCashTendered('');
     setWalkinName('');
     setWalkinPhone('');
+    setOntimeCustomerName('');
+    setOntimeCustomerPhone('');
+    setOntimeDeliveryArea('');
     setOrderNotes('');
     setPartialPaidAmount('');
     setLinkedCustomerId('');
@@ -699,6 +701,20 @@ export function POSProvider({ children }) {
   const handleCompleteSale = () => {
     if (cart.length === 0) return null;
 
+    if (saleCategory === 'delivery') {
+      if (deliverySubType === 'ontime') {
+        if (!ontimeDeliveryArea || !ontimeDeliveryArea.trim()) {
+          toast.error('Delivery Area / Address is required for On-Time Delivery');
+          return null;
+        }
+      } else if (deliverySubType === 'monthly') {
+        if (!linkedCustomerId) {
+          toast.error('Please select a registered monthly customer');
+          return null;
+        }
+      }
+    }
+
     const invoiceId = `INV-${1001 + salesHistory.length}`;
     const todayDate = new Date().toISOString().split('T')[0];
     const itemSummary = cart
@@ -748,7 +764,9 @@ export function POSProvider({ children }) {
       deliverySubType: saleCategory === 'delivery' ? deliverySubType : null,
       fulfillmentMode: saleCategory === 'delivery' ? 'doorstep' : 'counter',
       paymentMethod:
-        isRegisteredWalkin || isLegacyCustomerSale
+        saleCategory === 'delivery'
+          ? 'cod'
+          : isRegisteredWalkin || isLegacyCustomerSale
           ? khataPaymentOption
           : paymentMethod,
       cashTendered: paymentMethod === 'cash' || (isRegisteredWalkin && khataPaymentOption === 'cash')
@@ -765,6 +783,14 @@ export function POSProvider({ children }) {
               phone: walkinPhone.trim() || 'N/A',
             }
           : null,
+      ontimeCustomer:
+        saleCategory === 'delivery' && deliverySubType === 'ontime'
+          ? {
+              name: ontimeCustomerName.trim() || 'On-Time Customer',
+              phone: ontimeCustomerPhone.trim() || 'N/A',
+              area: ontimeDeliveryArea.trim(),
+            }
+          : null,
       rider:
         saleCategory === 'delivery'
           ? (activeRider || customRiderName)
@@ -774,7 +800,7 @@ export function POSProvider({ children }) {
                 customName: customRiderName || (activeRider ? activeRider.name : ''),
                 deliverySlot,
                 deliveryLandmark,
-                dropAddress,
+                dropAddress: deliverySubType === 'ontime' ? ontimeDeliveryArea.trim() : dropAddress,
                 collectEmptyBottles,
               }
             : {
@@ -782,7 +808,7 @@ export function POSProvider({ children }) {
                 customName: '',
                 deliverySlot,
                 deliveryLandmark,
-                dropAddress,
+                dropAddress: deliverySubType === 'ontime' ? ontimeDeliveryArea.trim() : dropAddress,
                 collectEmptyBottles,
               }
           : null,
@@ -827,35 +853,18 @@ export function POSProvider({ children }) {
         calculatedRemainingAmount = netPayable;
       }
     } else if (saleCategory === 'delivery') {
-      if (paymentMethod === 'online' || paymentMethod === 'cash') {
-        calculatedPaidAmount = netPayable;
-        calculatedRemainingAmount = 0;
-      } else if (paymentMethod === 'khata') {
-        calculatedPaidAmount = 0;
-        calculatedRemainingAmount = netPayable;
-      } else if (paymentMethod === 'cod') {
-        if (codPaymentOption === 'full') {
-          calculatedPaidAmount = netPayable;
-          calculatedRemainingAmount = 0;
-        } else if (codPaymentOption === 'half') {
-          calculatedPaidAmount = Math.round(netPayable / 2);
-          calculatedRemainingAmount = Math.max(0, netPayable - calculatedPaidAmount);
-        } else if (codPaymentOption === 'partial') {
-          calculatedPaidAmount = Math.min(netPayable, Math.max(0, parseFloat(codPaidAmount) || 0));
-          calculatedRemainingAmount = Math.max(0, netPayable - calculatedPaidAmount);
-        } else {
-          // Unpaid / Full Khata
-          calculatedPaidAmount = 0;
-          calculatedRemainingAmount = netPayable;
-        }
-      }
+      // Doorstep delivery is settled upon delivery arrival
+      calculatedPaidAmount = 0;
+      calculatedRemainingAmount = netPayable;
     }
 
     // Determine backend payment method and split metadata
     let backendPaymentMethod = 'CASH';
     let splitPaymentMeta = null;
 
-    if (calculatedPaidAmount >= netPayable) {
+    if (saleCategory === 'delivery') {
+      backendPaymentMethod = 'COD';
+    } else if (calculatedPaidAmount >= netPayable) {
       backendPaymentMethod = paymentMethod === 'online' ? 'ONLINE' : 'CASH';
     } else if (calculatedPaidAmount <= 0) {
       backendPaymentMethod = 'KHATA';
@@ -869,25 +878,13 @@ export function POSProvider({ children }) {
     }
 
     // Ledger Sync: If an active customer is linked to this order, record in Customer Khata Ledger
-    if (activeCustomer) {
+    if (activeCustomer && saleCategory !== 'delivery') {
       const isFullPaid = calculatedPaidAmount >= netPayable;
       const isPartialPaid = calculatedPaidAmount > 0 && calculatedPaidAmount < netPayable;
 
-      const fulfillmentLabel =
-        saleCategory === 'delivery'
-          ? paymentMethod === 'cod'
-            ? 'Doorstep (COD)'
-            : 'Doorstep Delivery'
-          : 'Walk-in Counter';
-
+      const fulfillmentLabel = 'Walk-in Counter';
       const payMethodLabel =
-        paymentMethod === 'cod'
-          ? isFullPaid
-            ? 'COD Full Paid'
-            : isPartialPaid
-            ? `COD Partial (Rs. ${calculatedPaidAmount.toLocaleString()})`
-            : 'COD Unpaid / Khata'
-          : paymentMethod === 'online'
+        paymentMethod === 'online'
           ? 'Online Payment'
           : paymentMethod === 'khata'
           ? 'Khata Credit'
@@ -899,12 +896,12 @@ export function POSProvider({ children }) {
         ? `Partial Paid: Rs. ${calculatedPaidAmount.toLocaleString()}, Remaining Baqi: Rs. ${calculatedRemainingAmount.toLocaleString()}`
         : 'Charged to Khata (Full Baqi)';
 
-      // 1. Record Debit Order Entry (What was bought) - marked as isPosOrder=true to prevent double-writing
+      // 1. Record Debit Order Entry (What was bought)
       if (typeof addLedgerEntry === 'function') {
         addLedgerEntry(
           activeCustomer.id || activeCustomer._id,
           {
-            description: `${saleCategory === 'delivery' ? 'Doorstep Delivery' : 'POS Counter Buy'}: ${itemSummary}`,
+            description: `POS Counter Buy: ${itemSummary}`,
             debit: netPayable,
             credit: 0,
             date: todayDate,
@@ -933,7 +930,7 @@ export function POSProvider({ children }) {
               paidAmount: calculatedPaidAmount,
               remainingAmount: calculatedRemainingAmount,
               fulfillmentType: fulfillmentLabel,
-              paymentMethod: paymentMethod === 'online' ? 'Online Payment' : paymentMethod === 'cod' ? 'Cash on Delivery' : 'Cash',
+              paymentMethod: paymentMethod === 'online' ? 'Online Payment' : 'Cash',
               invoiceId,
               notes: `Partial Settlement: Rs. ${calculatedPaidAmount.toLocaleString()} Received`,
             },
@@ -961,25 +958,42 @@ export function POSProvider({ children }) {
           subtotal: (Number(i.quantity) || 1) * (Number(i.price) || 0),
         }));
 
+        const resolvedCustomerName =
+          deliverySubType === 'ontime'
+            ? (ontimeCustomerName.trim() || 'One-Time Customer')
+            : (activeCustomer ? activeCustomer.name : 'Registered Customer');
+
+        const resolvedCustomerPhone =
+          deliverySubType === 'ontime'
+            ? (ontimeCustomerPhone.trim() || null)
+            : (activeCustomer?.phone || null);
+
+        const resolvedDeliveryAddress =
+          deliverySubType === 'ontime'
+            ? ontimeDeliveryArea.trim()
+            : (dropAddress || activeCustomer?.address || activeCustomer?.area || 'Direct Drop Point');
+
         addDelivery({
           date: todayDate,
           shift: activeCustomer?.shift || 'MORNING',
-          route: activeCustomer?.area || deliveryLandmark || 'Standard Route',
+          route: deliverySubType === 'ontime' ? ontimeDeliveryArea.trim() : (activeCustomer?.area || deliveryLandmark || 'Standard Route'),
           riderNameSnapshot: customRiderName || activeRider?.name || null,
           riderId: activeRider?.id || null,
           staffType: activeRider?.vehicleType === 'Walking Man' ? 'WALKING_BOY' : (activeRider ? 'MOTORCYCLE_RIDER' : 'OTHER'),
-          customerId: validCustomerId || undefined,
-          customerName: activeCustomer ? activeCustomer.name : (walkinName.trim() || 'Walk-in / Guest Delivery'),
-          deliveryAddress: dropAddress || activeCustomer?.address || activeCustomer?.area || 'Direct Drop Point',
+          customerId: deliverySubType === 'monthly' ? (validCustomerId || undefined) : undefined,
+          customerName: resolvedCustomerName,
+          customerPhone: resolvedCustomerPhone,
+          deliveryAddress: resolvedDeliveryAddress,
+          deliverySubType: deliverySubType === 'monthly' ? 'monthly' : 'ontime',
           itemDescription: itemDesc,
           qtyLiters: totalQty,
           items: formattedDeliveryItems,
-          amountPaid: calculatedPaidAmount,
-          amountDue: calculatedRemainingAmount,
-          paymentStatus: calculatedPaidAmount >= netPayable ? 'PAID' : calculatedPaidAmount > 0 ? 'PARTIAL' : 'UNPAID',
-          paymentMode: backendPaymentMethod,
-          codAmountToCollect: calculatedRemainingAmount > 0 ? calculatedRemainingAmount : 0,
-          source: 'POS_ONE_TIME',
+          amountPaid: 0,
+          amountDue: netPayable,
+          paymentStatus: 'UNPAID',
+          paymentMode: 'COD',
+          codAmountToCollect: netPayable,
+          source: deliverySubType === 'monthly' ? 'SCHEDULED_ROUTE' : 'POS_ONE_TIME',
           receiptNumber: invoiceId,
           bottlesReturned: 0,
         });
@@ -1010,10 +1024,20 @@ export function POSProvider({ children }) {
 
     // Save order to live backend POS API
     try {
+      const orderCustomerName =
+        deliverySubType === 'ontime'
+          ? (ontimeCustomerName.trim() || 'On-Time Customer')
+          : (activeCustomer?.name || (saleCategory === 'walkin' ? (walkinName.trim() || 'Walk-in Customer') : 'Customer'));
+
+      const orderCustomerPhone =
+        deliverySubType === 'ontime'
+          ? (ontimeCustomerPhone.trim() || null)
+          : (activeCustomer?.phone || (saleCategory === 'walkin' ? (walkinPhone.trim() || null) : null));
+
       posService.createOrder({
-        customerId: validCustomerId,
-        customerNameSnapshot: activeCustomer?.name || (saleCategory === 'walkin' ? (walkinName.trim() || 'Walk-in Customer') : 'Customer'),
-        customerPhoneSnapshot: activeCustomer?.phone || (saleCategory === 'walkin' ? (walkinPhone.trim() || null) : null),
+        customerId: deliverySubType === 'monthly' ? validCustomerId : null,
+        customerNameSnapshot: orderCustomerName,
+        customerPhoneSnapshot: orderCustomerPhone,
         fulfillmentType: saleCategory === 'delivery' ? 'DELIVERY' : 'COUNTER',
         items: cart.map((i) => {
           const qty = Number(i.quantity) || 1;
@@ -1047,9 +1071,10 @@ export function POSProvider({ children }) {
           riderId: activeRider?.id || null,
           riderName: customRiderName || activeRider?.name || null,
           riderNameSnapshot: customRiderName || activeRider?.name || null,
-          dropAddress: dropAddress || activeCustomer?.address || activeCustomer?.area || null,
-          deliveryAddress: dropAddress || activeCustomer?.address || activeCustomer?.area || null,
+          dropAddress: deliverySubType === 'ontime' ? ontimeDeliveryArea.trim() : (dropAddress || activeCustomer?.address || activeCustomer?.area || null),
+          deliveryAddress: deliverySubType === 'ontime' ? ontimeDeliveryArea.trim() : (dropAddress || activeCustomer?.address || activeCustomer?.area || null),
           deliverySubType: deliverySubType === 'monthly' ? 'MONTHLY' : 'ON_TIME',
+          customerPhone: orderCustomerPhone,
         } : null,
         notes: orderNotes || '',
       })
@@ -1784,6 +1809,12 @@ export function POSProvider({ children }) {
         setWalkinName,
         walkinPhone,
         setWalkinPhone,
+        ontimeCustomerName,
+        setOntimeCustomerName,
+        ontimeCustomerPhone,
+        setOntimeCustomerPhone,
+        ontimeDeliveryArea,
+        setOntimeDeliveryArea,
         deliverySubType,
         setDeliverySubType,
         khataPaymentOption,

@@ -89,17 +89,19 @@ export function DeliveryProvider({ children }) {
     }
   };
 
-  const updateDeliveryStatus = async (id, status) => {
+  const updateDeliveryStatus = async (id, statusData) => {
     try {
-      await deliveryService.updateDeliveryStatus(id, status);
-      const isDelivered = status === 'DELIVERED';
+      const payload = typeof statusData === 'string' ? { status: statusData } : statusData;
+      await deliveryService.updateDeliveryStatus(id, payload);
+      const isDelivered = payload.status === 'DELIVERED';
       setDeliveries((prev) =>
         prev.map((d) =>
           (d._id || d.id) === id
             ? {
                 ...d,
-                status,
-                deliveredAt: isDelivered ? new Date().toISOString() : null,
+                ...payload,
+                status: payload.status,
+                deliveredAt: payload.deliveredAt || (isDelivered ? new Date().toISOString() : null),
               }
             : d
         )

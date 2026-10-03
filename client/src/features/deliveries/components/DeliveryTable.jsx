@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, PackageOpen, MapPin, User, Bike } from 'lucide-react';
+import { Eye, PackageOpen, MapPin, User, Bike, Phone } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -50,6 +50,10 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
         return <Badge variant="amber" className="text-[9px] px-1.5 py-0">Khata</Badge>;
       case 'ONLINE':
         return <Badge variant="indigo" className="text-[9px] px-1.5 py-0">Online</Badge>;
+      case 'SPLIT':
+        return <Badge variant="purple" className="text-[9px] px-1.5 py-0">Split</Badge>;
+      case 'COD':
+        return <Badge variant="blue" className="text-[9px] px-1.5 py-0">COD</Badge>;
       case 'PREPAID':
         return <Badge variant="slate" className="text-[9px] px-1.5 py-0">Prepaid</Badge>;
       default:
@@ -97,11 +101,18 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
           ) : (
             deliveries.map((delivery) => {
               const hasRider = Boolean(delivery.riderId || (delivery.riderNameSnapshot && delivery.riderNameSnapshot !== 'Unassigned'));
-              const hasCustomerInfo = Boolean(delivery.customerId || (delivery.customerName && delivery.customerName !== 'Walk-in / Guest Delivery' && delivery.customerName !== 'N/A'));
+              const isOntime =
+                delivery.deliverySubType === 'ontime' ||
+                delivery.source === 'POS_ONE_TIME' ||
+                delivery.deliveryType === 'ONTIME';
+
+              const hasCustomerInfo = Boolean(delivery.customerName && delivery.customerName !== 'N/A');
               const hasItemsArray = Array.isArray(delivery.items) && delivery.items.length > 0;
               const totalDue = Number(delivery.amountDue) || 0;
               const paidAmt = Number(delivery.amountPaid) || 0;
               const codAmount = Number(delivery.codAmountToCollect) || (totalDue > 0 ? totalDue : 0);
+              const cashCol = Number(delivery.cashCollected) || 0;
+              const onlineCol = Number(delivery.onlineCollected) || 0;
 
               return (
                 <TableRow
@@ -126,16 +137,25 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
                   {/* Customer / Drop Point */}
                   <TableCell className="align-top py-2">
                     <div className="space-y-0.5">
-                      {hasCustomerInfo ? (
-                        <div className="text-xs font-bold text-slate-900 flex items-center gap-1 font-display leading-none">
-                          <User className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span>{delivery.customerName}</span>
-                        </div>
-                      ) : (
-                        <div className="text-[11px] font-semibold text-slate-500 italic">
-                          Walk-in / Direct Drop
+                      <div className="flex flex-wrap items-center gap-1 leading-none">
+                        <User className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span className="text-xs font-bold text-slate-900 font-display">
+                          {delivery.customerName || (isOntime ? 'One-Time Customer' : 'Customer')}
+                        </span>
+                        {isOntime && (
+                          <span className="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded border border-amber-200">
+                            ⚡ One-Time
+                          </span>
+                        )}
+                      </div>
+
+                      {delivery.customerPhone && (
+                        <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1">
+                          <Phone className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                          <span>{delivery.customerPhone}</span>
                         </div>
                       )}
+
                       {delivery.deliveryAddress && (
                         <div className="text-[11px] text-slate-500 flex items-center gap-1">
                           <MapPin className="w-2.5 h-2.5 text-slate-400 shrink-0" />
@@ -210,14 +230,20 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
                           </span>
                         )}
                       </div>
-                      {codAmount > 0 && (
+                      {codAmount > 0 && delivery.status !== 'DELIVERED' && (
                         <div className="text-[11px] font-bold text-rose-600 font-mono tabular">
                           Due: Rs. {codAmount.toLocaleString()}
                         </div>
                       )}
                       {paidAmt > 0 && (
-                        <div className="text-[10px] text-emerald-700 font-mono">
+                        <div className="text-[10px] text-emerald-700 font-mono font-bold">
                           Paid: Rs. {paidAmt.toLocaleString()}
+                        </div>
+                      )}
+                      {(cashCol > 0 || onlineCol > 0) && (
+                        <div className="text-[9px] text-slate-500 font-mono space-x-1">
+                          {cashCol > 0 && <span>Cash: Rs. {cashCol}</span>}
+                          {onlineCol > 0 && <span>Online: Rs. {onlineCol}</span>}
                         </div>
                       )}
                     </div>
@@ -251,3 +277,4 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
     </div>
   );
 }
+

@@ -133,6 +133,31 @@ const deliveryRunSchema = new Schema(
       type: Date,
       default: null,
     },
+    customerPhone: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    deliverySubType: {
+      type: String,
+      enum: ['ontime', 'monthly'],
+      default: 'monthly',
+    },
+    cashCollected: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    onlineCollected: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    notes: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     bottlesReturned: {
       type: Number,
       default: 0,
