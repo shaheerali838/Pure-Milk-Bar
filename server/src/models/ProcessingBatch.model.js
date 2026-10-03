@@ -153,5 +153,5 @@ processingBatchSchema.pre('save', async function () {
   }
 });
 
-export const ProcessingBatch = model('ProcessingBatch', processingBatchSchema, 'Dahi processingbatches');
+export const ProcessingBatch = model('ProcessingBatch', processingBatchSchema, 'dahiprocessingbatches');
 export default ProcessingBatch;
