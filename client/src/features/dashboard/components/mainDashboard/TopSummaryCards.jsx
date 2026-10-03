@@ -1,15 +1,5 @@
 import React from 'react';
-import {
-  Droplets,
-  Beef,
-  Truck,
-  Layers,
-  ShoppingBag,
-  ArrowDownLeft,
-  ChevronRight,
-  DollarSign,
-  TrendingUp,
-} from 'lucide-react';
+import { Droplets,Beef,Truck,Layers,ShoppingBag,ArrowDownLeft,ChevronRight,DollarSign,TrendingUp,} from 'lucide-react';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { usePOSContext } from '@/context/POSContext';

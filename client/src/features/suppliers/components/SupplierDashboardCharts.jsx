@@ -90,9 +90,7 @@ export default function SupplierDashboardCharts({
               <h3 className="font-bold text-sm text-slate-900 font-display">
                 Procurement Volume Trend (7 Days)
               </h3>
-              <p className="text-xs text-slate-500">
-                Daily milk intake from external dairy farms
-              </p>
+             
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -143,9 +141,7 @@ export default function SupplierDashboardCharts({
               <h3 className="font-bold text-sm text-slate-900 font-display">
                 Supplier Intake Breakdown
               </h3>
-              <p className="text-xs text-slate-500">
-                Liters supplied by active suppliers
-              </p>
+             
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -202,9 +198,7 @@ export default function SupplierDashboardCharts({
                 <h3 className="font-bold text-sm text-slate-900 font-display">
                   Procurement Expenses
                 </h3>
-                <p className="text-[11px] text-slate-500">
-                  Collection logistics, lab testing & handling costs
-                </p>
+              
               </div>
               <div className="flex items-center gap-1.5">
                 <button
@@ -258,14 +252,12 @@ export default function SupplierDashboardCharts({
 
         {/* Right: Supplier Sourcing P&L Performance Graph */}
         <div className="lg:col-span-8 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 ">
             <div>
               <h3 className="font-bold text-sm text-slate-900 font-display">
                 Supplier Sourcing P&L Performance
               </h3>
-              <p className="text-xs text-slate-500">
-                Procured milk sales revenue vs. supplier acquisition costs
-              </p>
+              
             </div>
             <div className="flex items-center gap-3">
               <button

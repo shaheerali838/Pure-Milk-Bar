@@ -74,7 +74,7 @@ router.post(
 
 router.delete(
   '/animals/:id',
-  authorize('ADMIN', 'MANAGER'),
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR', 'CASHIER'),
   validate({ params: animalIdParamSchema }),
   animalController.deleteAnimal
 );

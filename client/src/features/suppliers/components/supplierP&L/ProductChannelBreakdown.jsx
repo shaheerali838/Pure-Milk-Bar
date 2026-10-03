@@ -55,9 +55,7 @@ export default function ProductChannelBreakdown({ product, onClose }) {
                   {product.category}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Resale Channel Allocation &amp; Procurement Unit Economics
-              </p>
+              
             </div>
           </div>
 

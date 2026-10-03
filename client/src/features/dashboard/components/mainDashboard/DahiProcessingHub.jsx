@@ -121,14 +121,11 @@ export default function DahiProcessingHub() {
               <h3 className="text-sm font-extrabold text-slate-900 font-display leading-tight">
                 Dahi &amp; Value-Add Processing
               </h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Fresh Dahi, Matka Dahi &amp; Makhan
-              </p>
             </div>
           </div>
-          <span className="px-3 py-1 rounded-full text-[11px] font-black bg-teal-50 text-teal-700 shrink-0">
+          {/* <span className="px-3 py-1 rounded-full text-[11px] font-black bg-teal-50 text-teal-700 shrink-0">
             +{marginUpliftPct}% Uplift
-          </span>
+          </span> */}
         </div>
 
         {/* Metric Data Rows */}

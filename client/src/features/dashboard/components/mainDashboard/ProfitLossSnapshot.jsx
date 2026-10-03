@@ -1,15 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Wallet,
-  Store,
-  Beef,
-  AlertTriangle,
-  ArrowUpRight,
-  ArrowDownRight,
-} from "lucide-react";
+import {TrendingUp,TrendingDown,DollarSign,Wallet,Store,Beef,AlertTriangle,ArrowUpRight,ArrowDownRight,} from "lucide-react";
 import { usePOSContext } from "@/context/POSContext";
 import { useExpense } from "@/context/ExpenseContext";
 import { useIntakeContext } from "@/context/IntakeContext";
@@ -121,15 +111,13 @@ export default function ProfitLossSnapshot() {
   return (
     <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
       {/* 1. Top Section Header with Time Range Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
+      <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
         <div>
           <h3 className="text-base font-extrabold text-slate-900 font-display flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-emerald-600" />
             <span>Profit &amp; Loss Financial Snapshot</span>
           </h3>
-          <p className="text-xs text-slate-500">
-            Real-time income, direct procurement, operational costs &amp; net profitability
-          </p>
+          
         </div>
 
         {/* Time Tabs */}
@@ -158,8 +146,7 @@ export default function ProfitLossSnapshot() {
       {/* 2. Primary 3-Metric Summary Bar (Income, Expense, Net Profit) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
         {/* Total Income */}
-        <Link
-          to="/pos"
+        <button
           className="p-5 rounded-2xl bg-slate-50/80 hover:bg-slate-100/70 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group select-none"
         >
           <div>
@@ -174,7 +161,7 @@ export default function ProfitLossSnapshot() {
               Direct sales &amp; khata inflows
             </span>
           </div>
-        </Link>
+        </button>
 
         {/* Total Expenses */}
         <Link
@@ -225,15 +212,7 @@ export default function ProfitLossSnapshot() {
               </strong>
             </span>
           </div>
-          <div
-            className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-xs shadow-xs group-hover:scale-105 transition-transform ${
-              isPositive
-                ? "bg-emerald-600 text-white shadow-emerald-600/25"
-                : "bg-rose-600 text-white shadow-rose-600/25"
-            }`}
-          >
-            {marginPercent}%
-          </div>
+          
         </Link>
       </div>
 

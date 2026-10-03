@@ -87,10 +87,7 @@ export default function AddProduct({ onBack, product = null }) {
             <h1 className="text-xl font-bold text-slate-900 tracking-tight font-display">
               {isEditing ? `Edit Product — ${product.name}` : 'Add Product'}
             </h1>
-            <p className="text-xs text-slate-500">
-              {isEditing
-                ? `Update rates, categorization, and details for ${formData.name || 'product'}`
-                : 'Register a new dairy product with pricing rules and inventory specs'}
+            <p className="text-xs text-slate-500">{formData.name}
             </p>
           </div>
         </div>
@@ -119,9 +116,7 @@ export default function AddProduct({ onBack, product = null }) {
               <h2 className="text-sm font-bold text-slate-800 font-display">
                 Product Details &amp; Pricing Setup
               </h2>
-              <p className="text-xs text-slate-400">
-                All changes immediately sync to the database and POS counter register
-              </p>
+             
             </div>
           </div>
 
@@ -137,7 +132,6 @@ export default function AddProduct({ onBack, product = null }) {
                 placeholder="Enter code"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
               />
-              <p className="text-[10px] text-slate-400 mt-1">Unique barcode identifier</p>
             </div>
 
             <div>
@@ -152,7 +146,6 @@ export default function AddProduct({ onBack, product = null }) {
                 placeholder="Enter name"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
               />
-              <p className="text-[10px] text-slate-400 mt-1">Display title on POS screen and receipts</p>
             </div>
 
             {/* <div>
@@ -188,7 +181,6 @@ export default function AddProduct({ onBack, product = null }) {
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
-              <p className="text-[10px] text-slate-400 mt-1">Designates P&amp;L attribution &amp; sales card tracking</p>
             </div>
 
             <div>
@@ -218,15 +210,12 @@ export default function AddProduct({ onBack, product = null }) {
                 </span>
                 <input
                   type="number"
-                  min="0"
-                  step="any"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  placeholder="180"
+                  placeholder="enter price"
                   className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition font-mono tabular"
                 />
               </div>
-              <p className="text-[10px] text-slate-400 mt-1">Retail counter selling rate per unit</p>
             </div>
 
            

@@ -1,6 +1,14 @@
+import mongoose from "mongoose";
 import Animal from "../../../models/Animal.model.js";
 import AppError from "../../../utils/AppError.js";
 import { uploadToCloudinary } from "../../../config/cloudinary.js";
+
+const getAnimalFilter = (id) => {
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    return { _id: id };
+  }
+  return { $or: [{ tagNumber: id }, { tag: id }] };
+};
 
 class AnimalService {
   async createAnimal(data) {
@@ -90,7 +98,7 @@ class AnimalService {
   }
 
   async getAnimalById(id) {
-    const animal = await Animal.findById(id).lean();
+    const animal = await Animal.findOne(getAnimalFilter(id)).lean();
 
     if (!animal) {
       throw new AppError("Animal not found", 404, "ANIMAL_NOT_FOUND");
@@ -100,6 +108,7 @@ class AnimalService {
   }
 
   async updateAnimal(id, data) {
+    const targetFilter = getAnimalFilter(id);
     const updatePayload = { ...data };
     const tagNumber = updatePayload.tagNumber || updatePayload.tag;
 
@@ -107,7 +116,7 @@ class AnimalService {
       updatePayload.tagNumber = String(tagNumber).trim().toUpperCase();
       const existingAnimal = await Animal.findOne({
         tagNumber: updatePayload.tagNumber,
-        _id: { $ne: id },
+        ...(mongoose.Types.ObjectId.isValid(id) ? { _id: { $ne: id } } : { tagNumber: { $ne: id } }),
       });
       if (existingAnimal) {
         throw new AppError(
@@ -149,7 +158,7 @@ class AnimalService {
 
     mongoUpdate.$set = updatePayload;
 
-    const animal = await Animal.findByIdAndUpdate(id, mongoUpdate, {
+    const animal = await Animal.findOneAndUpdate(targetFilter, mongoUpdate, {
       new: true,
       runValidators: true,
     }).lean();
@@ -162,7 +171,8 @@ class AnimalService {
   }
 
   async addIntakeRecord(id, intakeData) {
-    const animal = await Animal.findById(id);
+    const targetFilter = getAnimalFilter(id);
+    const animal = await Animal.findOne(targetFilter);
     if (!animal) {
       throw new AppError("Animal not found", 404, "ANIMAL_NOT_FOUND");
     }
@@ -189,20 +199,43 @@ class AnimalService {
     if (shift === "MORNING") updateFields.morningYield = qty;
     if (shift === "EVENING") updateFields.eveningYield = qty;
 
-    const updated = await Animal.findByIdAndUpdate(
-      id,
-      {
-        $set: updateFields,
-        $push: { intakeHistory: newIntake },
-      },
-      { new: true }
-    ).lean();
+    const normShiftName = shift === "EVENING" ? "Evening" : "Morning";
+    const existingHistory = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : [];
+    const existingIndex = existingHistory.findIndex((h) => {
+      const hDate = h.date ? (typeof h.date === 'string' && h.date.includes('T') ? h.date.split('T')[0] : String(h.date).slice(0, 10)) : '';
+      const hShift = (h.shift || 'Morning').toLowerCase();
+      return hDate === dateStr && hShift === normShiftName.toLowerCase();
+    });
+
+    let updated;
+    if (existingIndex >= 0) {
+      await Animal.updateOne(
+        targetFilter,
+        {
+          $set: {
+            ...updateFields,
+            [`intakeHistory.${existingIndex}`]: { ...existingHistory[existingIndex], ...newIntake },
+          },
+        }
+      );
+      updated = await Animal.findOne(targetFilter).lean();
+    } else {
+      updated = await Animal.findOneAndUpdate(
+        targetFilter,
+        {
+          $set: updateFields,
+          $push: { intakeHistory: newIntake },
+        },
+        { new: true }
+      ).lean();
+    }
 
     return { animal: updated, newIntake };
   }
 
   async deleteAnimal(id) {
-    const animal = await Animal.findByIdAndDelete(id).lean();
+    const targetFilter = getAnimalFilter(id);
+    const animal = await Animal.findOneAndDelete(targetFilter).lean();
 
     if (!animal) {
       throw new AppError("Animal not found", 404, "ANIMAL_NOT_FOUND");

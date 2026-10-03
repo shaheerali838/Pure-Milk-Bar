@@ -20,9 +20,7 @@ export default function MilkingRegister() {
             <h1 className="text-base font-bold text-slate-900 tracking-tight font-display">
               Farm Milking Operations &amp; Intake
             </h1>
-            <p className="text-xs text-slate-400">
-              Shift milk yields, herd benchmark variance, and permanent database intake history
-            </p>
+            
           </div>
         </div>
 

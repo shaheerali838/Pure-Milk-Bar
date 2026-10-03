@@ -8,7 +8,6 @@ import AddSupplier from '../components/supplierDirectory/AddSupplier';
 import SupplierDetail from '../components/supplierDirectory/SupplierDetail';
 
 export default function SupplierDirectory() {
-  const { resetToDefault } = useSupplierContext();
 
   // Active view: 'list' | 'form' | 'detail'
   const [viewMode, setViewMode] = useState('list');
@@ -73,21 +72,6 @@ export default function SupplierDirectory() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              if (window.confirm('Reset all supplier records to clean default state?')) {
-                resetToDefault();
-              }
-            }}
-            className="flex items-center gap-1.5 px-3 h-9.5 rounded-full text-xs font-semibold text-slate-600 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer"
-            title="Reset supplier records to defaults"
-          >
-            <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
-            <span>Reset Data</span>
-          </Button>
-
           <Button
             type="button"
             onClick={handleOpenAdd}

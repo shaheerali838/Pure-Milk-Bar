@@ -62,9 +62,7 @@ export default function DahiPage() {
           <h2 className="text-lg font-bold text-slate-900 tracking-tight leading-tight font-display">
             Dahi Production & Kitchen Pipeline
           </h2>
-          <p className="text-[11px] text-slate-500">
-            Transform fresh farm &amp; supplier liquid milk into high-margin curd batches
-          </p>
+          
         </div>
         <Button
           onClick={() => setIsModalOpen(true)}
@@ -168,9 +166,6 @@ export default function DahiPage() {
               <h2 className="text-sm font-bold text-slate-900 font-display">
                 All Dahi Production Batches
               </h2>
-              <p className="text-[11px] text-slate-400">
-                Complete historical record of all setting, chilled, and dispatched batches
-              </p>
             </div>
           </div>
           <DahiBatchTable batches={batches} onDeleteBatch={deleteBatch} onViewDetail={setSelectedBatchId} />
