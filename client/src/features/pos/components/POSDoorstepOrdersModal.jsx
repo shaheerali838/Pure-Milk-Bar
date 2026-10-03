@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import DoorstepSettlementModal from '@/features/deliveries/components/DoorstepSettlementModal';
 
 export default function POSDoorstepOrdersModal({ isOpen, onClose }) {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ export default function POSDoorstepOrdersModal({ isOpen, onClose }) {
   const [filterTab, setFilterTab] = useState('PENDING'); // 'PENDING' | 'TODAY' | 'DELIVERED' | 'FAILED' | 'ALL'
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
+  const [settlingDelivery, setSettlingDelivery] = useState(null);
 
   if (!isOpen) return null;
 
@@ -343,6 +345,11 @@ export default function POSDoorstepOrdersModal({ isOpen, onClose }) {
           ) : (
             filteredDeliveries.map((delivery) => {
               const delId = delivery._id || delivery.id;
+              const isOntime =
+                delivery.deliverySubType === 'ontime' ||
+                delivery.source === 'POS_ONE_TIME' ||
+                delivery.deliveryType === 'ONTIME';
+
               const hasItemsArray = Array.isArray(delivery.items) && delivery.items.length > 0;
               const totalDue = Number(delivery.amountDue) || 0;
               const paidAmt = Number(delivery.amountPaid) || 0;
@@ -375,6 +382,11 @@ export default function POSDoorstepOrdersModal({ isOpen, onClose }) {
                           {delivery.receiptNumber && (
                             <span className="text-[10px] font-mono text-slate-500 bg-slate-200/60 px-1.5 py-0.2 rounded">
                               #{delivery.receiptNumber}
+                            </span>
+                          )}
+                          {isOntime && (
+                            <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded border border-amber-200">
+                              ⚡ One-Time
                             </span>
                           )}
                           {getStatusBadge(delivery.status)}
@@ -410,9 +422,16 @@ export default function POSDoorstepOrdersModal({ isOpen, onClose }) {
                       <div className="flex items-center gap-1.5">
                         <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <span className="text-xs font-bold text-slate-900">
-                          {delivery.customerName || 'Walk-in / Direct Delivery'}
+                          {delivery.customerName || (isOntime ? 'One-Time Customer' : 'Customer')}
                         </span>
                       </div>
+
+                      {delivery.customerPhone && (
+                        <div className="text-[10px] text-emerald-700 font-mono flex items-center gap-1">
+                          <Phone className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                          <span>{delivery.customerPhone}</span>
+                        </div>
+                      )}
 
                       {delivery.deliveryAddress && (
                         <div className="flex items-start gap-1.5 text-xs text-slate-600">
@@ -481,7 +500,7 @@ export default function POSDoorstepOrdersModal({ isOpen, onClose }) {
                             <button
                               type="button"
                               disabled={isUpdating}
-                              onClick={() => handleStatusUpdate(delId, 'DELIVERED', delivery.runCode)}
+                              onClick={() => setSettlingDelivery(delivery)}
                               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -555,6 +574,18 @@ export default function POSDoorstepOrdersModal({ isOpen, onClose }) {
           </div>
         </div>
       </div>
+
+      {/* Settlement Modal */}
+      {settlingDelivery && (
+        <DoorstepSettlementModal
+          delivery={settlingDelivery}
+          isOpen={Boolean(settlingDelivery)}
+          onClose={() => setSettlingDelivery(null)}
+          onSuccess={() => {
+            if (refreshDeliveries) refreshDeliveries();
+          }}
+        />
+      )}
     </div>
   );
 }

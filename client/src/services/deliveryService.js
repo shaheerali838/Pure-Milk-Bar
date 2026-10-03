@@ -17,8 +17,9 @@ export const deliveryService = {
     return res.data || res.delivery || res;
   },
 
-  updateDeliveryStatus: async (id, status) => {
-    const res = await api.patch(`/api/v1/deliveries/${id}/status`, { status });
+  updateDeliveryStatus: async (id, statusData) => {
+    const payload = typeof statusData === 'string' ? { status: statusData } : statusData;
+    const res = await api.patch(`/api/v1/deliveries/${id}/status`, payload);
     return res.data || res;
   },
 

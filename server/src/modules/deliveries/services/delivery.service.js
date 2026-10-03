@@ -202,7 +202,19 @@ class DeliveryService {
   }
 
   async updateDeliveryStatus(id, statusData) {
-    const { status, deliveredAt, bottlesReturned, codAmountToCollect } = statusData;
+    const {
+      status,
+      deliveredAt,
+      bottlesReturned,
+      codAmountToCollect,
+      amountPaid,
+      amountDue,
+      cashCollected,
+      onlineCollected,
+      paymentMode,
+      paymentStatus,
+      notes,
+    } = statusData;
 
     const updateFields = { status };
 
@@ -218,6 +230,34 @@ class DeliveryService {
 
     if (codAmountToCollect !== undefined) {
       updateFields.codAmountToCollect = codAmountToCollect;
+    }
+
+    if (amountPaid !== undefined) {
+      updateFields.amountPaid = amountPaid;
+    }
+
+    if (amountDue !== undefined) {
+      updateFields.amountDue = amountDue;
+    }
+
+    if (cashCollected !== undefined) {
+      updateFields.cashCollected = cashCollected;
+    }
+
+    if (onlineCollected !== undefined) {
+      updateFields.onlineCollected = onlineCollected;
+    }
+
+    if (paymentMode !== undefined) {
+      updateFields.paymentMode = paymentMode;
+    }
+
+    if (paymentStatus !== undefined) {
+      updateFields.paymentStatus = paymentStatus;
+    }
+
+    if (notes !== undefined) {
+      updateFields.notes = notes;
     }
 
     const updatedRun = await DeliveryRun.findByIdAndUpdate(id, updateFields, {
