@@ -223,7 +223,6 @@ export default function AddProduct({ onBack, product = null }) {
                   type="number"
                   min="0"
                   step="any"
-                  required
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   placeholder="180"

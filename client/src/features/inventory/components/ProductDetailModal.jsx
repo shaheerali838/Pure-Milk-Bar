@@ -7,7 +7,7 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
   if (!onBack && !isOpen) return null;
 
   const salePrice = Number(product.price) || 0;
-  const costPrice = Number(product.cost) || 0;
+  const costPrice = Number(product.cost || product.costPrice) || 0;
   const marginRs = salePrice - costPrice;
   const marginPct = salePrice > 0 ? ((marginRs / salePrice) * 100).toFixed(1) : '0.0';
 

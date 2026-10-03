@@ -47,6 +47,23 @@ const connectDB = async () => {
                   }
                 }
               }
+
+              // Auto-migrate legacy collections ('Dahi processingbatches' and 'processingbatches') into 'dahiprocessingbatches'
+              const legacyNames = ['Dahi processingbatches', 'processingbatches'];
+              for (const legacyName of legacyNames) {
+                const legacyColls = await db.listCollections({ name: legacyName }).toArray();
+                if (legacyColls.length > 0) {
+                  const legacyDocs = await db.collection(legacyName).find({}).toArray();
+                  if (legacyDocs.length > 0) {
+                    for (const doc of legacyDocs) {
+                      await db.collection('dahiprocessingbatches').replaceOne({ _id: doc._id }, doc, { upsert: true });
+                    }
+                    console.log(`Migrated ${legacyDocs.length} docs from '${legacyName}' to 'dahiprocessingbatches'.`);
+                  }
+                  await db.collection(legacyName).drop();
+                  console.log(`Successfully dropped legacy collection '${legacyName}'.`);
+                }
+              }
             }
           } catch (migError) {
             console.error(`Auto collection migration note: ${migError.message}`);

@@ -228,7 +228,7 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
           {filteredProducts.map((p, idx) => {
             const prodKey = p.id || p._id || p.sku || `prod-${idx}`;
             const salePrice = Number(p.price) || 0;
-            const costPrice = Number(p.cost) || 0;
+            const costPrice = Number(p.cost || p.costPrice) || 0;
             const profitMargin = salePrice - costPrice;
             const marginPercent = costPrice > 0 ? Math.round((profitMargin / costPrice) * 100) : 0;
             const categoryLower = (p.category || '').toLowerCase();

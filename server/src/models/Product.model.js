@@ -36,7 +36,7 @@ const productSchema = new Schema(
     },
     costPrice: {
       type: Number,
-      required: [true, 'Cost price is required'],
+      default: 0,
       min: [0, 'Cost price cannot be negative'],
     },
     currentStock: {
