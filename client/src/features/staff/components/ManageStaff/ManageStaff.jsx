@@ -23,6 +23,7 @@ import { useAuth } from '@/context/AuthContext';
 import { ROLES } from '@/config/rbac.config';
 import StaffAdd from './StaffAdd';
 import StaffDetail from './StaffDetail';
+import SalaryPaymentModal from './SalaryPaymentModal';
 
 export default function ManageStaff() {
   const { user } = useAuth();
@@ -33,12 +34,14 @@ export default function ManageStaff() {
     metrics,
     deleteStaff,
     getStaffStatusOnDate,
+    isStaffSalaryPaid,
     isLoading,
   } = useStaffPayrollContext();
 
   const [currentView, setCurrentView] = useState('list'); // 'list' | 'add' | 'edit' | 'detail'
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [editStaff, setEditStaff] = useState(null);
+  const [payingStaffModal, setPayingStaffModal] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -280,13 +283,13 @@ export default function ManageStaff() {
             </div>
             <div>
               <p className="font-mono text-2xl font-black text-blue-700 leading-tight tracking-tight mb-0.5 tabular truncate">
-                Rs. {metrics.totalMonthlyPayroll.toLocaleString()}
+                Rs. {(metrics.totalPaidSalaries || 0).toLocaleString()}
               </p>
               <p className="text-xs font-bold text-slate-700 font-display">
-                Monthly Base Payroll
+                Paid Staff Salaries
               </p>
               <p className="text-[11px] text-slate-400 font-medium truncate">
-                Base salary obligation
+                {metrics.totalPaidSalaries > 0 ? 'Disbursed this month' : 'No salaries paid yet'}
               </p>
             </div>
           </div>
@@ -444,6 +447,7 @@ export default function ManageStaff() {
                   {isAdmin && <th className="py-3 px-4">Monthly Salary</th>}
                   <th className="py-3 px-4">Assigned Route</th>
                   <th className="py-3 px-4 text-center">Duty Status</th>
+                  <th className="py-3 px-4 text-center">Payment Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -461,12 +465,13 @@ export default function ManageStaff() {
                       {isAdmin && <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-16" /></td>}
                       <td className="py-3 px-4"><div className="h-4 bg-slate-200 rounded w-20" /></td>
                       <td className="py-3 px-4 text-center"><div className="h-5 bg-slate-200 rounded-full w-16 mx-auto" /></td>
+                      <td className="py-3 px-4 text-center"><div className="h-5 bg-slate-200 rounded-full w-16 mx-auto" /></td>
                       <td className="py-3 px-4 text-right"><div className="h-6 bg-slate-200 rounded w-16 ml-auto" /></td>
                     </tr>
                   ))
                 ) : filteredStaff.length === 0 ? (
                   <tr>
-                    <td colSpan={isAdmin ? 11 : 10} className="text-center py-12 text-slate-400">
+                    <td colSpan={isAdmin ? 12 : 11} className="text-center py-12 text-slate-400">
                       <Users className="w-8 h-8 mx-auto text-slate-300 mb-2 opacity-50" />
                       <p className="font-semibold text-slate-600">No staff members found</p>
                       <p className="text-xs text-slate-400 mt-0.5">Try adjusting search or role filter</p>
@@ -475,6 +480,7 @@ export default function ManageStaff() {
                 ) : (
                   filteredStaff.map((staff) => {
                   const todayStatus = getStaffStatusOnDate(staff.id, todayStr);
+                  const isPaid = isStaffSalaryPaid ? isStaffSalaryPaid(staff.id) : false;
                   const isDelivery =
                     (staff.role || '').toLowerCase().includes('delivery') ||
                     (staff.role || '').toLowerCase().includes('rider');
@@ -598,8 +604,49 @@ export default function ManageStaff() {
                         </span>
                       </td>
 
+                      {/* Payment Status Column */}
+                      <td className="py-3 px-4 text-center">
+                        {isPaid ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                            <span>✅</span>
+                            <span>Paid</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
+                            <span>⏳</span>
+                            <span>Pending</span>
+                          </span>
+                        )}
+                      </td>
+
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {isAdmin && (
+                            isPaid ? (
+                              <button
+                                type="button"
+                                disabled={true}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-not-allowed opacity-90 shadow-2xs"
+                                title="Salary already disbursed for this month (Single payment only)"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Paid</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPayingStaffModal(staff);
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white transition shadow-2xs cursor-pointer"
+                                title="Pay Staff Salary with Attendance Deduction"
+                              >
+                                <DollarSign className="w-3.5 h-3.5" />
+                                <span>Pay Salary</span>
+                              </button>
+                            )
+                          )}
                           <button
                             type="button"
                             onClick={(e) => handleEditStaff(e, staff)}
@@ -628,6 +675,16 @@ export default function ManageStaff() {
           </div>
         )}
       </div>
+
+      {/* Pay Salary & Deduction Modal */}
+      {payingStaffModal && (
+        <SalaryPaymentModal
+          staff={payingStaffModal}
+          isOpen={Boolean(payingStaffModal)}
+          onClose={() => setPayingStaffModal(null)}
+          onSuccess={() => setPayingStaffModal(null)}
+        />
+      )}
     </div>
   );
 }

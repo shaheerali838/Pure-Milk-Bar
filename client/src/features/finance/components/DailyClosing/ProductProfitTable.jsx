@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
+import { getProductIcon } from '@/features/inventory/components/AddProduct';
 
 export default function ProductProfitTable({ products = [] }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,8 +69,11 @@ export default function ProductProfitTable({ products = [] }) {
                 products.map((p, idx) => (
                   <tr key={p.productId || idx} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
                     <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
-                      {p.name}
-                      <span className="text-[10px] text-slate-400 ml-1.5 font-normal">({p.unit || 'PIECE'})</span>
+                      <div className="flex items-center gap-2">
+                        {getProductIcon(p.name, { size: 14, className: 'text-emerald-600' })}
+                        <span>{p.name}</span>
+                        <span className="text-[10px] text-slate-400 font-normal">({p.unit || 'PIECE'})</span>
+                      </div>
                     </td>
                     <td className="py-2.5 px-3 text-right font-medium text-slate-700 dark:text-slate-300">
                       {p.sold > 0 ? `${p.sold} ${p.unit || ''}` : '0'}

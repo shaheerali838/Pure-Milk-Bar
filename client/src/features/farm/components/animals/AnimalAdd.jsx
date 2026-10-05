@@ -11,6 +11,8 @@ import {
   Tag,
   ShieldCheck,
   Loader2,
+  Sparkles,
+  Heart,
 } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import ImageUpload from "@/components/common/ImageUpload";
@@ -39,6 +41,12 @@ const initialForm = {
   healthStatus: "Healthy & Vaccinated",
   notes: "",
   image: "",
+  hasCalf: false,
+  calfTag: "",
+  calfGender: "Male",
+  calfDob: "",
+  calfAge: "",
+  calfNotes: "",
 };
 
 export default function AnimalAdd({
@@ -79,6 +87,12 @@ export default function AnimalAdd({
         healthStatus: editingAnimal.healthStatus || "Healthy & Vaccinated",
         notes: editingAnimal.notes || "",
         image: editingAnimal.image || "",
+        hasCalf: Boolean(editingAnimal.hasCalf),
+        calfTag: editingAnimal.calfTag || "",
+        calfGender: editingAnimal.calfGender || "Male",
+        calfDob: editingAnimal.calfDob ? String(editingAnimal.calfDob).slice(0, 10) : "",
+        calfAge: editingAnimal.calfAge || "",
+        calfNotes: editingAnimal.calfNotes || "",
       });
     } else {
       setFormData(initialForm);
@@ -510,6 +524,102 @@ export default function AnimalAdd({
                 />
               </div>
             </div>
+          </div>
+
+          {/* Section 4: Calf Information */}
+          <div className="pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-md bg-pink-100 text-pink-700 flex items-center justify-center text-xs">
+                  <Heart className="w-3.5 h-3.5 fill-pink-500" />
+                </div>
+                <h2 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
+                  4. Calf at Side (Optional)
+                </h2>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-1 rounded-full transition select-none">
+                <input
+                  type="checkbox"
+                  name="hasCalf"
+                  checked={formData.hasCalf}
+                  onChange={(e) => {
+                    const isChecked = e.target.checked;
+                    setFormData((prev) => ({
+                      ...prev,
+                      hasCalf: isChecked,
+                      calfTag: isChecked && !prev.calfTag && prev.tag ? `${prev.tag}-C1` : prev.calfTag,
+                    }));
+                  }}
+                  className="w-3.5 h-3.5 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
+                />
+                <span className="text-[11px] font-bold text-slate-700">
+                  {formData.hasCalf ? "Has Calf (Yes)" : "No Calf"}
+                </span>
+              </label>
+            </div>
+
+            {formData.hasCalf && (
+              <div className="p-3.5 bg-emerald-50/50 border border-emerald-200/80 rounded-xl space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Calf Tag / Identifier
+                    </label>
+                    <input
+                      type="text"
+                      name="calfTag"
+                      value={formData.calfTag}
+                      onChange={handleChange}
+                      placeholder={formData.tag ? `${formData.tag}-C1` : "CALF-01"}
+                      className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg text-slate-800 text-xs focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-mono font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Calf Gender
+                    </label>
+                    <select
+                      name="calfGender"
+                      value={formData.calfGender}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg text-slate-800 text-xs focus:outline-hidden focus:ring-1 focus:ring-emerald-500 cursor-pointer font-medium"
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Calf Age / DOB
+                    </label>
+                    <input
+                      type="text"
+                      name="calfAge"
+                      value={formData.calfAge}
+                      onChange={handleChange}
+                      placeholder="e.g. 1 Month, 20 Days"
+                      className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg text-slate-800 text-xs focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Calf Health &amp; Markings
+                    </label>
+                    <input
+                      type="text"
+                      name="calfNotes"
+                      value={formData.calfNotes}
+                      onChange={handleChange}
+                      placeholder="Healthy, suckling well, markings"
+                      className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg text-slate-800 text-xs focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-medium"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Form action buttons */}

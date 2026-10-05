@@ -39,29 +39,42 @@ export function usePOSOrders({
             source: i.source || 'Farm',
             subtotal: Number(i.subtotal) || ((Number(i.quantity) || 0) * (Number(i.unitPrice || i.price) || 0)),
           }));
+
+          const isDelivery =
+            order.fulfillmentType === 'DELIVERY' ||
+            order.fulfillmentType === 'DOORSTEP' ||
+            Boolean(order.deliveryMeta && (order.deliveryMeta.riderName || order.deliveryMeta.dropAddress || order.deliveryMeta.riderId));
+          const saleCategory = isDelivery ? 'delivery' : 'walkin';
+          const fulfillmentType = order.fulfillmentType || (isDelivery ? 'DELIVERY' : 'COUNTER');
+          const fulfillmentMode = isDelivery ? 'doorstep' : 'counter';
+
           return {
-            ...order,
-            invoiceId: order.receiptNumber || order.orderNumber || order.invoiceId || (order._id ? `INV-${String(order._id).slice(-6)}` : `INV-${Date.now()}`),
-            id: order._id || order.id,
-            timestamp: order.createdAt || new Date().toISOString(),
-            formattedTime: order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-            formattedDate: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '',
-            items,
-            itemCount: items.reduce((c, i) => c + (Number(i.quantity) || 0), 0),
-            subtotal: Number(order.subtotal) || 0,
-            deliveryCharge: Number(order.deliveryFee) || 0,
-            discount: Number(order.discountAmount) || 0,
-            netPayable: Number(order.grandTotal || order.netPayable || 0),
-            saleCategory: order.fulfillmentType === 'DOORSTEP' ? 'delivery' : 'walkin',
-            paymentMethod: (order.paymentMethod || 'cash').toLowerCase(),
-            customer: order.customerId ? { id: order.customerId?._id || order.customerId, name: order.customerNameSnapshot } : null,
-            walkinCustomer: order.walkinCustomer || (!order.customerId ? {
-              name: order.customerNameSnapshot || 'Walk-in Customer',
-              phone: order.customerPhoneSnapshot || 'N/A',
-            } : null),
-            notes: order.notes || '',
-          };
-        });
+              ...order,
+              invoiceId: order.receiptNumber || order.orderNumber || order.invoiceId || (order._id ? `INV-${String(order._id).slice(-6)}` : `INV-${Date.now()}`),
+              id: order._id || order.id,
+              timestamp: order.createdAt || new Date().toISOString(),
+              formattedTime: order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+              formattedDate: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '',
+              items,
+              itemCount: items.reduce((c, i) => c + (Number(i.quantity) || 0), 0),
+              subtotal: Number(order.subtotal) || 0,
+              deliveryCharge: Number(order.deliveryFee) || 0,
+              discount: Number(order.discountAmount) || 0,
+              netPayable: Number(order.grandTotal || order.netPayable || 0),
+              saleCategory,
+              fulfillmentType,
+              fulfillmentMode,
+              deliveryMeta: order.deliveryMeta || null,
+              rider: order.rider || (order.deliveryMeta?.riderName ? { name: order.deliveryMeta.riderName } : null),
+              paymentMethod: (order.paymentMethod || 'cash').toLowerCase(),
+              customer: order.customerId ? { id: order.customerId?._id || order.customerId, name: order.customerNameSnapshot } : null,
+              walkinCustomer: order.walkinCustomer || (!order.customerId ? {
+                name: order.customerNameSnapshot || 'Walk-in Customer',
+                phone: order.customerPhoneSnapshot || 'N/A',
+              } : null),
+              notes: order.notes || '',
+            };
+          });
       setSalesHistory(normalized);
     } catch (err) {
       console.warn('POS live order fetch notice:', err.message);
@@ -269,6 +282,7 @@ export function usePOSOrders({
         discount: effectiveDiscount,
         netPayable,
         saleCategory,
+        fulfillmentType: saleCategory === 'delivery' ? 'DELIVERY' : 'COUNTER',
         walkinCustomerType: saleCategory === 'walkin' ? walkinCustomerType : null,
         deliverySubType: saleCategory === 'delivery' ? deliverySubType : null,
         fulfillmentMode: saleCategory === 'delivery' ? 'doorstep' : 'counter',

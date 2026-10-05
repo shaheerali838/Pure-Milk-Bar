@@ -27,10 +27,10 @@ export default function DahiKitchenPipeline({
   const dahiBatches = batches.filter(isDahi);
 
   const incubatingBatches = dahiBatches.filter(
-    (b) => b.stage === 'incubating' || b.status === 'In Progress'
+    (b) => b.stage === 'incubating' || (b.status === 'In Progress' && b.stage !== 'chilled' && b.stage !== 'pos' && b.stage !== 'sold_out')
   );
   const chilledBatches = dahiBatches.filter(
-    (b) => b.stage === 'chilled' || (b.status === 'Completed' && b.stage !== 'pos')
+    (b) => b.stage === 'chilled'
   );
   const posBatches = dahiBatches.filter((b) => b.stage === 'pos' || b.stage === 'sold_out');
 
@@ -110,7 +110,7 @@ export default function DahiKitchenPipeline({
 
                   <button
                     type="button"
-                    onClick={() => onMoveToChiller(batch.id)}
+                    onClick={() => onMoveToChiller && onMoveToChiller(batch._id || batch.id)}
                     className="w-full py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-[0.99]"
                   >
                     <Zap className="w-3.5 h-3.5" />
@@ -194,7 +194,7 @@ export default function DahiKitchenPipeline({
 
                   <button
                     type="button"
-                    onClick={() => onSendToPOS(batch.id)}
+                    onClick={() => onSendToPOS && onSendToPOS(batch._id || batch.id)}
                     className="w-full py-2 px-3 rounded-lg bg-[#00a86b] hover:bg-[#008f5a] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-[0.99]"
                   >
                     <ShoppingCart className="w-3.5 h-3.5" />
@@ -331,13 +331,20 @@ export default function DahiKitchenPipeline({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onMarkSoldOut(batch.id)}
-                        className="flex-1 py-1.5 px-3 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs transition-colors cursor-pointer text-center"
-                      >
-                        Mark Sold Out
-                      </button>
+                      {batch.stage === 'sold_out' ? (
+                        <div className="flex-1 py-1.5 px-3 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs text-center flex items-center justify-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          Sold Out
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onMarkSoldOut && onMarkSoldOut(batch._id || batch.id)}
+                          className="flex-1 py-1.5 px-3 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 text-slate-700 font-bold text-xs transition-colors cursor-pointer text-center"
+                        >
+                          Mark Sold Out
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => window.print()}

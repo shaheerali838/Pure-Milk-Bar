@@ -20,6 +20,7 @@ import ProductDetailModal from '@/features/inventory/components/ProductDetailMod
 import POSSalesSourceDetail from './POSSalesSourceDetail';
 import POSWalkinHistoryModal from './POSWalkinHistoryModal';
 import POSDoorstepOrdersModal from './POSDoorstepOrdersModal';
+import { getProductIcon, getProductMeta } from '@/features/inventory/components/AddProduct';
 
 export default function POSDashboard() {
   const context = usePOSContext() || {};
@@ -392,19 +393,17 @@ export default function POSDashboard() {
 
                       <div className="flex items-start gap-3 my-1">
                         <div
-                          className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 shadow-2xs ${isMilk
-                              ? 'bg-blue-50/80 border border-blue-100'
-                              : isDahi
-                                ? 'bg-amber-50/80 border border-amber-100'
-                                : 'bg-purple-50/80 border border-purple-100'
-                            }`}
+                          className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-2xs border ${
+                            getProductMeta(product.name).bgClass
+                          }`}
                         >
-                          {isDahi ? '🥣' : product.category?.toLowerCase().includes('lassi') ? '🧃' : '🥛'}
+                          {getProductIcon(product.name, { size: 22 })}
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition line-clamp-1">
-                            {product.name}
+                          <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition line-clamp-1 flex items-center gap-1.5">
+                            {getProductIcon(product.name, { size: 14, className: 'text-indigo-600' })}
+                            <span>{product.name}</span>
                           </h4>
                           <p
                             className={`text-[10px] font-bold mt-0.5 flex items-center gap-1 ${

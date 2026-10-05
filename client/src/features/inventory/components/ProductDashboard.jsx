@@ -13,6 +13,7 @@ import {
 import { usePOSContext } from '@/context/POSContext';
 import { useAuth } from '@/context/AuthContext';
 import { ROLES } from '@/config/rbac.config';
+import { getProductIcon } from './AddProduct';
 
 export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
   const { user } = useAuth();
@@ -248,7 +249,7 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <div className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-lg shadow-2xs shrink-0 group-hover:scale-105 transition-transform">
-                        {emoji}
+                        {getProductIcon(p.name, { size: 18 })}
                       </div>
                       <div>
                         <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 uppercase tracking-wider block w-fit">
@@ -274,8 +275,9 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors font-display line-clamp-1">
-                      {p.name}
+                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors font-display line-clamp-1 flex items-center gap-1.5">
+                      {getProductIcon(p.name, { size: 14, className: 'text-emerald-600' })}
+                      <span>{p.name}</span>
                     </h3>
                     <p className="text-[10px] font-mono text-slate-400 mt-0.5">
                       {p.sku ? `SKU: ${p.sku}` : p.category}

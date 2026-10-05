@@ -5,12 +5,14 @@ import { authorize } from '../../../middlewares/authorize.js';
 
 // Controllers
 import animalController from '../controllers/animal.controller.js';
+import animalSaleController from '../controllers/animalSale.controller.js';
 import milkingYieldLogController from '../controllers/milkingYieldLog.controller.js';
 
 // Validators — Animal
 import {
   createAnimalSchema,
   updateAnimalSchema,
+  createAnimalSaleSchema,
   getAnimalsQuerySchema,
   animalIdParamSchema,
 } from '../validators/animal.validator.js';
@@ -77,6 +79,35 @@ router.delete(
   authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR', 'CASHIER'),
   validate({ params: animalIdParamSchema }),
   animalController.deleteAnimal
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ANIMAL SALES ROUTES — /api/farm/animal-sales
+// ═══════════════════════════════════════════════════════════════════════════
+
+router.post(
+  '/animal-sales',
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR', 'CASHIER'),
+  validate({ body: createAnimalSaleSchema }),
+  animalSaleController.recordSale
+);
+
+router.get(
+  '/animal-sales',
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR', 'CASHIER'),
+  animalSaleController.getAllSales
+);
+
+router.get(
+  '/animal-sales/:id',
+  authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR', 'CASHIER'),
+  animalSaleController.getSaleById
+);
+
+router.delete(
+  '/animal-sales/:id',
+  authorize('ADMIN', 'MANAGER'),
+  animalSaleController.deleteSale
 );
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -2,6 +2,8 @@ import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import Staff from '../../../models/Staff.model.js';
 import User from '../../../models/User.model.js';
+import Expense from '../../../models/Expense.model.js';
+import SalaryPayment from '../../../models/SalaryPayment.model.js';
 import { ROLES } from '../../../config/rbac.config.js';
 import { sendStaffCredentialsEmail } from '../../../utils/email.util.js';
 import { uploadToCloudinary } from '../../../config/cloudinary.js';
@@ -609,3 +611,222 @@ export const getStaffStatsService = async (user) => {
     byRole: roleAggregation,
   };
 };
+
+// Disburse Staff Salary: creates SalaryPayment document, creates Expense document, and marks Staff as Paid in DB
+export const payStaffSalaryService = async (payload, user) => {
+  const {
+    staffId,
+    id,
+    amount,
+    amountPaid,
+    paymentDate,
+    paymentMethod = 'CASH',
+    notes = '',
+    monthYear,
+    absentDays = 0,
+    deduction = 0,
+  } = payload;
+
+  const targetStaffId = staffId || id;
+  const staff = await findStaffByAnyId(targetStaffId);
+  if (!staff) {
+    const error = new Error(`Staff member with ID '${targetStaffId}' not found.`);
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const finalAmount = Number(amountPaid !== undefined ? amountPaid : amount) || 0;
+  if (finalAmount <= 0) {
+    const error = new Error('Salary payment amount must be greater than zero.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const pDate = paymentDate ? new Date(paymentDate) : new Date();
+  const dateStr = paymentDate
+    ? (typeof paymentDate === 'string' ? paymentDate.slice(0, 10) : new Date(paymentDate).toISOString().split('T')[0])
+    : new Date().toISOString().split('T')[0];
+
+  const currentMonthStr = monthYear || new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+
+  // STRICT RULE: Only allow paying salary ONCE per staff per month ("only one time i pay the salery in staff")
+  const existingPayment = await SalaryPayment.findOne({
+    staffId: staff._id,
+    monthYear: currentMonthStr,
+    status: 'Paid',
+  });
+
+  if (existingPayment) {
+    const error = new Error(`Salary for ${staff.name} has already been paid for ${currentMonthStr}. Staff can only be paid once per month.`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // 1. Create corresponding Expense in DB (Farm Operating Expenses)
+  const expenseDoc = await Expense.create({
+    scope: 'FARM',
+    category: 'SALARIES',
+    title: `Staff Salary: ${staff.name}`,
+    amountRupees: finalAmount,
+    paymentMethod: ['CASH', 'ONLINE', 'CHEQUE'].includes(String(paymentMethod).toUpperCase())
+      ? String(paymentMethod).toUpperCase()
+      : 'CASH',
+    date: pDate,
+    description: `Staff Salary disbursed to ${staff.name} (${staff.role || 'Staff'}) for ${currentMonthStr}. Absent Days: ${absentDays}, Deduction: Rs. ${Number(deduction || 0).toLocaleString()}`,
+    notes: notes || '',
+    authorizedBy: user?.name || 'Admin',
+    loggedByUserId: user?._id || null,
+  });
+
+  // 2. Create SalaryPayment record in DB
+  const paymentDoc = await SalaryPayment.create({
+    staffId: staff._id,
+    staffCode: staff.staffCode || '',
+    staffName: staff.name,
+    role: staff.role || 'Farm Staff',
+    monthlySalary: staff.monthlySalary || 0,
+    dailySalary: staff.dailySalary || Math.round((staff.monthlySalary || 0) / 30),
+    absentDays: Number(absentDays) || 0,
+    deduction: Number(deduction) || 0,
+    amount: finalAmount,
+    amountPaid: finalAmount,
+    status: 'Paid',
+    paymentDate: pDate,
+    date: dateStr,
+    monthYear: currentMonthStr,
+    paymentMethod: expenseDoc.paymentMethod,
+    notes: notes || '',
+    expenseId: expenseDoc._id,
+    paidBy: user?._id || null,
+  });
+
+  // 3. Update Staff status to Paid in DB
+  staff.salaryStatus = 'Paid';
+  staff.salaryPaidDate = pDate;
+  staff.salaryPaidMonth = currentMonthStr;
+  await staff.save();
+
+  // 4. Ensure bidirectional link between Expense and SalaryPayment
+  try {
+    expenseDoc.salaryPaymentId = paymentDoc._id;
+    await expenseDoc.save();
+  } catch (err) {
+    console.error('Error linking salaryPaymentId to expenseDoc:', err);
+  }
+
+  return {
+    success: true,
+    message: `Salary of Rs. ${finalAmount.toLocaleString()} paid to ${staff.name}.`,
+    payment: {
+      ...paymentDoc.toObject(),
+      id: paymentDoc._id,
+    },
+    expense: {
+      ...expenseDoc.toObject(),
+      id: expenseDoc._id,
+      amount: expenseDoc.amountRupees,
+    },
+    staff: sanitizeStaffForRole(staff, user?.role),
+  };
+};
+
+// Retrieve salary payment records from DB (filterable by staffId and monthYear)
+export const getStaffSalariesService = async ({ staffId, monthYear, limit = 500, page = 1 }) => {
+  const query = {};
+
+  if (staffId) {
+    const staff = await findStaffByAnyId(staffId);
+    if (staff) {
+      query.staffId = staff._id;
+    } else if (mongoose.Types.ObjectId.isValid(staffId)) {
+      query.staffId = staffId;
+    }
+  }
+
+  if (monthYear) {
+    query.monthYear = monthYear;
+  }
+
+  const numericLimit = Math.min(1000, Math.max(1, Number(limit) || 500));
+  const numericPage = Math.max(1, Number(page) || 1);
+  const skip = (numericPage - 1) * numericLimit;
+
+  const [salaries, total] = await Promise.all([
+    SalaryPayment.find(query)
+      .sort({ paymentDate: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(numericLimit)
+      .lean(),
+    SalaryPayment.countDocuments(query),
+  ]);
+
+  const normalized = salaries.map((s) => ({
+    ...s,
+    id: s._id,
+    paymentDate: s.paymentDate ? new Date(s.paymentDate).toISOString().split('T')[0] : s.date,
+    date: s.date || (s.paymentDate ? new Date(s.paymentDate).toISOString().split('T')[0] : ''),
+  }));
+
+  return {
+    salaries: normalized,
+    total,
+    page: numericPage,
+    limit: numericLimit,
+  };
+};
+
+// Delete a salary payment record from DB (and delete associated expense)
+export const deleteSalaryPaymentService = async (paymentId) => {
+  const payment = await SalaryPayment.findById(paymentId);
+  if (!payment) {
+    const error = new Error('Salary payment record not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // 1. Delete associated expense if payment has expenseId
+  if (payment.expenseId) {
+    await Expense.findByIdAndDelete(payment.expenseId);
+  }
+
+  // 2. Also delete any expense referencing this salary payment id
+  await Expense.deleteMany({ salaryPaymentId: payment._id });
+
+  // 3. Fallback: Also remove any lingering expense for this staff salary in case of unlinked record
+  if (payment.staffName) {
+    const nameRegex = new RegExp(payment.staffName.trim(), 'i');
+    await Expense.deleteMany({
+      category: 'SALARIES',
+      $or: [
+        { title: { $regex: nameRegex } },
+        { description: { $regex: nameRegex } },
+      ],
+      amountRupees: payment.amountPaid || payment.amount,
+    });
+  }
+
+  // 4. Delete the salary payment document itself
+  await SalaryPayment.findByIdAndDelete(paymentId);
+
+  // 5. Reset staff salary status back to Pending if no other payments exist for this month
+  if (payment.staffId) {
+    const remaining = await SalaryPayment.findOne({
+      staffId: payment.staffId,
+      monthYear: payment.monthYear,
+      status: 'Paid',
+    });
+    if (!remaining) {
+      await Staff.findByIdAndUpdate(payment.staffId, {
+        salaryStatus: 'Pending',
+        salaryPaidDate: null,
+        salaryPaidMonth: null,
+      });
+    }
+  }
+
+  return {
+    success: true,
+    message: 'Salary payment and associated expense deleted successfully from database.',
+  };
+};
+

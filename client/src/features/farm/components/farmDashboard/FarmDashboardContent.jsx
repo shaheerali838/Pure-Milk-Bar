@@ -3,6 +3,7 @@ import { Plus, ArrowRight } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { usePOSContext } from "../../../../context/POSContext";
 import { useExpense } from "../../../../context/ExpenseContext";
+import { getPktTodayString } from "@/utils/dateUtils";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -76,11 +77,69 @@ export default function FarmDashboardContent() {
 
   const avgAnimalYield = totalAnimals > 0 ? totalFarmYield / totalAnimals : 0;
 
-  // Real Financial Metrics from POS (Real sales & direct costs only - no synthetic multipliers)
+  // Real Financial Metrics from POS & Expenses (Accurately computed for Today and Month)
   const realFarmRevenue = Number(posCtx?.farmSalesMetrics?.totalRevenue || 0);
   const realFarmCost = Number(posCtx?.farmSalesMetrics?.totalCost || 0);
-  const dailyNetProfit = Number(posCtx?.farmSalesMetrics?.netProfit || 0);
-  const monthlyNetProfit = dailyNetProfit;
+
+  const { dailyNetProfit, monthlyNetProfit, todayFarmRevenue } = useMemo(() => {
+    let pktToday = '';
+    try {
+      pktToday = getPktTodayString();
+    } catch {
+      pktToday = '';
+    }
+    const now = new Date();
+    const localTodayStr = pktToday || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const isoTodayStr = now.toISOString().split('T')[0];
+    const currentMonthStr = localTodayStr.slice(0, 7);
+
+    const isToday = (dateVal) => {
+      if (!dateVal) return false;
+      const clean = String(dateVal).trim().slice(0, 10);
+      return clean === localTodayStr || clean === isoTodayStr;
+    };
+
+    const isMonth = (dateVal) => {
+      if (!dateVal) return false;
+      const clean = String(dateVal).trim().slice(0, 7);
+      return clean === currentMonthStr;
+    };
+
+    // Farm Sales
+    let tSales = 0;
+    let mSales = 0;
+    (posCtx?.farmSalesHistory || []).forEach((s) => {
+      let sDate = '';
+      if (s.date && /^\d{4}-\d{2}-\d{2}/.test(s.date)) {
+        sDate = s.date.slice(0, 10);
+      } else if (s.timestamp && /^\d{4}-\d{2}-\d{2}/.test(s.timestamp)) {
+        sDate = s.timestamp.slice(0, 10);
+      } else if (s.createdAt && /^\d{4}-\d{2}-\d{2}/.test(s.createdAt)) {
+        sDate = s.createdAt.slice(0, 10);
+      }
+      const netPay = Number(s.netPayable || s.subtotal) || 0;
+      if (isToday(sDate)) tSales += netPay;
+      if (isMonth(sDate)) mSales += netPay;
+    });
+
+    // Farm Expenses
+    let tExp = 0;
+    let mExp = 0;
+    (expenses || []).forEach((exp) => {
+      const scope = String(exp.scope || exp.expenseEntity || 'FARM').toUpperCase();
+      if (scope !== 'FARM') return;
+      const expDate = exp.date ? String(exp.date).slice(0, 10) : '';
+      const amt = Number(exp.amount) || 0;
+      if (isToday(expDate)) tExp += amt;
+      if (isMonth(expDate)) mExp += amt;
+    });
+
+    return {
+      dailyNetProfit: tSales - tExp,
+      monthlyNetProfit: mSales - mExp,
+      todayFarmRevenue: tSales,
+    };
+  }, [posCtx?.farmSalesHistory, expenses]);
 
   // Trend Data for 7 days (Using real milking logs and real sales)
   const trendData = useMemo(() => {
@@ -227,6 +286,7 @@ export default function FarmDashboardContent() {
         avgAnimalYield={avgAnimalYield}
         dailyNetProfit={dailyNetProfit}
         monthlyNetProfit={monthlyNetProfit}
+        todayFarmRevenue={todayFarmRevenue}
       />
 
       {/* Grid Row 1: Area Chart & Bar Chart */}

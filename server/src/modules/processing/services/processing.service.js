@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import ProcessingBatch from '../../../models/ProcessingBatch.model.js';
 import User from '../../../models/User.model.js';
 import AppError from '../../../utils/AppError.js';
@@ -264,11 +265,32 @@ export const getAllBatchesService = async (queryParams = {}) => {
   };
 };
 
+// Helper to find a batch by _id, batchNumber or id
+const findBatchDoc = async (batchId) => {
+  if (!batchId) return null;
+  const strId = String(batchId).trim();
+  if (mongoose.Types.ObjectId.isValid(strId)) {
+    const b = await ProcessingBatch.findById(strId);
+    if (b) return b;
+  }
+  let b = await ProcessingBatch.findOne({ batchNumber: strId });
+  if (!b) b = await ProcessingBatch.findOne({ id: strId });
+  return b;
+};
+
 // Get single processing batch by ID
 export const getBatchByIdService = async (batchId) => {
-  const batch = await ProcessingBatch.findById(batchId)
-    .populate('operatorId', 'name username')
-    .lean();
+  const strId = String(batchId || '').trim();
+  let batch;
+  if (mongoose.Types.ObjectId.isValid(strId)) {
+    batch = await ProcessingBatch.findById(strId).populate('operatorId', 'name username').lean();
+  }
+  if (!batch) {
+    batch = await ProcessingBatch.findOne({ batchNumber: strId }).populate('operatorId', 'name username').lean();
+  }
+  if (!batch) {
+    batch = await ProcessingBatch.findOne({ id: strId }).populate('operatorId', 'name username').lean();
+  }
 
   if (!batch) {
     throw new AppError('Processing batch not found.', 404, 'BATCH_NOT_FOUND');
@@ -301,7 +323,7 @@ export const getBatchByIdService = async (batchId) => {
 
 // Update processing batch
 export const updateBatchService = async (batchId, updateData) => {
-  const batch = await ProcessingBatch.findById(batchId);
+  const batch = await findBatchDoc(batchId);
   if (!batch) {
     throw new AppError('Processing batch not found.', 404, 'BATCH_NOT_FOUND');
   }
@@ -334,7 +356,7 @@ export const updateBatchService = async (batchId, updateData) => {
     } catch (_) {}
   }
 
-  const updated = await ProcessingBatch.findById(batchId)
+  const updated = await ProcessingBatch.findById(batch._id)
     .populate('operatorId', 'name username')
     .lean();
 
@@ -359,7 +381,7 @@ export const updateBatchService = async (batchId, updateData) => {
 
 // Delete processing batch
 export const deleteBatchService = async (batchId) => {
-  const batch = await ProcessingBatch.findById(batchId);
+  const batch = await findBatchDoc(batchId);
   if (!batch) {
     throw new AppError('Processing batch not found.', 404, 'BATCH_NOT_FOUND');
   }
@@ -386,7 +408,7 @@ export const deleteBatchService = async (batchId) => {
     }
   } catch (_) {}
 
-  await ProcessingBatch.findByIdAndDelete(batchId);
+  await ProcessingBatch.deleteOne({ _id: batch._id });
   return { message: `Processing batch '${batch.batchNumber || batch._id}' deleted successfully.` };
 };
 

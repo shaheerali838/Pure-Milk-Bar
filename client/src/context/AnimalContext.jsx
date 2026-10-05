@@ -5,6 +5,7 @@ import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
 const defaultAnimalContextValue = {
   animals: [],
   milkingLogs: [],
+  animalSales: [],
   isLoading: false,
   error: null,
   isModalOpen: false,
@@ -16,6 +17,8 @@ const defaultAnimalContextValue = {
   deleteAnimal: async () => {},
   deleteMilkingLog: async () => {},
   updateMilkingLog: async () => {},
+  recordAnimalSale: async () => {},
+  deleteAnimalSale: async () => {},
   openModal: () => {},
   closeModal: () => {},
 };
@@ -90,6 +93,16 @@ const normalizeAnimal = (animal, history = []) => {
     totalDailyYield: `${(morning + evening).toFixed(1)} L`,
     acquisitionDate: regDate,
     image: animal.image || null,
+    hasCalf: Boolean(animal.hasCalf),
+    calfTag: animal.calfTag || '',
+    calfGender: animal.calfGender || 'Male',
+    calfDob: animal.calfDob || '',
+    calfAge: animal.calfAge || '',
+    calfNotes: animal.calfNotes || '',
+    isSold: Boolean(animal.isSold),
+    salePrice: animal.salePrice || 0,
+    saleDate: animal.saleDate || null,
+    saleNotes: animal.saleNotes || '',
     intakeHistory: allEntries,
     history: allEntries,
   };
@@ -98,18 +111,20 @@ const normalizeAnimal = (animal, history = []) => {
 export function AnimalProvider({ children }) {
   const [animals, setAnimals] = useState([]);
   const [milkingLogs, setMilkingLogs] = useState([]);
+  const [animalSales, setAnimalSales] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch live herd animals and milking logs from API
+  // Fetch live herd animals, milking logs, and sales from API
   const fetchAnimalsAndLogs = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const [animalsData, logsData] = await Promise.allSettled([
+      const [animalsData, logsData, salesData] = await Promise.allSettled([
         farmService.getAnimals(),
         farmService.getMilkingLogs(),
+        farmService.getAnimalSales(),
       ]);
 
       const animalList =
@@ -125,6 +140,15 @@ export function AnimalProvider({ children }) {
             ? logsData.value
             : logsData.value?.logs || []
           : [];
+
+      const salesList =
+        salesData.status === 'fulfilled'
+          ? Array.isArray(salesData.value)
+            ? salesData.value
+            : salesData.value?.sales || []
+          : [];
+
+      setAnimalSales(salesList);
 
       // Group logs by multiple keys (id, _id, tag, tagNumber)
       const historyByAnimal = {};
@@ -225,6 +249,12 @@ export function AnimalProvider({ children }) {
         acquisitionDate: formData.acquisitionDate || new Date().toISOString().split('T')[0],
         notes: formData.notes || '',
         image: formData.image || null,
+        hasCalf: Boolean(formData.hasCalf),
+        calfTag: formData.calfTag?.trim() || '',
+        calfGender: formData.calfGender || 'Male',
+        calfDob: formData.calfDob || null,
+        calfAge: formData.calfAge?.trim() || '',
+        calfNotes: formData.calfNotes?.trim() || '',
       };
 
       const created = await farmService.createAnimal(payload);
@@ -243,12 +273,22 @@ export function AnimalProvider({ children }) {
   // Update Animal via API (preserving intakeHistory)
   const updateAnimal = async (id, formData) => {
     try {
-      await farmService.updateAnimal(id, formData);
+      const payload = {
+        ...formData,
+        tagNumber: formData.tag || formData.tagNumber,
+        hasCalf: Boolean(formData.hasCalf),
+        calfTag: formData.calfTag?.trim() || '',
+        calfGender: formData.calfGender || 'Male',
+        calfDob: formData.calfDob || null,
+        calfAge: formData.calfAge?.trim() || '',
+        calfNotes: formData.calfNotes?.trim() || '',
+      };
+      await farmService.updateAnimal(id, payload);
       setAnimals((prev) =>
         prev.map((a) => {
           if (String(a._id || a.id) === String(id)) {
             const existingHistory = a.intakeHistory || [];
-            return normalizeAnimal({ ...a, ...formData, tagNumber: formData.tag || a.tagNumber }, existingHistory);
+            return normalizeAnimal({ ...a, ...payload }, existingHistory);
           }
           return a;
         })
@@ -257,6 +297,33 @@ export function AnimalProvider({ children }) {
       broadcastSync('pure_milk_bar_inventory_updated');
     } catch (err) {
       console.error('Failed to update animal via API:', err);
+      throw err;
+    }
+  };
+
+  // Animal Sales via API
+  const recordAnimalSale = async (saleData) => {
+    try {
+      const res = await farmService.recordAnimalSale(saleData);
+      await fetchAnimalsAndLogs();
+      broadcastSync('pure_milk_bar_milking_updated');
+      broadcastSync('pure_milk_bar_inventory_updated');
+      broadcastSync('pure_milk_bar_pos_sale_completed');
+      return res;
+    } catch (err) {
+      console.error('Failed to record animal sale via API:', err);
+      throw err;
+    }
+  };
+
+  const deleteAnimalSale = async (saleId) => {
+    try {
+      const res = await farmService.deleteAnimalSale(saleId);
+      await fetchAnimalsAndLogs();
+      broadcastSync('pure_milk_bar_milking_updated');
+      return res;
+    } catch (err) {
+      console.error('Failed to delete animal sale via API:', err);
       throw err;
     }
   };
@@ -459,6 +526,7 @@ export function AnimalProvider({ children }) {
       value={{
         animals,
         milkingLogs,
+        animalSales,
         isLoading,
         error,
         refreshAnimals: fetchAnimalsAndLogs,
@@ -469,6 +537,8 @@ export function AnimalProvider({ children }) {
         deleteAnimal,
         deleteMilkingLog,
         updateMilkingLog,
+        recordAnimalSale,
+        deleteAnimalSale,
         isModalOpen,
         openModal,
         closeModal,

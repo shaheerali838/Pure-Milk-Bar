@@ -8,6 +8,9 @@ import {
   deleteStaff,
   getStaffStats,
   sendStaffCredentials,
+  payStaffSalary,
+  getStaffSalaries,
+  deleteSalaryPayment,
 } from '../controllers/staff.controller.js';
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize } from '../../../middlewares/authorize.js';
@@ -26,8 +29,24 @@ router.use(authenticate);
 // Workforce Analytics & Summary Statistics (ADMIN & MANAGER)
 router.get('/stats', authorize('ADMIN', 'MANAGER'), getStaffStats);
 
+// Salary Payments Collection & History (strictly before /:id routes)
+router
+  .route('/salaries')
+  .get(authorize('ADMIN', 'MANAGER'), getStaffSalaries)
+  .post(authorize('ADMIN', 'MANAGER'), payStaffSalary);
+
+router.delete('/salaries/:salaryId', authorize('ADMIN'), deleteSalaryPayment);
+
 // Send / Resend Login Credentials Email (strictly ADMIN)
 router.post('/:id/send-credentials', authorize('ADMIN'), sendStaffCredentials);
+
+// Staff-specific Salary payment & history
+router
+  .route('/:id/salaries')
+  .get(authorize('ADMIN', 'MANAGER'), getStaffSalaries)
+  .post(authorize('ADMIN', 'MANAGER'), payStaffSalary);
+
+router.post('/:id/pay-salary', authorize('ADMIN', 'MANAGER'), payStaffSalary);
 
 // Staff Collection CRUD (ADMIN & MANAGER)
 router

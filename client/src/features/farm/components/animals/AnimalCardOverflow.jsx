@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Beef, Edit3, Trash2, Eye, X, Users, UserCheck } from "lucide-react";
+import { Beef, Edit3, Trash2, Eye, X, Users, UserCheck, TrendingUp, TrendingDown, Heart, Tag } from "lucide-react";
 import AnimalStatsCards from "./AnimalStatsCards";
 import AnimalAdd from "./AnimalAdd";
 import AnimalFilterHeader from "./AnimalFilterHeader";
 import AnimalDetail from "./AnimalDetail";
+import AnimalSaleModal from "./AnimalSaleModal";
+import PKRIcon from "@/components/common/PKRIcon";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { useStaffPayrollContext } from "@/context/StaffPayrollContext";
 import { Button } from "@/components/ui/button";
@@ -22,14 +24,17 @@ const statusStyle = {
   "Milking": "bg-emerald-100 text-emerald-700 hover:bg-emerald-100",
   "Dry/Gestating": "bg-amber-100 text-amber-700 hover:bg-amber-100",
   "Calf": "bg-blue-100 text-blue-700 hover:bg-blue-100",
+  "Sold": "bg-rose-100 text-rose-700 hover:bg-rose-100",
 };
 
 export default function AnimalCardOverflow() {
   const {
     animals = [],
+    animalSales = [],
     addAnimal,
     updateAnimal,
     deleteAnimal,
+    deleteAnimalSale,
     isModalOpen,
     openModal,
     closeModal,
@@ -38,7 +43,7 @@ export default function AnimalCardOverflow() {
   const navigate = useNavigate();
   const { staffList = [] } = useStaffPayrollContext() || {};
   const displayWorkers = staffList.filter(s => s.role === 'Farm Worker' || s.role === 'Milking Staff');
-  const [activeTab, setActiveTab] = useState("registry"); // 'registry' or 'workers'
+  const [activeTab, setActiveTab] = useState("registry"); // 'registry', 'workers', or 'sales'
   const [searchTerm, setSearchTerm] = useState("");
   const [speciesFilter, setSpeciesFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -49,8 +54,17 @@ export default function AnimalCardOverflow() {
   const [selectedAnimalIds, setSelectedAnimalIds] = useState([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
+  // Animal Sale Modal State
+  const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
+  const [saleModalAnimal, setSaleModalAnimal] = useState(null);
+  const [deleteSaleTarget, setDeleteSaleTarget] = useState(null);
+  const [isDeletingSale, setIsDeletingSale] = useState(false);
+
   // Filter animals list based on search term, species, and status
   const filteredAnimals = animals.filter((a) => {
+    // In registry view, exclude sold animals unless 'Sold' is explicitly filtered
+    if (a.isSold && statusFilter !== "Sold") return false;
+
     const matchesSearch =
       searchTerm.trim() === "" ||
       (a.tag && a.tag.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -65,6 +79,18 @@ export default function AnimalCardOverflow() {
       statusFilter === "all" || a.lactationStatus === statusStatusFilter(a.lactationStatus, statusFilter);
 
     return matchesSearch && matchesSpecies && matchesStatus;
+  });
+
+  // Filter animal sales
+  const filteredSales = animalSales.filter((s) => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      (s.animalTag && s.animalTag.toLowerCase().includes(term)) ||
+      (s.buyerName && s.buyerName.toLowerCase().includes(term)) ||
+      (s.buyerPhone && s.buyerPhone.toLowerCase().includes(term)) ||
+      (s.species && s.species.toLowerCase().includes(term))
+    );
   });
 
   function statusStatusFilter(animalStatus, filterValue) {
@@ -102,6 +128,21 @@ export default function AnimalCardOverflow() {
     }
   };
 
+  const handleConfirmDeleteSale = async () => {
+    if (!deleteSaleTarget) return;
+    setIsDeletingSale(true);
+    try {
+      if (deleteAnimalSale) {
+        await deleteAnimalSale(deleteSaleTarget._id || deleteSaleTarget.id);
+      }
+      setDeleteSaleTarget(null);
+    } catch (err) {
+      console.error("Failed to delete sale record:", err);
+    } finally {
+      setIsDeletingSale(false);
+    }
+  };
+
   const headers = [
     "Tag #",
     "Species",
@@ -110,6 +151,18 @@ export default function AnimalCardOverflow() {
     "Morning (L)",
     "Evening (L)",
     "Total Daily Yield",
+    "Actions",
+  ];
+
+  const salesHeaders = [
+    "Sale Date",
+    "Animal Tag",
+    "Species & Breed",
+    "Buyer Details",
+    "Original Cost",
+    "Sale Price",
+    "Net Margin",
+    "Payment",
     "Actions",
   ];
 
@@ -158,6 +211,7 @@ export default function AnimalCardOverflow() {
         setActiveTab={setActiveTab}
         animalsCount={animals.length}
         workersCount={displayWorkers.length}
+        salesCount={animalSales.length}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         speciesFilter={speciesFilter}
@@ -165,6 +219,10 @@ export default function AnimalCardOverflow() {
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
         onOpenAddModal={openModal}
+        onOpenSaleModal={() => {
+          setSaleModalAnimal(null);
+          setIsSaleModalOpen(true);
+        }}
       />
 
       {/* Bulk Action Bar when items selected */}
@@ -197,7 +255,7 @@ export default function AnimalCardOverflow() {
         </div>
       )}
 
-      {activeTab === "registry" ? (
+      {activeTab === "registry" && (
         <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-2xs">
           <Table className="w-full border-collapse text-[13px]">
             <TableHeader>
@@ -267,9 +325,17 @@ export default function AnimalCardOverflow() {
                           </div>
                         )}
                         <div className="flex flex-col">
-                          <span className="font-mono text-[12px] font-bold text-slate-800 group-hover:text-emerald-700 tabular">
-                            {a.tag}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-[12px] font-bold text-slate-800 group-hover:text-emerald-700 tabular">
+                              {a.tag}
+                            </span>
+                            {a.hasCalf && (
+                              <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-pink-50 text-pink-700 border border-pink-200">
+                                <Heart className="w-2.5 h-2.5 fill-pink-500" />
+                                Calf {a.calfGender ? `(${a.calfGender})` : ''}
+                              </span>
+                            )}
+                          </div>
                           {a.name && a.name !== a.tag && (
                             <span className="text-[10px] text-slate-500 font-semibold truncate max-w-[100px]">
                               {a.name}
@@ -320,6 +386,19 @@ export default function AnimalCardOverflow() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => {
+                            setSaleModalAnimal(a);
+                            setIsSaleModalOpen(true);
+                          }}
+                          className="p-1.5 h-8 w-8 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-all cursor-pointer"
+                          title="Record Animal Sale / Sell"
+                        >
+                          <PKRIcon className="w-3.5 h-3.5 text-amber-600" />
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => setSelectedAnimalId(a.id)}
                           className="p-1.5 h-8 w-8 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all cursor-pointer"
                           title="View Animal Details"
@@ -354,12 +433,14 @@ export default function AnimalCardOverflow() {
             </TableBody>
           </Table>
         </div>
-      ) : (
+      )}
+
+      {activeTab === "workers" && (
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-emerald-600" />
-              <h3 className="font-display text-base font-bold text-slate-800">Farm Workers & Milking Staff</h3>
+              <h3 className="font-display text-base font-bold text-slate-800">Farm Workers &amp; Milking Staff</h3>
             </div>
           </div>
           <Table className="w-full text-left text-sm">
@@ -400,6 +481,165 @@ export default function AnimalCardOverflow() {
                     </TableCell>
                   </TableRow>
                 ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {activeTab === "sales" && (
+        <div className="overflow-x-auto bg-white border border-slate-200 rounded-xl shadow-2xs">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <PKRIcon className="w-4 h-4 text-emerald-700" />
+              </div>
+              <h3 className="font-display text-base font-bold text-slate-800">
+                Livestock Animal Sales &amp; Revenue Records
+              </h3>
+            </div>
+            <span className="text-xs text-slate-500 font-medium">
+              Total Sold: <strong className="text-slate-800 font-bold">{animalSales.length}</strong> Animals
+            </span>
+          </div>
+
+          <Table className="w-full border-collapse text-[13px]">
+            <TableHeader>
+              <TableRow className="bg-slate-50 border-b border-slate-200 hover:bg-slate-50">
+                {salesHeaders.map((h) => (
+                  <TableHead
+                    key={h}
+                    className="px-4 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap"
+                  >
+                    {h}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredSales.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={salesHeaders.length}
+                    className="px-4 py-12 text-center text-slate-400 text-sm"
+                  >
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <PKRIcon className="w-8 h-8 text-slate-300" />
+                      <p className="font-semibold text-slate-600">No Animal Sales Recorded Yet</p>
+                      <p className="text-slate-400 text-xs">
+                        Click "Sell Animal" or "+ Record New Animal Sale" to record a livestock sale.
+                      </p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredSales.map((s) => {
+                  const pPrice = parseFloat(s.purchasePrice || 0);
+                  const sPrice = parseFloat(s.salePrice || 0);
+                  const diff = sPrice - pPrice;
+                  const isGain = diff >= 0;
+                  const saleDateStr = s.saleDate ? String(s.saleDate).split("T")[0] : "Recent";
+
+                  return (
+                    <TableRow
+                      key={s._id || s.id}
+                      className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/60 transition-colors"
+                    >
+                      <TableCell className="px-4 py-3 font-mono text-xs text-slate-600">
+                        {saleDateStr}
+                      </TableCell>
+
+                      <TableCell className="px-4 py-3">
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-xs font-bold text-slate-900">
+                              {s.animalTag}
+                            </span>
+                            {s.hasCalfIncluded && (
+                              <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-pink-50 text-pink-700 border border-pink-200">
+                                <Heart className="w-2.5 h-2.5 fill-pink-500" />
+                                Calf Included
+                              </span>
+                            )}
+                          </div>
+                          {s.animalName && s.animalName !== s.animalTag && (
+                            <span className="text-[10px] text-slate-500 font-medium">
+                              {s.animalName}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="px-4 py-3 text-slate-700 font-medium">
+                        {s.species} ({s.breed || 'Standard'})
+                      </TableCell>
+
+                      <TableCell className="px-4 py-3">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-800 text-xs">
+                            {s.buyerName}
+                          </span>
+                          {s.buyerPhone && (
+                            <span className="font-mono text-[11px] text-slate-500">
+                              {s.buyerPhone}
+                            </span>
+                          )}
+                          {s.buyerAddress && (
+                            <span className="text-[10px] text-slate-400 truncate max-w-[150px]">
+                              {s.buyerAddress}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="px-4 py-3 font-mono text-slate-600 text-xs">
+                        Rs. {pPrice.toLocaleString()}
+                      </TableCell>
+
+                      <TableCell className="px-4 py-3 font-mono font-bold text-emerald-700 text-sm">
+                        Rs. {sPrice.toLocaleString()}
+                      </TableCell>
+
+                      <TableCell className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center gap-1 text-[11px] font-bold font-mono px-2 py-0.5 rounded-md ${
+                            isGain
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-rose-100 text-rose-800"
+                          }`}
+                        >
+                          {isGain ? (
+                            <TrendingUp className="w-3 h-3 text-emerald-600" />
+                          ) : (
+                            <TrendingDown className="w-3 h-3 text-rose-600" />
+                          )}
+                          {isGain ? "+" : ""}Rs. {Math.abs(diff).toLocaleString()}
+                        </span>
+                      </TableCell>
+
+                      <TableCell className="px-4 py-3">
+                        <Badge
+                          variant="outline"
+                          className="bg-slate-50 text-slate-700 border-slate-200 text-[11px] font-medium"
+                        >
+                          {s.paymentMethod || "Cash"}
+                        </Badge>
+                      </TableCell>
+
+                      <TableCell className="px-4 py-3">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteSaleTarget(s)}
+                          className="p-1.5 h-8 w-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+                          title="Delete / Revert Sale Record"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -495,6 +735,65 @@ export default function AnimalCardOverflow() {
           </div>
         </div>
       )}
+
+      {/* Delete / Revert Animal Sale Confirmation Modal */}
+      {deleteSaleTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h2 className="font-display text-xl font-bold text-[#0F172A] tracking-tight">
+                Delete Animal Sale Record
+              </h2>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setDeleteSaleTarget(null)}
+                className="text-slate-400 hover:text-slate-600 h-8 w-8 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </Button>
+            </div>
+
+            <div className="px-6 py-6 space-y-6">
+              <p className="text-slate-600 text-sm leading-relaxed font-normal">
+                Are you sure you want to delete this sale record for <strong className="text-slate-900">{deleteSaleTarget.animalTag}</strong>? 
+                Deleting this record will restore the animal back to the active milking/herd register.
+              </p>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDeleteSaleTarget(null)}
+                  disabled={isDeletingSale}
+                  className="px-5 py-2 rounded-full border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={isDeletingSale}
+                  onClick={handleConfirmDeleteSale}
+                  className="px-5 py-2 rounded-full bg-[#E11D48] hover:bg-[#D91B42] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+                >
+                  {isDeletingSale ? "Deleting..." : "Delete & Restore Animal"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Animal Sale Modal */}
+      <AnimalSaleModal
+        isOpen={isSaleModalOpen}
+        onClose={() => {
+          setIsSaleModalOpen(false);
+          setSaleModalAnimal(null);
+        }}
+        initialAnimal={saleModalAnimal}
+      />
 
     </div>
   );

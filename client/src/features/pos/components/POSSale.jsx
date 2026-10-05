@@ -15,14 +15,15 @@ import {
   Plus,
   Minus,
   X,
-  DollarSign,
   AlertCircle,
   Banknote,
   Smartphone,
   ChevronDown,
   Loader2,
 } from "lucide-react";
+import { PKRIcon } from "@/components/common/PKRIcon";
 import { usePOSContext } from "@/context/POSContext";
+import { getProductIcon } from "@/features/inventory/components/AddProduct";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import POSDeliverySection from "./POSDeliverySection";
@@ -271,13 +272,7 @@ export default function POSSale() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-sm shadow-2xs shrink-0">
-                        {item.category && item.category.toLowerCase().includes('dahi')
-                          ? '🥣'
-                          : item.category && item.category.toLowerCase().includes('lassi')
-                          ? '🧃'
-                          : '🥛'}
-                      </div>
+                      {getProductIcon(item.name, { size: 14, withBadge: true })}
                       <div className="min-w-0">
                         <div className="text-xs font-bold text-slate-800 leading-tight truncate">
                           {item.name}
@@ -522,7 +517,7 @@ export default function POSSale() {
 
             <div className="flex justify-between items-center text-slate-600 text-[11px]">
               <span className="flex items-center gap-1">
-                <DollarSign className="w-3 h-3 text-slate-400" /> Discount (Rs.)
+                <PKRIcon className="w-3 h-3 text-slate-400" /> Discount (Rs.)
               </span>
               <input
                 type="number"

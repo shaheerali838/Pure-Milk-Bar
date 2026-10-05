@@ -20,6 +20,7 @@ import { useAnimalContext } from '@/context/AnimalContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useStaffContext } from '@/context/StaffContext';
 import { exportMultiSectionCSV } from '@/utils/csvExport';
+import { getPktTodayString } from '@/utils/dateUtils';
 
 import PLCardOverflow from '../components/F&LReport/PLCardOverflow';
 import SellingRevenue from '../components/F&LReport/SellingRevenue';
@@ -52,32 +53,56 @@ const parseYield = (val) => {
 };
 
 export default function FarmPL() {
-  const { expenses = [], totals: expenseTotals } = useExpense();
+  const { expenses = [], totals: expenseTotals, fetchExpenses } = useExpense();
   const { farmSalesHistory = [], salesHistory = [], products = [], inventoryMetrics = {}, farmSalesMetrics } = usePOSContext();
   const { animals = [] } = useAnimalContext();
   const { deliveries = [] } = useDeliveryContext();
   const { salaryPayments = [], deleteSalaryPayment } = useStaffContext();
 
+  const handleDeleteSalaryPayment = async (paymentId) => {
+    try {
+      await deleteSalaryPayment(paymentId);
+    } catch (err) {
+      console.warn('Delete salary error in FarmPL:', err.message);
+    }
+    if (fetchExpenses) fetchExpenses();
+  };
+
   // 2. Filter & Date State
-  const [dateFilterMode, setDateFilterMode] = useState('all'); // 'all' | 'today' | 'this_month' | 'custom'
+  const [dateFilterMode, setDateFilterMode] = useState('today'); // 'today' (default) | 'this_month' | 'all' | 'custom'
   const [selectedDate, setSelectedDate] = useState('');
 
   // Slide-over state: activeCardDrawer ('raw_milk', 'value_added', etc.) or selectedProduct (for table row clicks)
   const [activeCardDrawer, setActiveCardDrawer] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  const todayLocal = useMemo(() => {
+    try {
+      return getPktTodayString();
+    } catch {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+  }, []);
   const todayISO = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const currentMonthISO = useMemo(() => todayISO.slice(0, 7), [todayISO]); // e.g. YYYY-MM
+  const currentMonthISO = useMemo(() => (todayLocal || todayISO).slice(0, 7), [todayLocal, todayISO]); // e.g. YYYY-MM
   const previousMonthISO = useMemo(() => {
     const d = new Date();
     d.setMonth(d.getMonth() - 1);
-    return d.toISOString().slice(0, 7);
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    return `${d.getFullYear()}-${m}`;
   }, []);
   const thirtyDaysAgo = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - 35);
     return d.toISOString().split('T')[0];
   }, []);
+
+  const isMatchToday = (dateStr) => {
+    if (!dateStr) return false;
+    const clean = String(dateStr).trim().slice(0, 10);
+    return clean === todayLocal || clean === todayISO;
+  };
 
   // Smart monthly cycle check: includes current month, rolling 35-day cycle, or recent billing month
   const isDateInMonthlyCycle = (dateStr) => {
@@ -131,7 +156,7 @@ export default function FarmPL() {
       }
 
       if (dateFilterMode === 'today') {
-        return saleDate === todayISO;
+        return isMatchToday(saleDate);
       }
       if (dateFilterMode === 'this_month') {
         return isDateInMonthlyCycle(saleDate);
@@ -141,30 +166,30 @@ export default function FarmPL() {
       }
       return true; // 'all'
     });
-  }, [activeFarmSales, dateFilterMode, selectedDate, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
+  }, [activeFarmSales, dateFilterMode, selectedDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter((exp) => {
       const scope = String(exp.scope || exp.expenseEntity || 'FARM').toUpperCase();
       if (scope !== 'FARM') return false;
 
-      const expDate = exp.date || '';
-      if (dateFilterMode === 'today') return expDate === todayISO;
+      const expDate = exp.date ? String(exp.date).slice(0, 10) : '';
+      if (dateFilterMode === 'today') return isMatchToday(expDate);
       if (dateFilterMode === 'this_month') return isDateInMonthlyCycle(expDate);
       if (dateFilterMode === 'custom' && selectedDate) return expDate === selectedDate;
       return true;
     });
-  }, [expenses, dateFilterMode, selectedDate, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
+  }, [expenses, dateFilterMode, selectedDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
 
   const filteredSalaries = useMemo(() => {
     return salaryPayments.filter((sal) => {
-      const salDate = sal.date ? sal.date.slice(0, 10) : '';
-      if (dateFilterMode === 'today') return salDate === todayISO;
+      const salDate = sal.date ? String(sal.date).slice(0, 10) : '';
+      if (dateFilterMode === 'today') return isMatchToday(salDate);
       if (dateFilterMode === 'this_month') return isDateInMonthlyCycle(salDate);
       if (dateFilterMode === 'custom' && selectedDate) return salDate === selectedDate;
       return true;
     });
-  }, [salaryPayments, dateFilterMode, selectedDate, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
+  }, [salaryPayments, dateFilterMode, selectedDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
 
   const totalStaffSalaryPaidInPeriod = useMemo(() => {
     return filteredSalaries.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
@@ -775,12 +800,12 @@ export default function FarmPL() {
           salaryPayments: filteredSalaries,
         }}
         onBack={() => setActiveCardDrawer(null)}
-        onDeletePayment={deleteSalaryPayment}
+        onDeletePayment={handleDeleteSalaryPayment}
       />
     );
   }
 
-  if (activeCardDrawer === 'net_profit') {
+  if (activeCardDrawer === 'net_profit' || activeCardDrawer === 'net_loss') {
     return (
       <NetProfitDetail
         data={{
@@ -816,22 +841,8 @@ export default function FarmPL() {
             <button
               type="button"
               onClick={() => {
-                setDateFilterMode('all');
-                setSelectedDate('');
-              }}
-              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
-                dateFilterMode === 'all'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              All Time
-            </button>
-            <button
-              type="button"
-              onClick={() => {
                 setDateFilterMode('today');
-                setSelectedDate(todayISO);
+                setSelectedDate(todayLocal);
               }}
               className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
                 dateFilterMode === 'today'
@@ -855,6 +866,20 @@ export default function FarmPL() {
             >
               This Month
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDateFilterMode('all');
+                setSelectedDate('');
+              }}
+              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                dateFilterMode === 'all'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              All Time
+            </button>
           </div>
 
           <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
@@ -864,11 +889,23 @@ export default function FarmPL() {
               value={selectedDate}
               onChange={(e) => {
                 setSelectedDate(e.target.value);
-                setDateFilterMode(e.target.value ? 'custom' : 'all');
+                setDateFilterMode(e.target.value ? 'custom' : 'today');
               }}
               className="border-none outline-hidden text-xs font-semibold text-slate-700 bg-transparent cursor-pointer"
               title="Filter P&L by specific date"
             />
+            {selectedDate && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedDate('');
+                  setDateFilterMode('today');
+                }}
+                className="text-[11px] font-bold text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
           </div>
 
           <button
@@ -952,7 +989,7 @@ export default function FarmPL() {
           dairyProducts: calculatedMetrics.valueAddedRevenue,
         }}
         expenses={filteredExpenses}
-        totalStaffSalaryPaid={calculatedMetrics.totalStaffSalaryPaid}
+        totalStaffSalaryPaid={totalStaffSalaryPaidInPeriod}
         dahiData={{
           milkCostTransferred: farmSalesMetrics?.milkCostTransferred || 0,
           totalDahiCost: farmSalesMetrics?.dahiProductionCost || 0,

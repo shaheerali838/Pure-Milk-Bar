@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Beef, Droplets, Activity, DollarSign } from 'lucide-react';
+import { Beef, Droplets, Activity, TrendingUp, TrendingDown } from 'lucide-react';
+import { PKRIcon } from '@/components/common/PKRIcon';
 import { useExpense } from '../../../../context/ExpenseContext';
 import { usePOSContext } from '../../../../context/POSContext';
 
@@ -12,7 +13,8 @@ export default function FarmCardOverflow({
   availableFarmStock = null,
   avgAnimalYield = 0, 
   dailyNetProfit = 0, 
-  monthlyNetProfit = 0 
+  monthlyNetProfit = 0,
+  todayFarmRevenue = 0,
 }) {
   const navigate = useNavigate();
   const { totals, expenses = [] } = useExpense();
@@ -81,20 +83,24 @@ export default function FarmCardOverflow({
       label: "Total Farm Expenses",
       value: `Rs. ${totalFarmExpense.toLocaleString()}`,
       sub: `${expenses.length} recorded expense${expenses.length === 1 ? '' : 's'}`,
-      icon: DollarSign,
+      icon: PKRIcon,
       color: "#e11d48",
       badge: "Expenses",
       path: "/farm/expenses"
     },
     {
-      label: "Farm Net Profit",
-      value: `Rs. ${dailyNetProfit.toLocaleString()}`,
-      sub: dailyNetProfit > 0
-        ? `From Rs. ${Number(posCtx?.farmSalesMetrics?.totalRevenue || 0).toLocaleString()} real sales`
-        : "No farm sales recorded yet",
-      icon: DollarSign,
-      color: "#10b981",
-      badge: dailyNetProfit > 0 ? "Realized Net" : "0 Real Sales",
+      label: dailyNetProfit < 0 ? "Farm Net Loss (Today)" : "Farm Net Profit (Today)",
+      value: dailyNetProfit < 0
+        ? `-Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
+        : `Rs. ${dailyNetProfit.toLocaleString()}`,
+      sub: dailyNetProfit < 0
+        ? `Today expenses exceed sales by Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
+        : dailyNetProfit > 0
+        ? `From Rs. ${todayFarmRevenue.toLocaleString()} today sales`
+        : "Today: Breakeven / No sales yet",
+      icon: dailyNetProfit < 0 ? TrendingDown : dailyNetProfit > 0 ? TrendingUp : PKRIcon,
+      color: dailyNetProfit < 0 ? "#e11d48" : dailyNetProfit > 0 ? "#10b981" : "#64748b",
+      badge: dailyNetProfit < 0 ? "Today Loss" : dailyNetProfit > 0 ? "Today Profit" : "Today Net",
       path: "/farm/pl"
     }
   ];

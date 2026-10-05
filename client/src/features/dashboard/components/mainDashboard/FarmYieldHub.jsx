@@ -40,10 +40,7 @@ export default function FarmYieldHub() {
   const farmValuation = Math.round(totalFarmYield * milkRate);
 
   // Feed expenses from expense context
-  const feedExpenses =
-    Number(expenseTotals.feedSeedFarming) ||
-    Number(expenseTotals.totalFarmExpense) ||
-    0;
+  const feedExpenses = Number(expenseTotals.feedSeedFarming) || 0;
 
   // Net Margin
   const netMargin = farmValuation - feedExpenses;
