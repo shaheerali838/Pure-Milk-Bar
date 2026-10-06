@@ -78,6 +78,12 @@ const expenseSchema = new Schema(
             default: null,
             index: true,
         },
+        salaryPaymentId: {
+            type: Schema.Types.ObjectId,
+            ref: 'SalaryPayment',
+            default: null,
+            index: true,
+        },
     },
     {
         timestamps: { createdAt: true, updatedAt: false },

@@ -18,7 +18,7 @@ import { useStaffContext } from '@/context/StaffContext';
 import { getPktTodayString } from '@/utils/dateUtils';
 
 export default function TotalFinancialSummary() {
-  const [period, setPeriod] = useState('all'); // 'all' | 'today' | 'this_month'
+  const [period, setPeriod] = useState('today'); // 'today' (default) | 'this_month' | 'all'
 
   const { farmSalesHistory = [], supplierSalesHistory = [] } = usePOSContext();
   const { expenses: farmExpensesList = [] } = useExpense();
@@ -83,7 +83,7 @@ export default function TotalFinancialSummary() {
       ? dateVal.slice(0, 10)
       : parseISODate(dateVal);
     if (!cleanDate) return false;
-    if (period === 'today') return cleanDate === todayStr;
+    if (period === 'today') return cleanDate === todayStr || cleanDate === new Date().toISOString().split('T')[0];
     if (period === 'this_month') return cleanDate.startsWith(currentMonthStr);
     return true; // 'all'
   };
@@ -273,9 +273,9 @@ export default function TotalFinancialSummary() {
 
         <div className="inline-flex items-center p-1 bg-slate-100 rounded-full shadow-2xs self-start sm:self-auto text-xs">
           {[
-            { id: 'all', label: 'All Time' },
-            { id: 'this_month', label: 'This Month' },
             { id: 'today', label: 'Today' },
+            { id: 'this_month', label: 'This Month' },
+            { id: 'all', label: 'All Time' },
           ].map((tab) => (
             <button
               key={tab.id}

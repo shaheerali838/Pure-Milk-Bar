@@ -27,7 +27,7 @@ export default function FarmDailyReport() {
   const { expenses = [], totals: expenseTotals = {} } = useExpense() || {};
   const { batches = [] } = useDahiContext() || {};
 
-  const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week'
+  const [dateFilter, setDateFilter] = useState('today'); // 'today' (default) | 'week' | 'all'
 
   const milkingAnimalsCount = useMemo(() => {
     return animals.filter(

@@ -37,6 +37,22 @@ export const farmService = {
     return res.data || res;
   },
 
+  // Animal Sales
+  getAnimalSales: async (params = {}) => {
+    const res = await api.get('/api/farm/animal-sales', params, { fallback: [] });
+    return res.data || res.sales || res || [];
+  },
+
+  recordAnimalSale: async (data) => {
+    const res = await api.post('/api/farm/animal-sales', data);
+    return res.data || res;
+  },
+
+  deleteAnimalSale: async (id) => {
+    const res = await api.delete(`/api/farm/animal-sales/${id}`);
+    return res.data || res;
+  },
+
   // Milking Yield Logs
   getMilkingLogs: async (params = {}) => {
     const res = await api.get('/api/farm/milking-logs', { limit: 1000, ...params }, { fallback: [] });

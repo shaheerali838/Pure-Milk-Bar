@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X,Droplets,Layers,TrendingUp,Scale,DollarSign,Receipt,Truck,Building2,Calendar,CheckCircle2,ArrowUpRight,ShoppingBag,Store,User,Milk,} from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
+import { getProductIcon } from '@/features/inventory/components/AddProduct';
 
 export default function POSSalesSourcePLModal({ source = 'farm', onClose }) {
   const {farmSalesMetrics,supplierSalesMetrics,inventoryMetrics,salesHistory = [],farmSalesHistory = [],supplierSalesHistory = [],} = usePOSContext();
@@ -349,7 +350,10 @@ export default function POSSalesSourcePLModal({ source = 'farm', onClose }) {
                       : currentMetrics.itemizedProducts) || []).map((p, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/60 transition">
                         <td className="py-2.5 px-2.5 font-bold text-slate-900">
-                          {p.name}
+                          <div className="flex items-center gap-2">
+                            {getProductIcon(p.name, { size: 14, className: 'text-indigo-600' })}
+                            <span>{p.name}</span>
+                          </div>
                         </td>
                         <td className="py-2.5 px-2.5">
                           <span

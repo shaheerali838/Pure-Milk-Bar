@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Layers,
-  FileText,
-  Calculator,
-  Plus,
-} from 'lucide-react';
+import { Layers, FileText, Calculator, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DahiStatsCards from '../component/DahiStatsCards';
 import DahiKitchenPipeline from '../component/DahiKitchenPipeline';

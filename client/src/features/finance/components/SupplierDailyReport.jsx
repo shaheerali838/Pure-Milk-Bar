@@ -27,7 +27,7 @@ export default function SupplierDailyReport() {
   const { supplierSalesHistory = [], salesHistory = [], inventoryMetrics = {} } = usePOSContext() || {};
   const { expenses = [] } = useSourcExpenseContext() || {};
 
-  const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week'
+  const [dateFilter, setDateFilter] = useState('today'); // 'today' (default) | 'week' | 'all'
 
   // Expected daily procurement capacity from registered suppliers
   const expectedSupplierDailyCapacity = useMemo(() => {

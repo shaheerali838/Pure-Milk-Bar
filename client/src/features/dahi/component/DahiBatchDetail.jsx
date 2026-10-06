@@ -13,9 +13,14 @@ import {
 import { useDahiContext } from '@/context/DahiContext';
 
 export default function DahiBatchDetail({ batchId, onBack }) {
-  const { batches = [], deleteBatch } = useDahiContext();
+  const { batches = [], deleteBatch, markSoldOut, sendToPOS, moveToChiller } = useDahiContext();
 
-  const batch = batches.find((b) => String(b.id) === String(batchId));
+  const batch = batches.find(
+    (b) =>
+      String(b.id) === String(batchId) ||
+      String(b._id) === String(batchId) ||
+      String(b.batchNumber) === String(batchId)
+  );
 
   if (!batch) {
     return (
@@ -81,6 +86,38 @@ export default function DahiBatchDetail({ batchId, onBack }) {
         </div>
 
         <div className="flex items-center gap-2">
+          {batch.stage === 'incubating' && (
+            <button
+              type="button"
+              onClick={() => moveToChiller && moveToChiller(batch._id || batch.id)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition cursor-pointer shadow-2xs"
+            >
+              Move to Chiller →
+            </button>
+          )}
+          {batch.stage === 'chilled' && (
+            <button
+              type="button"
+              onClick={() => sendToPOS && sendToPOS(batch._id || batch.id)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer shadow-2xs"
+            >
+              Send to POS →
+            </button>
+          )}
+          {batch.stage === 'pos' && (
+            <button
+              type="button"
+              onClick={() => markSoldOut && markSoldOut(batch._id || batch.id)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition cursor-pointer shadow-2xs"
+            >
+              Mark Sold Out
+            </button>
+          )}
+          {batch.stage === 'sold_out' && (
+            <span className="px-3.5 py-1.5 rounded-xl bg-rose-50 text-rose-700 text-xs font-bold border border-rose-200">
+              ✓ Sold Out
+            </span>
+          )}
           <button
             type="button"
             onClick={handleDelete}

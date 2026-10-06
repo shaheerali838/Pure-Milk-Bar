@@ -1,5 +1,6 @@
 import React from 'react';
-import { Droplets, Layers, TrendingUp, Receipt, DollarSign, ArrowUpRight, Users } from 'lucide-react';
+import { Droplets, Layers, TrendingUp, TrendingDown, Receipt, ArrowUpRight, Users } from 'lucide-react';
+import { PKRIcon } from '@/components/common/PKRIcon';
 
 export default function PLCardOverflow({
   rawMilkRevenue = 0,
@@ -20,6 +21,9 @@ export default function PLCardOverflow({
 }) {
   const fmt = (n) => 'Rs. ' + Math.round(Number(n) || 0).toLocaleString();
 
+  const isNetLoss = Number(netProfit) < 0;
+  const isNetProfit = Number(netProfit) > 0;
+
   const cards = [
     {
       id: 'raw_milk',
@@ -29,6 +33,8 @@ export default function PLCardOverflow({
       icon: Droplets,
       color: '#155dfc',
       badge: 'Farm Milk',
+      badgeClass: 'text-slate-600 bg-slate-100 border-slate-200/80',
+      amountClass: 'text-slate-900',
     },
     {
       id: 'value_added',
@@ -38,6 +44,8 @@ export default function PLCardOverflow({
       icon: Layers,
       color: '#009689',
       badge: 'Processed',
+      badgeClass: 'text-slate-600 bg-slate-100 border-slate-200/80',
+      amountClass: 'text-slate-900',
     },
     {
       id: 'gross_revenue',
@@ -47,6 +55,8 @@ export default function PLCardOverflow({
       icon: TrendingUp,
       color: '#009966',
       badge: 'Topline',
+      badgeClass: 'text-slate-600 bg-slate-100 border-slate-200/80',
+      amountClass: 'text-slate-900',
     },
     {
       id: 'farm_costs',
@@ -56,21 +66,35 @@ export default function PLCardOverflow({
       icon: Receipt,
       color: '#e11d48',
       badge: 'Expenses',
+      badgeClass: 'text-slate-600 bg-slate-100 border-slate-200/80',
+      amountClass: 'text-slate-900',
     },
     {
       id: 'net_profit',
-      title: 'Net Profit',
-      amount: fmt(netProfit),
-      sub: `Margin: ${netMargin}% • Rs. ${profitPerLiter}/L`,
-      icon: DollarSign,
-      color: '#4f39f6',
-      badge: 'Net Profit',
+      title: isNetLoss ? 'Net Loss' : 'Net Profit',
+      amount: isNetLoss
+        ? `-Rs. ${Math.abs(Math.round(netProfit)).toLocaleString()}`
+        : fmt(netProfit),
+      sub: isNetLoss
+        ? `Loss: ${Math.abs(netMargin)}% • Rs. ${Math.abs(profitPerLiter)}/L Loss`
+        : isNetProfit
+        ? `Margin: ${netMargin}% • Rs. ${profitPerLiter}/L`
+        : 'Breakeven • Rs. 0/L',
+      icon: isNetLoss ? TrendingDown : isNetProfit ? TrendingUp : PKRIcon,
+      color: isNetLoss ? '#e11d48' : isNetProfit ? '#059669' : '#4f39f6',
+      badge: isNetLoss ? 'Net Loss' : isNetProfit ? 'Net Profit' : 'Breakeven',
+      badgeClass: isNetLoss
+        ? 'text-rose-700 bg-rose-50 border-rose-200'
+        : isNetProfit
+        ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+        : 'text-slate-600 bg-slate-100 border-slate-200/80',
+      amountClass: isNetLoss ? 'text-rose-600' : isNetProfit ? 'text-emerald-700' : 'text-slate-900',
     },
   ];
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-      {cards.map(({ id, title, amount, sub, icon: Icon, color, badge }) => (
+      {cards.map(({ id, title, amount, sub, icon: Icon, color, badge, badgeClass, amountClass }) => (
         <div
           key={id}
           onClick={() => onSelectCard && onSelectCard(id)}
@@ -84,7 +108,7 @@ export default function PLCardOverflow({
               <Icon style={{ width: 16, height: 16, color }} />
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${badgeClass || 'text-slate-600 bg-slate-100 border-slate-200/80'}`}>
                 {badge}
               </span>
               <ArrowUpRight className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -92,7 +116,7 @@ export default function PLCardOverflow({
           </div>
 
           <div>
-            <p className="text-lg sm:text-xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
+            <p className={`text-lg sm:text-xl font-black leading-tight tracking-tight mb-0.5 tabular ${amountClass || 'text-slate-900'}`}>
               {amount}
             </p>
             <p className="text-xs font-bold text-slate-800">{title}</p>

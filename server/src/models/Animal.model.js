@@ -106,6 +106,51 @@ const animalSchema = new Schema(
       type: String,
       default: null,
     },
+    // Calf fields
+    hasCalf: {
+      type: Boolean,
+      default: false,
+    },
+    calfTag: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    calfGender: {
+      type: String,
+      enum: ['Male', 'Female', 'MALE', 'FEMALE', null],
+      default: null,
+    },
+    calfDob: {
+      type: Date,
+      default: null,
+    },
+    calfAge: {
+      type: String,
+      default: null,
+    },
+    calfNotes: {
+      type: String,
+      default: null,
+    },
+    // Sale status
+    isSold: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    saleDate: {
+      type: Date,
+      default: null,
+    },
+    salePrice: {
+      type: Number,
+      default: 0,
+    },
+    saleNotes: {
+      type: String,
+      default: null,
+    },
     image: {
       type: String,
       default: null,

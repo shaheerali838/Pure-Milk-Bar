@@ -3,6 +3,8 @@ import KhataEntry from '../../../models/KhataEntry.model.js';
 import Customer from '../../../models/Customer.model.js';
 import Expense from '../../../models/Expense.model.js';
 import User from '../../../models/User.model.js';
+import SalaryPayment from '../../../models/SalaryPayment.model.js';
+import Staff from '../../../models/Staff.model.js';
 
 
 const generateKhataVoucher = () => {
@@ -350,7 +352,11 @@ export const getExpensesService = async (queryParams) => {
 
   if (startDate || endDate) {
     query.date = {};
-    if (startDate) query.date.$gte = new Date(startDate);
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      query.date.$gte = start;
+    }
     if (endDate) {
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
@@ -468,6 +474,38 @@ export const deleteExpenseService = async (expenseId) => {
     error.statusCode = 404;
     throw error;
   }
+
+  // If this expense is linked to a salary payment, clean up SalaryPayment and Staff status
+  try {
+    let payment = null;
+    if (expense.salaryPaymentId) {
+      payment = await SalaryPayment.findById(expense.salaryPaymentId);
+    }
+    if (!payment) {
+      payment = await SalaryPayment.findOne({ expenseId: expense._id });
+    }
+
+    if (payment) {
+      await SalaryPayment.findByIdAndDelete(payment._id);
+      if (payment.staffId) {
+        const remaining = await SalaryPayment.findOne({
+          staffId: payment.staffId,
+          monthYear: payment.monthYear,
+          status: 'Paid',
+        });
+        if (!remaining) {
+          await Staff.findByIdAndUpdate(payment.staffId, {
+            salaryStatus: 'Pending',
+            salaryPaidDate: null,
+            salaryPaidMonth: null,
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error cascading salary delete in deleteExpenseService:', err);
+  }
+
   return { message: 'Expense deleted successfully', expense };
 };
 

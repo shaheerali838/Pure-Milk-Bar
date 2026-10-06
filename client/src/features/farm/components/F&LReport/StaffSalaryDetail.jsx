@@ -185,9 +185,13 @@ export default function StaffSalaryDetail({ data, onClose, onBack, onDeletePayme
                       <td className="px-4 py-3 text-center">
                         <button
                           type="button"
-                          onClick={() => onDeletePayment(p.id)}
-                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                          title="Delete salary record"
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to delete this salary record for ${p.staffName || 'this staff member'}? This will also remove the corresponding farm expense from all reports.`)) {
+                              onDeletePayment(p._id || p.id);
+                            }
+                          }}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                          title="Delete salary record &amp; linked expense"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

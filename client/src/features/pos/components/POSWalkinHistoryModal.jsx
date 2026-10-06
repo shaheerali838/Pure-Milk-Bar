@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePOSContext } from '@/context/POSContext';
+import { getProductIcon } from '@/features/inventory/components/AddProduct';
 
 export default function POSWalkinHistoryModal({ isOpen, onClose }) {
   const { salesHistory = [], setCompletedSaleReceipt } = usePOSContext();
@@ -24,14 +25,28 @@ export default function POSWalkinHistoryModal({ isOpen, onClose }) {
   const [customDate, setCustomDate] = useState(new Date().toISOString().split('T')[0]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter only Walk-in counter transactions
+  // Filter strictly Walk-in counter transactions only
   const walkinSales = useMemo(() => {
     return salesHistory.filter((sale) => {
+      // Strictly exclude any delivery / doorstep / rider orders
+      const isDelivery =
+        sale.saleCategory === 'delivery' ||
+        sale.fulfillmentType === 'DELIVERY' ||
+        sale.fulfillmentType === 'DOORSTEP' ||
+        sale.fulfillmentMode === 'doorstep' ||
+        Boolean(sale.rider && (sale.rider.name || sale.rider.customName || sale.rider._id || sale.rider.id)) ||
+        Boolean(sale.deliveryMeta && (sale.deliveryMeta.riderName || sale.deliveryMeta.dropAddress || sale.deliveryMeta.deliveryAddress || sale.deliveryMeta.riderId)) ||
+        Boolean(sale.ontimeCustomer && (sale.ontimeCustomer.name || sale.ontimeCustomer.phone || sale.ontimeCustomer.area));
+
+      if (isDelivery) return false;
+
+      // Strictly include only walk-in counter transactions
       const isWalkin =
         sale.saleCategory === 'walkin' ||
         sale.fulfillmentType === 'COUNTER' ||
-        sale.fulfillmentMode === 'counter' ||
-        !sale.saleCategory;
+        sale.fulfillmentType === 'TAKEAWAY' ||
+        sale.fulfillmentMode === 'counter';
+
       return isWalkin;
     });
   }, [salesHistory]);
@@ -387,7 +402,7 @@ export default function POSWalkinHistoryModal({ isOpen, onClose }) {
                                   key={itemIdx}
                                   className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 text-[11px] font-medium mr-1.5 mb-1"
                                 >
-                                  <span>{item.name?.toLowerCase().includes('dahi') ? '🥣' : '🥛'}</span>
+                                  {getProductIcon(item.name, { size: 13, className: 'text-indigo-600' })}
                                   <span className="font-bold">{item.name}</span>
                                   <span className="text-slate-500">
                                     {item.quantity} {item.unit || ''}

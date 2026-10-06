@@ -90,6 +90,18 @@ export const createAnimalSchema = Joi.object({
     .allow(null, '')
     .default(null),
 
+  hasCalf: Joi.boolean().allow(null).default(false),
+  calfTag: Joi.string().trim().allow(null, ''),
+  calfGender: Joi.string().trim().allow(null, ''),
+  calfDob: Joi.alternatives().try(Joi.date().iso(), Joi.string()).allow(null, ''),
+  calfAge: Joi.string().trim().allow(null, ''),
+  calfNotes: Joi.string().trim().max(1000).allow(null, ''),
+
+  isSold: Joi.boolean().allow(null).default(false),
+  saleDate: Joi.alternatives().try(Joi.date().iso(), Joi.string()).allow(null, ''),
+  salePrice: Joi.number().min(0).allow(null, ''),
+  saleNotes: Joi.string().trim().allow(null, ''),
+
   image: Joi.string()
     .allow(null, '')
     .optional(),
@@ -196,6 +208,18 @@ export const updateAnimalSchema = Joi.object({
     .max(1000)
     .allow(null, ''),
 
+  hasCalf: Joi.boolean().allow(null),
+  calfTag: Joi.string().trim().allow(null, ''),
+  calfGender: Joi.string().trim().allow(null, ''),
+  calfDob: Joi.alternatives().try(Joi.date().iso(), Joi.string()).allow(null, ''),
+  calfAge: Joi.string().trim().allow(null, ''),
+  calfNotes: Joi.string().trim().max(1000).allow(null, ''),
+
+  isSold: Joi.boolean().allow(null),
+  saleDate: Joi.alternatives().try(Joi.date().iso(), Joi.string()).allow(null, ''),
+  salePrice: Joi.number().min(0).allow(null, ''),
+  saleNotes: Joi.string().trim().allow(null, ''),
+
   image: Joi.string()
     .allow(null, '')
     .optional(),
@@ -204,6 +228,19 @@ export const updateAnimalSchema = Joi.object({
 
   intakeHistory: Joi.array().optional(),
 }).options({ stripUnknown: true }).min(1);
+
+// ─── CREATE Animal Sale Schema ──────────────────────────────────────────────
+export const createAnimalSaleSchema = Joi.object({
+  animalId: Joi.string().required(),
+  salePrice: Joi.number().min(0).required(),
+  buyerName: Joi.string().trim().required(),
+  buyerPhone: Joi.string().trim().allow('', null).default(''),
+  buyerAddress: Joi.string().trim().allow('', null).default(''),
+  saleDate: Joi.alternatives().try(Joi.date().iso(), Joi.string()).allow(null, '').default(() => new Date()),
+  paymentMethod: Joi.string().allow('', null).default('Cash'),
+  hasCalfIncluded: Joi.boolean().allow(null).default(false),
+  notes: Joi.string().trim().allow('', null).default(''),
+}).options({ stripUnknown: true });
 
 // ─── QUERY Params Schema ────────────────────────────────────────────────────
 export const getAnimalsQuerySchema = Joi.object({

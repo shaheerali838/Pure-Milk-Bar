@@ -17,19 +17,21 @@ import {
   Wallet,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useStaffContext } from '@/context/StaffContext';
+import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
 import { useExpense } from '@/context/ExpenseContext';
 
 export default function SalaryPayment() {
   const {
     staffList = [],
     salaryPayments = [],
-    totalStaffSalaryPaid = 0,
+    metrics = {},
+    recordSalaryPayment,
     paySalary,
     deleteSalaryPayment,
-  } = useStaffContext();
+    isStaffSalaryPaid,
+  } = useStaffPayrollContext();
 
-  const { addExpense } = useExpense();
+  const { fetchExpenses } = useExpense();
 
   // Salary Payment Form State
   const [selectedStaffId, setSelectedStaffId] = useState('');
@@ -42,16 +44,29 @@ export default function SalaryPayment() {
   const [paymentNotes, setPaymentNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Selected staff details & suggested duty-based salary
+  // Selected staff details & deduction-based salary calculation
   const selectedStaff = useMemo(() => {
     return staffList.find((s) => String(s.id || s._id) === String(selectedStaffId));
   }, [staffList, selectedStaffId]);
 
-  const suggestedSalary = useMemo(() => {
-    if (!selectedStaff) return 0;
-    const daily = Number(selectedStaff.dailySalary) || Math.round((Number(selectedStaff.monthlySalary || selectedStaff.salary) || 0) / 30);
-    const present = selectedStaff.presentDays !== undefined ? Number(selectedStaff.presentDays) : 30;
-    return daily * present;
+  const { monthlyBase, perDaySalary, absentDays, totalDeduction, calculatedNetSalary } = useMemo(() => {
+    if (!selectedStaff) {
+      return { monthlyBase: 0, perDaySalary: 0, absentDays: 0, totalDeduction: 0, calculatedNetSalary: 0 };
+    }
+    const base = Number(selectedStaff.monthlySalary || selectedStaff.salary) || 0;
+    const daily = Math.round(base / 30);
+    const absent = selectedStaff.attendanceMap
+      ? Object.values(selectedStaff.attendanceMap).filter((st) => String(st).trim().toLowerCase() === 'absent').length
+      : (Number(selectedStaff.absentDays) || 0);
+    const deduction = daily * absent;
+    const net = Math.max(0, base - deduction);
+    return {
+      monthlyBase: base,
+      perDaySalary: daily,
+      absentDays: absent,
+      totalDeduction: deduction,
+      calculatedNetSalary: net,
+    };
   }, [selectedStaff]);
 
   // When staff changes, auto-populate suggested salary amount
@@ -59,9 +74,14 @@ export default function SalaryPayment() {
     setSelectedStaffId(id);
     const staff = staffList.find((s) => String(s.id || s._id) === String(id));
     if (staff) {
-      const daily = Number(staff.dailySalary) || Math.round((Number(staff.monthlySalary || staff.salary) || 0) / 30);
-      const present = staff.presentDays !== undefined ? Number(staff.presentDays) : 30;
-      setSalaryAmount(String(daily * present));
+      const base = Number(staff.monthlySalary || staff.salary) || 0;
+      const daily = Math.round(base / 30);
+      const absent = staff.attendanceMap
+        ? Object.values(staff.attendanceMap).filter((st) => String(st).trim().toLowerCase() === 'absent').length
+        : (Number(staff.absentDays) || 0);
+      const deduction = daily * absent;
+      const net = Math.max(0, base - deduction);
+      setSalaryAmount(String(net));
     } else {
       setSalaryAmount('');
     }
@@ -75,6 +95,12 @@ export default function SalaryPayment() {
       return;
     }
 
+    const isAlreadyPaid = selectedStaff && isStaffSalaryPaid ? isStaffSalaryPaid(selectedStaff.id || selectedStaff._id) : false;
+    if (isAlreadyPaid) {
+      toast.error(`Salary for ${selectedStaff.name} has already been paid for this month. Duplicate payments are not allowed.`);
+      return;
+    }
+
     const amt = Number(salaryAmount);
     if (!amt || amt <= 0) {
       toast.error('Please enter a valid salary amount');
@@ -83,37 +109,30 @@ export default function SalaryPayment() {
 
     setIsSubmitting(true);
     try {
-      // 1. Record salary payment in StaffContext
-      await paySalary({
+      const payFn = recordSalaryPayment || paySalary;
+      // 1. Record salary payment in database (which automatically creates the Expense in MongoDB via backend service)
+      await payFn({
         staffId: selectedStaff.id || selectedStaff._id,
         staffName: selectedStaff.name,
         role: selectedStaff.role || 'Farm Labor',
         amount: amt,
+        amountPaid: amt,
+        absentDays,
+        deduction: totalDeduction,
+        status: 'Paid',
+        paymentDate,
         date: paymentDate,
         paymentMethod,
         notes: paymentNotes,
         monthYear: paymentMonth,
-        skipDirectBackendCreate: true, // We push via addExpense into global farmExpenses
       });
 
-      // 2. Automatically push into global farmExpenses array as a new expense object
-      if (addExpense) {
-        await addExpense({
-          expenseEntity: 'FARM',
-          scope: 'FARM',
-          category: 'Staff Salary',
-          title: `Staff Salary: ${selectedStaff.name}`,
-          amount: amt,
-          amountRupees: amt,
-          paymentMethod,
-          date: paymentDate,
-          description: `Staff Salary: ${selectedStaff.name} (${paymentMonth})`,
-          notes: paymentNotes,
-          authorizedBy: 'Admin',
-        });
+      // 2. Refresh expenses so Farm Expenses immediately displays the new database expense
+      if (fetchExpenses) {
+        await fetchExpenses();
       }
 
-      toast.success(`Rs. ${amt.toLocaleString()} paid to ${selectedStaff.name}. Recorded as Farm Expense & Daily Close Cash Out!`);
+      toast.success(`Rs. ${amt.toLocaleString()} paid to ${selectedStaff.name}! Synced to Database & Farm Expenses.`);
 
       // Reset form fields
       setSalaryAmount('');
@@ -167,22 +186,24 @@ export default function SalaryPayment() {
             <span className="text-[10px] text-emerald-700 font-medium">Active on Duty</span>
           </div>
 
-          {/* Card 3: Monthly Salary Base */}
+          {/* Card 3: Total Paid Salaries */}
           <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800 block">Monthly Payroll Base</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800 block">Paid Staff Salaries</span>
             <p className="text-xl sm:text-2xl font-black text-blue-800 font-mono mt-0.5">
-              {fmt(staffList.reduce((s, m) => s + (Number(m.monthlySalary || m.salary) || 0), 0))}
+              {fmt(metrics?.totalPaidSalaries || 0)}
             </p>
-            <span className="text-[10px] text-blue-700 font-medium">Full Month Potential</span>
+            <span className="text-[10px] text-blue-700 font-medium">
+              {(metrics?.totalPaidSalaries || 0) > 0 ? 'Disbursed This Month' : 'No salaries paid yet'}
+            </span>
           </div>
 
-          {/* Card 4: Total Salary Paid */}
+          {/* Card 4: Disbursed Vouchers Count */}
           <div className="p-3.5 bg-purple-50/70 border border-purple-200 rounded-xl">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-800 block">Total Salary Paid</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-800 block">Disbursed Vouchers</span>
             <p className="text-xl sm:text-2xl font-black text-purple-800 font-mono mt-0.5">
-              {fmt(totalStaffSalaryPaid)}
+              {salaryPayments.length}
             </p>
-            <span className="text-[10px] text-purple-700 font-medium">Deducted from Farm P&amp;L</span>
+            <span className="text-[10px] text-purple-700 font-medium">Database Synced</span>
           </div>
         </div>
       </div>
@@ -270,19 +291,21 @@ export default function SalaryPayment() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11.5px] pt-1">
                 <div className="bg-white/90 p-2.5 rounded-lg border border-purple-100">
                   <span className="text-slate-400 block text-[10px] uppercase font-bold">Monthly Base</span>
-                  <span className="font-black text-slate-900">{fmt(selectedStaff.monthlySalary || selectedStaff.salary)}</span>
+                  <span className="font-black text-slate-900">{fmt(monthlyBase)}</span>
                 </div>
                 <div className="bg-white/90 p-2.5 rounded-lg border border-purple-100">
                   <span className="text-slate-400 block text-[10px] uppercase font-bold">Daily Wage (1/30)</span>
-                  <span className="font-black text-slate-900">{fmt(selectedStaff.dailySalary)}</span>
+                  <span className="font-black text-slate-900">{fmt(perDaySalary)}/d</span>
                 </div>
                 <div className="bg-white/90 p-2.5 rounded-lg border border-purple-100">
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Present Days</span>
-                  <span className="font-black text-emerald-700">{selectedStaff.presentDays ?? 30} Days</span>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Absent Deduction</span>
+                  <span className="font-black text-rose-600 font-mono">
+                    {absentDays > 0 ? `- ${fmt(totalDeduction)} (${absentDays}d)` : 'Rs. 0 (0 Absent)'}
+                  </span>
                 </div>
                 <div className="bg-white/90 p-2.5 rounded-lg border border-purple-100">
                   <span className="text-slate-400 block text-[10px] uppercase font-bold">Calculated Net Due</span>
-                  <span className="font-black text-purple-800">{fmt(suggestedSalary)}</span>
+                  <span className="font-black text-purple-800">{fmt(calculatedNetSalary)}</span>
                 </div>
               </div>
             </div>
@@ -298,10 +321,10 @@ export default function SalaryPayment() {
                 {selectedStaff && (
                   <button
                     type="button"
-                    onClick={() => setSalaryAmount(String(suggestedSalary))}
+                    onClick={() => setSalaryAmount(String(calculatedNetSalary))}
                     className="text-[10px] font-bold text-purple-700 hover:text-purple-800 underline cursor-pointer"
                   >
-                    Use Suggested ({fmt(suggestedSalary)})
+                    Use Suggested ({fmt(calculatedNetSalary)})
                   </button>
                 )}
               </div>
@@ -353,17 +376,32 @@ export default function SalaryPayment() {
             </div>
           </div>
 
+          {selectedStaff && isStaffSalaryPaid && isStaffSalaryPaid(selectedStaff.id || selectedStaff._id) && (
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Salary for <strong>{selectedStaff.name}</strong> has already been disbursed for this month. A staff member can only receive salary once per month.</span>
+            </div>
+          )}
+
           <div className="pt-2 flex items-center justify-between">
             <p className="text-[11px] text-slate-500 leading-tight">
               ✓ Submitting this payment will post a <strong>Farm Expense</strong> and log a <strong>Daily Close Cash Outflow</strong>.
             </p>
             <button
               type="submit"
-              disabled={isSubmitting || !selectedStaffId || !salaryAmount}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 active:scale-[0.98] text-white font-bold text-xs shadow-xs transition cursor-pointer disabled:opacity-50"
+              disabled={isSubmitting || !selectedStaffId || !salaryAmount || (selectedStaff && isStaffSalaryPaid && isStaffSalaryPaid(selectedStaff.id || selectedStaff._id))}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs shadow-xs transition ${
+                selectedStaff && isStaffSalaryPaid && isStaffSalaryPaid(selectedStaff.id || selectedStaff._id)
+                  ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300'
+                  : 'bg-purple-700 hover:bg-purple-800 active:scale-[0.98] text-white cursor-pointer disabled:opacity-50'
+              }`}
             >
               <DollarSign className="w-4 h-4" />
-              {isSubmitting ? 'Recording...' : 'Disburse & Record Salary Payment'}
+              {isSubmitting
+                ? 'Recording...'
+                : selectedStaff && isStaffSalaryPaid && isStaffSalaryPaid(selectedStaff.id || selectedStaff._id)
+                ? 'Already Paid (Single Payment Only)'
+                : 'Disburse & Record Salary Payment'}
             </button>
           </div>
         </form>
@@ -404,6 +442,8 @@ export default function SalaryPayment() {
                   <th className="py-3 px-3">Staff Member</th>
                   <th className="py-3 px-3">Role</th>
                   <th className="py-3 px-3">Period</th>
+                  <th className="py-3 px-3 text-center">Absent Days</th>
+                  <th className="py-3 px-3 text-right">Deduction</th>
                   <th className="py-3 px-3">Method</th>
                   <th className="py-3 px-3 text-right">Amount Paid</th>
                   <th className="py-3 px-3">Notes</th>
@@ -414,7 +454,7 @@ export default function SalaryPayment() {
                 {salaryPayments.map((p, idx) => (
                   <tr key={p.id || idx} className="hover:bg-slate-50/70 transition">
                     <td className="py-3 px-3 font-semibold text-slate-600">
-                      {p.date ? p.date.slice(0, 10) : '-'}
+                      {p.paymentDate || p.date ? (p.paymentDate || p.date).slice(0, 10) : '-'}
                     </td>
                     <td className="py-3 px-3">
                       <div className="font-bold text-slate-900">{p.staffName || 'Staff Member'}</div>
@@ -428,6 +468,16 @@ export default function SalaryPayment() {
                     <td className="py-3 px-3 font-semibold text-slate-800">
                       {p.monthYear || '-'}
                     </td>
+                    <td className="py-3 px-3 text-center font-mono">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                        Number(p.absentDays) > 0 ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        {p.absentDays ?? 0} {Number(p.absentDays) === 1 ? 'd' : 'd'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-right font-mono text-rose-600 font-semibold">
+                      {Number(p.deduction) > 0 ? `- ${fmt(p.deduction)}` : 'Rs. 0'}
+                    </td>
                     <td className="py-3 px-3">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                         p.paymentMethod === 'CASH'
@@ -438,7 +488,7 @@ export default function SalaryPayment() {
                       </span>
                     </td>
                     <td className="py-3 px-3 text-right font-black text-rose-700 font-mono text-sm">
-                      - {fmt(p.amount)}
+                      - {fmt(p.amountPaid ?? p.amount)}
                     </td>
                     <td className="py-3 px-3 text-slate-500 max-w-xs truncate" title={p.notes || ''}>
                       {p.notes || 'Routine salary payment'}

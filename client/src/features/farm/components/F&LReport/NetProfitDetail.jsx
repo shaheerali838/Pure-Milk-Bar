@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, DollarSign, TrendingUp, TrendingDown, Minus, Equal, CheckCircle2, ShieldCheck, Activity } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, Equal, CheckCircle2, ShieldCheck, Activity } from 'lucide-react';
 
 export default function NetProfitDetail({ data, onClose, onBack }) {
   const handleBack = onBack || onClose;
@@ -31,7 +31,9 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
           <div className="flex items-center gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg md:text-xl font-bold text-slate-900 font-display">Net Profit Detail</h1>
+                <h1 className="text-lg md:text-xl font-bold text-slate-900 font-display">
+                  {isProfitable ? 'Net Profit Detail' : 'Net Loss Detail'}
+                </h1>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
                   isProfitable ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
                 }`}>
@@ -44,7 +46,10 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
 
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-slate-500 bg-slate-50 border border-slate-200/70 px-3 py-1.5 rounded-xl">
-            Profit Margin: <strong className={isProfitable ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>{netMargin}%</strong>
+            {isProfitable ? 'Profit Margin:' : 'Loss Margin:'}{' '}
+            <strong className={isProfitable ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>
+              {isProfitable ? `${netMargin}%` : `-${Math.abs(netMargin)}%`}
+            </strong>
           </span>
         </div>
       </div>
@@ -56,14 +61,14 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
       }`}>
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs font-bold text-indigo-100 uppercase tracking-wider">
-            Farm Net Take-Home Profit
+            {isProfitable ? 'Farm Net Take-Home Profit' : 'Farm Net Operating Loss'}
           </span>
           <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20 text-white">
-            Net Margin: {netMargin}%
+            {isProfitable ? `Net Margin: ${netMargin}%` : `Loss Margin: -${Math.abs(netMargin)}%`}
           </span>
         </div>
         <div className="text-3xl md:text-4xl font-black tracking-tight tabular my-2">
-          {fmt(netProfit)}
+          {isProfitable ? fmt(netProfit) : `-Rs. ${Math.abs(Math.round(netProfit)).toLocaleString()}`}
         </div>
         <p className="text-xs text-indigo-100/90">
           {isProfitable 
