@@ -21,8 +21,9 @@ export const formatDateKey = (d) => {
 };
 
 export function StaffPayrollProvider({ children }) {
-  // 1. Staff List (Starts empty, synced with live API / MongoDB database)
+  // 1. Staff List (Synced strictly with MongoDB database API)
   const [staffList, setStaffList] = useState([]);
+  const [salaryPayments, setSalaryPayments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // 2. Attendance Map: { [dateString 'YYYY-MM-DD']: { [staffId]: 'present' | 'absent' | 'leave' } }
@@ -46,6 +47,9 @@ export function StaffPayrollProvider({ children }) {
           monthlySalary: monthly,
           dailySalary: Number(m.dailySalary) || Math.round(monthly / 30),
           status: m.status || (m.active !== false ? 'Active' : 'Inactive'),
+          salaryStatus: m.salaryStatus || 'Pending',
+          salaryPaidMonth: m.salaryPaidMonth || null,
+          salaryPaidDate: m.salaryPaidDate || null,
           joinedDate: m.joinedDate || (m.createdAt ? new Date(m.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
           attendanceMap: m.attendanceMap || {},
         };
@@ -74,9 +78,47 @@ export function StaffPayrollProvider({ children }) {
     }
   }, []);
 
+  // Fetch real salary payments history directly from MongoDB backend database
+  const fetchSalaries = useCallback(async () => {
+    try {
+      const res = await adminService.getStaffSalaries({ limit: 1000 });
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.salaries)
+        ? res.salaries
+        : Array.isArray(res?.data)
+        ? res.data
+        : [];
+
+      if (Array.isArray(list)) {
+        const normalized = list.map((s) => ({
+          ...s,
+          id: s._id || s.id,
+          paymentDate: s.paymentDate ? String(s.paymentDate).slice(0, 10) : s.date,
+          date: s.date || (s.paymentDate ? String(s.paymentDate).slice(0, 10) : ''),
+        }));
+        setSalaryPayments(normalized);
+      }
+    } catch (err) {
+      console.warn('Live salary fetch notice:', err.message);
+    }
+  }, []);
+
   useEffect(() => {
     fetchStaff();
-  }, [fetchStaff]);
+    fetchSalaries();
+
+    const handleSync = () => {
+      fetchStaff();
+      fetchSalaries();
+    };
+    window.addEventListener('salary:updated', handleSync);
+    window.addEventListener('expense:updated', handleSync);
+    return () => {
+      window.removeEventListener('salary:updated', handleSync);
+      window.removeEventListener('expense:updated', handleSync);
+    };
+  }, [fetchStaff, fetchSalaries]);
   // Helper to generate next Staff ID like STF-001, STF-002
   const generateStaffId = () => {
     if (!staffList || staffList.length === 0) return 'STF-001';
@@ -398,9 +440,34 @@ export function StaffPayrollProvider({ children }) {
     }
   };
 
+  // Helper: check if salary is paid for current month
+  const isStaffSalaryPaid = useCallback((staffId) => {
+    const sId = String(staffId);
+    const currentMonthStr = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+    const currentMonthISO = new Date().toISOString().slice(0, 7); // e.g. "2026-10"
+
+    // Check staff object state
+    const staff = staffList.find((s) => String(s.id) === sId || String(s._id) === sId);
+    if (staff && staff.salaryStatus === 'Paid') {
+      if (!staff.salaryPaidMonth || staff.salaryPaidMonth === currentMonthStr) {
+        return true;
+      }
+    }
+
+    // Check salary payments history
+    return salaryPayments.some((p) => {
+      const matchStaff = String(p.staffId) === sId || (staff && p.staffName && staff.name && p.staffName.toLowerCase().trim() === staff.name.toLowerCase().trim());
+      if (!matchStaff) return false;
+      const pDate = p.paymentDate || p.date || '';
+      return p.monthYear === currentMonthStr || pDate.startsWith(currentMonthISO);
+    });
+  }, [staffList, salaryPayments]);
+
   // Aggregated KPI Metrics
   const metrics = useMemo(() => {
     const todayStr = new Date().toISOString().split('T')[0];
+    const currentMonthPrefix = todayStr.slice(0, 7);
+    const currentMonthStr = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
     const totalStaff = staffList.length;
 
     let presentToday = 0;
@@ -420,6 +487,20 @@ export function StaffPayrollProvider({ children }) {
       totalDailyPayroll += s.dailySalary || Math.round(monthly / 30);
     });
 
+    // CRITICAL: Calculate actual PAID/DISBURSED salaries for this month directly from salaryPayments!
+    const totalPaidSalaries = salaryPayments.reduce((acc, p) => {
+      const pMonth = p.monthYear || '';
+      const pDate = String(p.paymentDate || p.date || '');
+      const isCurrentMonth = pMonth === currentMonthStr || pDate.startsWith(currentMonthPrefix);
+      if (isCurrentMonth && (p.status === 'Paid' || !p.status)) {
+        return acc + (Number(p.amountPaid !== undefined ? p.amountPaid : p.amount) || 0);
+      }
+      return acc;
+    }, 0);
+
+    const paidStaffCount = staffList.filter((s) => isStaffSalaryPaid(s.id || s._id)).length;
+    const pendingStaffCount = Math.max(0, totalStaff - paidStaffCount);
+
     const activeStaff = presentToday;
     const turnoutRate = totalStaff > 0 ? Math.round((presentToday / totalStaff) * 100) : 0;
 
@@ -431,12 +512,154 @@ export function StaffPayrollProvider({ children }) {
       absentToday,
       turnoutRate,
       totalMonthlyPayroll,
+      totalPaidSalaries,
+      paidStaffCount,
+      pendingStaffCount,
       totalDailyPayroll,
     };
-  }, [staffList, attendanceRecords]);
+  }, [staffList, attendanceRecords, salaryPayments, isStaffSalaryPaid]);
+
+  // Record Salary Payment (Deductions, State Update, and History Tracking)
+  const recordSalaryPayment = async ({
+    staffId,
+    staffName,
+    role,
+    paymentDate,
+    absentDays = 0,
+    deduction = 0,
+    amount = 0,
+    amountPaid,
+    status = 'Paid',
+    monthYear,
+    paymentMethod = 'CASH',
+    notes = '',
+  }) => {
+    const today = new Date().toISOString().split('T')[0];
+    const currentMonthStr = monthYear || new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+    const pDate = paymentDate || today;
+    const finalAmount = Number(amountPaid !== undefined ? amountPaid : amount) || 0;
+    const idKey = String(staffId);
+
+    // Strictly enforce: Only allow paying salary ONCE per staff per month ("only one time i pay the salery in staff")
+    if (isStaffSalaryPaid(idKey)) {
+      throw new Error(`Salary has already been paid for this staff member for ${currentMonthStr}. Salary can only be paid once per month.`);
+    }
+
+    // 1. Sync live to MongoDB Database API
+    const serverRes = await adminService.payStaffSalary({
+      staffId: idKey,
+      amount: finalAmount,
+      amountPaid: finalAmount,
+      paymentDate: pDate,
+      absentDays: Number(absentDays) || 0,
+      deduction: Number(deduction) || 0,
+      monthYear: currentMonthStr,
+      paymentMethod: paymentMethod ? String(paymentMethod).toUpperCase() : 'CASH',
+      notes: notes || '',
+    });
+
+    const paymentRecord = {
+      ...(serverRes?.payment || {}),
+      id: serverRes?.payment?._id || serverRes?.payment?.id || `SAL-${Date.now()}`,
+      staffId: idKey,
+      staffName: staffName || serverRes?.payment?.staffName || 'Staff Member',
+      role: role || serverRes?.payment?.role || 'Farm Worker',
+      paymentDate: serverRes?.payment?.paymentDate ? String(serverRes.payment.paymentDate).slice(0, 10) : pDate,
+      date: serverRes?.payment?.date || pDate,
+      absentDays: Number(absentDays) || 0,
+      deduction: Number(deduction) || 0,
+      amount: finalAmount,
+      amountPaid: finalAmount,
+      status: 'Paid',
+      monthYear: currentMonthStr,
+      paymentMethod: paymentMethod ? String(paymentMethod).toUpperCase() : 'CASH',
+      notes: notes || '',
+      createdAt: new Date().toISOString(),
+    };
+
+    // 2. Update salary payments in state
+    setSalaryPayments((prev) => [paymentRecord, ...prev.filter((p) => String(p.id) !== String(paymentRecord.id))]);
+
+    // 3. Update staff list state to reflect Paid status for this month
+    setStaffList((prev) =>
+      prev.map((s) => {
+        if (String(s.id) === idKey || String(s._id) === idKey) {
+          return {
+            ...s,
+            salaryStatus: 'Paid',
+            salaryPaidDate: pDate,
+            salaryPaidMonth: currentMonthStr,
+            lastSalaryPayment: paymentRecord,
+          };
+        }
+        return s;
+      })
+    );
+
+    // 4. Re-fetch both staff and salaries from backend
+    fetchStaff();
+    fetchSalaries();
+
+    window.dispatchEvent(new CustomEvent('expense:updated'));
+    window.dispatchEvent(new CustomEvent('salary:updated'));
+
+    return paymentRecord;
+  };
+
+  // Delete salary payment record from database
+  const deleteSalaryPayment = async (paymentId) => {
+    setSalaryPayments((prev) => prev.filter((p) => String(p.id || p._id) !== String(paymentId)));
+    try {
+      await adminService.deleteSalaryPayment(paymentId);
+    } catch (err) {
+      console.warn('Delete salary payment error:', err.message);
+    }
+    await Promise.allSettled([fetchStaff(), fetchSalaries()]);
+    window.dispatchEvent(new CustomEvent('expense:updated'));
+    window.dispatchEvent(new CustomEvent('salary:updated'));
+  };
+
+  // Helper: Count absent days from existing attendance state
+  const getStaffAbsentDays = (staff) => {
+    if (!staff) return 0;
+    const sId = String(staff.id || staff._id);
+
+    // 1. Check staff.attendanceMap directly (filter for status === 'absent' or 'Absent')
+    if (staff.attendanceMap && typeof staff.attendanceMap === 'object') {
+      const absentCount = Object.values(staff.attendanceMap).filter(
+        (st) => String(st).trim().toLowerCase() === 'absent'
+      ).length;
+      if (absentCount > 0) return absentCount;
+    }
+
+    // 2. Check getStaffMonthlyAttendance
+    const monthlyStats = getStaffMonthlyAttendance(sId);
+    if (monthlyStats && Number(monthlyStats.absentCount) > 0) {
+      return Number(monthlyStats.absentCount);
+    }
+
+    // 3. Check attendanceRecords state
+    let countFromRecords = 0;
+    Object.values(attendanceRecords).forEach((dayMap) => {
+      if (dayMap && (
+        String(dayMap[sId]).toLowerCase() === 'absent' ||
+        (staff._id && String(dayMap[String(staff._id)]).toLowerCase() === 'absent')
+      )) {
+        countFromRecords++;
+      }
+    });
+    if (countFromRecords > 0) return countFromRecords;
+
+    if (staff.absentDays !== undefined && staff.absentDays !== null) {
+      return Number(staff.absentDays) || 0;
+    }
+
+    return 0;
+  };
 
   const value = {
     staffList,
+    salaryPayments,
     attendanceRecords,
     dailySheets,
     addStaff,
@@ -446,6 +669,12 @@ export function StaffPayrollProvider({ children }) {
     markAllAttendance,
     getStaffStatusOnDate,
     getStaffMonthlyAttendance,
+    getStaffAbsentDays,
+    isStaffSalaryPaid,
+    recordSalaryPayment,
+    paySalary: recordSalaryPayment,
+    deleteSalaryPayment,
+    refreshSalaries: fetchSalaries,
     updateDailySheetEntry,
     metrics,
   };

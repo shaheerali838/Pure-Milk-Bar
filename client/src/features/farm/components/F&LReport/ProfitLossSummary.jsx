@@ -2,7 +2,6 @@ import React from 'react';
 import {
   TrendingUp,
   TrendingDown,
-  DollarSign,
   Droplets,
   Layers,
   Sparkles,
@@ -13,6 +12,7 @@ import {
   CheckCircle2,
   Users,
 } from 'lucide-react';
+import { PKRIcon } from '@/components/common/PKRIcon';
 
 export default function ProfitLossSummary({
   incomeData = {},
@@ -69,30 +69,41 @@ export default function ProfitLossSummary({
   // Subtotal Line: Gross Profit
   const grossProfit = totalFarmIncome - totalDirectCosts;
 
-  // Final Result Line: Farm Net Profit (Take-Home Earnings)
-  const totalNetProfit = totalFarmIncome - totalAllFarmExpenses;
-  const netMargin = totalFarmIncome > 0 ? ((totalNetProfit / totalFarmIncome) * 100).toFixed(1) : '0.0';
-
-  const isProfitable = totalNetProfit >= 0;
+  // Final Result Line: Farm Net Profit / Net Loss (Take-Home Earnings)
+  const netEarnings = totalFarmIncome - totalAllFarmExpenses;
+  const isProfitable = netEarnings > 0;
+  const isNetLoss = netEarnings < 0;
+  const netMargin = totalFarmIncome > 0
+    ? ((netEarnings / totalFarmIncome) * 100).toFixed(1)
+    : '0.0';
 
   return (
     <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
         <div>
           <h2 className="text-base font-bold text-slate-900 tracking-tight font-display flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-emerald-600" />
+            {isNetLoss ? (
+              <TrendingDown className="w-4 h-4 text-rose-600" />
+            ) : (
+              <PKRIcon className="w-4 h-4 text-emerald-600" />
+            )}
             Farm Profit &amp; Loss Summary
           </h2>
-          
         </div>
 
         <div className="flex items-center gap-2">
           <span className={`text-xs font-bold px-3 py-1 rounded-full border ${
-            isProfitable
+            isNetLoss
+              ? 'bg-rose-50 text-rose-700 border-rose-200'
+              : isProfitable
               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              : 'bg-rose-50 text-rose-700 border-rose-200'
+              : 'bg-slate-100 text-slate-700 border-slate-200'
           }`}>
-            {isProfitable ? `Net Margin: ${netMargin}%` : `Operating Loss (${netMargin}%)`}
+            {isNetLoss
+              ? `Loss Margin: -${Math.abs(netMargin)}%`
+              : isProfitable
+              ? `Net Margin: ${netMargin}%`
+              : 'Breakeven (0.0%)'}
           </span>
         </div>
       </div>
@@ -194,30 +205,52 @@ export default function ProfitLossSummary({
         </div>
 
         <div className={`p-5 rounded-2xl text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-          isProfitable
-            ? 'bg-gradient-to-r from-indigo-700 via-indigo-800 to-purple-900'
-            : 'bg-gradient-to-r from-rose-700 to-red-900'
+          isNetLoss
+            ? 'bg-gradient-to-r from-rose-900 via-rose-800 to-red-950'
+            : isProfitable
+            ? 'bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900'
+            : 'bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950'
         }`}>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              {isNetLoss ? (
+                <TrendingDown className="w-5 h-5 text-rose-300" />
+              ) : isProfitable ? (
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              ) : (
+                <ShieldCheck className="w-5 h-5 text-indigo-300" />
+              )}
               <h3 className="text-sm font-black uppercase tracking-wider text-white">
-                Total Net Profit (Take-Home Earnings)
+                {isNetLoss
+                  ? 'Total Net Loss'
+                  : isProfitable
+                  ? 'Total Net Profit (Take-Home Earnings)'
+                  : 'Net Breakeven'}
               </h3>
             </div>
             <p className="text-xs text-indigo-100/80">
-              Final realized net surplus after all direct feed, packaging &amp; farm running overheads
+              {isNetLoss
+                ? 'Total farm operating expenses exceed income for this period.'
+                : 'Final realized net surplus after all direct feed, packaging & farm running overheads'}
             </p>
           </div>
 
           <div className="text-right shrink-0">
-            <p className="text-2xl sm:text-3xl font-black text-emerald-300 tabular">
-              {fmt(totalNetProfit)}
+            <p className={`text-2xl sm:text-3xl font-black tabular ${
+              isNetLoss ? 'text-rose-200' : isProfitable ? 'text-emerald-300' : 'text-slate-200'
+            }`}>
+              {isNetLoss
+                ? `-Rs. ${Math.abs(Math.round(netEarnings)).toLocaleString()}`
+                : `Rs. ${Math.round(netEarnings).toLocaleString()}`}
             </p>
             <div className="flex items-center justify-end gap-2 mt-0.5">
-              <span className="text-xs text-slate-200">Net Margin:</span>
-              <span className="text-xs font-black px-2 py-0.5 rounded-md bg-white/20 text-white tabular">
-                {netMargin}%
+              <span className="text-xs text-slate-200">
+                {isNetLoss ? 'Loss Margin:' : 'Net Margin:'}
+              </span>
+              <span className={`text-xs font-black px-2 py-0.5 rounded-md text-white tabular ${
+                isNetLoss ? 'bg-rose-700/60' : 'bg-white/20'
+              }`}>
+                {isNetLoss ? `-${Math.abs(netMargin)}%` : `${netMargin}%`}
               </span>
             </div>
           </div>

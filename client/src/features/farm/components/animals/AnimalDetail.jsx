@@ -23,9 +23,12 @@ import {
   Clock,
   Plus,
   Loader2,
+  Heart,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAnimalContext } from "../../../../context/AnimalContext";
+import PKRIcon from "@/components/common/PKRIcon";
+import AnimalSaleModal from "./AnimalSaleModal";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -72,6 +75,7 @@ export default function AnimalDetail({
   const [dateFilter, setDateFilter] = useState("All");
   const [customDate, setCustomDate] = useState("");
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
 
   // Quick milk intake state directly for this animal
   const [isIntakeModalOpen, setIsIntakeModalOpen] = useState(false);
@@ -443,6 +447,16 @@ export default function AnimalDetail({
         </div>
 
         <div className="flex items-center gap-2">
+          {!animal.isSold && (
+            <button
+              type="button"
+              onClick={() => setIsSaleModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold border border-amber-200/70 transition shadow-2xs cursor-pointer"
+            >
+              <PKRIcon className="w-3.5 h-3.5 text-amber-700" />
+              Sell Animal
+            </button>
+          )}
           <button
             type="button"
             onClick={handleStartEdit}
@@ -509,6 +523,18 @@ export default function AnimalDetail({
                       ? String(animal.createdAt).split("T")[0]
                       : "Recently")}
                 </span>
+                {animal.hasCalf && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-pink-50 text-pink-700 border border-pink-200">
+                    <Heart className="w-3 h-3 fill-pink-500" />
+                    Calf: {animal.calfTag || 'Calf'} ({animal.calfGender || 'Male'})
+                  </span>
+                )}
+                {animal.isSold && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                    <PKRIcon className="w-3 h-3 text-rose-600" />
+                    SOLD (Rs. {(animal.salePrice || 0).toLocaleString()})
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -567,6 +593,58 @@ export default function AnimalDetail({
             </p>
           </div>
         </div>
+
+        {/* Sold Status Banner */}
+        {animal.isSold && (
+          <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/70 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-rose-100 flex items-center justify-center text-rose-700 shrink-0">
+                <PKRIcon className="w-5 h-5 text-rose-700" />
+              </div>
+              <div>
+                <span className="font-bold text-rose-900 text-sm block">
+                  Livestock Animal Sold
+                </span>
+                <p className="text-rose-700 text-[11px]">
+                  Sold on: {animal.saleDate ? String(animal.saleDate).split('T')[0] : 'Past'}
+                  {animal.saleNotes && ` • Notes: ${animal.saleNotes}`}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] uppercase font-bold text-rose-600 block">Sale Revenue</span>
+              <span className="font-mono font-black text-rose-900 text-base">
+                Rs. {(animal.salePrice || 0).toLocaleString()}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Calf Information Banner if hasCalf is true */}
+        {animal.hasCalf && (
+          <div className="p-4 rounded-xl border border-pink-200 bg-pink-50/50 flex flex-wrap items-center justify-between gap-4 text-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center text-pink-600 shadow-2xs shrink-0">
+                <Heart className="w-5 h-5 fill-pink-500" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-slate-900 text-sm">
+                    Calf at Side
+                  </h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-100 text-pink-700">
+                    {animal.calfGender || 'Male'}
+                  </span>
+                </div>
+                <p className="text-slate-600 mt-0.5 text-xs">
+                  Calf ID: <strong className="font-mono text-slate-900">{animal.calfTag || 'Auto'}</strong>
+                  {animal.calfAge && ` • Age: ${animal.calfAge}`}
+                  {animal.calfNotes && ` • Notes: ${animal.calfNotes}`}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Breakdown & Production History Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
@@ -1350,6 +1428,13 @@ export default function AnimalDetail({
           </div>
         </div>
       )}
+
+      {/* Animal Sale Modal */}
+      <AnimalSaleModal
+        isOpen={isSaleModalOpen}
+        onClose={() => setIsSaleModalOpen(false)}
+        initialAnimal={animal}
+      />
     </div>
   );
 }

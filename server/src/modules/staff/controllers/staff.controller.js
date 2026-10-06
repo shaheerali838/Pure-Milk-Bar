@@ -7,6 +7,9 @@ import {
   deleteStaffService,
   getStaffStatsService,
   sendStaffCredentialsService,
+  payStaffSalaryService,
+  getStaffSalariesService,
+  deleteSalaryPaymentService,
 } from '../services/staff.service.js';
 
 // Send / Resend Login Credentials Email (strictly ADMIN / Owner)
@@ -142,3 +145,66 @@ export const getStaffStats = async (req, res, next) => {
     next(error);
   }
 };
+
+// Disburse staff salary payment
+export const payStaffSalary = async (req, res, next) => {
+  try {
+    const payload = {
+      ...req.body,
+      staffId: req.params.id || req.body.staffId,
+    };
+    const result = await payStaffSalaryService(payload, req.user);
+
+    return res.status(201).json({
+      success: true,
+      statusCode: 201,
+      message: result.message,
+      data: result,
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get salary payments history (filterable by staffId and monthYear)
+export const getStaffSalaries = async (req, res, next) => {
+  try {
+    const filter = {
+      staffId: req.params.id || req.query.staffId,
+      monthYear: req.query.monthYear,
+      limit: req.query.limit,
+      page: req.query.page,
+    };
+    const result = await getStaffSalariesService(filter);
+
+    return res.status(200).json({
+      success: true,
+      statusCode: 200,
+      message: 'Salary payment records retrieved successfully',
+      data: result.salaries,
+      salaries: result.salaries,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Delete a salary payment record
+export const deleteSalaryPayment = async (req, res, next) => {
+  try {
+    const result = await deleteSalaryPaymentService(req.params.salaryId || req.params.id);
+
+    return res.status(200).json({
+      success: true,
+      statusCode: 200,
+      message: result.message,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

@@ -42,7 +42,7 @@ const normalizeDate = (dateVal) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
+export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSupplier }) {
   const { intakeLogs, deleteIntake, isLoading } = useIntakeContext();
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState('All'); // 'All' | 'Today' | 'Custom'
@@ -421,7 +421,18 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier }) {
                       {/* Supplier Name */}
                       <TableCell className="py-3.5 px-4 font-bold text-slate-800">
                         <div className="flex items-center gap-1.5">
-                          <span>{group.supplierName}</span>
+                          <span
+                            onClick={(e) => {
+                              if (onViewSupplier) {
+                                e.stopPropagation();
+                                onViewSupplier(group.supplierName, group.slips[0]?.supplierId || group.slips[0]?.supplier);
+                              }
+                            }}
+                            className={onViewSupplier ? "hover:text-blue-600 hover:underline cursor-pointer transition-colors" : ""}
+                            title={onViewSupplier ? `Click to view profile & ledger for ${group.supplierName}` : undefined}
+                          >
+                            {group.supplierName}
+                          </span>
                           {hasMultipleShifts && (
                             <button
                               type="button"

@@ -2,6 +2,7 @@ import React from "react";
 import { X, CheckCircle, Printer, ArrowRight } from "lucide-react";
 import { usePOSContext } from "@/context/POSContext";
 import { useSettingsContext } from "@/context/SettingsContext";
+import { getProductIcon } from "@/features/inventory/components/AddProduct";
 
 export default function POSReceiptModal() {
   const { completedSaleReceipt, setCompletedSaleReceipt } = usePOSContext();
@@ -130,13 +131,16 @@ export default function POSReceiptModal() {
                   key={item.id}
                   className="py-1.5 flex justify-between items-center text-xs"
                 >
-                  <div>
-                    <span className="font-bold text-slate-800">
-                      {item.name}
-                    </span>
-                    <div className="text-[10px] text-slate-400">
-                      {item.quantity} × Rs. {item.price} /{" "}
-                      {item.unit ? item.unit.replace("per ", "") : "kg"}
+                  <div className="flex items-start gap-1.5">
+                    <span className="mt-0.5 shrink-0">{getProductIcon(item.name, { size: 13, className: 'text-indigo-600' })}</span>
+                    <div>
+                      <span className="font-bold text-slate-800">
+                        {item.name}
+                      </span>
+                      <div className="text-[10px] text-slate-400">
+                        {item.quantity} × Rs. {item.price} /{" "}
+                        {item.unit ? item.unit.replace("per ", "") : "kg"}
+                      </div>
                     </div>
                   </div>
                   <span className="font-bold text-slate-900 tabular">

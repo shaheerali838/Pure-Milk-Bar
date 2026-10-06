@@ -68,9 +68,25 @@ export default function POSSalesHistory({ compact = false }) {
     let list = [...salesHistory].sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
     
     if (channelFilter === 'walkin') {
-      list = list.filter(s => s.saleCategory === 'walkin' || s.fulfillmentType === 'COUNTER' || s.fulfillmentMode === 'counter' || !s.saleCategory);
+      list = list.filter((s) => {
+        const isDelivery =
+          s.saleCategory === 'delivery' ||
+          s.fulfillmentType === 'DELIVERY' ||
+          s.fulfillmentType === 'DOORSTEP' ||
+          s.fulfillmentMode === 'doorstep' ||
+          Boolean(s.deliveryMeta) ||
+          Boolean(s.rider);
+        return !isDelivery && (s.saleCategory === 'walkin' || s.fulfillmentType === 'COUNTER' || s.fulfillmentMode === 'counter');
+      });
     } else if (channelFilter === 'delivery') {
-      list = list.filter(s => s.saleCategory === 'delivery' || s.fulfillmentType === 'DOORSTEP' || s.fulfillmentMode === 'doorstep');
+      list = list.filter((s) =>
+        s.saleCategory === 'delivery' ||
+        s.fulfillmentType === 'DELIVERY' ||
+        s.fulfillmentType === 'DOORSTEP' ||
+        s.fulfillmentMode === 'doorstep' ||
+        Boolean(s.deliveryMeta) ||
+        Boolean(s.rider)
+      );
     }
 
     if (dateFilter === 'today') {

@@ -1,7 +1,189 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, PackagePlus, ChevronDown, Check } from 'lucide-react';
+import {
+  ArrowLeft,
+  PackagePlus,
+  ChevronDown,
+  Check,
+  Milk,
+  GlassWater,
+  Soup,
+  Package,
+  Box,
+  Flame,
+  CupSoda,
+  Utensils,
+  Layers,
+  Sparkles,
+} from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 import { useSettingsContext } from '@/context/SettingsContext';
+
+/**
+ * Registry of dairy product categories and string-matching keywords
+ */
+export const PRODUCT_ICON_MAP = [
+  {
+    type: 'dahi',
+    keywords: ['dahi', 'yogurt', 'curd'],
+    icon: Soup,
+    emoji: '🥣',
+    label: 'Dahi / Yogurt',
+    bgClass: 'bg-amber-50 text-amber-600 border-amber-200',
+    color: '#d97706',
+  },
+  {
+    type: 'milk',
+    keywords: ['milk', 'doodh', 'cow', 'buffalo', 'kachha'],
+    icon: Milk,
+    fallbackIcon: GlassWater,
+    emoji: '🥛',
+    label: 'Fresh Milk',
+    bgClass: 'bg-blue-50 text-blue-600 border-blue-200',
+    color: '#2563eb',
+  },
+  {
+    type: 'ghee',
+    keywords: ['ghee', 'desi ghee', 'oil'],
+    icon: Flame,
+    emoji: '🧈',
+    label: 'Desi Ghee',
+    bgClass: 'bg-orange-50 text-orange-600 border-orange-200',
+    color: '#ea580c',
+  },
+  {
+    type: 'butter',
+    keywords: ['butter', 'makhan', 'makhhan'],
+    icon: Layers,
+    emoji: '🧈',
+    label: 'Butter / Makhan',
+    bgClass: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    color: '#ca8a04',
+  },
+  {
+    type: 'lassi',
+    keywords: ['lassi', 'shake', 'drink', 'beverage'],
+    icon: CupSoda,
+    emoji: '🥤',
+    label: 'Lassi / Shake',
+    bgClass: 'bg-teal-50 text-teal-600 border-teal-200',
+    color: '#0d9488',
+  },
+  {
+    type: 'paneer',
+    keywords: ['paneer', 'cheese', 'tofu'],
+    icon: Utensils,
+    emoji: '🧀',
+    label: 'Paneer / Cheese',
+    bgClass: 'bg-amber-50 text-amber-700 border-amber-300',
+    color: '#b45309',
+  },
+  {
+    type: 'cream',
+    keywords: ['cream', 'malai'],
+    icon: Sparkles,
+    emoji: '🍨',
+    label: 'Fresh Cream / Malai',
+    bgClass: 'bg-rose-50 text-rose-600 border-rose-200',
+    color: '#e11d48',
+  },
+  {
+    type: 'sweets',
+    keywords: ['khoya', 'mawa', 'mithai', 'sweet'],
+    icon: Sparkles,
+    emoji: '🍬',
+    label: 'Khoya / Sweets',
+    bgClass: 'bg-purple-50 text-purple-600 border-purple-200',
+    color: '#9333ea',
+  },
+];
+
+const DEFAULT_ENTRY = {
+  type: 'general',
+  keywords: [],
+  icon: Package,
+  fallbackIcon: Box,
+  emoji: '📦',
+  label: 'General Product',
+  bgClass: 'bg-slate-50 text-slate-600 border-slate-200',
+  color: '#64748b',
+};
+
+/**
+ * Case-insensitive match product name to icon definition
+ */
+export function getProductMeta(productName) {
+  const normalized = String(productName || '').toLowerCase().trim();
+  if (!normalized) return DEFAULT_ENTRY;
+
+  for (const entry of PRODUCT_ICON_MAP) {
+    if (entry.keywords.some((kw) => normalized.includes(kw))) {
+      return entry;
+    }
+  }
+
+  return DEFAULT_ENTRY;
+}
+
+/**
+ * Returns native emoji string
+ */
+export function getProductEmoji(productName) {
+  return getProductMeta(productName).emoji;
+}
+
+/**
+ * Returns dynamic Lucide React icon element for the product
+ */
+export function getProductIcon(productName, options = {}) {
+  const {
+    size = 16,
+    className = '',
+    withBadge = false,
+    asEmoji = false,
+  } = options;
+
+  const meta = getProductMeta(productName);
+
+  if (asEmoji) {
+    return meta.emoji;
+  }
+
+  const IconComponent = meta.icon || meta.fallbackIcon || Package;
+
+  if (withBadge) {
+    return (
+      <span
+        className={`inline-flex items-center justify-center w-7 h-7 rounded-lg border shrink-0 shadow-2xs ${meta.bgClass} ${className}`}
+        title={meta.label}
+      >
+        <IconComponent style={{ width: size, height: size }} />
+      </span>
+    );
+  }
+
+  return (
+    <IconComponent
+      style={{ width: size, height: size }}
+      className={`shrink-0 ${className}`}
+      aria-label={meta.label}
+    />
+  );
+}
+
+/**
+ * Reusable JSX component <ProductIcon name={...} />
+ */
+export function ProductIcon({
+  name,
+  productName,
+  size = 16,
+  className = '',
+  withBadge = false,
+  asEmoji = false,
+}) {
+  const targetName = name || productName || '';
+  return getProductIcon(targetName, { size, className, withBadge, asEmoji });
+}
 
 export default function AddProduct({ onBack, product = null }) {
   const { products = [], addProduct, updateProduct } = usePOSContext();
@@ -13,7 +195,8 @@ export default function AddProduct({ onBack, product = null }) {
   const defaultUnit = settings?.productDefaults?.defaultUnit === 'kg' ? 'per kg' : 'per liter';
 
   const [formData, setFormData] = useState({
-    id: product ? product.id || product.sku || defaultSku : defaultSku,
+    id: product ? product.id || product.sku || 
+    defaultSku : defaultSku,
     name: product ? product.name || '' : '',
     category: product ? product.category || 'Milk' : 'Milk',
     unit: product ? product.unit || 'per liter' : 'per liter',
@@ -41,6 +224,8 @@ export default function AddProduct({ onBack, product = null }) {
     e.preventDefault();
     if (!formData.name.trim()) return;
 
+    const meta = getProductMeta(formData.name.trim());
+
     if (isEditing) {
       updateProduct({
         ...product,
@@ -51,6 +236,8 @@ export default function AddProduct({ onBack, product = null }) {
         price: Number(formData.price) || 0,
         cost: Number(formData.cost) || 0,
         description: formData.description.trim(),
+        icon: meta.emoji,
+        iconType: meta.type,
       });
     } else {
       const newProduct = {
@@ -64,6 +251,8 @@ export default function AddProduct({ onBack, product = null }) {
         cost: Number(formData.cost) || 0,
         description: formData.description.trim(),
         status: 'Active',
+        icon: meta.emoji,
+        iconType: meta.type,
       };
       addProduct(newProduct);
     }
@@ -83,12 +272,15 @@ export default function AddProduct({ onBack, product = null }) {
             <ArrowLeft className="w-4 h-4" />
             Back to Products
           </button>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight font-display">
-              {isEditing ? `Edit Product — ${product.name}` : 'Add Product'}
-            </h1>
-            <p className="text-xs text-slate-500">{formData.name}
-            </p>
+          <div className="flex items-center gap-2">
+            {formData.name && getProductIcon(formData.name, { size: 20, withBadge: true })}
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight font-display">
+                {isEditing ? `Edit Product — ${product.name}` : 'Add Product'}
+              </h1>
+              <p className="text-xs text-slate-500">{formData.name || 'Specify product name and pricing details'}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -135,17 +327,30 @@ export default function AddProduct({ onBack, product = null }) {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Product Name <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Enter name"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
-              />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                  Product Name <span className="text-rose-500">*</span>
+                </label>
+                {formData.name && (
+                  <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
+                    {getProductIcon(formData.name, { size: 13 })}
+                    <span>Auto Icon</span>
+                  </span>
+                )}
+              </div>
+              <div className="relative flex items-center">
+                <div className="absolute left-3 flex items-center pointer-events-none text-slate-500">
+                  {getProductIcon(formData.name, { size: 16 })}
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g. Pure Cow Milk, Dahi Special, Desi Ghee"
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition font-medium"
+                />
+              </div>
             </div>
 
             {/* <div>

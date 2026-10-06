@@ -27,7 +27,7 @@ export default function DahiDailyReport() {
   const { batches = [], availableDahiStock = 0 } = useDahiContext() || {};
   const { salesHistory = [], farmSalesHistory = [], supplierSalesHistory = [], inventoryMetrics = {} } = usePOSContext() || {};
 
-  const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week'
+  const [dateFilter, setDateFilter] = useState('today'); // 'today' (default) | 'week' | 'all'
 
   // Aggregate end-to-end data by date
   const aggregatedByDate = useMemo(() => {

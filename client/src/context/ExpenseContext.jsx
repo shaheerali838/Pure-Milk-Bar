@@ -60,6 +60,15 @@ export function ExpenseProvider({ children }) {
 
     useEffect(() => {
         fetchExpenses();
+        const handleSync = () => {
+            fetchExpenses();
+        };
+        window.addEventListener('expense:updated', handleSync);
+        window.addEventListener('salary:updated', handleSync);
+        return () => {
+            window.removeEventListener('expense:updated', handleSync);
+            window.removeEventListener('salary:updated', handleSync);
+        };
     }, [fetchExpenses]);
 
     const addExpense = async (expense) => {
@@ -139,6 +148,8 @@ export function ExpenseProvider({ children }) {
         setExpenses(prev => prev.filter(exp => (exp._id || exp.id) !== id && exp.id !== id));
         try {
             await api.finance.deleteExpense(id);
+            window.dispatchEvent(new CustomEvent('expense:updated'));
+            window.dispatchEvent(new CustomEvent('salary:updated'));
         } catch (e) {
             console.warn('Expense delete API sync error:', e.message);
             throw e;
@@ -209,6 +220,8 @@ export function ExpenseProvider({ children }) {
         addExpense,
         editExpense,
         deleteExpense,
+        fetchExpenses,
+        refreshExpenses: fetchExpenses,
         totals
     };
 

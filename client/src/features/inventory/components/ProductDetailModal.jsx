@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, X, Layers, ShieldCheck, Edit2 } from 'lucide-react';
+import { getProductIcon } from './AddProduct';
 
 export default function ProductDetailModal({ product, isOpen, onClose, onBack, onOpenEdit, backLabel = 'Back to Products' }) {
   if (!product) return null;
@@ -51,13 +52,14 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
         <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-5">
           <div className="bg-[#f0f4ff] p-5 rounded-2xl border border-indigo-100/70 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
-              <div className="w-14 h-14 rounded-2xl bg-white border border-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-3xl shrink-0 shadow-xs">
-                {emoji}
+              <div className="w-14 h-14 rounded-2xl bg-white border border-indigo-100 text-indigo-700 font-bold flex items-center justify-center shrink-0 shadow-xs">
+                {getProductIcon(product.name, { size: 28 })}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base font-bold text-slate-900 leading-tight font-display">
-                    {product.name}
+                  <h2 className="text-base font-bold text-slate-900 leading-tight font-display flex items-center gap-1.5">
+                    {getProductIcon(product.name, { size: 16, className: 'text-indigo-600' })}
+                    <span>{product.name}</span>
                   </h2>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                     {product.status || 'Active'}
@@ -200,13 +202,14 @@ export default function ProductDetailModal({ product, isOpen, onClose, onBack, o
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-4">
         <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xl shrink-0 shadow-2xs">
-              {emoji}
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold flex items-center justify-center shrink-0 shadow-2xs">
+              {getProductIcon(product.name, { size: 20 })}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-slate-900 leading-tight font-display">
-                  {product.name}
+                <h3 className="text-sm font-bold text-slate-900 leading-tight font-display flex items-center gap-1.5">
+                  {getProductIcon(product.name, { size: 14, className: 'text-indigo-600' })}
+                  <span>{product.name}</span>
                 </h3>
                 <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                   {product.status || 'Active'}

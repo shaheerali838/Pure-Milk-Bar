@@ -33,14 +33,7 @@ export const generateDefaultAttendanceMap = (absentDays = 0, totalDays = 30) => 
 
 export function StaffProvider({ children }) {
   const [staffList, setStaffList] = useState([]);
-  const [salaryPayments, setSalaryPayments] = useState(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY_SALARY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [salaryPayments, setSalaryPayments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -74,9 +67,47 @@ export function StaffProvider({ children }) {
     }
   }, []);
 
+  // Fetch real salary payment records from backend database
+  const fetchSalaries = useCallback(async () => {
+    try {
+      const res = await adminService.getStaffSalaries({ limit: 1000 });
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.salaries)
+        ? res.salaries
+        : Array.isArray(res?.data)
+        ? res.data
+        : [];
+
+      if (Array.isArray(list)) {
+        const normalized = list.map((s) => ({
+          ...s,
+          id: s._id || s.id,
+          paymentDate: s.paymentDate ? String(s.paymentDate).slice(0, 10) : s.date,
+          date: s.date || (s.paymentDate ? String(s.paymentDate).slice(0, 10) : ''),
+        }));
+        setSalaryPayments(normalized);
+      }
+    } catch (err) {
+      console.warn('Failed to load salaries from database API:', err.message);
+    }
+  }, []);
+
   useEffect(() => {
     fetchStaff();
-  }, [fetchStaff]);
+    fetchSalaries();
+
+    const handleSync = () => {
+      fetchStaff();
+      fetchSalaries();
+    };
+    window.addEventListener('salary:updated', handleSync);
+    window.addEventListener('expense:updated', handleSync);
+    return () => {
+      window.removeEventListener('salary:updated', handleSync);
+      window.removeEventListener('expense:updated', handleSync);
+    };
+  }, [fetchStaff, fetchSalaries]);
 
 
   // 1. Add New Staff Member
@@ -508,64 +539,90 @@ export function StaffProvider({ children }) {
   };
 
   // 12. Pay Salary to Staff Member
-  const paySalary = async ({ staffId, staffName, role, amount, date, paymentMethod = 'CASH', notes = '', monthYear, skipDirectBackendCreate = false }) => {
-    const payment = {
+  const paySalary = async ({ staffId, staffName, role, amount, amountPaid, date, paymentDate, paymentMethod = 'CASH', notes = '', monthYear, absentDays = 0, deduction = 0, status = 'Paid', skipDirectBackendCreate = false }) => {
+    const finalAmount = Number(amountPaid !== undefined ? amountPaid : amount) || 0;
+    const pDate = paymentDate || date || new Date().toISOString().split('T')[0];
+    const currentMonthStr = monthYear || new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    let payment = {
       id: `SAL-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       staffId: String(staffId),
       staffName: staffName || 'Staff Member',
       role: role || 'Farm Labor',
-      amount: Number(amount) || 0,
-      date: date || new Date().toISOString().split('T')[0],
+      amount: finalAmount,
+      amountPaid: finalAmount,
+      absentDays: Number(absentDays) || 0,
+      deduction: Number(deduction) || 0,
+      status: status || 'Paid',
+      paymentDate: pDate,
+      date: pDate,
       paymentMethod: paymentMethod ? String(paymentMethod).toUpperCase() : 'CASH',
       notes: notes || '',
-      monthYear: monthYear || new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+      monthYear: currentMonthStr,
       createdAt: new Date().toISOString(),
     };
 
-    setSalaryPayments((prev) => {
-      const updated = [payment, ...prev];
-      try {
-        localStorage.setItem(STORAGE_KEY_SALARY, JSON.stringify(updated));
-      } catch (e) {
-        console.warn('Failed to save salary payments to localStorage:', e);
-      }
-      return updated;
-    });
+    // 1. Sync live to MongoDB Database API
+    try {
+      const serverRes = await adminService.payStaffSalary({
+        staffId: String(staffId),
+        amount: finalAmount,
+        amountPaid: finalAmount,
+        paymentDate: pDate,
+        absentDays: Number(absentDays) || 0,
+        deduction: Number(deduction) || 0,
+        monthYear: currentMonthStr,
+        paymentMethod: paymentMethod ? String(paymentMethod).toUpperCase() : 'CASH',
+        notes: notes || '',
+      });
 
-    // Also sync to backend finance expense if not already pushed via addExpense
-    if (!skipDirectBackendCreate) {
-      try {
-        await api.finance.createExpense({
-          scope: 'FARM',
-          category: 'SALARIES',
-          title: `Staff Salary: ${payment.staffName}`,
-          amount: Number(payment.amount) || 0,
-          amountRupees: Number(payment.amount) || 0,
-          paymentMethod: payment.paymentMethod,
-          date: payment.date,
-          description: `Staff salary disbursed to ${payment.staffName} (${payment.role}) for ${payment.monthYear}. ${notes || ''}`.trim(),
-          notes: notes || '',
-          authorizedBy: 'Admin',
-        });
-      } catch (err) {
-        console.warn('Backend sync salary expense notice:', err.message);
+      if (serverRes?.payment) {
+        payment = {
+          ...serverRes.payment,
+          id: serverRes.payment._id || serverRes.payment.id,
+          paymentDate: serverRes.payment.paymentDate ? String(serverRes.payment.paymentDate).slice(0, 10) : pDate,
+          date: serverRes.payment.date || pDate,
+        };
       }
+    } catch (err) {
+      console.warn('Backend salary payment API sync notice in StaffContext:', err.message);
     }
+
+    setSalaryPayments((prev) => [payment, ...prev.filter((p) => String(p.id) !== String(payment.id))]);
+
+    // Update staff state for current month payment
+    setStaffList((prev) =>
+      prev.map((s) => {
+        if (String(s.id) === String(staffId) || String(s._id) === String(staffId)) {
+          return {
+            ...s,
+            salaryStatus: 'Paid',
+            salaryPaidDate: pDate,
+            salaryPaidMonth: currentMonthStr,
+            lastSalaryPayment: payment,
+          };
+        }
+        return s;
+      })
+    );
+
+    window.dispatchEvent(new CustomEvent('expense:updated'));
+    window.dispatchEvent(new CustomEvent('salary:updated'));
 
     return payment;
   };
 
-  // 13. Delete Salary Payment
-  const deleteSalaryPayment = (id) => {
-    setSalaryPayments((prev) => {
-      const updated = prev.filter((p) => String(p.id) !== String(id));
-      try {
-        localStorage.setItem(STORAGE_KEY_SALARY, JSON.stringify(updated));
-      } catch (e) {
-        console.warn('Failed to save salary payments to localStorage:', e);
-      }
-      return updated;
-    });
+  // 13. Delete Salary Payment from Database & Sync Everywhere
+  const deleteSalaryPayment = async (id) => {
+    setSalaryPayments((prev) => prev.filter((p) => String(p.id || p._id) !== String(id)));
+    try {
+      await adminService.deleteSalaryPayment(id);
+    } catch (err) {
+      console.warn('Delete salary payment error:', err.message);
+    }
+    await Promise.allSettled([fetchStaff(), fetchSalaries()]);
+    window.dispatchEvent(new CustomEvent('expense:updated'));
+    window.dispatchEvent(new CustomEvent('salary:updated'));
   };
 
   // 14. Total Staff Salary Paid

@@ -1,14 +1,62 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useExpense } from '../../../../context/ExpenseContext';
 import { DollarSign, Tractor, Wrench, Utensils } from 'lucide-react';
 
-export default function ExpenseFarmCardOverFlow() {
-  const { totals } = useExpense();
+export default function ExpenseFarmCardOverFlow({ expenses: propExpenses }) {
+  const { totals: globalTotals } = useExpense();
+
+  const activeTotals = useMemo(() => {
+    if (!propExpenses) return globalTotals;
+
+    let totalFarmExpense = 0;
+    let feedSeedFarming = 0;
+    let fuelTransportRepairs = 0;
+    let salariesKitchenMess = 0;
+
+    propExpenses.forEach((exp) => {
+      const amt = Number(exp.amount) || 0;
+      const scope = String(exp.scope || exp.expenseEntity || 'FARM').toUpperCase();
+      const cat = String(exp.category || '').toUpperCase();
+
+      if (scope === 'FARM') {
+        totalFarmExpense += amt;
+        if (
+          cat.includes('FEED') ||
+          cat.includes('SEED') ||
+          cat.includes('VETERINARY') ||
+          cat.includes('LIVESTOCK') ||
+          cat.includes('DAIRY')
+        ) {
+          feedSeedFarming += amt;
+        } else if (
+          cat.includes('FUEL') ||
+          cat.includes('MACHINERY') ||
+          cat.includes('ELECTRICITY') ||
+          cat.includes('SHED') ||
+          cat.includes('HARDWARE') ||
+          cat.includes('TRANSPORT') ||
+          cat.includes('MAINTENANCE') ||
+          cat.includes('UTILITIES')
+        ) {
+          fuelTransportRepairs += amt;
+        } else if (cat.includes('SALAR') || cat.includes('KITCHEN') || cat.includes('WAGE') || cat.includes('LABOUR') || cat.includes('LABOR')) {
+          salariesKitchenMess += amt;
+        }
+      }
+    });
+
+    return {
+      totalFarmExpense,
+      feedSeedFarming,
+      fuelTransportRepairs,
+      salariesKitchenMess,
+    };
+  }, [propExpenses, globalTotals]);
 
   const statCards = [
     {
       label: "Total Farm Expense",
-      value: `Rs. ${totals.totalFarmExpense.toLocaleString()}`,
+      value: `Rs. ${activeTotals.totalFarmExpense.toLocaleString()}`,
       sub: "Total expenses recorded",
       icon: DollarSign,
       color: "#009966",
@@ -16,7 +64,7 @@ export default function ExpenseFarmCardOverFlow() {
     },
     {
       label: "Feed, Seed & Farming",
-      value: `PKR ${totals.feedSeedFarming.toLocaleString()}`,
+      value: `PKR ${activeTotals.feedSeedFarming.toLocaleString()}`,
       sub: "Farming supplies & feed",
       icon: Tractor,
       color: "#155dfc",
@@ -24,7 +72,7 @@ export default function ExpenseFarmCardOverFlow() {
     },
     {
       label: "Fuel, Transport & Repairs",
-      value: `PKR ${totals.fuelTransportRepairs.toLocaleString()}`,
+      value: `PKR ${activeTotals.fuelTransportRepairs.toLocaleString()}`,
       sub: "Vehicle & maintenance",
       icon: Wrench,
       color: "#009689",
@@ -32,7 +80,7 @@ export default function ExpenseFarmCardOverFlow() {
     },
     {
       label: "Salaries & Kitchen Mess",
-      value: `PKR ${totals.salariesKitchenMess.toLocaleString()}`,
+      value: `PKR ${activeTotals.salariesKitchenMess.toLocaleString()}`,
       sub: "Staff & food costs",
       icon: Utensils,
       color: "#10b981",

@@ -4,9 +4,10 @@ import {
   Minus,
   X,
   Truck,
-  DollarSign,
 } from 'lucide-react';
+import { PKRIcon } from '@/components/common/PKRIcon';
 import { usePOSContext } from '@/context/POSContext';
+import { getProductIcon } from '@/features/inventory/components/AddProduct';
 
 export default function POSCartItems() {
   const {
@@ -32,13 +33,7 @@ export default function POSCartItems() {
             className="flex items-center justify-between p-2 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-slate-50 transition"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-xs shadow-2xs shrink-0">
-                {item.category && item.category.toLowerCase().includes('dahi')
-                  ? '🥣'
-                  : item.category && item.category.toLowerCase().includes('lassi')
-                  ? '🧃'
-                  : '🥛'}
-              </div>
+              {getProductIcon(item.name, { size: 14, withBadge: true })}
               <div className="min-w-0">
                 <div className="text-xs font-bold text-slate-800 leading-tight truncate">
                   {item.name}
@@ -128,7 +123,7 @@ export default function POSCartItems() {
 
         <div className="flex justify-between items-center text-slate-600 text-[11px]">
           <span className="flex items-center gap-1">
-            <DollarSign className="w-3 h-3 text-slate-400" /> Discount (Rs.)
+            <PKRIcon className="w-3 h-3 text-slate-400" /> Discount (Rs.)
           </span>
           <input
             type="number"

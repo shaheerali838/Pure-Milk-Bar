@@ -20,6 +20,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
+import { getProductIcon } from '@/features/inventory/components/AddProduct';
 
 export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
   const {
@@ -296,9 +297,15 @@ export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
                   : currentMetrics.itemizedProducts) || []).map((p, idx) => {
                   const pProfit = Number(p.totalRevenue - p.totalCost);
                   return (
-                    <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                    <tr
+                      key={idx}
+                      className="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0"
+                    >
                       <td className="py-3 px-3.5 font-bold text-slate-900">
-                        {p.name}
+                        <div className="flex items-center gap-2">
+                          {getProductIcon(p.name, { size: 14, className: 'text-indigo-600' })}
+                          <span>{p.name}</span>
+                        </div>
                       </td>
                       <td className="py-3 px-3.5 text-slate-600">
                         {p.category || 'Milk'}

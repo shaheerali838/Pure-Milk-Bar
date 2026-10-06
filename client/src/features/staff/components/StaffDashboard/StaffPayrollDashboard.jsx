@@ -305,13 +305,13 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
           </div>
           <div>
             <p className="text-2xl font-black text-blue-700 leading-tight tracking-tight mb-0.5 tabular font-mono truncate">
-              Rs. {metrics.totalMonthlyPayroll.toLocaleString()}
+              Rs. {(metrics.totalPaidSalaries || 0).toLocaleString()}
             </p>
             <p className="text-xs font-bold text-slate-700 font-display">
-              Monthly Base Payroll
+              Paid Staff Salaries
             </p>
             <p className="text-[11px] text-slate-400 font-medium truncate">
-              ~Rs. {metrics.totalDailyPayroll.toLocaleString()} / day estimated
+              {metrics.totalPaidSalaries > 0 ? 'Disbursed this month' : 'No salaries paid yet'}
             </p>
           </div>
         </div>

@@ -555,9 +555,12 @@ export function DahiProvider({ children }) {
 
   // Mark POS batch sold out
   const markSoldOut = useCallback(async (batchId) => {
+    const target = String(batchId || '').trim();
     setBatches((prev) =>
       prev.map((b) =>
-        b.id === batchId || b._id === batchId
+        String(b.id || '').trim() === target ||
+        String(b._id || '').trim() === target ||
+        String(b.batchNumber || '').trim() === target
           ? {
               ...b,
               stage: 'sold_out',
@@ -569,7 +572,7 @@ export function DahiProvider({ children }) {
 
     try {
       await farmService.updateProcessingBatch(batchId, { stage: 'sold_out', status: 'Completed' });
-      window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
+      broadcastSync('pure_milk_bar_dahi_updated');
     } catch (e) {
       console.warn('Backend API updateProcessingBatch markSoldOut error:', e.message);
     }

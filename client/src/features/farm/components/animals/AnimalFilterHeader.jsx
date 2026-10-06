@@ -1,11 +1,13 @@
 import React from "react";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Tag } from "lucide-react";
+import PKRIcon from "@/components/common/PKRIcon";
 
 export default function AnimalFilterHeader({
   activeTab,
   setActiveTab,
   animalsCount = 0,
   workersCount = 0,
+  salesCount = 0,
   searchTerm,
   setSearchTerm,
   speciesFilter,
@@ -13,14 +15,15 @@ export default function AnimalFilterHeader({
   statusFilter,
   setStatusFilter,
   onOpenAddModal,
+  onOpenSaleModal,
 }) {
   return (
-    <div className="flex flex-col  w-full">
-      <div className="border-b border-slate-200 flex items-center gap-8 text-sm font-bold pt-2">
+    <div className="flex flex-col w-full">
+      <div className="border-b border-slate-200 flex items-center gap-6 sm:gap-8 text-sm font-bold pt-2 overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveTab("registry")}
-          className={`pb-3 transition-all cursor-pointer relative ${
+          className={`pb-3 transition-all cursor-pointer relative whitespace-nowrap ${
             activeTab === "registry"
               ? "text-emerald-700 font-extrabold"
               : "text-slate-500 hover:text-slate-700"
@@ -35,7 +38,7 @@ export default function AnimalFilterHeader({
         <button
           type="button"
           onClick={() => setActiveTab("workers")}
-          className={`pb-3 transition-all cursor-pointer relative ${
+          className={`pb-3 transition-all cursor-pointer relative whitespace-nowrap ${
             activeTab === "workers"
               ? "text-emerald-700 font-extrabold"
               : "text-slate-500 hover:text-slate-700"
@@ -46,10 +49,25 @@ export default function AnimalFilterHeader({
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600 rounded-full" />
           )}
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("sales")}
+          className={`pb-3 transition-all cursor-pointer relative whitespace-nowrap flex items-center gap-1.5 ${
+            activeTab === "sales"
+              ? "text-emerald-700 font-extrabold"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <span>Animal Sales History ({salesCount})</span>
+          {activeTab === "sales" && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600 rounded-full" />
+          )}
+        </button>
       </div>
 
       {activeTab === "registry" && (
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-wrap items-center justify-between gap-4 mt-1">
           <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-sm text-slate-700 w-full sm:w-72 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
             <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
@@ -85,11 +103,44 @@ export default function AnimalFilterHeader({
 
             <button
               type="button"
+              onClick={onOpenSaleModal}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs sm:text-[13px] font-semibold cursor-pointer transition-all shadow-xs"
+            >
+              <PKRIcon className="w-3.5 h-3.5 text-white" /> Sell Animal
+            </button>
+
+            <button
+              type="button"
               onClick={onOpenAddModal}
               className="flex items-center gap-1.5 px-4 py-2 rounded-full text-white text-xs sm:text-[13px] font-semibold cursor-pointer hover:brightness-105 active:scale-95 transition-all shadow-xs"
               style={{ background: "#009966" }}
             >
               <Plus className="w-3.5 h-3.5" /> Add Animal
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "sales" && (
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-wrap items-center justify-between gap-4 mt-1">
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-sm text-slate-700 w-full sm:w-80 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
+            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              placeholder="Search by buyer name, phone, or tag..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-transparent border-none outline-none text-slate-800 placeholder-slate-400 text-xs sm:text-sm font-medium"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onOpenSaleModal}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs sm:text-[13px] font-semibold cursor-pointer transition-all shadow-xs"
+            >
+              <PKRIcon className="w-3.5 h-3.5 text-white" /> + Record New Animal Sale
             </button>
           </div>
         </div>
