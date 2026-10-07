@@ -20,8 +20,10 @@ const userSchema = new Schema(
     },
     phone: {
       type: String,
+      required: [true, 'Phone number is required'],
+      unique: true,
+      sparse: true,
       trim: true,
-      default: '',
       index: true,
     },
     email: {
