@@ -45,17 +45,46 @@ export default function TopSummaryCards() {
   const totalNetProfit = Number(businessFinancialMetrics.totalBusinessNetProfit) || 0;
   const netMargin = Number(businessFinancialMetrics.totalBusinessMargin) || 0;
 
-  // 5. Today's POS Sales Revenue (in PKT timezone)
   const todayISO = getPktTodayString();
   const todaySales = salesHistory.filter((s) => {
     const raw = s.date || s.timestamp || s.formattedDate || s.createdAt || '';
     const saleDate = raw.includes('T') ? raw.split('T')[0] : (raw.includes('-') ? raw.slice(0, 10) : '');
     return saleDate === todayISO || s.date === todayISO;
   });
-  const todaySalesRevenue = todaySales.reduce(
-    (sum, s) => sum + (Number(s.netPayable || s.totalAmount || s.grandTotal) || 0),
-    0
-  );
+
+  let todaySalesRevenue = 0;
+  let todayMilkSoldQty = 0;
+  let todayMilkSalesRevenue = 0;
+  let todayFarmMilkSoldQty = 0;
+  let todaySupplierMilkSoldQty = 0;
+  let todayFarmMilkRevenue = 0;
+  let todaySupplierMilkRevenue = 0;
+  let todayDahiSoldQty = 0;
+
+  todaySales.forEach((sale) => {
+    todaySalesRevenue += (Number(sale.netPayable || sale.totalAmount || sale.grandTotal) || 0);
+    (sale.items || []).forEach((item) => {
+      const name = (item.name || '').toLowerCase();
+      const cat = (item.category || '').toLowerCase();
+      const qty = Number(item.quantity) || 0;
+      const rev = Number(item.subtotal || item.effectiveRevenue) || (qty * (Number(item.price) || 0));
+      const isDahi = name.includes('dahi') || cat.includes('dahi') || name.includes('yogurt');
+      if (isDahi) {
+        todayDahiSoldQty += qty;
+      } else {
+        todayMilkSoldQty += qty;
+        todayMilkSalesRevenue += rev;
+        const fQty = item.farmQuantity !== undefined ? Number(item.farmQuantity) || 0 : (item.source === 'Farm' ? qty : 0);
+        const sQty = item.supplierQuantity !== undefined ? Number(item.supplierQuantity) || 0 : (item.source === 'Supplier' ? qty : 0);
+        const fRev = item.farmRevenue !== undefined ? Number(item.farmRevenue) || 0 : (item.source === 'Farm' ? rev : 0);
+        const sRev = item.supplierRevenue !== undefined ? Number(item.supplierRevenue) || 0 : (item.source === 'Supplier' ? rev : 0);
+        todayFarmMilkSoldQty += fQty;
+        todaySupplierMilkSoldQty += sQty;
+        todayFarmMilkRevenue += fRev;
+        todaySupplierMilkRevenue += sRev;
+      }
+    });
+  });
 
   // 6. Recoveries (Credit payments into Ledgers)
   let totalRecoveries = 0;
@@ -114,16 +143,6 @@ export default function TopSummaryCards() {
       to: '/pos',
     },
     {
-      id: 'available-dahi-stock',
-      title: 'Available Dahi Stock',
-      value: `${totalDahiStock} kg`,
-      subtitle: 'Ready at POS counter',
-      icon: Layers,
-      color: '#0284c7',
-      tag: 'Counter Stock',
-      to: '/farm/processing',
-    },
-    {
       id: 'total-sourced',
       title: 'Total Milk Sourced',
       value: `${totalMilkSourced.toFixed(1)} L`,
@@ -134,13 +153,43 @@ export default function TopSummaryCards() {
       to: '/supplier/intake',
     },
     {
+      id: 'todays-milk-sold',
+      title: "Total Milk Sold Today",
+      value: `${Number(todayMilkSoldQty.toFixed(1))} L`,
+      subtitle: `Farm: ${Number(todayFarmMilkSoldQty.toFixed(1))}L • Sup: ${Number(todaySupplierMilkSoldQty.toFixed(1))}L`,
+      icon: Droplets,
+      color: '#10b981',
+      tag: 'Combined Sales',
+      to: '/pos',
+    },
+    {
+      id: 'todays-milk-revenue',
+      title: 'Total Milk Sales Revenue',
+      value: `+ Rs. ${todayMilkSalesRevenue.toLocaleString()}`,
+      subtitle: `Farm: Rs. ${todayFarmMilkRevenue.toLocaleString()} • Sup: Rs. ${todaySupplierMilkRevenue.toLocaleString()}`,
+      icon: DollarSign,
+      color: '#059669',
+      tag: 'Combined Revenue',
+      to: '/pos',
+    },
+    {
+      id: 'todays-dahi-sold',
+      title: "Today's Dahi Sold",
+      value: `${Number(todayDahiSoldQty.toFixed(1))} Kg`,
+      subtitle: `Farm + Supplier Dahi`,
+      icon: Layers,
+      color: '#0284c7',
+      tag: 'Live Counter',
+      to: '/pos',
+    },
+    {
       id: 'todays-sales',
-      title: "Today's Sales",
+      title: "Total Business Revenue",
       value: `Rs. ${todaySalesRevenue.toLocaleString()}`,
       subtitle: `${todaySales.length} orders today`,
       icon: ShoppingBag,
-      color: '#10b981',
-      tag: 'Live Counter',
+      color: '#059669',
+      tag: 'POS Money In',
       to: '/pos',
     },
     {
@@ -156,7 +205,7 @@ export default function TopSummaryCards() {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
       {cards.map((card) => {
         const Icon = card.icon;
         return (

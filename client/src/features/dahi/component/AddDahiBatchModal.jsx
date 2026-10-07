@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layers, X, Droplets, AlertCircle, ArrowLeft, Check, Milk } from 'lucide-react';
+import { Layers, X, Droplets, AlertCircle, ArrowLeft, Check, Milk, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDahiContext } from '@/context/DahiContext';
 
@@ -268,7 +268,21 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Production Date <span className="text-rose-500">*</span></span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-semibold cursor-pointer"
+                />
+              </div>
+
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Dahi Product Type <span className="text-rose-500">*</span>
@@ -279,7 +293,6 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                   className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-medium cursor-pointer"
                 >
                   <option value="Fresh Dahi (Plain)">Fresh Dahi (Plain)</option>
-    
                 </select>
               </div>
 

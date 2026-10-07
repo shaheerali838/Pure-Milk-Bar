@@ -7,6 +7,7 @@ import {
   ShoppingCart,
   Printer,
   Plus,
+  Calendar,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -83,8 +84,10 @@ export default function DahiKitchenPipeline({
                   <div className="flex items-start justify-between">
                     <div>
                       <h4 className="text-xs font-bold text-slate-900">{batch.product}</h4>
-                      <p className="text-[10px] font-mono text-slate-400 mt-0.5">
-                        {batch.id} {batch.time ? `• ${batch.time}` : ''}
+                      <p className="text-[10px] font-mono text-slate-500 mt-0.5 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        <span>{batch.date ? (typeof batch.date === 'string' && batch.date.includes('T') ? batch.date.split('T')[0] : batch.date) : (batch.createdAt ? String(batch.createdAt).slice(0, 10) : 'Today')}</span>
+                        {batch.time ? `• ${batch.time}` : ''}
                       </p>
                     </div>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
@@ -171,6 +174,11 @@ export default function DahiKitchenPipeline({
                   <div className="flex items-start justify-between">
                     <div>
                       <h4 className="text-xs font-bold text-slate-900">{batch.product}</h4>
+                      <p className="text-[10px] font-mono text-slate-500 mt-0.5 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        <span>{batch.date ? (typeof batch.date === 'string' && batch.date.includes('T') ? batch.date.split('T')[0] : batch.date) : (batch.createdAt ? String(batch.createdAt).slice(0, 10) : 'Today')}</span>
+                        {batch.time ? `• ${batch.time}` : ''}
+                      </p>
                     </div>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
                       ✓ Ready
@@ -274,7 +282,10 @@ export default function DahiKitchenPipeline({
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="text-xs font-bold text-slate-900">{batch.product}</h4>
-                        <p className="text-[10px] font-mono text-slate-400 mt-0.5">{batch.id}</p>
+                        <p className="text-[10px] font-mono text-slate-500 mt-0.5 flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-slate-400" />
+                          <span>{batch.date ? (typeof batch.date === 'string' && batch.date.includes('T') ? batch.date.split('T')[0] : batch.date) : (batch.createdAt ? String(batch.createdAt).slice(0, 10) : 'Today')}</span>
+                        </p>
                       </div>
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${

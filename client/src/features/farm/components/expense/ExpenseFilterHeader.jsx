@@ -51,10 +51,11 @@ export default function ExpenseFilterHeader({
   const onEndChange = setEndDate || setLocalEndDate;
 
   const dateTabs = [
-    { id: 'all', label: 'All History' },
-    { id: 'today', label: 'Today' },
-    { id: 'this_week', label: 'This Week' },
-    { id: 'custom', label: 'Custom Range' },
+    { id: 'all',        label: 'All History' },
+    { id: 'today',      label: 'Today' },
+    { id: 'this_week',  label: 'This Week' },
+    { id: 'this_month', label: 'This Month' },
+    { id: 'custom',     label: 'Custom Range' },
   ];
 
   return (
