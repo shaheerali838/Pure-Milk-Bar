@@ -1,10 +1,19 @@
 import React from 'react';
-import { Droplets, Layers, Milk, TrendingUp, ShoppingBag, ChevronRight } from 'lucide-react';
+import { Droplets, Layers, Milk, TrendingUp, ShoppingBag, ChevronRight, AlertCircle } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 
 export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
+  // Pull live businessFinancialMetrics — re-renders instantly when Product Module price changes
   const { businessFinancialMetrics = {} } = usePOSContext() || {};
-  const { totalDahiRevenue = 0, totalDahiProductionCost = 0, totalDahiNetProfit = 0 } = businessFinancialMetrics;
+  const {
+    totalDahiRevenue = 0,
+    totalDahiProductionCost = 0,
+    totalDahiNetProfit = 0,
+    totalDahiSold = 0,
+    dahiSalePrice = null,          // null = not set in Product Module
+    isDahiPriceDefined = false,    // true only when price > 0 in Product Module
+    dahiProductName = null,
+  } = businessFinancialMetrics;
 
   const {
     totalMilkSourced = '0.0',
@@ -23,9 +32,31 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
     dahiTransferredToPOS = '0.0',
   } = metrics;
 
-  const displayTotal = remainingTotalMilk !== undefined ? remainingTotalMilk : totalMilkSourced;
-  const displayFarm = remainingFarmMilk !== undefined ? remainingFarmMilk : farmSourced;
+  const displayTotal    = remainingTotalMilk    !== undefined ? remainingTotalMilk    : totalMilkSourced;
+  const displayFarm     = remainingFarmMilk     !== undefined ? remainingFarmMilk     : farmSourced;
   const displaySupplier = remainingSupplierMilk !== undefined ? remainingSupplierMilk : supplierSourced;
+
+  // ── Condition A: Price NOT defined ── show qty only, hide all revenue/profit
+  // ── Condition B: Price defined      ── show qty + Rs. amount
+  const dahiSalesAmount  = isDahiPriceDefined
+    ? `${dahiSoldInPOS} kg  👉  +Rs. ${Number(totalDahiRevenue).toLocaleString()}`
+    : `${dahiSoldInPOS} kg`;
+
+  const dahiSalesSub     = isDahiPriceDefined
+    ? `Rs. ${dahiSalePrice}/kg · ${dahiSalesOrdersCount} sale${dahiSalesOrdersCount !== 1 ? 's' : ''}`
+    : `${dahiSalesOrdersCount} sale${dahiSalesOrdersCount !== 1 ? 's' : ''} · Price not set in Products`;
+
+  const dahiProfitAmount = isDahiPriceDefined
+    ? `Rs. ${Number(totalDahiNetProfit).toLocaleString()}`
+    : `${dahiProduced} kg`;
+
+  const dahiProfitTitle  = isDahiPriceDefined ? 'Dahi Net Profit' : 'Dahi Produced (Qty)';
+
+  const dahiProfitSub    = isDahiPriceDefined
+    ? `${totalDahiRevenue > 0 ? Math.round((totalDahiNetProfit / totalDahiRevenue) * 100) : 0}% Net Margin · Realized Gain`
+    : 'Set sale price in Products to see revenue';
+
+  const dahiProfitColor  = isDahiPriceDefined ? '#10b981' : '#94a3b8';
 
   const cards = [
     {
@@ -57,27 +88,29 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
     },
     {
       id: 'dahi_sales',
-      title: 'POS Dahi Sales',
-      amount: `${dahiSoldInPOS} kg Sold`,
-      sub: `Revenue: Rs. ${totalDahiRevenue.toLocaleString()} (${dahiSalesOrdersCount} sales)`,
+      title: isDahiPriceDefined ? 'POS Dahi Sales' : 'Total Dahi Available/Sold',
+      amount: dahiSalesAmount,
+      sub: dahiSalesSub,
       icon: ShoppingBag,
-      color: '#4f39f6',
-      badge: 'Live Sales',
+      color: isDahiPriceDefined ? '#4f39f6' : '#64748b',
+      badge: isDahiPriceDefined ? 'Live Sales' : 'Qty Only',
+      noPriceBadge: !isDahiPriceDefined,
     },
     {
       id: 'profit',
-      title: 'Dahi Net Profit',
-      amount: `Rs. ${totalDahiNetProfit.toLocaleString()}`,
-      sub: `${totalDahiRevenue > 0 ? Math.round((totalDahiNetProfit / totalDahiRevenue) * 100) : 0}% Net Margin • Realized Gain`,
+      title: dahiProfitTitle,
+      amount: dahiProfitAmount,
+      sub: dahiProfitSub,
       icon: TrendingUp,
-      color: '#10b981',
-      badge: 'Specific P&L',
+      color: dahiProfitColor,
+      badge: isDahiPriceDefined ? 'Specific P&L' : 'Pending Price',
+      noPriceBadge: !isDahiPriceDefined,
     },
   ];
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-2">
-      {cards.map(({ id, title, amount, sub, icon: Icon, color, badge }) => (
+      {cards.map(({ id, title, amount, sub, icon: Icon, color, badge, noPriceBadge }) => (
         <div
           key={id}
           onClick={() => onSelectCard && onSelectCard(id)}
@@ -95,6 +128,12 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
               <Icon style={{ width: 16, height: 16, color }} />
             </div>
             <div className="flex items-center gap-1">
+              {noPriceBadge && (
+                <AlertCircle
+                  className="w-3 h-3 text-amber-500"
+                  title="Sale price not set in Product Module"
+                />
+              )}
               <span className="text-[10px] font-bold px-3 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
                 {badge}
               </span>
@@ -104,7 +143,10 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
 
           {/* Value, title, and subtext */}
           <div>
-            <p className="font-display text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
+            <p
+              className={`font-display font-black leading-tight tracking-tight mb-0.5 tabular ${amount.length > 16 ? 'text-lg' : 'text-2xl'}`}
+              style={{ color: noPriceBadge ? '#475569' : '#0f172a' }}
+            >
               {amount}
             </p>
             <p className="text-xs font-bold text-slate-700">{title}</p>
@@ -117,3 +159,4 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
     </div>
   );
 }
+

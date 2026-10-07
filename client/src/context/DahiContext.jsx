@@ -24,6 +24,19 @@ export function DahiProvider({ children }) {
   const [batches, setBatches] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // =========================================================================
+  // LIVE DAHI PRICE from POS Product Module
+  // =========================================================================
+  const liveDahiPosRate = useMemo(() => {
+    const productList = posCtx?.products || [];
+    const dahiProd = productList.find((p) => {
+      const n = (p.name || '').toLowerCase();
+      const c = (p.category || '').toLowerCase();
+      return c.includes('dahi') || n.includes('dahi') || n.includes('yogurt') || n.includes('curd');
+    });
+    return dahiProd ? (Number(dahiProd.price) || Number(dahiProd.sellingPrice) || 320) : 320;
+  }, [posCtx?.products]);
+
   // Fetch batches directly from backend database
   const fetchBatches = useCallback(async () => {
     setIsLoading(true);
@@ -159,10 +172,10 @@ export function DahiProvider({ children }) {
       ? ((totalOutputProduced / totalConverted) * 100).toFixed(1)
       : '0.0';
 
-    // Real Value-Add Net Profit: (Retail POS rate - Raw milk cost approx 220) * output
+    // Real Value-Add Net Profit: (Retail POS rate from live products - Raw milk cost) * output
     const netProfitValue = batches.reduce((acc, b) => {
       const out = Number(b.outputVal) || 0;
-      const rate = parseFloat(String(b.posRate || '').replace(/[^\d.]/g, '')) || 320;
+      const rate = parseFloat(String(b.posRate || '').replace(/[^\d.]/g, '')) || liveDahiPosRate;
       const profitPerKg = Math.max(0, rate - 220);
       return acc + Math.round(out * profitPerKg);
     }, 0);
@@ -178,7 +191,7 @@ export function DahiProvider({ children }) {
       remainingTotal,
       netProfitValue,
     };
-  }, [batches, realFarmYield, realSupplierIntake, farmMilkSold, supplierMilkSold]);
+  }, [batches, realFarmYield, realSupplierIntake, farmMilkSold, supplierMilkSold, liveDahiPosRate]);
 
   // Read live POS sales history for Dahi sales & extra profit tracking
   const salesHistory = posCtx?.salesHistory || [];
@@ -252,7 +265,7 @@ export function DahiProvider({ children }) {
       remainingSupplierMilk: conversionData.remainingSupplier,
       remainingTotalMilk: conversionData.remainingTotal,
     };
-  }, [realFarmYield, realSupplierIntake, conversionData, dahiSalesData, dahiTransferredToPOS, liveDahiPOSStock]);
+  }, [realFarmYield, realSupplierIntake, conversionData, dahiSalesData, dahiTransferredToPOS, liveDahiPOSStock, liveDahiPosRate]);
 
   // =========================================================================
   // 3. PIPELINE ACTIONS (Synced with database)
@@ -327,7 +340,7 @@ export function DahiProvider({ children }) {
       const resolvedMilkUsedCost = Number(extraData.milkCostTransferred || extraData.milkUsedCost || extraData.totalMilkCost) || (resolvedFarmCost + resolvedSupplierCost);
       const resolvedDahiProductionCost = Number(extraData.totalDahiCost || extraData.dahiProductionCost) || Math.round(numOutput * resolvedDahiCostRate);
 
-      const rateNum = parseFloat(String(extraData.posRate || '').replace(/[^\d.]/g, '')) || 300;
+      const rateNum = parseFloat(String(extraData.posRate || '').replace(/[^\d.]/g, '')) || liveDahiPosRate;
       const expectedProfitVal = Math.round((numOutput * rateNum) - resolvedDahiProductionCost);
 
       const initialStage = extraData.stage || (extraData.status === 'Completed' ? 'pos' : 'incubating');
@@ -392,7 +405,7 @@ export function DahiProvider({ children }) {
         checklist: initialChecklist,
       };
 
-      // 1. Instantly update DahiContext local state
+      // 1. Instantly update DahiContext local state (starts in 'incubating' stage)
       setBatches((prev) => [newRecord, ...prev]);
 
       // 2. Instantly call Context API setters for stock deduction
@@ -403,7 +416,7 @@ export function DahiProvider({ children }) {
         posCtx.setSupplierStock((prev) => Math.max(0, Number(((prev !== null ? prev : (posCtx?.inventoryMetrics?.rawSupplierMilkStock ?? 0)) - supPortion).toFixed(1))));
       }
 
-      // 3. Instantly update POSContext (deduct source milk, increment Dahi, recalculate available stock)
+      // 3. Instantly update POSContext (deduct source milk; only increment Dahi counter stock if initialStage is 'pos')
       if (typeof posCtx?.recordDahiConversion === 'function') {
         posCtx.recordDahiConversion({
           source: normSource,
@@ -412,6 +425,7 @@ export function DahiProvider({ children }) {
           supplierMilkUsed: supPortion,
           outputQuantity: numOutput,
           batch: newRecord,
+          stage: initialStage,
         });
       } else if (posCtx?.setProducts) {
         posCtx.setProducts((prev) =>
@@ -477,7 +491,11 @@ export function DahiProvider({ children }) {
   const addBatch = useCallback(
     async (formData) => {
       const rawMilkNum = parseFloat(formData.milkUsedVal ?? formData.milkUsed) || 0;
-      return convertToDahi(formData.source, rawMilkNum, formData);
+      return convertToDahi(formData.source, rawMilkNum, {
+        ...formData,
+        stage: formData.stage || 'incubating',
+        status: formData.status || 'In Progress',
+      });
     },
     [convertToDahi]
   );
@@ -522,7 +540,7 @@ export function DahiProvider({ children }) {
     setBatches((prev) =>
       prev.map((b) => {
         if (b.id !== batchId && b._id !== batchId && b.batchNumber !== batchId) return b;
-        const rateNum = parseFloat(String(b.posRate || '').replace(/[^\d.]/g, '')) || 320;
+        const rateNum = parseFloat(String(b.posRate || '').replace(/[^\d.]/g, '')) || liveDahiPosRate || 320;
         const profit = Math.round((b.outputVal || 0) * Math.max(0, rateNum - 220));
         const currentChecklist = b.checklist || {};
         return {

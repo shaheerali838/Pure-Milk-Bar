@@ -13,6 +13,7 @@ export function usePOSOrders({
   setSupplierStock,
   setPosSyncVersion,
   remainingFarmBuffaloMilk = 0,
+  remainingFarmMilk = 0,
   resolveItemSourceAndRatios,
 }) {
   const [salesHistory, setSalesHistory] = useState([]);
@@ -155,10 +156,65 @@ export function usePOSOrders({
           const rate = Number(i.price) || 0;
           const lineSubtotal = Math.round(qty * rate);
           const name = (i.name || '').toLowerCase();
+          const category = (i.category || '').toLowerCase();
           const isBuffalo = name.includes('buffalo');
           const isCow = name.includes('cow');
+          const isMilk = name.includes('milk') || category.includes('milk');
+          const isGenericMilk = isMilk && !isBuffalo && !isCow;
 
-          if (isCow) {
+          // The cashier's POS selection (source: 'Farm' | 'Supplier' | 'Mixed') is the single
+          // source of truth. Stock is deducted ONLY from the selected entity.
+          const explicitSource = (i.source || '').toLowerCase();
+          const isExplicitFarm = explicitSource === 'farm';
+          const isExplicitSupplier = explicitSource === 'supplier';
+          const isExplicitMixed = explicitSource === 'mixed' || explicitSource.includes('both');
+
+          if (isExplicitMixed) {
+            const fRatio = Math.min(1, Math.max(0, Number(i.farmRatio) || 0));
+            const farmQty = Number((qty * fRatio).toFixed(3));
+            const supQty = Number((qty - farmQty).toFixed(3));
+            const farmRev = Math.round(lineSubtotal * fRatio);
+            const supRev = lineSubtotal - farmRev;
+            const baseName = i.name || 'Milk';
+            const parts = [];
+            if (farmQty > 0) {
+              parts.push({
+                ...i,
+                name: `${baseName} (Farm Share)`,
+                source: 'Farm',
+                quantity: farmQty,
+                price: rate,
+                cost: 0,
+                subtotal: farmRev,
+                farmRatio: 1,
+                supplierRatio: 0,
+                farmRevenue: farmRev,
+                supplierRevenue: 0,
+                farmQuantity: farmQty,
+                supplierQuantity: 0,
+              });
+            }
+            if (supQty > 0) {
+              parts.push({
+                ...i,
+                name: `${baseName} (Supplier Share)`,
+                source: 'Supplier',
+                quantity: supQty,
+                price: rate,
+                cost: Number(i.cost) || 0,
+                subtotal: supRev,
+                farmRatio: 0,
+                supplierRatio: 1,
+                farmRevenue: 0,
+                supplierRevenue: supRev,
+                farmQuantity: 0,
+                supplierQuantity: supQty,
+              });
+            }
+            return parts;
+          }
+
+          if (isExplicitFarm || (isCow && !isExplicitSupplier)) {
             return [{
               ...i,
               quantity: qty,
@@ -175,19 +231,38 @@ export function usePOSOrders({
             }];
           }
 
-          if (isBuffalo) {
-            const availableFarmBuff = Math.max(0, Number(remainingFarmBuffaloMilk) || 0);
-            const farmQty = Math.min(availableFarmBuff, qty);
+          if (isExplicitSupplier) {
+            return [{
+              ...i,
+              quantity: qty,
+              price: rate,
+              cost: Number(i.cost) || 0,
+              source: 'Supplier',
+              farmRatio: 0,
+              supplierRatio: 1,
+              farmRevenue: 0,
+              supplierRevenue: lineSubtotal,
+              farmQuantity: 0,
+              supplierQuantity: qty,
+              subtotal: lineSubtotal,
+            }];
+          }
+
+          if (isBuffalo || isGenericMilk) {
+            const availableFarm = isBuffalo ? Math.max(0, Number(remainingFarmBuffaloMilk) || 0) : Math.max(0, Number(remainingFarmMilk) || 0);
+            const farmQty = Math.min(availableFarm, qty);
             const supQty = Math.max(0, qty - farmQty);
 
             const farmRev = Math.round(farmQty * rate);
             const supRev = lineSubtotal - farmRev;
 
+            const baseName = isBuffalo ? 'Buffalo Milk' : (i.name || 'Milk');
+
             if (farmQty > 0 && supQty > 0) {
               return [
                 {
                   ...i,
-                  name: 'Buffalo Milk (Farm Share)',
+                  name: `${baseName} (Farm Share)`,
                   source: 'Farm',
                   quantity: Number(farmQty.toFixed(2)),
                   price: rate,
@@ -202,7 +277,7 @@ export function usePOSOrders({
                 },
                 {
                   ...i,
-                  name: 'Buffalo Milk (Supplier Share)',
+                  name: `${baseName} (Supplier Share)`,
                   source: 'Supplier',
                   quantity: Number(supQty.toFixed(2)),
                   price: rate,
@@ -221,7 +296,7 @@ export function usePOSOrders({
             if (farmQty > 0) {
               return [{
                 ...i,
-                name: 'Buffalo Milk',
+                name: baseName,
                 source: 'Farm',
                 quantity: Number(farmQty.toFixed(2)),
                 price: rate,
@@ -238,7 +313,7 @@ export function usePOSOrders({
 
             return [{
               ...i,
-              name: 'Buffalo Milk',
+              name: baseName,
               source: 'Supplier',
               quantity: Number(supQty.toFixed(2)),
               price: rate,
