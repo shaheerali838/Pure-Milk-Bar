@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { getCustomerSubscription } from '../../../../context/CustomerContext';
 
 export default function CustomerDetailsView({ customer, onBack, onEdit }) {
   if (!customer) return null;
@@ -25,6 +26,7 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
   const creditLimit = customer.creditLimit || 10000;
   const khataBalance = customer.khataBalance || 0;
   const khataPercent = Math.min(100, Math.round((khataBalance / creditLimit) * 100));
+  const subscription = getCustomerSubscription(customer) || 'No active agreement';
 
   return (
     <div className="space-y-3 animate-in fade-in duration-200 pb-4">
@@ -144,7 +146,7 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Subscription</p>
             <p className="text-base font-bold text-slate-900 font-display mt-0.5">
-              {customer.subscription || '2 L Cow Milk'}
+              {subscription}
             </p>
             <p className="text-[10px] text-slate-500 mt-0.5">
               Mode: <span className="font-semibold text-blue-700">{customer.paymentMode || 'Khata'}</span>
@@ -265,7 +267,7 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
             <div className="grid grid-cols-2 gap-2.5">
               <div className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-xl">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Subscription Type</span>
-                <p className="font-bold text-slate-900 mt-0.5">{customer.subscription || '2 L Cow Milk'}</p>
+                <p className="font-bold text-slate-900 mt-0.5">{subscription}</p>
               </div>
 
               <div className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-xl">

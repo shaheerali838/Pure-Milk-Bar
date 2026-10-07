@@ -4,6 +4,7 @@ import { usePOSContext } from "@/context/POSContext";
 import { useExpense } from "@/context/ExpenseContext";
 import { useIntakeContext } from "@/context/IntakeContext";
 import { useCustomerContext } from "@/context/CustomerContext";
+import { useLedgerContext } from "@/context/LedgerContext";
 import { useAnimalContext } from "@/context/AnimalContext";
 import { Link } from "react-router-dom";
 
@@ -12,14 +13,26 @@ import { useDahiContext } from '@/context/DahiContext';
 import { getPktTodayString, getPktDaysAgoString } from '@/utils/dateUtils';
 
 export default function ProfitLossSnapshot() {
-  const [timeRange, setTimeRange] = useState("today"); // 'today' | 'week' | 'month'
+  const [timeRange, setTimeRange] = useState("today"); // 'today' | 'week' | 'month' | 'custom'
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
 
   const { salesHistory = [], inventoryMetrics = {} } = usePOSContext();
   const { expenses: farmExpensesList = [], totals: expenseTotals = {} } = useExpense();
   const { intakeLogs = [], totals: intakeTotals = {} } = useIntakeContext();
   const { expenses: supplierExpensesList = [] } = useSourcExpenseContext() || {};
   const { batches: processingBatches = [] } = useDahiContext() || {};
-  const { totalKhataReceivable = 0 } = useCustomerContext();
+  const { totalKhataReceivable = 0, withKhataBalCount = 0 } = useCustomerContext() || {};
+  const { getAllCustomersAggregates } = useLedgerContext() || {};
+
+  const customerAggregates = useMemo(() => {
+    return getAllCustomersAggregates ? getAllCustomersAggregates() : null;
+  }, [getAllCustomersAggregates]);
+
+  const exactPendingKhata = customerAggregates?.totalAllDue !== undefined
+    ? customerAggregates.totalAllDue
+    : totalKhataReceivable;
+  const pendingDuesAccounts = customerAggregates?.khataAccountsCount ?? withKhataBalCount;
 
   const todayStr = useMemo(() => getPktTodayString(), []);
   const weekStartStr = useMemo(() => getPktDaysAgoString(7), []);
@@ -52,6 +65,11 @@ export default function ProfitLossSnapshot() {
     }
     if (timeRange === 'month') {
       return cleanDate >= monthStartStr;
+    }
+    if (timeRange === 'custom') {
+      if (customStartDate && cleanDate < customStartDate) return false;
+      if (customEndDate && cleanDate > customEndDate) return false;
+      return true;
     }
     return true;
   };
@@ -111,35 +129,69 @@ export default function ProfitLossSnapshot() {
   return (
     <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
       {/* 1. Top Section Header with Time Range Switcher */}
-      <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
         <div>
           <h3 className="text-base font-extrabold text-slate-900 font-display flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-emerald-600" />
             <span>Profit &amp; Loss Financial Snapshot</span>
           </h3>
-          
         </div>
 
-        {/* Time Tabs */}
-        <div className="inline-flex items-center p-1 bg-slate-100 rounded-full shadow-2xs self-start sm:self-auto">
-          {[
-            { id: "today", label: "Today" },
-            { id: "week", label: "This Week" },
-            { id: "month", label: "This Month" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setTimeRange(tab.id)}
-              className={`px-3.5 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
-                timeRange === tab.id
-                  ? "bg-white text-slate-900 shadow-xs"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Time Tabs */}
+          <div className="inline-flex items-center p-1 bg-slate-100 rounded-full shadow-2xs self-start sm:self-auto">
+            {[
+              { id: "today", label: "Today" },
+              { id: "week", label: "This Week" },
+              { id: "month", label: "This Month" },
+              { id: "custom", label: "Custom Range" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setTimeRange(tab.id)}
+                className={`px-3.5 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                  timeRange === tab.id
+                    ? "bg-white text-slate-900 shadow-xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom Date Range Inputs */}
+          {timeRange === 'custom' && (
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs">
+              <span className="text-[11px] font-semibold text-slate-500">From:</span>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+              />
+              <span className="text-[11px] font-semibold text-slate-500">To:</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+              />
+              {(customStartDate || customEndDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomStartDate('');
+                    setCustomEndDate('');
+                  }}
+                  className="text-[10px] font-bold text-rose-600 hover:underline ml-1 cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -225,17 +277,18 @@ export default function ProfitLossSnapshot() {
         >
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-slate-600 transition-colors">
-              Receivables
+              Customer Khata Pending
             </span>
             <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Wallet className="w-3.5 h-3.5" />
             </div>
           </div>
           <p className="text-lg font-black text-slate-900 font-display tabular">
-            Rs. {totalKhataReceivable.toLocaleString()}
+            Rs. {Number(exactPendingKhata || 0).toLocaleString()}
           </p>
-          <p className="text-[11px] text-amber-700 font-semibold mt-0.5">
-            Customer Khata ledger pending &rarr;
+          <p className="text-[11px] text-amber-700 font-semibold mt-0.5 flex items-center justify-between">
+            <span>Customer Khata ledger pending</span>
+            <span className="text-[10px] font-bold px-1.5 py-0.2 bg-amber-100/80 rounded">{pendingDuesAccounts} dues &rarr;</span>
           </p>
         </Link>
 

@@ -58,6 +58,10 @@
 }
 
 :root {
+  --space-xs: 4px;
+  --space-sm: 6px;
+  --space-md: 8px;
+  --space-lg: 12px;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -84,6 +88,19 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.625rem;
 }
+
+.customer-delivery-compact {
+  --compact-space: var(--space-sm);
+}
+
+.customer-delivery-compact :is(input, select, button) {
+  min-height: 28px;
+}
+
+.compact-stack { gap: var(--space-md); }
+.compact-surface { border-radius: 8px; box-shadow: none; }
+.compact-control { min-height: 30px; font-size: 12px; line-height: 1.3; }
+.compact-chip { padding: 2px 8px; font-size: 12px; line-height: 1.3; }
 
 .dark {
   --background: oklch(0.145 0 0);
@@ -168,29 +185,51 @@ body {
   scrollbar-width: none !important;
 }
 
-/* Print Styles for POS Receipts & Ledgers */
+/* Print Styles for POS 80mm Thermal Printer Receipts & Ledgers */
+@page {
+  size: 80mm auto;
+  margin: 0;
+}
+
 @media print {
-  .no-print {
+  /* Hide all other surrounding UI elements */
+  #root > *:not(#pos-print-root),
+  nav,
+  aside,
+  header,
+  footer,
+  button,
+  .no-print,
+  .no-print * {
     display: none !important;
+    visibility: hidden !important;
   }
 
-  @page {
-    margin: 0;
-  }
+  html,
   body {
+    width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
     background: #ffffff !important;
     color: #000000 !important;
-    box-shadow: none !important;
-    font-family: var(--font-mono) !important;
-    font-size: 12px !important;
+    font-family: var(--font-mono), monospace !important;
+    font-size: 11px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  * {
-    background: transparent !important;
-    color: #000000 !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
+
+  .receipt-container,
+  #pos-print-root,
+  #pos-print-root * {
+    width: 100% !important;
+    max-width: 80mm !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
   }
 }
+
+
 
 /* Continuous Marquee Left Animation */
 @keyframes marquee-scroll-left {

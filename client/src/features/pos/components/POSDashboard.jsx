@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Search,
   Eye,
@@ -23,6 +24,7 @@ import POSDoorstepOrdersModal from './POSDoorstepOrdersModal';
 import { getProductIcon, getProductMeta } from '@/features/inventory/components/AddProduct';
 
 export default function POSDashboard() {
+  const [searchParams] = useSearchParams();
   const context = usePOSContext() || {};
   const {
     products = [],
@@ -42,10 +44,45 @@ export default function POSDashboard() {
 
   // Walk-in history modal state
   const [isWalkinHistoryOpen, setIsWalkinHistoryOpen] = useState(false);
+  const [walkinHistorySearch, setWalkinHistorySearch] = useState('');
 
-  // Doorstep orders modal state & pending count
+  // Auto-open Walk-in History modal if requested via URL
+  useEffect(() => {
+    const modalParam = searchParams.get('modal') || searchParams.get('open');
+    const isWalkinParam =
+      searchParams.get('walkinHistory') === 'true' ||
+      searchParams.get('walkinhistory') === 'true';
+
+    if (
+      modalParam === 'walkin_history' ||
+      modalParam === 'walkinhistory' ||
+      modalParam === 'walkin' ||
+      isWalkinParam
+    ) {
+      setIsWalkinHistoryOpen(true);
+      const searchVal =
+        searchParams.get('search') ||
+        searchParams.get('invoice') ||
+        searchParams.get('name') ||
+        '';
+      if (searchVal) {
+        setWalkinHistorySearch(searchVal);
+      }
+    }
+  }, [searchParams]);
+
+  // Doorstep orders modal state & pending count for ON-TIME deliveries
   const [isDoorstepOrdersOpen, setIsDoorstepOrdersOpen] = useState(false);
-  const pendingDeliveriesCount = deliveries.filter((d) => d.status === 'PENDING').length;
+  const isDeliveryOnTime = (d) => {
+    return (
+      d.deliverySubType === 'ontime' ||
+      d.source === 'POS_ONE_TIME' ||
+      d.deliveryType === 'ONTIME' ||
+      d.isOneTime ||
+      (!d.customerId && !d.customer?.monthlySubscription)
+    );
+  };
+  const pendingDeliveriesCount = deliveries.filter((d) => d.status === 'PENDING' && isDeliveryOnTime(d)).length;
 
   // Product detail view state
   const [productForDetail, setProductForDetail] = useState(null);
@@ -202,11 +239,11 @@ export default function POSDashboard() {
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-3 py-2">
+    <div className="h-[calc(100vh-4.2rem)] max-h-[calc(100vh-4.2rem)] flex flex-col overflow-hidden space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 shrink-0">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-black text-slate-900 tracking-tight font-display">
+            <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight font-display">
               Point of Sale &amp; Counter Checkout
             </h1>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -214,7 +251,6 @@ export default function POSDashboard() {
               Live Register
             </span>
           </div>
-
         </div>
 
         <div className="flex items-center gap-2">
@@ -264,15 +300,20 @@ export default function POSDashboard() {
         </div>
       </div>
 
-      <POSCardOverflow onSelectSource={setSelectedSalesSource} />
+      {/* Main 2-Panel Split Layout: Left Panel (Cards + Items) & Right Panel (Checkout) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 flex-1 min-h-0 overflow-hidden">
+        {/* LEFT PANEL: Summary Cards + Product Items */}
+        <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-2 min-h-0 overflow-hidden h-full">
+          {/* Summary Metric Cards at the Top of Left Panel */}
+          <div className="shrink-0">
+            <POSCardOverflow onSelectSource={setSelectedSalesSource} />
+          </div>
 
-
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
-        <div className="lg:col-span-7 space-y-2 ">
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 shadow-2xs space-y-3">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 justify-between">
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-3.5 py-1.5 text-sm text-slate-700 w-full sm:w-72 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
+          {/* Product Items Catalog Container */}
+          <div className="flex-1 min-h-0 flex flex-col bg-white border border-slate-200/90 rounded-2xl p-3 shadow-2xs overflow-hidden">
+            {/* Search & Category Filter Toolbar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 justify-between pb-2.5 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-3.5 py-1.5 text-sm text-slate-700 w-full sm:w-64 md:w-72 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
                 <Search className="w-4 h-4 text-slate-400 shrink-0" />
                 <input
                   type="text"
@@ -283,7 +324,7 @@ export default function POSDashboard() {
                 />
               </div>
 
-              <div className="flex items-center gap-1 bg-slate-100 rounded-full p-1 overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-1 bg-slate-100 rounded-full p-1 overflow-x-auto no-scrollbar shrink-0">
                 {[
                   { id: 'all', label: 'All Items' },
                   { id: 'milk', label: 'Milk' },
@@ -306,202 +347,213 @@ export default function POSDashboard() {
               </div>
             </div>
 
-            {filteredProducts.length === 0 ? (
-              <div className="text-center py-12 px-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400 mb-2">
-                  <PackageX className="w-6 h-6" />
+            {/* Scrollable Product Items Grid */}
+            <div className="flex-1 min-h-0 overflow-y-auto py-2 pr-1">
+              {filteredProducts.length === 0 ? (
+                <div className="text-center py-12 px-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400 mb-2">
+                    <PackageX className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-800">
+                    {products.length === 0 ? 'No Products in Inventory' : 'No Matching Products'}
+                  </h3>
+                  <p className="text-xs text-slate-500 max-w-xs mx-auto mt-1">
+                    {products.length === 0
+                      ? 'Products added in the Products Management page will automatically appear here.'
+                      : 'Try adjusting your search query or category filter.'}
+                  </p>
                 </div>
-                <h3 className="text-sm font-bold text-slate-800">
-                  {products.length === 0 ? 'No Products in Inventory' : 'No Matching Products'}
-                </h3>
-                <p className="text-xs text-slate-500 max-w-xs mx-auto mt-1">
-                  {products.length === 0
-                    ? 'Products added in the Products Management page will automatically appear here.'
-                    : 'Try adjusting your search query or category filter.'}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                {filteredProducts.map((product, idx) => {
-                  const prodId = product.id || product._id || product.sku || `prod-${idx}`;
-                  const cartItem = cart.find((i) => i.id === prodId || (product.id && i.id === product.id));
-                  const inCartQty = cartItem ? cartItem.quantity : 0;
-                  const isMilk = product.category?.toLowerCase().includes('milk') || (product.name || '').toLowerCase().includes('milk');
-                  const isDahi = product.category?.toLowerCase().includes('dahi') || (product.name || '').toLowerCase().includes('dahi');
-                  const isCow = (product.name || '').toLowerCase().includes('cow');
-                  const isBuff = (product.name || '').toLowerCase().includes('buffalo');
-                  const displayStock = getProductDisplayStock(product);
-                  const unitLabel = product.unit?.replace('per ', '') || (isMilk ? 'L' : 'kg');
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
+                  {filteredProducts.map((product, idx) => {
+                    const prodId = product.id || product._id || product.sku || `prod-${idx}`;
+                    const cartItem = cart.find((i) => i.id === prodId || (product.id && i.id === product.id));
+                    const inCartQty = cartItem ? cartItem.quantity : 0;
+                    const isMilk = product.category?.toLowerCase().includes('milk') || (product.name || '').toLowerCase().includes('milk');
+                    const isDahi = product.category?.toLowerCase().includes('dahi') || (product.name || '').toLowerCase().includes('dahi');
+                    const isCow = (product.name || '').toLowerCase().includes('cow');
+                    const isBuff = (product.name || '').toLowerCase().includes('buffalo');
+                    const displayStock = getProductDisplayStock(product);
+                    const unitLabel = product.unit?.replace('per ', '') || (isMilk ? 'L' : 'kg');
 
                     return (
-                    <div
-                      key={prodId}
-                      onClick={() => handleProductCardClick(product)}
-                      className={`relative group bg-white border rounded-2xl p-3.5 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-md flex flex-col justify-between overflow-hidden ${
-                        inCartQty > 0
-                          ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/10'
-                          : displayStock <= 0
-                          ? 'border-rose-200/90 hover:border-rose-400 bg-rose-50/10'
-                          : 'border-slate-200/90 hover:border-indigo-200'
-                      }`}
-                    >
-                      {/* On-Card Stock Warning Message Overlay (NO browser alert) */}
-                      {stockWarningId === product.id && (
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setStockWarningId(null);
-                          }}
-                          className="absolute inset-0 z-30 bg-rose-950/95 text-white rounded-2xl p-3 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in-95 duration-150 backdrop-blur-xs shadow-xl cursor-pointer"
-                        >
-                          <AlertCircle className="w-6 h-6 text-rose-300 mb-1 animate-pulse" />
-                          <span className="text-xs font-black text-white leading-tight">
-                            {stockWarningMsg}
-                          </span>
-                          <p className="text-[10px] text-rose-200 mt-1 font-medium leading-tight">
-                            {isMilk ? 'Cannot add: 0 L milk available.' : 'Cannot add: Product out of stock.'}
-                          </p>
-                          <span className="mt-2 text-[9px] font-bold bg-white/20 hover:bg-white/30 text-white px-2.5 py-0.5 rounded-full transition">
-                            Tap to dismiss
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between gap-2 mb-2.5">
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isMilk
-                              ? 'bg-blue-50 text-blue-700 border border-blue-200/60'
-                              : isDahi
-                                ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
-                                : 'bg-purple-50 text-purple-700 border border-purple-200/60'
-                            }`}
-                        >
-                          {product.category || 'Dairy'}
-                        </span>
-
-                        <div className="flex items-center gap-1 bg-slate-50 border border-slate-200/80 rounded-lg p-0.5 shadow-2xs">
-                          <button
-                            type="button"
-                            onClick={(e) => handleViewDetail(e, product)}
-                            title="View Product Specifications"
-                            className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-white rounded transition cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3 my-1">
-                        <div
-                          className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-2xs border ${
-                            getProductMeta(product.name).bgClass
-                          }`}
-                        >
-                          {getProductIcon(product.name, { size: 22 })}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition line-clamp-1 flex items-center gap-1.5">
-                            {getProductIcon(product.name, { size: 14, className: 'text-indigo-600' })}
-                            <span>{product.name}</span>
-                          </h4>
-                          <p
-                            className={`text-[10px] font-bold mt-0.5 flex items-center gap-1 ${
-                              displayStock > 0 ? 'text-emerald-600' : 'text-rose-600 font-extrabold'
-                            }`}
-                          >
-                            {displayStock > 0 ? (
-                              <>
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                Stock: {displayStock} {unitLabel}
-                              </>
-                            ) : (
-                              <>
-                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                                0 {unitLabel} (Out of Stock)
-                              </>
-                            )}
-                          </p>
-                          {isMilk && isBuff && (
-                            <p className="text-[9px] text-slate-500 font-medium tracking-tight mt-0.5 flex items-center gap-1">
-                              <span className="font-semibold text-emerald-700">Farm: {Number(inventoryMetrics?.farmBuffaloMilkStock) || 0}L</span>
-                              <span className="text-slate-300">|</span>
-                              <span className="font-semibold text-amber-700">Supplier: {Number(inventoryMetrics?.supplierBuffaloMilkStock) || 0}L</span>
-                            </p>
-                          )}
-                          {isMilk && isCow && (
-                            <p className="text-[9px] text-blue-600 font-semibold tracking-tight mt-0.5">
-                              Strictly Farm Cow Milk
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                        <div>
-                          <span className="text-sm font-black text-slate-900 tracking-tight">
-                            Rs. {Number(product.price || 0).toLocaleString()}
-                          </span>
-                          <span className="text-[10px] font-medium text-slate-400 ml-1">
-                            /{product.unit?.replace('per ', '') || 'kg'}
-                          </span>
-                        </div>
-
-                        {displayStock <= 0 ? (
-                          <button
-                            type="button"
+                      <div
+                        key={prodId}
+                        onClick={() => handleProductCardClick(product)}
+                        className={`relative group bg-white border rounded-2xl p-3 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-md flex flex-col justify-between overflow-hidden ${
+                          inCartQty > 0
+                            ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/10'
+                            : displayStock <= 0
+                            ? 'border-rose-200/90 hover:border-rose-400 bg-rose-50/10'
+                            : 'border-slate-200/90 hover:border-indigo-200'
+                        }`}
+                      >
+                        {/* On-Card Stock Warning Message Overlay (NO browser alert) */}
+                        {stockWarningId === product.id && (
+                          <div
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleProductCardClick(product);
+                              setStockWarningId(null);
                             }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold transition shadow-2xs cursor-pointer"
+                            className="absolute inset-0 z-30 bg-rose-950/95 text-white rounded-2xl p-3 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in-95 duration-150 backdrop-blur-xs shadow-xl cursor-pointer"
                           >
-                            <AlertCircle className="w-3 h-3 text-rose-500" />
-                            Out of Stock
-                          </button>
-                        ) : inCartQty > 0 ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-600 text-white text-[11px] font-bold shadow-2xs">
-                            <Check className="w-3 h-3 stroke-3" />
-                            {inCartQty} in cart
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleProductCardClick(product);
-                            }}
-                            className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 text-xs font-bold transition shadow-2xs cursor-pointer"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            Add
-                          </button>
+                            <AlertCircle className="w-6 h-6 text-rose-300 mb-1 animate-pulse" />
+                            <span className="text-xs font-black text-white leading-tight">
+                              {stockWarningMsg}
+                            </span>
+                            <p className="text-[10px] text-rose-200 mt-1 font-medium leading-tight">
+                              {isMilk ? 'Cannot add: 0 L milk available.' : 'Cannot add: Product out of stock.'}
+                            </p>
+                            <span className="mt-2 text-[9px] font-bold bg-white/20 hover:bg-white/30 text-white px-2.5 py-0.5 rounded-full transition">
+                              Tap to dismiss
+                            </span>
+                          </div>
                         )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
 
-            <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-              <span> Click any product card to add 1 unit to cart</span>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isMilk
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200/60'
+                                : isDahi
+                                  ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                                  : 'bg-purple-50 text-purple-700 border border-purple-200/60'
+                              }`}
+                          >
+                            {product.category || 'Dairy'}
+                          </span>
+
+                          <div className="flex items-center gap-1 bg-slate-50 border border-slate-200/80 rounded-lg p-0.5 shadow-2xs">
+                            <button
+                              type="button"
+                              onClick={(e) => handleViewDetail(e, product)}
+                              title="View Product Specifications"
+                              className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-white rounded transition cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2.5 my-0.5">
+                          <div
+                            className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-2xs border ${
+                              getProductMeta(product.name).bgClass
+                            }`}
+                          >
+                            {getProductIcon(product.name, { size: 20 })}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition line-clamp-1 flex items-center gap-1.5">
+                              {getProductIcon(product.name, { size: 14, className: 'text-indigo-600' })}
+                              <span>{product.name}</span>
+                            </h4>
+                            <p
+                              className={`text-[10px] font-bold mt-0.5 flex items-center gap-1 ${
+                                displayStock > 0 ? 'text-emerald-600' : 'text-rose-600 font-extrabold'
+                              }`}
+                            >
+                              {displayStock > 0 ? (
+                                <>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                  Stock: {displayStock} {unitLabel}
+                                </>
+                              ) : (
+                                <>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                  0 {unitLabel} (Out of Stock)
+                                </>
+                              )}
+                            </p>
+                            {isMilk && isBuff && (
+                              <p className="text-[9px] text-slate-500 font-medium tracking-tight mt-0.5 flex items-center gap-1">
+                                <span className="font-semibold text-emerald-700">Farm: {Number(inventoryMetrics?.farmBuffaloMilkStock) || 0}L</span>
+                                <span className="text-slate-300">|</span>
+                                <span className="font-semibold text-amber-700">Supplier: {Number(inventoryMetrics?.supplierBuffaloMilkStock) || 0}L</span>
+                              </p>
+                            )}
+                            {isMilk && isCow && (
+                              <p className="text-[9px] text-blue-600 font-semibold tracking-tight mt-0.5">
+                                Strictly Farm Cow Milk
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between">
+                          <div>
+                            <span className="text-sm font-black text-slate-900 tracking-tight">
+                              Rs. {Number(product.price || 0).toLocaleString()}
+                            </span>
+                            <span className="text-[10px] font-medium text-slate-400 ml-1">
+                              /{product.unit?.replace('per ', '') || 'kg'}
+                            </span>
+                          </div>
+
+                          {displayStock <= 0 ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleProductCardClick(product);
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold transition shadow-2xs cursor-pointer"
+                            >
+                              <AlertCircle className="w-3 h-3 text-rose-500" />
+                              Out of Stock
+                            </button>
+                          ) : inCartQty > 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-600 text-white text-[11px] font-bold shadow-2xs">
+                              <Check className="w-3 h-3 stroke-3" />
+                              {inCartQty} in cart
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleProductCardClick(product);
+                              }}
+                              className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 text-xs font-bold transition shadow-2xs cursor-pointer"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              Add
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Bottom info footer */}
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+              <span>Click any product card to add 1 unit to cart</span>
               <span className="font-semibold text-slate-500">Live POS Engine</span>
             </div>
           </div>
         </div>
 
-        <div className="lg:col-span-5">
+        {/* RIGHT PANEL: Dedicated Checkout Workspace */}
+        <div className="lg:col-span-5 xl:col-span-5 flex flex-col min-h-0 h-full overflow-hidden">
           <POSSale />
         </div>
       </div>
 
+
       <POSReceiptModal />
       <POSWalkinHistoryModal
         isOpen={isWalkinHistoryOpen}
-        onClose={() => setIsWalkinHistoryOpen(false)}
+        onClose={() => {
+          setIsWalkinHistoryOpen(false);
+          setWalkinHistorySearch('');
+        }}
+        initialSearch={walkinHistorySearch}
       />
       <POSDoorstepOrdersModal
+        mode="ontime"
         isOpen={isDoorstepOrdersOpen}
         onClose={() => setIsDoorstepOrdersOpen(false)}
       />

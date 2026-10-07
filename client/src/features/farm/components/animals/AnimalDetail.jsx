@@ -526,7 +526,8 @@ export default function AnimalDetail({
                 {animal.hasCalf && (
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-pink-50 text-pink-700 border border-pink-200">
                     <Heart className="w-3 h-3 fill-pink-500" />
-                    Calf: {animal.calfTag || 'Calf'} ({animal.calfGender || 'Male'})
+                    Calf: {animal.calfTag || "Calf"} (
+                    {animal.calfGender || "Male"})
                   </span>
                 )}
                 {animal.isSold && (
@@ -606,13 +607,18 @@ export default function AnimalDetail({
                   Livestock Animal Sold
                 </span>
                 <p className="text-rose-700 text-[11px]">
-                  Sold on: {animal.saleDate ? String(animal.saleDate).split('T')[0] : 'Past'}
+                  Sold on:{" "}
+                  {animal.saleDate
+                    ? String(animal.saleDate).split("T")[0]
+                    : "Past"}
                   {animal.saleNotes && ` • Notes: ${animal.saleNotes}`}
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <span className="text-[10px] uppercase font-bold text-rose-600 block">Sale Revenue</span>
+              <span className="text-[10px] uppercase font-bold text-rose-600 block">
+                Sale Revenue
+              </span>
               <span className="font-mono font-black text-rose-900 text-base">
                 Rs. {(animal.salePrice || 0).toLocaleString()}
               </span>
@@ -633,11 +639,14 @@ export default function AnimalDetail({
                     Calf at Side
                   </h3>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-100 text-pink-700">
-                    {animal.calfGender || 'Male'}
+                    {animal.calfGender || "Male"}
                   </span>
                 </div>
                 <p className="text-slate-600 mt-0.5 text-xs">
-                  Calf ID: <strong className="font-mono text-slate-900">{animal.calfTag || 'Auto'}</strong>
+                  Calf ID:{" "}
+                  <strong className="font-mono text-slate-900">
+                    {animal.calfTag || "Auto"}
+                  </strong>
                   {animal.calfAge && ` • Age: ${animal.calfAge}`}
                   {animal.calfNotes && ` • Notes: ${animal.calfNotes}`}
                 </p>

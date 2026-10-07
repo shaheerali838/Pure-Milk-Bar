@@ -33,8 +33,10 @@ export default function SupplierPL() {
   const settingsPricing = settingsCtx?.settings?.pricing || {};
 
   // Top-right Date/Period filter states
-  const [periodFilter, setPeriodFilter] = useState('All Time'); // 'All Time' | 'Today' | 'This Month'
+  const [periodFilter, setPeriodFilter] = useState('All Time'); // 'All Time' | 'Today' | 'This Month' | 'Custom Range'
   const [customDate, setCustomDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   // Active Drawers / Slide-overs state
   const [activeCardDetail, setActiveCardDetail] = useState(null); // 'cost' | 'volume' | 'paid' | 'due' | 'rate' | 'income' | null
@@ -45,6 +47,15 @@ export default function SupplierPL() {
   const currentMonthStr = todayStr.slice(0, 7); // YYYY-MM
 
   const filteredIntakeLogs = useMemo(() => {
+    if (periodFilter === 'Custom Range' || startDate || endDate) {
+      return intakeLogs.filter((item) => {
+        const iDate = (item.date || '').slice(0, 10);
+        if (startDate && iDate < startDate) return false;
+        if (endDate && iDate > endDate) return false;
+        if (customDate && !startDate && !endDate) return iDate === customDate;
+        return true;
+      });
+    }
     if (customDate) {
       return intakeLogs.filter((item) => item.date === customDate);
     }
@@ -55,7 +66,7 @@ export default function SupplierPL() {
       return intakeLogs.filter((item) => (item.date || '').startsWith(currentMonthStr));
     }
     return intakeLogs;
-  }, [intakeLogs, customDate, periodFilter, todayStr, currentMonthStr]);
+  }, [intakeLogs, customDate, startDate, endDate, periodFilter, todayStr, currentMonthStr]);
 
   const activeSupplierSales = supplierSalesHistory;
   const filteredSales = useMemo(() => {
@@ -80,14 +91,29 @@ export default function SupplierPL() {
           }
         }
       }
+      if (periodFilter === 'Custom Range' || startDate || endDate) {
+        if (startDate && sDate < startDate) return false;
+        if (endDate && sDate > endDate) return false;
+        if (customDate && !startDate && !endDate) return sDate === customDate;
+        return true;
+      }
       if (customDate) return sDate === customDate;
       if (periodFilter === 'Today') return sDate === todayStr;
       if (periodFilter === 'This Month') return sDate.startsWith(currentMonthStr);
       return true;
     });
-  }, [activeSupplierSales, customDate, periodFilter, todayStr, currentMonthStr]);
+  }, [activeSupplierSales, customDate, startDate, endDate, periodFilter, todayStr, currentMonthStr]);
 
   const filteredExpenses = useMemo(() => {
+    if (periodFilter === 'Custom Range' || startDate || endDate) {
+      return allExpenses.filter((e) => {
+        const eDate = (e.date || '').slice(0, 10);
+        if (startDate && eDate < startDate) return false;
+        if (endDate && eDate > endDate) return false;
+        if (customDate && !startDate && !endDate) return eDate === customDate;
+        return true;
+      });
+    }
     if (customDate) {
       return allExpenses.filter((e) => e.date === customDate);
     }
@@ -98,7 +124,7 @@ export default function SupplierPL() {
       return allExpenses.filter((e) => (e.date || '').startsWith(currentMonthStr));
     }
     return allExpenses;
-  }, [allExpenses, customDate, periodFilter, todayStr, currentMonthStr]);
+  }, [allExpenses, customDate, startDate, endDate, periodFilter, todayStr, currentMonthStr]);
 
   // Compute Supplier Milk and Dahi Sales strictly isolated from filtered sales
   const { supplierMilkSales, supplierMilkVolume, supplierDahiSales, supplierDahiVolume, totalSupplierSales } = useMemo(() => {
@@ -402,18 +428,23 @@ export default function SupplierPL() {
         <div className="flex flex-wrap items-center gap-2">
           {/* A. Period Segmented Pills */}
           <div className="flex items-center bg-slate-100/90 p-1 rounded-full border border-slate-200/70">
-            {['All Time', 'Today', 'This Month'].map((period) => {
-              const isActive = periodFilter === period && !customDate;
+            {['All Time', 'Today', 'This Month', 'Custom Range'].map((period) => {
+              const isActive = periodFilter === period && !customDate && !startDate && !endDate;
+              const isCustomActive = period === 'Custom Range' && (periodFilter === 'Custom Range' || startDate || endDate || customDate);
               return (
                 <button
                   key={period}
                   type="button"
                   onClick={() => {
                     setPeriodFilter(period);
-                    setCustomDate('');
+                    if (period !== 'Custom Range') {
+                      setCustomDate('');
+                      setStartDate('');
+                      setEndDate('');
+                    }
                   }}
                   className={`px-3.5 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
-                    isActive
+                    (period === 'Custom Range' ? isCustomActive : isActive)
                       ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
@@ -424,19 +455,48 @@ export default function SupplierPL() {
             })}
           </div>
 
-          {/* B. Specific Date Picker input */}
-          <div className="relative flex items-center">
-            <Calendar className="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none" />
-            <input
-              type="date"
-              value={customDate}
-              onChange={(e) => {
-                setCustomDate(e.target.value);
-                if (e.target.value) setPeriodFilter('');
-              }}
-              className="h-9 pl-8 pr-3 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-700 shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-[#0092b8] focus:border-[#0092b8] transition cursor-pointer"
-            />
-          </div>
+          {/* B. Date Range / Custom Date Picker inputs */}
+          {(periodFilter === 'Custom Range' || startDate || endDate || customDate) && (
+            <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-full px-3 h-9 text-xs shadow-2xs">
+              <Calendar className="w-3.5 h-3.5 text-[#0092b8] shrink-0" />
+              <span className="text-slate-400 font-medium text-[11px]">From:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setCustomDate('');
+                  setPeriodFilter('Custom Range');
+                }}
+                className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+              />
+              <span className="text-slate-400 font-medium text-[11px]">To:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setCustomDate('');
+                  setPeriodFilter('Custom Range');
+                }}
+                className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+              />
+              {(startDate || endDate || customDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                    setCustomDate('');
+                    setPeriodFilter('All Time');
+                  }}
+                  className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer ml-1"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
 
           {/* C. Export CSV Button */}
           <button

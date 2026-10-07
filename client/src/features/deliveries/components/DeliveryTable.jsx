@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, PackageOpen, MapPin, User, Bike, Phone } from 'lucide-react';
+import { Eye, PackageOpen, MapPin, User, Bike, Phone, Calendar } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -27,18 +27,37 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
     }
   };
 
+  const formatDeliveryDate = (dateVal) => {
+    if (!dateVal) return '—';
+    try {
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) {
+        const parts = String(dateVal).split('T')[0].split('-');
+        if (parts.length === 3) {
+          const dateObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          return dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        return String(dateVal);
+      }
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+      return String(dateVal);
+    }
+  };
+
   const getShiftBadge = (shift) => {
-    if (shift === 'MORNING') {
+    const isMorning = String(shift || '').toUpperCase() === 'MORNING';
+    if (isMorning) {
       return (
-        <Badge variant="amber" className="text-[9px] px-1.5 py-0 font-medium">
-          Morning
-        </Badge>
+        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-900 border border-amber-300/80 rounded-md px-1.5 py-0.5 text-[10px] font-bold">
+          🌅 Morning
+        </span>
       );
     }
     return (
-      <Badge variant="indigo" className="text-[9px] px-1.5 py-0 font-medium">
-        Evening
-      </Badge>
+      <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-900 border border-indigo-300/80 rounded-md px-1.5 py-0.5 text-[10px] font-bold">
+        🌙 Evening
+      </span>
     );
   };
 
@@ -73,7 +92,7 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
       <Table>
         <TableHeader>
           <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
-            <TableHead className="w-[120px] py-1.5 text-xs">Date &amp; Shift</TableHead>
+            <TableHead className="w-[140px] py-1.5 text-xs">Date &amp; Shift</TableHead>
             <TableHead className="min-w-[170px] py-1.5 text-xs">Customer / Drop</TableHead>
             <TableHead className="min-w-[180px] py-1.5 text-xs">Purchased Items</TableHead>
             <TableHead className="min-w-[130px] py-1.5 text-xs">Rider / Route</TableHead>
@@ -121,11 +140,12 @@ export default function DeliveryTable({ deliveries = [], onViewDelivery }) {
                   className="cursor-pointer hover:bg-slate-50/80 transition-colors"
                 >
                   <TableCell className="align-top py-2">
-                    <div className="space-y-0.5">
-                      <div className="text-xs font-semibold text-slate-900 font-mono tabular leading-none">
-                        {delivery.date || '—'}
+                    <div className="space-y-1">
+                      <div className="text-xs font-bold text-slate-900 font-display flex items-center gap-1 leading-none">
+                        <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span>{formatDeliveryDate(delivery.date)}</span>
                       </div>
-                      <div className="flex items-center gap-1 mt-0.5">
+                      <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                         {getShiftBadge(delivery.shift)}
                         <span className="text-[9px] text-slate-400 font-mono">
                           {delivery.runCode}

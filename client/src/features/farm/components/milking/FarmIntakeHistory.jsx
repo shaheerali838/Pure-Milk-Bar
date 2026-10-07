@@ -43,6 +43,8 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
   const [shiftFilter, setShiftFilter] = useState('All');
   const [speciesFilter, setSpeciesFilter] = useState('All');
   const [selectedDate, setSelectedDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [selectedLogs, setSelectedLogs] = useState([]);
 
@@ -112,11 +114,14 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
           ? true
           : (item.species || '').toLowerCase() === speciesFilter.toLowerCase();
 
-      const matchesDate = !selectedDate || item.dateStr === selectedDate;
+      let matchesDate = true;
+      if (startDate && item.dateStr < startDate) matchesDate = false;
+      if (endDate && item.dateStr > endDate) matchesDate = false;
+      if (selectedDate && !startDate && !endDate) matchesDate = item.dateStr === selectedDate;
 
       return matchesSearch && matchesShift && matchesSpecies && matchesDate;
     });
-  }, [enrichedLogs, search, shiftFilter, speciesFilter, selectedDate]);
+  }, [enrichedLogs, search, shiftFilter, speciesFilter, selectedDate, startDate, endDate]);
 
   // Aggregated Summary Metrics
   const totalActualMilk = useMemo(() => {
@@ -320,9 +325,13 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full text-xs font-semibold text-slate-600">
             <button
               type="button"
-              onClick={() => setSelectedDate('')}
+              onClick={() => {
+                setSelectedDate('');
+                setStartDate('');
+                setEndDate('');
+              }}
               className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
-                !selectedDate
+                !selectedDate && !startDate && !endDate
                   ? 'bg-white text-emerald-700 shadow-xs font-bold'
                   : 'hover:text-slate-900'
               }`}
@@ -331,30 +340,65 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
             </button>
             <button
               type="button"
-              onClick={() => setSelectedDate(todayStr)}
+              onClick={() => {
+                setSelectedDate(todayStr);
+                setStartDate('');
+                setEndDate('');
+              }}
               className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
-                selectedDate === todayStr
+                selectedDate === todayStr && !startDate && !endDate
                   ? 'bg-white text-emerald-700 shadow-xs font-bold'
                   : 'hover:text-slate-900'
               }`}
             >
               Today
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedDate('');
+              }}
+              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                startDate || endDate
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
+                  : 'hover:text-slate-900'
+              }`}
+            >
+              Custom Range
+            </button>
           </div>
 
-          {/* Custom Date Picker */}
+          {/* Custom Date Range Inputs */}
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5 text-xs text-slate-700">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="text-[11px] font-semibold text-slate-400">From:</span>
             <input
               type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setSelectedDate('');
+              }}
               className="bg-transparent border-none outline-none text-xs font-medium cursor-pointer"
             />
-            {selectedDate && (
+            <span className="text-[11px] font-semibold text-slate-400">To:</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setSelectedDate('');
+              }}
+              className="bg-transparent border-none outline-none text-xs font-medium cursor-pointer"
+            />
+            {(startDate || endDate || selectedDate) && (
               <button
-                onClick={() => setSelectedDate('')}
-                className="text-slate-400 hover:text-slate-600 text-[10px] font-bold ml-1 cursor-pointer"
+                onClick={() => {
+                  setSelectedDate('');
+                  setStartDate('');
+                  setEndDate('');
+                }}
+                className="text-rose-600 hover:text-rose-800 text-xs font-bold ml-1 cursor-pointer"
                 title="Clear date filter"
               >
                 ✕

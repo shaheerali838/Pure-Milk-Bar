@@ -46,6 +46,7 @@ export function DeliveryProvider({ children }) {
         deliveryAddress: data.deliveryAddress ? data.deliveryAddress.trim() : '',
         itemDescription: data.itemDescription ? data.itemDescription.trim() : 'Dairy Delivery',
         qtyLiters: Number(data.qtyLiters) || 0,
+        deliveryFee: data.deliveryFee !== null && data.deliveryFee !== undefined ? Number(data.deliveryFee) || 0 : null,
         paymentMode: data.paymentMode || 'CASH',
         codAmountToCollect: Number(data.codAmountToCollect) || 0,
         items: Array.isArray(data.items) ? data.items : [],
@@ -55,6 +56,9 @@ export function DeliveryProvider({ children }) {
         source: data.source || 'SCHEDULED_ROUTE',
         linkedOrderId: data.linkedOrderId || null,
         receiptNumber: data.receiptNumber || null,
+        customerPhone: data.customerPhone || '',
+        deliverySubType: data.deliverySubType || 'monthly',
+        notes: data.notes || '',
         status: data.status || 'PENDING',
         bottlesReturned: Number(data.bottlesReturned) || 0,
       };
@@ -79,13 +83,23 @@ export function DeliveryProvider({ children }) {
   };
 
   const updateDelivery = async (id, data) => {
+    const previousDeliveries = deliveries;
     setDeliveries((prev) =>
       prev.map((d) => ((d._id || d.id) === id ? { ...d, ...data } : d))
     );
     try {
-      await deliveryService.updateDelivery(id, data);
+      const updated = await deliveryService.updateDelivery(id, data);
+      const deliveryDoc = updated?.deliveryRun || updated;
+      if (deliveryDoc && typeof deliveryDoc === 'object') {
+        setDeliveries((prev) => prev.map((d) => (
+          (d._id || d.id) === id ? { ...d, ...deliveryDoc, id: deliveryDoc._id || deliveryDoc.id || id } : d
+        )));
+      }
+      return deliveryDoc;
     } catch (err) {
+      setDeliveries(previousDeliveries);
       console.warn('Failed to update delivery on API:', err.message);
+      throw err;
     }
   };
 

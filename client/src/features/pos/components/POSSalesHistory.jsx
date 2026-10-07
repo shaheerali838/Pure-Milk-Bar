@@ -61,7 +61,9 @@ export default function POSSalesHistory({ compact = false }) {
   const { salesHistory = [] } = usePOSContext();
   const [search, setSearch] = useState('');
   const [selectedSale, setSelectedSale] = useState(null);
-  const [dateFilter, setDateFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all'); // 'today' | 'week' | 'all' | 'custom'
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [channelFilter, setChannelFilter] = useState('all'); // 'all' | 'walkin' | 'delivery'
 
   const filteredByDate = useMemo(() => {
@@ -98,8 +100,20 @@ export default function POSSalesHistory({ compact = false }) {
       weekAgo.setDate(weekAgo.getDate() - 7);
       return list.filter(sale => new Date(sale.timestamp || sale.date) >= weekAgo);
     }
+    if (dateFilter === 'custom') {
+      return list.filter((sale) => {
+        const raw = sale.timestamp || sale.date || sale.createdAt || sale.formattedDate;
+        if (!raw) return true;
+        const d = new Date(raw);
+        if (isNaN(d.getTime())) return true;
+        const sDate = d.toISOString().split('T')[0];
+        if (startDate && sDate < startDate) return false;
+        if (endDate && sDate > endDate) return false;
+        return true;
+      });
+    }
     return list;
-  }, [salesHistory, dateFilter, channelFilter]);
+  }, [salesHistory, dateFilter, startDate, endDate, channelFilter]);
 
   const filteredSales = filteredByDate.filter((sale) => {
     const customer = getCustomer(sale);
@@ -143,9 +157,6 @@ export default function POSSalesHistory({ compact = false }) {
               <Receipt className="w-4.5 h-4.5 text-emerald-600" />
               POS Sales Finance Report
             </h2>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Comprehensive overview of total sales, income, and customer data.
-            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {/* Channel Filter */}
@@ -172,21 +183,60 @@ export default function POSSalesHistory({ compact = false }) {
 
             {/* Date Filter */}
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-              {['today', 'week', 'all'].map((filter) => (
+              {['today', 'week', 'all', 'custom'].map((filter) => (
                 <button
                   key={filter}
                   type="button"
-                  onClick={() => setDateFilter(filter)}
+                  onClick={() => {
+                    setDateFilter(filter);
+                    if (filter !== 'custom') {
+                      setStartDate('');
+                      setEndDate('');
+                    }
+                  }}
                   className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     dateFilter === filter
                       ? 'bg-white text-emerald-700 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  {filter === 'today' ? 'Today' : filter === 'week' ? 'Last 7 Days' : 'All History'}
+                  {filter === 'today' ? 'Today' : filter === 'week' ? 'Last 7 Days' : filter === 'custom' ? 'Custom Range' : 'All History'}
                 </button>
               ))}
             </div>
+
+            {/* Custom Date Range Inputs */}
+            {dateFilter === 'custom' && (
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs">
+                <span className="text-[11px] font-semibold text-slate-500">From:</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+                />
+                <span className="text-[11px] font-semibold text-slate-500">To:</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+                />
+                {(startDate || endDate) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStartDate('');
+                      setEndDate('');
+                      setDateFilter('all');
+                    }}
+                    className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer ml-1"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -234,7 +284,7 @@ export default function POSSalesHistory({ compact = false }) {
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
-          <div><h2 className="text-sm font-black text-slate-900 flex items-center gap-2"><Receipt className="w-4 h-4 text-emerald-600" /> POS sales</h2><p className="text-[11px] text-slate-500 mt-0.5">Milk sales and customer details saved at checkout.</p></div>
+          <div><h2 className="text-sm font-black text-slate-900 flex items-center gap-2"><Receipt className="w-4 h-4 text-emerald-600" /> POS sales</h2></div>
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5"><Search className="w-3.5 h-3.5 text-slate-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search invoice or customer" className="w-44 bg-transparent outline-none text-xs" /></div>
         </div>
         {filteredSales.length === 0 ? <div className="py-10 text-center text-xs text-slate-400">No POS sales found.</div> : <div className={compact ? 'max-h-72 overflow-y-auto' : 'overflow-x-auto'}><table className="w-full text-left text-xs"><thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400"><tr><th className="px-4 py-2">Invoice</th><th className="px-4 py-2">Customer</th><th className="px-4 py-2">Items</th><th className="px-4 py-2 text-right">Total</th><th className="px-4 py-2 text-right">Action</th></tr></thead><tbody className="divide-y divide-slate-100">{filteredSales.map((sale) => { const customer = getCustomer(sale); return <tr key={sale.invoiceId} className="hover:bg-emerald-50/40 transition-colors"><td className="px-4 py-2.5 font-mono font-bold text-slate-700">{sale.invoiceId}</td><td className="px-4 py-2.5"><div className="font-bold text-slate-800 flex items-center gap-1"><User className="w-3 h-3 text-slate-400" /> {customer.name}</div><div className="text-[10px] text-slate-400">{customer.phone || 'N/A'}</div></td><td className="px-4 py-2.5 text-slate-500">{getSaleItems(sale).map((item) => item.name).join(', ') || 'Dairy item'}</td><td className="px-4 py-2.5 text-right font-black text-emerald-700">Rs. {getTotal(sale).toLocaleString()}</td><td className="px-4 py-2.5 text-right"><button type="button" title="View sale details" onClick={() => setSelectedSale(sale)} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 font-bold hover:bg-blue-600 hover:text-white cursor-pointer transition-colors"><Eye className="w-3.5 h-3.5" /> View</button></td></tr>; })}</tbody></table></div>}

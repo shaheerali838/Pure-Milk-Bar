@@ -70,6 +70,7 @@ export default function Sidebar({ isOpen = false, onClose }) {
       { id: "Dashboard", name: "Main Dashboard", icon: LayoutGrid, path: "/dashboard", roles: [ROLES.ADMIN, ROLES.MANAGER] },
       { id: "Farm", name: "Farm Dashboard", icon: Tractor, path: "/farm", roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.FARM_SUPERVISOR] },
       { id: "Supplier", name: "Supplier Dashboard", icon: Truck, path: "/supplier", roles: [ROLES.ADMIN, ROLES.MANAGER] },
+      { id: "CustomerHub", name: "Customer & Deliveries", icon: Users, path: "/customer-hub", roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.CASHIER] },
     ];
     return all.filter((l) => l.roles.includes(currentRole));
   }, [currentRole]);
@@ -91,23 +92,7 @@ export default function Sidebar({ isOpen = false, onClose }) {
     return all.filter((l) => l.roles.includes(currentRole));
   }, [currentRole]);
 
-  // 4. Delivery Links
-  const deliveryLinks = useMemo(() => {
-    const all = [
-      { id: "doorstep-delivery", name: "Doorstep Deliveries", icon: Truck, path: "/delivery", roles: [ROLES.ADMIN, ROLES.MANAGER] },
-    ];
-    return all.filter((l) => l.roles.includes(currentRole));
-  }, [currentRole]);
-
-  // 5. Customers Links
-  const customerLinks = useMemo(() => {
-    const all = [
-      { id: "customer", name: "Customer & Accounts", icon: Users, path: "/customer", roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.CASHIER] },
-    ];
-    return all.filter((l) => l.roles.includes(currentRole));
-  }, [currentRole]);
-
-  // 6. Finance Links
+  // 4. Finance Links
   const financeLinks = useMemo(() => {
     const all = [
       { id: "finance", name: "Finance", icon: Wallet, path: "/finance", roles: [ROLES.ADMIN] },
@@ -115,7 +100,7 @@ export default function Sidebar({ isOpen = false, onClose }) {
     return all.filter((l) => l.roles.includes(currentRole));
   }, [currentRole]);
 
-  // 7. Reconciliation & Management Links
+  // 5. Reconciliation & Management Links
   const reconciliationLinks = useMemo(() => {
     return rawReconciliationLinks.filter((l) => {
       if (currentRole === ROLES.ADMIN) return true;
@@ -172,7 +157,7 @@ export default function Sidebar({ isOpen = false, onClose }) {
           </button>
         </div>
 
-        <div className="flex-1 px-3 py-3 space-y-4 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-3 space-y-4">
         {/* Operations Section */}
         {operationsLinks.length > 0 && (
           <div>
@@ -184,13 +169,16 @@ export default function Sidebar({ isOpen = false, onClose }) {
                     key={link.id}
                     to={link.path}
                     onClick={handleLinkClick}
-                    className={({ isActive }) =>
-                      `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                        isActive
+                    className={({ isActive }) => {
+                      const isCurrentActive =
+                        isActive ||
+                        (link.path === '/customer-hub' && (pathname.startsWith('/customer') || pathname.startsWith('/delivery')));
+                      return `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                        isCurrentActive
                           ? "bg-[#00a86b] text-white shadow-xs"
                           : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                      }`
-                    }
+                      }`;
+                    }}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
                     <span className="truncate">{link.name}</span>
@@ -250,68 +238,6 @@ export default function Sidebar({ isOpen = false, onClose }) {
                       `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
                         isActive
                           ? "bg-[#00a86b] text-white shadow-xs"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                      }`
-                    }
-                  >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    <span className="truncate">{link.name}</span>
-                  </NavLink>
-                );
-              })}
-            </nav>
-          </div>
-        )}
-
-        {/* Delivery Section */}
-        {deliveryLinks.length > 0 && (
-          <div>
-            <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-              DELIVERY
-            </div>
-            <nav className="space-y-0.5">
-              {deliveryLinks.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <NavLink
-                    key={link.id}
-                    to={link.path}
-                    onClick={handleLinkClick}
-                    className={({ isActive }) =>
-                      `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                        isActive
-                          ? "bg-[#00a86b] text-white shadow-xs"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                      }`
-                    }
-                  >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    <span className="truncate">{link.name}</span>
-                  </NavLink>
-                );
-              })}
-            </nav>
-          </div>
-        )}
-
-        {/* Customers Section */}
-        {customerLinks.length > 0 && (
-          <div>
-            <div className="px-2.5 mb-2 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-              CUSTOMERS
-            </div>
-            <nav className="space-y-0.5">
-              {customerLinks.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <NavLink
-                    key={link.id}
-                    to={link.path}
-                    onClick={handleLinkClick}
-                    className={({ isActive }) =>
-                      `w-full flex items-center gap-2.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
-                        isActive
-                          ? "bg-[#00a86b] text-white shadow-sm shadow-emerald-500/20"
                           : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                       }`
                     }

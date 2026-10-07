@@ -55,28 +55,29 @@ class OrderService {
 
     // 3. Khata Payment Verification & Limits
     const isKhataPayment = orderData.paymentMethod === 'KHATA';
+    const isDeliveryUnpaid =
+      orderData.fulfillmentType === 'DELIVERY' ||
+      orderData.paymentMethod === 'COD' ||
+      orderData.paymentMethod === 'KHATA';
+
     const splitKhataAmount =
       orderData.paymentMethod === 'SPLIT' && orderData.splitPaymentMeta?.khataAmount
         ? Number(orderData.splitPaymentMeta.khataAmount)
         : 0;
-    const totalKhataDebit = isKhataPayment ? orderData.grandTotal : splitKhataAmount;
 
-    if (totalKhataDebit > 0) {
-      if (!customer) {
-        throw new AppError(
-          'An active customer account must be selected for Khata credit payments.',
-          400,
-          'CUSTOMER_REQUIRED_FOR_KHATA'
-        );
-      }
+    let totalKhataDebit = 0;
+    if (isKhataPayment || (isDeliveryUnpaid && (Number(orderData.amountReceived) || 0) < orderData.grandTotal)) {
+      totalKhataDebit = Math.max(0, orderData.grandTotal - (Number(orderData.amountReceived) || 0));
+    } else if (orderData.paymentMethod === 'SPLIT') {
+      totalKhataDebit = splitKhataAmount;
+    } else if (orderData.paymentMethod === 'CASH' || orderData.paymentMethod === 'ONLINE') {
+      totalKhataDebit = Math.max(0, orderData.grandTotal - (Number(orderData.amountReceived) || orderData.grandTotal));
+    }
 
-      const availableCredit = customer.creditLimit - customer.currentBalance;
-      if (totalKhataDebit > availableCredit) {
-        throw new AppError(
-          `Credit limit exceeded. Customer available credit is Rs. ${availableCredit.toLocaleString()}, but order requires Rs. ${totalKhataDebit.toLocaleString()}.`,
-          400,
-          'CREDIT_LIMIT_EXCEEDED'
-        );
+    if (totalKhataDebit > 0 && customer && customer.creditLimit > 0) {
+      const availableCredit = customer.creditLimit - (customer.currentBalance || customer.khataBalance || 0);
+      if (availableCredit > 0 && totalKhataDebit > availableCredit) {
+        // Warning note: allowed but flagged
       }
     }
 

@@ -1,5 +1,13 @@
 import Joi from 'joi';
 
+const agreementItemSchema = Joi.object({
+  productId: Joi.string().allow('', null).optional(),
+  name: Joi.string().trim().required(),
+  qty: Joi.number().positive().required(),
+  unitPrice: Joi.number().min(0).required(),
+  unit: Joi.string().valid('L', 'KG').required(),
+});
+
 // Create Customer Schema
 export const createCustomerSchema = Joi.object({
   code: Joi.string()
@@ -28,7 +36,22 @@ export const createCustomerSchema = Joi.object({
   area: Joi.string().trim().max(100).allow('', null),
   deliveryRoute: Joi.string().trim().max(100).allow('', null),
   creditLimit: Joi.number().min(0).default(5000),
-  deliveryFee: Joi.number().min(0).allow(null).default(0),
+  deliveryFee: Joi.number().min(0).allow(null).optional(),
+  morningMilkQty: Joi.number().min(0).allow(null).optional().default(0),
+  eveningMilkQty: Joi.number().min(0).allow(null).optional().default(0),
+  subscription: Joi.string().trim().max(500).allow('', null).optional(),
+  morningItems: Joi.array().items(agreementItemSchema).allow(null).optional(),
+  eveningItems: Joi.array().items(agreementItemSchema).allow(null).optional(),
+  autoAssignRider: Joi.string().allow('', null).optional(),
+  preferredRiderId: Joi.string().allow('', null).optional(),
+  standingOrder: Joi.object({
+    morningQty: Joi.number().min(0).allow(null).optional(),
+    eveningQty: Joi.number().min(0).allow(null).optional(),
+    morningItems: Joi.array().items(agreementItemSchema).allow(null).optional(),
+    eveningItems: Joi.array().items(agreementItemSchema).allow(null).optional(),
+    autoAssignRider: Joi.string().allow('', null).optional(),
+    deliveryFee: Joi.number().min(0).allow(null).optional(),
+  }).allow(null).optional(),
   openingBalance: Joi.number().min(0).allow(null).default(0),
   openingPaymentMethod: Joi.string().trim().uppercase().allow('', null).optional().default('KHATA_DEBIT'),
   currentBalance: Joi.number().allow(null).default(0),
@@ -57,7 +80,22 @@ export const updateCustomerSchema = Joi.object({
   area: Joi.string().trim().max(100).allow('', null),
   deliveryRoute: Joi.string().trim().max(100).allow('', null),
   creditLimit: Joi.number().min(0),
-  deliveryFee: Joi.number().min(0).allow(null),
+  deliveryFee: Joi.number().min(0).allow(null).optional(),
+  morningMilkQty: Joi.number().min(0).allow(null).optional(),
+  eveningMilkQty: Joi.number().min(0).allow(null).optional(),
+  subscription: Joi.string().trim().max(500).allow('', null).optional(),
+  morningItems: Joi.array().items(agreementItemSchema).allow(null).optional(),
+  eveningItems: Joi.array().items(agreementItemSchema).allow(null).optional(),
+  autoAssignRider: Joi.string().allow('', null).optional(),
+  preferredRiderId: Joi.string().allow('', null).optional(),
+  standingOrder: Joi.object({
+    morningQty: Joi.number().min(0).allow(null).optional(),
+    eveningQty: Joi.number().min(0).allow(null).optional(),
+    morningItems: Joi.array().items(agreementItemSchema).allow(null).optional(),
+    eveningItems: Joi.array().items(agreementItemSchema).allow(null).optional(),
+    autoAssignRider: Joi.string().allow('', null).optional(),
+    deliveryFee: Joi.number().min(0).allow(null).optional(),
+  }).allow(null).optional(),
   currentBalance: Joi.number(),
   preferredPayment: Joi.string()
     .trim()
