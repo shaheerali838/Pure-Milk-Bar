@@ -12,7 +12,9 @@ import { useDahiContext } from '@/context/DahiContext';
 import { getPktTodayString, getPktDaysAgoString } from '@/utils/dateUtils';
 
 export default function ProfitLossSnapshot() {
-  const [timeRange, setTimeRange] = useState("today"); // 'today' | 'week' | 'month'
+  const [timeRange, setTimeRange] = useState("today"); // 'today' | 'week' | 'month' | 'custom'
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
 
   const { salesHistory = [], inventoryMetrics = {} } = usePOSContext();
   const { expenses: farmExpensesList = [], totals: expenseTotals = {} } = useExpense();
@@ -52,6 +54,11 @@ export default function ProfitLossSnapshot() {
     }
     if (timeRange === 'month') {
       return cleanDate >= monthStartStr;
+    }
+    if (timeRange === 'custom') {
+      if (customStartDate && cleanDate < customStartDate) return false;
+      if (customEndDate && cleanDate > customEndDate) return false;
+      return true;
     }
     return true;
   };
@@ -111,35 +118,69 @@ export default function ProfitLossSnapshot() {
   return (
     <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
       {/* 1. Top Section Header with Time Range Switcher */}
-      <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
         <div>
           <h3 className="text-base font-extrabold text-slate-900 font-display flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-emerald-600" />
             <span>Profit &amp; Loss Financial Snapshot</span>
           </h3>
-          
         </div>
 
-        {/* Time Tabs */}
-        <div className="inline-flex items-center p-1 bg-slate-100 rounded-full shadow-2xs self-start sm:self-auto">
-          {[
-            { id: "today", label: "Today" },
-            { id: "week", label: "This Week" },
-            { id: "month", label: "This Month" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setTimeRange(tab.id)}
-              className={`px-3.5 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
-                timeRange === tab.id
-                  ? "bg-white text-slate-900 shadow-xs"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Time Tabs */}
+          <div className="inline-flex items-center p-1 bg-slate-100 rounded-full shadow-2xs self-start sm:self-auto">
+            {[
+              { id: "today", label: "Today" },
+              { id: "week", label: "This Week" },
+              { id: "month", label: "This Month" },
+              { id: "custom", label: "Custom Range" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setTimeRange(tab.id)}
+                className={`px-3.5 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                  timeRange === tab.id
+                    ? "bg-white text-slate-900 shadow-xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom Date Range Inputs */}
+          {timeRange === 'custom' && (
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs">
+              <span className="text-[11px] font-semibold text-slate-500">From:</span>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+              />
+              <span className="text-[11px] font-semibold text-slate-500">To:</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+              />
+              {(customStartDate || customEndDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomStartDate('');
+                    setCustomEndDate('');
+                  }}
+                  className="text-[10px] font-bold text-rose-600 hover:underline ml-1 cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

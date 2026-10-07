@@ -28,7 +28,6 @@ import { usePOSContext } from '@/context/POSContext';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
-import { PKRIcon } from '@/components/common/PKRIcon';
 import ExportCSVModal from '@/components/common/ExportCSVModal';
 
 const APP_ROUTES = [
@@ -405,20 +404,6 @@ export default function Navbar({ onToggleSidebar }) {
           <Download className="w-3.5 h-3.5" />
           <span>Export</span>
         </Button>
-
-        {/* Farm P&L Quick Link with Pakistani Rupee Currency Icon */}
-        <Link to="/farm/pl">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-7 px-2 sm:px-2.5 text-xs font-semibold cursor-pointer bg-emerald-50/50 hover:bg-emerald-50 text-emerald-800 border-emerald-200/80 shadow-2xs gap-1"
-            title="Farm Profit & Loss (P&L)"
-          >
-            <PKRIcon className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="hidden md:inline">P&amp;L</span>
-          </Button>
-        </Link>
 
         {/* POS Terminal */}
         <Link to="/pos">

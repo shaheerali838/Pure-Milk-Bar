@@ -27,7 +27,9 @@ export default function SupplierDailyReport() {
   const { supplierSalesHistory = [], salesHistory = [], inventoryMetrics = {} } = usePOSContext() || {};
   const { expenses = [] } = useSourcExpenseContext() || {};
 
-  const [dateFilter, setDateFilter] = useState('today'); // 'today' (default) | 'week' | 'all'
+  const [dateFilter, setDateFilter] = useState('today'); // 'today' (default) | 'week' | 'all' | 'custom'
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   // Expected daily procurement capacity from registered suppliers
   const expectedSupplierDailyCapacity = useMemo(() => {
@@ -147,9 +149,16 @@ export default function SupplierDailyReport() {
       const weekAgoStr = normalizeDateStr(weekAgo);
       return list.filter((item) => item.date >= weekAgoStr);
     }
+    if (dateFilter === 'custom') {
+      return list.filter((item) => {
+        if (startDate && item.date < startDate) return false;
+        if (endDate && item.date > endDate) return false;
+        return true;
+      });
+    }
 
     return list;
-  }, [intakeLogs, supplierSalesHistory, salesHistory, expenses, dateFilter]);
+  }, [intakeLogs, supplierSalesHistory, salesHistory, expenses, dateFilter, startDate, endDate]);
 
   // Overall totals across the aggregated view
   const overallTotals = useMemo(() => {
@@ -197,41 +206,63 @@ export default function SupplierDailyReport() {
           </p>
         </div>
 
-        {/* Date Filter Buttons */}
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-center">
-          <button
-            type="button"
-            onClick={() => setDateFilter('today')}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              dateFilter === 'today'
-                ? 'bg-white text-blue-700 shadow-xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Today
-          </button>
-          <button
-            type="button"
-            onClick={() => setDateFilter('week')}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              dateFilter === 'week'
-                ? 'bg-white text-blue-700 shadow-xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Last 7 Days
-          </button>
-          <button
-            type="button"
-            onClick={() => setDateFilter('all')}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              dateFilter === 'all'
-                ? 'bg-white text-blue-700 shadow-xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            All History
-          </button>
+        {/* Date Filter Buttons & Custom Range Inputs */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-center">
+            {['today', 'week', 'all', 'custom'].map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => {
+                  setDateFilter(filter);
+                  if (filter !== 'custom') {
+                    setStartDate('');
+                    setEndDate('');
+                  }
+                }}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  dateFilter === filter
+                    ? 'bg-white text-blue-700 shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {filter === 'today' ? 'Today' : filter === 'week' ? 'Last 7 Days' : filter === 'custom' ? 'Custom Range' : 'All History'}
+              </button>
+            ))}
+          </div>
+
+          {dateFilter === 'custom' && (
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs">
+              <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+              <span className="text-[11px] font-semibold text-slate-500">From:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+              />
+              <span className="text-[11px] font-semibold text-slate-500">To:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+              />
+              {(startDate || endDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                    setDateFilter('all');
+                  }}
+                  className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer ml-1"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

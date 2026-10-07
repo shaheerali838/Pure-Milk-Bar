@@ -54,7 +54,7 @@ export default function POSCardOverflow({ onSelectSource }) {
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
       {cards.map(({ id, title, amount, sub, icon: Icon, color, badge, clickable, onClick }) => (
         <div
           key={id}
@@ -62,18 +62,18 @@ export default function POSCardOverflow({ onSelectSource }) {
           role={clickable ? 'button' : undefined}
           tabIndex={clickable ? 0 : undefined}
           onKeyDown={clickable ? (e) => (e.key === 'Enter' || e.key === ' ') && onClick() : undefined}
-          className={`flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 ${
+          className={`flex flex-col justify-between bg-white border border-slate-200/90 rounded-xl p-2 sm:p-2.5 shadow-2xs transition-all duration-200 ${
             clickable
               ? 'cursor-pointer hover:shadow-md hover:scale-[1.01] hover:border-slate-300'
               : 'hover:shadow-xs'
           }`}
         >
-          <div className="flex items-start justify-between mb-1.5">
+          <div className="flex items-start justify-between mb-1">
             <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
+              className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
               style={{ background: `${color}15` }}
             >
-              <Icon style={{ width: 15, height: 15, color }} />
+              <Icon style={{ width: 14, height: 14, color }} />
             </div>
             <div className="flex items-center gap-1">
               <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
@@ -84,14 +84,15 @@ export default function POSCardOverflow({ onSelectSource }) {
           </div>
 
           <div>
-            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
+            <p className="text-sm sm:text-base font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
               {amount}
             </p>
-            <p className="text-xs font-bold text-slate-800">{title}</p>
-            <p className="text-[10px] font-medium text-slate-400 line-clamp-1" title={sub}>{sub}</p>
+            <p className="text-[11px] sm:text-xs font-bold text-slate-800 line-clamp-1">{title}</p>
+            <p className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 line-clamp-1" title={sub}>{sub}</p>
           </div>
         </div>
       ))}
     </div>
   );
 }
+

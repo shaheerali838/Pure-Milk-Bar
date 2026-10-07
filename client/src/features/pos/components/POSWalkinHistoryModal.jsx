@@ -22,7 +22,9 @@ import { getProductIcon } from '@/features/inventory/components/AddProduct';
 export default function POSWalkinHistoryModal({ isOpen, onClose }) {
   const { salesHistory = [], setCompletedSaleReceipt } = usePOSContext();
   const [dateFilter, setDateFilter] = useState('today');
-  const [customDate, setCustomDate] = useState(new Date().toISOString().split('T')[0]);
+  const [customDate, setCustomDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Filter strictly Walk-in counter transactions only
@@ -74,11 +76,15 @@ export default function POSWalkinHistoryModal({ isOpen, onClose }) {
         return saleDateObj >= weekAgo;
       }
       if (dateFilter === 'custom') {
-        return saleDateObj.toISOString().split('T')[0] === customDate;
+        const sDate = saleDateObj.toISOString().split('T')[0];
+        if (startDate && sDate < startDate) return false;
+        if (endDate && sDate > endDate) return false;
+        if (customDate && !startDate && !endDate) return sDate === customDate;
+        return true;
       }
       return true; // 'all'
     });
-  }, [walkinSales, dateFilter, customDate]);
+  }, [walkinSales, dateFilter, customDate, startDate, endDate]);
 
   // Filter by search query
   const displayedSales = useMemo(() => {
@@ -204,13 +210,20 @@ export default function POSWalkinHistoryModal({ isOpen, onClose }) {
               { id: 'today', label: 'Today' },
               { id: 'yesterday', label: 'Yesterday' },
               { id: 'week', label: 'Last 7 Days' },
-              { id: 'custom', label: 'Custom Date' },
+              { id: 'custom', label: 'Custom Range' },
               { id: 'all', label: 'All History' },
             ].map((tab) => (
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setDateFilter(tab.id)}
+                onClick={() => {
+                  setDateFilter(tab.id);
+                  if (tab.id !== 'custom') {
+                    setStartDate('');
+                    setEndDate('');
+                    setCustomDate('');
+                  }
+                }}
                 className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all cursor-pointer ${
                   dateFilter === tab.id
                     ? 'bg-emerald-600 text-white shadow-xs'
@@ -223,14 +236,42 @@ export default function POSWalkinHistoryModal({ isOpen, onClose }) {
           </div>
 
           {dateFilter === 'custom' && (
-            <div className="flex items-center gap-2 bg-white px-2.5 py-1 rounded-xl border border-slate-200">
+            <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 text-xs">
               <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="text-[11px] font-semibold text-slate-500">From:</span>
               <input
                 type="date"
-                value={customDate}
-                onChange={(e) => setCustomDate(e.target.value)}
-                className="text-xs font-bold text-slate-800 bg-transparent outline-none"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setCustomDate('');
+                }}
+                className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer"
               />
+              <span className="text-[11px] font-semibold text-slate-500">To:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setCustomDate('');
+                }}
+                className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer"
+              />
+              {(startDate || endDate || customDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                    setCustomDate('');
+                    setDateFilter('today');
+                  }}
+                  className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer ml-1"
+                >
+                  Clear
+                </button>
+              )}
             </div>
           )}
 

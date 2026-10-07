@@ -203,15 +203,16 @@ export default function POSSale() {
           Math.max(0, netPayable - (parseFloat(partialPaidAmount) || 0));
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3.5">
-      <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
+    <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-3.5 sm:p-4 min-h-0 overflow-hidden">
+      {/* Fixed Header */}
+      <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
             <ShoppingCart className="w-4 h-4" />
           </div>
           <div>
             <h2 className="text-xs sm:text-sm font-bold text-slate-900 font-display">
-              Sale Cart
+              Sale Cart &amp; Checkout
             </h2>
           </div>
           <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-600 text-white">
@@ -232,22 +233,24 @@ export default function POSSale() {
         )}
       </div>
 
-      {cart.length === 0 ? (
-        <div className="py-8 text-center flex flex-col items-center justify-center space-y-2">
-          <div className="w-11 h-11 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
-            <ShoppingCart className="w-5 h-5" />
+      {/* Scrollable Checkout Content */}
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-3.5 pr-1 py-2">
+        {cart.length === 0 ? (
+          <div className="py-8 text-center flex flex-col items-center justify-center space-y-2">
+            <div className="w-11 h-11 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+              <ShoppingCart className="w-5 h-5" />
+            </div>
+            <p className="text-xs sm:text-sm font-bold text-slate-700">
+              Sale Cart is Empty
+            </p>
+            <p className="text-[11px] text-slate-400 max-w-55">
+              Tap any dairy product on the left to add it to this active sale.
+            </p>
           </div>
-          <p className="text-xs sm:text-sm font-bold text-slate-700">
-            Sale Cart is Empty
-          </p>
-          <p className="text-[11px] text-slate-400 max-w-55">
-            Tap any dairy product on the left to add it to this active sale.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <div className="space-y-2.5 max-h-85 overflow-y-auto pr-1">
-            {cart.map((item) => {
+        ) : (
+          <div className="space-y-2">
+            <div className="space-y-2 pr-0.5">
+              {cart.map((item) => {
               const qty = Number(item.quantity) || 0;
               const rate = Number(item.price) || 0;
               const lineTotal = Math.round(qty * rate);
@@ -1007,8 +1010,10 @@ export default function POSSale() {
       )}
 
       {saleCategory === "delivery" && <POSDeliverySection />}
+      </div>
 
-      <div className="pt-2">
+      {/* Fixed Bottom Checkout Action */}
+      <div className="pt-2.5 border-t border-slate-100 shrink-0">
         {cart.length === 0 ? (
           <button
             type="button"
@@ -1062,3 +1067,4 @@ export default function POSSale() {
     </div>
   );
 }
+

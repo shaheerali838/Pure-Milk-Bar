@@ -61,7 +61,9 @@ export default function POSSalesHistory({ compact = false }) {
   const { salesHistory = [] } = usePOSContext();
   const [search, setSearch] = useState('');
   const [selectedSale, setSelectedSale] = useState(null);
-  const [dateFilter, setDateFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all'); // 'today' | 'week' | 'all' | 'custom'
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [channelFilter, setChannelFilter] = useState('all'); // 'all' | 'walkin' | 'delivery'
 
   const filteredByDate = useMemo(() => {
@@ -98,8 +100,20 @@ export default function POSSalesHistory({ compact = false }) {
       weekAgo.setDate(weekAgo.getDate() - 7);
       return list.filter(sale => new Date(sale.timestamp || sale.date) >= weekAgo);
     }
+    if (dateFilter === 'custom') {
+      return list.filter((sale) => {
+        const raw = sale.timestamp || sale.date || sale.createdAt || sale.formattedDate;
+        if (!raw) return true;
+        const d = new Date(raw);
+        if (isNaN(d.getTime())) return true;
+        const sDate = d.toISOString().split('T')[0];
+        if (startDate && sDate < startDate) return false;
+        if (endDate && sDate > endDate) return false;
+        return true;
+      });
+    }
     return list;
-  }, [salesHistory, dateFilter, channelFilter]);
+  }, [salesHistory, dateFilter, startDate, endDate, channelFilter]);
 
   const filteredSales = filteredByDate.filter((sale) => {
     const customer = getCustomer(sale);
@@ -172,21 +186,60 @@ export default function POSSalesHistory({ compact = false }) {
 
             {/* Date Filter */}
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-              {['today', 'week', 'all'].map((filter) => (
+              {['today', 'week', 'all', 'custom'].map((filter) => (
                 <button
                   key={filter}
                   type="button"
-                  onClick={() => setDateFilter(filter)}
+                  onClick={() => {
+                    setDateFilter(filter);
+                    if (filter !== 'custom') {
+                      setStartDate('');
+                      setEndDate('');
+                    }
+                  }}
                   className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     dateFilter === filter
                       ? 'bg-white text-emerald-700 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  {filter === 'today' ? 'Today' : filter === 'week' ? 'Last 7 Days' : 'All History'}
+                  {filter === 'today' ? 'Today' : filter === 'week' ? 'Last 7 Days' : filter === 'custom' ? 'Custom Range' : 'All History'}
                 </button>
               ))}
             </div>
+
+            {/* Custom Date Range Inputs */}
+            {dateFilter === 'custom' && (
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs">
+                <span className="text-[11px] font-semibold text-slate-500">From:</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+                />
+                <span className="text-[11px] font-semibold text-slate-500">To:</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+                />
+                {(startDate || endDate) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStartDate('');
+                      setEndDate('');
+                      setDateFilter('all');
+                    }}
+                    className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer ml-1"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

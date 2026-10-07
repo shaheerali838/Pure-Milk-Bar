@@ -57,7 +57,6 @@ const animalSaleSchema = new Schema(
     saleDate: {
       type: Date,
       default: Date.now,
-      index: true,
     },
     paymentMethod: {
       type: String,
@@ -91,7 +90,6 @@ const animalSaleSchema = new Schema(
 );
 
 animalSaleSchema.index({ saleDate: -1 });
-animalSaleSchema.index({ animalTag: 1 });
 
 export const AnimalSale = model('AnimalSale', animalSaleSchema);
 export default AnimalSale;

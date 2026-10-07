@@ -47,6 +47,8 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState('All'); // 'All' | 'Today' | 'Custom'
   const [customDate, setCustomDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [shiftFilter, setShiftFilter] = useState('All'); // 'All' | 'Morning' | 'Evening'
   const [settlementFilter, setSettlementFilter] = useState('All');
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -83,13 +85,15 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
           ? true
           : (item.shift || '').toLowerCase() === shiftFilter.toLowerCase();
 
-      // Date filter (All, Today, Custom date)
+      // Date filter (All, Today, Custom date range)
       const itemDate = normalizeDate(item.date);
       let matchesDate = true;
       if (dateFilter === 'Today') {
         matchesDate = itemDate === todayStr;
-      } else if (dateFilter === 'Custom' && customDate) {
-        matchesDate = itemDate === customDate;
+      } else if (dateFilter === 'Custom' || startDate || endDate) {
+        if (startDate && itemDate < startDate) matchesDate = false;
+        if (endDate && itemDate > endDate) matchesDate = false;
+        if (customDate && !startDate && !endDate) matchesDate = itemDate === customDate;
       }
 
       // Settlement filter (All, Paid, Pending)
@@ -100,7 +104,7 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
 
       return matchesSearch && matchesShift && matchesDate && matchesSettlement;
     });
-  }, [intakeLogs, search, shiftFilter, dateFilter, customDate, todayStr, settlementFilter]);
+  }, [intakeLogs, search, shiftFilter, dateFilter, customDate, startDate, endDate, todayStr, settlementFilter]);
 
   // 2. Group records by supplier & date so each supplier has ONLY ONE main row
   const groupedRecords = useMemo(() => {
@@ -219,16 +223,18 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
 
         {/* Filter Controls (Date, Shift, Settlement, Pay) */}
         <div className="flex items-center gap-2 flex-wrap w-full xl:w-auto">
-          {/* 1. Date Filter (All / Today / Custom Date) */}
+          {/* 1. Date Filter (All / Today / Custom Range) */}
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full text-xs font-semibold text-slate-600">
             <button
               type="button"
               onClick={() => {
                 setDateFilter('All');
                 setCustomDate('');
+                setStartDate('');
+                setEndDate('');
               }}
               className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
-                dateFilter === 'All'
+                dateFilter === 'All' && !startDate && !endDate && !customDate
                   ? 'bg-white text-emerald-700 shadow-xs font-bold'
                   : 'hover:text-slate-900'
               }`}
@@ -240,43 +246,75 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
               onClick={() => {
                 setDateFilter('Today');
                 setCustomDate('');
+                setStartDate('');
+                setEndDate('');
               }}
               className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
-                dateFilter === 'Today'
+                dateFilter === 'Today' && !startDate && !endDate && !customDate
                   ? 'bg-white text-emerald-700 shadow-xs font-bold'
                   : 'hover:text-slate-900'
               }`}
             >
               Today
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDateFilter('Custom');
+              }}
+              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+                dateFilter === 'Custom' || startDate || endDate || customDate
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
+                  : 'hover:text-slate-900'
+              }`}
+            >
+              Custom Range
+            </button>
           </div>
 
-          {/* Date Picker Input */}
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-full px-3 h-8 text-xs text-slate-700">
-            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <input
-              type="date"
-              value={customDate}
-              onChange={(e) => {
-                setCustomDate(e.target.value);
-                setDateFilter(e.target.value ? 'Custom' : 'All');
-              }}
-              className="bg-transparent border-none outline-none text-xs font-medium cursor-pointer"
-            />
-            {customDate && (
-              <button
-                type="button"
-                onClick={() => {
+          {/* Date Picker Range Inputs */}
+          {(dateFilter === 'Custom' || startDate || endDate || customDate) && (
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-full px-3 h-8 text-xs text-slate-700">
+              <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span className="text-[11px] font-semibold text-slate-400">From:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
                   setCustomDate('');
-                  setDateFilter('All');
+                  setDateFilter('Custom');
                 }}
-                className="text-slate-400 hover:text-slate-600 text-xs font-bold ml-1"
-                title="Clear date"
-              >
-                ✕
-              </button>
-            )}
-          </div>
+                className="bg-transparent border-none outline-none text-xs font-medium cursor-pointer"
+              />
+              <span className="text-[11px] font-semibold text-slate-400">To:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setCustomDate('');
+                  setDateFilter('Custom');
+                }}
+                className="bg-transparent border-none outline-none text-xs font-medium cursor-pointer"
+              />
+              {(startDate || endDate || customDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                    setCustomDate('');
+                    setDateFilter('All');
+                  }}
+                  className="text-rose-600 hover:text-rose-800 text-xs font-bold ml-1 cursor-pointer"
+                  title="Clear dates"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          )}
 
           {/* 2. Shift Filter (All / Morning / Evening) */}
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full text-xs font-semibold text-slate-600">

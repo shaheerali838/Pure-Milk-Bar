@@ -71,6 +71,8 @@ export default function FarmPL() {
   // 2. Filter & Date State
   const [dateFilterMode, setDateFilterMode] = useState('today'); // 'today' (default) | 'this_month' | 'all' | 'custom'
   const [selectedDate, setSelectedDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   // Slide-over state: activeCardDrawer ('raw_milk', 'value_added', etc.) or selectedProduct (for table row clicks)
   const [activeCardDrawer, setActiveCardDrawer] = useState(null);
@@ -161,12 +163,15 @@ export default function FarmPL() {
       if (dateFilterMode === 'this_month') {
         return isDateInMonthlyCycle(saleDate);
       }
-      if (dateFilterMode === 'custom' && selectedDate) {
-        return saleDate === selectedDate;
+      if (dateFilterMode === 'custom') {
+        if (startDate && saleDate < startDate) return false;
+        if (endDate && saleDate > endDate) return false;
+        if (selectedDate && !startDate && !endDate) return saleDate === selectedDate;
+        return true;
       }
       return true; // 'all'
     });
-  }, [activeFarmSales, dateFilterMode, selectedDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
+  }, [activeFarmSales, dateFilterMode, selectedDate, startDate, endDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter((exp) => {
@@ -176,20 +181,30 @@ export default function FarmPL() {
       const expDate = exp.date ? String(exp.date).slice(0, 10) : '';
       if (dateFilterMode === 'today') return isMatchToday(expDate);
       if (dateFilterMode === 'this_month') return isDateInMonthlyCycle(expDate);
-      if (dateFilterMode === 'custom' && selectedDate) return expDate === selectedDate;
+      if (dateFilterMode === 'custom') {
+        if (startDate && expDate < startDate) return false;
+        if (endDate && expDate > endDate) return false;
+        if (selectedDate && !startDate && !endDate) return expDate === selectedDate;
+        return true;
+      }
       return true;
     });
-  }, [expenses, dateFilterMode, selectedDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
+  }, [expenses, dateFilterMode, selectedDate, startDate, endDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
 
   const filteredSalaries = useMemo(() => {
     return salaryPayments.filter((sal) => {
       const salDate = sal.date ? String(sal.date).slice(0, 10) : '';
       if (dateFilterMode === 'today') return isMatchToday(salDate);
       if (dateFilterMode === 'this_month') return isDateInMonthlyCycle(salDate);
-      if (dateFilterMode === 'custom' && selectedDate) return salDate === selectedDate;
+      if (dateFilterMode === 'custom') {
+        if (startDate && salDate < startDate) return false;
+        if (endDate && salDate > endDate) return false;
+        if (selectedDate && !startDate && !endDate) return salDate === selectedDate;
+        return true;
+      }
       return true;
     });
-  }, [salaryPayments, dateFilterMode, selectedDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
+  }, [salaryPayments, dateFilterMode, selectedDate, startDate, endDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
 
   const totalStaffSalaryPaidInPeriod = useMemo(() => {
     return filteredSalaries.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
@@ -843,6 +858,8 @@ export default function FarmPL() {
               onClick={() => {
                 setDateFilterMode('today');
                 setSelectedDate(todayLocal);
+                setStartDate('');
+                setEndDate('');
               }}
               className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
                 dateFilterMode === 'today'
@@ -857,6 +874,8 @@ export default function FarmPL() {
               onClick={() => {
                 setDateFilterMode('this_month');
                 setSelectedDate('');
+                setStartDate('');
+                setEndDate('');
               }}
               className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
                 dateFilterMode === 'this_month'
@@ -871,6 +890,8 @@ export default function FarmPL() {
               onClick={() => {
                 setDateFilterMode('all');
                 setSelectedDate('');
+                setStartDate('');
+                setEndDate('');
               }}
               className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
                 dateFilterMode === 'all'
@@ -880,33 +901,60 @@ export default function FarmPL() {
             >
               All Time
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDateFilterMode('custom');
+              }}
+              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                dateFilterMode === 'custom'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Custom Range
+            </button>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
-            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => {
-                setSelectedDate(e.target.value);
-                setDateFilterMode(e.target.value ? 'custom' : 'today');
-              }}
-              className="border-none outline-hidden text-xs font-semibold text-slate-700 bg-transparent cursor-pointer"
-              title="Filter P&L by specific date"
-            />
-            {selectedDate && (
-              <button
-                type="button"
-                onClick={() => {
+          {dateFilterMode === 'custom' && (
+            <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs text-xs">
+              <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span className="text-slate-400 font-medium">From:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
                   setSelectedDate('');
-                  setDateFilterMode('today');
                 }}
-                className="text-[11px] font-bold text-slate-400 hover:text-slate-700 cursor-pointer"
-              >
-                Clear
-              </button>
-            )}
-          </div>
+                className="border-none outline-hidden text-xs font-semibold text-slate-700 bg-transparent cursor-pointer"
+              />
+              <span className="text-slate-400 font-medium">To:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setSelectedDate('');
+                }}
+                className="border-none outline-hidden text-xs font-semibold text-slate-700 bg-transparent cursor-pointer"
+              />
+              {(startDate || endDate || selectedDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                    setSelectedDate('');
+                    setDateFilterMode('today');
+                  }}
+                  className="text-[11px] font-bold text-rose-600 hover:underline cursor-pointer ml-1"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
 
           <button
             type="button"

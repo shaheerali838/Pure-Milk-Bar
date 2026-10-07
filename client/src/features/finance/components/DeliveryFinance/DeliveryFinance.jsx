@@ -90,7 +90,9 @@ export default function DeliveryFinance() {
     }
 
     if (timeFilter === 'custom') {
-      return dateOnly >= customStartDate && dateOnly <= customEndDate;
+      if (customStartDate && dateOnly < customStartDate) return false;
+      if (customEndDate && dateOnly > customEndDate) return false;
+      return true;
     }
 
     return true;
@@ -353,6 +355,19 @@ export default function DeliveryFinance() {
                 onChange={(e) => setCustomEndDate(e.target.value)}
                 className="h-7 w-28 text-[11px] tabular px-1.5"
               />
+              {(customStartDate || customEndDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomStartDate('');
+                    setCustomEndDate('');
+                    setTimeFilter('all');
+                  }}
+                  className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer ml-1"
+                >
+                  Clear
+                </button>
+              )}
             </div>
           )}
 
