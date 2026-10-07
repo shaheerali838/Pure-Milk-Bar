@@ -186,6 +186,34 @@ export default function AnimalDetail({
     });
   }, [animalLogs, shiftFilter, dateFilter, customDate]);
 
+  // Compute 7-day chart data for milk production trend
+  const chartData = useMemo(() => {
+    const dateMap = {};
+
+    (animalLogs || []).forEach((log) => {
+      const dStr = log.date || getTodayDateStr();
+      if (!dateMap[dStr]) {
+        dateMap[dStr] = { date: dStr, morning: 0, evening: 0 };
+      }
+      if ((log.shift || '').toLowerCase() === 'morning') {
+        dateMap[dStr].morning += parseFloat(log.actualYield) || 0;
+      } else if ((log.shift || '').toLowerCase() === 'evening') {
+        dateMap[dStr].evening += parseFloat(log.actualYield) || 0;
+      }
+    });
+
+    const dates = Object.keys(dateMap).sort();
+    if (dates.length > 0) {
+      return dates.slice(-7).map((d) => ({
+        date: d.length > 5 ? d.slice(5) : d,
+        morning: dateMap[d].morning,
+        evening: dateMap[d].evening,
+      }));
+    }
+
+    return [];
+  }, [animalLogs]);
+
   const morningCount = animalLogs.filter((l) => l.shift?.toLowerCase() === 'morning').length;
   const eveningCount = animalLogs.filter((l) => l.shift?.toLowerCase() === 'evening').length;
 
