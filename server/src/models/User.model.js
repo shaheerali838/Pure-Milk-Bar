@@ -20,9 +20,8 @@ const userSchema = new Schema(
     },
     phone: {
       type: String,
-      required: [true, 'Phone number is required'],
-      unique: true,
       trim: true,
+      default: '',
       index: true,
     },
     email: {
@@ -77,4 +76,10 @@ const userSchema = new Schema(
 );
 
 export const User = model('User', userSchema);
+
+// Sync indexes to drop legacy phone_1 unique index in MongoDB
+User.syncIndexes().catch((err) => {
+  console.log('[User Model] Syncing indexes notice:', err.message);
+});
+
 export default User;
