@@ -382,22 +382,28 @@ export function usePOSOrders({
         };
       }
 
-      // Ledger Sync
+      // Ledger Sync for Active Customers (Walk-in Registered & Monthly Delivery Customers)
       const { addLedgerEntry, fetchCustomerLedger, addDelivery, addFuelLog, refreshCustomers, animalCtx, intakeCtx } = farmContexts || {};
 
-      if (activeCustomer && saleCategory !== 'delivery') {
+      const validCustomerId = activeCustomer?._id || activeCustomer?.id || null;
+
+      if (activeCustomer) {
+        const isDelivery = saleCategory === 'delivery';
         const isFullPaid = calculatedPaidAmount >= netPayable;
         const isPartialPaid = calculatedPaidAmount > 0 && calculatedPaidAmount < netPayable;
 
-        const fulfillmentLabel = 'Walk-in Counter';
-        const payMethodLabel =
-          paymentMethod === 'online'
-            ? 'Online Payment'
-            : paymentMethod === 'khata'
-            ? 'Khata Credit'
-            : 'Cash';
+        const fulfillmentLabel = isDelivery ? 'Doorstep Delivery' : 'Walk-in Counter';
+        const payMethodLabel = isDelivery
+          ? 'Khata Credit'
+          : paymentMethod === 'online'
+          ? 'Online Payment'
+          : paymentMethod === 'khata'
+          ? 'Khata Credit'
+          : 'Cash';
 
-        const noteMsg = isFullPaid
+        const noteMsg = isDelivery
+          ? 'Scheduled Doorstep Delivery (Charged to Customer Khata)'
+          : isFullPaid
           ? 'No Khata / Fully Paid in Full'
           : isPartialPaid
           ? `Partial Paid: Rs. ${calculatedPaidAmount.toLocaleString()}, Remaining Baqi: Rs. ${calculatedRemainingAmount.toLocaleString()}`
@@ -407,7 +413,7 @@ export function usePOSOrders({
           addLedgerEntry(
             activeCustomer.id || activeCustomer._id,
             {
-              description: `POS Counter Buy: ${itemSummary}`,
+              description: `POS ${isDelivery ? 'Delivery Order' : 'Counter Buy'}: ${itemSummary}`,
               debit: netPayable,
               credit: 0,
               date: todayDate,
@@ -444,10 +450,6 @@ export function usePOSOrders({
           }
         }
       }
-
-      const validCustomerId = isObjectId(activeCustomer?._id || activeCustomer?.id)
-        ? (activeCustomer?._id || activeCustomer?.id)
-        : null;
 
       if (saleCategory === 'delivery') {
         if (typeof addDelivery === 'function') {
@@ -494,7 +496,7 @@ export function usePOSOrders({
             amountPaid: 0,
             amountDue: netPayable,
             paymentStatus: 'UNPAID',
-            paymentMode: 'COD',
+            paymentMode: 'KHATA',
             codAmountToCollect: netPayable,
             source: deliverySubType === 'monthly' ? 'SCHEDULED_ROUTE' : 'POS_ONE_TIME',
             receiptNumber: invoiceId,
@@ -537,7 +539,7 @@ export function usePOSOrders({
 
         if (posService && posService.createOrder) {
           await posService.createOrder({
-            customerId: deliverySubType === 'monthly' ? validCustomerId : null,
+            customerId: deliverySubType === 'monthly' || saleCategory === 'walkin' ? validCustomerId : null,
             customerNameSnapshot: orderCustomerName,
             customerPhoneSnapshot: orderCustomerPhone,
             fulfillmentType: saleCategory === 'delivery' ? 'DELIVERY' : 'COUNTER',

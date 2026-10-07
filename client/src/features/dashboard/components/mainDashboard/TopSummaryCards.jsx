@@ -4,6 +4,7 @@ import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useLedgerContext } from '@/context/LedgerContext';
+import { useCustomerContext } from '@/context/CustomerContext';
 import { getPktTodayString } from '@/utils/dateUtils';
 
 import { Link } from 'react-router-dom';
@@ -13,7 +14,8 @@ export default function TopSummaryCards() {
   const { animals = [], isLoading: isAnimalsLoading } = useAnimalContext();
   const { intakeLogs = [], totals: intakeTotals = {}, isLoading: isIntakeLoading } = useIntakeContext();
   const { salesHistory = [], inventoryMetrics = {}, businessFinancialMetrics = {} } = usePOSContext();
-  const { ledgers = {} } = useLedgerContext();
+  const { ledgers = {}, getAllCustomersAggregates } = useLedgerContext() || {};
+  const { totalKhataReceivable = 0, withKhataBalCount = 0 } = useCustomerContext() || {};
 
   if (isAnimalsLoading && isIntakeLoading && animals.length === 0 && intakeLogs.length === 0) {
     return <KpiGridSkeleton count={8} />;
@@ -57,15 +59,19 @@ export default function TopSummaryCards() {
     0
   );
 
-  // 6. Recoveries (Credit payments into Ledgers)
-  let totalRecoveries = 0;
+  // 6. Recoveries (Credit payments into Ledgers & Cash inflows)
+  const customerAggregates = getAllCustomersAggregates ? getAllCustomersAggregates() : null;
+  let ledgerRecoveriesSum = 0;
   Object.values(ledgers).forEach((entries) => {
     (entries || []).forEach((entry) => {
       if (entry.type === 'CREDIT' || Number(entry.credit) > 0) {
-        totalRecoveries += Number(entry.credit) || 0;
+        ledgerRecoveriesSum += Number(entry.credit) || 0;
       }
     });
   });
+  const totalRecoveries = Math.max(ledgerRecoveriesSum, Number(customerAggregates?.totalAllPaid) || 0);
+  const pendingKhataTotal = customerAggregates?.totalAllDue !== undefined ? customerAggregates.totalAllDue : totalKhataReceivable;
+  const pendingAccountsCount = customerAggregates?.khataAccountsCount ?? withKhataBalCount;
 
   const totalMilkStock = inventoryMetrics?.totalMilkStock ?? '0';
   const farmMilkStock = inventoryMetrics?.farmMilkStock ?? '0';
@@ -147,7 +153,7 @@ export default function TopSummaryCards() {
       id: 'recoveries',
       title: 'Recoveries',
       value: `Rs. ${totalRecoveries.toLocaleString()}`,
-      subtitle: 'Khata receivables collected',
+      subtitle: `${pendingAccountsCount} accounts • Due: Rs. ${Number(pendingKhataTotal || 0).toLocaleString()}`,
       icon: ArrowDownLeft,
       color: '#d97706',
       tag: 'Recovery',

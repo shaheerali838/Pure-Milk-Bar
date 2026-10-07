@@ -51,6 +51,24 @@ export default function ViewDeliveryModal({ delivery, isOpen, onClose }) {
   const codAmount = Number(delivery.codAmountToCollect) || 0;
   const bottles = Number(delivery.bottlesReturned) || 0;
 
+  const formatDeliveryDate = (dateVal) => {
+    if (!dateVal) return '—';
+    try {
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) {
+        const parts = String(dateVal).split('T')[0].split('-');
+        if (parts.length === 3) {
+          const dateObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          return dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        return String(dateVal);
+      }
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+      return String(dateVal);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
@@ -62,7 +80,7 @@ export default function ViewDeliveryModal({ delivery, isOpen, onClose }) {
                 {getStatusBadge(delivery.status)}
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500 mt-0.5">
-                Created on {new Date(delivery.createdAt || Date.now()).toLocaleString()}
+                Scheduled: {formatDeliveryDate(delivery.date)} · Shift: {String(delivery.shift || '').toUpperCase() === 'EVENING' ? '🌙 Evening' : '🌅 Morning'}
               </DialogDescription>
             </div>
           </div>
@@ -134,11 +152,13 @@ export default function ViewDeliveryModal({ delivery, isOpen, onClose }) {
             <div className="space-y-1 text-slate-600">
               <div className="flex justify-between py-0.5 border-b border-slate-200/50">
                 <span className="text-slate-400">Delivery Date:</span>
-                <span className="font-semibold text-slate-900 tabular">{delivery.date}</span>
+                <span className="font-semibold text-slate-900 tabular">{formatDeliveryDate(delivery.date)}</span>
               </div>
               <div className="flex justify-between py-0.5 border-b border-slate-200/50">
                 <span className="text-slate-400">Shift:</span>
-                <span className="font-semibold text-slate-900">{delivery.shift || 'Standard'}</span>
+                <span className="font-semibold text-slate-900">
+                  {String(delivery.shift || '').toUpperCase() === 'EVENING' ? '🌙 Evening Shift' : '🌅 Morning Shift'}
+                </span>
               </div>
               {delivery.route && (
                 <div className="flex justify-between py-0.5 border-b border-slate-200/50">

@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Search,
   Eye,
@@ -22,6 +23,7 @@ import POSWalkinHistoryModal from './POSWalkinHistoryModal';
 import POSDoorstepOrdersModal from './POSDoorstepOrdersModal';
 
 export default function POSDashboard() {
+  const [searchParams] = useSearchParams();
   const context = usePOSContext() || {};
   const {
     products = [],
@@ -41,10 +43,45 @@ export default function POSDashboard() {
 
   // Walk-in history modal state
   const [isWalkinHistoryOpen, setIsWalkinHistoryOpen] = useState(false);
+  const [walkinHistorySearch, setWalkinHistorySearch] = useState('');
 
-  // Doorstep orders modal state & pending count
+  // Auto-open Walk-in History modal if requested via URL
+  useEffect(() => {
+    const modalParam = searchParams.get('modal') || searchParams.get('open');
+    const isWalkinParam =
+      searchParams.get('walkinHistory') === 'true' ||
+      searchParams.get('walkinhistory') === 'true';
+
+    if (
+      modalParam === 'walkin_history' ||
+      modalParam === 'walkinhistory' ||
+      modalParam === 'walkin' ||
+      isWalkinParam
+    ) {
+      setIsWalkinHistoryOpen(true);
+      const searchVal =
+        searchParams.get('search') ||
+        searchParams.get('invoice') ||
+        searchParams.get('name') ||
+        '';
+      if (searchVal) {
+        setWalkinHistorySearch(searchVal);
+      }
+    }
+  }, [searchParams]);
+
+  // Doorstep orders modal state & pending count for ON-TIME deliveries
   const [isDoorstepOrdersOpen, setIsDoorstepOrdersOpen] = useState(false);
-  const pendingDeliveriesCount = deliveries.filter((d) => d.status === 'PENDING').length;
+  const isDeliveryOnTime = (d) => {
+    return (
+      d.deliverySubType === 'ontime' ||
+      d.source === 'POS_ONE_TIME' ||
+      d.deliveryType === 'ONTIME' ||
+      d.isOneTime ||
+      (!d.customerId && !d.customer?.monthlySubscription)
+    );
+  };
+  const pendingDeliveriesCount = deliveries.filter((d) => d.status === 'PENDING' && isDeliveryOnTime(d)).length;
 
   // Product detail view state
   const [productForDetail, setProductForDetail] = useState(null);
@@ -500,9 +537,14 @@ export default function POSDashboard() {
       <POSReceiptModal />
       <POSWalkinHistoryModal
         isOpen={isWalkinHistoryOpen}
-        onClose={() => setIsWalkinHistoryOpen(false)}
+        onClose={() => {
+          setIsWalkinHistoryOpen(false);
+          setWalkinHistorySearch('');
+        }}
+        initialSearch={walkinHistorySearch}
       />
       <POSDoorstepOrdersModal
+        mode="ontime"
         isOpen={isDoorstepOrdersOpen}
         onClose={() => setIsDoorstepOrdersOpen(false)}
       />

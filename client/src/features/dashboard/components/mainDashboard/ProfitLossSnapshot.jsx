@@ -4,6 +4,7 @@ import { usePOSContext } from "@/context/POSContext";
 import { useExpense } from "@/context/ExpenseContext";
 import { useIntakeContext } from "@/context/IntakeContext";
 import { useCustomerContext } from "@/context/CustomerContext";
+import { useLedgerContext } from "@/context/LedgerContext";
 import { useAnimalContext } from "@/context/AnimalContext";
 import { Link } from "react-router-dom";
 
@@ -19,7 +20,17 @@ export default function ProfitLossSnapshot() {
   const { intakeLogs = [], totals: intakeTotals = {} } = useIntakeContext();
   const { expenses: supplierExpensesList = [] } = useSourcExpenseContext() || {};
   const { batches: processingBatches = [] } = useDahiContext() || {};
-  const { totalKhataReceivable = 0 } = useCustomerContext();
+  const { totalKhataReceivable = 0, withKhataBalCount = 0 } = useCustomerContext() || {};
+  const { getAllCustomersAggregates } = useLedgerContext() || {};
+
+  const customerAggregates = useMemo(() => {
+    return getAllCustomersAggregates ? getAllCustomersAggregates() : null;
+  }, [getAllCustomersAggregates]);
+
+  const exactPendingKhata = customerAggregates?.totalAllDue !== undefined
+    ? customerAggregates.totalAllDue
+    : totalKhataReceivable;
+  const pendingDuesAccounts = customerAggregates?.khataAccountsCount ?? withKhataBalCount;
 
   const todayStr = useMemo(() => getPktTodayString(), []);
   const weekStartStr = useMemo(() => getPktDaysAgoString(7), []);
@@ -225,17 +236,18 @@ export default function ProfitLossSnapshot() {
         >
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-slate-600 transition-colors">
-              Receivables
+              Customer Khata Pending
             </span>
             <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Wallet className="w-3.5 h-3.5" />
             </div>
           </div>
           <p className="text-lg font-black text-slate-900 font-display tabular">
-            Rs. {totalKhataReceivable.toLocaleString()}
+            Rs. {Number(exactPendingKhata || 0).toLocaleString()}
           </p>
-          <p className="text-[11px] text-amber-700 font-semibold mt-0.5">
-            Customer Khata ledger pending &rarr;
+          <p className="text-[11px] text-amber-700 font-semibold mt-0.5 flex items-center justify-between">
+            <span>Customer Khata ledger pending</span>
+            <span className="text-[10px] font-bold px-1.5 py-0.2 bg-amber-100/80 rounded">{pendingDuesAccounts} dues &rarr;</span>
           </p>
         </Link>
 

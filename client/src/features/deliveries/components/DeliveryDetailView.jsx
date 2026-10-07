@@ -64,6 +64,24 @@ export default function DeliveryDetailView({ delivery, onBack }) {
   const cashCol = Number(delivery.cashCollected) || 0;
   const onlineCol = Number(delivery.onlineCollected) || 0;
 
+  const formatDeliveryDate = (dateVal) => {
+    if (!dateVal) return '—';
+    try {
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) {
+        const parts = String(dateVal).split('T')[0].split('-');
+        if (parts.length === 3) {
+          const dateObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          return dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        return String(dateVal);
+      }
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+      return String(dateVal);
+    }
+  };
+
   return (
     <div className="space-y-2.5 animate-in fade-in duration-150 pb-4">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200">
@@ -88,8 +106,12 @@ export default function DeliveryDetailView({ delivery, onBack }) {
                 </span>
               )}
             </h1>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Scheduled on {delivery.date} &bull; Shift: {delivery.shift} &bull; Created {new Date(delivery.createdAt || Date.now()).toLocaleTimeString()}
+            <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+              <span>Scheduled: <strong className="text-slate-800 font-semibold">{formatDeliveryDate(delivery.date)}</strong></span>
+              <span>&bull;</span>
+              <span>Shift: <strong className="text-slate-800 font-semibold">{String(delivery.shift || '').toUpperCase() === 'EVENING' ? '🌙 Evening' : '🌅 Morning'}</strong></span>
+              <span>&bull;</span>
+              <span>Created {new Date(delivery.createdAt || Date.now()).toLocaleTimeString()}</span>
             </p>
           </div>
         </div>
@@ -185,11 +207,13 @@ export default function DeliveryDetailView({ delivery, onBack }) {
           <div className="space-y-1.5 text-slate-600">
             <div className="flex justify-between py-0.5 border-b border-slate-100">
               <span className="text-slate-400">Delivery Date:</span>
-              <span className="font-semibold text-slate-900 tabular">{delivery.date}</span>
+              <span className="font-semibold text-slate-900 tabular">{formatDeliveryDate(delivery.date)}</span>
             </div>
             <div className="flex justify-between py-0.5 border-b border-slate-100">
               <span className="text-slate-400">Shift Timing:</span>
-              <span className="font-semibold text-slate-900">{delivery.shift || 'Standard'}</span>
+              <span className="font-semibold text-slate-900">
+                {String(delivery.shift || '').toUpperCase() === 'EVENING' ? '🌙 Evening Shift' : '🌅 Morning Shift'}
+              </span>
             </div>
             {delivery.route && (
               <div className="flex justify-between py-0.5 border-b border-slate-100">
@@ -204,6 +228,14 @@ export default function DeliveryDetailView({ delivery, onBack }) {
                 <span className="font-semibold text-slate-900 flex items-center gap-1">
                   <Bike className="w-3 h-3 text-purple-600" />
                   {delivery.riderNameSnapshot} {delivery.staffType ? `(${delivery.staffType})` : ''}
+                </span>
+              </div>
+            )}
+            {(Number(delivery.fuelLitres) > 0 || Number(delivery.fuelAmount) > 0) && (
+              <div className="flex justify-between py-0.5 border-t border-slate-100">
+                <span className="text-slate-400">Fuel:</span>
+                <span className="font-semibold text-slate-900">
+                  {Number(delivery.fuelLitres) > 0 ? `${delivery.fuelLitres} L` : '0 L'} / Rs. {Number(delivery.fuelAmount || 0).toLocaleString()}
                 </span>
               </div>
             )}

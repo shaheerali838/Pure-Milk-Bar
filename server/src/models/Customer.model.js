@@ -42,7 +42,7 @@ const customerSchema = new Schema(
     },
     deliveryFee: {
       type: Number,
-      default: 0,
+      default: null,
       min: 0,
     },
     openingBalance: {
@@ -61,6 +61,41 @@ const customerSchema = new Schema(
       type: Number,
       default: 0,
       index: true,
+    },
+    morningMilkQty: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    eveningMilkQty: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    subscription: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    morningItems: {
+      type: Array,
+      default: [],
+    },
+    eveningItems: {
+      type: Array,
+      default: [],
+    },
+    autoAssignRider: {
+      type: String,
+      default: null,
+    },
+    preferredRiderId: {
+      type: String,
+      default: null,
+    },
+    standingOrder: {
+      type: Object,
+      default: null,
     },
     preferredPayment: {
       type: String,

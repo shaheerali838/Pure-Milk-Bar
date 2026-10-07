@@ -14,7 +14,7 @@ export default function CustomerFilters() {
   const { searchTerm, setSearchTerm, statusFilter, setStatusFilter } = useCustomerContext();
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+    <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="relative flex-1 min-w-[240px]">
         <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <Input
@@ -22,13 +22,13 @@ export default function CustomerFilters() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search by name, phone, Online Payment, or area..."
-          className="w-full pl-8 pr-3 py-1.5 h-9 bg-white rounded-lg border border-slate-200 text-xs font-medium text-slate-700 placeholder-slate-400 shadow-2xs"
+          className="compact-control w-full pl-8 pr-3 py-1 bg-white rounded-lg border border-slate-200 text-xs font-medium text-slate-700 placeholder-slate-400 shadow-none"
         />
       </div>
 
       <div className="w-40">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-9 bg-white text-xs font-semibold text-slate-700 shadow-2xs">
+          <SelectTrigger className="compact-control h-[30px] bg-white text-xs font-semibold text-slate-700 shadow-none">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
           <SelectContent>

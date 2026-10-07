@@ -39,7 +39,7 @@ export default function CustomerManagement() {
   }
 
   return (
-    <div className="space-y-2.5">
+    <div className="compact-stack flex flex-col">
       <CustomerHeader onOpenAddModal={() => setCurrentView('add')} />
       <CustomerStatsCards onOpenAdvanceDetails={() => setCurrentView('advance')} />
       <CustomerFilters />

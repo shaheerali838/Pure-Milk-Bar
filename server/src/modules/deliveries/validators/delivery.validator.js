@@ -52,6 +52,7 @@ export const createDeliveryRunSchema = Joi.object({
     .min(0)
     .optional()
     .default(0),
+  deliveryFee: Joi.number().min(0).allow(null).optional(),
   paymentMode: Joi.string()
     .valid('CASH', 'KHATA', 'ONLINE', 'PREPAID', 'SPLIT', 'COD')
     .optional()
@@ -89,6 +90,8 @@ export const createDeliveryRunSchema = Joi.object({
   deliverySubType: Joi.string().valid('ontime', 'monthly').optional().default('monthly'),
   cashCollected: Joi.number().min(0).optional().default(0),
   onlineCollected: Joi.number().min(0).optional().default(0),
+  fuelLitres: Joi.number().min(0).allow(null).optional(),
+  fuelAmount: Joi.number().min(0).allow(null).optional(),
   notes: Joi.string().trim().allow('', null).optional(),
   bottlesReturned: Joi.number().min(0).default(0),
 
@@ -110,27 +113,39 @@ export const updateDeliveryRunSchema = Joi.object({
   date: Joi.date().iso(),
   shift: Joi.string().valid('MORNING', 'EVENING'),
   route: Joi.string().trim().max(100),
-  riderId: Joi.string().pattern(objectIdPattern).allow(null),
+  riderId: Joi.string().pattern(objectIdPattern).allow(null, ''),
   riderNameSnapshot: Joi.string().trim().max(100).allow('', null),
-  staffType: Joi.string().valid('MOTORCYCLE_RIDER', 'WALKING_BOY', 'VAN_DRIVER'),
-  customerId: Joi.string().pattern(objectIdPattern),
+  staffType: Joi.string().valid('MOTORCYCLE_RIDER', 'WALKING_BOY', 'VAN_DRIVER', 'OTHER'),
+  customerId: Joi.string().pattern(objectIdPattern).allow(null, ''),
   customerName: Joi.string().trim().max(150),
   customerPhone: Joi.string().trim().allow('', null),
   deliverySubType: Joi.string().valid('ontime', 'monthly'),
   deliveryAddress: Joi.string().trim().max(300),
   itemDescription: Joi.string().trim().max(200),
-  qtyLiters: Joi.number().positive().min(0.1),
+  qtyLiters: Joi.number().min(0),
+  deliveryFee: Joi.number().min(0).allow(null),
   paymentMode: Joi.string().valid('CASH', 'KHATA', 'ONLINE', 'PREPAID', 'SPLIT', 'COD'),
   codAmountToCollect: Joi.number().min(0),
   amountPaid: Joi.number().min(0),
   amountDue: Joi.number().min(0),
   cashCollected: Joi.number().min(0),
   onlineCollected: Joi.number().min(0),
+  fuelLitres: Joi.number().min(0).allow(null),
+  fuelAmount: Joi.number().min(0).allow(null),
   paymentStatus: Joi.string().valid('PAID', 'PARTIAL', 'UNPAID'),
   status: Joi.string().valid('PENDING', 'DELIVERED', 'FAILED', 'SKIPPED'),
   deliveredAt: Joi.date().iso().allow(null),
   notes: Joi.string().trim().allow('', null),
   bottlesReturned: Joi.number().min(0),
+  items: Joi.array().items(
+    Joi.object({
+      name: Joi.string().required(),
+      quantity: Joi.number().required(),
+      unit: Joi.string().allow('', null).optional(),
+      unitPrice: Joi.number().min(0).optional().default(0),
+      subtotal: Joi.number().min(0).optional().default(0),
+    })
+  ).optional(),
 }).min(1);
 
 export const assignRiderSchema = Joi.object({

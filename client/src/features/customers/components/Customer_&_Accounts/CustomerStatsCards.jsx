@@ -9,7 +9,7 @@ export default function CustomerStatsCards({ onOpenAdvanceDetails }) {
   const { getAllCustomersAggregates } = useLedgerContext();
 
   if (isLoading && (!allCustomersCount || allCustomersCount === 0)) {
-    return <KpiGridSkeleton count={5} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 mb-2.5" />;
+    return <KpiGridSkeleton count={5} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2" />;
   }
 
   const aggregates = getAllCustomersAggregates ? getAllCustomersAggregates() : {
@@ -81,26 +81,26 @@ export default function CustomerStatsCards({ onOpenAdvanceDetails }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 mb-2.5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2">
       {statCards.map(({ id, label, value, sub, icon: Icon, color, badge, badgeClass, clickable, onClick, isHighlight }) => (
         <div
           key={id}
           onClick={clickable && onClick ? onClick : undefined}
-          className={`flex flex-col justify-between bg-white border rounded-2xl p-3 shadow-xs transition-all duration-200 ${
+          className={`compact-surface flex flex-col justify-between bg-white border rounded-lg p-2 transition-all duration-200 ${
             clickable
               ? 'cursor-pointer hover:shadow-md hover:border-emerald-500 hover:-translate-y-0.5 ring-1 ring-emerald-500/20'
               : 'border-slate-200/90 hover:shadow-xs'
           } ${isHighlight ? 'bg-linear-to-b from-emerald-50/30 to-white border-emerald-300/80' : ''}`}
         >
-          <div className="flex items-start justify-between mb-2">
+          <div className="flex items-start justify-between mb-1">
             <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
               style={{ background: `${color}15` }}
             >
               <Icon style={{ width: 16, height: 16, color }} />
             </div>
             <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+              className={`compact-chip text-[10px] font-bold rounded ${
                 badgeClass || 'text-slate-600 bg-slate-100 border border-slate-200'
               }`}
             >
@@ -108,7 +108,7 @@ export default function CustomerStatsCards({ onOpenAdvanceDetails }) {
             </span>
           </div>
           <div>
-            <p className={`font-display text-xl sm:text-2xl font-black leading-tight tracking-tight mb-0.5 tabular ${
+            <p className={`font-display text-lg sm:text-xl font-black leading-tight tracking-tight mb-0.5 tabular ${
               isHighlight ? 'text-emerald-800' : 'text-slate-900'
             }`}>
               {value}
