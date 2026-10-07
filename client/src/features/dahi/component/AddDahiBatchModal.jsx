@@ -18,7 +18,10 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
     supplierMilkUsed: '',
     output: '',
     date: new Date().toISOString().split('T')[0],
+    stage: 'incubating',
     status: 'In Progress',
+    boiledAndCooled: true,
+    starterAdded: true,
   });
 
   const [unitCost, setUnitCost] = useState(230);
@@ -279,7 +282,8 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                   className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-medium cursor-pointer"
                 >
                   <option value="Fresh Dahi (Plain)">Fresh Dahi (Plain)</option>
-    
+                  <option value="Sweet Dahi (Meethi Dahi)">Sweet Dahi (Meethi Dahi)</option>
+                  <option value="Matka Dahi (Clay Pot)">Matka Dahi (Clay Pot)</option>
                 </select>
               </div>
 
