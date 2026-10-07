@@ -35,8 +35,8 @@ export default function CustomerDeliveryNav() {
   const { pathname } = useLocation();
 
   return (
-    <div className="w-full overflow-x-auto no-scrollbar">
-      <div className="flex items-center gap-1 min-w-max">
+    <div className="w-full overflow-x-auto no-scrollbar py-1">
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-max">
         {CUSTOMER_DELIVERY_TABS.map(({ to, label, icon: Icon, color, aliasTo }) => {
           const isActive =
             pathname === to ||
@@ -48,7 +48,7 @@ export default function CustomerDeliveryNav() {
             <NavLink
               key={to}
               to={to}
-              className="compact-control flex items-center justify-center gap-1.5 px-3 h-8 rounded-lg whitespace-nowrap shrink-0 transition-all duration-200 cursor-pointer font-bold text-xs text-white select-none hover:brightness-110 shadow-none"
+              className="flex items-center justify-center gap-2 px-4 h-9.5 sm:h-10 rounded-full whitespace-nowrap shrink-0 transition-all duration-200 cursor-pointer font-bold text-xs sm:text-[13px] text-white select-none hover:brightness-110"
               style={{
                 backgroundColor: isActive ? color : `${color}dd`,
                 border: isActive
@@ -57,7 +57,7 @@ export default function CustomerDeliveryNav() {
               }}
             >
               <Icon className="w-4 h-4 shrink-0 text-white" />
-              <span>{label}</span>
+              <span className="leading-none tracking-tight">{label}</span>
             </NavLink>
           );
         })}
@@ -65,3 +65,4 @@ export default function CustomerDeliveryNav() {
     </div>
   );
 }
+

@@ -121,7 +121,7 @@ export default function ViewTransactionView({
       </div>
 
       {/* Metric Cards Banner */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 max-w-4xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2.5 max-w-4xl">
         <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
             {isAdvanceOpening ? "Advance Deposit" : "Total Order Bill"}
@@ -131,9 +131,25 @@ export default function ViewTransactionView({
           </div>
         </Card>
 
+        {Number(transaction.advanceUsed || 0) > 0 && (
+          <Card className="p-3 bg-teal-50/70 border border-teal-200 rounded-xl shadow-xs">
+            <span className="text-[10px] font-bold text-teal-700 uppercase tracking-wider block">
+              Paid from Advance
+            </span>
+            <div className="text-base font-black text-teal-800 tabular font-display mt-0.5">
+              Rs. {Number(transaction.advanceUsed).toLocaleString()}
+            </div>
+            {transaction.advanceBalanceAfter !== undefined && (
+              <span className="text-[9px] font-semibold text-teal-600 block mt-0.5">
+                Advance Left: Rs. {Number(transaction.advanceBalanceAfter).toLocaleString()}
+              </span>
+            )}
+          </Card>
+        )}
+
         <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
-            {isAdvanceOpening ? "Amount Received" : "Amount Paid"}
+            {isAdvanceOpening ? "Amount Received" : "Amount Paid (Direct)"}
           </span>
           <div className="text-base font-black text-emerald-700 tabular font-display mt-0.5">
             Rs. {displayPaidAmount.toLocaleString()}
@@ -142,23 +158,23 @@ export default function ViewTransactionView({
 
         <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider block">
-            Balance Due
+            Khata Balance Added
           </span>
           <div className="text-base font-black text-rose-600 tabular font-display mt-0.5">
-            Rs. {displayBalanceDue.toLocaleString()}
+            Rs. {Number(transaction.khataAmount !== undefined ? transaction.khataAmount : displayBalanceDue).toLocaleString()}
           </div>
         </Card>
 
         <Card className="p-3 bg-white border border-slate-200 rounded-xl shadow-xs">
           <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider block">
-            Total Customer Balance
+            Running Khata Due
           </span>
           <div className="text-base font-black text-slate-900 tabular font-display mt-0.5">
             Rs.{" "}
             {Number(
-              customer?.currentBalance !== undefined
-                ? customer.currentBalance
-                : transaction.runningBalance || 0,
+              transaction.runningKhataBalance !== undefined
+                ? transaction.runningKhataBalance
+                : (transaction.runningBalance || 0),
             ).toLocaleString()}
           </div>
         </Card>

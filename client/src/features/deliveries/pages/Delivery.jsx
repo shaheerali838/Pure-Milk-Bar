@@ -177,9 +177,6 @@ export default function Delivery() {
       <div>
         {activeTab === 'drop-points' && (
           <DropPoints
-            onBookDelivery={() => {
-              navigate('/pos?category=delivery');
-            }}
             onViewDelivery={(delivery) => {
               setViewingDelivery(delivery);
               setCurrentView('viewDelivery');

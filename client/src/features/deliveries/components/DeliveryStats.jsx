@@ -1,86 +1,102 @@
 import React from 'react';
 import { Truck, Clock, CheckCircle2, Banknote } from 'lucide-react';
 import { useDeliveryContext } from '@/context/DeliveryContext';
+import { isDateInFilterRange } from '@/utils/dateUtils';
 
 export default function DeliveryStats() {
-  const { deliveries = [] } = useDeliveryContext();
+  const {
+    deliveries = [],
+    dateFilter = 'Today',
+    startDate = '',
+    endDate = '',
+  } = useDeliveryContext();
 
-  const now = new Date();
-  const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const todayUTC = now.toISOString().split('T')[0];
+  const periodDeliveries = deliveries.filter((d) =>
+    isDateInFilterRange(d.date || d.createdAt, dateFilter, startDate, endDate)
+  );
 
-  const isToday = (d) => {
-    if (!d) return false;
-    try {
-      const str = typeof d === 'string' ? d.split('T')[0] : String(d).slice(0, 10);
-      if (str === todayLocal || str === todayUTC) return true;
-      const dateObj = new Date(d);
-      if (isNaN(dateObj.getTime())) return false;
-      const yr = dateObj.getFullYear();
-      const mo = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const da = String(dateObj.getDate()).padStart(2, '0');
-      const parsedLocal = `${yr}-${mo}-${da}`;
-      const parsedUTC = dateObj.toISOString().split('T')[0];
-      return parsedLocal === todayLocal || parsedUTC === todayUTC;
-    } catch {
-      const str = typeof d === 'string' ? d.split('T')[0] : String(d).slice(0, 10);
-      return str === todayLocal || str === todayUTC;
+  const totalCount = periodDeliveries.length;
+  const pendingCount = periodDeliveries.filter(
+    (d) => d.status === 'PENDING' || d.status === 'OUT_FOR_DELIVERY'
+  ).length;
+  const deliveredCount = periodDeliveries.filter((d) => d.status === 'DELIVERED').length;
+
+  const codToCollect = periodDeliveries
+    .filter(
+      (d) =>
+        d.status !== 'DELIVERED' ||
+        d.paymentStatus === 'UNPAID' ||
+        d.paymentStatus === 'PARTIAL'
+    )
+    .reduce((acc, d) => acc + (Number(d.codAmountToCollect || d.amountDue) || 0), 0);
+
+  const getPrimaryLabel = () => {
+    switch (dateFilter) {
+      case 'Today':
+        return "Today's Deliveries";
+      case 'Weekly':
+        return 'Weekly Deliveries';
+      case 'Monthly':
+        return 'Monthly Deliveries';
+      case 'Custom Range':
+        return 'Deliveries (Selected)';
+      default:
+        return 'All-Time Deliveries';
     }
   };
 
-  const todayDeliveries = deliveries.filter(
-    (d) => isToday(d.date) || isToday(d.createdAt)
-  );
+  const getPrimarySub = () => {
+    if (totalCount === 0) return 'No deliveries in selected range';
+    return `${deliveredCount} Completed · ${pendingCount} Pending`;
+  };
 
-  const todayCount = todayDeliveries.length;
-  const todayPending = todayDeliveries.filter(
-    (d) => d.status === 'PENDING' || d.status === 'OUT_FOR_DELIVERY'
-  ).length;
-  const todayDelivered = todayDeliveries.filter((d) => d.status === 'DELIVERED').length;
+  const getPendingSub = () => {
+    if (pendingCount === 0) return 'All deliveries completed';
+    if (dateFilter === 'Today') return `${pendingCount} scheduled for today`;
+    return `${pendingCount} pending in selected period`;
+  };
 
-  const allPending = deliveries.filter(
-    (d) => d.status === 'PENDING' || d.status === 'OUT_FOR_DELIVERY'
-  ).length;
-  const allDelivered = deliveries.filter((d) => d.status === 'DELIVERED').length;
+  const getDeliveredSub = () => {
+    if (deliveredCount === 0) return 'No completed orders yet';
+    if (dateFilter === 'Today') return `${deliveredCount} fulfilled today`;
+    return `${deliveredCount} fulfilled in period`;
+  };
 
-  // Pending COD calculation: include deliveries not yet paid or not delivered
-  const codToCollect = deliveries
-    .filter((d) => d.status !== 'DELIVERED' || d.paymentStatus === 'UNPAID' || d.paymentStatus === 'PARTIAL')
-    .reduce((acc, d) => acc + (Number(d.codAmountToCollect || d.amountDue) || 0), 0);
-
-  const todayCodToCollect = todayDeliveries
-    .filter((d) => d.status !== 'DELIVERED' || d.paymentStatus === 'UNPAID' || d.paymentStatus === 'PARTIAL')
-    .reduce((acc, d) => acc + (Number(d.codAmountToCollect || d.amountDue) || 0), 0);
+  const getCodSub = () => {
+    if (codToCollect === 0) return 'No pending COD amount';
+    if (dateFilter === 'Today') return `Rs. ${codToCollect.toLocaleString()} to collect today`;
+    return `Rs. ${codToCollect.toLocaleString()} in selected period`;
+  };
 
   const statCards = [
     {
-      label: "TODAY'S DELIVERIES",
-      value: `${todayCount}`,
-      sub: todayCount > 0 ? `${todayDelivered} done · ${todayPending} in route` : `All-time: ${deliveries.length} drops`,
+      label: getPrimaryLabel(),
+      value: `${totalCount} Drops`,
+      sub: getPrimarySub(),
       icon: Truck,
-      color: '#155dfc',
-      badge: 'Today',
+      color: '#2563eb',
+      badge: 'Runs',
     },
     {
-      label: 'PENDING',
-      value: `${allPending}`,
-      sub: todayPending > 0 ? `${todayPending} scheduled today` : 'Awaiting delivery runs',
+      label: 'Pending In Route',
+      value: `${pendingCount} Orders`,
+      sub: getPendingSub(),
       icon: Clock,
-      color: '#f59e0b',
+      color: '#d97706',
       badge: 'In Route',
     },
     {
-      label: 'DELIVERED',
-      value: `${allDelivered}`,
-      sub: todayDelivered > 0 ? `${todayDelivered} completed today` : 'Successfully completed',
+      label: 'Delivered Orders',
+      value: `${deliveredCount} Completed`,
+      sub: getDeliveredSub(),
       icon: CheckCircle2,
-      color: '#009966',
+      color: '#059669',
       badge: 'Done',
     },
     {
-      label: 'COD TO COLLECT',
+      label: 'COD Cash Due',
       value: `Rs. ${codToCollect.toLocaleString()}`,
-      sub: todayCodToCollect > 0 ? `Rs. ${todayCodToCollect.toLocaleString()} pending today` : 'Pending cash on delivery',
+      sub: getCodSub(),
       icon: Banknote,
       color: '#e11d48',
       badge: 'Cash Due',
@@ -88,32 +104,36 @@ export default function DeliveryStats() {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mb-2">
       {statCards.map(({ label, value, sub, icon: Icon, color, badge }) => (
         <div
           key={label}
-          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-sm hover:shadow-md transition-all duration-200"
+          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs"
         >
           <div className="flex items-start justify-between mb-1.5">
             <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
               style={{ background: `${color}15` }}
             >
-              <Icon style={{ width: 16, height: 16, color }} />
+              <Icon style={{ width: 15, height: 15, color }} />
             </div>
-            <span className="text-[10px] font-bold px-3 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
-              {badge}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
+                {badge}
+              </span>
+            </div>
           </div>
           <div>
-            <p className="font-display text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
               {value}
             </p>
-            <p className="text-xs font-bold text-slate-700">{label}</p>
-            <p className="text-[11px] font-medium text-slate-400">{sub}</p>
+            <p className="text-xs font-bold text-slate-800">{label}</p>
+            <p className="text-[10px] font-medium text-slate-400 line-clamp-1">{sub}</p>
           </div>
         </div>
       ))}
     </div>
   );
 }
+
+

@@ -45,7 +45,10 @@ export default function CustomerManagement() {
       <CustomerFilters />
       <CustomerTable
         onViewCustomer={(cust) => {
-          navigate(`/customer-khata-ledger?customerId=${cust.id}`);
+          const custId = cust?._id || cust?.id;
+          if (custId) {
+            navigate(`/customer-hub/khata-ledger?customerId=${custId}`);
+          }
         }}
         onEditCustomer={(cust) => {
           setSelectedCustomer(cust);

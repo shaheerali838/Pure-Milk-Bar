@@ -1,22 +1,29 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ShoppingCart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useDeliveryContext } from '@/context/DeliveryContext';
+import { isDateInFilterRange } from '@/utils/dateUtils';
 import DeliveryFilters from './DeliveryFilters';
 import DeliveryTable from './DeliveryTable';
 
-export default function DropPoints({ onBookDelivery, onViewDelivery }) {
-  const navigate = useNavigate();
-  const { deliveries = [] } = useDeliveryContext();
+export default function DropPoints({ onViewDelivery }) {
+  const {
+    deliveries = [],
+    dateFilter = 'Today',
+    startDate = '',
+    endDate = '',
+  } = useDeliveryContext();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [shiftFilter, setShiftFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
-  // Filter deliveries
+  // Filter deliveries by date range, search query, type, shift, and status
   const filteredDeliveries = deliveries.filter((d) => {
+    // 1. Date filter match
+    const matchesDate = isDateInFilterRange(d.date || d.createdAt, dateFilter, startDate, endDate);
+    if (!matchesDate) return false;
+
+    // 2. Search query match
     const term = searchQuery.toLowerCase().trim();
     const matchesSearch =
       !term ||
@@ -46,28 +53,17 @@ export default function DropPoints({ onBookDelivery, onViewDelivery }) {
 
   return (
     <div className="space-y-1.5">
-      <div className="flex flex-wrap items-center justify-between gap-1.5 no-print">
-        <div className="flex-1 min-w-[280px]">
-          <DeliveryFilters
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            typeFilter={typeFilter}
-            setTypeFilter={setTypeFilter}
-            shiftFilter={shiftFilter}
-            setShiftFilter={setShiftFilter}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-          />
-        </div>
-
-        <Button
-          type="button"
-          onClick={onBookDelivery || (() => navigate('/pos?category=delivery'))}
-          className="h-7.5 px-3 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs cursor-pointer flex items-center gap-1"
-        >
-          <ShoppingCart className="w-3.5 h-3.5 mr-0.5" />
-          <span>New Delivery via POS</span>
-        </Button>
+      <div className="no-print">
+        <DeliveryFilters
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+          shiftFilter={shiftFilter}
+          setShiftFilter={setShiftFilter}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+        />
       </div>
 
       <DeliveryTable
@@ -77,4 +73,5 @@ export default function DropPoints({ onBookDelivery, onViewDelivery }) {
     </div>
   );
 }
+
 

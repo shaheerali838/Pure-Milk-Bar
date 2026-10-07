@@ -64,6 +64,7 @@ export const createCustomerService = async (customerData) => {
     image: customerImageUrl,
     openingBalance: openingBal,
     openingPaymentMethod: openingMethod,
+    advanceBalance: isAdvanceDeposit ? openingBal : 0,
     currentBalance: isAdvanceDeposit ? 0 : openingBal,
     khataBalance: isAdvanceDeposit ? 0 : openingBal,
   });
@@ -80,6 +81,10 @@ export const createCustomerService = async (customerData) => {
           : `Customer Account Opening Balance (Previous Dues)`,
         debitAmount: isAdvanceDeposit ? 0 : openingBal,
         creditAmount: isAdvanceDeposit ? openingBal : 0,
+        advanceReceived: isAdvanceDeposit ? openingBal : 0,
+        advanceUsed: 0,
+        advanceBalanceAfter: isAdvanceDeposit ? openingBal : 0,
+        khataAmount: isAdvanceDeposit ? 0 : openingBal,
         runningBalance: isAdvanceDeposit ? 0 : openingBal,
         paymentMethod: isAdvanceDeposit ? (openingMethod.includes('ONLINE') ? 'ONLINE' : 'CASH') : 'Opening Balance',
         referenceTransactionId: `OP-${customerCode}`,

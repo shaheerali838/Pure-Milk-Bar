@@ -64,6 +64,8 @@ class DeliveryService {
   async getDeliveryRuns(query = {}) {
     const {
       date,
+      startDate,
+      endDate,
       shift,
       route,
       status,
@@ -77,7 +79,19 @@ class DeliveryService {
 
     const filter = {};
 
-    if (date) {
+    if (startDate || endDate) {
+      filter.date = {};
+      if (startDate) {
+        const s = new Date(startDate);
+        s.setHours(0, 0, 0, 0);
+        filter.date.$gte = s;
+      }
+      if (endDate) {
+        const e = new Date(endDate);
+        e.setHours(23, 59, 59, 999);
+        filter.date.$lte = e;
+      }
+    } else if (date) {
       const startOfDay = new Date(date);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(date);

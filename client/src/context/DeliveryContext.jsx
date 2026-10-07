@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import deliveryService from '../services/deliveryService.js';
+import { getPktTodayString, getDateRangeFromFilter } from '../utils/dateUtils.js';
 
 const DeliveryContext = createContext();
 
@@ -8,12 +9,26 @@ export function DeliveryProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchDeliveries = useCallback(async () => {
+  // Date Filtering State - Default to 'Today'
+  const [dateFilter, setDateFilter] = useState('Today');
+  const [startDate, setStartDate] = useState(() => getPktTodayString());
+  const [endDate, setEndDate] = useState(() => getPktTodayString());
+
+  // Keep start and end dates synchronized when date filter changes
+  useEffect(() => {
+    if (dateFilter !== 'Custom Range') {
+      const range = getDateRangeFromFilter(dateFilter);
+      if (range.startDate !== undefined) setStartDate(range.startDate);
+      if (range.endDate !== undefined) setEndDate(range.endDate);
+    }
+  }, [dateFilter]);
+
+  const fetchDeliveries = useCallback(async (customParams = {}) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await deliveryService.getDeliveries();
-      const list = Array.isArray(data) ? data : data?.deliveries || [];
+      const data = await deliveryService.getDeliveries(customParams);
+      const list = Array.isArray(data) ? data : data?.deliveryRuns || data?.deliveries || [];
       const normalized = list.map((d) => ({
         ...d,
         id: d._id || d.id,
@@ -31,6 +46,7 @@ export function DeliveryProvider({ children }) {
   useEffect(() => {
     fetchDeliveries();
   }, [fetchDeliveries]);
+
 
   const addDelivery = async (data) => {
     try {
@@ -140,6 +156,12 @@ export function DeliveryProvider({ children }) {
         deliveries,
         isLoading,
         error,
+        dateFilter,
+        setDateFilter,
+        startDate,
+        setStartDate,
+        endDate,
+        setEndDate,
         refreshDeliveries: fetchDeliveries,
         addDelivery,
         updateDelivery,

@@ -135,27 +135,22 @@ class OrderService {
 
     // 8. Update Customer Khata and create Khata Ledger Entry for customer purchase history
     if (customer) {
-      const totals = await KhataEntry.aggregate([
-        { $match: { customerId: customer._id } },
-        {
-          $group: {
-            _id: null,
-            totalDebit: { $sum: '$debitAmount' },
-            totalCredit: { $sum: '$creditAmount' },
-          },
-        },
-      ]);
-      const currentTotals = totals[0] || { totalDebit: 0, totalCredit: 0 };
-      const newTotalDebit = currentTotals.totalDebit + (totalKhataDebit > 0 ? totalKhataDebit : 0);
-      const newTotalCredit = currentTotals.totalCredit;
-      const updatedBalance = Math.max(0, newTotalDebit - newTotalCredit);
-
-      const updatedCustomer = await Customer.findByIdAndUpdate(
-        customer._id,
-        { currentBalance: updatedBalance, khataBalance: updatedBalance },
-        { new: true }
+      const billPortion = totalKhataDebit > 0 ? totalKhataDebit : 0;
+      const { advanceUsed, khataAmount, advanceBalanceAfter, newKhataBalance } = processBillAgainstAdvance(
+        billPortion,
+        customer.advanceBalance || 0,
+        customer.khataBalance || customer.currentBalance || 0
       );
-      let currentRunningBalance = updatedCustomer.currentBalance;
+
+      customer.advanceBalance = advanceBalanceAfter;
+      customer.khataBalance = newKhataBalance;
+      customer.currentBalance = newKhataBalance;
+      await customer.save();
+
+      order.advanceUsed = advanceUsed;
+      order.khataAmount = khataAmount;
+      order.advanceBalanceAfter = advanceBalanceAfter;
+      await order.save();
 
       const orderItemsSnapshot = Array.isArray(order.items)
         ? order.items.map((it) => {
@@ -190,17 +185,21 @@ class OrderService {
         voucherNumber: `KV-${order.receiptNumber}`,
         transactionType: 'DEBIT',
         description: `POS Order #${order.receiptNumber} (${order.fulfillmentType})`,
-        debitAmount: totalKhataDebit,
+        debitAmount: order.grandTotal,
         creditAmount: 0,
-        runningBalance: currentRunningBalance,
+        advanceUsed,
+        khataAmount,
+        advanceBalanceAfter,
+        advanceReceived: 0,
+        runningBalance: newKhataBalance,
         paymentMethod: order.paymentMethod,
         referenceTransactionId: order.receiptNumber,
         cashierId,
         items: orderItemsSnapshot,
         orderTotal: order.grandTotal,
-        paidAmount: Math.max(0, order.grandTotal - totalKhataDebit),
-        remainingAmount: totalKhataDebit,
-        fulfillmentType: order.fulfillmentType === 'DELIVERY' ? 'Doorstep Delivery' : 'Walk-in Counter',
+        paidAmount: Math.max(0, (order.grandTotal - billPortion) + advanceUsed),
+        remainingAmount: khataAmount,
+        fulfillmentType: order.fulfillmentType === 'DELIVERY' ? 'Doorstep Delivery' : (advanceUsed > 0 && khataAmount === 0 ? 'Paid from Advance' : 'Walk-in Counter'),
         riderName: order.deliveryMeta?.riderName || order.deliveryMeta?.riderNameSnapshot || orderData.deliveryMeta?.riderName || orderData.riderName || null,
         deliveryAddress: order.deliveryMeta?.deliveryAddress || order.deliveryMeta?.dropAddress || customer.address || null,
       });
@@ -209,7 +208,7 @@ class OrderService {
     // 9. Return fully populated order
     return await Order.findById(order._id)
       .populate('cashierId', 'name username role')
-      .populate('customerId', 'name phone code currentBalance creditLimit')
+      .populate('customerId', 'name phone code currentBalance advanceBalance khataBalance creditLimit')
       .lean();
   }
 
@@ -419,22 +418,26 @@ class OrderService {
       }
     }
 
-    // 2. Reverse Khata debt if applicable
+    // 2. Reverse Khata debt & Advance if applicable
+    const advanceUsedToReverse = Number(order.advanceUsed || 0);
     const isKhataPayment = order.paymentMethod === 'KHATA';
     const splitKhata =
       order.paymentMethod === 'SPLIT' && order.splitPaymentMeta?.khataAmount
         ? Number(order.splitPaymentMeta.khataAmount)
         : 0;
-    const khataAmountToReverse = isKhataPayment ? order.grandTotal : splitKhata;
+    const khataAmountToReverse = Number(order.khataAmount !== undefined ? order.khataAmount : (isKhataPayment ? order.grandTotal : splitKhata));
 
-    if (order.customerId && khataAmountToReverse > 0) {
-      const updatedCustomer = await Customer.findByIdAndUpdate(
-        order.customerId,
-        { $inc: { currentBalance: -khataAmountToReverse } },
-        { new: true }
-      );
+    if (order.customerId && (khataAmountToReverse > 0 || advanceUsedToReverse > 0)) {
+      const customer = await Customer.findById(order.customerId);
+      if (customer) {
+        const newAdvance = Math.max(0, (customer.advanceBalance || 0) + advanceUsedToReverse);
+        const newKhata = Math.max(0, (customer.currentBalance || customer.khataBalance || 0) - khataAmountToReverse);
 
-      if (updatedCustomer) {
+        customer.advanceBalance = newAdvance;
+        customer.khataBalance = newKhata;
+        customer.currentBalance = newKhata;
+        await customer.save();
+
         await KhataEntry.create({
           customerId: order.customerId,
           date: new Date(),
@@ -443,7 +446,11 @@ class OrderService {
           description: `Order Voided / Reversal #${order.receiptNumber}: ${reason}`,
           debitAmount: 0,
           creditAmount: khataAmountToReverse,
-          runningBalance: updatedCustomer.currentBalance,
+          advanceUsed: 0,
+          khataAmount: 0,
+          advanceReceived: advanceUsedToReverse,
+          advanceBalanceAfter: newAdvance,
+          runningBalance: newKhata,
           paymentMethod: 'ADJUSTMENT',
           referenceTransactionId: order.receiptNumber,
           cashierId: cancelledByUserId || order.cashierId,
