@@ -282,9 +282,6 @@ export default function ProcurementSheet() {
             <FileText className="w-5 h-5 text-[#d97706]" />
             Daily Procurement Master Sheet
           </h2>
-          <p className="text-sm text-slate-500">
-            Daily intake reconciliation, route-wise collections, weighted fat rates, and net supplier settlements.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">

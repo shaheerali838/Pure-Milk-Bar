@@ -40,12 +40,13 @@ import Products from "../features/inventory/pages/Products";
 // Sales & Point of Sale (POS)
 import Pos from "../features/pos/pages/Pos";
 
-// Delivery & Logistics
-import Delivery from "../features/deliveries/pages/Delivery";
-
-// Customers & Accounts Ledger
+// Customer & Deliveries Hub
+import CustomerDeliveryHub from "../features/customers/pages/CustomerDeliveryHub";
+import DailyMonthlyDeliveries from "../features/customers/pages/DailyMonthlyDeliveries";
 import CustomerManagement from "../features/customers/pages/CustomerManagement";
 import CustomerKhataLedger from "../features/customers/pages/CustomerKhataLedger";
+import Delivery from "../features/deliveries/pages/Delivery";
+import DoorstepOrdersPage from "../features/deliveries/pages/DoorstepOrdersPage";
 
 // Finance, Reconciliation & Daily Closing
 import FinancePage from "../features/finance/pages/FinancePage";
@@ -129,15 +130,22 @@ export function AppRouter() {
               <Route path="pos" element={<Pos />} />
             </Route>
 
-            {/* 5. Deliveries & Customers */}
-            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER]} />}>
-              <Route path="delivery" element={<Delivery />} />
+            {/* 5. Unified Customer & Deliveries Hub */}
+            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.CASHIER]} />}>
+              <Route path="customer-hub" element={<CustomerDeliveryHub />}>
+                <Route index element={<CustomerManagement />} />
+                <Route path="customers" element={<CustomerManagement />} />
+                <Route path="daily-deliveries" element={<DailyMonthlyDeliveries />} />
+                <Route path="doorstep-orders" element={<DoorstepOrdersPage />} />
+                <Route path="doorstep-deliveries" element={<Delivery />} />
+                <Route path="khata-ledger" element={<CustomerKhataLedger />} />
+              </Route>
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.MANAGER, ROLES.CASHIER]} />}>
-              <Route path="customer" element={<CustomerManagement />} />
-              <Route path="customer-khata-ledger" element={<CustomerKhataLedger />} />
-            </Route>
+            {/* Direct & Backward Compatible Navigation Routes */}
+            <Route path="customer" element={<Navigate to="/customer-hub/customers" replace />} />
+            <Route path="delivery" element={<Navigate to="/customer-hub/doorstep-deliveries" replace />} />
+            <Route path="customer-khata-ledger" element={<Navigate to="/customer-hub/khata-ledger" replace />} />
 
             {/* Quick Redirects */}
             <Route path="dailysheet" element={<Navigate to="/farm/dailysheet" replace />} />

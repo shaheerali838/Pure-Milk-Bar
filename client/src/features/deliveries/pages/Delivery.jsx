@@ -119,15 +119,12 @@ export default function Delivery() {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="customer-delivery-compact space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-0.5 no-print">
         <div>
           <h3 className="font-display text-lg font-bold text-slate-800 leading-tight">
             Doorstep Deliveries
           </h3>
-          <p className="text-xs text-slate-500">
-            Manage daily milk delivery routes and fleet staff
-          </p>
         </div>
       </div>
 

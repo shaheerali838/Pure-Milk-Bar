@@ -29,15 +29,15 @@ export default function Layout() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-[100dvh] min-h-0 overflow-hidden bg-slate-50">
       <Sidebar
         isOpen={isMobileSidebarOpen}
         onClose={() => setIsMobileSidebarOpen(false)}
       />
 
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+      <div className="flex-1 flex min-h-0 min-w-0 flex-col overflow-hidden">
         <Navbar onToggleSidebar={() => setIsMobileSidebarOpen((prev) => !prev)} />
-        <main className="flex-1 p-2 sm:p-3 md:p-4 overflow-y-auto overflow-x-hidden">
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-2 sm:p-3 md:p-4">
           <Suspense fallback={getFallbackSkeleton()}>
             <Outlet />
           </Suspense>

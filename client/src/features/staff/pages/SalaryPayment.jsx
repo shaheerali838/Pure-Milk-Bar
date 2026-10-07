@@ -216,9 +216,6 @@ export default function SalaryPayment() {
               <CreditCard className="w-5 h-5 text-purple-600" />
               Pay Staff Salary Form
             </h2>
-            <p className="text-xs text-slate-500">
-              Select a staff member, verify attendance duties, and disburse salary directly into Farm Expenses.
-            </p>
           </div>
         </div>
 
@@ -415,9 +412,6 @@ export default function SalaryPayment() {
               <Receipt className="w-5 h-5 text-indigo-600" />
               Salary Payment Disbursements Ledger
             </h2>
-            <p className="text-xs text-slate-500">
-              Audit log of all issued staff salaries, voucher references, and Farm P&amp;L expense postings.
-            </p>
           </div>
 
           <span className="text-xs font-bold text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">

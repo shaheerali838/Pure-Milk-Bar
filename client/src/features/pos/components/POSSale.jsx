@@ -145,7 +145,7 @@ export default function POSSale() {
     return Number(prod.stock) || 0;
   };
 
-  // Sync category from URL search params (e.g. /pos?category=delivery)
+  // Sync category & customer info from URL search params (e.g. /pos?category=walkin&customerId=... or /pos?category=delivery)
   useEffect(() => {
     const categoryParam = searchParams.get("category");
     if (categoryParam === "delivery") {
@@ -156,8 +156,33 @@ export default function POSSale() {
       }
     } else if (categoryParam === "walkin") {
       setSaleCategory("walkin");
+      const customerId = searchParams.get("customerId");
+      const name = searchParams.get("name") || searchParams.get("customerName");
+      const phone = searchParams.get("phone");
+      const type = searchParams.get("type");
+
+      if (customerId) {
+        if (setLinkedCustomerId) setLinkedCustomerId(customerId);
+        if (setWalkinCustomerType) setWalkinCustomerType("registered");
+      } else if (name || phone) {
+        if (type === "registered") {
+          if (setWalkinCustomerType) setWalkinCustomerType("registered");
+        } else {
+          if (setWalkinCustomerType) setWalkinCustomerType("first_time");
+        }
+        if (name && setWalkinName) setWalkinName(name);
+        if (phone && setWalkinPhone) setWalkinPhone(phone);
+      }
     }
-  }, [searchParams, setSaleCategory, setDeliverySubType]);
+  }, [
+    searchParams,
+    setSaleCategory,
+    setDeliverySubType,
+    setLinkedCustomerId,
+    setWalkinCustomerType,
+    setWalkinName,
+    setWalkinPhone,
+  ]);
 
   const handleDirectClearKhata = (cust) => {
     const target = cust || activeCustomer;

@@ -7,7 +7,7 @@ export default function CustomerHeader({ onOpenAddModal, title = "Customers & Ac
   const { allCustomersCount, totalKhataReceivable } = useCustomerContext();
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+    <div className="flex flex-wrap items-center justify-between gap-2">
       <div>
         <h2 className="text-lg font-bold text-slate-900 tracking-tight leading-tight font-display">
           {title}
@@ -20,7 +20,7 @@ export default function CustomerHeader({ onOpenAddModal, title = "Customers & Ac
       <Button
         onClick={onOpenAddModal}
         size="sm"
-        className="flex items-center gap-1.5 text-xs font-bold shadow-2xs"
+        className="compact-control flex items-center gap-1.5 px-3 text-xs font-bold shadow-none"
       >
         <Plus className="w-3.5 h-3.5" />
         Add New Customer

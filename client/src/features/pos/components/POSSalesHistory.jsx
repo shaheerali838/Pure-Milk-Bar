@@ -157,9 +157,6 @@ export default function POSSalesHistory({ compact = false }) {
               <Receipt className="w-4.5 h-4.5 text-emerald-600" />
               POS Sales Finance Report
             </h2>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Comprehensive overview of total sales, income, and customer data.
-            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {/* Channel Filter */}
@@ -287,7 +284,7 @@ export default function POSSalesHistory({ compact = false }) {
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
-          <div><h2 className="text-sm font-black text-slate-900 flex items-center gap-2"><Receipt className="w-4 h-4 text-emerald-600" /> POS sales</h2><p className="text-[11px] text-slate-500 mt-0.5">Milk sales and customer details saved at checkout.</p></div>
+          <div><h2 className="text-sm font-black text-slate-900 flex items-center gap-2"><Receipt className="w-4 h-4 text-emerald-600" /> POS sales</h2></div>
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5"><Search className="w-3.5 h-3.5 text-slate-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search invoice or customer" className="w-44 bg-transparent outline-none text-xs" /></div>
         </div>
         {filteredSales.length === 0 ? <div className="py-10 text-center text-xs text-slate-400">No POS sales found.</div> : <div className={compact ? 'max-h-72 overflow-y-auto' : 'overflow-x-auto'}><table className="w-full text-left text-xs"><thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400"><tr><th className="px-4 py-2">Invoice</th><th className="px-4 py-2">Customer</th><th className="px-4 py-2">Items</th><th className="px-4 py-2 text-right">Total</th><th className="px-4 py-2 text-right">Action</th></tr></thead><tbody className="divide-y divide-slate-100">{filteredSales.map((sale) => { const customer = getCustomer(sale); return <tr key={sale.invoiceId} className="hover:bg-emerald-50/40 transition-colors"><td className="px-4 py-2.5 font-mono font-bold text-slate-700">{sale.invoiceId}</td><td className="px-4 py-2.5"><div className="font-bold text-slate-800 flex items-center gap-1"><User className="w-3 h-3 text-slate-400" /> {customer.name}</div><div className="text-[10px] text-slate-400">{customer.phone || 'N/A'}</div></td><td className="px-4 py-2.5 text-slate-500">{getSaleItems(sale).map((item) => item.name).join(', ') || 'Dairy item'}</td><td className="px-4 py-2.5 text-right font-black text-emerald-700">Rs. {getTotal(sale).toLocaleString()}</td><td className="px-4 py-2.5 text-right"><button type="button" title="View sale details" onClick={() => setSelectedSale(sale)} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 font-bold hover:bg-blue-600 hover:text-white cursor-pointer transition-colors"><Eye className="w-3.5 h-3.5" /> View</button></td></tr>; })}</tbody></table></div>}
