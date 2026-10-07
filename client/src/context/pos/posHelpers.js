@@ -1,6 +1,14 @@
 // Helper to determine if a given date or timestamp matches today in local calendar
 export const isTodayDate = (dateVal) => {
   if (!dateVal) return false;
+  if (typeof dateVal === 'string' && dateVal.includes('T')) {
+    dateVal = dateVal.split('T')[0];
+  }
+  if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateVal.trim())) {
+    const [y, m, d] = dateVal.trim().split('-').map(Number);
+    const now = new Date();
+    return y === now.getFullYear() && m === (now.getMonth() + 1) && d === now.getDate();
+  }
   const d = new Date(dateVal);
   if (isNaN(d.getTime())) return false;
   const now = new Date();

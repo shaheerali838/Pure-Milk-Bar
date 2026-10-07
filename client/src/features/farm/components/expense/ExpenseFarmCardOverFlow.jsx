@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useExpense } from '../../../../context/ExpenseContext';
-import { DollarSign, Tractor, Wrench, Utensils } from 'lucide-react';
+import { Banknote, Tractor, Wrench, Utensils } from 'lucide-react';
 
 export default function ExpenseFarmCardOverFlow({ expenses: propExpenses }) {
   const { totals: globalTotals } = useExpense();
@@ -58,7 +58,7 @@ export default function ExpenseFarmCardOverFlow({ expenses: propExpenses }) {
       label: "Total Farm Expense",
       value: `Rs. ${activeTotals.totalFarmExpense.toLocaleString()}`,
       sub: "Total expenses recorded",
-      icon: DollarSign,
+      icon: Banknote,
       color: "#009966",
       badge: "Total Expenses"
     },

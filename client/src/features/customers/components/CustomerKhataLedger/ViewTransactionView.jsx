@@ -1,20 +1,5 @@
 import React from "react";
-import {
-  ArrowLeft,
-  Calendar,
-  DollarSign,
-  FileText,
-  CheckCircle2,
-  User,
-  CreditCard,
-  ShoppingBag,
-  Store,
-  Truck,
-  Banknote,
-  Receipt,
-  Tag,
-  Package,
-} from "lucide-react";
+import { ArrowLeft, Calendar, Banknote, FileText, CheckCircle2, User, CreditCard, ShoppingBag, Store, Truck, Receipt, Tag, Package } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

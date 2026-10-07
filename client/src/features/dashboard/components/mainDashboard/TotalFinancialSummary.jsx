@@ -1,12 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  TrendingUp,
-  DollarSign,
-  Droplets,
-  Layers,
-  Building2,
-  ArrowRight,
-} from 'lucide-react';
+import { TrendingUp, Banknote, Droplets, Layers, Building2, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePOSContext } from '@/context/POSContext';
 import { useExpense } from '@/context/ExpenseContext';
@@ -232,7 +225,7 @@ export default function TotalFinancialSummary() {
         <div>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-linear-to-tr from-emerald-600 via-teal-600 to-indigo-600 flex items-center justify-center text-white shadow-2xs">
-              <DollarSign className="w-4 h-4" />
+              <Banknote className="w-4 h-4" />
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black text-slate-900 font-display tracking-tight">

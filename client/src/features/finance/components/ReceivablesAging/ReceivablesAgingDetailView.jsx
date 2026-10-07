@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, CreditCard, Milk, ArrowRight, DollarSign, AlertCircle } from 'lucide-react';
+import { ArrowLeft, MapPin, CreditCard, Milk, ArrowRight, Banknote, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useLedgerContext } from '@/context/LedgerContext';
@@ -84,7 +84,7 @@ export default function ReceivablesAgingDetailView({ customer, buckets, onBack, 
               size="sm"
               className="h-8 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
             >
-              <DollarSign className="w-3.5 h-3.5" />
+              <Banknote className="w-3.5 h-3.5" />
               Collect Payment
             </Button>
           )}

@@ -1,21 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import {
-  Calendar,
-  Users,
-  Truck,
-  ShoppingBag,
-  Droplets,
-  DollarSign,
-  CheckCircle2,
-  TrendingUp,
-  Receipt,
-  Wallet,
-  Fuel,
-  Printer,
-  FileText,
-  Clock,
-  ArrowRight,
-} from 'lucide-react';
+import { Calendar, Users, Truck, ShoppingBag, Droplets, Banknote, CheckCircle2, TrendingUp, Receipt, Wallet, Fuel, Printer, FileText, Clock, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePOSContext } from '@/context/POSContext';
 import { useCustomerContext, getCustomerDueBalance } from '@/context/CustomerContext';

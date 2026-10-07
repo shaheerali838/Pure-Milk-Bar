@@ -1,14 +1,78 @@
-import React, { useState } from 'react';
-import { Layers, X, Droplets, AlertCircle, ArrowLeft, Check, Milk, Calendar } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Layers, X, Droplets, AlertCircle, ArrowLeft, Check, Milk } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDahiContext } from '@/context/DahiContext';
+import { usePOSContext } from '@/context/POSContext';
+import { useAnimalContext } from '@/context/AnimalContext';
+import { useIntakeContext } from '@/context/IntakeContext';
+import { subscribeToSync } from '@/utils/syncBroadcaster';
 
 export default function AddDahiBatchModal({ onClose, onAddBatch }) {
-  const { metrics = {} } = useDahiContext();
+  const { metrics = {}, refreshBatches } = useDahiContext();
+  const posCtx = usePOSContext();
+  const animalCtx = useAnimalContext();
+  const intakeCtx = useIntakeContext();
 
-  const availFarm = Number(metrics.remainingFarmMilk ?? metrics.farmSourced ?? 0);
-  const availSupplier = Number(metrics.remainingSupplierMilk ?? metrics.supplierSourced ?? 0);
-  const availTotal = Number(metrics.remainingTotalMilk ?? (availFarm + availSupplier).toFixed(1));
+  // Lively fetch latest stock and batches on modal open and real-time events
+  useEffect(() => {
+    if (typeof refreshBatches === 'function') refreshBatches();
+    if (typeof animalCtx?.refreshAnimals === 'function') animalCtx.refreshAnimals();
+    if (typeof intakeCtx?.refreshIntakes === 'function') intakeCtx.refreshIntakes();
+    if (typeof posCtx?.fetchOrders === 'function') posCtx.fetchOrders();
+    if (typeof posCtx?.loadProcessingBatches === 'function') posCtx.loadProcessingBatches();
+
+    const handleSync = () => {
+      if (typeof refreshBatches === 'function') refreshBatches();
+      if (typeof animalCtx?.refreshAnimals === 'function') animalCtx.refreshAnimals();
+      if (typeof intakeCtx?.refreshIntakes === 'function') intakeCtx.refreshIntakes();
+      if (typeof posCtx?.fetchOrders === 'function') posCtx.fetchOrders();
+      if (typeof posCtx?.loadProcessingBatches === 'function') posCtx.loadProcessingBatches();
+    };
+
+    const unsubscribe = subscribeToSync(handleSync);
+    window.addEventListener('pure_milk_bar_milking_updated', handleSync);
+    window.addEventListener('pure_milk_bar_intake_updated', handleSync);
+    window.addEventListener('pure_milk_bar_dahi_updated', handleSync);
+    window.addEventListener('pure_milk_bar_sales_updated', handleSync);
+    window.addEventListener('pure_milk_bar_pos_sale_completed', handleSync);
+    window.addEventListener('pure_milk_bar_inventory_updated', handleSync);
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+      window.removeEventListener('pure_milk_bar_milking_updated', handleSync);
+      window.removeEventListener('pure_milk_bar_intake_updated', handleSync);
+      window.removeEventListener('pure_milk_bar_dahi_updated', handleSync);
+      window.removeEventListener('pure_milk_bar_sales_updated', handleSync);
+      window.removeEventListener('pure_milk_bar_pos_sale_completed', handleSync);
+      window.removeEventListener('pure_milk_bar_inventory_updated', handleSync);
+    };
+  }, []);
+
+  // Read authoritative live stock
+  const availFarm = useMemo(() => {
+    if (posCtx?.inventoryMetrics?.rawFarmMilkStock !== undefined && posCtx?.inventoryMetrics?.rawFarmMilkStock !== null) {
+      return Math.max(0, Number(posCtx.inventoryMetrics.rawFarmMilkStock) || 0);
+    }
+    if (metrics?.remainingFarmMilk !== undefined && metrics?.remainingFarmMilk !== null) {
+      return Math.max(0, Number(metrics.remainingFarmMilk) || 0);
+    }
+    return 0;
+  }, [posCtx?.inventoryMetrics?.rawFarmMilkStock, metrics?.remainingFarmMilk]);
+
+  const availSupplier = useMemo(() => {
+    if (posCtx?.inventoryMetrics?.rawSupplierMilkStock !== undefined && posCtx?.inventoryMetrics?.rawSupplierMilkStock !== null) {
+      return Math.max(0, Number(posCtx.inventoryMetrics.rawSupplierMilkStock) || 0);
+    }
+    if (metrics?.remainingSupplierMilk !== undefined && metrics?.remainingSupplierMilk !== null) {
+      return Math.max(0, Number(metrics.remainingSupplierMilk) || 0);
+    }
+    const totalProcured = (intakeCtx?.intakeLogs || []).reduce((sum, item) => sum + (Number(item.quantity || item.quantityLiters) || 0), 0);
+    return Math.max(0, totalProcured);
+  }, [posCtx?.inventoryMetrics?.rawSupplierMilkStock, metrics?.remainingSupplierMilk, intakeCtx?.intakeLogs]);
+
+  const availTotal = useMemo(() => {
+    return Number((availFarm + availSupplier).toFixed(1));
+  }, [availFarm, availSupplier]);
 
   const [formData, setFormData] = useState({
     product: 'Fresh Dahi (Plain)',
@@ -271,21 +335,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Production Date <span className="text-rose-500">*</span></span>
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-semibold cursor-pointer"
-                />
-              </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Dahi Product Type <span className="text-rose-500">*</span>

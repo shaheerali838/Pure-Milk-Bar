@@ -1,19 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Calendar,
-  Download,
-  Filter,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Droplets,
-  Receipt,
-  FileSpreadsheet,
-  RotateCcw,
-  Clock,
-  Sparkles,
-  Info,
-} from 'lucide-react';
+import { Calendar, Download, Filter, TrendingUp, TrendingDown, Banknote, Droplets, Receipt, FileSpreadsheet, RotateCcw, Clock, Sparkles, Info } from 'lucide-react';
 import { useExpense } from '@/context/ExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useAnimalContext } from '@/context/AnimalContext';
@@ -852,7 +838,7 @@ export default function FarmPL() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 text-xs">
+          <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold">
             <button
               type="button"
               onClick={() => {
@@ -861,9 +847,9 @@ export default function FarmPL() {
                 setStartDate('');
                 setEndDate('');
               }}
-              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 dateFilterMode === 'today'
-                  ? 'bg-white text-slate-900 shadow-2xs'
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -877,9 +863,9 @@ export default function FarmPL() {
                 setStartDate('');
                 setEndDate('');
               }}
-              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 dateFilterMode === 'this_month'
-                  ? 'bg-white text-slate-900 shadow-2xs'
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -893,9 +879,9 @@ export default function FarmPL() {
                 setStartDate('');
                 setEndDate('');
               }}
-              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 dateFilterMode === 'all'
-                  ? 'bg-white text-slate-900 shadow-2xs'
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -906,9 +892,9 @@ export default function FarmPL() {
               onClick={() => {
                 setDateFilterMode('custom');
               }}
-              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 dateFilterMode === 'custom'
-                  ? 'bg-white text-slate-900 shadow-2xs'
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >

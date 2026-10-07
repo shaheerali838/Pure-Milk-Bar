@@ -145,7 +145,7 @@ export default function DahiProcessingHub() {
           </div>
 
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
-            <span className="text-slate-600 text-xs font-semibold">Available Dahi Stock</span>
+            <span className="text-slate-600 text-xs font-semibold">Available Dahi Stock (With Me)</span>
             <span className="font-mono font-bold text-teal-700 text-xs tabular">
               {inventoryMetrics?.totalDahiStock || 0} kg (POS Ready)
             </span>

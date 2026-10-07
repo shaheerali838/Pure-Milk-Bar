@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle2, DollarSign, ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Banknote, ArrowRight, Loader2 } from 'lucide-react';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

@@ -301,7 +301,7 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
                       <div className="flex items-center justify-between text-[10px] pt-1 border-t border-slate-200/60">
                         <span className="text-slate-400 font-medium">Cost: Rs. {costPrice.toLocaleString()}</span>
                         <span className={`font-bold ${profitMargin >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                          {profitMargin >= 0 ? `+Rs. ${profitMargin} (${marginPercent}%)` : `-Rs. ${Math.abs(profitMargin)}`}
+                          {profitMargin >= 0 ? `Rs. ${profitMargin} (${marginPercent}%)` : `Rs. -${Math.abs(profitMargin)}`}
                         </span>
                       </div>
                     )}

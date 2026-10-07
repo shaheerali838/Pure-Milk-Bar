@@ -1,14 +1,5 @@
 import React from 'react';
-import {
-  DollarSign,
-  Receipt,
-  TrendingUp,
-  Droplets,
-  Scale,
-  Milk,
-  ArrowUpRight,
-  ChevronRight,
-} from 'lucide-react';
+import { Banknote, Receipt, TrendingUp, Droplets, Scale, Milk, ArrowUpRight, ChevronRight } from 'lucide-react';
 
 export default function SupplierPLCards({ summaryData, onSelectCard }) {
   if (!summaryData) return null;
@@ -32,7 +23,7 @@ export default function SupplierPLCards({ summaryData, onSelectCard }) {
       subtext: `Settled with Suppliers`,
       badge: summaryData.paidSpend > 0 ? 'Payment Disbursed' : 'No Disbursements',
       badgeColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-      icon: DollarSign,
+      icon: Banknote,
       iconColor: 'bg-emerald-100 text-emerald-700',
       borderHover: 'hover:border-emerald-300',
     },

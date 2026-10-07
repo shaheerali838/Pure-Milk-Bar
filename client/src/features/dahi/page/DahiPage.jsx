@@ -144,29 +144,38 @@ export default function DahiPage() {
   }
 
   return (
-    <div className="space-y-2.5">
+    <div className="relative min-h-screen bg-slate-50/50 pb-10 space-y-4">
       {/* Top Header Row */}
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-        <div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h2 className="text-lg font-bold text-slate-900 tracking-tight leading-tight font-display">
-              Dahi Production & Kitchen Pipeline
-            </h2>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-semibold shadow-2xs">
-              <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>{todayFormatted}</span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pt-2">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center text-white shadow-md shadow-amber-500/20">
+            <Layers className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 font-display tracking-tight leading-none">
+              Dahi Production &amp; Kitchen
+            </h1>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                Value-Added Dairy · {todayFormatted}
+              </span>
+              <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
+                Active Kitchen
+              </span>
             </div>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">Real-time batch tracking, incubation status, and segregated sales</p>
         </div>
-        <Button
+
+        <button
+          type="button"
           onClick={() => setIsModalOpen(true)}
-          size="sm"
-          className="flex items-center gap-1.5 text-xs font-bold shadow-2xs cursor-pointer"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
         >
-          <Plus className="w-3.5 h-3.5" />
-          Record New Batch
-        </Button>
+          <Plus className="w-3.5 h-3.5 stroke-3" />
+          <span>Record New Batch</span>
+        </button>
       </div>
 
       {/* ── Date Filter Tabs ── */}

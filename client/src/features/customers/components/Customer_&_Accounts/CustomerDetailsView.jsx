@@ -1,19 +1,5 @@
 import React from 'react';
-import {
-  ArrowLeft,
-  Phone,
-  Smartphone,
-  Milk,
-  CreditCard,
-  MapPin,
-  ShieldCheck,
-  Edit3,
-  Calendar,
-  User,
-  Activity,
-  DollarSign,
-  AlertCircle
-} from 'lucide-react';
+import { ArrowLeft, Phone, Smartphone, Milk, CreditCard, MapPin, ShieldCheck, Edit3, Calendar, User, Activity, Banknote, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -138,7 +124,7 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
             </p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-            <DollarSign className="w-5 h-5" />
+            <Banknote className="w-5 h-5" />
           </div>
         </Card>
 

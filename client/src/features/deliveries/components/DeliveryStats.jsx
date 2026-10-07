@@ -54,63 +54,70 @@ export default function DeliveryStats() {
 
   const statCards = [
     {
-      label: "TODAY'S DELIVERIES",
+      id: 'today_deliveries',
+      label: "Today's Deliveries",
       value: `${todayCount}`,
       sub: todayCount > 0 ? `${todayDelivered} done · ${todayPending} in route` : `All-time: ${deliveries.length} drops`,
       icon: Truck,
-      color: '#155dfc',
+      color: '#2563eb', // blue-600
       badge: 'Today',
     },
     {
-      label: 'PENDING',
+      id: 'pending_deliveries',
+      label: 'Pending In Route',
       value: `${allPending}`,
       sub: todayPending > 0 ? `${todayPending} scheduled today` : 'Awaiting delivery runs',
       icon: Clock,
-      color: '#f59e0b',
+      color: '#d97706', // amber-600
       badge: 'In Route',
     },
     {
-      label: 'DELIVERED',
+      id: 'completed_deliveries',
+      label: 'Delivered',
       value: `${allDelivered}`,
       sub: todayDelivered > 0 ? `${todayDelivered} completed today` : 'Successfully completed',
       icon: CheckCircle2,
-      color: '#009966',
+      color: '#059669', // emerald-600
       badge: 'Done',
     },
     {
-      label: 'COD TO COLLECT',
+      id: 'cod_collect',
+      label: 'COD To Collect',
       value: `Rs. ${codToCollect.toLocaleString()}`,
       sub: todayCodToCollect > 0 ? `Rs. ${todayCodToCollect.toLocaleString()} pending today` : 'Pending cash on delivery',
       icon: Banknote,
-      color: '#e11d48',
+      color: '#e11d48', // rose-600
       badge: 'Cash Due',
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
-      {statCards.map(({ label, value, sub, icon: Icon, color, badge }) => (
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-2.5">
+      {statCards.map(({ id, label, value, sub, icon: Icon, color, badge }) => (
         <div
-          key={label}
-          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-sm hover:shadow-md transition-all duration-200"
+          key={id}
+          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs"
         >
           <div className="flex items-start justify-between mb-1.5">
             <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
               style={{ background: `${color}15` }}
             >
-              <Icon style={{ width: 16, height: 16, color }} />
+              <Icon style={{ width: 15, height: 15, color }} />
             </div>
-            <span className="text-[10px] font-bold px-3 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
-              {badge}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
+                {badge}
+              </span>
+            </div>
           </div>
+
           <div>
-            <p className="font-display text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
               {value}
             </p>
-            <p className="text-xs font-bold text-slate-700">{label}</p>
-            <p className="text-[11px] font-medium text-slate-400">{sub}</p>
+            <p className="text-xs font-bold text-slate-800">{label}</p>
+            <p className="text-[10px] font-medium text-slate-400 line-clamp-1">{sub}</p>
           </div>
         </div>
       ))}

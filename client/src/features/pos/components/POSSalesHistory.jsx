@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Eye, Receipt, Search, User, Phone, Package, TrendingUp, Users, DollarSign, Activity } from 'lucide-react';
+import { ArrowLeft, Eye, Receipt, Search, User, Phone, Package, TrendingUp, Users, Banknote, Activity } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 
 const getCustomer = (sale) => sale.customer || sale.walkinCustomer || { name: 'Walk-in Customer', phone: 'N/A' };
@@ -160,7 +160,7 @@ export default function POSSalesHistory({ compact = false }) {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {/* Channel Filter */}
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+            <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold">
               {[
                 { id: 'all', label: 'All Channels' },
                 { id: 'walkin', label: '🥛 Walk-in Counter' },
@@ -170,9 +170,9 @@ export default function POSSalesHistory({ compact = false }) {
                   key={tab.id}
                   type="button"
                   onClick={() => setChannelFilter(tab.id)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     channelFilter === tab.id
-                      ? 'bg-slate-900 text-white shadow-xs font-bold'
+                      ? 'bg-white text-slate-900 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -182,7 +182,7 @@ export default function POSSalesHistory({ compact = false }) {
             </div>
 
             {/* Date Filter */}
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+            <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold">
               {['today', 'week', 'all', 'custom'].map((filter) => (
                 <button
                   key={filter}
@@ -194,7 +194,7 @@ export default function POSSalesHistory({ compact = false }) {
                       setEndDate('');
                     }
                   }}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     dateFilter === filter
                       ? 'bg-white text-emerald-700 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'

@@ -760,7 +760,10 @@ export function usePOSMetrics({
   // and POS sales decrease ONLY the matching entity. Legacy override state is ignored.
   const availableFarmStock = calculatedAvailableFarmStock;
   const remainingFarmMilk = availableFarmStock;
-  const calculatedRemainingSupplierMilk = Math.max(0, Number((todaySupplierIntake - todaySupplierMilkSold - supplierMilkConvertedToDahi).toFixed(1)));
+
+  const totalSupplierMilkSoldQty = Number(supplierStats.milkSold.toFixed(2)) || todaySupplierMilkSold;
+  const effectiveSupplierIntake = totalSupplierIntake > 0 ? totalSupplierIntake : todaySupplierIntake;
+  const calculatedRemainingSupplierMilk = Math.max(0, Number((effectiveSupplierIntake - totalSupplierMilkSoldQty - supplierMilkConvertedToDahi).toFixed(1)));
   const remainingSupplierMilk = calculatedRemainingSupplierMilk;
   const remainingTotalMilk = Number((remainingFarmMilk + remainingSupplierMilk + totalProcessedMilk).toFixed(1));
 
@@ -773,8 +776,11 @@ export function usePOSMetrics({
   const remainingFarmCowMilk = Math.max(0, Number((preDahiCow - cowDeduction).toFixed(1)));
   const remainingFarmBuffaloMilk = Math.max(0, Number((preDahiBuff - buffDeduction).toFixed(1)));
 
-  const preDahiSupCow = Math.max(0, todaySupplierCowIntake - todaySupplierCowMilkSold);
-  const preDahiSupBuff = Math.max(0, todaySupplierBuffaloIntake - todaySupplierBuffaloMilkSold);
+  const effectiveSupplierCow = totalSupplierCowIntake > 0 ? totalSupplierCowIntake : todaySupplierCowIntake;
+  const effectiveSupplierBuffalo = totalSupplierBuffaloIntake > 0 ? totalSupplierBuffaloIntake : todaySupplierBuffaloIntake;
+
+  const preDahiSupCow = Math.max(0, effectiveSupplierCow - todaySupplierCowMilkSold);
+  const preDahiSupBuff = Math.max(0, effectiveSupplierBuffalo - todaySupplierBuffaloMilkSold);
 
   const supBuffDeduction = Math.min(preDahiSupBuff, supplierMilkConvertedToDahi);
   const supCowDeduction = Math.max(0, supplierMilkConvertedToDahi - supBuffDeduction);

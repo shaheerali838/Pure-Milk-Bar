@@ -1,23 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Users,
-  Plus,
-  Search,
-  Phone,
-  Clock,
-  DollarSign,
-  Briefcase,
-  MapPin,
-  CreditCard,
-  CheckCircle2,
-  XCircle,
-  UserCheck,
-  Truck,
-  ArrowRight,
-  Eye,
-  Edit2,
-  Trash2,
-} from 'lucide-react';
+import { Users, Plus, Search, Phone, Clock, Banknote, Briefcase, MapPin, CreditCard, CheckCircle2, XCircle, UserCheck, Truck, ArrowRight, Eye, Edit2, Trash2 } from 'lucide-react';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
 import { useAuth } from '@/context/AuthContext';
 import { ROLES } from '@/config/rbac.config';
@@ -275,7 +257,7 @@ export default function ManageStaff() {
                 className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
                 style={{ background: '#3b82f615' }}
               >
-                <DollarSign style={{ width: 16, height: 16, color: '#3b82f6' }} />
+                <Banknote style={{ width: 16, height: 16, color: '#3b82f6' }} />
               </div>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-blue-700 bg-blue-50 border border-blue-200">
                 Payroll
@@ -642,7 +624,7 @@ export default function ManageStaff() {
                                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white transition shadow-2xs cursor-pointer"
                                 title="Pay Staff Salary with Attendance Deduction"
                               >
-                                <DollarSign className="w-3.5 h-3.5" />
+                                <Banknote className="w-3.5 h-3.5" />
                                 <span>Pay Salary</span>
                               </button>
                             )

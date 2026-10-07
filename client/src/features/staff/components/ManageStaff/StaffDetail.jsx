@@ -1,16 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  ArrowLeft,
-  Edit,
-  Trash2,
-  Users,
-  Truck,
-  FileSpreadsheet,
-  Clock,
-  DollarSign,
-  CheckCircle2,
-  Calendar,
-} from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Users, Truck, FileSpreadsheet, Clock, Banknote, CheckCircle2, Calendar } from 'lucide-react';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
 import StaffAdd from './StaffAdd';
 import AttendanceSheetDetail from '../StaffAttendance/AttendanceSheetDetail';
@@ -166,7 +155,7 @@ export default function StaffDetail({
               onClick={() => setIsPaySalaryModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer"
             >
-              <DollarSign className="w-3.5 h-3.5" />
+              <Banknote className="w-3.5 h-3.5" />
               Pay Salary
             </button>
           )}
@@ -304,7 +293,7 @@ export default function StaffDetail({
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
               style={{ background: '#3b82f615' }}
             >
-              <DollarSign style={{ width: 16, height: 16, color: '#3b82f6' }} />
+              <Banknote style={{ width: 16, height: 16, color: '#3b82f6' }} />
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-blue-700 bg-blue-50 border border-blue-200">
               Monthly
@@ -332,7 +321,7 @@ export default function StaffDetail({
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
               style={{ background: '#f59e0b15' }}
             >
-              <DollarSign style={{ width: 16, height: 16, color: '#f59e0b' }} />
+              <Banknote style={{ width: 16, height: 16, color: '#f59e0b' }} />
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-amber-700 bg-amber-50 border border-amber-200">
               Day Rate
@@ -439,7 +428,7 @@ export default function StaffDetail({
       <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
         <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-purple-600" />
+            <Banknote className="w-4 h-4 text-purple-600" />
             <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
               Salary Payment History
             </h3>
@@ -465,7 +454,7 @@ export default function StaffDetail({
               {staffSalaryHistory.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-slate-400">
-                    <DollarSign className="w-7 h-7 mx-auto mb-1.5 opacity-30 text-slate-400" />
+                    <Banknote className="w-7 h-7 mx-auto mb-1.5 opacity-30 text-slate-400" />
                     <p className="font-semibold text-slate-600">No salary payment history for this employee yet</p>
                     <p className="text-[11px] text-slate-400 mt-0.5">
                       Click the "Pay Salary" button above to record a payment.

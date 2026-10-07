@@ -1,25 +1,5 @@
 import React, { useState } from 'react';
-import {
-  X,
-  Phone,
-  Mail,
-  CreditCard,
-  Clock,
-  MapPin,
-  Calendar,
-  DollarSign,
-  Trash2,
-  Edit2,
-  Check,
-  AlertCircle,
-  TrendingDown,
-  CheckCircle2,
-  XCircle,
-  Key,
-  Send,
-  Sparkles,
-  Copy,
-} from 'lucide-react';
+import { X, Phone, Mail, CreditCard, Clock, MapPin, Calendar, Banknote, Trash2, Edit2, Check, AlertCircle, TrendingDown, CheckCircle2, XCircle, Key, Send, Sparkles, Copy } from 'lucide-react';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
 import { useAuth } from '@/context/AuthContext';
 import { ROLES } from '@/config/rbac.config';

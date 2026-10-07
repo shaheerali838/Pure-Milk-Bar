@@ -27,16 +27,14 @@ export default function LedgerCustomerSelector({
           {/* Left Controls: Back Button + Month Picker */}
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             {/* Back Button */}
-            <Button
+            <button
               type="button"
-              variant="outline"
-              size="sm"
               onClick={onBack}
-              className="h-8 px-3 text-xs font-semibold text-slate-700 hover:text-slate-900 border-slate-300 hover:bg-slate-100 bg-white rounded-lg shadow-2xs cursor-pointer gap-1.5"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
               <span>Back</span>
-            </Button>
+            </button>
 
             {/* Month Picker with Clear/All button */}
             <div className="flex items-center gap-1">
@@ -45,72 +43,63 @@ export default function LedgerCustomerSelector({
                   type="month"
                   value={selectedMonth || ''}
                   onChange={(e) => onChangeMonth(e.target.value)}
-                  className="w-full h-8 px-2 bg-slate-50/80 border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:border-emerald-500 cursor-pointer shadow-none"
+                  className="w-full h-8 px-2 bg-slate-50/80 border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:border-emerald-500 cursor-pointer shadow-none"
                 />
               </div>
               {selectedMonth && (
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
                   onClick={() => onChangeMonth('')}
                   title="Show All Records"
-                  className="h-8 px-2 text-[10px] font-bold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer"
+                  className="inline-flex items-center px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold transition-all cursor-pointer"
                 >
                   All
-                </Button>
+                </button>
               )}
             </div>
           </div>
 
           {/* Right Action Buttons */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Button
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
               type="button"
-              variant="outline"
-              size="sm"
               onClick={onOpenAddDebit}
               disabled={!selectedCustomerId}
-              className="h-8 px-2.5 text-xs font-medium text-slate-700 hover:text-slate-900 border-slate-200 hover:bg-slate-50 cursor-pointer gap-1 rounded-lg shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-50"
             >
               <Plus className="w-3.5 h-3.5 text-slate-500" />
               <span>Manual Debit</span>
-            </Button>
+            </button>
 
-            <Button
+            <button
               type="button"
-              variant="outline"
-              size="sm"
               onClick={onOpenRecordPayment}
               disabled={!selectedCustomerId}
-              className="h-8 px-2.5 text-xs font-semibold text-blue-700 hover:text-blue-800 border-blue-200/80 bg-blue-50/40 hover:bg-blue-100/60 cursor-pointer gap-1 rounded-lg shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/60 hover:bg-blue-100 text-blue-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-50"
             >
               <CreditCard className="w-3.5 h-3.5 text-blue-600" />
               <span>Record Payment</span>
-            </Button>
+            </button>
 
-            <Button
+            <button
               type="button"
-              size="sm"
               onClick={onOpenBuyModal}
               disabled={!selectedCustomerId}
-              className="h-8 px-3 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer gap-1.5 rounded-lg shadow-xs"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
             >
               <ShoppingCart className="w-3.5 h-3.5" />
               <span>Buy / Add Order</span>
-            </Button>
+            </button>
 
-            <Button
+            <button
               type="button"
-              variant="outline"
-              size="sm"
               onClick={onSettleKhata}
               disabled={!selectedCustomerId}
-              className="h-8 px-2.5 text-xs font-bold text-emerald-800 border-emerald-300 bg-emerald-50/60 hover:bg-emerald-100 cursor-pointer gap-1 rounded-lg shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50/60 hover:bg-emerald-100 text-emerald-800 text-xs font-bold shadow-2xs transition-all cursor-pointer disabled:opacity-50"
             >
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
               <span>Settle Khata</span>
-            </Button>
+            </button>
           </div>
         </div>
       </CardContent>

@@ -147,22 +147,21 @@ export default function CustomerAdvancePaymentsView({ onBack, onOpenAddCustomer 
       {/* ── Top Header Bar ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
+          <button
+            type="button"
             onClick={onBack}
-            className="h-9 px-3 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-700 font-bold gap-1.5 shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
             <span>Back</span>
-          </Button>
+          </button>
           <div>
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200/60 flex items-center justify-center">
                 <Wallet className="w-4 h-4 text-emerald-600" />
               </div>
               <h1 className="text-lg sm:text-xl font-black font-display text-slate-900 tracking-tight">
-                Customer Advance Payments & Balance Ledger
+                Customer Advance Payments &amp; Balance Ledger
               </h1>
             </div>
             <p className="text-xs text-slate-500 mt-0.5 font-medium">
@@ -172,16 +171,15 @@ export default function CustomerAdvancePaymentsView({ onBack, onOpenAddCustomer 
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
+          <button
+            type="button"
             onClick={handleExportCSV}
             disabled={filteredList.length === 0}
-            className="h-9 px-3 text-xs font-bold rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 gap-1.5 shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
           >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
+            <Download className="w-3.5 h-3.5 stroke-2" />
             <span>Export CSV</span>
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -280,7 +278,7 @@ export default function CustomerAdvancePaymentsView({ onBack, onOpenAddCustomer 
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-full sm:w-auto overflow-x-auto">
+        <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold w-full sm:w-auto overflow-x-auto">
           {[
             { key: 'ALL', label: `All (${advanceCustomersList.length})` },
             { key: 'ACTIVE', label: `Active Credit (${activeRemainingCount})` },
@@ -290,7 +288,7 @@ export default function CustomerAdvancePaymentsView({ onBack, onOpenAddCustomer 
             <button
               key={tab.key}
               onClick={() => setFilterStatus(tab.key)}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap ${
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap cursor-pointer ${
                 filterStatus === tab.key
                   ? 'bg-white text-emerald-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'

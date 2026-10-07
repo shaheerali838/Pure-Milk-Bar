@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, DollarSign, CheckCircle2, ArrowRight, Wallet } from 'lucide-react';
+import { X, Banknote, CheckCircle2, ArrowRight, Wallet } from 'lucide-react';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 import { getCustomerDueBalance } from '../../../../context/CustomerContext';
 import { Button } from '@/components/ui/button';
@@ -337,7 +337,7 @@ export default function RecordPaymentModal({ customer, isOpen, onClose }) {
                 size="sm"
                 className="px-5 py-2 h-9 bg-[#00a86b] hover:bg-[#00925d] text-white rounded-lg font-bold text-xs shadow-sm transition cursor-pointer flex items-center gap-1.5"
               >
-                <DollarSign className="w-3.5 h-3.5" />
+                <Banknote className="w-3.5 h-3.5" />
                 Record Payment (PKR {enteredAmount > 0 ? enteredAmount.toLocaleString() : '0'})
               </Button>
             </div>

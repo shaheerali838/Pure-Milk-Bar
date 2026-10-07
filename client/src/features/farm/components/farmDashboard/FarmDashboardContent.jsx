@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from "react";
-import { Plus, ArrowRight } from "lucide-react";
+import { Plus, ArrowRight, LayoutDashboard, Droplets } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { usePOSContext } from "../../../../context/POSContext";
 import { useExpense } from "../../../../context/ExpenseContext";
-import { getPktTodayString } from "@/utils/dateUtils";
+import { isMatchingTimeframe } from "@/utils/dateUtils";
+import DashboardDateFilter from "@/components/common/DashboardDateFilter";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -33,34 +34,36 @@ const parseYield = (val) => {
 export default function FarmDashboardContent() {
   const { animals = [], milkingLogs = [] } = useAnimalContext();
   const posCtx = usePOSContext();
-  const products = posCtx?.products || [];
-  const { expenses = [], totals = {} } = useExpense();
+  const { expenses = [] } = useExpense();
   const [selectedAnimalId, setSelectedAnimalId] = useState(null);
   const [editAnimal, setEditAnimal] = useState(null);
   const navigate = useNavigate();
+
+  // Date Filtering State
+  const [timeRange, setTimeRange] = useState("today"); // 'today' | 'week' | 'month' | 'all' | 'custom'
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
 
   // Metrics
   const totalAnimals = animals.length;
   const cowsCount = animals.filter((a) => (a.species || "").toLowerCase().includes("cow")).length;
   const buffCount = animals.filter((a) => (a.species || "").toLowerCase().includes("buffalo")).length;
 
+  // Farm Yield filtered by timeframe
   const totalFarmYield = useMemo(() => {
-    const now = new Date();
-    const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const isoTodayStr = now.toISOString().split("T")[0];
-    const todayLogs = milkingLogs.filter((l) => {
-      if (!l.date) return false;
-      const d = l.date.split("T")[0];
-      return d === localTodayStr || d === isoTodayStr;
-    });
-    if (todayLogs.length > 0) {
-      return todayLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
+    const matched = milkingLogs.filter((l) =>
+      isMatchingTimeframe(l.date, timeRange, customStartDate, customEndDate)
+    );
+    if (matched.length > 0) {
+      return matched.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
+    }
+    if (timeRange === 'today' && milkingLogs.length > 0) {
+      return 0;
     }
     return 0;
-  }, [milkingLogs]);
+  }, [milkingLogs, timeRange, customStartDate, customEndDate]);
 
   // Available live farm stock in cold room / chiller
-  // Formula: Available Farm Stock = Total Farm Intake - (Total Farm Milk Sold in POS + Total Farm Milk Converted to Dahi)
   const availableFarmStock = useMemo(() => {
     const rawPos = parseFloat(
       posCtx?.inventoryMetrics?.availableFarmStock ??
@@ -77,71 +80,38 @@ export default function FarmDashboardContent() {
 
   const avgAnimalYield = totalAnimals > 0 ? totalFarmYield / totalAnimals : 0;
 
-  // Real Financial Metrics from POS & Expenses (Accurately computed for Today and Month)
-  const realFarmRevenue = Number(posCtx?.farmSalesMetrics?.totalRevenue || 0);
-  const realFarmCost = Number(posCtx?.farmSalesMetrics?.totalCost || 0);
-
-  const { dailyNetProfit, monthlyNetProfit, todayFarmRevenue } = useMemo(() => {
-    let pktToday = '';
-    try {
-      pktToday = getPktTodayString();
-    } catch {
-      pktToday = '';
-    }
-    const now = new Date();
-    const localTodayStr = pktToday || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const isoTodayStr = now.toISOString().split('T')[0];
-    const currentMonthStr = localTodayStr.slice(0, 7);
-
-    const isToday = (dateVal) => {
-      if (!dateVal) return false;
-      const clean = String(dateVal).trim().slice(0, 10);
-      return clean === localTodayStr || clean === isoTodayStr;
-    };
-
-    const isMonth = (dateVal) => {
-      if (!dateVal) return false;
-      const clean = String(dateVal).trim().slice(0, 7);
-      return clean === currentMonthStr;
-    };
-
+  // Real Financial Metrics from POS & Expenses filtered by timeframe
+  const { periodNetProfit, periodFarmRevenue, periodFarmExpenses, periodExpenseCount } = useMemo(() => {
     // Farm Sales
-    let tSales = 0;
-    let mSales = 0;
+    let sales = 0;
     (posCtx?.farmSalesHistory || []).forEach((s) => {
-      let sDate = '';
-      if (s.date && /^\d{4}-\d{2}-\d{2}/.test(s.date)) {
-        sDate = s.date.slice(0, 10);
-      } else if (s.timestamp && /^\d{4}-\d{2}-\d{2}/.test(s.timestamp)) {
-        sDate = s.timestamp.slice(0, 10);
-      } else if (s.createdAt && /^\d{4}-\d{2}-\d{2}/.test(s.createdAt)) {
-        sDate = s.createdAt.slice(0, 10);
+      const raw = s.date || s.timestamp || s.createdAt || s.formattedDate || '';
+      if (isMatchingTimeframe(raw, timeRange, customStartDate, customEndDate)) {
+        sales += Number(s.netPayable || s.subtotal) || 0;
       }
-      const netPay = Number(s.netPayable || s.subtotal) || 0;
-      if (isToday(sDate)) tSales += netPay;
-      if (isMonth(sDate)) mSales += netPay;
     });
 
     // Farm Expenses
-    let tExp = 0;
-    let mExp = 0;
+    let exps = 0;
+    let count = 0;
     (expenses || []).forEach((exp) => {
       const scope = String(exp.scope || exp.expenseEntity || 'FARM').toUpperCase();
       if (scope !== 'FARM') return;
-      const expDate = exp.date ? String(exp.date).slice(0, 10) : '';
-      const amt = Number(exp.amount) || 0;
-      if (isToday(expDate)) tExp += amt;
-      if (isMonth(expDate)) mExp += amt;
+      if (isMatchingTimeframe(exp.date, timeRange, customStartDate, customEndDate)) {
+        exps += Number(exp.amount) || 0;
+        count += 1;
+      }
     });
 
     return {
-      dailyNetProfit: tSales - tExp,
-      monthlyNetProfit: mSales - mExp,
-      todayFarmRevenue: tSales,
+      periodNetProfit: sales - exps,
+      periodFarmRevenue: sales,
+      periodFarmExpenses: exps,
+      periodExpenseCount: count,
     };
-  }, [posCtx?.farmSalesHistory, expenses]);
+  }, [posCtx?.farmSalesHistory, expenses, timeRange, customStartDate, customEndDate]);
 
-  // Trend Data for 7 days (Using real milking logs and real sales)
+  // Trend Data for 7 days
   const trendData = useMemo(() => {
     const days = [];
     for (let i = 6; i >= 0; i--) {
@@ -232,20 +202,26 @@ export default function FarmDashboardContent() {
     });
   }, [animals]);
 
-  // Aggregate expenses by category
+  // Aggregate expenses by category filtered by timeframe
   const expensesByCategory = useMemo(() => {
     const cats = {};
-    expenses.forEach(e => {
+    const filtered = expenses.filter(e => {
+      const scope = String(e.scope || e.expenseEntity || 'FARM').toUpperCase();
+      if (scope !== 'FARM') return false;
+      return isMatchingTimeframe(e.date, timeRange, customStartDate, customEndDate);
+    });
+
+    filtered.forEach(e => {
       const cat = e.category || 'Other';
       if (!cats[cat]) cats[cat] = 0;
       cats[cat] += parseFloat(e.amount) || 0;
     });
     const sorted = Object.entries(cats).sort((a,b) => b[1] - a[1]).slice(0, 5);
     const displayList = sorted.length > 0 ? sorted : [];
-    const sum = expenses.reduce((s, e) => s + (parseFloat(e.amount)||0), 0);
+    const sum = filtered.reduce((s, e) => s + (parseFloat(e.amount)||0), 0);
 
     return { list: displayList, total: sum };
-  }, [expenses]);
+  }, [expenses, timeRange, customStartDate, customEndDate]);
 
   if (selectedAnimalId) {
     return (
@@ -275,7 +251,21 @@ export default function FarmDashboardContent() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="space-y-4">
+      {/* Date Filter Toolbar */}
+      <div className="flex items-center justify-between gap-3 pb-1">
+        <DashboardDateFilter
+          timeRange={timeRange}
+          setTimeRange={setTimeRange}
+          customStartDate={customStartDate}
+          setCustomStartDate={setCustomStartDate}
+          customEndDate={customEndDate}
+          setCustomEndDate={setCustomEndDate}
+          showAll={true}
+          activeTheme="emerald"
+        />
+      </div>
+
       {/* Metrics Row */}
       <FarmCardOverflow 
         totalAnimals={totalAnimals}
@@ -284,9 +274,11 @@ export default function FarmDashboardContent() {
         totalFarmYield={totalFarmYield}
         availableFarmStock={availableFarmStock}
         avgAnimalYield={avgAnimalYield}
-        dailyNetProfit={dailyNetProfit}
-        monthlyNetProfit={monthlyNetProfit}
-        todayFarmRevenue={todayFarmRevenue}
+        dailyNetProfit={periodNetProfit}
+        todayFarmRevenue={periodFarmRevenue}
+        totalFarmExpense={periodFarmExpenses}
+        expenseCount={periodExpenseCount}
+        timeRange={timeRange}
       />
 
       {/* Grid Row 1: Area Chart & Bar Chart */}
@@ -300,16 +292,18 @@ export default function FarmDashboardContent() {
             </div>
             <div className="flex items-center gap-2">
               <button 
+                type="button"
                 onClick={() => navigate('/farm/milking')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5 text-slate-500" /> Log Shift
               </button>
               <button 
+                type="button"
                 onClick={() => navigate('/farm/animals')}
-                className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer"
               >
-                Register <ArrowRight className="w-3.5 h-3.5" />
+                <span>Register</span> <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -395,14 +389,16 @@ export default function FarmDashboardContent() {
               </div>
               <div className="flex items-center gap-2">
                 <button 
+                  type="button"
                   onClick={() => navigate('/farm/expenses')}
-                  className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Add
+                  <Plus className="w-3.5 h-3.5 text-slate-500" /> Add
                 </button>
                 <button 
+                  type="button"
                   onClick={() => navigate('/farm/expenses')}
-                  className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
                 >
                   All <ArrowRight className="w-3.5 h-3.5" />
                 </button>
@@ -467,8 +463,38 @@ export default function FarmDashboardContent() {
 
       </div>
 
-      {/* Grid Row 3: Herd Table */}
-      <div className="mt-4">
+      {/* Dynamic Bottom Register: Herd Directory */}
+      <div className="mt-8 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1 pb-2 border-b border-slate-200">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-900 font-display">
+                Herd Register &amp; Directory
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {animals.length} Animals Registered
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Comprehensive registry of active dairy cows and buffaloes with yields, health status, and lifecycle records
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEditAnimal(null);
+                navigate('/farm/animals');
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-3" />
+              <span>Add Animal</span>
+            </button>
+          </div>
+        </div>
+
         <AnimalTable
           onSelectAnimal={(id) => setSelectedAnimalId(id)}
           onEditAnimal={(animal) => setEditAnimal(animal)}

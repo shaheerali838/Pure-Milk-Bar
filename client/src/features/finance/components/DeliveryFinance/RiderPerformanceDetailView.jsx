@@ -1,17 +1,5 @@
 import React, { useState } from 'react';
-import {
-  ArrowLeft,
-  Bike,
-  Footprints,
-  Phone,
-  MapPin,
-  Car,
-  Fuel,
-  Package,
-  Calendar,
-  Clock,
-  DollarSign,
-} from 'lucide-react';
+import { ArrowLeft, Bike, Footprints, Phone, MapPin, Car, Fuel, Package, Calendar, Clock, Banknote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {

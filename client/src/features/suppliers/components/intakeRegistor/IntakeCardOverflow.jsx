@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Droplets, DollarSign, Wallet, TrendingUp, Clock, ChevronRight } from 'lucide-react';
+import { Droplets, Banknote, Wallet, TrendingUp, Clock, ChevronRight } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { usePOSContext } from '@/context/POSContext';
 import IntakeCardDetailModal from './IntakeCardDetailModal';
@@ -34,7 +34,7 @@ export default function IntakeCardOverflow({ onViewBatch }) {
       label: 'Total Intake Spend',
       value: `Rs. ${(totals.totalIntakeSpend || 0).toLocaleString()}`,
       sub: `Across ${totals.totalRecords} collection slips`,
-      icon: DollarSign,
+      icon: Banknote,
       color: '#009966',
       badge: 'Total Cost',
     },

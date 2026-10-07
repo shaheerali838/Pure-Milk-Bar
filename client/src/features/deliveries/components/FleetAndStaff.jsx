@@ -35,14 +35,14 @@ export default function FleetAndStaff({ onRegisterStaff, onViewStaff }) {
           />
         </div>
 
-        <Button
+        <button
           type="button"
           onClick={onRegisterStaff}
-          className="h-7.5 px-3 text-xs bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-xs cursor-pointer"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
         >
-          <Plus className="w-3.5 h-3.5 mr-1" />
-          Register New Delivery Staff
-        </Button>
+          <Plus className="w-3.5 h-3.5 stroke-3" />
+          <span>Register New Delivery Staff</span>
+        </button>
       </div>
 
       {filteredStaff.length === 0 ? (
@@ -62,14 +62,14 @@ export default function FleetAndStaff({ onRegisterStaff, onViewStaff }) {
                 : 'Try adjusting your search terms to find registered riders or delivery boys.'}
             </p>
             {staffList.length === 0 && (
-              <Button
+              <button
                 type="button"
                 onClick={onRegisterStaff}
-                className="mt-1.5 text-xs bg-purple-600 hover:bg-purple-700 text-white cursor-pointer h-7 px-3"
+                className="mt-2 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5 mr-1" />
-                Register First Staff Member
-              </Button>
+                <Plus className="w-3.5 h-3.5 stroke-3" />
+                <span>Register First Staff Member</span>
+              </button>
             )}
           </div>
         </div>

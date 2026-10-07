@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, CreditCard, DollarSign, Wallet, Sparkles, ChevronRight } from 'lucide-react';
+import { Users, CreditCard, Banknote, Wallet, Sparkles, ChevronRight } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 
@@ -60,7 +60,7 @@ export default function CustomerFinanceStats({ onOpenAdvanceDetails }) {
       label: "Total Collected",
       value: `Rs. ${totalCollected.toLocaleString()}`,
       sub: "Realized sales & bill collections",
-      icon: DollarSign,
+      icon: Banknote,
       color: "#009966",
       badge: "Earned Revenue",
       clickable: false,

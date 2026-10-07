@@ -33,23 +33,25 @@ export default function DeliveryFilters({
       </div>
 
       {setTypeFilter && (
-        <div className="w-36">
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-full h-7.5 px-2 bg-white border border-slate-200 rounded-md text-xs font-semibold text-slate-700 cursor-pointer">
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL" className="text-xs">
-                All Orders
-              </SelectItem>
-              <SelectItem value="ONTIME" className="text-xs font-bold text-amber-700">
-                ⚡ One-Time Orders
-              </SelectItem>
-              <SelectItem value="MONTHLY" className="text-xs font-semibold text-slate-700">
-                Regular Subscriptions
-              </SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold shrink-0">
+          {[
+            { id: 'ALL', label: 'All Orders' },
+            { id: 'ONTIME', label: '⚡ One-Time' },
+            { id: 'MONTHLY', label: 'Subscriptions' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setTypeFilter(tab.id)}
+              className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
+                typeFilter === tab.id
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       )}
 

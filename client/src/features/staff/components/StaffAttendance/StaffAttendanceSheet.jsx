@@ -1,18 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Calendar,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Sparkles,
-  Filter,
-  Check,
-  X,
-  AlertCircle,
-  HelpCircle,
-  DollarSign,
-  TrendingUp,
-} from 'lucide-react';
+import { Calendar, CheckCircle2, XCircle, Clock, Sparkles, Filter, Check, X, AlertCircle, HelpCircle, Banknote, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStaffContext, generateDefaultAttendanceMap } from '@/context/StaffContext';
 
@@ -297,7 +284,7 @@ export default function StaffAttendanceSheet({ staff }) {
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
               style={{ background: '#3b82f615' }}
             >
-              <DollarSign style={{ width: 16, height: 16, color: '#3b82f6' }} />
+              <Banknote style={{ width: 16, height: 16, color: '#3b82f6' }} />
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-blue-700 bg-blue-50 border border-blue-200">
               Wage

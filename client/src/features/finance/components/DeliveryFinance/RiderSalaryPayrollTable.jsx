@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DollarSign, CheckCircle2, Clock, XCircle, Users, Calendar, AlertCircle, Info, ChevronDown, ChevronUp } from 'lucide-react';
+import { Banknote, CheckCircle2, Clock, XCircle, Users, Calendar, AlertCircle, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -222,7 +222,7 @@ export default function RiderSalaryPayrollTable({
                                 : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
                             }`}
                           >
-                            <DollarSign className="w-3 h-3 mr-1" />
+                            <Banknote className="w-3 h-3 mr-1" />
                             {status === 'PAID' ? 'View Slip' : 'Pay Salary'}
                           </Button>
                         </TableCell>
@@ -263,7 +263,7 @@ export default function RiderSalaryPayrollTable({
       {payrollData.length > 0 && (
         <div className="bg-slate-900 text-white px-3.5 py-2.5 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
           <div className="flex items-center gap-2 font-display font-semibold">
-            <DollarSign className="w-4 h-4 text-emerald-400" />
+            <Banknote className="w-4 h-4 text-emerald-400" />
             <span>Monthly Payroll Totals ({selectedMonth})</span>
           </div>
 

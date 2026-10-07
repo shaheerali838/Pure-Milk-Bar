@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Phone, MapPin, DollarSign, Calendar, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Phone, MapPin, Banknote, Calendar, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 import { getCustomerDueBalance } from '../../../../context/CustomerContext';
 import { Button } from '@/components/ui/button';
@@ -60,7 +60,7 @@ export default function CustomerFinanceDetailView({ customer, onBack, onRecordPa
             size="sm"
             className="h-8 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
           >
-            <DollarSign className="w-3.5 h-3.5" />
+            <Banknote className="w-3.5 h-3.5" />
             Record Payment
           </Button>
         )}

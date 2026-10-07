@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, CreditCard, Building2, Calendar, FileText, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Banknote, CreditCard, Building2, Calendar, FileText, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { Typography } from '@/components/common/Typography';
 import { useAuth } from '@/context/AuthContext';
 import { ROLES } from '@/config/rbac.config';
@@ -46,7 +46,7 @@ export default function StaffPayrollBreakdown({ staff }) {
       <div className="flex items-center justify-between pb-2 border-b border-slate-100">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold border border-emerald-100">
-            <DollarSign className="w-4 h-4" />
+            <Banknote className="w-4 h-4" />
           </div>
           <div>
             <Typography variant="h4" className="font-bold text-slate-900 text-sm sm:text-base leading-tight">

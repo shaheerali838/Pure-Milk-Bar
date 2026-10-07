@@ -216,7 +216,7 @@ export default function CustomerKhataLedger() {
   }
 
   return (
-    <div className="space-y-3 p-1 sm:p-2.5 w-full animate-in fade-in duration-150">
+    <div className="relative min-h-screen bg-slate-50/50 pb-10 space-y-4">
       <LedgerHeader
         onHowToFinish={() => setCurrentSubView('howToFinish')}
         onPrint={handlePrint}

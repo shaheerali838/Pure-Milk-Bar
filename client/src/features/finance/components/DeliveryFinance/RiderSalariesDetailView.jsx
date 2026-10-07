@@ -1,23 +1,5 @@
 import React, { useState } from 'react';
-import {
-  ArrowLeft,
-  DollarSign,
-  Calendar,
-  User,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  Search,
-  Download,
-  Filter,
-  CreditCard,
-  Building,
-  Wallet,
-  Plus,
-  ChevronDown,
-  ChevronUp,
-  CalendarDays,
-} from 'lucide-react';
+import { ArrowLeft, Banknote, Calendar, User, CheckCircle2, AlertCircle, Clock, Search, Download, Filter, CreditCard, Building, Wallet, Plus, ChevronDown, ChevronUp, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -243,7 +225,7 @@ export default function RiderSalariesDetailView({
           </Button>
           <div>
             <h1 className="text-lg font-bold text-slate-900 tracking-tight font-display flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-blue-600" />
+              <Banknote className="w-5 h-5 text-blue-600" />
               <span>Rider Salaries &amp; Payroll Disbursals</span>
               <Badge variant="blue" className="text-[10px] uppercase font-bold">
                 {selectedMonth === 'ALL' ? 'All Months' : selectedMonth}

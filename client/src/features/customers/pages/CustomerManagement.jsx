@@ -39,19 +39,42 @@ export default function CustomerManagement() {
   }
 
   return (
-    <div className="compact-stack flex flex-col">
+    <div className="relative min-h-screen bg-slate-50/50 pb-10 space-y-4">
       <CustomerHeader onOpenAddModal={() => setCurrentView('add')} />
       <CustomerStatsCards onOpenAdvanceDetails={() => setCurrentView('advance')} />
-      <CustomerFilters />
-      <CustomerTable
-        onViewCustomer={(cust) => {
-          navigate(`/customer-khata-ledger?customerId=${cust.id}`);
-        }}
-        onEditCustomer={(cust) => {
-          setSelectedCustomer(cust);
-          setCurrentView('edit');
-        }}
-      />
+
+      {/* Dynamic Bottom Register: Customer Register & Directory */}
+      <div className="mt-8 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1 pb-2 border-b border-slate-200">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-900 font-display">
+                Customer Register &amp; Accounts Directory
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                Active Directory
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Directory of all registered customers, contact numbers, assigned routes, and live Khata balances
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <CustomerFilters />
+          </div>
+        </div>
+
+        <CustomerTable
+          onViewCustomer={(cust) => {
+            navigate(`/customer-khata-ledger?customerId=${cust.id}`);
+          }}
+          onEditCustomer={(cust) => {
+            setSelectedCustomer(cust);
+            setCurrentView('edit');
+          }}
+        />
+      </div>
     </div>
   );
 }

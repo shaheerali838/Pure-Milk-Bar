@@ -1,16 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   LayoutDashboard,
-  Calendar,
-  Sparkles,
   ShoppingBag,
   Droplets,
-  Beef,
   ClipboardCheck,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 // Modular Components
+import DashboardDateFilter from '@/components/common/DashboardDateFilter';
 import TopSummaryCards from '../components/mainDashboard/TopSummaryCards';
 import FarmYieldHub from '../components/mainDashboard/FarmYieldHub';
 import SupplierProcurementHub from '../components/mainDashboard/SupplierProcurementHub';
@@ -22,6 +20,10 @@ import SalesAndReceivablesSection from '../components/mainDashboard/SalesAndRece
 import DashboardFooterSummary from '../components/mainDashboard/DashboardFooterSummary';
 
 export default function MainDashboard() {
+  const [timeRange, setTimeRange] = useState('today'); // 'today' | 'week' | 'month' | 'all' | 'custom'
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+
   const todayFormatted = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -30,30 +32,35 @@ export default function MainDashboard() {
   });
 
   return (
-    <div className="space-y-2 animate-in fade-in duration-200 ">
+    <div className="relative min-h-screen bg-slate-50/50 pb-10 space-y-4 animate-in fade-in duration-200">
       {/* 1. Header Bar with Business Title & Quick Action Shortcuts */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 font-display tracking-tight">
-              Pure Milk Bar — Enterprise Command Center
-            </h1>
-            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Operations
-            </span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2 pt-2">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
+            <LayoutDashboard className="w-5 h-5" />
           </div>
-          <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
-            <span>Day: <strong className="text-slate-800">{todayFormatted}</strong></span>
-          </p>
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 font-display tracking-tight leading-none">
+              Enterprise Command Center
+            </h1>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                Pure Milk Bar · {todayFormatted}
+              </span>
+              <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
+                Live Operations
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Quick Shortcut Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
           <Link
             to="/pos"
-            className="flex items-center gap-1.5 px-3.5 h-[36px] rounded-full text-xs font-bold text-white shadow-xs hover:brightness-110 transition-all cursor-pointer select-none"
-            style={{ backgroundColor: '#009966' }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
           >
             <ShoppingBag className="w-3.5 h-3.5" />
             <span>POS Register</span>
@@ -61,7 +68,7 @@ export default function MainDashboard() {
 
           <Link
             to="/supplier/intake"
-            className="flex items-center gap-1.5 px-3.5 h-[36px] rounded-full text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-all cursor-pointer select-none"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 text-xs font-bold transition-all cursor-pointer"
           >
             <Droplets className="w-3.5 h-3.5 text-blue-600" />
             <span>Intake Register</span>
@@ -69,7 +76,7 @@ export default function MainDashboard() {
 
           <Link
             to="/finance/daily-closing"
-            className="flex items-center gap-1.5 px-3.5 h-[36px] rounded-full text-xs font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 transition-all cursor-pointer select-none"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-2xs transition-all cursor-pointer"
           >
             <ClipboardCheck className="w-3.5 h-3.5 text-slate-500" />
             <span>Daily Closing</span>
@@ -77,9 +84,27 @@ export default function MainDashboard() {
         </div>
       </div>
 
-      {/* 2. Top Summary Cards (6 Cards) */}
+      {/* Date Filter Toolbar */}
+      <div className="flex items-center justify-between gap-3 pb-1">
+        <DashboardDateFilter
+          timeRange={timeRange}
+          setTimeRange={setTimeRange}
+          customStartDate={customStartDate}
+          setCustomStartDate={setCustomStartDate}
+          customEndDate={customEndDate}
+          setCustomEndDate={setCustomEndDate}
+          showAll={true}
+          activeTheme="emerald"
+        />
+      </div>
+
+      {/* 2. Top Summary Cards (10 Cards responding to selected date timeframe) */}
       <section aria-label="Top KPI Summary">
-        <TopSummaryCards />
+        <TopSummaryCards
+          timeRange={timeRange}
+          customStartDate={customStartDate}
+          customEndDate={customEndDate}
+        />
       </section>
 
       {/* 3. Detailed Hub Cards (3 Detailed Cards: Farm, Supplier Procurement, Dahi Processing) */}
@@ -99,17 +124,17 @@ export default function MainDashboard() {
         <ProfitLossSnapshot />
       </section>
 
-      {/* 5. Charts & Milk Flow Component */}
+      {/* 6. Charts & Milk Flow Component */}
       <section aria-label="Milk Production & Flow Reconciliation">
         <MilkProductionAndFlow />
       </section>
 
-      {/* 6. Sales & Receivables Component */}
+      {/* 7. Sales & Receivables Component */}
       <section aria-label="Sales and Receivables Overview">
         <SalesAndReceivablesSection />
       </section>
 
-      {/* 7. Bottom Footer Summary (4 Simple Cards) */}
+      {/* 8. Bottom Footer Summary (4 Simple Cards) */}
       <section aria-label="Footer Metrics">
         <DashboardFooterSummary />
       </section>

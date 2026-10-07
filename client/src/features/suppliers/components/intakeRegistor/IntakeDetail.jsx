@@ -1,27 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import {
-  ArrowLeft,
-  X,
-  Edit,
-  Trash2,
-  Printer,
-  Droplets,
-  DollarSign,
-  Calendar,
-  Clock,
-  User,
-  Building2,
-  Tag,
-  Wallet,
-  CheckCircle2,
-  AlertCircle,
-  Sun,
-  Moon,
-  Search,
-  Receipt,
-  Layers,
-  Badge,
-} from "lucide-react";
+import { ArrowLeft, X, Edit, Trash2, Printer, Droplets, Banknote, Calendar, Clock, User, Building2, Tag, Wallet, CheckCircle2, AlertCircle, Sun, Moon, Search, Receipt, Layers, Badge } from 'lucide-react';
 import { useIntakeContext } from "@/context/IntakeContext";
 import { useSupplierContext } from "@/context/SupplierContext";
 import { toast } from "sonner";
@@ -391,7 +369,7 @@ export default function IntakeDetail({
         {/* Total Cost */}
         <div className="p-4 bg-purple-50/50 rounded-xl border border-purple-200/70">
           <div className="flex items-center gap-1.5 text-purple-700 text-[10px] font-bold uppercase tracking-wider mb-1">
-            <DollarSign className="w-3.5 h-3.5" />
+            <Banknote className="w-3.5 h-3.5" />
             {selectedShiftView === "all" && hasBothShifts
               ? "Total Cost"
               : "Total Batch Value"}

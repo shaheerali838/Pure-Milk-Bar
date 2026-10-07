@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Droplets, TrendingUp, DollarSign, Truck, Store, Layers, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Droplets, TrendingUp, Banknote, Truck, Store, Layers, CheckCircle2 } from 'lucide-react';
 
 export default function RawMilkDetail({ data, onClose, onBack }) {
   const handleBack = onBack || onClose;
@@ -92,7 +92,7 @@ export default function RawMilkDetail({ data, onClose, onBack }) {
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Direct COGS</span>
               <span className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                <DollarSign className="w-3.5 h-3.5" />
+                <Banknote className="w-3.5 h-3.5" />
               </span>
             </div>
             <p className="text-2xl sm:text-3xl font-black text-amber-600 tabular">

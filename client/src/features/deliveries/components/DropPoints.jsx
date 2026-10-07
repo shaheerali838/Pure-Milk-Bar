@@ -60,14 +60,14 @@ export default function DropPoints({ onBookDelivery, onViewDelivery }) {
           />
         </div>
 
-        <Button
+        <button
           type="button"
           onClick={onBookDelivery || (() => navigate('/pos?category=delivery'))}
-          className="h-7.5 px-3 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs cursor-pointer flex items-center gap-1"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
         >
-          <ShoppingCart className="w-3.5 h-3.5 mr-0.5" />
+          <ShoppingCart className="w-3.5 h-3.5" />
           <span>New Delivery via POS</span>
-        </Button>
+        </button>
       </div>
 
       <DeliveryTable

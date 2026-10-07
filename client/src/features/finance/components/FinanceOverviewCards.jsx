@@ -1,19 +1,5 @@
 import React from 'react';
-import {
-  Users,
-  Bike,
-  ArrowRight,
-  TrendingUp,
-  Wallet,
-  ShieldCheck,
-  ChevronRight,
-  Receipt,
-  Truck,
-  Tractor,
-  Layers,
-  Droplets,
-  DollarSign,
-} from 'lucide-react';
+import { Users, Bike, ArrowRight, TrendingUp, Wallet, ShieldCheck, ChevronRight, Receipt, Truck, Tractor, Layers, Droplets, Banknote } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCustomerContext } from '@/context/CustomerContext';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, CreditCard, Wallet, ArrowDownLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Users, Banknote, Wallet, ArrowDownLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 import { KpiGridSkeleton } from '@/components/ui/skeleton';
@@ -9,7 +9,7 @@ export default function CustomerStatsCards({ onOpenAdvanceDetails }) {
   const { getAllCustomersAggregates } = useLedgerContext();
 
   if (isLoading && (!allCustomersCount || allCustomersCount === 0)) {
-    return <KpiGridSkeleton count={5} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2" />;
+    return <KpiGridSkeleton count={5} className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5" />;
   }
 
   const aggregates = getAllCustomersAggregates ? getAllCustomersAggregates() : {
@@ -31,27 +31,27 @@ export default function CustomerStatsCards({ onOpenAdvanceDetails }) {
       value: `${aggregates.totalCustomersCount || allCustomersCount || 0}`,
       sub: `${activeAccountsCount || 0} active regular buyers`,
       icon: Users,
-      color: "#009966",
-      badge: "All Accounts",
+      color: "#059669", // emerald-600
+      badge: "Accounts",
       clickable: false,
     },
     {
       id: "dues_accounts",
       label: "Accounts With Dues",
       value: `${aggregates.khataAccountsCount || 0}`,
-      sub: "Customers with active balance",
+      sub: "Active khata balances",
       icon: Wallet,
-      color: "#f59e0b",
-      badge: "Pending Dues",
+      color: "#d97706", // amber-600
+      badge: "Pending",
       clickable: false,
     },
     {
       id: "dues_receivable",
       label: "Total Dues Receivable",
       value: `Rs. ${(aggregates.totalAllDue || 0).toLocaleString()}`,
-      sub: "Total outstanding balance to collect",
-      icon: CreditCard,
-      color: "#e11d48",
+      sub: "Total outstanding khata dues",
+      icon: Banknote,
+      color: "#e11d48", // rose-600
       badge: "Receivables",
       clickable: false,
     },
@@ -59,11 +59,11 @@ export default function CustomerStatsCards({ onOpenAdvanceDetails }) {
       id: "advance_payments",
       label: "Advance Payments",
       value: `Rs. ${(aggregates.totalAllAdvanceReceived || 0).toLocaleString()}`,
-      sub: `Rs. ${(aggregates.totalRemainingAdvance || 0).toLocaleString()} remaining • ${aggregates.advanceAccountsCount || 0} accounts`,
+      sub: `Rs. ${(aggregates.totalRemainingAdvance || 0).toLocaleString()} bal · ${aggregates.advanceAccountsCount || 0} accts`,
       icon: Sparkles,
-      color: "#059669",
-      badge: "Advance • View Details ➔",
-      badgeClass: "bg-emerald-500 text-white font-extrabold shadow-xs hover:bg-emerald-600 transition-colors",
+      color: "#2563eb", // blue-600
+      badge: "Advance ➔",
+      badgeClass: "bg-blue-50 text-blue-700 border border-blue-200/80 hover:bg-blue-100 transition-colors",
       clickable: true,
       onClick: onOpenAdvanceDetails,
       isHighlight: true,
@@ -72,52 +72,53 @@ export default function CustomerStatsCards({ onOpenAdvanceDetails }) {
       id: "total_collected",
       label: "Total Payments Received",
       value: `Rs. ${(aggregates.totalAllPaid || 0).toLocaleString()}`,
-      sub: "Earned payments collected against purchases & dues",
+      sub: "Total collected revenue",
       icon: ArrowDownLeft,
-      color: "#2563eb",
+      color: "#4f46e5", // indigo-600
       badge: "Collected",
       clickable: false,
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
       {statCards.map(({ id, label, value, sub, icon: Icon, color, badge, badgeClass, clickable, onClick, isHighlight }) => (
         <div
           key={id}
           onClick={clickable && onClick ? onClick : undefined}
-          className={`compact-surface flex flex-col justify-between bg-white border rounded-lg p-2 transition-all duration-200 ${
+          className={`flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs ${
             clickable
-              ? 'cursor-pointer hover:shadow-md hover:border-emerald-500 hover:-translate-y-0.5 ring-1 ring-emerald-500/20'
-              : 'border-slate-200/90 hover:shadow-xs'
-          } ${isHighlight ? 'bg-linear-to-b from-emerald-50/30 to-white border-emerald-300/80' : ''}`}
+              ? 'cursor-pointer hover:border-blue-500 hover:-translate-y-0.5 ring-1 ring-blue-500/20'
+              : ''
+          } ${isHighlight ? 'bg-gradient-to-b from-blue-50/20 to-white' : ''}`}
         >
-          <div className="flex items-start justify-between mb-1">
+          <div className="flex items-start justify-between mb-1.5">
             <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
               style={{ background: `${color}15` }}
             >
-              <Icon style={{ width: 16, height: 16, color }} />
+              <Icon style={{ width: 15, height: 15, color }} />
             </div>
-            <span
-              className={`compact-chip text-[10px] font-bold rounded ${
-                badgeClass || 'text-slate-600 bg-slate-100 border border-slate-200'
-              }`}
-            >
-              {badge}
-            </span>
+            <div className="flex items-center gap-1">
+              <span
+                className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md ${
+                  badgeClass || 'text-slate-600 bg-slate-100 border border-slate-200/80'
+                }`}
+              >
+                {badge}
+              </span>
+            </div>
           </div>
+
           <div>
-            <p className={`font-display text-lg sm:text-xl font-black leading-tight tracking-tight mb-0.5 tabular ${
-              isHighlight ? 'text-emerald-800' : 'text-slate-900'
-            }`}>
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
               {value}
             </p>
             <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-slate-700">{label}</p>
-              {clickable && <ChevronRight className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+              <p className="text-xs font-bold text-slate-800">{label}</p>
+              {clickable && <ChevronRight className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
             </div>
-            <p className="text-[11px] font-medium text-slate-500 truncate mt-0.5">{sub}</p>
+            <p className="text-[10px] font-medium text-slate-400 line-clamp-1">{sub}</p>
           </div>
         </div>
       ))}

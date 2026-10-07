@@ -1,19 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  ArrowLeft,
-  Building2,
-  Phone,
-  MapPin,
-  Tag,
-  Check,
-  Calendar,
-  DollarSign,
-  FileText,
-  CreditCard,
-  Droplets,
-  Camera,
-  Loader2,
-} from 'lucide-react';
+import { ArrowLeft, Building2, Phone, MapPin, Tag, Check, Calendar, Banknote, FileText, CreditCard, Droplets, Camera, Loader2 } from 'lucide-react';
 import { useSupplierContext } from '@/context/SupplierContext';
 import ImageUpload from '@/components/common/ImageUpload';
 
