@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import CustomerHeader from '../components/Customer_&_Accounts/CustomerHeader';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import CustomerStatsCards from '../components/Customer_&_Accounts/CustomerStatsCards';
 import CustomerFilters from '../components/Customer_&_Accounts/CustomerFilters';
 import CustomerTable from '../components/Customer_&_Accounts/CustomerTable';
@@ -10,21 +9,36 @@ import CustomerAdvancePaymentsView from '../components/Customer_&_Accounts/Custo
 
 export default function CustomerManagement() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const actionParam = searchParams.get('action');
+
   const [currentView, setCurrentView] = useState('list'); // 'list' | 'add' | 'edit' | 'advance'
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
+  useEffect(() => {
+    if (actionParam === 'add') {
+      setCurrentView('add');
+    }
+  }, [actionParam]);
+
+  const handleBackToList = () => {
+    if (searchParams.has('action')) {
+      searchParams.delete('action');
+      setSearchParams(searchParams);
+    }
+    setSelectedCustomer(null);
+    setCurrentView('list');
+  };
+
   if (currentView === 'add') {
-    return <AddNewCustomerView onBack={() => setCurrentView('list')} />;
+    return <AddNewCustomerView onBack={handleBackToList} />;
   }
 
   if (currentView === 'edit' && selectedCustomer) {
     return (
       <EditCustomerView
         customer={selectedCustomer}
-        onBack={() => {
-          setSelectedCustomer(null);
-          setCurrentView('list');
-        }}
+        onBack={handleBackToList}
       />
     );
   }
@@ -32,38 +46,20 @@ export default function CustomerManagement() {
   if (currentView === 'advance') {
     return (
       <CustomerAdvancePaymentsView
-        onBack={() => setCurrentView('list')}
+        onBack={handleBackToList}
         onOpenAddCustomer={() => setCurrentView('add')}
       />
     );
   }
 
   return (
-    <div className="relative min-h-screen bg-slate-50/50 pb-10 space-y-4">
-      <CustomerHeader onOpenAddModal={() => setCurrentView('add')} />
+    <div className="space-y-4">
+      {/* KPI Stats Cards */}
       <CustomerStatsCards onOpenAdvanceDetails={() => setCurrentView('advance')} />
 
-      {/* Dynamic Bottom Register: Customer Register & Directory */}
-      <div className="mt-8 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1 pb-2 border-b border-slate-200">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-slate-900 font-display">
-                Customer Register &amp; Accounts Directory
-              </h3>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                Active Directory
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Directory of all registered customers, contact numbers, assigned routes, and live Khata balances
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <CustomerFilters />
-          </div>
-        </div>
+      {/* Customer Directory Table Section with Clean Controls */}
+      <div className="space-y-3 pt-2">
+        <CustomerFilters />
 
         <CustomerTable
           onViewCustomer={(cust) => {

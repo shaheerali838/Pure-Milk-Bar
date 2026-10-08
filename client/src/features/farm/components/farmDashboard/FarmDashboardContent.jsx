@@ -187,20 +187,37 @@ export default function FarmDashboardContent() {
     });
   }, [milkingLogs, animals, posCtx?.farmSalesHistory]);
 
-  // Data for Current Lactation Yield by Animal
+  // Data for Current Lactation Yield by Animal (from actual recorded shift logs in current timeframe)
   const animalBarData = useMemo(() => {
-    return animals.slice(0, 6).map(a => {
-      const morning = parseYield(a.morningYield);
-      const evening = parseYield(a.eveningYield);
-      const mVal = morning > 0 ? morning : (parseYield(a.totalDailyYield) / 2) || 8;
-      const eVal = evening > 0 ? evening : (parseYield(a.totalDailyYield) / 2) || 7;
+    const matchedLogs = (milkingLogs || []).filter((l) =>
+      isMatchingTimeframe(l.date, timeRange, customStartDate, customEndDate)
+    );
+
+    return animals.slice(0, 6).map((a) => {
+      const tag = (a.tag || a.tagNumber || '').toUpperCase();
+      const id = String(a.id || a._id || '');
+
+      const logsForAnimal = matchedLogs.filter((l) => {
+        const lTag = (l.animalTag || l.tag || l.animalId?.tagNumber || l.animalId?.tag || '').toUpperCase();
+        const lId = String(l.animalId?._id || l.animalId || '');
+        return (tag && lTag === tag) || (id && lId === id);
+      });
+
+      const morningYield = logsForAnimal
+        .filter((l) => (l.shift || 'Morning').toLowerCase().includes('morning'))
+        .reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
+
+      const eveningYield = logsForAnimal
+        .filter((l) => (l.shift || '').toLowerCase().includes('evening'))
+        .reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
+
       return {
-        name: a.tag,
-        morning: parseFloat(mVal.toFixed(1)),
-        evening: parseFloat(eVal.toFixed(1)),
+        name: a.tag || 'Animal',
+        morning: parseFloat(morningYield.toFixed(1)),
+        evening: parseFloat(eveningYield.toFixed(1)),
       };
     });
-  }, [animals]);
+  }, [animals, milkingLogs, timeRange, customStartDate, customEndDate]);
 
   // Aggregate expenses by category filtered by timeframe
   const expensesByCategory = useMemo(() => {

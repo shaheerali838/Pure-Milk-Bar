@@ -371,13 +371,23 @@ export default function FarmPL() {
     const posShare = grossRevenue > 0 ? Math.round((posRevenue / grossRevenue) * 100) : 0;
     const wholesaleShare = grossRevenue > 0 ? Math.max(0, 100 - doorstepShare - posShare) : 0;
 
-    // Direct Farm Production base from AnimalContext
-    const cowsList = animals.filter((a) => (a.species || '').toLowerCase().includes('cow'));
-    const buffsList = animals.filter((a) => (a.species || '').toLowerCase().includes('buffalo'));
-
-    const cowYieldDaily = cowsList.reduce((s, a) => s + parseYield(a.totalDailyYield), 0);
-    const buffYieldDaily = buffsList.reduce((s, a) => s + parseYield(a.totalDailyYield), 0);
-    const farmYieldDaily = cowYieldDaily + buffYieldDaily;
+    // Direct Farm Production base from Milking Logs in current timeframe
+    const matchedMilking = (milkingLogs || []).filter((l) =>
+      isMatchingTimeframe(l.date, timeframe, customStart, customEnd)
+    );
+    const cowMilkingYield = matchedMilking
+      .filter((l) => {
+        const tag = (l.animalTag || l.tag || l.animalId?.tagNumber || l.animalId?.tag || '').toUpperCase();
+        return tag.startsWith('COW') || (l.animalId?.type || '').toUpperCase() === 'COW';
+      })
+      .reduce((s, l) => s + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
+    const buffMilkingYield = matchedMilking
+      .filter((l) => {
+        const tag = (l.animalTag || l.tag || l.animalId?.tagNumber || l.animalId?.tag || '').toUpperCase();
+        return !tag.startsWith('COW') && (l.animalId?.type || '').toUpperCase() !== 'COW';
+      })
+      .reduce((s, l) => s + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
+    const farmYieldDaily = cowMilkingYield + buffMilkingYield;
 
     // Helper to calculate channel split object
     const calcSplit = (chObj, totalRev) => {
@@ -399,7 +409,7 @@ export default function FarmPL() {
         name: 'Fresh Pure Cow Milk',
         category: 'Raw Milk',
         unit: 'L',
-        totalOutput: cowMilkVolume > 0 ? cowMilkVolume : cowYieldDaily,
+        totalOutput: cowMilkVolume > 0 ? cowMilkVolume : cowMilkingYield,
         sellingRate: cowMilkVolume > 0 ? Math.round(cowMilkRevenue / cowMilkVolume) : 0,
         grossRealized: cowMilkRevenue,
         directCost: 0,
@@ -413,7 +423,7 @@ export default function FarmPL() {
         name: 'Fresh Rich Buffalo Milk',
         category: 'Raw Milk',
         unit: 'L',
-        totalOutput: buffMilkVolume > 0 ? buffMilkVolume : buffYieldDaily,
+        totalOutput: buffMilkVolume > 0 ? buffMilkVolume : buffMilkingYield,
         sellingRate: buffMilkVolume > 0 ? Math.round(buffMilkRevenue / buffMilkVolume) : 0,
         grossRealized: buffMilkRevenue,
         directCost: 0,

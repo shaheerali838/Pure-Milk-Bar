@@ -78,6 +78,7 @@ export function parseCleanDate(val) {
   const d = new Date(val);
   if (!isNaN(d.getTime())) {
     const year = d.getFullYear();
+    if (year < 2020) return '';
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
@@ -96,7 +97,7 @@ export function parseCleanDate(val) {
 export function isMatchingTimeframe(dateVal, timeRange = 'today', customStartDate = '', customEndDate = '') {
   if (timeRange === 'all' || timeRange === 'all_time') return true;
   const clean = parseCleanDate(dateVal);
-  if (!clean) return true;
+  if (!clean) return false;
 
   const todayStr = getPktTodayString();
   if (timeRange === 'today') {
