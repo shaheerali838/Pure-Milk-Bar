@@ -184,82 +184,94 @@ export default function CustomerAdvancePaymentsView({ onBack, onOpenAddCustomer 
       </div>
 
       {/* ── KPI Summary Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
         {/* Card 1: Total Advance Received */}
-        <div className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-start justify-between mb-2">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-2xs">
-              <ArrowDownLeft className="w-5 h-5" />
+        <div className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs">
+          <div className="flex items-start justify-between mb-1.5">
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
+              style={{ background: '#2563eb15' }}
+            >
+              <ArrowDownLeft style={{ width: 15, height: 15, color: '#2563eb' }} />
             </div>
-            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full text-blue-700 bg-blue-50 border border-blue-200/60">
-              Total Deposits
+            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
+              Deposits
             </span>
           </div>
           <div>
-            <p className="font-display text-2xl font-black text-slate-900 tracking-tight tabular">
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
               Rs. {totalDeposited.toLocaleString()}
             </p>
-            <p className="text-xs font-bold text-slate-700">Total Advance Received</p>
-            <p className="text-[11px] font-medium text-slate-400">Total advance funds deposited across accounts</p>
+            <p className="text-xs font-bold text-slate-800">Total Advance Received</p>
+            <p className="text-[10px] font-medium text-slate-400 line-clamp-1">Total advance funds deposited</p>
           </div>
         </div>
 
         {/* Card 2: Remaining Advance Balance (Active) */}
-        <div className="flex flex-col justify-between bg-white border-2 border-emerald-500/30 rounded-2xl p-3.5 shadow-xs bg-linear-to-br from-white to-emerald-50/20 hover:shadow-md transition-all">
-          <div className="flex items-start justify-between mb-2">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100/80 border border-emerald-300/60 flex items-center justify-center text-emerald-700 shadow-2xs">
-              <Wallet className="w-5 h-5" />
+        <div className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs">
+          <div className="flex items-start justify-between mb-1.5">
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
+              style={{ background: '#05966915' }}
+            >
+              <Wallet style={{ width: 15, height: 15, color: '#059669' }} />
             </div>
-            <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full text-emerald-700 bg-emerald-100 border border-emerald-300">
+            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-emerald-700 bg-emerald-50 border border-emerald-200/80">
               Active Available
             </span>
           </div>
           <div>
-            <p className="font-display text-2xl font-black text-emerald-700 tracking-tight tabular">
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
               Rs. {totalRemaining.toLocaleString()}
             </p>
             <p className="text-xs font-bold text-slate-800">Remaining Advance Balance</p>
-            <p className="text-[11px] font-medium text-emerald-600/90 font-semibold">
+            <p className="text-[10px] font-medium text-slate-400 line-clamp-1">
               {activeRemainingCount} customer{activeRemainingCount !== 1 ? 's' : ''} with active credit
             </p>
           </div>
         </div>
 
         {/* Card 3: Consumed Advance */}
-        <div className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-start justify-between mb-2">
-            <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-2xs">
-              <TrendingDown className="w-5 h-5" />
+        <div className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs">
+          <div className="flex items-start justify-between mb-1.5">
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
+              style={{ background: '#d9770615' }}
+            >
+              <TrendingDown style={{ width: 15, height: 15, color: '#d97706' }} />
             </div>
-            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full text-amber-700 bg-amber-50 border border-amber-200/60">
-              Adjusted / Consumed
+            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
+              Adjusted
             </span>
           </div>
           <div>
-            <p className="font-display text-2xl font-black text-slate-900 tracking-tight tabular">
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
               Rs. {totalConsumed.toLocaleString()}
             </p>
-            <p className="text-xs font-bold text-slate-700">Total Advance Consumed</p>
-            <p className="text-[11px] font-medium text-slate-400">Deducted against daily milk & POS orders</p>
+            <p className="text-xs font-bold text-slate-800">Total Advance Consumed</p>
+            <p className="text-[10px] font-medium text-slate-400 line-clamp-1">Deducted against orders</p>
           </div>
         </div>
 
         {/* Card 4: Advance Accounts Count */}
-        <div className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs hover:shadow-md transition-all">
-          <div className="flex items-start justify-between mb-2">
-            <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shadow-2xs">
-              <User className="w-5 h-5" />
+        <div className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs">
+          <div className="flex items-start justify-between mb-1.5">
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
+              style={{ background: '#9333ea15' }}
+            >
+              <User style={{ width: 15, height: 15, color: '#9333ea' }} />
             </div>
-            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full text-purple-700 bg-purple-50 border border-purple-200/60">
+            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
               Advance Khata
             </span>
           </div>
           <div>
-            <p className="font-display text-2xl font-black text-slate-900 tracking-tight tabular">
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
               {advanceCustomersList.length} Accounts
             </p>
-            <p className="text-xs font-bold text-slate-700">Advance Depositors</p>
-            <p className="text-[11px] font-medium text-slate-400">Customers with advance history</p>
+            <p className="text-xs font-bold text-slate-800">Advance Depositors</p>
+            <p className="text-[10px] font-medium text-slate-400 line-clamp-1">Customers with advance history</p>
           </div>
         </div>
       </div>
@@ -483,7 +495,10 @@ export default function CustomerAdvancePaymentsView({ onBack, onOpenAddCustomer 
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigate(`/customer-khata-ledger?customerId=${item.id}`)}
+                          onClick={() => {
+                            const cId = item._id || item.id;
+                            if (cId) navigate(`/customer-hub/khata-ledger?customerId=${cId}`);
+                          }}
                           className="h-8 px-2.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg gap-1"
                         >
                           <span>View Khata</span>

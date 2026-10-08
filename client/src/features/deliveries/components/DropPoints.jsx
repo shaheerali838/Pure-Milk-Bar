@@ -1,22 +1,32 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useDeliveryContext } from '@/context/DeliveryContext';
+import { isDateInFilterRange } from '@/utils/dateUtils';
 import DeliveryFilters from './DeliveryFilters';
 import DeliveryTable from './DeliveryTable';
 
-export default function DropPoints({ onBookDelivery, onViewDelivery }) {
+export default function DropPoints({ onViewDelivery, onBookDelivery }) {
   const navigate = useNavigate();
-  const { deliveries = [] } = useDeliveryContext();
+  const {
+    deliveries = [],
+    dateFilter = 'Today',
+    startDate = '',
+    endDate = '',
+  } = useDeliveryContext();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [shiftFilter, setShiftFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
-  // Filter deliveries
+  // Filter deliveries by date range, search query, type, shift, and status
   const filteredDeliveries = deliveries.filter((d) => {
+    // 1. Date filter match
+    const matchesDate = isDateInFilterRange(d.date || d.createdAt, dateFilter, startDate, endDate);
+    if (!matchesDate) return false;
+
+    // 2. Search query match
     const term = searchQuery.toLowerCase().trim();
     const matchesSearch =
       !term ||
@@ -77,4 +87,3 @@ export default function DropPoints({ onBookDelivery, onViewDelivery }) {
     </div>
   );
 }
-

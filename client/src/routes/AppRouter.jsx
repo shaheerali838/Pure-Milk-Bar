@@ -145,7 +145,7 @@ export function AppRouter() {
             {/* Direct & Backward Compatible Navigation Routes */}
             <Route path="customer" element={<Navigate to="/customer-hub/customers" replace />} />
             <Route path="delivery" element={<Navigate to="/customer-hub/doorstep-deliveries" replace />} />
-            <Route path="customer-khata-ledger" element={<Navigate to="/customer-hub/khata-ledger" replace />} />
+            <Route path="customer-khata-ledger" element={<CustomerKhataLedger />} />
 
             {/* Quick Redirects */}
             <Route path="dailysheet" element={<Navigate to="/farm/dailysheet" replace />} />

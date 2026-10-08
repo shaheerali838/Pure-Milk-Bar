@@ -463,13 +463,13 @@ export default function DailyMonthlyDeliveries() {
   };
 
   return (
-    <div className="customer-delivery-compact space-y-2 animate-in fade-in duration-150">
+    <div className="customer-delivery-compact space-y-2.5 animate-in fade-in duration-150">
       {/* 1. Page Header with Action Controls */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 font-display flex items-center gap-2">
-            <Droplets className="w-5 h-5 text-blue-600" />
-            Daily Monthly Deliveries Order Register
+          <h2 className="text-lg font-bold text-slate-900 font-display flex items-center gap-2">
+            <Droplets className="w-5 h-5 text-slate-700" />
+            Daily Monthly Deliveries Register
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
             Place &amp; dispatch scheduled monthly milk orders (Delivered orders are tracked in Doorstep Deliveries)
@@ -477,57 +477,63 @@ export default function DailyMonthlyDeliveries() {
         </div>
 
         {/* Register actions */}
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Direct Link to Doorstep Deliveries Tab */}
           <button
             type="button"
             onClick={() => navigate('/customer-hub/doorstep-orders')}
-            className={`relative flex items-center gap-1.5 px-3.5 h-[36px] rounded-full text-[0px] font-bold transition shadow-2xs cursor-pointer ${
+            className={`relative flex items-center gap-2 px-3.5 h-[34px] rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer border ${
               monthlyPendingCount > 0
-                ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 border border-amber-400 ring-2 ring-amber-400/40'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+                ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-600 shadow-emerald-700/20'
+                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
             }`}
             title="Open pending monthly doorstep orders"
           >
-            <Truck className="w-3.5 h-3.5" />
-            <span className="text-xs">Orders</span>
-            <span className="bg-slate-950 text-white px-1.5 py-0.5 rounded-full text-[10px] font-black">
-              {monthlyPendingCount} Pending
-            </span>
-            <span>Go to Doorstep Deliveries 🚚</span>
+            <Truck className={`w-3.5 h-3.5 ${monthlyPendingCount > 0 ? 'text-emerald-100' : 'text-slate-500'}`} />
+            <span>Doorstep Orders</span>
+            {monthlyPendingCount > 0 && (
+              <span className="inline-flex items-center gap-1 bg-white text-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-2xs">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                </span>
+                <span>{monthlyPendingCount} Pending</span>
+              </span>
+            )}
           </button>
 
           {/* Export CSV Button */}
           <button
             type="button"
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3.5 h-[36px] rounded-full text-xs font-semibold bg-white text-slate-700 border border-slate-300 hover:bg-slate-100 transition-all cursor-pointer shadow-2xs"
+            className="flex items-center gap-1.5 px-3.5 h-[34px] rounded-lg text-xs font-semibold bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
             title="Download CSV report"
           >
             <Download className="w-3.5 h-3.5 text-slate-400" />
             <span>Export</span>
           </button>
 
-          {activeShift === 'All' && <button
-            type="button"
-            onClick={handleSaveAllShiftOrders}
-            className="flex items-center gap-1.5 px-4 h-[36px] rounded-full text-xs font-bold text-white transition-all shadow-xs cursor-pointer hover:brightness-110 active:translate-y-0 select-none"
-            style={{ backgroundColor: '#009966' }}
-          >
-            <Save className="w-4 h-4" />
-            <span>Place All Shifts</span>
-          </button>}
+          {activeShift === 'All' && (
+            <button
+              type="button"
+              onClick={handleSaveAllShiftOrders}
+              className="flex items-center gap-1.5 px-4 h-[34px] rounded-lg text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 transition shadow-xs cursor-pointer select-none"
+            >
+              <Save className="w-4 h-4" />
+              <span>Place All Shifts</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* 2. Top Banner Card with Date, Shift Pills & Stat Pills */}
-      <div className="compact-surface bg-white border border-slate-200/90 rounded-lg p-2 space-y-2">
+      <div className="compact-surface bg-white border border-slate-200 rounded-lg p-2.5 space-y-2 shadow-2xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2">
           {/* Left Side: Date Picker & Shift Selector Pills */}
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Date Picker */}
-            <div className="flex items-center gap-1.5 px-3 h-[36px] rounded-full bg-slate-50 border border-slate-200 text-xs shadow-2xs">
-              <Calendar className="w-3.5 h-3.5 text-[#155dfc] shrink-0" />
+            <div className="flex items-center gap-1.5 px-3 h-[32px] rounded-md bg-slate-50 border border-slate-200 text-xs shadow-2xs">
+              <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
               <input
                 type="date"
                 value={selectedDate}
@@ -537,37 +543,37 @@ export default function DailyMonthlyDeliveries() {
             </div>
 
             {/* Shift Pill Buttons */}
-            <div className="inline-flex items-center p-0.5 bg-slate-100 rounded-full border border-slate-200 shadow-2xs">
+            <div className="inline-flex items-center p-0.5 bg-slate-100 rounded-md border border-slate-200">
               <button
                 type="button"
                 onClick={() => setActiveShift('Morning')}
-                className={`flex items-center gap-1.5 px-3.5 h-[30px] rounded-full text-xs font-bold transition-all cursor-pointer select-none ${
+                className={`flex items-center gap-1.5 px-3 h-[28px] rounded text-xs font-bold transition cursor-pointer select-none ${
                   activeShift === 'Morning'
-                    ? 'bg-amber-500 text-white shadow-xs'
+                    ? 'bg-white text-slate-900 border border-slate-300 shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Sun className="w-3 h-3" />
-                <span>Morning 🌅</span>
+                <Sun className="w-3.5 h-3.5 text-amber-500" />
+                <span>Morning</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveShift('Evening')}
-                className={`flex items-center gap-1.5 px-3.5 h-[30px] rounded-full text-xs font-bold transition-all cursor-pointer select-none ${
+                className={`flex items-center gap-1.5 px-3 h-[28px] rounded text-xs font-bold transition cursor-pointer select-none ${
                   activeShift === 'Evening'
-                    ? 'bg-indigo-600 text-white shadow-xs'
+                    ? 'bg-white text-slate-900 border border-slate-300 shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Moon className="w-3 h-3" />
-                <span>Evening 🌙</span>
+                <Moon className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Evening</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveShift('All')}
-                className={`flex items-center gap-1.5 px-3.5 h-[30px] rounded-full text-xs font-bold transition-all cursor-pointer select-none ${
+                className={`flex items-center gap-1.5 px-3 h-[28px] rounded text-xs font-bold transition cursor-pointer select-none ${
                   activeShift === 'All'
-                    ? 'bg-slate-800 text-white shadow-xs'
+                    ? 'bg-white text-slate-900 border border-slate-300 shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -578,23 +584,23 @@ export default function DailyMonthlyDeliveries() {
 
           {/* Right Side: 3 Stat Pills (Orders Placed, Total Liters, Total Billing) */}
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center px-3.5 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs shadow-2xs">
-              <span className="text-slate-500 mr-1.5 font-medium">Pending Placement:</span>
+            <div className="flex items-center px-3 py-1 rounded-md bg-slate-50 border border-slate-200 text-xs">
+              <span className="text-slate-500 mr-1.5 font-medium">Pending:</span>
               <span className="font-mono font-bold text-slate-800">
                 {totalCustomersCount - placedCount} / {totalCustomersCount}
               </span>
             </div>
 
-            <div className="flex items-center px-3.5 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs shadow-2xs">
+            <div className="flex items-center px-3 py-1 rounded-md bg-slate-50 border border-slate-200 text-xs">
               <span className="text-slate-500 mr-1.5 font-medium">Shift Liters:</span>
               <span className="font-mono font-bold text-slate-800">
                 {totalEnteredLiters.toFixed(1)} L
               </span>
             </div>
 
-            <div className="flex items-center px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800 shadow-2xs">
-              <span className="text-emerald-700 mr-1.5 font-medium">Shift Billing:</span>
-              <span className="font-mono font-black">
+            <div className="flex items-center px-3 py-1 rounded-md bg-slate-50 border border-slate-200 text-xs">
+              <span className="text-slate-500 mr-1.5 font-medium">Shift Billing:</span>
+              <span className="font-mono font-bold text-slate-900">
                 Rs. {totalOrderCost.toLocaleString()}
               </span>
             </div>
@@ -606,10 +612,10 @@ export default function DailyMonthlyDeliveries() {
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search customer name, phone, or drop area to place order..."
+            placeholder="Search customer name, phone, or drop area..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-full pl-9 pr-8 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition"
+            className="w-full bg-slate-50 border border-slate-200 rounded-md pl-9 pr-8 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:bg-white transition"
           />
           {searchQuery && (
             <button
@@ -624,45 +630,38 @@ export default function DailyMonthlyDeliveries() {
       </div>
 
       {/* 3. Main Register Table (POS for Standing Monthly Orders) */}
-      <div className="compact-surface bg-white border border-slate-200/90 rounded-lg overflow-hidden">
+      <div className="compact-surface bg-white border border-slate-200 rounded-lg overflow-hidden shadow-2xs">
         <form onSubmit={handleSaveAllShiftOrders}>
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs sm:text-sm border-collapse">
+            <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50/70 border-b border-slate-200 text-[10px] font-bold uppercase text-slate-500 tracking-wider">
-                  <th className="py-3 px-3 w-28 text-center">DISPATCH</th>
-                  <th className="py-3 px-4 min-w-44">CUSTOMER</th>
-                  <th className="py-3 px-3 min-w-28">LOCATION &amp; KHATA</th>
-                  <th className="py-3 px-3 text-center">SHIFT</th>
-                  <th className="py-3 px-3 text-center min-w-32">AGREED QTY</th>
-                  <th className="py-3 px-4 min-w-56">CUSTOMER AGREEMENT</th>
-                  <th className="py-3 px-3 min-w-28 text-center">DELIVERY FEE</th>
-                  <th className="py-3 px-3 min-w-36">ASSIGN RIDER</th>
-                  <th className="py-3 px-4 text-right min-w-28">LINE TOTAL</th>
+                <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold uppercase text-slate-500 tracking-wider">
+                  <th className="py-2.5 px-3 w-28 text-center">DISPATCH</th>
+                  <th className="py-2.5 px-4 min-w-44">CUSTOMER</th>
+                  <th className="py-2.5 px-3 min-w-28">LOCATION &amp; KHATA</th>
+                  <th className="py-2.5 px-3 text-center">SHIFT</th>
+                  <th className="py-2.5 px-3 text-center min-w-32">AGREED QTY</th>
+                  <th className="py-2.5 px-4 min-w-56">CUSTOMER AGREEMENT</th>
+                  <th className="py-2.5 px-3 min-w-24 text-center">DELIVERY FEE</th>
+                  <th className="py-2.5 px-3 min-w-36">ASSIGN RIDER</th>
+                  <th className="py-2.5 px-4 text-right min-w-28">LINE TOTAL</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-slate-100">
                 {filteredRows.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-14 text-center text-slate-400">
+                    <td colSpan={9} className="py-12 text-center text-slate-400">
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-1">
-                          <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-1">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                         </div>
-                        <p className="text-sm font-bold text-slate-700 font-display">
-                          All Orders Placed / Delivered for {activeShift} Shift!
+                        <p className="text-xs font-bold text-slate-700 font-display">
+                          All Orders Placed / Delivered for {activeShift} Shift
                         </p>
-                        <p className="text-xs text-slate-400 max-w-sm">
-                          There are no pending orders left to place for this shift. Switch shifts or view all deliveries in Doorstep Deliveries.
+                        <p className="text-[11px] text-slate-400 max-w-sm">
+                          There are no pending orders left to place for this shift. Switch shifts or view active deliveries in Doorstep Deliveries.
                         </p>
-                        <button
-                          type="button"
-                          onClick={() => {}}
-                          className="hidden"
-                        >
-                          View Doorstep Deliveries 🚚
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -689,33 +688,33 @@ export default function DailyMonthlyDeliveries() {
                     return (
                       <tr
                         key={rowKey}
-                        className={`hover:bg-slate-50/60 transition-colors ${
+                        className={`hover:bg-slate-50/70 transition-colors ${
                           isDispatched
                             ? isDelivered
-                              ? 'bg-emerald-50/20'
-                              : 'bg-emerald-50/30'
+                              ? 'bg-slate-50/40'
+                              : 'bg-emerald-50/20'
                             : ''
                         }`}
                       >
                         {/* Column 1: explicit dispatch confirmation */}
-                        <td className="py-3.5 px-3 text-center">
+                        <td className="py-2.5 px-3 text-center">
                           <div className="flex items-center justify-center">
                             {isProcessing ? (
-                              <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+                              <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
                             ) : isDispatched ? (
-                              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold border ${
+                              <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border ${
                                 isDelivered
-                                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                  : 'border-amber-200 bg-amber-50 text-amber-800'
+                                  ? 'border-slate-200 bg-slate-100 text-slate-600'
+                                  : 'border-emerald-200 bg-emerald-50 text-emerald-800'
                               }`}>
                                 {isDelivered ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                                {isDelivered ? 'Delivered' : 'Pending'}
+                                {isDelivered ? 'Delivered' : 'Dispatched'}
                               </span>
                             ) : (
                               <button
                                 type="button"
                                 onClick={() => handleToggleRowOrder(row)}
-                                className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-2xs transition hover:bg-emerald-700"
+                                className="inline-flex items-center gap-1 rounded-md bg-emerald-700 hover:bg-emerald-800 px-2.5 py-1 text-[10px] font-bold text-white shadow-2xs transition cursor-pointer"
                               >
                                 <Check className="h-3 w-3" /> Dispatch
                               </button>
@@ -723,17 +722,17 @@ export default function DailyMonthlyDeliveries() {
                           </div>
                         </td>
 
-                        {/* Column 2: CUSTOMER with Blue Initial Circle */}
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 text-[#155dfc] flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                        {/* Column 2: CUSTOMER */}
+                        <td className="py-2.5 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-md bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">
                               {initialLetter}
                             </div>
                             <div className="min-w-0">
-                              <p className="font-bold text-slate-900 text-xs sm:text-sm font-display truncate">
+                              <p className="font-bold text-slate-900 text-xs truncate">
                                 {customer.name}
                               </p>
-                              <p className="text-[11px] text-slate-400 font-mono font-medium">
+                              <p className="text-[10px] text-slate-400 font-mono font-medium">
                                 {customer.phone || 'No phone'}
                               </p>
                             </div>
@@ -741,33 +740,26 @@ export default function DailyMonthlyDeliveries() {
                         </td>
 
                         {/* Column 3: LOCATION & KHATA DUE */}
-                        <td className="py-3.5 px-3">
-                          <p className="text-xs font-semibold text-slate-700 flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-rose-500 shrink-0" />
+                        <td className="py-2.5 px-3">
+                          <p className="text-[11px] font-medium text-slate-700 flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
                             <span className="truncate">{customer.area || 'Model Town'}</span>
                           </p>
-                          <p className="text-[11px] font-bold text-amber-700 mt-0.5">
-                            Khata: Rs. {Number(customer.khataBalance || 0).toLocaleString()}
+                          <p className="text-[10px] font-bold text-slate-600 mt-0.5">
+                            Khata: <span className="font-mono text-slate-800">Rs. {Number(customer.khataBalance || 0).toLocaleString()}</span>
                           </p>
                         </td>
 
                         {/* Column 4: SHIFT BADGE */}
-                        <td className="py-3.5 px-3 text-center whitespace-nowrap">
-                          {shift === 'Morning' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
-                              <Sun className="w-3 h-3 text-amber-600" />
-                              <span>Morning 🌅</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-900 border border-indigo-200">
-                              <Moon className="w-3 h-3 text-indigo-600" />
-                              <span>Evening 🌙</span>
-                            </span>
-                          )}
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                            {shift === 'Morning' ? <Sun className="w-3 h-3 text-amber-500" /> : <Moon className="w-3 h-3 text-indigo-500" />}
+                            <span>{shift}</span>
+                          </span>
                         </td>
 
                         {/* Column 5: primary agreement item quantity */}
-                        <td className="py-3.5 px-3 text-center">
+                        <td className="py-2.5 px-3 text-center">
                           <div className="flex flex-col items-center justify-center gap-0.5">
                             <input
                               type="number"
@@ -777,63 +769,64 @@ export default function DailyMonthlyDeliveries() {
                               value={rowVals.qty}
                               disabled={isDelivered}
                               onChange={(e) => handleRowChange(rowKey, 'qty', e.target.value)}
-                              className={`w-24 h-[34px] px-2 rounded-full border text-center text-xs sm:text-sm font-bold outline-none tabular transition-all shadow-2xs ${
-                                isDelivered ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed' : 'border-slate-300 bg-white text-slate-900 hover:border-slate-400 focus:border-blue-600 focus:ring-1 focus:ring-blue-600'
+                              className={`w-20 h-[28px] px-1.5 rounded-md border text-center text-xs font-bold outline-none tabular transition-all shadow-2xs ${
+                                isDelivered ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed' : 'border-slate-300 bg-white text-slate-900 hover:border-slate-400 focus:border-slate-500'
                               }`}
                             />
-                            <span className="text-[10px] text-slate-400 font-medium">
-                              {row.primaryItem?.name} @ Rs. {rate}/{row.primaryItem?.unit || 'Pcs'}
+                            <span className="text-[9px] text-slate-400 font-medium">
+                              {row.primaryItem?.name} @ Rs.{rate}/{row.primaryItem?.unit || 'L'}
                             </span>
                           </div>
                         </td>
 
                         {/* Column 6: customer agreement products */}
-                        <td className="py-3.5 px-4">
-                          <div className="flex flex-wrap items-center gap-1.5">
+                        <td className="py-2.5 px-4">
+                          <div className="flex flex-wrap items-center gap-1">
                             {row.scheduledItems.map((item, index) => (
-                              <span key={`${item.name}-${index}`} className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-[10.5px] font-bold text-blue-900">
-                                {index === 0 ? q : item.quantity} {item.unit} {item.name}
+                              <span key={`${item.name}-${index}`} className="inline-flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium text-slate-700">
+                                <span className="font-bold text-slate-900">{index === 0 ? q : item.quantity} {item.unit}</span>
+                                <span>{item.name}</span>
                               </span>
                             ))}
                           </div>
                         </td>
 
-                        {/* Column 7: DELIVERY FEE (Only rendered if customer has fee set) */}
-                        <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                        {/* Column 7: DELIVERY FEE */}
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
                           {row.deliveryFee !== null && row.deliveryFee !== undefined ? (
-                            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50/80 border border-amber-200">
-                              <span className="text-[10px] font-bold text-amber-900">Rs.</span>
+                            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50">
+                              <span className="text-[9px] font-medium text-slate-500">Rs.</span>
                               <input
                                 type="number"
                                 min="0"
                                 value={rowVals.deliveryFee !== null ? rowVals.deliveryFee : ''}
                                 disabled={isDelivered}
                                 onChange={(e) => handleRowChange(rowKey, 'deliveryFee', e.target.value)}
-                                className={`w-12 h-5 text-center font-mono font-bold text-xs border rounded outline-none ${
-                                  isDelivered ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white border-amber-300 focus:border-amber-500'
+                                className={`w-10 h-4 text-center font-mono font-bold text-[10px] border border-slate-200 rounded outline-none ${
+                                  isDelivered ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white focus:border-slate-400'
                                 }`}
                               />
                             </div>
                           ) : (
-                            <span className="text-slate-400 text-xs font-medium">Free</span>
+                            <span className="text-slate-400 text-[11px] font-medium">Free</span>
                           )}
                         </td>
 
                         {/* Column 8: ASSIGNED RIDER */}
-                        <td className="py-3.5 px-3 min-w-36">
+                        <td className="py-2.5 px-3 min-w-36">
                           <div className="relative">
                             <select
                               value={rowVals.riderId}
                               disabled={isDelivered}
                               onChange={(e) => handleRowChange(rowKey, 'riderId', e.target.value)}
-                              className={`w-full border rounded-lg px-2 py-1.5 text-xs font-semibold appearance-none pr-6 shadow-2xs ${
-                                isDelivered ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white border-slate-300 text-slate-800 focus:outline-none focus:border-blue-500 cursor-pointer'
+                              className={`w-full border rounded-md px-2 py-1 text-[11px] font-medium appearance-none pr-6 shadow-2xs ${
+                                isDelivered ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-white border-slate-300 text-slate-800 focus:outline-none focus:border-slate-400 cursor-pointer'
                               }`}
                             >
                               <option value="">— Select Rider —</option>
                               {activeRiders.map((r) => (
                                 <option key={r.id} value={r.id}>
-                                  {r.vehicle === 'Motorbike' ? '🛵' : '🚲'} {r.name}
+                                  {r.name}
                                 </option>
                               ))}
                             </select>
@@ -842,13 +835,13 @@ export default function DailyMonthlyDeliveries() {
                         </td>
 
                         {/* Column 9: LINE TOTAL */}
-                        <td className="py-3.5 px-4 text-right font-bold tabular text-slate-900">
+                        <td className="py-2.5 px-4 text-right font-bold tabular text-slate-900">
                           {grandTotal > 0 ? (
                             <div>
-                              <span className="text-emerald-700 text-xs sm:text-sm font-display">
+                              <span className="text-slate-900 text-xs font-mono font-bold">
                                 Rs. {grandTotal.toLocaleString()}
                               </span>
-                              <span className="block text-[9.5px] text-slate-400 font-normal">
+                              <span className="block text-[9px] text-slate-400 font-normal">
                                 {isDispatched ? (isDelivered ? 'Delivered' : `#${dispatchedRec?.runCode || 'DEL'}`) : 'Ready'}
                               </span>
                             </div>
@@ -865,29 +858,28 @@ export default function DailyMonthlyDeliveries() {
           </div>
 
           {/* Bottom Action Bar */}
-          <div className="p-2 bg-slate-50/70 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div className="flex items-center gap-4 text-xs">
-              <span className="text-slate-600">
-                Pending Rows: <strong>{totalCustomersCount}</strong>
+          <div className="p-2.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div className="flex items-center gap-3 text-xs text-slate-600">
+              <span>
+                Pending Rows: <strong className="text-slate-800">{totalCustomersCount}</strong>
               </span>
               <span>•</span>
-              <span className="text-slate-600">
-                Shift Total Liters: <strong className="text-blue-700">{totalEnteredLiters.toFixed(1)} L</strong>
+              <span>
+                Shift Total Liters: <strong className="text-slate-800">{totalEnteredLiters.toFixed(1)} L</strong>
               </span>
             </div>
 
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <span className="text-xs text-slate-500 block">Total Shift Billing</span>
-                <span className="text-base font-bold text-slate-900 font-display">
+                <span className="text-[10px] text-slate-500 uppercase block">Total Shift Billing</span>
+                <span className="text-sm font-bold text-slate-900 font-mono">
                   Rs. {totalOrderCost.toLocaleString()}
                 </span>
               </div>
 
               <button
                 type="submit"
-                className="flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold text-white transition-all shadow-xs cursor-pointer hover:brightness-110 active:translate-y-0"
-                style={{ backgroundColor: '#009966' }}
+                className="flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 transition shadow-xs cursor-pointer"
               >
                 <Save className="w-4 h-4" />
                 <span>{activeShift === 'All' ? 'Place All Shifts' : `Place All ${activeShift}`}</span>

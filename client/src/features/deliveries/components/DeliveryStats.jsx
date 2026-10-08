@@ -1,92 +1,108 @@
 import React from 'react';
 import { Truck, Clock, CheckCircle2, Banknote } from 'lucide-react';
 import { useDeliveryContext } from '@/context/DeliveryContext';
+import { isDateInFilterRange } from '@/utils/dateUtils';
 
 export default function DeliveryStats() {
-  const { deliveries = [] } = useDeliveryContext();
+  const {
+    deliveries = [],
+    dateFilter = 'Today',
+    startDate = '',
+    endDate = '',
+  } = useDeliveryContext();
 
-  const now = new Date();
-  const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const todayUTC = now.toISOString().split('T')[0];
+  const periodDeliveries = deliveries.filter((d) =>
+    isDateInFilterRange(d.date || d.createdAt, dateFilter, startDate, endDate)
+  );
 
-  const isToday = (d) => {
-    if (!d) return false;
-    try {
-      const str = typeof d === 'string' ? d.split('T')[0] : String(d).slice(0, 10);
-      if (str === todayLocal || str === todayUTC) return true;
-      const dateObj = new Date(d);
-      if (isNaN(dateObj.getTime())) return false;
-      const yr = dateObj.getFullYear();
-      const mo = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const da = String(dateObj.getDate()).padStart(2, '0');
-      const parsedLocal = `${yr}-${mo}-${da}`;
-      const parsedUTC = dateObj.toISOString().split('T')[0];
-      return parsedLocal === todayLocal || parsedUTC === todayUTC;
-    } catch {
-      const str = typeof d === 'string' ? d.split('T')[0] : String(d).slice(0, 10);
-      return str === todayLocal || str === todayUTC;
+  const totalCount = periodDeliveries.length;
+  const pendingCount = periodDeliveries.filter(
+    (d) => d.status === 'PENDING' || d.status === 'OUT_FOR_DELIVERY'
+  ).length;
+  const deliveredCount = periodDeliveries.filter((d) => d.status === 'DELIVERED').length;
+
+  const codToCollect = periodDeliveries
+    .filter(
+      (d) =>
+        d.status !== 'DELIVERED' ||
+        d.paymentStatus === 'UNPAID' ||
+        d.paymentStatus === 'PARTIAL'
+    )
+    .reduce((acc, d) => acc + (Number(d.codAmountToCollect || d.amountDue) || 0), 0);
+
+  const getPrimaryLabel = () => {
+    switch (dateFilter) {
+      case 'Today':
+        return "Today's Deliveries";
+      case 'Weekly':
+        return 'Weekly Deliveries';
+      case 'Monthly':
+        return 'Monthly Deliveries';
+      case 'Custom Range':
+        return 'Deliveries (Selected)';
+      default:
+        return 'All-Time Deliveries';
     }
   };
 
-  const todayDeliveries = deliveries.filter(
-    (d) => isToday(d.date) || isToday(d.createdAt)
-  );
+  const getPrimarySub = () => {
+    if (totalCount === 0) return 'No deliveries in selected range';
+    return `${deliveredCount} Completed · ${pendingCount} Pending`;
+  };
 
-  const todayCount = todayDeliveries.length;
-  const todayPending = todayDeliveries.filter(
-    (d) => d.status === 'PENDING' || d.status === 'OUT_FOR_DELIVERY'
-  ).length;
-  const todayDelivered = todayDeliveries.filter((d) => d.status === 'DELIVERED').length;
+  const getPendingSub = () => {
+    if (pendingCount === 0) return 'All deliveries completed';
+    if (dateFilter === 'Today') return `${pendingCount} scheduled for today`;
+    return `${pendingCount} pending in selected period`;
+  };
 
-  const allPending = deliveries.filter(
-    (d) => d.status === 'PENDING' || d.status === 'OUT_FOR_DELIVERY'
-  ).length;
-  const allDelivered = deliveries.filter((d) => d.status === 'DELIVERED').length;
+  const getDeliveredSub = () => {
+    if (deliveredCount === 0) return 'No completed orders yet';
+    if (dateFilter === 'Today') return `${deliveredCount} fulfilled today`;
+    return `${deliveredCount} fulfilled in period`;
+  };
 
-  // Pending COD calculation: include deliveries not yet paid or not delivered
-  const codToCollect = deliveries
-    .filter((d) => d.status !== 'DELIVERED' || d.paymentStatus === 'UNPAID' || d.paymentStatus === 'PARTIAL')
-    .reduce((acc, d) => acc + (Number(d.codAmountToCollect || d.amountDue) || 0), 0);
-
-  const todayCodToCollect = todayDeliveries
-    .filter((d) => d.status !== 'DELIVERED' || d.paymentStatus === 'UNPAID' || d.paymentStatus === 'PARTIAL')
-    .reduce((acc, d) => acc + (Number(d.codAmountToCollect || d.amountDue) || 0), 0);
+  const getCodSub = () => {
+    if (codToCollect === 0) return 'No pending COD amount';
+    if (dateFilter === 'Today') return `Rs. ${codToCollect.toLocaleString()} to collect today`;
+    return `Rs. ${codToCollect.toLocaleString()} in selected period`;
+  };
 
   const statCards = [
     {
-      id: 'today_deliveries',
-      label: "Today's Deliveries",
-      value: `${todayCount}`,
-      sub: todayCount > 0 ? `${todayDelivered} done · ${todayPending} in route` : `All-time: ${deliveries.length} drops`,
+      id: 'primary_deliveries',
+      label: getPrimaryLabel(),
+      value: `${totalCount} Drops`,
+      sub: getPrimarySub(),
       icon: Truck,
-      color: '#2563eb', // blue-600
-      badge: 'Today',
+      color: '#2563eb',
+      badge: 'Runs',
     },
     {
       id: 'pending_deliveries',
       label: 'Pending In Route',
-      value: `${allPending}`,
-      sub: todayPending > 0 ? `${todayPending} scheduled today` : 'Awaiting delivery runs',
+      value: `${pendingCount} Orders`,
+      sub: getPendingSub(),
       icon: Clock,
-      color: '#d97706', // amber-600
+      color: '#d97706',
       badge: 'In Route',
     },
     {
-      id: 'completed_deliveries',
-      label: 'Delivered',
-      value: `${allDelivered}`,
-      sub: todayDelivered > 0 ? `${todayDelivered} completed today` : 'Successfully completed',
+      id: 'delivered_deliveries',
+      label: 'Delivered Orders',
+      value: `${deliveredCount} Completed`,
+      sub: getDeliveredSub(),
       icon: CheckCircle2,
-      color: '#059669', // emerald-600
+      color: '#059669',
       badge: 'Done',
     },
     {
       id: 'cod_collect',
-      label: 'COD To Collect',
+      label: 'COD Cash Due',
       value: `Rs. ${codToCollect.toLocaleString()}`,
-      sub: todayCodToCollect > 0 ? `Rs. ${todayCodToCollect.toLocaleString()} pending today` : 'Pending cash on delivery',
+      sub: getCodSub(),
       icon: Banknote,
-      color: '#e11d48', // rose-600
+      color: '#e11d48',
       badge: 'Cash Due',
     },
   ];
@@ -95,7 +111,7 @@ export default function DeliveryStats() {
     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-2.5">
       {statCards.map(({ id, label, value, sub, icon: Icon, color, badge }) => (
         <div
-          key={id}
+          key={id || label}
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs"
         >
           <div className="flex items-start justify-between mb-1.5">
@@ -113,7 +129,7 @@ export default function DeliveryStats() {
           </div>
 
           <div>
-            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular font-display">
               {value}
             </p>
             <p className="text-xs font-bold text-slate-800">{label}</p>

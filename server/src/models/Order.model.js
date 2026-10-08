@@ -84,6 +84,21 @@ const orderSchema = new Schema(
       default: 0,
       min: 0,
     },
+    advanceUsed: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    khataAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    advanceBalanceAfter: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     onlineTransferMeta: {
       type: Schema.Types.Mixed,
       default: null,

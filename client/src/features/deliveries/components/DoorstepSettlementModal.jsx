@@ -56,7 +56,11 @@ export default function DoorstepSettlementModal({
     ? delivery.items.reduce((acc, it) => acc + (Number(it.subtotal) || Number(it.unitPrice * it.quantity) || 0), 0)
     : 0;
 
+  const deliveryFee = Number(delivery?.deliveryFee) || 0;
+  const itemsPlusFee = itemsTotal > 0 ? itemsTotal + deliveryFee : 0;
+
   const orderTotal = Math.max(
+    itemsPlusFee,
     itemsTotal,
     prevPaid + (prevDue > 0 ? prevDue : codToCollect),
     codToCollect,

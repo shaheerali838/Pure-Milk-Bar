@@ -12,8 +12,8 @@ export default function LedgerStatsCards({
   currentBalance = 0,
   remainingAdvance = 0,
 }) {
-  const isCleared = currentBalance <= 0;
-  const hasAdvance = remainingAdvance > 0 && currentBalance <= 0;
+  const hasAdvance = isAdvanceOpening && Number(remainingAdvance || 0) > 0;
+  const isCleared = !hasAdvance && Number(currentBalance || 0) <= 0;
 
   const statCards = [
     {
@@ -45,7 +45,7 @@ export default function LedgerStatsCards({
     },
     {
       id: 'balance',
-      label: hasAdvance ? 'Advance Credit Remaining' : currentBalance > 0 ? 'Current Balance Due' : 'Cleared Balance',
+      label: hasAdvance ? 'Advance Credit Remaining' : Number(currentBalance || 0) > 0 ? 'Current Balance Due' : 'Cleared Balance',
       value: `Rs. ${Number(hasAdvance ? remainingAdvance : currentBalance).toLocaleString()}`,
       sub: hasAdvance ? 'Deducted from advance' : isCleared ? 'Dues fully cleared' : 'Outstanding recovery',
       icon: isCleared ? CheckCircle2 : AlertCircle,
@@ -76,7 +76,7 @@ export default function LedgerStatsCards({
           </div>
 
           <div>
-            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular font-display">
               {value}
             </p>
             <p className="text-xs font-bold text-slate-800">{label}</p>

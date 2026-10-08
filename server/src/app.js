@@ -3,7 +3,10 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
+import mongoose from "mongoose";
+import connectDB from "./config/db.js";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
+
 
 // Route Imports
 import authRoutes from "./modules/auth/routes/auth.routes.js";
@@ -100,6 +103,19 @@ app.get("/api/v1/health", (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development",
   });
+});
+
+// Ensure DB connection is active for all API requests
+app.use("/api/", async (req, res, next) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      await connectDB();
+    }
+    next();
+  } catch (err) {
+    console.error("DB connection error in request:", err.message);
+    next();
+  }
 });
 
 // API v1 Routes

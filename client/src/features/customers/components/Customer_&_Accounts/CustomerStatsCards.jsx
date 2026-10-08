@@ -5,14 +5,14 @@ import { useLedgerContext } from '../../../../context/LedgerContext';
 import { KpiGridSkeleton } from '@/components/ui/skeleton';
 
 export default function CustomerStatsCards({ onOpenAdvanceDetails }) {
-  const { allCustomersCount, activeAccountsCount, isLoading } = useCustomerContext();
+  const { allCustomersCount, activeAccountsCount, isLoading, dateFilter, startDate, endDate } = useCustomerContext();
   const { getAllCustomersAggregates } = useLedgerContext();
 
   if (isLoading && (!allCustomersCount || allCustomersCount === 0)) {
     return <KpiGridSkeleton count={5} className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5" />;
   }
 
-  const aggregates = getAllCustomersAggregates ? getAllCustomersAggregates() : {
+  const aggregates = getAllCustomersAggregates ? getAllCustomersAggregates(dateFilter, startDate, endDate) : {
     totalAllDue: 0,
     totalAllPaid: 0,
     totalAllCharged: 0,
@@ -27,9 +27,9 @@ export default function CustomerStatsCards({ onOpenAdvanceDetails }) {
   const statCards = [
     {
       id: "total_accounts",
-      label: "Total Customer Accounts",
-      value: `${aggregates.totalCustomersCount || allCustomersCount || 0}`,
-      sub: `${activeAccountsCount || 0} active regular buyers`,
+      label: "Total Accounts",
+      value: `${aggregates.totalCustomersCount || allCustomersCount || 0} Accounts`,
+      sub: `${activeAccountsCount || 0} Active Customers`,
       icon: Users,
       color: "#059669", // emerald-600
       badge: "Accounts",
@@ -38,7 +38,7 @@ export default function CustomerStatsCards({ onOpenAdvanceDetails }) {
     {
       id: "dues_accounts",
       label: "Accounts With Dues",
-      value: `${aggregates.khataAccountsCount || 0}`,
+      value: `${aggregates.khataAccountsCount || 0} Accounts`,
       sub: "Active khata balances",
       icon: Wallet,
       color: "#d97706", // amber-600
@@ -66,7 +66,6 @@ export default function CustomerStatsCards({ onOpenAdvanceDetails }) {
       badgeClass: "bg-blue-50 text-blue-700 border border-blue-200/80 hover:bg-blue-100 transition-colors",
       clickable: true,
       onClick: onOpenAdvanceDetails,
-      isHighlight: true,
     },
     {
       id: "total_collected",
@@ -74,7 +73,7 @@ export default function CustomerStatsCards({ onOpenAdvanceDetails }) {
       value: `Rs. ${(aggregates.totalAllPaid || 0).toLocaleString()}`,
       sub: "Total collected revenue",
       icon: ArrowDownLeft,
-      color: "#4f46e5", // indigo-600
+      color: "#4f39f6", // indigo-600
       badge: "Collected",
       clickable: false,
     },
@@ -125,4 +124,3 @@ export default function CustomerStatsCards({ onOpenAdvanceDetails }) {
     </div>
   );
 }
-

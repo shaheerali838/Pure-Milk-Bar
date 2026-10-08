@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useCustomerContext } from '../../../context/CustomerContext';
 import { useLedgerContext } from '../../../context/LedgerContext';
 import { exportTableToCSV } from '@/utils/csvExport';
+import { recalculateCustomerStatementChronological } from '@/utils/khataAdvanceHelper';
 import LedgerHeader from '../components/CustomerKhataLedger/LedgerHeader';
 import LedgerCustomerSelector from '../components/CustomerKhataLedger/LedgerCustomerSelector';
 import LedgerCustomerProfileCard from '../components/CustomerKhataLedger/LedgerCustomerProfileCard';
@@ -21,7 +22,7 @@ import EditCustomerModal from '../components/Customer_&_Accounts/EditCustomerMod
 export default function CustomerKhataLedger() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { customers } = useCustomerContext();
+  const { customers = [] } = useCustomerContext();
   const { getLedgerForCustomer, fetchCustomerLedger, settleKhata, ledgers } = useLedgerContext();
 
   const urlCustomerId = searchParams.get('customerId');
@@ -33,21 +34,53 @@ export default function CustomerKhataLedger() {
   const [viewTransaction, setViewTransaction] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Sync selected customer from URL or fallback to first customer
+  // Match current customer by id, _id, code, or name
+  const currentCustomer = React.useMemo(() => {
+    if (!customers || customers.length === 0) return null;
+    const targetId = selectedCustomerId || urlCustomerId;
+    if (targetId) {
+      const targetLower = String(targetId).trim().toLowerCase();
+      const match = customers.find(
+        (c) =>
+          String(c.id || c._id) === String(targetId) ||
+          String(c._id) === String(targetId) ||
+          String(c.id) === String(targetId) ||
+          String(c.code || '').toLowerCase() === targetLower ||
+          String(c.name || '').toLowerCase() === targetLower
+      );
+      if (match) return match;
+    }
+    return customers[0] || null;
+  }, [customers, selectedCustomerId, urlCustomerId]);
+
+  const effectiveCustomerId = currentCustomer ? String(currentCustomer._id || currentCustomer.id) : selectedCustomerId;
+
+  // Sync selected customer from URL when searchParams change
   useEffect(() => {
-    if (urlCustomerId && customers.some((c) => String(c.id || c._id) === String(urlCustomerId))) {
-      setSelectedCustomerId(String(urlCustomerId));
-    } else if ((!selectedCustomerId || !customers.some((c) => String(c.id || c._id) === String(selectedCustomerId))) && customers.length > 0) {
-      setSelectedCustomerId(String(customers[0].id || customers[0]._id));
+    if (urlCustomerId && customers.length > 0) {
+      const targetLower = String(urlCustomerId).trim().toLowerCase();
+      const match = customers.find(
+        (c) =>
+          String(c.id || c._id) === String(urlCustomerId) ||
+          String(c._id) === String(urlCustomerId) ||
+          String(c.id) === String(urlCustomerId) ||
+          String(c.code || '').toLowerCase() === targetLower ||
+          String(c.name || '').toLowerCase() === targetLower
+      );
+      if (match) {
+        setSelectedCustomerId(String(match._id || match.id));
+      }
+    } else if (!selectedCustomerId && customers.length > 0) {
+      setSelectedCustomerId(String(customers[0]._id || customers[0].id));
     }
   }, [customers, urlCustomerId]);
 
-  // Fetch live statement from backend whenever selected customer changes
+  // Fetch live statement from backend whenever effective customer changes
   useEffect(() => {
-    if (selectedCustomerId) {
-      fetchCustomerLedger(selectedCustomerId);
+    if (effectiveCustomerId) {
+      fetchCustomerLedger(effectiveCustomerId);
     }
-  }, [selectedCustomerId, fetchCustomerLedger]);
+  }, [effectiveCustomerId, fetchCustomerLedger]);
 
   const handleSelectCustomer = (id) => {
     setSelectedCustomerId(id);
@@ -55,9 +88,7 @@ export default function CustomerKhataLedger() {
     if (id) fetchCustomerLedger(id);
   };
 
-  const currentCustomer = customers.find((c) => String(c.id || c._id) === String(selectedCustomerId)) || null;
-
-  const rawEntries = selectedCustomerId ? (getLedgerForCustomer(selectedCustomerId) || []) : [];
+  const rawEntries = effectiveCustomerId ? (getLedgerForCustomer(effectiveCustomerId) || []) : [];
 
   // Filter entries if month matches or show all
   const activeEntries = (selectedMonth && selectedMonth !== 'all')
@@ -67,11 +98,16 @@ export default function CustomerKhataLedger() {
       })
     : rawEntries;
 
-  // Accurately compute Opening Balance & Advance Deposit from all-time history
+  // Recalculate full chronological ledger & stats
+  const { entries: recalculatedEntries, summary: chronologicalSummary, rowMap } = React.useMemo(() => {
+    return recalculateCustomerStatementChronological(activeEntries, currentCustomer || {});
+  }, [activeEntries, currentCustomer]);
+
+  // Accurately compute Opening Balance & Advance Deposit
   let openingBalance = 0;
   const openingEntry = rawEntries.find((e) => e.isOpening || e.type === 'OPENING');
   const isAdvanceOpening =
-    openingEntry?.credit > 0 ||
+    (openingEntry && Number(openingEntry.advanceReceived) > 0) ||
     String(currentCustomer?.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') ||
     currentCustomer?.openingPaymentMethod === 'CASH' ||
     currentCustomer?.openingPaymentMethod === 'ONLINE' ||
@@ -99,21 +135,17 @@ export default function CustomerKhataLedger() {
     ? String(currentCustomer.createdAt).slice(0, 10)
     : '';
 
-  const purchaseEntries = rawEntries.filter((e) => !e.isOpening && e.type !== 'OPENING' && !/opening/i.test(e.description || ''));
-  const totalCharged = purchaseEntries.reduce((acc, e) => {
-    return acc + Number(e.debit || e.orderTotal || (e.items?.length > 0 ? e.items.reduce((s, it) => s + Number(it.subtotal || 0), 0) : 0));
-  }, 0);
+  const purchaseEntries = activeEntries.filter((e) => !e.isOpening && e.type !== 'OPENING' && !/opening/i.test(e.description || ''));
   const chargedCount = purchaseEntries.length;
 
-  const paymentEntries = rawEntries.filter((e) => !e.isOpening && e.type !== 'OPENING' && !/opening/i.test(e.description || '') && Number(e.credit) > 0);
-  const totalPayments = paymentEntries.reduce((acc, e) => acc + (Number(e.credit) || 0), 0);
+  const paymentEntries = activeEntries.filter((e) => !e.isOpening && e.type !== 'OPENING' && !/opening/i.test(e.description || '') && Number(e.credit) > 0);
   const paidCount = paymentEntries.length;
 
-  const effectiveDebits = totalCharged + (!isAdvanceOpening ? openingBalance : 0);
-  const totalPaid = totalPayments + (isAdvanceOpening ? openingBalance : 0);
-
-  const closingBalance = Math.max(0, effectiveDebits - totalPaid);
-  const remainingAdvance = Math.max(0, totalPaid - effectiveDebits);
+  const totalCharged = chronologicalSummary.totalDebits || 0;
+  const totalPaid = chronologicalSummary.totalCredits || 0;
+  const totalAdvanceUsed = chronologicalSummary.totalAdvanceUsed || 0;
+  const remainingAdvance = chronologicalSummary.advanceRemaining !== undefined ? chronologicalSummary.advanceRemaining : Number(currentCustomer?.advanceBalance || 0);
+  const closingBalance = chronologicalSummary.closingDueBalance !== undefined ? chronologicalSummary.closingDueBalance : Number(currentCustomer?.khataBalance ?? currentCustomer?.currentBalance ?? 0);
 
   const handleSettleKhata = () => {
     if (!selectedCustomerId || !currentCustomer) return;
@@ -133,21 +165,27 @@ export default function CustomerKhataLedger() {
       'Date',
       'Type',
       'Description',
-      'Debit / Charged (Rs)',
-      'Credit / Paid (Rs)',
-      'Running Balance (Rs)',
+      'Total Bill / Debit (Rs)',
+      'Advance Used (Rs)',
+      'Advance Left (Rs)',
+      'Paid / Credit (Rs)',
+      'Khata Due Added (Rs)',
+      'Khata Balance (Rs)',
       'Payment Method',
       'Notes',
     ];
-    const rows = activeEntries.map((e) => [
+    const rows = recalculatedEntries.map((e) => [
       e.id || e._id || '-',
       e.date || '-',
       e.type || 'ENTRY',
       e.description || 'Ledger statement entry',
-      `Rs. ${Number(e.debit || 0).toLocaleString()}`,
-      `Rs. ${Number(e.credit || 0).toLocaleString()}`,
-      `Rs. ${Number(e.runningBalance || 0).toLocaleString()}`,
-      e.method || '-',
+      `Rs. ${Number(e.orderTotal || e.debit || 0).toLocaleString()}`,
+      Number(e.advanceUsed || 0) > 0 ? `Rs. ${Number(e.advanceUsed).toLocaleString()}` : '-',
+      `Rs. ${Number(e.advanceBalanceAfter || 0).toLocaleString()}`,
+      `Rs. ${Number(e.credit || e.paidAmount || 0).toLocaleString()}`,
+      Number(e.khataAmount || 0) > 0 ? `Rs. ${Number(e.khataAmount).toLocaleString()}` : 'Rs. 0',
+      `Rs. ${Number(e.runningKhataBalance !== undefined ? e.runningKhataBalance : (e.runningBalance || 0)).toLocaleString()}`,
+      e.paymentMethod || e.method || '-',
       e.notes || '-',
     ]);
 
@@ -160,15 +198,30 @@ export default function CustomerKhataLedger() {
         ['Area / Address', currentCustomer.area || currentCustomer.address || '-'],
         ['Credit Limit', `Rs. ${Number(currentCustomer.creditLimit || 0).toLocaleString()}`],
         ['Opening Balance', `Rs. ${Number(openingBalance || 0).toLocaleString()}`],
-        ['Total Charged (Period)', `Rs. ${Number(totalCharged || 0).toLocaleString()}`],
-        ['Total Paid (Period)', `Rs. ${Number(totalPaid || 0).toLocaleString()}`],
+        ['Total Debits (Period)', `Rs. ${Number(totalCharged || 0).toLocaleString()}`],
+        ['Total Credits (Period)', `Rs. ${Number(totalPaid || 0).toLocaleString()}`],
+        ['Total Advance Used', `Rs. ${Number(totalAdvanceUsed || 0).toLocaleString()}`],
+        ['Advance Remaining', `Rs. ${Number(remainingAdvance || 0).toLocaleString()}`],
         ['Current Outstanding Khata Balance', `Rs. ${Number(closingBalance || 0).toLocaleString()}`],
         ['Statement Month Filter', selectedMonth || 'All Time History'],
       ],
       headers,
       rows,
       summaryRows: [
-        ['SUMMARY TOTALS', '', '', '', `Rs. ${Number(totalCharged || 0).toLocaleString()}`, `Rs. ${Number(totalPaid || 0).toLocaleString()}`, `Closing: Rs. ${Number(closingBalance || 0).toLocaleString()}`, '', `Entries: ${activeEntries.length}`],
+        [
+          'SUMMARY TOTALS',
+          '',
+          '',
+          '',
+          `Debits: Rs. ${Number(totalCharged || 0).toLocaleString()}`,
+          `Adv Used: Rs. ${Number(totalAdvanceUsed || 0).toLocaleString()}`,
+          `Adv Left: Rs. ${Number(remainingAdvance || 0).toLocaleString()}`,
+          `Credits: Rs. ${Number(totalPaid || 0).toLocaleString()}`,
+          '',
+          `Closing Due: Rs. ${Number(closingBalance || 0).toLocaleString()}`,
+          '',
+          `Entries: ${recalculatedEntries.length}`,
+        ],
       ],
     });
   };
@@ -261,7 +314,9 @@ export default function CustomerKhataLedger() {
       )}
 
       <LedgerCustomerSelector
-        selectedCustomerId={selectedCustomerId}
+        customers={customers}
+        selectedCustomerId={effectiveCustomerId}
+        onSelectCustomer={handleSelectCustomer}
         selectedMonth={selectedMonth}
         onChangeMonth={(m) => setSelectedMonth(m)}
         onOpenBuyModal={() => setCurrentSubView('buy')}
@@ -272,7 +327,7 @@ export default function CustomerKhataLedger() {
           if (window.history.length > 1) {
             navigate(-1);
           } else {
-            navigate('/customer');
+            navigate('/customer-hub/customers');
           }
         }}
       />
@@ -281,6 +336,7 @@ export default function CustomerKhataLedger() {
         <LedgerCustomerProfileCard
           customer={currentCustomer}
           currentBalance={closingBalance}
+          advanceBalance={remainingAdvance}
           onEdit={() => setIsEditModalOpen(true)}
         />
       )}
@@ -299,9 +355,11 @@ export default function CustomerKhataLedger() {
 
       <LedgerTable
         customer={currentCustomer}
-        ledgerEntries={activeEntries}
+        ledgerEntries={recalculatedEntries}
         totalCharged={totalCharged}
         totalPaid={totalPaid}
+        totalAdvanceUsed={totalAdvanceUsed}
+        advanceRemaining={remainingAdvance}
         closingBalance={closingBalance}
         onViewCustomerProfile={() => setCurrentSubView('viewCustomer')}
         onPayBalance={() => {
