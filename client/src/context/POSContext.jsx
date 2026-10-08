@@ -129,8 +129,9 @@ export function POSProvider({ children }) {
     posSyncVersion,
   });
 
-  // Wire remaining Buffalo stock & attribution resolution into ordersState
+  // Wire remaining stock & attribution resolution into ordersState
   ordersState.remainingFarmBuffaloMilk = metricsState.remainingFarmBuffaloMilk;
+  ordersState.remainingFarmMilk = metricsState.inventoryMetrics?.rawFarmMilkStock || 0;
   ordersState.resolveItemSourceAndRatios = metricsState.resolveItemSourceAndRatios;
 
   // Real-Time Event Sync Engine & Heartbeat

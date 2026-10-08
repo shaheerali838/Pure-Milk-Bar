@@ -1,21 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  DollarSign,
-  UserCheck,
-  Calendar,
-  CreditCard,
-  Building,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Users,
-  FileText,
-  Trash2,
-  Sparkles,
-  ArrowRight,
-  Receipt,
-  Wallet,
-} from 'lucide-react';
+import { Banknote, UserCheck, Calendar, CreditCard, Building, CheckCircle2, Clock, AlertCircle, Users, FileText, Trash2, Sparkles, ArrowRight, Receipt, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
 import { useExpense } from '@/context/ExpenseContext';
@@ -155,7 +139,7 @@ export default function SalaryPayment() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 font-display tracking-tight flex items-center gap-2">
-                <DollarSign className="w-6 h-6 text-purple-600" />
+                <Banknote className="w-6 h-6 text-purple-600" />
                 Staff Salary &amp; Payroll Disbursement
               </h1>
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
@@ -393,7 +377,7 @@ export default function SalaryPayment() {
                   : 'bg-purple-700 hover:bg-purple-800 active:scale-[0.98] text-white cursor-pointer disabled:opacity-50'
               }`}
             >
-              <DollarSign className="w-4 h-4" />
+              <Banknote className="w-4 h-4" />
               {isSubmitting
                 ? 'Recording...'
                 : selectedStaff && isStaffSalaryPaid && isStaffSalaryPaid(selectedStaff.id || selectedStaff._id)
@@ -421,7 +405,7 @@ export default function SalaryPayment() {
 
         {salaryPayments.length === 0 ? (
           <div className="p-8 text-center bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-            <DollarSign className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+            <Banknote className="w-10 h-10 text-slate-300 mx-auto mb-2" />
             <p className="text-xs font-bold text-slate-600">No Salary Payments Recorded Yet</p>
             <p className="text-[11px] text-slate-400 mt-0.5">
               Use the form above to disburse salary to your farm staff members.

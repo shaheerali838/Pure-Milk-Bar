@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import customerService from '../services/customerService.js';
+import { getPktTodayString, getDateRangeFromFilter } from '../utils/dateUtils.js';
 
 const CustomerContext = createContext();
+
 
 export const getCustomerDueBalance = (c) => {
   if (!c) return 0;
@@ -48,6 +50,19 @@ export function CustomerProvider({ children }) {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
+  const [dateFilter, setDateFilter] = useState('Today'); // 'Today' | 'Weekly' | 'Monthly' | 'Custom Range'
+  const [startDate, setStartDate] = useState(() => getPktTodayString());
+  const [endDate, setEndDate] = useState(() => getPktTodayString());
+
+  // Keep start and end dates synchronized when date filter changes
+  useEffect(() => {
+    if (dateFilter !== 'Custom Range') {
+      const range = getDateRangeFromFilter(dateFilter);
+      if (range.startDate !== undefined) setStartDate(range.startDate);
+      if (range.endDate !== undefined) setEndDate(range.endDate);
+    }
+  }, [dateFilter]);
+
 
   // Fetch live customer records from backend
   const fetchCustomers = useCallback(async () => {
@@ -278,6 +293,12 @@ export function CustomerProvider({ children }) {
         setSearchTerm,
         statusFilter,
         setStatusFilter,
+        dateFilter,
+        setDateFilter,
+        startDate,
+        setStartDate,
+        endDate,
+        setEndDate,
         addCustomer,
         updateCustomer,
         deleteCustomer,

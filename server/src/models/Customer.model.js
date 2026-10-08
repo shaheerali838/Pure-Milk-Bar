@@ -53,6 +53,11 @@ const customerSchema = new Schema(
       type: String,
       default: 'KHATA_DEBIT',
     },
+    advanceBalance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     khataBalance: {
       type: Number,
       default: 0,

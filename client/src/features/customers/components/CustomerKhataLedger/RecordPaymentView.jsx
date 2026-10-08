@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle2, DollarSign, ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Banknote, ArrowRight, Loader2 } from 'lucide-react';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -272,7 +272,7 @@ export default function RecordPaymentView({ customer, prefillAmount, onBack }) {
             </div>
           </div>
 
-          {totalDue > 0 && (
+          {enteredAmount > 0 && (
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs flex items-center justify-between">
               <div>
                 <span className="text-slate-400 text-[10px] uppercase font-bold block">Current Khata Due</span>
@@ -285,9 +285,11 @@ export default function RecordPaymentView({ customer, prefillAmount, onBack }) {
               </div>
               <ArrowRight className="w-4 h-4 text-slate-300" />
               <div>
-                <span className="text-slate-400 text-[10px] uppercase font-bold block">Remaining Due</span>
-                <span className={`font-bold tabular text-sm ${remainingBalance === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                  Rs. {remainingBalance.toLocaleString()}
+                <span className="text-slate-400 text-[10px] uppercase font-bold block">
+                  {enteredAmount > totalDue ? 'Surplus to Advance' : 'Remaining Due'}
+                </span>
+                <span className={`font-bold tabular text-sm ${enteredAmount > totalDue ? 'text-teal-700' : remainingBalance === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  Rs. {enteredAmount > totalDue ? (enteredAmount - totalDue).toLocaleString() : remainingBalance.toLocaleString()}
                 </span>
               </div>
             </div>

@@ -73,7 +73,7 @@ export default function PLCardOverflow({
       id: 'net_profit',
       title: isNetLoss ? 'Net Loss' : 'Net Profit',
       amount: isNetLoss
-        ? `-Rs. ${Math.abs(Math.round(netProfit)).toLocaleString()}`
+        ? `Rs. -${Math.abs(Math.round(netProfit)).toLocaleString()}`
         : fmt(netProfit),
       sub: isNetLoss
         ? `Loss: ${Math.abs(netMargin)}% • Rs. ${Math.abs(profitPerLiter)}/L Loss`

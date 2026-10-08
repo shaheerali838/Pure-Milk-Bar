@@ -1,34 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  ArrowLeft,
-  Edit,
-  Building2,
-  Phone,
-  MapPin,
-  Tag,
-  DollarSign,
-  Wallet,
-  Clock,
-  Droplets,
-  Calendar,
-  CreditCard,
-  CheckCircle2,
-  AlertCircle,
-  FileText,
-  Sun,
-  Moon,
-  Coins,
-  ChevronRight,
-  Filter,
-  Landmark,
-  Smartphone,
-  Receipt,
-  ArrowDownRight,
-  Check,
-  Copy,
-  PlusCircle,
-  BadgeCheck,
-} from 'lucide-react';
+import { ArrowLeft, Edit, Building2, Phone, MapPin, Tag, Banknote, Wallet, Clock, Droplets, Calendar, CreditCard, CheckCircle2, AlertCircle, FileText, Sun, Moon, Coins, ChevronRight, Filter, Landmark, Smartphone, Receipt, ArrowDownRight, Check, Copy, PlusCircle, BadgeCheck } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import IntakeDetail from '../intakeRegistor/IntakeDetail';
@@ -475,7 +446,7 @@ export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit 
 
           <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-200/70">
             <div className="flex items-center gap-1.5 text-blue-700 text-[10px] font-bold uppercase tracking-wider mb-1">
-              <DollarSign className="w-3.5 h-3.5" />
+              <Banknote className="w-3.5 h-3.5" />
               Gross Procurement
             </div>
             <p className="text-base font-black text-slate-900 font-mono">

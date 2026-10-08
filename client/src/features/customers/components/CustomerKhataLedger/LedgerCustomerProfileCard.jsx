@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 export default function LedgerCustomerProfileCard({
   customer,
   currentBalance,
+  advanceBalance: propAdvanceBalance,
   onEdit,
 }) {
   if (!customer) return null;
@@ -17,6 +18,11 @@ export default function LedgerCustomerProfileCard({
     currentBalance !== undefined && currentBalance !== null
       ? Number(currentBalance)
       : Number(customer.khataBalance ?? customer.currentBalance ?? 0);
+  const advanceBalance =
+    propAdvanceBalance !== undefined && propAdvanceBalance !== null
+      ? Number(propAdvanceBalance)
+      : Number(customer.advanceBalance || 0);
+
   const khataPercent = Math.min(
     100,
     Math.round((khataBalance / creditLimit) * 100),
@@ -95,8 +101,19 @@ export default function LedgerCustomerProfileCard({
             </div>
           </div>
 
-          {/* 3. Khata Due Balance & Mini Utilization Strip */}
+          {/* 3. Advance Left Chip & Khata Due Balance & Mini Utilization Strip */}
           <div className="flex items-center gap-3">
+            {advanceBalance > 0 && (
+              <div className="bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200">
+                <div className="text-[9px] font-bold text-teal-600 uppercase tracking-wider">
+                  Advance Left
+                </div>
+                <div className="text-xs font-bold font-mono text-teal-800">
+                  Rs. {advanceBalance.toLocaleString()}
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/70">
               <div className="text-right">
                 <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">

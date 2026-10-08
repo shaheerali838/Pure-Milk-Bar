@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useCustomerContext } from './CustomerContext';
 import api from '../services/api.js';
+import { isDateInFilterRange } from '../utils/dateUtils.js';
+import {
+  processBillAgainstAdvance,
+  processPaymentAgainstKhata,
+  recalculateCustomerStatementChronological,
+} from '../utils/khataAdvanceHelper';
+
 
 const LedgerContext = createContext();
 
@@ -112,15 +119,25 @@ export function normalizeLedgerEntry(entry) {
     remainingAmount = Math.max(0, numDebit - paidAmount);
   }
 
+  // Advance fields
+  const advanceUsed = Number(entry.advanceUsed || 0);
+  const advanceReceived = Number(entry.advanceReceived || 0);
+  const advanceBalanceAfter = entry.advanceBalanceAfter !== undefined ? Number(entry.advanceBalanceAfter) : undefined;
+  const khataAmount = entry.khataAmount !== undefined ? Number(entry.khataAmount) : undefined;
+
   // 5. Payment status badge
   let paymentStatus = 'Full Paid';
   if (isOpeningEntry) {
     paymentStatus = numDebit > 0 ? 'Opening Due' : 'Advance Deposit';
+  } else if (advanceUsed > 0 && (!khataAmount || khataAmount === 0)) {
+    paymentStatus = 'Paid from Advance';
+  } else if (advanceUsed > 0 && khataAmount > 0) {
+    paymentStatus = 'Partly from Advance';
   } else if (numCredit > 0) {
     paymentStatus = 'Payment Received';
   } else if (paidAmount > 0 && remainingAmount > 0) {
     paymentStatus = `Partial Paid (Rs. ${paidAmount.toLocaleString()})`;
-  } else if (remainingAmount > 0 || paymentMethod === 'Khata Credit') {
+  } else if (remainingAmount > 0 || paymentMethod === 'Khata Credit' || (khataAmount && khataAmount > 0)) {
     paymentStatus = 'Unpaid / Khata Due';
   }
 
@@ -149,6 +166,10 @@ export function normalizeLedgerEntry(entry) {
     isOpening: isOpeningEntry,
     debit: numDebit,
     credit: numCredit,
+    advanceUsed,
+    advanceReceived,
+    advanceBalanceAfter,
+    khataAmount,
     runningBalance: Number(entry.runningBalance) || 0,
     items,
     fulfillmentType,
@@ -214,7 +235,7 @@ export function LedgerProvider({ children }) {
       const normalized = rawEntries.map((e) => normalizeLedgerEntry(e));
 
       const customer = (customers || []).find((c) => String(c.id || c._id) === custId || String(c.id || c._id) === validObjectId);
-      const openingBal = Number(customer?.openingBalance || 0);
+      const openingBal = Number(customer?.openingBalance || customer?.advanceBalance || customer?.currentBalance || customer?.khataBalance || 0);
 
       let finalEntries = normalized;
       const hasOpeningEntry = finalEntries.some(
@@ -222,7 +243,12 @@ export function LedgerProvider({ children }) {
       );
 
       if (!hasOpeningEntry && openingBal > 0 && customer) {
-        const isAdvance = String(customer.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') || customer.openingPaymentMethod === 'CASH' || customer.openingPaymentMethod === 'ONLINE';
+        const isAdvance =
+          Number(customer.advanceBalance) > 0 ||
+          String(customer.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') ||
+          customer.openingPaymentMethod === 'CASH' ||
+          customer.openingPaymentMethod === 'ONLINE';
+
         finalEntries = [
           ...finalEntries,
           normalizeLedgerEntry({
@@ -236,6 +262,8 @@ export function LedgerProvider({ children }) {
             creditAmount: isAdvance ? openingBal : 0,
             debit: isAdvance ? 0 : openingBal,
             credit: isAdvance ? openingBal : 0,
+            advanceReceived: isAdvance ? openingBal : 0,
+            advanceBalanceAfter: isAdvance ? openingBal : 0,
             runningBalance: isAdvance ? 0 : openingBal,
             fulfillmentType: isAdvance ? 'Advance Deposit' : 'Opening Balance',
             paymentMethod: isAdvance ? 'Advance Cash' : 'Opening Balance',
@@ -246,13 +274,17 @@ export function LedgerProvider({ children }) {
         ];
       }
 
+      // Re-run chronological ledger calculation so advance deductions are perfectly aligned
+      const recalculated = recalculateCustomerStatementChronological(finalEntries, customer);
+      const computedEntries = recalculated.entries.map((e) => normalizeLedgerEntry(e));
+
       setLedgers((prev) => ({
         ...prev,
-        [custId]: finalEntries,
-        ...(validObjectId ? { [validObjectId]: finalEntries } : {}),
+        [custId]: computedEntries,
+        ...(validObjectId ? { [validObjectId]: computedEntries } : {}),
       }));
 
-      return finalEntries;
+      return computedEntries;
     } catch (err) {
       console.warn(`Failed to fetch ledger statement for customer ${custId}:`, err.message);
       return [];
@@ -305,14 +337,38 @@ export function LedgerProvider({ children }) {
     const numCredit = Number(credit) || 0;
 
     const currentStats = getCustomerCalculatedStats(custId);
-    const previousDue = currentStats.closingBalance;
-    const newRunningBalance = Math.max(0, previousDue + numDebit - numCredit);
+    const currentAdvance = currentStats.remainingAdvance;
+    const currentKhata = currentStats.closingBalance;
 
     const calculatedOrderTotal = orderTotal !== undefined ? Number(orderTotal) : (numDebit > 0 ? numDebit : numCredit);
-    const calculatedPaid = paidAmount !== undefined ? Number(paidAmount) : (numCredit > 0 ? numCredit : 0);
-    const calculatedRemaining = remainingAmount !== undefined ? Number(remainingAmount) : (numDebit > 0 ? Math.max(0, numDebit - calculatedPaid) : 0);
-
     const isOrderOrDebit = numDebit > 0 || (Array.isArray(items) && items.length > 0) || (orderTotal && Number(orderTotal) > 0);
+
+    let advanceUsed = 0;
+    let khataAmount = 0;
+    let advanceReceived = 0;
+    let newAdvanceBalance = currentAdvance;
+    let newKhataBalance = currentKhata;
+
+    if (isOrderOrDebit) {
+      const bill = calculatedOrderTotal > 0 ? calculatedOrderTotal : numDebit;
+      const calc = processBillAgainstAdvance(bill, currentAdvance, currentKhata);
+      advanceUsed = calc.advanceUsed;
+      khataAmount = calc.khataAmount;
+      newAdvanceBalance = calc.advanceBalanceAfter;
+      newKhataBalance = calc.newKhataBalance;
+    } else if (numCredit > 0) {
+      const isExplicitAdvance =
+        /advance/i.test(description || '') ||
+        /advance/i.test(paymentMethod || '') ||
+        /advance/i.test(method || '');
+      const calc = processPaymentAgainstKhata(numCredit, currentKhata, currentAdvance, isExplicitAdvance);
+      advanceReceived = calc.surplusAdvance;
+      newAdvanceBalance = calc.newAdvanceBalance;
+      newKhataBalance = calc.newKhataBalance;
+    }
+
+    const calculatedPaid = paidAmount !== undefined ? Number(paidAmount) : (numCredit > 0 ? numCredit : advanceUsed);
+    const calculatedRemaining = remainingAmount !== undefined ? Number(remainingAmount) : khataAmount;
 
     const newEntry = normalizeLedgerEntry({
       id: invoiceId || `txn-${Date.now()}`,
@@ -321,19 +377,25 @@ export function LedgerProvider({ children }) {
       type: isOrderOrDebit ? 'DEBIT' : 'CREDIT',
       debit: numDebit,
       credit: numCredit,
-      runningBalance: newRunningBalance,
+      advanceUsed,
+      khataAmount,
+      advanceReceived,
+      advanceBalanceAfter: newAdvanceBalance,
+      runningBalance: newKhataBalance,
       method: method === 'EasyPaisa' || method === 'JazzCash' ? 'Online Payment' : method,
       notes,
       items: Array.isArray(items) ? items : [],
       orderTotal: calculatedOrderTotal,
       paidAmount: calculatedPaid,
       remainingAmount: calculatedRemaining,
-      fulfillmentType: fulfillmentType || (isOrderOrDebit ? 'Walk-in Counter' : 'Payment Clearance'),
+      fulfillmentType: fulfillmentType || (isOrderOrDebit ? (advanceUsed > 0 && khataAmount === 0 ? 'Paid from Advance' : 'Walk-in Counter') : 'Payment Clearance'),
       paymentMethod: paymentMethod || method,
       invoiceId: invoiceId || undefined,
     });
 
-    const updatedLedger = [newEntry, ...existingEntries.filter((e) => e.id !== newEntry.id)];
+    const rawUpdated = [newEntry, ...existingEntries.filter((e) => e.id !== newEntry.id)];
+    const recalculated = recalculateCustomerStatementChronological(rawUpdated, customer);
+    const updatedLedger = recalculated.entries.map((e) => normalizeLedgerEntry(e));
 
     const isObjectId = (val) => typeof val === 'string' && /^[0-9a-fA-F]{24}$/.test(val);
     const validId = isObjectId(customer?._id || customer?.id || custId) ? String(customer?._id || customer?.id || custId) : null;
@@ -353,15 +415,15 @@ export function LedgerProvider({ children }) {
       updateCustomer(
         {
           ...customer,
-          khataBalance: newRunningBalance,
-          currentBalance: newRunningBalance,
+          advanceBalance: newAdvanceBalance,
+          khataBalance: newKhataBalance,
+          currentBalance: newKhataBalance,
         },
         true
       );
     }
 
     // Only post to api.finance.addKhataEntry if this is a MANUAL ledger entry (NOT from POS checkout)
-    // to prevent duplicate debit writes (since backend order.service already creates KhataEntry for POS orders)
     if (!isPosOrder && validId) {
       try {
         await api.finance.addKhataEntry({
@@ -383,7 +445,7 @@ export function LedgerProvider({ children }) {
           orderTotal: calculatedOrderTotal,
           paidAmount: calculatedPaid,
           remainingAmount: calculatedRemaining,
-          fulfillmentType,
+          fulfillmentType: newEntry.fulfillmentType,
           riderName: newEntry.riderName || null,
           deliveryAddress: newEntry.deliveryAddress || null,
         });
@@ -425,6 +487,9 @@ export function LedgerProvider({ children }) {
       type: 'CREDIT',
       debit: 0,
       credit: lastRunningBalance,
+      advanceUsed: 0,
+      advanceReceived: 0,
+      advanceBalanceAfter: customer?.advanceBalance || 0,
       runningBalance: 0,
       method: 'Online Payment',
       notes: 'All outstanding dues cleared',
@@ -472,11 +537,12 @@ export function LedgerProvider({ children }) {
   const getLedgerForCustomer = useCallback((customerId) => {
     if (!customerId) return [];
     const custId = String(customerId);
+    const customer = (customers || []).find((c) => String(c.id || c._id) === custId);
+
     if (ledgers[custId] && ledgers[custId].length > 0) {
       return ledgers[custId];
     }
 
-    const customer = (customers || []).find((c) => String(c.id || c._id) === custId);
     if (customer) {
       const altId1 = customer._id ? String(customer._id) : null;
       const altId2 = customer.id ? String(customer.id) : null;
@@ -488,16 +554,22 @@ export function LedgerProvider({ children }) {
       }
 
       const initialBal = Number(customer.openingBalance ?? customer.khataBalance ?? customer.currentBalance) || 0;
-      if (initialBal > 0) {
+      const isAdvance = String(customer.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') || customer.openingPaymentMethod === 'CASH' || customer.openingPaymentMethod === 'ONLINE';
+
+      if (initialBal > 0 || (customer.advanceBalance && customer.advanceBalance > 0)) {
+        const advBal = Number(customer.advanceBalance || (isAdvance ? initialBal : 0));
+        const dueBal = Number(customer.khataBalance ?? (isAdvance ? 0 : initialBal));
         return [
           normalizeLedgerEntry({
             id: `txn-${customer._id || customer.id || custId}-init`,
             date: customer.createdAt ? (typeof customer.createdAt === 'string' && customer.createdAt.includes('T') ? customer.createdAt.split('T')[0] : String(customer.createdAt).slice(0, 10)) : new Date().toISOString().split('T')[0],
-            description: 'Opening Balance',
+            description: isAdvance ? 'Opening Advance Deposit' : 'Opening Balance',
             type: 'OPENING',
-            debit: 0,
-            credit: 0,
-            runningBalance: initialBal,
+            debit: isAdvance ? 0 : dueBal,
+            credit: isAdvance ? advBal : 0,
+            advanceReceived: isAdvance ? advBal : 0,
+            advanceBalanceAfter: advBal,
+            runningBalance: dueBal,
             method: '-',
           }),
         ];
@@ -507,8 +579,44 @@ export function LedgerProvider({ children }) {
     return [];
   }, [customers, ledgers]);
 
+  const isDateInRange = (entryDateStr, dateFilter = 'All Time', startDate = '', endDate = '') => {
+    if (!dateFilter || dateFilter === 'All Time' || dateFilter === 'ALL') return true;
+    if (!entryDateStr) return false;
+    const entryDate = typeof entryDateStr === 'string' ? entryDateStr.slice(0, 10) : new Date(entryDateStr).toISOString().slice(0, 10);
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    if (dateFilter === 'Today' || dateFilter === 'TODAY') {
+      return entryDate === todayStr;
+    }
+
+    if (dateFilter === 'Weekly' || dateFilter === 'WEEKLY') {
+      const d = new Date();
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday
+      const monday = new Date(d.setDate(diff)).toISOString().slice(0, 10);
+      return entryDate >= monday && entryDate <= todayStr;
+    }
+
+    if (dateFilter === 'Monthly' || dateFilter === 'MONTHLY') {
+      const monthStart = todayStr.slice(0, 7) + '-01';
+      return entryDate >= monthStart && entryDate <= todayStr;
+    }
+
+    if (dateFilter === 'Custom Range' || dateFilter === 'CUSTOM') {
+      if (startDate && endDate) {
+        return entryDate >= startDate && entryDate <= endDate;
+      }
+      if (startDate) return entryDate >= startDate;
+      if (endDate) return entryDate <= endDate;
+      return true;
+    }
+
+    return true;
+  };
+
   const getCustomerCalculatedStats = useCallback(
-    (customerId) => {
+    (customerId, dateFilter = 'All Time', startDate = '', endDate = '') => {
       if (!customerId) {
         return {
           openingBalance: 0,
@@ -517,9 +625,17 @@ export function LedgerProvider({ children }) {
           totalCharged: 0,
           chargedCount: 0,
           totalPaid: 0,
+          totalAdvanceUsed: 0,
           paidCount: 0,
           closingBalance: 0,
           remainingAdvance: 0,
+          totalAdvanceDeposited: 0,
+          consumedAdvance: 0,
+          isAdvanceCustomer: false,
+          periodCharged: 0,
+          periodPaid: 0,
+          periodAdvanceDeposited: 0,
+          periodAdvanceUsed: 0,
         };
       }
 
@@ -527,28 +643,20 @@ export function LedgerProvider({ children }) {
       const customer = (customers || []).find((c) => String(c.id || c._id) === custId);
       const activeEntries = getLedgerForCustomer(customerId) || [];
 
-      let openingBalance = 0;
-      const openingEntry = activeEntries.find((e) => e.isOpening || e.type === 'OPENING');
+      // Run chronological recalculator to ensure single source of truth
+      const recalc = recalculateCustomerStatementChronological(activeEntries, customer || {});
+      const summary = recalc.summary;
+
+      const openingEntry = recalc.entries.find((e) => e.isOpening || e.type === 'OPENING');
       const isAdvanceOpening =
-        (openingEntry && Number(openingEntry.credit) > 0) ||
+        (openingEntry && Number(openingEntry.advanceReceived) > 0) ||
         String(customer?.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') ||
         /advance/i.test(openingEntry?.description || '') ||
         /advance/i.test(openingEntry?.fulfillmentType || '');
 
-      if (openingEntry) {
-        const rawVal = Number(
-          openingEntry.credit ||
-          openingEntry.debit ||
-          openingEntry.orderTotal ||
-          openingEntry.paidAmount ||
-          openingEntry.remainingAmount ||
-          customer?.openingBalance ||
-          0
-        );
-        openingBalance = rawVal;
-      } else if (customer && Number(customer.openingBalance || 0) > 0) {
-        openingBalance = Number(customer.openingBalance);
-      }
+      const openingBalance = openingEntry
+        ? Number(openingEntry.credit || openingEntry.debit || openingEntry.orderTotal || customer?.openingBalance || 0)
+        : Number(customer?.openingBalance || 0);
 
       const openingDate = openingEntry
         ? openingEntry.date
@@ -556,126 +664,129 @@ export function LedgerProvider({ children }) {
         ? String(customer.createdAt).slice(0, 10)
         : '';
 
-      const purchaseEntries = activeEntries.filter(
+      const purchaseEntries = recalc.entries.filter(
         (e) => !e.isOpening && e.type !== 'OPENING' && !/opening/i.test(e.description || '')
       );
-      const totalCharged = purchaseEntries.reduce((acc, e) => {
-        return (
-          acc +
-          Number(
-            e.debit ||
-              e.orderTotal ||
-              (e.items?.length > 0 ? e.items.reduce((s, it) => s + Number(it.subtotal || 0), 0) : 0)
-          )
-        );
-      }, 0);
       const chargedCount = purchaseEntries.length;
 
-      const paymentEntries = activeEntries.filter(
+      const paymentEntries = recalc.entries.filter(
         (e) =>
           !e.isOpening &&
           e.type !== 'OPENING' &&
           !/opening/i.test(e.description || '') &&
           Number(e.credit) > 0
       );
-      const totalPayments = paymentEntries.reduce((acc, e) => acc + (Number(e.credit) || 0), 0);
       const paidCount = paymentEntries.length;
 
-      const effectiveDebits = totalCharged + (!isAdvanceOpening ? openingBalance : 0);
+      const remainingAdvance = summary.advanceRemaining !== undefined ? summary.advanceRemaining : Number(customer?.advanceBalance || 0);
+      const closingBalance = summary.closingDueBalance !== undefined ? summary.closingDueBalance : Number(customer?.khataBalance ?? customer?.currentBalance ?? 0);
+      const totalAdvanceUsed = summary.totalAdvanceUsed || 0;
+      const totalAdvanceDeposited = summary.totalAdvanceDeposited || 0;
+      const totalCharged = summary.totalDebits || 0;
+      const totalPaid = summary.totalCredits || 0;
 
-      // 1. Advance deposits breakdown (strict check: opening balance must be > 0 if isAdvanceOpening)
-      const initialAdvance = (isAdvanceOpening && openingBalance > 0) ? openingBalance : 0;
-      const advanceDepositPayments = paymentEntries
-        .filter((e) => /advance/i.test(e.description || '') || /advance/i.test(e.paymentMethod || ''))
-        .reduce((sum, e) => sum + (Number(e.credit) || 0), 0);
-      const totalAdvanceDeposited = initialAdvance + advanceDepositPayments;
+      // Period-specific activity calculation based on date filter
+      const isFiltered = Boolean(dateFilter && dateFilter !== 'All Time' && dateFilter !== 'ALL');
+      let periodCharged = 0;
+      let periodPaid = 0;
+      let periodAdvanceDeposited = 0;
+      let periodAdvanceUsed = 0;
+      let periodDue = 0;
 
-      // 2. Regular repayments for orders / khata dues
-      const regularRepayments = paymentEntries
-        .filter((e) => !/advance/i.test(e.description || '') && !/advance/i.test(e.paymentMethod || ''))
-        .reduce((sum, e) => sum + (Number(e.credit) || 0), 0);
+      recalc.entries.forEach((entry) => {
+        const entryDate = entry.date || entry.createdAt;
+        if (!isDateInFilterRange(entryDate, dateFilter, startDate, endDate)) return;
 
-      // 3. Total gross payments recorded (cash inflow)
-      const totalPaid = totalPayments + initialAdvance;
+        if (!entry.isOpening && entry.type !== 'OPENING') {
+          const deb = Number(entry.debitAmount !== undefined ? entry.debitAmount : (entry.debit || 0));
+          const cred = Number(entry.creditAmount !== undefined ? entry.creditAmount : (entry.credit || 0));
+          const advU = Number(entry.advanceUsed || 0);
+          const advR = Number(entry.advanceReceived || 0);
+          const duePortion = Number(entry.duePortion !== undefined ? entry.duePortion : Math.max(0, deb - advU));
 
-      // 4. Closing dues balance
-      let closingBalance = 0;
-      if (activeEntries.length > 0) {
-        closingBalance = Math.max(0, effectiveDebits - totalPaid);
-      } else if (customer) {
-        closingBalance = Number(
-          customer.khataBalance ?? customer.currentBalance ?? (isAdvanceOpening ? 0 : openingBalance)
-        );
-      }
+          periodCharged += deb;
+          periodPaid += cred;
+          periodAdvanceUsed += advU;
+          periodAdvanceDeposited += advR;
+          periodDue += duePortion;
+        } else if (entry.isOpening) {
+          if (entry.advanceReceived) periodAdvanceDeposited += Number(entry.advanceReceived);
+          if (entry.debit) periodDue += Number(entry.debit);
+        }
+      });
 
-      // 5. Advance consumption & remaining balances
-      const consumedAdvance = Math.max(0, Math.min(totalAdvanceDeposited, totalCharged));
-      const remainingAdvance = Math.max(0, totalPaid - effectiveDebits);
-
-      // 6. Realized payments collected (Earned revenue: Consumed advance + regular bill repayments)
-      // Unearned advance deposit does NOT enter realized payments until items are purchased!
-      const realizedPaid = consumedAdvance + regularRepayments;
-
-      const isAdvanceCustomer = totalAdvanceDeposited > 0 || (isAdvanceOpening && openingBalance > 0) || remainingAdvance > 0;
+      const isAdvanceCustomer = totalAdvanceDeposited > 0 || remainingAdvance > 0 || (isAdvanceOpening && openingBalance > 0);
 
       return {
         openingBalance,
         openingDate,
         isAdvanceOpening,
-        totalCharged,
+        totalCharged: isFiltered ? periodCharged : totalCharged,
         chargedCount,
-        totalPaid,
-        realizedPaid,
+        totalPaid: isFiltered ? periodPaid : totalPaid,
+        totalAdvanceUsed: isFiltered ? periodAdvanceUsed : totalAdvanceUsed,
+        realizedPaid: isFiltered ? periodPaid : totalPaid,
         paidCount,
         closingBalance,
         totalAdvanceDeposited,
         remainingAdvance,
-        consumedAdvance,
+        consumedAdvance: totalAdvanceUsed,
         isAdvanceCustomer,
+        periodCharged,
+        periodPaid,
+        periodAdvanceDeposited,
+        periodAdvanceUsed,
+        periodDue,
       };
     },
-    [customers, ledgers]
+    [customers, getLedgerForCustomer]
   );
 
-  const getAllCustomersAggregates = useCallback(() => {
-    let totalAllDue = 0;
-    let totalAllPaid = 0;
-    let totalAllCharged = 0;
-    let totalAllAdvanceReceived = 0;
-    let totalRemainingAdvance = 0;
-    let totalConsumedAdvance = 0;
-    let khataAccountsCount = 0;
-    let advanceAccountsCount = 0;
+  const getAllCustomersAggregates = useCallback(
+    (dateFilter = 'Today', startDate = '', endDate = '') => {
+      const isFiltered = Boolean(dateFilter && dateFilter !== 'All Time' && dateFilter !== 'ALL');
+      let totalAllDue = 0;
+      let totalAllPaid = 0;
+      let totalAllCharged = 0;
+      let totalAllAdvanceReceived = 0;
+      let totalRemainingAdvance = 0;
+      let totalConsumedAdvance = 0;
+      let khataAccountsCount = 0;
+      let advanceAccountsCount = 0;
 
-    (customers || []).forEach((c) => {
-      const stats = getCustomerCalculatedStats(c.id || c._id);
-      totalAllDue += stats.closingBalance;
-      totalAllPaid += stats.realizedPaid;
-      totalAllCharged += stats.totalCharged;
-      totalAllAdvanceReceived += stats.totalAdvanceDeposited;
-      totalRemainingAdvance += stats.remainingAdvance;
-      totalConsumedAdvance += stats.consumedAdvance;
+      (customers || []).forEach((c) => {
+        const stats = getCustomerCalculatedStats(c.id || c._id, dateFilter, startDate, endDate);
+        const dueVal = isFiltered ? stats.periodDue : stats.closingBalance;
+        totalAllDue += dueVal;
+        totalAllPaid += (isFiltered ? stats.periodPaid : stats.totalPaid);
+        totalAllCharged += (isFiltered ? stats.periodCharged : stats.totalCharged);
+        totalAllAdvanceReceived += stats.totalAdvanceDeposited;
+        totalRemainingAdvance += stats.remainingAdvance;
+        totalConsumedAdvance += stats.totalAdvanceUsed;
 
-      if (stats.closingBalance > 0) {
-        khataAccountsCount += 1;
-      }
-      if (stats.isAdvanceCustomer) {
-        advanceAccountsCount += 1;
-      }
-    });
+        if (dueVal > 0) {
+          khataAccountsCount += 1;
+        }
+        if (stats.isAdvanceCustomer) {
+          advanceAccountsCount += 1;
+        }
+      });
 
-    return {
-      totalAllDue,
-      totalAllPaid,
-      totalAllCharged,
-      totalAllAdvanceReceived,
-      totalRemainingAdvance,
-      totalConsumedAdvance,
-      khataAccountsCount,
-      advanceAccountsCount,
-      totalCustomersCount: (customers || []).length,
-    };
-  }, [customers, getCustomerCalculatedStats]);
+      return {
+        totalAllDue,
+        totalAllPaid,
+        totalAllCharged,
+        totalAllAdvanceReceived,
+        totalRemainingAdvance,
+        totalConsumedAdvance,
+        khataAccountsCount,
+        advanceAccountsCount,
+        totalCustomersCount: (customers || []).length,
+      };
+    },
+    [customers, getCustomerCalculatedStats]
+  );
+
 
   return (
     <LedgerContext.Provider

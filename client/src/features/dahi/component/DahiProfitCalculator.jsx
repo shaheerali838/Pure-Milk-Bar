@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, Sparkles, TrendingUp, ArrowRight, DollarSign, Scale, Milk } from 'lucide-react';
+import { Calculator, Sparkles, TrendingUp, ArrowRight, Banknote, Scale, Milk } from 'lucide-react';
 import { useDahiContext } from '@/context/DahiContext';
 
 export default function DahiProfitCalculator() {

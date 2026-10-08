@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Calendar, DollarSign, FileText, CheckCircle2, ArrowUpRight, ShoppingBag, Truck, Store, CreditCard, ShieldCheck } from 'lucide-react';
+import { X, Calendar, Banknote, FileText, CheckCircle2, ArrowUpRight, ShoppingBag, Truck, Store, CreditCard, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { normalizeLedgerEntry } from '@/context/LedgerContext';
 

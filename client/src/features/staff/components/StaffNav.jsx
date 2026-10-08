@@ -1,113 +1,50 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  Users,
-  CheckSquare,
-  FileSpreadsheet,
-  DollarSign,
-} from 'lucide-react';
+import { LayoutDashboard, Users, CheckSquare, FileSpreadsheet, Banknote } from 'lucide-react';
+import SubNav from '../../../components/common/SubNav';
 
 export const STAFF_NAV_TABS = [
   {
     id: 'dashboard',
     to: '/staff',
-    aliasTo: '/staff/dashboard',
+    aliasTo: ['/staff/dashboard', '/finance/staff'],
     label: 'Dashboard',
     icon: LayoutDashboard,
-    color: '#1a2340', // Dark Navy
+    color: '#1a2340',
   },
   {
     id: 'manage',
     to: '/staff/manage',
-    aliasTo: '/staff/add',
+    aliasTo: ['/staff/add', '/finance/staff/manage'],
     label: 'Add / Manage Staff',
     icon: Users,
-    color: '#009966', // Green
+    color: '#009966',
   },
   {
     id: 'attendance',
     to: '/staff/attendance',
+    aliasTo: ['/finance/staff/attendance'],
     label: 'Attendance',
     icon: CheckSquare,
-    color: '#155dfc', // Blue
+    color: '#155dfc',
   },
   {
     id: 'salary',
     to: '/staff/salary',
-    aliasTo: '/staff/payroll',
+    aliasTo: ['/staff/payroll', '/finance/staff/salary'],
     label: 'Salary Payment',
-    icon: DollarSign,
-    color: '#7c3aed', // Purple
+    icon: Banknote,
+    color: '#7c3aed',
   },
   {
     id: 'dailysheet',
     to: '/staff/dailysheet',
-    aliasTo: '/staff/daily-sheet',
+    aliasTo: ['/staff/daily-sheet', '/finance/staff/dailysheet', '/finance/staff/daily-sheet'],
     label: 'Daily Sheet',
     icon: FileSpreadsheet,
-    color: '#d97706', // Orange
+    color: '#d97706',
   },
 ];
 
 export default function StaffNav() {
-  const { pathname } = useLocation();
-
-  return (
-    <div className="w-full overflow-x-auto no-scrollbar py-1">
-      <div className="flex items-center gap-1.5 sm:gap-2 min-w-max">
-        {STAFF_NAV_TABS.map(({ id, to, aliasTo, label, icon: Icon, color }) => {
-          let isActive = false;
-
-          if (id === 'dashboard') {
-            isActive =
-              pathname === '/staff' ||
-              pathname === '/staff/' ||
-              pathname === '/staff/dashboard' ||
-              pathname === '/finance/staff' ||
-              pathname === '/finance/staff/';
-          } else if (id === 'manage') {
-            isActive =
-              pathname.startsWith('/staff/manage') ||
-              pathname.startsWith('/staff/add') ||
-              pathname.startsWith('/finance/staff/manage');
-          } else if (id === 'attendance') {
-            isActive =
-              pathname.startsWith('/staff/attendance') ||
-              pathname.startsWith('/finance/staff/attendance');
-          } else if (id === 'salary') {
-            isActive =
-              pathname.startsWith('/staff/salary') ||
-              pathname.startsWith('/staff/payroll') ||
-              pathname.startsWith('/finance/staff/salary');
-          } else if (id === 'dailysheet') {
-            isActive =
-              pathname.startsWith('/staff/dailysheet') ||
-              pathname.startsWith('/staff/daily-sheet') ||
-              pathname.startsWith('/finance/staff/dailysheet') ||
-              pathname.startsWith('/finance/staff/daily-sheet');
-          }
-
-          return (
-            <NavLink
-              key={id}
-              to={to}
-              className="flex items-center justify-center gap-2 px-4 h-9.5 sm:h-10 rounded-full whitespace-nowrap shrink-0 transition-all duration-150 hover:brightness-110 cursor-pointer select-none"
-              style={{
-                background: isActive ? color : `${color}dd`,
-                border: isActive
-                  ? '2px solid rgba(255, 255, 255, 0.45)'
-                  : '2px solid transparent',
-              }}
-            >
-              <Icon className="w-4 h-4 shrink-0 text-white" />
-              <span className="text-xs sm:text-[13px] font-bold text-white leading-none tracking-tight">
-                {label}
-              </span>
-            </NavLink>
-          );
-        })}
-      </div>
-    </div>
-  );
+  return <SubNav tabs={STAFF_NAV_TABS} />;
 }

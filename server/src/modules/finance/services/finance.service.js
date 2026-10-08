@@ -5,6 +5,11 @@ import Expense from '../../../models/Expense.model.js';
 import User from '../../../models/User.model.js';
 import SalaryPayment from '../../../models/SalaryPayment.model.js';
 import Staff from '../../../models/Staff.model.js';
+import {
+  processBillAgainstAdvance,
+  processPaymentAgainstKhata,
+  recalculateCustomerStatementChronological,
+} from '../../../utils/khataAdvanceHelper.js';
 
 
 const generateKhataVoucher = () => {
@@ -52,21 +57,53 @@ export const addKhataEntryService = async (data, userId) => {
       throw error;
     }
 
-    const previousBalance = customer.currentBalance || 0;
-    let newBalance = previousBalance;
+    let advanceUsed = 0;
+    let khataAmount = 0;
+    let advanceReceived = 0;
+    let advanceBalanceAfter = customer.advanceBalance || 0;
+    let newKhataBalance = customer.khataBalance || customer.currentBalance || 0;
 
     if (txType === 'DEBIT') {
-      newBalance = previousBalance + entryAmount;
+      const billRes = processBillAgainstAdvance(
+        entryAmount,
+        customer.advanceBalance || 0,
+        customer.khataBalance || 0
+      );
+      advanceUsed = billRes.advanceUsed;
+      khataAmount = billRes.khataAmount;
+      advanceBalanceAfter = billRes.advanceBalanceAfter;
+      newKhataBalance = billRes.newKhataBalance;
 
-      if (customer.creditLimit > 0 && newBalance > customer.creditLimit) {
+      if (customer.creditLimit > 0 && newKhataBalance > customer.creditLimit) {
         const error = new Error(
-          `Credit limit exceeded. Current balance (${previousBalance} PKR) + Debit (${entryAmount} PKR) exceeds limit of ${customer.creditLimit} PKR`
+          `Credit limit exceeded. Current dues (${customer.khataBalance || 0} PKR) + Khata Portion (${khataAmount} PKR) exceeds limit of ${customer.creditLimit} PKR`
         );
         error.statusCode = 400;
         throw error;
       }
+
+      customer.advanceBalance = advanceBalanceAfter;
+      customer.khataBalance = newKhataBalance;
+      customer.currentBalance = newKhataBalance;
     } else if (txType === 'CREDIT') {
-      newBalance = Math.max(0, previousBalance - entryAmount);
+      const isExplicitAdvance =
+        /advance/i.test(description || '') ||
+        /advance/i.test(paymentMethod || '') ||
+        /advance/i.test(data.fulfillmentType || '');
+
+      const payRes = processPaymentAgainstKhata(
+        entryAmount,
+        customer.khataBalance || customer.currentBalance || 0,
+        customer.advanceBalance || 0,
+        isExplicitAdvance
+      );
+      advanceReceived = payRes.surplusAdvance;
+      advanceBalanceAfter = payRes.newAdvanceBalance;
+      newKhataBalance = payRes.newKhataBalance;
+
+      customer.advanceBalance = advanceBalanceAfter;
+      customer.khataBalance = newKhataBalance;
+      customer.currentBalance = newKhataBalance;
     }
 
     const voucherNumber = generateKhataVoucher();
@@ -78,21 +115,23 @@ export const addKhataEntryService = async (data, userId) => {
       description: (description || '').trim(),
       debitAmount: txType === 'DEBIT' ? entryAmount : 0,
       creditAmount: txType === 'CREDIT' ? entryAmount : 0,
-      runningBalance: newBalance,
+      advanceUsed,
+      khataAmount,
+      advanceBalanceAfter,
+      advanceReceived,
+      runningBalance: newKhataBalance,
       paymentMethod: paymentMethod ? paymentMethod.toUpperCase() : (txType === 'CREDIT' ? 'CASH' : null),
       referenceTransactionId: referenceTransactionId || null,
       items: Array.isArray(data.items) ? data.items : [],
       orderTotal: Number(data.orderTotal ?? (txType === 'DEBIT' ? entryAmount : 0)),
-      paidAmount: Number(data.paidAmount ?? (txType === 'CREDIT' ? entryAmount : 0)),
-      remainingAmount: Number(data.remainingAmount ?? (txType === 'DEBIT' ? entryAmount : 0)),
-      fulfillmentType: data.fulfillmentType || null,
+      paidAmount: Number(data.paidAmount ?? (txType === 'DEBIT' ? advanceUsed : entryAmount)),
+      remainingAmount: Number(data.remainingAmount ?? (txType === 'DEBIT' ? khataAmount : 0)),
+      fulfillmentType: data.fulfillmentType || (advanceUsed > 0 && khataAmount === 0 ? 'Advance Deduction' : null),
       riderName: data.riderName || null,
       deliveryAddress: data.deliveryAddress || null,
       cashierId: userId,
     });
 
-    customer.currentBalance = newBalance;
-    customer.khataBalance = newBalance;
     await customer.save();
 
     return {
@@ -101,8 +140,9 @@ export const addKhataEntryService = async (data, userId) => {
         id: customer._id,
         name: customer.name,
         code: customer.code,
-        previousBalance,
-        currentBalance: newBalance,
+        advanceBalance: customer.advanceBalance,
+        khataBalance: customer.khataBalance,
+        currentBalance: customer.currentBalance,
         creditLimit: customer.creditLimit,
       },
     };
@@ -112,94 +152,109 @@ export const addKhataEntryService = async (data, userId) => {
 };
 
 export const getCustomerStatementService = async (customerId, queryParams) => {
-  const { startDate, endDate, page = 1, limit = 50 } = queryParams;
+  const { startDate, endDate, page = 1, limit = 100 } = queryParams;
 
-  const customer = await Customer.findById(customerId);
+  let customer = null;
+  if (/^[0-9a-fA-F]{24}$/.test(String(customerId))) {
+    customer = await Customer.findById(customerId);
+  }
+  if (!customer) {
+    customer = await Customer.findOne({ $or: [{ code: customerId }, { phone: customerId }, { name: customerId }] });
+  }
+
   if (!customer) {
     const error = new Error('Customer not found');
     error.statusCode = 404;
     throw error;
   }
 
-  const query = { customerId };
+  // Fetch all transactions for this customer to ensure chronological accuracy
+  let allEntries = await KhataEntry.find({ customerId: customer._id })
+    .populate('cashierId', 'name username role')
+    .lean();
+
+  const openingBal = Number(customer?.openingBalance || customer?.advanceBalance || customer?.currentBalance || customer?.khataBalance || 0);
+  const hasOpeningEntry = allEntries.some(
+    (e) => e.isOpening || e.type === 'OPENING' || /opening/i.test(e.description || '') || /^KV-OP-/i.test(e.voucherNumber || '')
+  );
+
+  if (!hasOpeningEntry && openingBal > 0) {
+    const isAdvance =
+      Number(customer.advanceBalance) > 0 ||
+      String(customer.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') ||
+      customer.openingPaymentMethod === 'CASH' ||
+      customer.openingPaymentMethod === 'ONLINE';
+
+    allEntries.unshift({
+      voucherNumber: `KV-OP-${customer.code || customer._id}`,
+      date: customer.createdAt ? new Date(customer.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      description: isAdvance ? 'Customer Account Initial Advance Deposit' : 'Customer Account Opening Balance',
+      transactionType: isAdvance ? 'CREDIT' : 'DEBIT',
+      debitAmount: isAdvance ? 0 : openingBal,
+      creditAmount: isAdvance ? openingBal : 0,
+      debit: isAdvance ? 0 : openingBal,
+      credit: isAdvance ? openingBal : 0,
+      advanceReceived: isAdvance ? openingBal : 0,
+      advanceBalanceAfter: isAdvance ? openingBal : 0,
+      runningBalance: isAdvance ? 0 : openingBal,
+      isOpening: true,
+      fulfillmentType: isAdvance ? 'Advance Deposit' : 'Opening Balance',
+      paymentMethod: isAdvance ? 'Advance Cash' : 'Opening Balance',
+      orderTotal: openingBal,
+      paidAmount: isAdvance ? openingBal : 0,
+      remainingAmount: isAdvance ? 0 : openingBal,
+    });
+  }
+
+  const { entries: computedChronological, summary } = recalculateCustomerStatementChronological(allEntries, customer);
+
+  // Sync customer's stored balances if needed
+  if (
+    customer.khataBalance !== summary.closingDueBalance ||
+    customer.currentBalance !== summary.closingDueBalance ||
+    customer.advanceBalance !== summary.advanceRemaining
+  ) {
+    customer.khataBalance = summary.closingDueBalance;
+    customer.currentBalance = summary.closingDueBalance;
+    customer.advanceBalance = summary.advanceRemaining;
+    await Customer.findByIdAndUpdate(customer._id, {
+      khataBalance: summary.closingDueBalance,
+      currentBalance: summary.closingDueBalance,
+      advanceBalance: summary.advanceRemaining,
+    });
+  }
+
+  // Filter by date if requested
+  let filtered = [...computedChronological].reverse(); // Newest first for view
 
   if (startDate || endDate) {
-    query.date = {};
-    if (startDate) query.date.$gte = new Date(startDate);
-    if (endDate) {
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      query.date.$lte = end;
-    }
+    filtered = filtered.filter((e) => {
+      const eDate = new Date(e.date || e.createdAt);
+      if (startDate && eDate < new Date(startDate)) return false;
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        if (eDate > end) return false;
+      }
+      return true;
+    });
   }
 
   const pageNum = Math.max(1, parseInt(page, 10));
   const limitNum = Math.max(1, Math.min(200, parseInt(limit, 10)));
   const skip = (pageNum - 1) * limitNum;
-
-  const [entries, totalCount] = await Promise.all([
-    KhataEntry.find(query)
-      .sort({ date: -1, _id: -1 })
-      .skip(skip)
-      .limit(limitNum)
-      .populate('cashierId', 'name username role'),
-    KhataEntry.countDocuments(query),
-  ]);
-
-  const totalsAggregation = await KhataEntry.aggregate([
-    { $match: { customerId: customer._id } },
-    {
-      $group: {
-        _id: null,
-        totalDebit: { $sum: '$debitAmount' },
-        totalCredit: { $sum: '$creditAmount' },
-      },
-    },
-  ]);
-
-  const allTotals = totalsAggregation[0] || { totalDebit: 0, totalCredit: 0 };
-  const openingBal = Number(customer.openingBalance || 0);
-  const isAdvance = String(customer.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') || customer.openingPaymentMethod === 'CASH' || customer.openingPaymentMethod === 'ONLINE';
-
-  const hasOpeningEntry = await KhataEntry.exists({
-    customerId: customer._id,
-    $or: [{ voucherNumber: { $regex: /^KV-OP-/i } }, { referenceTransactionId: { $regex: /^OP-/i } }],
-  });
-
-  let calculatedBalance = 0;
-  if (hasOpeningEntry) {
-    calculatedBalance = Math.max(0, allTotals.totalDebit - allTotals.totalCredit);
-  } else {
-    const initialDebit = isAdvance ? 0 : openingBal;
-    const initialCredit = isAdvance ? openingBal : 0;
-    calculatedBalance = Math.max(0, initialDebit + allTotals.totalDebit - (initialCredit + allTotals.totalCredit));
-  }
-
-  if (customer.currentBalance !== calculatedBalance || customer.khataBalance !== calculatedBalance) {
-    customer.currentBalance = calculatedBalance;
-    customer.khataBalance = calculatedBalance;
-    await Customer.findByIdAndUpdate(customer._id, {
-      currentBalance: calculatedBalance,
-      khataBalance: calculatedBalance,
-    });
-  }
-
-  const periodSummary = totalsAggregation[0] || { totalDebit: 0, totalCredit: 0 };
+  const paginatedEntries = filtered.slice(skip, skip + limitNum);
 
   return {
     customer,
-    summary: {
-      totalDebit: periodSummary.totalDebit,
-      totalCredit: periodSummary.totalCredit,
-      netBalance: calculatedBalance,
-    },
-    entries,
+    entries: paginatedEntries,
     pagination: {
-      total: totalCount,
+      total: filtered.length,
       page: pageNum,
       limit: limitNum,
-      totalPages: Math.ceil(totalCount / limitNum),
+      totalPages: Math.ceil(filtered.length / limitNum),
     },
+    summary,
   };
 };
 

@@ -1,24 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  FileText,
-  Calendar,
-  Download,
-  Printer,
-  Lock,
-  CheckCircle2,
-  Clock,
-  DollarSign,
-  Users,
-  MapPin,
-  Sun,
-  Sunset,
-  Moon,
-  Edit3,
-  Check,
-  Briefcase,
-  AlertCircle,
-  Truck,
-} from 'lucide-react';
+import { FileText, Calendar, Download, Printer, Lock, CheckCircle2, Clock, Banknote, Users, MapPin, Sun, Sunset, Moon, Edit3, Check, Briefcase, AlertCircle, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
 import { exportTableToCSV } from '@/utils/csvExport';
@@ -518,7 +499,7 @@ export default function StaffDailySheet() {
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
               style={{ background: '#10b98115' }}
             >
-              <DollarSign style={{ width: 16, height: 16, color: '#10b981' }} />
+              <Banknote style={{ width: 16, height: 16, color: '#10b981' }} />
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-emerald-700 bg-emerald-50 border border-emerald-200">
               Payout

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, User, MapPin, PackageOpen, Bike, CreditCard, DollarSign } from 'lucide-react';
+import { Eye, User, MapPin, PackageOpen, Bike, CreditCard, Banknote } from 'lucide-react';
 import {
   Table,
   TableBody,

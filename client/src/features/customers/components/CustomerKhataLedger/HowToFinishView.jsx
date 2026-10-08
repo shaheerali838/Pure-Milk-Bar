@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, CheckCircle2, ShieldCheck, DollarSign, BookOpen } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ShieldCheck, Banknote, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 

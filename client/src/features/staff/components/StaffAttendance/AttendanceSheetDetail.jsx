@@ -1,21 +1,5 @@
 import React, { useState } from 'react';
-import {
-  ArrowLeft,
-  X,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  DollarSign,
-  TrendingUp,
-  Truck,
-  Users,
-  Printer,
-  Download,
-  CheckCheck,
-  UserCheck,
-  MapPin,
-} from 'lucide-react';
+import { ArrowLeft, X, Calendar, CheckCircle2, Clock, XCircle, Banknote, TrendingUp, Truck, Users, Printer, Download, CheckCheck, UserCheck, MapPin } from 'lucide-react';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
 
 export default function AttendanceSheetDetail({ staff, isOpen, onClose, onBack, initialDate }) {
@@ -366,7 +350,7 @@ export default function AttendanceSheetDetail({ staff, isOpen, onClose, onBack, 
                   className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
                   style={{ background: '#3b82f615' }}
                 >
-                  <DollarSign style={{ width: 14, height: 14, color: '#3b82f6' }} />
+                  <Banknote style={{ width: 14, height: 14, color: '#3b82f6' }} />
                 </div>
                 <span className="text-[9px] font-bold px-2 py-0.5 rounded text-blue-700 bg-blue-50 border border-blue-200">
                   Wage

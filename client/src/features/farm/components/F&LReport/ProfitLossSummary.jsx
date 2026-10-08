@@ -240,7 +240,7 @@ export default function ProfitLossSummary({
               isNetLoss ? 'text-rose-200' : isProfitable ? 'text-emerald-300' : 'text-slate-200'
             }`}>
               {isNetLoss
-                ? `-Rs. ${Math.abs(Math.round(netEarnings)).toLocaleString()}`
+                ? `Rs. -${Math.abs(Math.round(netEarnings)).toLocaleString()}`
                 : `Rs. ${Math.round(netEarnings).toLocaleString()}`}
             </p>
             <div className="flex items-center justify-end gap-2 mt-0.5">

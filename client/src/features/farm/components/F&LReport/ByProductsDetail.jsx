@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Sparkles, TrendingUp, DollarSign, Leaf, Recycle } from 'lucide-react';
+import { ArrowLeft, Sparkles, TrendingUp, Banknote, Leaf, Recycle } from 'lucide-react';
 
 export default function ByProductsDetail({ data, onClose, onBack }) {
   const handleBack = onBack || onClose;

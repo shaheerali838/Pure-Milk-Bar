@@ -1,15 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  X,
-  DollarSign,
-  Calendar,
-  CreditCard,
-  UserCheck,
-  AlertCircle,
-  CheckCircle2,
-  Receipt,
-  RotateCcw,
-} from 'lucide-react';
+import { X, Banknote, Calendar, CreditCard, UserCheck, AlertCircle, CheckCircle2, Receipt, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
 import { useExpense } from '@/context/ExpenseContext';
@@ -124,7 +114,7 @@ export default function SalaryPaymentModal({ staff, isOpen, onClose, onSuccess }
         <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shadow-xs">
-              <DollarSign className="w-4 h-4" />
+              <Banknote className="w-4 h-4" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 font-display">
@@ -390,7 +380,7 @@ export default function SalaryPaymentModal({ staff, isOpen, onClose, onSuccess }
                   : 'bg-purple-700 hover:bg-purple-800 active:scale-[0.98] text-white disabled:opacity-50'
               }`}
             >
-              <DollarSign className="w-4 h-4" />
+              <Banknote className="w-4 h-4" />
               {isSubmitting ? 'Recording...' : isAlreadyPaid ? 'Already Paid' : 'Confirm Payment'}
             </button>
           </div>

@@ -1,8 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Beef, Droplets, Activity, TrendingUp, TrendingDown } from 'lucide-react';
-import { PKRIcon } from '@/components/common/PKRIcon';
-import { useExpense } from '../../../../context/ExpenseContext';
+import { Beef, Droplets, Activity, TrendingUp, TrendingDown, ChevronRight, Banknote } from 'lucide-react';
 import { usePOSContext } from '../../../../context/POSContext';
 
 export default function FarmCardOverflow({ 
@@ -13,15 +11,15 @@ export default function FarmCardOverflow({
   availableFarmStock = null,
   avgAnimalYield = 0, 
   dailyNetProfit = 0, 
-  monthlyNetProfit = 0,
   todayFarmRevenue = 0,
+  totalFarmExpense = 0,
+  expenseCount = 0,
+  timeRange = 'today',
 }) {
   const navigate = useNavigate();
-  const { totals, expenses = [] } = useExpense();
   const posCtx = usePOSContext?.();
   
   // Resilient calculation for Available Farm Stock (Cold room / Chiller):
-  // Formula: Available Farm Stock = Total Farm Intake - (Total Farm Milk Sold in POS + Total Farm Milk Converted to Dahi)
   const parsedPropStock = availableFarmStock !== null && availableFarmStock !== undefined ? parseFloat(availableFarmStock) : NaN;
   const parsedPosStock = parseFloat(
     posCtx?.inventoryMetrics?.availableFarmStock ??
@@ -41,97 +39,105 @@ export default function FarmCardOverflow({
   }
 
   const farmMilkStock = effectiveStock % 1 === 0 ? effectiveStock.toFixed(0) : effectiveStock.toFixed(1);
-  const totalFarmExpense = totals?.totalFarmExpense ?? 0;
+  const isToday = timeRange === 'today';
+  const periodLabel = isToday ? '(Today)' : timeRange === 'week' ? '(This Week)' : timeRange === 'month' ? '(This Month)' : '';
 
   const statCards = [
     {
       label: "Total Animals",
       value: `${totalAnimals}`,
-      sub: `${cowsCount} Cows • ${buffCount} Buffaloes`,
+      sub: `${cowsCount} Cows · ${buffCount} Buffaloes`,
       icon: Beef,
       color: "#009966",
-      badge: "Active Herd",
+      badge: "Herd",
       path: "/farm/animals"
     },
     {
-      label: "Total Farm Yield",
+      label: `Total Farm Yield ${periodLabel}`.trim(),
       value: `${totalFarmYield.toFixed(1)} L`,
-      sub: "Daily total production",
+      sub: isToday ? "Daily Total Production" : "Production in Period",
       icon: Droplets,
-      color: "#155dfc",
-      badge: "Today's Milk",
+      color: "#2563eb",
+      badge: isToday ? "Today's Milk" : "Farm Milk",
       path: "/farm/milking"
     },
     {
-      label: "Available Farm Stock",
+      label: "Available Stock (With Me)",
       value: `${farmMilkStock} L`,
-      sub: "In farm cold room",
+      sub: "In Cold Room Chiller",
       icon: Droplets,
       color: "#059669",
-      badge: "Chiller Stock",
+      badge: "Available",
       path: "/pos"
     },
     {
       label: "Average Animal Yield",
       value: `${avgAnimalYield.toFixed(1)} L`,
-      sub: "Avg output per animal",
+      sub: "Avg Output Per Head",
       icon: Activity,
-      color: "#009689",
-      badge: "Yield / Head"
+      color: "#4f46e5",
+      badge: "Yield / Head",
+      path: "/farm/animals"
     },
     {
-      label: "Total Farm Expenses",
+      label: `Farm Expenses ${periodLabel}`.trim(),
       value: `Rs. ${totalFarmExpense.toLocaleString()}`,
-      sub: `${expenses.length} recorded expense${expenses.length === 1 ? '' : 's'}`,
-      icon: PKRIcon,
+      sub: `${expenseCount} recorded expense${expenseCount === 1 ? '' : 's'}`,
+      icon: Banknote,
       color: "#e11d48",
       badge: "Expenses",
       path: "/farm/expenses"
     },
     {
-      label: dailyNetProfit < 0 ? "Farm Net Loss (Today)" : "Farm Net Profit (Today)",
+      label: dailyNetProfit < 0 ? `Farm Net Loss ${periodLabel}`.trim() : `Farm Net Profit ${periodLabel}`.trim(),
       value: dailyNetProfit < 0
-        ? `-Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
+        ? `Rs. -${Math.abs(dailyNetProfit).toLocaleString()}`
         : `Rs. ${dailyNetProfit.toLocaleString()}`,
       sub: dailyNetProfit < 0
-        ? `Today expenses exceed sales by Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
+        ? `Loss: Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
         : dailyNetProfit > 0
-        ? `From Rs. ${todayFarmRevenue.toLocaleString()} today sales`
-        : "Today: Breakeven / No sales yet",
-      icon: dailyNetProfit < 0 ? TrendingDown : dailyNetProfit > 0 ? TrendingUp : PKRIcon,
+        ? `From Rs. ${todayFarmRevenue.toLocaleString()} sales`
+        : "Breakeven / No sales yet",
+      icon: dailyNetProfit < 0 ? TrendingDown : dailyNetProfit > 0 ? TrendingUp : Banknote,
       color: dailyNetProfit < 0 ? "#e11d48" : dailyNetProfit > 0 ? "#10b981" : "#64748b",
-      badge: dailyNetProfit < 0 ? "Today Loss" : dailyNetProfit > 0 ? "Today Profit" : "Today Net",
+      badge: dailyNetProfit < 0 ? "Loss" : dailyNetProfit > 0 ? "Profit" : "Net",
       path: "/farm/pl"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-2">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
       {statCards.map(({ label, value, sub, icon: Icon, color, badge, path }) => (
         <div
           key={label}
           onClick={() => path && navigate(path)}
-          className={`flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2 shadow-sm hover:shadow-md transition-all duration-200 ${
-            path ? 'cursor-pointer' : ''
+          role={path ? 'button' : undefined}
+          tabIndex={path ? 0 : undefined}
+          className={`flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs ${
+            path ? 'cursor-pointer hover:border-slate-300' : ''
           }`}
         >
-          <div className="flex items-start justify-between mb-1">
+          <div className="flex items-start justify-between mb-1.5">
             <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
               style={{ background: `${color}15` }}
             >
-              <Icon style={{ width: 16, height: 16, color }} />
+              <Icon style={{ width: 15, height: 15, color }} />
             </div>
-            <span className="text-[10px] font-bold px-6 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
-              {badge}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
+                {badge}
+              </span>
+              {path && <ChevronRight className="w-2.5 h-2.5 text-slate-300" />}
+            </div>
           </div>
+
           <div>
-            <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5">
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
               {value}
             </p>
-            <p className="text-xs font-bold text-slate-700">{label}</p>
-            <p className="text-[11px] font-medium text-slate-400">{sub}</p>
+            <p className="text-xs font-bold text-slate-800 line-clamp-1">{label}</p>
+            <p className="text-[10px] font-medium text-slate-400 line-clamp-1">{sub}</p>
           </div>
         </div>
       ))}

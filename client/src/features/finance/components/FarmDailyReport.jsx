@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Calendar, Activity, ArrowRight, Droplets, DollarSign, Tractor, CheckCircle2, TrendingUp, Layers, Receipt, AlertCircle } from 'lucide-react';
+import { Calendar, Activity, ArrowRight, Droplets, Banknote, Tractor, CheckCircle2, TrendingUp, Layers, Receipt, AlertCircle } from 'lucide-react';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useExpense } from '@/context/ExpenseContext';
@@ -438,7 +438,7 @@ export default function FarmDailyReport() {
                 <div className="p-4 space-y-3 bg-emerald-50/20">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
-                      <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                      <Banknote className="w-3.5 h-3.5 text-emerald-600" />
                       Farm POS Sales (Milk &amp; Dahi)
                     </div>
                     <span className="text-[11px] font-semibold text-slate-400">

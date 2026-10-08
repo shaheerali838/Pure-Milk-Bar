@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Calendar, Truck, ArrowRight, Droplets, DollarSign, CheckCircle2, TrendingUp, Users, AlertCircle, Receipt, Scale } from 'lucide-react';
+import { Calendar, Truck, ArrowRight, Droplets, Banknote, CheckCircle2, TrendingUp, Users, AlertCircle, Receipt, Scale } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { usePOSContext } from '@/context/POSContext';
@@ -431,7 +431,7 @@ export default function SupplierDailyReport() {
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
-                      <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                      <Banknote className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Supplier Milk &amp; Dahi Sales</span>
                     </div>
                     <span className="text-[11px] font-semibold text-slate-400">

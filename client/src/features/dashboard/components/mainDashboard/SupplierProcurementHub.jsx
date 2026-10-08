@@ -81,7 +81,7 @@ export default function SupplierProcurementHub() {
           </div>
 
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
-            <span className="text-slate-600 text-xs font-semibold">Supplier Milk Stock</span>
+            <span className="text-slate-600 text-xs font-semibold">Supplier Milk Stock (With Me)</span>
             <span className="font-mono font-bold text-blue-700 text-xs tabular">
               {inventoryMetrics?.supplierMilkStock || 0} L (Dock Chiller)
             </span>
@@ -99,7 +99,7 @@ export default function SupplierProcurementHub() {
         <div className="p-3 rounded-2xl bg-gradient-to-r from-blue-500/15 via-blue-500/10 to-indigo-500/15 flex items-center justify-between font-bold text-xs mb-4">
           <span className="text-slate-900 font-extrabold">Net Sourcing Contribution:</span>
           <span className="font-mono font-black text-[#155dfc] text-sm tabular">
-            {netContribution >= 0 ? `+Rs. ${netContribution.toLocaleString()}` : `-Rs. ${Math.abs(netContribution).toLocaleString()}`}
+            {netContribution >= 0 ? `Rs. ${netContribution.toLocaleString()}` : `Rs. -${Math.abs(netContribution).toLocaleString()}`}
           </span>
         </div>
       </div>

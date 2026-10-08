@@ -1,19 +1,5 @@
 import React from 'react';
-import {
-  ArrowLeft,
-  Phone,
-  Smartphone,
-  Milk,
-  CreditCard,
-  MapPin,
-  ShieldCheck,
-  Edit3,
-  Calendar,
-  User,
-  Activity,
-  DollarSign,
-  AlertCircle
-} from 'lucide-react';
+import { ArrowLeft, Phone, Smartphone, Milk, CreditCard, MapPin, ShieldCheck, Edit3, Calendar, User, Activity, Banknote, AlertCircle, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +13,9 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
   const khataBalance = customer.khataBalance || 0;
   const khataPercent = Math.min(100, Math.round((khataBalance / creditLimit) * 100));
   const subscription = getCustomerSubscription(customer) || 'No active agreement';
+
+  const advanceBalance = Number(customer.advanceBalance || 0);
+  const openingBalance = Number(customer.openingBalance || 0);
 
   return (
     <div className="space-y-3 animate-in fade-in duration-200 pb-4">
@@ -126,51 +115,100 @@ export default function CustomerDetailsView({ customer, onBack, onEdit }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-        <Card className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs flex items-center justify-between">
+      <div className={`grid grid-cols-1 ${advanceBalance > 0 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-2.5`}>
+        <div className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs">
+          <div className="flex items-start justify-between mb-1.5">
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
+              style={{ background: '#05966915' }}
+            >
+              <DollarSign style={{ width: 15, height: 15, color: '#059669' }} />
+            </div>
+            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
+              Khata Due
+            </span>
+          </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Khata Balance</p>
-            <p className="text-base font-bold text-slate-900 font-display tabular mt-0.5">
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
               Rs. {khataBalance.toLocaleString()}
             </p>
-            <p className="text-[10px] text-slate-500 mt-0.5">
-              of <span className="font-semibold tabular">Rs. {creditLimit.toLocaleString()}</span> limit
+            <p className="text-xs font-bold text-slate-800">Current Balance Due</p>
+            <p className="text-[10px] font-medium text-slate-400 line-clamp-1">
+              of <span className="font-semibold tabular">Rs. {creditLimit.toLocaleString()}</span> credit limit
             </p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-            <DollarSign className="w-5 h-5" />
-          </div>
-        </Card>
+        </div>
 
-        <Card className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs flex items-center justify-between">
+        {advanceBalance > 0 && (
+          <div className="flex flex-col justify-between bg-white border border-teal-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs">
+            <div className="flex items-start justify-between mb-1.5">
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
+                style={{ background: '#0d948815' }}
+              >
+                <DollarSign style={{ width: 15, height: 15, color: '#0d9488' }} />
+              </div>
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-teal-700 bg-teal-50 border border-teal-200/80">
+                Advance
+              </span>
+            </div>
+            <div>
+              <p className="text-lg font-black text-teal-800 leading-tight tracking-tight mb-0.5 tabular">
+                Rs. {advanceBalance.toLocaleString()}
+              </p>
+              <p className="text-xs font-bold text-slate-800">Advance Remaining</p>
+              <p className="text-[10px] font-medium text-slate-400 line-clamp-1">
+                Deducts from future deliveries
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs">
+          <div className="flex items-start justify-between mb-1.5">
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
+              style={{ background: '#2563eb15' }}
+            >
+              <Milk style={{ width: 15, height: 15, color: '#2563eb' }} />
+            </div>
+            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-blue-700 bg-blue-50 border border-blue-200/80">
+              {customer.paymentMode || 'Khata'}
+            </span>
+          </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Subscription</p>
-            <p className="text-base font-bold text-slate-900 font-display mt-0.5">
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 truncate">
               {subscription}
             </p>
-            <p className="text-[10px] text-slate-500 mt-0.5">
-              Mode: <span className="font-semibold text-blue-700">{customer.paymentMode || 'Khata'}</span>
+            <p className="text-xs font-bold text-slate-800">Active Subscription</p>
+            <p className="text-[10px] font-medium text-slate-400 line-clamp-1">
+              Fulfillment mode: {customer.fulfillmentType || 'Doorstep Delivery'}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-            <Milk className="w-5 h-5" />
-          </div>
-        </Card>
+        </div>
 
-        <Card className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs flex items-center justify-between">
+        <div className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs">
+          <div className="flex items-start justify-between mb-1.5">
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
+              style={{ background: '#9333ea15' }}
+            >
+              <Phone style={{ width: 15, height: 15, color: '#9333ea' }} />
+            </div>
+            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
+              Contact
+            </span>
+          </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Primary Phone</p>
-            <p className="text-base font-bold text-slate-900 font-mono tabular mt-0.5">
-              {customer.phone}
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 font-mono tabular">
+              {customer.phone || 'No phone'}
             </p>
-            <p className="text-[10px] text-slate-500 mt-0.5">
-              Online: <span className="font-mono">{customer.onlineAccount || customer.phone}</span>
+            <p className="text-xs font-bold text-slate-800">Primary Phone</p>
+            <p className="text-[10px] font-medium text-slate-400 line-clamp-1">
+              Account: {customer.onlineAccount || customer.phone || 'Standard'}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-            <Phone className="w-5 h-5" />
-          </div>
-        </Card>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
