@@ -158,54 +158,17 @@ export default function POSDashboard() {
   const [stockWarningId, setStockWarningId] = useState(null);
   const [stockWarningMsg, setStockWarningMsg] = useState('');
 
-  // Handle product click with in-UI out-of-stock warning (NO browser alert)
+  // Handle product click
   const handleProductCardClick = (product) => {
     if (isSaleRefreshing) return;
     const displayStock = getProductDisplayStock(product);
-    const isMilk = (product.category || '').toLowerCase().includes('milk') || (product.name || '').toLowerCase().includes('milk');
-    const isDahi = (product.category || '').toLowerCase().includes('dahi') || (product.name || '').toLowerCase().includes('dahi');
-    const isCow = (product.name || '').toLowerCase().includes('cow');
-    const isBuff = (product.name || '').toLowerCase().includes('buffalo');
-    const isSupplier = (product.source || '').toLowerCase() === 'supplier';
-    const unitLabel = product.unit?.replace('per ', '') || (isMilk ? 'L' : isDahi ? 'kg' : 'units');
+    const unitLabel = product.unit?.replace('per ', '') || 'L';
 
     if (displayStock <= 0) {
-      setStockWarningId(product.id);
-      const shortMsg = isCow
-        ? 'Cow milk out of stock hai'
-        : isBuff
-        ? 'Buffalo milk out of stock hai'
-        : isDahi
-        ? `Dahi stock is 0 ${unitLabel}`
-        : `${product.name} out of stock hai`;
-      setStockWarningMsg(shortMsg);
-
-      setTimeout(() => {
-        setStockWarningId((current) => (current === product.id ? null : current));
-      }, 3000);
-
-      toast.error(isCow ? 'Cow milk out of stock hai' : isBuff ? 'Buffalo milk out of stock hai' : `${product.name} out of stock hai`, {
-        description: `Current inventory is 0 ${unitLabel}. Please record milking yield or supplier intake.`,
-        duration: 3500,
+      toast.info(`Selling ${product.name} (Recorded stock: 0 ${unitLabel})`, {
+        description: 'Inventory balance will adjust upon sales recording.',
+        duration: 2000,
       });
-      return;
-    }
-    const cartItem = cart.find((i) => i.id === product.id);
-    const inCartQty = cartItem ? cartItem.quantity : 0;
-    // Only block if we actually have stock tracking enabled for this item
-    if (inCartQty >= displayStock) {
-      setStockWarningId(product.id);
-      setStockWarningMsg(`Max stock in cart (${displayStock} ${unitLabel})`);
-
-      setTimeout(() => {
-        setStockWarningId((current) => (current === product.id ? null : current));
-      }, 3000);
-
-      toast.warning(`Cannot add more "${product.name}"`, {
-        description: `All available stock (${displayStock} ${unitLabel}) is already in your cart.`,
-        duration: 3500,
-      });
-      return;
     }
 
     handleAddToCart(product);

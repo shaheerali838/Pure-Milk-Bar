@@ -106,6 +106,7 @@ export default function POSSale() {
     registeredCustomers = [],
 
     // Sale Actions
+    deductStockAfterSale,
     handleCompleteSale,
     isSaleRefreshing = false,
     inventoryMetrics = {},
@@ -351,13 +352,11 @@ export default function POSSale() {
                         min="0"
                         value={qty === 0 ? '0' : qty}
                         onChange={(e) => {
-                          const maxStock = getProductDisplayStock(item.id);
                           const val = parseFloat(e.target.value);
-                          if (!isNaN(val) && val > maxStock) {
-                             toast.error(`Cannot sell more than available stock (${maxStock} ${unitLabel})`);
-                             handleUpdateQuantity(item.id, maxStock);
-                          } else {
-                             handleUpdateQuantity(item.id, e.target.value);
+                          if (!isNaN(val) && val >= 0) {
+                            handleUpdateQuantity(item.id, val);
+                          } else if (e.target.value === '') {
+                            handleUpdateQuantity(item.id, 0);
                           }
                         }}
                         className="w-12 text-center text-xs font-bold text-slate-800 outline-none tabular py-0.5"
@@ -368,13 +367,7 @@ export default function POSSale() {
                         onClick={() => {
                           const step = qty < 1 ? 0.25 : 0.5;
                           const newQty = Number((qty + step).toFixed(2));
-                          const maxStock = getProductDisplayStock(item.id);
-                          if (newQty > maxStock) {
-                             toast.error(`Cannot sell more than available stock (${maxStock} ${unitLabel})`);
-                             handleUpdateQuantity(item.id, maxStock);
-                          } else {
-                             handleUpdateQuantity(item.id, newQty);
-                          }
+                          handleUpdateQuantity(item.id, newQty);
                         }}
                         className="px-2 py-0.5 text-slate-500 hover:text-slate-800 transition text-xs font-bold cursor-pointer"
                         title="Increase quantity"
@@ -922,9 +915,13 @@ export default function POSSale() {
             onClick={async () => {
               if (isProcessingSale || isSaleRefreshing || cart.length === 0) return;
               setIsProcessingSale(true);
+              const completedCartItems = [...cart];
               try {
                 const result = await handleCompleteSale();
                 if (result) {
+                  if (typeof deductStockAfterSale === 'function') {
+                    deductStockAfterSale(completedCartItems);
+                  }
                   toast.success('Sale completed successfully!');
                 }
               } catch (err) {
