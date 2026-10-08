@@ -776,20 +776,23 @@ export function usePOSMetrics({
     }, 0);
   }, [products]);
 
-  const totalFarmMilkSoldQty = todayFarmMilkSold;
-  const totalFarmMilkStockBasis = totalFarmMilk + catalogFarmMilkStock;
-  const calculatedAvailableFarmStock = Math.max(0, Number((totalFarmMilkStockBasis - totalFarmMilkSoldQty - farmMilkConvertedToDahi).toFixed(1)));
+  // Note: catalogFarmMilkStock and catalogSupplierMilkStock are sourced from Product.currentStock,
+  // which is ALREADY decremented on every POS sale. Deducting today's sold quantity a second time
+  // causes a double-subtraction bug (e.g. 216L - 6L became 204L instead of 210L).
+  const uncataloguedFarmMilkSold = catalogFarmMilkStock > 0 ? 0 : todayFarmMilkSold;
+  const calculatedAvailableFarmStock = Math.max(0, Number((catalogFarmMilkStock + totalFarmMilk - uncataloguedFarmMilkSold - farmMilkConvertedToDahi).toFixed(1)));
   const availableFarmStock = calculatedAvailableFarmStock;
   const remainingFarmMilk = availableFarmStock;
 
-  const totalSupplierMilkSoldQty = todaySupplierMilkSold;
-  const totalSupplierIntakeBasis = totalSupplierIntake + catalogSupplierMilkStock;
-  const calculatedRemainingSupplierMilk = Math.max(0, Number((totalSupplierIntakeBasis - totalSupplierMilkSoldQty - supplierMilkConvertedToDahi).toFixed(1)));
+  const uncataloguedSupplierMilkSold = catalogSupplierMilkStock > 0 ? 0 : todaySupplierMilkSold;
+  const calculatedRemainingSupplierMilk = Math.max(0, Number((catalogSupplierMilkStock + totalSupplierIntake - uncataloguedSupplierMilkSold - supplierMilkConvertedToDahi).toFixed(1)));
   const remainingSupplierMilk = calculatedRemainingSupplierMilk;
   const remainingTotalMilk = Number((remainingFarmMilk + remainingSupplierMilk + totalProcessedMilk).toFixed(1));
 
-  const preDahiCow = Math.max(0, totalFarmCowMilk - todayFarmCowMilkSold + processedCowMilkStock);
-  const preDahiBuff = Math.max(0, (totalFarmBuffaloMilk + catalogFarmMilkStock) - todayFarmBuffaloMilkSold + processedBuffaloMilkStock);
+  const uncataloguedFarmCowMilkSold = catalogFarmMilkStock > 0 ? 0 : todayFarmCowMilkSold;
+  const uncataloguedFarmBuffMilkSold = catalogFarmMilkStock > 0 ? 0 : todayFarmBuffaloMilkSold;
+  const preDahiCow = Math.max(0, totalFarmCowMilk - uncataloguedFarmCowMilkSold + processedCowMilkStock);
+  const preDahiBuff = Math.max(0, catalogFarmMilkStock + totalFarmBuffaloMilk - uncataloguedFarmBuffMilkSold + processedBuffaloMilkStock);
   
   const buffDeduction = Math.min(preDahiBuff, farmMilkConvertedToDahi);
   const cowDeduction = Math.max(0, farmMilkConvertedToDahi - buffDeduction);
@@ -797,11 +800,13 @@ export function usePOSMetrics({
   const remainingFarmCowMilk = Math.max(0, Number((preDahiCow - cowDeduction).toFixed(1)));
   const remainingFarmBuffaloMilk = Math.max(0, Number((preDahiBuff - buffDeduction).toFixed(1)));
 
+  const uncataloguedSupCowMilkSold = catalogSupplierMilkStock > 0 ? 0 : todaySupplierCowMilkSold;
+  const uncataloguedSupBuffMilkSold = catalogSupplierMilkStock > 0 ? 0 : todaySupplierBuffaloMilkSold;
   const effectiveSupplierCow = totalSupplierCowIntake > 0 ? totalSupplierCowIntake : todaySupplierCowIntake;
-  const effectiveSupplierBuffalo = (totalSupplierBuffaloIntake > 0 ? totalSupplierBuffaloIntake : todaySupplierBuffaloIntake) + catalogSupplierMilkStock;
+  const effectiveSupplierBuffalo = (totalSupplierBuffaloIntake > 0 ? totalSupplierBuffaloIntake : todaySupplierBuffaloIntake);
 
-  const preDahiSupCow = Math.max(0, effectiveSupplierCow - todaySupplierCowMilkSold);
-  const preDahiSupBuff = Math.max(0, effectiveSupplierBuffalo - todaySupplierBuffaloMilkSold);
+  const preDahiSupCow = Math.max(0, effectiveSupplierCow - uncataloguedSupCowMilkSold);
+  const preDahiSupBuff = Math.max(0, catalogSupplierMilkStock + effectiveSupplierBuffalo - uncataloguedSupBuffMilkSold);
 
   const supBuffDeduction = Math.min(preDahiSupBuff, supplierMilkConvertedToDahi);
   const supCowDeduction = Math.max(0, supplierMilkConvertedToDahi - supBuffDeduction);
@@ -849,7 +854,7 @@ export function usePOSMetrics({
     rawDahiStock: availableDahiStock,
     rawChilledDahiStock: totalDahiChilledInKitchen,
     totalFarmMilkIntake: totalFarmMilk,
-    totalFarmMilkSold: totalFarmMilkSoldQty,
+    totalFarmMilkSold: todayFarmMilkSold,
     totalFarmMilkConvertedToDahi: farmMilkConvertedToDahi,
     milkSold: (totalMilkSold % 1 === 0 ? totalMilkSold.toFixed(0) : totalMilkSold.toFixed(2)),
     dahiSold: (totalDahiSold % 1 === 0 ? totalDahiSold.toFixed(0) : totalDahiSold.toFixed(2)),
