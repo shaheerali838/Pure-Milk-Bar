@@ -59,6 +59,7 @@ export const addKhataEntryService = async (data, userId) => {
 
     let advanceUsed = 0;
     let khataAmount = 0;
+    let directCash = 0;
     let advanceReceived = 0;
     let advanceBalanceAfter = customer.advanceBalance || 0;
     let newKhataBalance = customer.khataBalance || customer.currentBalance || 0;
@@ -70,9 +71,17 @@ export const addKhataEntryService = async (data, userId) => {
         customer.khataBalance || 0
       );
       advanceUsed = billRes.advanceUsed;
-      khataAmount = billRes.khataAmount;
+      const uncoveredAfterAdv = billRes.khataAmount;
+
+      const rawCashInput = Number(data.cashPaid !== undefined ? data.cashPaid : (data.paidAmount !== undefined ? data.paidAmount : 0)) || 0;
+      let actualCash = rawCashInput;
+      if (actualCash > uncoveredAfterAdv && actualCash >= advanceUsed && advanceUsed > 0) {
+        actualCash = actualCash - advanceUsed;
+      }
+      directCash = Math.max(0, Math.min(uncoveredAfterAdv, actualCash));
+      khataAmount = Math.max(0, uncoveredAfterAdv - directCash);
       advanceBalanceAfter = billRes.advanceBalanceAfter;
-      newKhataBalance = billRes.newKhataBalance;
+      newKhataBalance = (customer.khataBalance || 0) + khataAmount;
 
       if (customer.creditLimit > 0 && newKhataBalance > customer.creditLimit) {
         const error = new Error(
@@ -124,8 +133,8 @@ export const addKhataEntryService = async (data, userId) => {
       referenceTransactionId: referenceTransactionId || null,
       items: Array.isArray(data.items) ? data.items : [],
       orderTotal: Number(data.orderTotal ?? (txType === 'DEBIT' ? entryAmount : 0)),
-      paidAmount: Number(data.paidAmount ?? (txType === 'DEBIT' ? advanceUsed : entryAmount)),
-      remainingAmount: Number(data.remainingAmount ?? (txType === 'DEBIT' ? khataAmount : 0)),
+      paidAmount: txType === 'DEBIT' ? (advanceUsed + directCash) : entryAmount,
+      remainingAmount: txType === 'DEBIT' ? khataAmount : 0,
       fulfillmentType: data.fulfillmentType || (advanceUsed > 0 && khataAmount === 0 ? 'Advance Deduction' : null),
       riderName: data.riderName || null,
       deliveryAddress: data.deliveryAddress || null,

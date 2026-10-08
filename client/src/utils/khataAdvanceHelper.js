@@ -227,7 +227,7 @@ export function recalculateCustomerStatementChronological(rawEntries = [], custo
       // DEBIT / Order / Delivery Bill
       const rawBill = Number(entry.orderTotal !== undefined && Number(entry.orderTotal) > 0 ? entry.orderTotal : (rawDebit > 0 ? rawDebit : (entry.amount || 0)));
       const billAmount = Math.max(0, rawBill);
-      const directCash = Math.max(0, Number(entry.paidAmount || 0));
+      const rawPaidInput = Number(entry.cashPaid !== undefined ? entry.cashPaid : (entry.paidAmount !== undefined ? entry.paidAmount : 0)) || 0;
 
       totalDebits += billAmount;
 
@@ -235,8 +235,13 @@ export function recalculateCustomerStatementChronological(rawEntries = [], custo
       advanceUsed = calc.advanceUsed;
       const uncoveredAfterAdv = calc.khataAmount;
 
-      // If customer also paid direct cash at delivery/checkout, apply cash against the remaining uncovered part
-      cashPaid = Math.min(uncoveredAfterAdv, directCash);
+      // Calculate direct cash payment received specifically for this order
+      let actualDirectCash = rawPaidInput;
+      if (actualDirectCash > uncoveredAfterAdv && actualDirectCash >= advanceUsed && advanceUsed > 0) {
+        // If paidAmount was provided as (advanceUsed + directCash), extract direct cash portion
+        actualDirectCash = actualDirectCash - advanceUsed;
+      }
+      cashPaid = Math.max(0, Math.min(uncoveredAfterAdv, actualDirectCash));
       khataAmount = Math.max(0, uncoveredAfterAdv - cashPaid);
 
       runningAdvance = calc.advanceBalanceAfter;

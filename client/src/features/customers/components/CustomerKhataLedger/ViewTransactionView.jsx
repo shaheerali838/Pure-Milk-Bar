@@ -60,30 +60,38 @@ export default function ViewTransactionView({
       0,
   );
 
+  const isDebit = Number(transaction.debit) > 0 && !isAdvanceOpening;
+  const isCredit = Number(transaction.credit) > 0 || isAdvanceOpening;
+  const isPayment = transaction.isPayment || (Number(transaction.credit) > 0 && Number(transaction.debit) === 0);
+
   const displayOrderTotal = isAdvanceOpening
     ? rawOpeningVal
-    : Number(
-        transaction.orderTotal || transaction.debit || transaction.credit || 0,
-      );
+    : isPayment
+      ? 0
+      : Number(transaction.orderTotal !== undefined && Number(transaction.orderTotal) > 0 ? transaction.orderTotal : (transaction.debit || 0));
 
   const displayPaidAmount = isAdvanceOpening
     ? rawOpeningVal
-    : Number(
-        transaction.paidAmount ||
-          (Number(transaction.credit) > 0 ? transaction.credit : 0),
-      );
+    : isPayment
+      ? Number(transaction.credit || transaction.paidAmount || 0)
+      : Number(
+          transaction.cashPaid !== undefined
+            ? transaction.cashPaid
+            : (Number(transaction.paidAmount || 0) > Number(transaction.advanceUsed || 0)
+              ? Number(transaction.paidAmount || 0) - Number(transaction.advanceUsed || 0)
+              : 0)
+        );
 
   const displayBalanceDue = isAdvanceOpening
     ? 0
     : Number(
-        transaction.remainingAmount ||
-          (Number(transaction.debit) > 0
-            ? Number(transaction.debit) - Number(transaction.paidAmount || 0)
-            : 0),
+        transaction.khataAmount !== undefined
+          ? transaction.khataAmount
+          : (transaction.remainingAmount !== undefined
+            ? transaction.remainingAmount
+            : Math.max(0, displayOrderTotal - Number(transaction.advanceUsed || 0) - displayPaidAmount))
       );
 
-  const isDebit = Number(transaction.debit) > 0 && !isAdvanceOpening;
-  const isCredit = Number(transaction.credit) > 0 || isAdvanceOpening;
   const hasItems =
     Array.isArray(transaction.items) && transaction.items.length > 0;
 
