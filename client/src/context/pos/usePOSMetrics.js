@@ -42,10 +42,9 @@ export function usePOSMetrics({
 
     const seenEntries = new Set();
     const todayMilkingLogs = (milkingLogs || []).filter((l) => isTodayDate(l.date || l.createdAt));
-    const effectiveMilkingLogs = todayMilkingLogs.length > 0 ? todayMilkingLogs : (milkingLogs || []);
 
-    if (Array.isArray(effectiveMilkingLogs) && effectiveMilkingLogs.length > 0) {
-      effectiveMilkingLogs.forEach((log) => {
+    if (Array.isArray(todayMilkingLogs) && todayMilkingLogs.length > 0) {
+      todayMilkingLogs.forEach((log) => {
         const y = parseFloat(log.yieldLiters || log.yield || log.quantityLiters) || 0;
         const tag = (log.animalTag || log.tag || log.animalId?.tagNumber || log.animalId?.tag || '').toUpperCase();
         const rawId = String(log.animalId?._id || log.animalId || '');
@@ -74,7 +73,7 @@ export function usePOSMetrics({
       });
     }
 
-    // Incorporate any animal intakeHistory entries not present in milkingLogs
+    // Incorporate any animal intakeHistory entries strictly dated today
     if (Array.isArray(animals) && animals.length > 0) {
       animals.forEach((animal) => {
         const tag = (animal.tag || animal.tagNumber || '').toUpperCase();
@@ -87,10 +86,9 @@ export function usePOSMetrics({
 
         const history = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
         const todayHistory = history.filter((h) => h && isTodayDate(h.date || h.createdAt));
-        const effectiveHistory = todayHistory.length > 0 ? todayHistory : (todayMilkingLogs.length === 0 ? history : []);
 
-        if (effectiveHistory.length > 0) {
-          effectiveHistory.forEach((h) => {
+        if (todayHistory.length > 0) {
+          todayHistory.forEach((h) => {
             if (!h) return;
             const dateStr = h.date ? (typeof h.date === 'string' && h.date.includes('T') ? h.date.split('T')[0] : String(h.date).slice(0, 10)) : '';
             const shiftStr = (h.shift || (h.morning > 0 ? 'Morning' : 'Evening') || 'Morning').toUpperCase();
@@ -107,15 +105,6 @@ export function usePOSMetrics({
               }
             }
           });
-        } else if (logSum === 0) {
-          const m = parseFloat(animal.morningYield || 0);
-          const e = parseFloat(animal.eveningYield || 0);
-          const daily = m + e;
-          if (daily > 0) {
-            logSum += daily;
-            if (isCow) cowLogs += daily;
-            else buffLogs += daily;
-          }
         }
       });
     }
@@ -127,14 +116,13 @@ export function usePOSMetrics({
     };
   }, [animals, milkingLogs, posSyncVersion]);
 
-  // Separate Supplier Cow & Buffalo intake totals
+  // Separate Supplier Cow & Buffalo intake totals for today
   const { totalSupplierIntake, totalSupplierCowIntake, totalSupplierBuffaloIntake } = useMemo(() => {
     let tot = 0;
     let cowIn = 0;
     let buffIn = 0;
     const todayIntakes = (intakeLogs || []).filter((item) => isTodayDate(item.date || item.createdAt));
-    const effectiveIntakes = todayIntakes.length > 0 ? todayIntakes : (intakeLogs || []);
-    effectiveIntakes.forEach((item) => {
+    todayIntakes.forEach((item) => {
       const qty = Number(item.quantity || item.quantityLiters) || 0;
       const type = (item.milkType || '').toUpperCase();
       tot += qty;
@@ -788,20 +776,23 @@ export function usePOSMetrics({
     }, 0);
   }, [products]);
 
-  const totalFarmMilkSoldQty = todayFarmMilkSold;
-  const totalFarmMilkStockBasis = totalFarmMilk + catalogFarmMilkStock;
-  const calculatedAvailableFarmStock = Math.max(0, Number((totalFarmMilkStockBasis - totalFarmMilkSoldQty - farmMilkConvertedToDahi).toFixed(1)));
+  // Note: catalogFarmMilkStock and catalogSupplierMilkStock are sourced from Product.currentStock,
+  // which is ALREADY decremented on every POS sale. Deducting today's sold quantity a second time
+  // causes a double-subtraction bug (e.g. 216L - 6L became 204L instead of 210L).
+  const uncataloguedFarmMilkSold = catalogFarmMilkStock > 0 ? 0 : todayFarmMilkSold;
+  const calculatedAvailableFarmStock = Math.max(0, Number((catalogFarmMilkStock + totalFarmMilk - uncataloguedFarmMilkSold - farmMilkConvertedToDahi).toFixed(1)));
   const availableFarmStock = calculatedAvailableFarmStock;
   const remainingFarmMilk = availableFarmStock;
 
-  const totalSupplierMilkSoldQty = todaySupplierMilkSold;
-  const totalSupplierIntakeBasis = totalSupplierIntake + catalogSupplierMilkStock;
-  const calculatedRemainingSupplierMilk = Math.max(0, Number((totalSupplierIntakeBasis - totalSupplierMilkSoldQty - supplierMilkConvertedToDahi).toFixed(1)));
+  const uncataloguedSupplierMilkSold = catalogSupplierMilkStock > 0 ? 0 : todaySupplierMilkSold;
+  const calculatedRemainingSupplierMilk = Math.max(0, Number((catalogSupplierMilkStock + totalSupplierIntake - uncataloguedSupplierMilkSold - supplierMilkConvertedToDahi).toFixed(1)));
   const remainingSupplierMilk = calculatedRemainingSupplierMilk;
   const remainingTotalMilk = Number((remainingFarmMilk + remainingSupplierMilk + totalProcessedMilk).toFixed(1));
 
-  const preDahiCow = Math.max(0, totalFarmCowMilk - todayFarmCowMilkSold + processedCowMilkStock);
-  const preDahiBuff = Math.max(0, (totalFarmBuffaloMilk + catalogFarmMilkStock) - todayFarmBuffaloMilkSold + processedBuffaloMilkStock);
+  const uncataloguedFarmCowMilkSold = catalogFarmMilkStock > 0 ? 0 : todayFarmCowMilkSold;
+  const uncataloguedFarmBuffMilkSold = catalogFarmMilkStock > 0 ? 0 : todayFarmBuffaloMilkSold;
+  const preDahiCow = Math.max(0, totalFarmCowMilk - uncataloguedFarmCowMilkSold + processedCowMilkStock);
+  const preDahiBuff = Math.max(0, catalogFarmMilkStock + totalFarmBuffaloMilk - uncataloguedFarmBuffMilkSold + processedBuffaloMilkStock);
   
   const buffDeduction = Math.min(preDahiBuff, farmMilkConvertedToDahi);
   const cowDeduction = Math.max(0, farmMilkConvertedToDahi - buffDeduction);
@@ -809,11 +800,13 @@ export function usePOSMetrics({
   const remainingFarmCowMilk = Math.max(0, Number((preDahiCow - cowDeduction).toFixed(1)));
   const remainingFarmBuffaloMilk = Math.max(0, Number((preDahiBuff - buffDeduction).toFixed(1)));
 
+  const uncataloguedSupCowMilkSold = catalogSupplierMilkStock > 0 ? 0 : todaySupplierCowMilkSold;
+  const uncataloguedSupBuffMilkSold = catalogSupplierMilkStock > 0 ? 0 : todaySupplierBuffaloMilkSold;
   const effectiveSupplierCow = totalSupplierCowIntake > 0 ? totalSupplierCowIntake : todaySupplierCowIntake;
-  const effectiveSupplierBuffalo = (totalSupplierBuffaloIntake > 0 ? totalSupplierBuffaloIntake : todaySupplierBuffaloIntake) + catalogSupplierMilkStock;
+  const effectiveSupplierBuffalo = (totalSupplierBuffaloIntake > 0 ? totalSupplierBuffaloIntake : todaySupplierBuffaloIntake);
 
-  const preDahiSupCow = Math.max(0, effectiveSupplierCow - todaySupplierCowMilkSold);
-  const preDahiSupBuff = Math.max(0, effectiveSupplierBuffalo - todaySupplierBuffaloMilkSold);
+  const preDahiSupCow = Math.max(0, effectiveSupplierCow - uncataloguedSupCowMilkSold);
+  const preDahiSupBuff = Math.max(0, catalogSupplierMilkStock + effectiveSupplierBuffalo - uncataloguedSupBuffMilkSold);
 
   const supBuffDeduction = Math.min(preDahiSupBuff, supplierMilkConvertedToDahi);
   const supCowDeduction = Math.max(0, supplierMilkConvertedToDahi - supBuffDeduction);
@@ -861,7 +854,7 @@ export function usePOSMetrics({
     rawDahiStock: availableDahiStock,
     rawChilledDahiStock: totalDahiChilledInKitchen,
     totalFarmMilkIntake: totalFarmMilk,
-    totalFarmMilkSold: totalFarmMilkSoldQty,
+    totalFarmMilkSold: todayFarmMilkSold,
     totalFarmMilkConvertedToDahi: farmMilkConvertedToDahi,
     milkSold: (totalMilkSold % 1 === 0 ? totalMilkSold.toFixed(0) : totalMilkSold.toFixed(2)),
     dahiSold: (totalDahiSold % 1 === 0 ? totalDahiSold.toFixed(0) : totalDahiSold.toFixed(2)),
