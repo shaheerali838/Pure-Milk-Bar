@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Layers, Trash2, Search, CheckCircle2, ShoppingCart, Clock, Thermometer } from 'lucide-react';
+import { Layers, Trash2, Search, CheckCircle2, ShoppingCart, Clock, Thermometer, Calendar, X } from 'lucide-react';
 import {
   Table,
   TableHeader,
@@ -15,6 +15,7 @@ export default function DahiBatchTable({ batches = [], onDeleteBatch, onViewDeta
   const { metrics = {} } = useDahiContext() || {};
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState(''); // '' | YYYY-MM-DD
 
   const totalGlobalPosSold = parseFloat(String(metrics?.dahiSoldInPOS || '0').replace(/[^\d.]/g, '')) || 0;
 
@@ -42,12 +43,17 @@ export default function DahiBatchTable({ batches = [], onDeleteBatch, onViewDeta
         }
       }
 
+      const bDate = b.date
+        ? (typeof b.date === 'string' && b.date.includes('T') ? b.date.split('T')[0] : String(b.date).slice(0, 10))
+        : (b.createdAt ? String(b.createdAt).slice(0, 10) : '');
+
       return {
         ...b,
         outputNum,
         soldKg,
         remainingKg,
         isSoldOut,
+        formattedDate: bDate,
       };
     });
   }, [batches, totalGlobalPosSold]);
@@ -74,13 +80,18 @@ export default function DahiBatchTable({ batches = [], onDeleteBatch, onViewDeta
       matchesStatus = b.status === statusFilter;
     }
 
-    return matchesSearch && matchesStatus;
+    let matchesDate = true;
+    if (dateFilter) {
+      matchesDate = b.formattedDate === dateFilter;
+    }
+
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   return (
     <div className="space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 h-9 shadow-xs">
             <Search className="w-3.5 h-3.5 text-slate-400" />
             <input
@@ -88,7 +99,7 @@ export default function DahiBatchTable({ batches = [], onDeleteBatch, onViewDeta
               placeholder="Search batch ID, product..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="border-none outline-none bg-transparent text-xs text-slate-700 w-45"
+              className="border-none outline-none bg-transparent text-xs text-slate-700 w-40"
             />
           </div>
 
@@ -103,6 +114,28 @@ export default function DahiBatchTable({ batches = [], onDeleteBatch, onViewDeta
             <option value="chilled">Chilled & Ready</option>
             <option value="incubating">Incubating</option>
           </select>
+
+          {/* Date Filter Input */}
+          <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 h-9 shadow-xs text-xs">
+            <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="bg-transparent border-none outline-none text-xs text-slate-700 font-semibold cursor-pointer"
+              title="Filter by Batch Date"
+            />
+            {dateFilter && (
+              <button
+                type="button"
+                onClick={() => setDateFilter('')}
+                className="text-slate-400 hover:text-rose-600 p-0.5 cursor-pointer"
+                title="Clear date filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="text-xs text-slate-500 font-medium">
@@ -114,7 +147,7 @@ export default function DahiBatchTable({ batches = [], onDeleteBatch, onViewDeta
         <Table className="w-full border-collapse text-[13px]">
           <TableHeader>
             <TableRow className="bg-slate-50/80 border-b border-slate-200 hover:bg-slate-50/80">
-              {['Batch ID', 'Product', 'Source', 'Milk Input', 'Produced Output', 'Sold at POS', 'Remaining', 'Status', 'Actions'].map((h) => (
+              {['Date', 'Batch ID', 'Product', 'Source', 'Milk Input', 'Produced Output', 'Sold at POS', 'Remaining', 'Status', 'Actions'].map((h) => (
                 <TableHead
                   key={h}
                   className="px-3.5 py-3 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap"
@@ -127,7 +160,7 @@ export default function DahiBatchTable({ batches = [], onDeleteBatch, onViewDeta
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="px-4 py-12 text-center text-slate-400 text-xs font-medium">
+                <TableCell colSpan={10} className="px-4 py-12 text-center text-slate-400 text-xs font-medium">
                   <div className="flex flex-col items-center justify-center gap-1.5">
                     <Layers className="w-8 h-8 text-slate-300" />
                     <p className="font-semibold text-slate-600">No Dahi batches found</p>
@@ -143,6 +176,13 @@ export default function DahiBatchTable({ batches = [], onDeleteBatch, onViewDeta
                     onClick={() => onViewDetail && onViewDetail(b.id)}
                     className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/70 transition-colors cursor-pointer"
                   >
+                    <TableCell className="px-3.5 py-3 whitespace-nowrap">
+                      <span className="flex items-center gap-1.5 font-mono text-[11.5px] font-semibold text-slate-600">
+                        <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                        {b.formattedDate || 'Today'}
+                      </span>
+                    </TableCell>
+
                     <TableCell className="px-3.5 py-3">
                       <span className="flex items-center gap-1.5 font-mono text-[12px] font-bold text-slate-800 tabular">
                         <Layers className="w-3.5 h-3.5 text-[#009689]" />

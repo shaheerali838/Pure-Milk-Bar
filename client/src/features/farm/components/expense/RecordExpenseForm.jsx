@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Receipt } from 'lucide-react';
+import { X, Receipt, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useExpense } from '../../../../context/ExpenseContext';
 import { useAnimalContext } from '../../../../context/AnimalContext';
 
@@ -26,8 +27,9 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
   const { addExpense, editExpense, expenses } = useExpense();
   const { animals = [] } = useAnimalContext();
 
-  const editingRecord = expenseId ? expenses.find(e => e.id === expenseId) : null;
+  const editingRecord = expenseId ? expenses.find(e => e.id === expenseId || e._id === expenseId || String(e.id) === String(expenseId)) : null;
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     expenseEntity: 'Farm',
     category: '',
@@ -56,14 +58,41 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
     }
   }, [editingRecord]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingRecord) {
-      editExpense(editingRecord.id, formData);
-    } else {
-      addExpense(formData);
+    if (!formData.amount || Number(formData.amount) <= 0) {
+      toast.error('Please enter a valid expense amount greater than 0');
+      return;
     }
-    if (onClose) onClose();
+    if (!formData.category) {
+      toast.error('Please select an expense category');
+      return;
+    }
+    if (!formData.description?.trim()) {
+      toast.error('Please enter an expense description');
+      return;
+    }
+    if (!formData.date) {
+      toast.error('Please select a valid date');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      if (editingRecord) {
+        await editExpense(editingRecord.id || editingRecord._id, formData);
+        toast.success('Expense record updated successfully!');
+      } else {
+        await addExpense(formData);
+        toast.success('Farm expense recorded successfully!');
+      }
+      if (onClose) onClose();
+    } catch (err) {
+      console.error('Error saving expense:', err);
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to save expense');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -218,10 +247,22 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
         </div>
 
         <div className="shrink-0 px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-3">
-          <Button type="button" variant="outline" onClick={onClose} className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-all cursor-pointer">
+          <Button 
+            type="button" 
+            variant="outline" 
+            disabled={isSubmitting}
+            onClick={onClose} 
+            className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-all cursor-pointer"
+          >
             Cancel
           </Button>
-          <Button type="submit" form="record-expense-form" className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-sm transition-all active:scale-95 cursor-pointer">
+          <Button 
+            type="submit" 
+            form="record-expense-form" 
+            disabled={isSubmitting}
+            className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-sm transition-all active:scale-95 cursor-pointer flex items-center gap-2"
+          >
+            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
             {editingRecord ? 'Update Expense' : 'Save Expense'}
           </Button>
         </div>

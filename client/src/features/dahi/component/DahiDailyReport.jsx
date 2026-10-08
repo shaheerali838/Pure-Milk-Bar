@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import {Calendar,Layers,Milk,Droplets,DollarSign,TrendingUp,Activity,ArrowRight,CheckCircle2,Tractor,Truck,Flame,Scale,Receipt,} from 'lucide-react';
+import { Calendar, Layers, Milk, Droplets, Banknote, TrendingUp, Activity, ArrowRight, CheckCircle2, Tractor, Truck, Flame, Scale, Receipt } from 'lucide-react';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useDahiContext } from '@/context/DahiContext';
@@ -395,7 +395,7 @@ export default function DahiDailyReport() {
                 <div className="p-4 space-y-3 bg-emerald-50/20">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
-                      <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                      <Banknote className="w-3.5 h-3.5 text-emerald-600" />
                       POS Dahi Sales &amp; Segregation
                     </div>
                     <span className="text-[11px] font-semibold text-slate-400">

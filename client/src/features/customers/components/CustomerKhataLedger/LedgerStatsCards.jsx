@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, TrendingUp, TrendingDown, CheckCircle2, AlertCircle, Wallet } from 'lucide-react';
+import { BookOpen, TrendingUp, TrendingDown, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function LedgerStatsCards({
   openingBalance = 0,
@@ -12,47 +12,50 @@ export default function LedgerStatsCards({
   currentBalance = 0,
   remainingAdvance = 0,
 }) {
+  const hasAdvance = isAdvanceOpening && Number(remainingAdvance || 0) > 0;
+  const isCleared = !hasAdvance && Number(currentBalance || 0) <= 0;
+
   const statCards = [
     {
       id: 'opening',
       label: isAdvanceOpening ? 'Opening Advance Deposit' : 'Opening Balance',
-      value: `Rs.  ${Number(openingBalance || 0).toLocaleString()}`,
-      sub: openingDate ? `Dated: ${openingDate}` : 'Dated: 2026-10-06',
+      value: `Rs. ${Number(openingBalance || 0).toLocaleString()}`,
+      sub: openingDate ? `Dated: ${openingDate}` : 'Period start',
       icon: BookOpen,
-      color: isAdvanceOpening ? '#0d9488' : '#4f46e5',
+      color: isAdvanceOpening ? '#059669' : '#64748b',
       badge: isAdvanceOpening ? 'Advance' : 'Opening',
     },
     {
-      id: 'debits',
+      id: 'charged',
       label: 'Total Debits (Purchases)',
-      value: `Rs.  ${Number(totalCharged || 0).toLocaleString()}`,
-      sub: `${chargedCount} orders / charges`,
+      value: `Rs. ${Number(totalCharged || 0).toLocaleString()}`,
+      sub: `${chargedCount} orders / purchases`,
       icon: TrendingUp,
       color: '#e11d48',
       badge: 'Debits',
     },
     {
-      id: 'credits',
+      id: 'paid',
       label: 'Total Credits (Payments)',
-      value: `Rs.  ${Number(totalPaid || 0).toLocaleString()}`,
+      value: `Rs. ${Number(totalPaid || 0).toLocaleString()}`,
       sub: `${paidCount} deposits / payments`,
       icon: TrendingDown,
       color: '#059669',
       badge: 'Credits',
     },
     {
-      id: 'due',
-      label: 'Current Balance Due',
-      value: `Rs.  ${Number(currentBalance || 0).toLocaleString()}`,
-      sub: 'Outstanding khata recovery',
-      icon: AlertCircle,
-      color: Number(currentBalance || 0) > 0 ? '#e11d48' : '#059669',
-      badge: 'Due',
+      id: 'balance',
+      label: hasAdvance ? 'Advance Credit Remaining' : Number(currentBalance || 0) > 0 ? 'Current Balance Due' : 'Cleared Balance',
+      value: `Rs. ${Number(hasAdvance ? remainingAdvance : currentBalance).toLocaleString()}`,
+      sub: hasAdvance ? 'Deducted from advance' : isCleared ? 'Dues fully cleared' : 'Outstanding recovery',
+      icon: isCleared ? CheckCircle2 : AlertCircle,
+      color: isCleared ? '#059669' : '#e11d48',
+      badge: hasAdvance ? 'Advance Bal' : isCleared ? 'Cleared' : 'Balance Due',
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-2.5">
       {statCards.map(({ id, label, value, sub, icon: Icon, color, badge }) => (
         <div
           key={id}
@@ -84,4 +87,3 @@ export default function LedgerStatsCards({
     </div>
   );
 }
-

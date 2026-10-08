@@ -1,17 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  TrendingUp,
-  Download,
-  Calendar,
-  Layers,
-  Droplets,
-  DollarSign,
-  Receipt,
-  Truck,
-  Scale,
-  Milk,
-  RefreshCw,
-} from 'lucide-react';
+import { TrendingUp, Download, Calendar, Layers, Droplets, Banknote, Receipt, Truck, Scale, Milk, RefreshCw } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
@@ -427,7 +415,7 @@ export default function SupplierPL() {
         {/* Toolbar matching user's exact screenshot design */}
         <div className="flex flex-wrap items-center gap-2">
           {/* A. Period Segmented Pills */}
-          <div className="flex items-center bg-slate-100/90 p-1 rounded-full border border-slate-200/70">
+          <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold">
             {['All Time', 'Today', 'This Month', 'Custom Range'].map((period) => {
               const isActive = periodFilter === period && !customDate && !startDate && !endDate;
               const isCustomActive = period === 'Custom Range' && (periodFilter === 'Custom Range' || startDate || endDate || customDate);
@@ -443,9 +431,9 @@ export default function SupplierPL() {
                       setEndDate('');
                     }
                   }}
-                  className={`px-3.5 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     (period === 'Custom Range' ? isCustomActive : isActive)
-                      ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
+                      ? 'bg-white text-blue-700 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >

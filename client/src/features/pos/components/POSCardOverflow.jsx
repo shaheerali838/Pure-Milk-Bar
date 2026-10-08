@@ -1,14 +1,14 @@
 import React from 'react';
-import { Droplets, CheckCircle2, ChevronRight, Milk, ShoppingBag, TrendingUp } from 'lucide-react';
+import { Droplets, CheckCircle2, ChevronRight, Milk, ShoppingBag } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 
 export default function POSCardOverflow({ onSelectSource }) {
-  const { inventoryMetrics, farmSalesMetrics } = usePOSContext();
+  const { inventoryMetrics } = usePOSContext();
 
   const cards = [
     {
       id: 'total_milk',
-      title: 'Total Milk Stock',
+      title: 'Total Milk Stock (With Me)',
       amount: `${inventoryMetrics?.totalMilk ?? 0} L`,
       sub: `Farm: ${inventoryMetrics?.farmMilkStock ?? 0} L | Sup: ${inventoryMetrics?.supplierMilkStock ?? 0} L`,
       icon: Droplets,
@@ -19,7 +19,7 @@ export default function POSCardOverflow({ onSelectSource }) {
     },
     {
       id: 'dahi_stock',
-      title: 'Dahi Counter Stock',
+      title: 'Dahi Stock (With Me)',
       amount: `${inventoryMetrics?.totalDahi ?? 0} kg`,
       sub: Number(inventoryMetrics?.chilledDahiStock || 0) > 0
         ? `Transferred: ${inventoryMetrics?.totalDahiTransferred || 0} kg (${inventoryMetrics?.chilledDahiStock || 0} kg chilled in kitchen)`
@@ -50,7 +50,6 @@ export default function POSCardOverflow({ onSelectSource }) {
       badge: 'Dahi Sales',
       clickable: false,
     },
-
   ];
 
   return (
@@ -95,4 +94,3 @@ export default function POSCardOverflow({ onSelectSource }) {
     </div>
   );
 }
-

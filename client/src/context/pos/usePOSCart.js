@@ -118,7 +118,7 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
     }
 
     if (name.includes('buffalo')) {
-      return { source: 'Supplier', farmRatio: 0, supplierRatio: 1 };
+      return { source: 'Farm', farmRatio: 1, supplierRatio: 0 };
     }
 
     return { source: 'Farm', farmRatio: 1, supplierRatio: 0 };

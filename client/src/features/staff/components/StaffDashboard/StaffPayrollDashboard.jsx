@@ -1,28 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import {
-  Users,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  DollarSign,
-  TrendingUp,
-  Briefcase,
-  Sun,
-  Moon,
-  Sunset,
-  ArrowRight,
-  UserPlus,
-  Calendar,
-  FileSpreadsheet,
-  Search,
-  Filter,
-  Plus,
-  MapPin,
-  Truck,
-  Eye,
-  Edit2,
-  Trash2,
-} from 'lucide-react';
+import { Users, CheckCircle2, Clock, XCircle, Banknote, TrendingUp, Briefcase, Sun, Moon, Sunset, ArrowRight, UserPlus, Calendar, FileSpreadsheet, Search, Filter, Plus, MapPin, Truck, Eye, Edit2, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
 import StaffDetail from '../ManageStaff/StaffDetail';
@@ -297,7 +274,7 @@ export default function StaffPayrollDashboard({ onNavigateTab }) {
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
               style={{ background: '#3b82f615' }}
             >
-              <DollarSign style={{ width: 16, height: 16, color: '#3b82f6' }} />
+              <Banknote style={{ width: 16, height: 16, color: '#3b82f6' }} />
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-blue-700 bg-blue-50 border border-blue-200">
               Payroll

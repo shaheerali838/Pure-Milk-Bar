@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {TrendingUp,TrendingDown,DollarSign,Wallet,Store,Beef,AlertTriangle,ArrowUpRight,ArrowDownRight,} from "lucide-react";
+import { TrendingUp, TrendingDown, Banknote, Wallet, Store, Beef, AlertTriangle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { usePOSContext } from "@/context/POSContext";
 import { useExpense } from "@/context/ExpenseContext";
 import { useIntakeContext } from "@/context/IntakeContext";
@@ -139,7 +139,7 @@ export default function ProfitLossSnapshot() {
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Time Tabs */}
-          <div className="inline-flex items-center p-1 bg-slate-100 rounded-full shadow-2xs self-start sm:self-auto">
+          <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold self-start sm:self-auto">
             {[
               { id: "today", label: "Today" },
               { id: "week", label: "This Week" },
@@ -150,10 +150,10 @@ export default function ProfitLossSnapshot() {
                 key={tab.id}
                 type="button"
                 onClick={() => setTimeRange(tab.id)}
-                className={`px-3.5 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                   timeRange === tab.id
-                    ? "bg-white text-slate-900 shadow-xs"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "bg-white text-emerald-700 shadow-xs font-bold"
+                    : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 {tab.label}
@@ -252,7 +252,7 @@ export default function ProfitLossSnapshot() {
                 isPositive ? "text-emerald-700" : "text-rose-700"
               }`}
             >
-              {isPositive ? "+" : "-"} Rs.{" "}
+              Rs. {isPositive ? "" : "-"}
               {Math.abs(netProfit).toLocaleString()}
             </span>
             <span className="text-[11px] font-bold text-slate-600 block mt-0.5">

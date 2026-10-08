@@ -1,22 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  X,
-  Tag,
-  DollarSign,
-  User,
-  Phone,
-  Calendar,
-  CreditCard,
-  FileText,
-  AlertCircle,
-  Check,
-  Loader2,
-  TrendingUp,
-  TrendingDown,
-  Beef,
-  Heart,
-  MapPin,
-} from 'lucide-react';
+import { X, Tag, Banknote, User, Phone, Calendar, CreditCard, FileText, AlertCircle, Check, Loader2, TrendingUp, TrendingDown, Beef, Heart, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAnimalContext } from '../../../../context/AnimalContext';
 import PKRIcon from '@/components/common/PKRIcon';

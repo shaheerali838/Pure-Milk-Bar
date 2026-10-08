@@ -1,19 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import {
-  Calendar,
-  Truck,
-  Bike,
-  Droplets,
-  DollarSign,
-  CheckCircle2,
-  Wallet,
-  Fuel,
-  Printer,
-  Users,
-  MapPin,
-  Search,
-  X,
-} from 'lucide-react';
+import { Calendar, Truck, Bike, Droplets, Banknote, CheckCircle2, Wallet, Fuel, Printer, Users, MapPin, Search, X } from 'lucide-react';
 import { useCustomerContext } from '@/context/CustomerContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';

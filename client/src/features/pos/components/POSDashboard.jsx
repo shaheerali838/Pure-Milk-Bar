@@ -158,54 +158,17 @@ export default function POSDashboard() {
   const [stockWarningId, setStockWarningId] = useState(null);
   const [stockWarningMsg, setStockWarningMsg] = useState('');
 
-  // Handle product click with in-UI out-of-stock warning (NO browser alert)
+  // Handle product click
   const handleProductCardClick = (product) => {
     if (isSaleRefreshing) return;
     const displayStock = getProductDisplayStock(product);
-    const isMilk = (product.category || '').toLowerCase().includes('milk') || (product.name || '').toLowerCase().includes('milk');
-    const isDahi = (product.category || '').toLowerCase().includes('dahi') || (product.name || '').toLowerCase().includes('dahi');
-    const isCow = (product.name || '').toLowerCase().includes('cow');
-    const isBuff = (product.name || '').toLowerCase().includes('buffalo');
-    const isSupplier = (product.source || '').toLowerCase() === 'supplier';
-    const unitLabel = product.unit?.replace('per ', '') || (isMilk ? 'L' : isDahi ? 'kg' : 'units');
+    const unitLabel = product.unit?.replace('per ', '') || 'L';
 
     if (displayStock <= 0) {
-      setStockWarningId(product.id);
-      const shortMsg = isCow
-        ? 'Cow milk out of stock hai'
-        : isBuff
-        ? 'Buffalo milk out of stock hai'
-        : isDahi
-        ? `Dahi stock is 0 ${unitLabel}`
-        : `${product.name} out of stock hai`;
-      setStockWarningMsg(shortMsg);
-
-      setTimeout(() => {
-        setStockWarningId((current) => (current === product.id ? null : current));
-      }, 3000);
-
-      toast.error(isCow ? 'Cow milk out of stock hai' : isBuff ? 'Buffalo milk out of stock hai' : `${product.name} out of stock hai`, {
-        description: `Current inventory is 0 ${unitLabel}. Please record milking yield or supplier intake.`,
-        duration: 3500,
+      toast.info(`Selling ${product.name} (Recorded stock: 0 ${unitLabel})`, {
+        description: 'Inventory balance will adjust upon sales recording.',
+        duration: 2000,
       });
-      return;
-    }
-    const cartItem = cart.find((i) => i.id === product.id);
-    const inCartQty = cartItem ? cartItem.quantity : 0;
-    // Only block if we actually have stock tracking enabled for this item
-    if (inCartQty >= displayStock) {
-      setStockWarningId(product.id);
-      setStockWarningMsg(`Max stock in cart (${displayStock} ${unitLabel})`);
-
-      setTimeout(() => {
-        setStockWarningId((current) => (current === product.id ? null : current));
-      }, 3000);
-
-      toast.warning(`Cannot add more "${product.name}"`, {
-        description: `All available stock (${displayStock} ${unitLabel}) is already in your cart.`,
-        duration: 3500,
-      });
-      return;
     }
 
     handleAddToCart(product);
@@ -324,7 +287,7 @@ export default function POSDashboard() {
                 />
               </div>
 
-              <div className="flex items-center gap-1 bg-slate-100 rounded-full p-1 overflow-x-auto no-scrollbar shrink-0">
+              <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold overflow-x-auto no-scrollbar shrink-0">
                 {[
                   { id: 'all', label: 'All Items' },
                   { id: 'milk', label: 'Milk' },
@@ -335,10 +298,10 @@ export default function POSDashboard() {
                     key={cat.id}
                     type="button"
                     onClick={() => setSelectedCategory(cat.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
                       selectedCategory === cat.id
-                        ? 'bg-slate-900 text-white shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                        ? 'bg-white text-emerald-700 shadow-xs font-bold'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     {cat.label}
@@ -412,12 +375,13 @@ export default function POSDashboard() {
 
                         <div className="flex items-center justify-between gap-2 mb-2">
                           <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isMilk
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              isMilk
                                 ? 'bg-blue-50 text-blue-700 border border-blue-200/60'
                                 : isDahi
-                                  ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
-                                  : 'bg-purple-50 text-purple-700 border border-purple-200/60'
-                              }`}
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                                : 'bg-purple-50 text-purple-700 border border-purple-200/60'
+                            }`}
                           >
                             {product.category || 'Dairy'}
                           </span>

@@ -47,6 +47,10 @@ export function ExpenseProvider({ children }) {
                     authorizedBy: exp.authorizedBy || 'Admin',
                     scope: exp.scope || 'FARM',
                     expenseEntity: exp.scope || 'FARM',
+                    receiptRef: exp.receiptNumber || exp.receiptRef || exp.voucherNumber || '',
+                    voucherNumber: exp.voucherNumber || exp.receiptNumber || '',
+                    paymentMethod: exp.paymentMethod || 'Cash',
+                    animalName: exp.animalName || (exp.costAttribution && String(exp.costAttribution).startsWith('Animal: ') ? String(exp.costAttribution).replace('Animal: ', '') : ''),
                 }));
 
                 setExpenses(normalized);
@@ -79,6 +83,7 @@ export function ExpenseProvider({ children }) {
             date: expense.date || new Date().toISOString().split('T')[0],
             amount: Number(expense.amount) || 0,
             scope: (expense.expenseEntity || 'FARM').toUpperCase(),
+            expenseEntity: expense.expenseEntity || 'Farm',
         };
         setExpenses(prev => [newExpense, ...prev]);
 
@@ -88,11 +93,11 @@ export function ExpenseProvider({ children }) {
         if (!allowedCats.includes(mappedCategory)) {
             if (mappedCategory.includes('FEED') || mappedCategory.includes('SEED')) mappedCategory = 'FEED';
             else if (mappedCategory.includes('FUEL') || mappedCategory.includes('TRANSPORT')) mappedCategory = 'TRANSPORT';
-            else if (mappedCategory.includes('SALAR') || mappedCategory.includes('KITCHEN')) mappedCategory = 'SALARIES';
-            else mappedCategory = 'MISC';
+            else if (mappedCategory.includes('SALAR') || mappedCategory.includes('KITCHEN') || mappedCategory.includes('WAGE')) mappedCategory = 'SALARIES';
+            else mappedCategory = expense.category || 'MISC';
         }
 
-        const mappedPaymentMethod = ['CASH', 'ONLINE', 'CHEQUE'].includes(String(expense.paymentMethod).toUpperCase())
+        const mappedPaymentMethod = ['CASH', 'ONLINE', 'CHEQUE', 'BANK_TRANSFER'].includes(String(expense.paymentMethod).toUpperCase())
             ? String(expense.paymentMethod).toUpperCase()
             : 'CASH';
 
@@ -109,7 +114,9 @@ export function ExpenseProvider({ children }) {
                 notes: expense.description || '',
                 paymentMethod: mappedPaymentMethod,
                 receiptRef: expense.receiptRef || '',
+                receiptNumber: expense.receiptRef || '',
                 authorizedBy: expense.authorizedBy || 'Admin',
+                costAttribution: expense.animalName ? `Animal: ${expense.animalName}` : '',
             });
 
             const created = res?.data?.expense || res?.data || res?.expense || res;
@@ -119,9 +126,12 @@ export function ExpenseProvider({ children }) {
                     ...item,
                     _id: realId,
                     id: realId,
-                    amount: Number(created.amountRupees ?? created.amount ?? item.amount)
+                    amount: Number(created.amountRupees ?? created.amount ?? item.amount),
+                    voucherNumber: created.voucherNumber || item.voucherNumber,
                 } : item));
             }
+            window.dispatchEvent(new CustomEvent('expense:updated'));
+            return res;
         } catch (e) {
             console.error('Expense API backend sync error:', e);
             throw e;
@@ -129,15 +139,21 @@ export function ExpenseProvider({ children }) {
     };
 
     const editExpense = async (id, updatedExpense) => {
-        setExpenses(prev => prev.map(exp => ((exp._id || exp.id) === id || exp.id === id ? { ...updatedExpense, id, _id: id } : exp)));
+        setExpenses(prev => prev.map(exp => ((exp._id || exp.id) === id || exp.id === id || String(exp.id) === String(id) ? { ...exp, ...updatedExpense, id, _id: id } : exp)));
         try {
             await api.finance.updateExpense(id, {
                 amountRupees: Number(updatedExpense.amount),
+                amount: Number(updatedExpense.amount),
                 title: updatedExpense.description || updatedExpense.category,
                 category: updatedExpense.category,
+                description: updatedExpense.description,
                 notes: updatedExpense.description || updatedExpense.notes,
+                date: updatedExpense.date,
                 authorizedBy: updatedExpense.authorizedBy,
+                receiptNumber: updatedExpense.receiptRef || updatedExpense.receiptNumber,
+                costAttribution: updatedExpense.animalName ? `Animal: ${updatedExpense.animalName}` : '',
             });
+            window.dispatchEvent(new CustomEvent('expense:updated'));
         } catch (e) {
             console.warn('Expense edit API sync error:', e.message);
             throw e;
@@ -145,7 +161,7 @@ export function ExpenseProvider({ children }) {
     };
 
     const deleteExpense = async (id) => {
-        setExpenses(prev => prev.filter(exp => (exp._id || exp.id) !== id && exp.id !== id));
+        setExpenses(prev => prev.filter(exp => (exp._id || exp.id) !== id && exp.id !== id && String(exp.id) !== String(id)));
         try {
             await api.finance.deleteExpense(id);
             window.dispatchEvent(new CustomEvent('expense:updated'));

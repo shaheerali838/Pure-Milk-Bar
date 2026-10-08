@@ -210,16 +210,49 @@ class MilkingYieldLogService {
   }
 
   async deleteMilkingYieldLog(id) {
-    const log = await MilkingYieldLog.findByIdAndDelete(id).lean();
-
-    if (!log) {
-      throw new AppError('Milking yield log not found', 404, 'MILKING_LOG_NOT_FOUND');
+    let log = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      log = await MilkingYieldLog.findByIdAndDelete(id).lean();
     }
 
-    // Recalculate animal's daily average yield after deletion
-    await this._recalculateAnimalAvgYield(log.animalId);
+    // Pull from Animal intakeHistory by ID
+    await Animal.updateMany(
+      {
+        $or: [
+          ...(mongoose.Types.ObjectId.isValid(id) ? [{ 'intakeHistory._id': id }] : []),
+          { 'intakeHistory.id': id },
+        ],
+      },
+      {
+        $pull: {
+          intakeHistory: {
+            $or: [
+              ...(mongoose.Types.ObjectId.isValid(id) ? [{ _id: id }] : []),
+              { id: id },
+            ],
+          },
+        },
+      }
+    );
 
-    return log;
+    if (log && log.animalId) {
+      await Animal.updateOne(
+        { _id: log.animalId },
+        {
+          $pull: {
+            intakeHistory: {
+              $or: [
+                { _id: log._id },
+                { date: log.date ? (typeof log.date === 'string' ? log.date : log.date.toISOString().split('T')[0]) : undefined, shift: log.shift },
+              ],
+            },
+          },
+        }
+      );
+      await this._recalculateAnimalAvgYield(log.animalId);
+    }
+
+    return log || { deleted: true };
   }
 
   async getDailyYieldSummary(dateStr) {

@@ -70,6 +70,7 @@ export default function DeliveryStats() {
 
   const statCards = [
     {
+      id: 'primary_deliveries',
       label: getPrimaryLabel(),
       value: `${totalCount} Drops`,
       sub: getPrimarySub(),
@@ -78,6 +79,7 @@ export default function DeliveryStats() {
       badge: 'Runs',
     },
     {
+      id: 'pending_deliveries',
       label: 'Pending In Route',
       value: `${pendingCount} Orders`,
       sub: getPendingSub(),
@@ -86,6 +88,7 @@ export default function DeliveryStats() {
       badge: 'In Route',
     },
     {
+      id: 'delivered_deliveries',
       label: 'Delivered Orders',
       value: `${deliveredCount} Completed`,
       sub: getDeliveredSub(),
@@ -94,6 +97,7 @@ export default function DeliveryStats() {
       badge: 'Done',
     },
     {
+      id: 'cod_collect',
       label: 'COD Cash Due',
       value: `Rs. ${codToCollect.toLocaleString()}`,
       sub: getCodSub(),
@@ -104,10 +108,10 @@ export default function DeliveryStats() {
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mb-2">
-      {statCards.map(({ label, value, sub, icon: Icon, color, badge }) => (
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-2.5">
+      {statCards.map(({ id, label, value, sub, icon: Icon, color, badge }) => (
         <div
-          key={label}
+          key={id || label}
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs"
         >
           <div className="flex items-start justify-between mb-1.5">
@@ -123,8 +127,9 @@ export default function DeliveryStats() {
               </span>
             </div>
           </div>
+
           <div>
-            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular font-display">
               {value}
             </p>
             <p className="text-xs font-bold text-slate-800">{label}</p>
@@ -135,5 +140,3 @@ export default function DeliveryStats() {
     </div>
   );
 }
-
-

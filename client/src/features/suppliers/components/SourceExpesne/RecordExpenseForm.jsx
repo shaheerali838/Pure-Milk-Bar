@@ -1,17 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  ArrowLeft,
-  Receipt,
-  Check,
-  Calendar,
-  DollarSign,
-  Tag,
-  CreditCard,
-  FileText,
-  User,
-  MapPin,
-  ShieldCheck,
-} from 'lucide-react';
+import { ArrowLeft, Receipt, Check, Calendar, Banknote, Tag, CreditCard, FileText, User, MapPin, ShieldCheck } from 'lucide-react';
 import {
   useSourcExpenseContext,
   CATEGORY_OPTIONS,
@@ -290,7 +278,7 @@ export default function RecordExpenseForm({
           <div className="pt-2 border-t border-slate-100">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-2.5">
               <div className="w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">
-                <DollarSign className="w-3.5 h-3.5" />
+                <Banknote className="w-3.5 h-3.5" />
               </div>
               <h2 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
                 2. Financial Amount &amp; Operational Narrative

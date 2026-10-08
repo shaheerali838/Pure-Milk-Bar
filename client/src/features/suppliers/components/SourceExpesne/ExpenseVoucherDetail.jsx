@@ -1,21 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  ArrowLeft,
-  Edit,
-  Trash2,
-  Printer,
-  Receipt,
-  DollarSign,
-  Calendar,
-  Tag,
-  CreditCard,
-  User,
-  MapPin,
-  CheckCircle2,
-  Search,
-  X,
-  Sparkles,
-} from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Printer, Receipt, Banknote, Calendar, Tag, CreditCard, User, MapPin, CheckCircle2, Search, X, Sparkles } from 'lucide-react';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import RecordExpenseForm from './RecordExpenseForm';
 
@@ -244,7 +228,7 @@ export default function ExpenseVoucherDetail({
           {/* Card 1: Amount */}
           <div className="p-3.5 bg-emerald-50/50 rounded-xl border border-emerald-200/70">
             <div className="flex items-center gap-1.5 text-emerald-700 text-[10px] font-bold uppercase tracking-wider mb-1">
-              <DollarSign className="w-3.5 h-3.5" />
+              <Banknote className="w-3.5 h-3.5" />
               Disbursed Outlay
             </div>
             <p className="text-base font-black text-slate-900 font-mono">

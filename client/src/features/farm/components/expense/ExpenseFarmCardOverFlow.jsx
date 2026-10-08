@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useExpense } from '../../../../context/ExpenseContext';
-import { DollarSign, Tractor, Wrench, Utensils } from 'lucide-react';
+import { Banknote, Tractor, Wrench, Utensils } from 'lucide-react';
 
 export default function ExpenseFarmCardOverFlow({ expenses: propExpenses }) {
   const { totals: globalTotals } = useExpense();
@@ -58,13 +58,13 @@ export default function ExpenseFarmCardOverFlow({ expenses: propExpenses }) {
       label: "Total Farm Expense",
       value: `Rs. ${activeTotals.totalFarmExpense.toLocaleString()}`,
       sub: "Total expenses recorded",
-      icon: DollarSign,
+      icon: Banknote,
       color: "#009966",
       badge: "Total Expenses"
     },
     {
       label: "Feed, Seed & Farming",
-      value: `PKR ${activeTotals.feedSeedFarming.toLocaleString()}`,
+      value: `Rs. ${activeTotals.feedSeedFarming.toLocaleString()}`,
       sub: "Farming supplies & feed",
       icon: Tractor,
       color: "#155dfc",
@@ -72,7 +72,7 @@ export default function ExpenseFarmCardOverFlow({ expenses: propExpenses }) {
     },
     {
       label: "Fuel, Transport & Repairs",
-      value: `PKR ${activeTotals.fuelTransportRepairs.toLocaleString()}`,
+      value: `Rs. ${activeTotals.fuelTransportRepairs.toLocaleString()}`,
       sub: "Vehicle & maintenance",
       icon: Wrench,
       color: "#009689",
@@ -80,7 +80,7 @@ export default function ExpenseFarmCardOverFlow({ expenses: propExpenses }) {
     },
     {
       label: "Salaries & Kitchen Mess",
-      value: `PKR ${activeTotals.salariesKitchenMess.toLocaleString()}`,
+      value: `Rs. ${activeTotals.salariesKitchenMess.toLocaleString()}`,
       sub: "Staff & food costs",
       icon: Utensils,
       color: "#10b981",

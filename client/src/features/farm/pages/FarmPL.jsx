@@ -1,19 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Calendar,
-  Download,
-  Filter,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Droplets,
-  Receipt,
-  FileSpreadsheet,
-  RotateCcw,
-  Clock,
-  Sparkles,
-  Info,
-} from 'lucide-react';
+import { Calendar, Download, Filter, TrendingUp, TrendingDown, Banknote, Droplets, Receipt, FileSpreadsheet, RotateCcw, Clock, Sparkles, Info } from 'lucide-react';
 import { useExpense } from '@/context/ExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useAnimalContext } from '@/context/AnimalContext';
@@ -385,13 +371,23 @@ export default function FarmPL() {
     const posShare = grossRevenue > 0 ? Math.round((posRevenue / grossRevenue) * 100) : 0;
     const wholesaleShare = grossRevenue > 0 ? Math.max(0, 100 - doorstepShare - posShare) : 0;
 
-    // Direct Farm Production base from AnimalContext
-    const cowsList = animals.filter((a) => (a.species || '').toLowerCase().includes('cow'));
-    const buffsList = animals.filter((a) => (a.species || '').toLowerCase().includes('buffalo'));
-
-    const cowYieldDaily = cowsList.reduce((s, a) => s + parseYield(a.totalDailyYield), 0);
-    const buffYieldDaily = buffsList.reduce((s, a) => s + parseYield(a.totalDailyYield), 0);
-    const farmYieldDaily = cowYieldDaily + buffYieldDaily;
+    // Direct Farm Production base from Milking Logs in current timeframe
+    const matchedMilking = (milkingLogs || []).filter((l) =>
+      isMatchingTimeframe(l.date, timeframe, customStart, customEnd)
+    );
+    const cowMilkingYield = matchedMilking
+      .filter((l) => {
+        const tag = (l.animalTag || l.tag || l.animalId?.tagNumber || l.animalId?.tag || '').toUpperCase();
+        return tag.startsWith('COW') || (l.animalId?.type || '').toUpperCase() === 'COW';
+      })
+      .reduce((s, l) => s + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
+    const buffMilkingYield = matchedMilking
+      .filter((l) => {
+        const tag = (l.animalTag || l.tag || l.animalId?.tagNumber || l.animalId?.tag || '').toUpperCase();
+        return !tag.startsWith('COW') && (l.animalId?.type || '').toUpperCase() !== 'COW';
+      })
+      .reduce((s, l) => s + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
+    const farmYieldDaily = cowMilkingYield + buffMilkingYield;
 
     // Helper to calculate channel split object
     const calcSplit = (chObj, totalRev) => {
@@ -413,12 +409,12 @@ export default function FarmPL() {
         name: 'Fresh Pure Cow Milk',
         category: 'Raw Milk',
         unit: 'L',
-        totalOutput: cowMilkVolume > 0 ? cowMilkVolume : cowYieldDaily,
-        sellingRate: cowMilkVolume > 0 ? Math.round(cowMilkRevenue / cowMilkVolume) : 210,
+        totalOutput: cowMilkVolume > 0 ? cowMilkVolume : cowMilkingYield,
+        sellingRate: cowMilkVolume > 0 ? Math.round(cowMilkRevenue / cowMilkVolume) : 0,
         grossRealized: cowMilkRevenue,
-        directCost: cowMilkVolume > 0 ? (cowMilkVolume * 135) : 0,
-        netProfit: cowMilkRevenue - (cowMilkVolume > 0 ? (cowMilkVolume * 135) : 0),
-        netMargin: cowMilkRevenue > 0 ? (((cowMilkRevenue - (cowMilkVolume * 135)) / cowMilkRevenue) * 100).toFixed(1) : '0.0',
+        directCost: 0,
+        netProfit: cowMilkRevenue,
+        netMargin: '100.0',
         channelSplit: calcSplit(prodChannels.cow, cowMilkRevenue),
         recentTransactions: cowTransactions,
       },
@@ -427,12 +423,12 @@ export default function FarmPL() {
         name: 'Fresh Rich Buffalo Milk',
         category: 'Raw Milk',
         unit: 'L',
-        totalOutput: buffMilkVolume > 0 ? buffMilkVolume : buffYieldDaily,
-        sellingRate: buffMilkVolume > 0 ? Math.round(buffMilkRevenue / buffMilkVolume) : 240,
+        totalOutput: buffMilkVolume > 0 ? buffMilkVolume : buffMilkingYield,
+        sellingRate: buffMilkVolume > 0 ? Math.round(buffMilkRevenue / buffMilkVolume) : 0,
         grossRealized: buffMilkRevenue,
-        directCost: buffMilkVolume > 0 ? (buffMilkVolume * 155) : 0,
-        netProfit: buffMilkRevenue - (buffMilkVolume > 0 ? (buffMilkVolume * 155) : 0),
-        netMargin: buffMilkRevenue > 0 ? (((buffMilkRevenue - (buffMilkVolume * 155)) / buffMilkRevenue) * 100).toFixed(1) : '0.0',
+        directCost: 0,
+        netProfit: buffMilkRevenue,
+        netMargin: '100.0',
         channelSplit: calcSplit(prodChannels.buff, buffMilkRevenue),
         recentTransactions: buffTransactions,
       },
@@ -442,11 +438,11 @@ export default function FarmPL() {
         category: 'Value-Added',
         unit: 'kg',
         totalOutput: dahiVolume,
-        sellingRate: dahiVolume > 0 ? Math.round(dahiRevenue / dahiVolume) : 280,
+        sellingRate: dahiVolume > 0 ? Math.round(dahiRevenue / dahiVolume) : 0,
         grossRealized: dahiRevenue,
-        directCost: dahiVolume > 0 ? (dahiVolume * 180) : 0,
-        netProfit: dahiRevenue - (dahiVolume > 0 ? (dahiVolume * 180) : 0),
-        netMargin: dahiRevenue > 0 ? (((dahiRevenue - (dahiVolume * 180)) / dahiRevenue) * 100).toFixed(1) : '0.0',
+        directCost: 0,
+        netProfit: dahiRevenue,
+        netMargin: '100.0',
         channelSplit: calcSplit(prodChannels.dahi, dahiRevenue),
         recentTransactions: dahiTransactions,
       },
@@ -852,7 +848,7 @@ export default function FarmPL() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 text-xs">
+          <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold">
             <button
               type="button"
               onClick={() => {
@@ -861,9 +857,9 @@ export default function FarmPL() {
                 setStartDate('');
                 setEndDate('');
               }}
-              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 dateFilterMode === 'today'
-                  ? 'bg-white text-slate-900 shadow-2xs'
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -877,9 +873,9 @@ export default function FarmPL() {
                 setStartDate('');
                 setEndDate('');
               }}
-              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 dateFilterMode === 'this_month'
-                  ? 'bg-white text-slate-900 shadow-2xs'
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -893,9 +889,9 @@ export default function FarmPL() {
                 setStartDate('');
                 setEndDate('');
               }}
-              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 dateFilterMode === 'all'
-                  ? 'bg-white text-slate-900 shadow-2xs'
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -906,9 +902,9 @@ export default function FarmPL() {
               onClick={() => {
                 setDateFilterMode('custom');
               }}
-              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 dateFilterMode === 'custom'
-                  ? 'bg-white text-slate-900 shadow-2xs'
+                  ? 'bg-white text-emerald-700 shadow-xs font-bold'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >

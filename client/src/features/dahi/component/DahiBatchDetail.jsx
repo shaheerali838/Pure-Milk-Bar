@@ -1,15 +1,5 @@
 import React from 'react';
-import {
-  ArrowLeft,
-  Trash2,
-  Layers,
-  Milk,
-  CheckCircle,
-  Clock,
-  Settings,
-  Droplets,
-  DollarSign
-} from 'lucide-react';
+import { ArrowLeft, Trash2, Layers, Milk, CheckCircle, Clock, Settings, Droplets, Banknote } from 'lucide-react';
 import { useDahiContext } from '@/context/DahiContext';
 
 export default function DahiBatchDetail({ batchId, onBack }) {
@@ -204,7 +194,7 @@ export default function DahiBatchDetail({ batchId, onBack }) {
 
           <div className="p-4 bg-amber-50/50 rounded-xl border border-amber-200/70">
             <div className="flex items-center gap-1.5 text-amber-700 text-[10px] font-bold uppercase tracking-wider mb-1">
-              <DollarSign className="w-3.5 h-3.5" />
+              <Banknote className="w-3.5 h-3.5" />
               Retail POS Rate
             </div>
             <p className="text-sm font-bold text-slate-800 font-mono">

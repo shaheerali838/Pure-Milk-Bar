@@ -2,10 +2,17 @@ import React, { useState, useMemo } from "react";
 import ExpenseFarmCardOverFlow from "./ExpenseFarmCardOverFlow";
 import ExpenseFilterHeader from "./ExpenseFilterHeader";
 import ExpenseTable from "./ExpenseTable";
-import { Plus } from "lucide-react";
+import { Plus, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import RecordExpenseForm from "./RecordExpenseForm";
 import { useExpense } from "@/context/ExpenseContext";
+
+const formatLocalDate = (d) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 export default function ExpenseDashboard() {
     const { expenses = [] } = useExpense();
@@ -16,6 +23,13 @@ export default function ExpenseDashboard() {
     const [endDate, setEndDate] = useState('');
     const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
     const [editingExpenseId, setEditingExpenseId] = useState(null);
+
+    const todayFormatted = new Date().toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    });
 
     const handleOpenExpenseForm = (expenseId = null) => {
         setEditingExpenseId(expenseId);
@@ -30,14 +44,24 @@ export default function ExpenseDashboard() {
     // Filter expenses by scope ('FARM'), date, category, and search query
     const filteredExpenses = useMemo(() => {
         const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
+        const todayStr = formatLocalDate(now);
 
         // Start of current week (Monday)
         const day = now.getDay();
         const diffToMonday = (day === 0 ? -6 : 1) - day;
         const monday = new Date(now);
         monday.setDate(now.getDate() + diffToMonday);
-        const mondayStr = monday.toISOString().split('T')[0];
+        const mondayStr = formatLocalDate(monday);
+
+        // End of current week (Sunday)
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        const sundayStr = formatLocalDate(sunday);
+
+        // Start of current month
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthStartStr = formatLocalDate(monthStart);
+        const monthEndStr = todayStr;
 
         return expenses.filter((exp) => {
             // Strictly farm scope
@@ -45,11 +69,17 @@ export default function ExpenseDashboard() {
             if (scope !== 'FARM') return false;
 
             // 1. Date Filter
-            const expDate = exp.date ? String(exp.date).slice(0, 10) : '';
+            const rawDate = exp.date;
+            const expDate = rawDate
+                ? (typeof rawDate === 'string' && rawDate.includes('T') ? rawDate.split('T')[0] : String(rawDate).slice(0, 10))
+                : '';
+
             if (dateFilter === 'today') {
                 if (expDate !== todayStr) return false;
             } else if (dateFilter === 'this_week') {
-                if (expDate < mondayStr || expDate > todayStr) return false;
+                if (expDate < mondayStr || expDate > sundayStr) return false;
+            } else if (dateFilter === 'this_month') {
+                if (expDate < monthStartStr || expDate > monthEndStr) return false;
             } else if (dateFilter === 'custom') {
                 if (startDate && expDate < startDate) return false;
                 if (endDate && expDate > endDate) return false;
@@ -59,11 +89,16 @@ export default function ExpenseDashboard() {
             if (categoryFilter && categoryFilter !== 'All') {
                 const expCat = (exp.category || '').toLowerCase();
                 const filterCat = categoryFilter.toLowerCase();
-                const firstWord = filterCat.split(' ')[0];
+                const firstWord = filterCat.split(' ')[0].replace(/[^a-z0-9]/g, '');
+                const expFirstWord = expCat.split(' ')[0].replace(/[^a-z0-9]/g, '');
+
                 const matchesCategory =
                     expCat === filterCat ||
                     expCat.includes(filterCat) ||
-                    expCat.startsWith(firstWord);
+                    filterCat.includes(expCat) ||
+                    (firstWord && expCat.includes(firstWord)) ||
+                    (expFirstWord && filterCat.includes(expFirstWord));
+
                 if (!matchesCategory) return false;
             }
 
@@ -74,6 +109,7 @@ export default function ExpenseDashboard() {
                 const cat = (exp.category || '').toLowerCase();
                 const ref = (exp.receiptRef || exp.voucherNumber || '').toLowerCase();
                 const auth = (exp.authorizedBy || '').toLowerCase();
+                const animal = (exp.animalName || '').toLowerCase();
                 const amt = String(exp.amount || '');
 
                 const matchesSearch =
@@ -81,6 +117,7 @@ export default function ExpenseDashboard() {
                     cat.includes(q) ||
                     ref.includes(q) ||
                     auth.includes(q) ||
+                    animal.includes(q) ||
                     amt.includes(q);
                 if (!matchesSearch) return false;
             }
@@ -104,8 +141,14 @@ export default function ExpenseDashboard() {
             <div className="space-y-3">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-2 gap-3">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Farm Operating Expenses</h1>
-                        <p className="text-xs text-slate-500 font-medium">Track farm inputs, feed, utilities, salaries and maintenance costs</p>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Farm Operating Expenses</h1>
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-semibold shadow-2xs">
+                                <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>{todayFormatted}</span>
+                            </div>
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">Track farm inputs, feed, utilities, salaries and maintenance costs</p>
                     </div>
                     <div className="items-center w-full sm:w-auto">
                         <Button

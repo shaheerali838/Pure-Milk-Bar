@@ -166,7 +166,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                               ? 'Click to direct finish & clear Khata'
                               : 'Khata account (No outstanding debt)'
                           }
-                          className="px-2 py-0.5 rounded bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-semibold border border-purple-200/60 transition cursor-pointer"
+                          className="px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-[11px] font-bold border border-purple-200/80 shadow-2xs transition-all cursor-pointer"
                         >
                           Khata · Finish
                         </button>
@@ -183,33 +183,29 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                     </TableCell>
 
                     <TableCell className="px-2 py-1.5 text-right">
-                      <div className="flex items-center justify-end gap-1 text-slate-400">
-                        <Button
+                      <div className="flex items-center justify-end gap-1.5 text-slate-400">
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (onViewCustomer) onViewCustomer(c);
                           }}
                           title="View Khata Ledger & Details"
-                          className="h-7 w-7 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                          className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-blue-50 text-slate-500 hover:text-blue-600 shadow-2xs flex items-center justify-center transition-all cursor-pointer"
                         >
                           <Eye className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
+                        </button>
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (onEditCustomer) onEditCustomer(c);
                           }}
                           title="Edit Customer"
-                          className="h-7 w-7 p-0 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50"
+                          className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 shadow-2xs flex items-center justify-center transition-all cursor-pointer"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
-                        </Button>
+                        </button>
                       </div>
                     </TableCell>
                   </TableRow>

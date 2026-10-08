@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Users, DollarSign, Calendar, Filter, ExternalLink, Trash2 } from 'lucide-react';
+import { ArrowLeft, Users, Banknote, Calendar, Filter, ExternalLink, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function StaffSalaryDetail({ data, onClose, onBack, onDeletePayment }) {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Receipt, DollarSign, PieChart as PieIcon, Calendar, Filter } from 'lucide-react';
+import { ArrowLeft, Receipt, Banknote, PieChart as PieIcon, Calendar, Filter } from 'lucide-react';
 
 export default function FarmCostsDetail({ data, onClose, onBack }) {
   const handleBack = onBack || onClose;

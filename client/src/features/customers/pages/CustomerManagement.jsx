@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import CustomerHeader from '../components/Customer_&_Accounts/CustomerHeader';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import CustomerStatsCards from '../components/Customer_&_Accounts/CustomerStatsCards';
 import CustomerFilters from '../components/Customer_&_Accounts/CustomerFilters';
 import CustomerTable from '../components/Customer_&_Accounts/CustomerTable';
@@ -10,21 +9,36 @@ import CustomerAdvancePaymentsView from '../components/Customer_&_Accounts/Custo
 
 export default function CustomerManagement() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const actionParam = searchParams.get('action');
+
   const [currentView, setCurrentView] = useState('list'); // 'list' | 'add' | 'edit' | 'advance'
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
+  useEffect(() => {
+    if (actionParam === 'add') {
+      setCurrentView('add');
+    }
+  }, [actionParam]);
+
+  const handleBackToList = () => {
+    if (searchParams.has('action')) {
+      searchParams.delete('action');
+      setSearchParams(searchParams);
+    }
+    setSelectedCustomer(null);
+    setCurrentView('list');
+  };
+
   if (currentView === 'add') {
-    return <AddNewCustomerView onBack={() => setCurrentView('list')} />;
+    return <AddNewCustomerView onBack={handleBackToList} />;
   }
 
   if (currentView === 'edit' && selectedCustomer) {
     return (
       <EditCustomerView
         customer={selectedCustomer}
-        onBack={() => {
-          setSelectedCustomer(null);
-          setCurrentView('list');
-        }}
+        onBack={handleBackToList}
       />
     );
   }
@@ -32,30 +46,34 @@ export default function CustomerManagement() {
   if (currentView === 'advance') {
     return (
       <CustomerAdvancePaymentsView
-        onBack={() => setCurrentView('list')}
+        onBack={handleBackToList}
         onOpenAddCustomer={() => setCurrentView('add')}
       />
     );
   }
 
   return (
-    <div className="compact-stack flex flex-col">
-      <CustomerHeader onOpenAddModal={() => setCurrentView('add')} />
+    <div className="space-y-4">
+      {/* KPI Stats Cards */}
       <CustomerStatsCards onOpenAdvanceDetails={() => setCurrentView('advance')} />
-      <CustomerFilters />
-      <CustomerTable
-        onViewCustomer={(cust) => {
-          const custId = cust?._id || cust?.id;
-          if (custId) {
-            navigate(`/customer-hub/khata-ledger?customerId=${custId}`);
-          }
-        }}
-        onEditCustomer={(cust) => {
-          setSelectedCustomer(cust);
-          setCurrentView('edit');
-        }}
-      />
+
+      {/* Customer Directory Table Section with Clean Controls */}
+      <div className="space-y-3 pt-2">
+        <CustomerFilters />
+
+        <CustomerTable
+          onViewCustomer={(cust) => {
+            const custId = cust?._id || cust?.id;
+            if (custId) {
+              navigate(`/customer-hub/khata-ledger?customerId=${custId}`);
+            }
+          }}
+          onEditCustomer={(cust) => {
+            setSelectedCustomer(cust);
+            setCurrentView('edit');
+          }}
+        />
+      </div>
     </div>
   );
 }
-

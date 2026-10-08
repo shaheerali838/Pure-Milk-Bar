@@ -1,19 +1,5 @@
 import React from 'react';
-import {
-  ArrowLeft,
-  Phone,
-  Smartphone,
-  Milk,
-  CreditCard,
-  MapPin,
-  ShieldCheck,
-  Edit3,
-  Calendar,
-  User,
-  Activity,
-  DollarSign,
-  AlertCircle
-} from 'lucide-react';
+import { ArrowLeft, Phone, Smartphone, Milk, CreditCard, MapPin, ShieldCheck, Edit3, Calendar, User, Activity, Banknote, AlertCircle, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

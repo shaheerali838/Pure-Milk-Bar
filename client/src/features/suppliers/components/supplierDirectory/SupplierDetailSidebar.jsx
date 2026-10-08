@@ -1,18 +1,5 @@
 import React from 'react';
-import {
-  X,
-  Phone,
-  MapPin,
-  Building2,
-  Droplets,
-  Receipt,
-  Clock,
-  DollarSign,
-  Edit,
-  CheckCircle2,
-  XCircle,
-  Calendar,
-} from 'lucide-react';
+import { X, Phone, MapPin, Building2, Droplets, Receipt, Clock, Banknote, Edit, CheckCircle2, XCircle, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 

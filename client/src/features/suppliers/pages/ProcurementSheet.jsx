@@ -1,18 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  FileText,
-  Calendar,
-  Download,
-  Printer,
-  CheckCircle2,
-  Lock,
-  Droplets,
-  Layers,
-  DollarSign,
-  Sun,
-  Moon,
-  TrendingUp,
-} from 'lucide-react';
+import { FileText, Calendar, Download, Printer, CheckCircle2, Lock, Droplets, Layers, Banknote, Sun, Moon, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -400,7 +387,7 @@ export default function ProcurementSheet() {
             title: 'Milk Purchases',
             amount: `Rs. ${totals.totalNetPayable.toLocaleString()}`,
             sub: 'Farmer Disbursements',
-            icon: DollarSign,
+            icon: Banknote,
             color: '#d97706',
             badge: 'Khata',
           },
@@ -418,7 +405,7 @@ export default function ProcurementSheet() {
             title: 'Sourcing Expenses',
             amount: `Rs. ${totals.totalExpenses.toLocaleString()}`,
             sub: 'Chilling & transit',
-            icon: DollarSign,
+            icon: Banknote,
             color: '#e11d48',
             badge: 'Expense',
           },

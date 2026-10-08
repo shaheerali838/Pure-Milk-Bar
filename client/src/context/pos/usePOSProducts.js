@@ -178,6 +178,47 @@ export function usePOSProducts({ setCart } = {}) {
     } catch (err) {}
   };
 
+  // Deduct Stock After Sale (Immediate Context State Mutation without reload)
+  const deductStockAfterSale = useCallback((cartItems) => {
+    if (!Array.isArray(cartItems) || cartItems.length === 0) return;
+
+    setProducts((prevProducts) => {
+      return prevProducts.map((product) => {
+        const prodId = String(product.id || product._id || '');
+        const prodSku = String(product.sku || '');
+        const prodName = String(product.name || '').replace(/\s*\((Farm|Supplier)\s*Share\)/i, '').trim().toLowerCase();
+
+        // Find all matching cart items
+        const matchedItems = cartItems.filter((item) => {
+          const itemId = String(item.id || item._id || item.productId || '');
+          const itemSku = String(item.sku || '');
+          const itemName = String(item.name || '').replace(/\s*\((Farm|Supplier)\s*Share\)/i, '').trim().toLowerCase();
+
+          return (
+            (prodId && itemId && prodId === itemId) ||
+            (prodSku && itemSku && prodSku === itemSku) ||
+            (prodName && itemName && prodName === itemName)
+          );
+        });
+
+        if (matchedItems.length > 0) {
+          const totalDeduct = matchedItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+          const currentStock = product.stock !== undefined ? Number(product.stock) : (product.currentStock !== undefined ? Number(product.currentStock) : (Number(product.quantity) || 0));
+          const updatedStock = Math.max(0, Number((currentStock - totalDeduct).toFixed(2)));
+
+          return {
+            ...product,
+            stock: updatedStock,
+            currentStock: updatedStock,
+            quantity: updatedStock,
+          };
+        }
+
+        return product;
+      });
+    });
+  }, []);
+
   return {
     products,
     setProducts,
@@ -189,5 +230,6 @@ export function usePOSProducts({ setCart } = {}) {
     updateProduct,
     batchUpdateProducts,
     deleteProduct,
+    deductStockAfterSale,
   };
 }

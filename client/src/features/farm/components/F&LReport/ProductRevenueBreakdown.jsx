@@ -126,7 +126,7 @@ export default function ProductRevenueBreakdown({ productsData = [], onSelectPro
                     <td className="py-3.5 px-3 text-right tabular">
                       <span className={`font-bold ${isProfitable ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {item.netProfit < 0
-                          ? `-Rs. ${Math.abs(Math.round(item.netProfit)).toLocaleString()}`
+                          ? `Rs. -${Math.abs(Math.round(item.netProfit)).toLocaleString()}`
                           : fmt(item.netProfit || 0)}
                       </span>
                       <span className="block text-[10px] text-slate-400">

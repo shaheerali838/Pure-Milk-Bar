@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X,Droplets,Layers,TrendingUp,Scale,DollarSign,Receipt,Truck,Building2,Calendar,CheckCircle2,ArrowUpRight,ShoppingBag,Store,User,Milk,} from 'lucide-react';
+import { X, Droplets, Layers, TrendingUp, Scale, Banknote, Receipt, Truck, Building2, Calendar, CheckCircle2, ArrowUpRight, ShoppingBag, Store, User, Milk } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 import { getProductIcon } from '@/features/inventory/components/AddProduct';
 

@@ -1,19 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  ArrowLeft,
-  Beef,
-  Check,
-  Calendar,
-  DollarSign,
-  Activity,
-  Milk,
-  FileText,
-  Tag,
-  ShieldCheck,
-  Loader2,
-  Sparkles,
-  Heart,
-} from "lucide-react";
+import { ArrowLeft, Beef, Check, Calendar, Banknote, Activity, Milk, FileText, Tag, ShieldCheck, Loader2, Sparkles, Heart } from 'lucide-react';
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import ImageUpload from "@/components/common/ImageUpload";
 
@@ -427,7 +413,7 @@ export default function AnimalAdd({
           <div className="pt-2 border-t border-slate-100">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-2.5">
               <div className="w-6 h-6 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center text-xs">
-                <DollarSign className="w-3.5 h-3.5" />
+                <Banknote className="w-3.5 h-3.5" />
               </div>
               <h2 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
                 3. Acquisition, Valuation &amp; Health

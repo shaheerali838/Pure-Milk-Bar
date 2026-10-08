@@ -1,16 +1,5 @@
 import React from 'react';
-import {
-  Wallet,
-  ArrowDownLeft,
-  ArrowUpRight,
-  CreditCard,
-  Building,
-  Truck,
-  DollarSign,
-  Receipt,
-  PiggyBank,
-  Users,
-} from 'lucide-react';
+import { Wallet, ArrowDownLeft, ArrowUpRight, CreditCard, Building, Truck, Banknote, Receipt, PiggyBank, Users } from 'lucide-react';
 import { useStaffContext } from '@/context/StaffContext';
 
 export default function MoneyInAndOutBlock({
@@ -110,7 +99,7 @@ export default function MoneyInAndOutBlock({
           <div className="space-y-2 text-xs sm:text-sm">
             <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
               <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                <DollarSign className="w-3.5 h-3.5 text-slate-400" />
+                <Banknote className="w-3.5 h-3.5 text-slate-400" />
                 1. POS Counter Cash Sales
               </span>
               <span className="font-semibold text-slate-900 dark:text-white">{formatRs(counterCash)}</span>

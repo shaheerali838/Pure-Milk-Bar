@@ -97,7 +97,7 @@ export default function FarmYieldHub() {
 
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
             <span className="text-slate-600 text-xs font-semibold">
-              Farm Milk Stock
+              Farm Milk Stock (With Me)
             </span>
             <span className="font-mono font-bold text-emerald-700 text-xs tabular">
               {inventoryMetrics?.farmMilkStock || 0} L (Chiller)
@@ -121,8 +121,8 @@ export default function FarmYieldHub() {
           </span>
           <span className="font-mono font-black text-emerald-700 text-sm tabular">
             {netMargin >= 0
-              ? `+Rs. ${netMargin.toLocaleString()}`
-              : `-Rs. ${Math.abs(netMargin).toLocaleString()}`}
+              ? `Rs. ${netMargin.toLocaleString()}`
+              : `Rs. -${Math.abs(netMargin).toLocaleString()}`}
           </span>
         </div>
       </div>

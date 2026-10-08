@@ -1,18 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Bike,
-  Footprints,
-  Fuel,
-  Package,
-  CheckCircle2,
-  Clock,
-  Car,
-  Search,
-  Calendar,
-  DollarSign,
-  TrendingUp,
-  MapPin,
-} from 'lucide-react';
+import { Bike, Footprints, Fuel, Package, CheckCircle2, Clock, Car, Search, Calendar, Banknote, TrendingUp, MapPin } from 'lucide-react';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useFuelLogContext } from '@/context/FuelLogContext';
 import { Badge } from '@/components/ui/badge';

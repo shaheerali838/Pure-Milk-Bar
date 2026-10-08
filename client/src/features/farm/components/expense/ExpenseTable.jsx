@@ -3,6 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { useExpense } from '../../../../context/ExpenseContext';
 import { FileText, Eye, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
+const formatDisplayDate = (d) => {
+  if (!d) return '-';
+  if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    const [y, m, day] = d.split('-');
+    return `${day}/${m}/${y}`;
+  }
+  try {
+    const dateObj = new Date(d);
+    if (!isNaN(dateObj.getTime())) {
+      return dateObj.toLocaleDateString('en-GB');
+    }
+  } catch (e) {}
+  return String(d).slice(0, 10);
+};
 
 export default function ExpenseTable({
   expenses: propExpenses,
@@ -21,11 +37,14 @@ export default function ExpenseTable({
     if (!propExpenses && categoryFilter && categoryFilter !== 'All') {
       const expCat = (expense.category || '').toLowerCase();
       const filterCat = categoryFilter.toLowerCase();
-      const firstWord = filterCat.split(' ')[0];
+      const firstWord = filterCat.split(' ')[0].replace(/[^a-z0-9]/g, '');
+      const expFirstWord = expCat.split(' ')[0].replace(/[^a-z0-9]/g, '');
       const matchesCategory =
         expCat === filterCat ||
         expCat.includes(filterCat) ||
-        expCat.startsWith(firstWord);
+        filterCat.includes(expCat) ||
+        (firstWord && expCat.includes(firstWord)) ||
+        (expFirstWord && filterCat.includes(expFirstWord));
       if (!matchesCategory) return false;
     }
 
@@ -34,8 +53,9 @@ export default function ExpenseTable({
       const q = searchQuery.toLowerCase().trim();
       const desc = (expense.description || '').toLowerCase();
       const cat = (expense.category || '').toLowerCase();
-      const ref = (expense.receiptRef || '').toLowerCase();
+      const ref = (expense.receiptRef || expense.voucherNumber || '').toLowerCase();
       const auth = (expense.authorizedBy || '').toLowerCase();
+      const animal = (expense.animalName || '').toLowerCase();
       const amt = String(expense.amount || '');
 
       const matchesSearch =
@@ -43,6 +63,7 @@ export default function ExpenseTable({
         cat.includes(q) ||
         ref.includes(q) ||
         auth.includes(q) ||
+        animal.includes(q) ||
         amt.includes(q);
       if (!matchesSearch) return false;
     }
@@ -64,8 +85,10 @@ export default function ExpenseTable({
     if (window.confirm(msg)) {
       try {
         await deleteExpense(expId);
+        toast.success('Expense deleted successfully');
       } catch (err) {
         console.error('Error deleting expense:', err);
+        toast.error('Failed to delete expense');
       }
     }
   };
@@ -103,8 +126,8 @@ export default function ExpenseTable({
                   onClick={() => navigate(`/farm/expenses/detail/${expenseId}`)}
                   className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
                 >
-                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-xs font-medium">
-                    {expense.date ? new Date(expense.date).toLocaleDateString('en-GB') : '-'}
+                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-xs font-semibold">
+                    {formatDisplayDate(expense.date)}
                   </td>
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
@@ -114,7 +137,7 @@ export default function ExpenseTable({
                   <td className="px-4 py-3 text-slate-600 font-medium text-xs">
                     {expense.animalName || '-'}
                   </td>
-                  <td className="px-4 py-3 text-slate-700 max-w-[220px] truncate text-xs" title={expense.description || expense.title || ''}>
+                  <td className="px-4 py-3 text-slate-700 max-w-[220px] truncate text-xs font-medium" title={expense.description || expense.title || ''}>
                     {expense.description || expense.title || '-'}
                   </td>
                   <td className="px-4 py-3 text-slate-500 font-mono text-xs">
@@ -124,7 +147,7 @@ export default function ExpenseTable({
                     Rs. {Number(expense.amount).toLocaleString()}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="flex items-center justify-center space-x-1">
                       <Button
                         variant="ghost"
                         size="icon"

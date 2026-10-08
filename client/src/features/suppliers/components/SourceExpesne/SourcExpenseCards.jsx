@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, Fuel, FlaskConical, Users2, TrendingUp } from 'lucide-react';
+import { Banknote, Fuel, FlaskConical, Users2, TrendingUp } from 'lucide-react';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 
 export default function SourcExpenseCards() {
@@ -16,7 +16,7 @@ export default function SourcExpenseCards() {
       title: 'Total Sourcing Costs',
       amount: totalSourcingCosts,
       subtitle: `${expenses.length} vouchers recorded`,
-      icon: DollarSign,
+      icon: Banknote,
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-50',
       borderColor: 'border-emerald-100',

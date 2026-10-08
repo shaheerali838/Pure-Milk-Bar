@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Layers, Package, TrendingUp, Sparkles, DollarSign } from 'lucide-react';
+import { ArrowLeft, Layers, Package, TrendingUp, Sparkles, Banknote } from 'lucide-react';
 
 export default function ValueAddedDetail({ data, onClose, onBack }) {
   const handleBack = onBack || onClose;

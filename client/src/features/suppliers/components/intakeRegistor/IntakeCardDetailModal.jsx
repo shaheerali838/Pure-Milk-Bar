@@ -1,16 +1,5 @@
 import React, { useState } from 'react';
-import {
-  X,
-  Droplets,
-  DollarSign,
-  Wallet,
-  TrendingUp,
-  Clock,
-  Search,
-  CheckCircle2,
-  Eye,
-  Calendar,
-} from 'lucide-react';
+import { X, Droplets, Banknote, Wallet, TrendingUp, Clock, Search, CheckCircle2, Eye, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 // Drilldown modal for milk intake summary metrics
@@ -55,7 +44,7 @@ export default function IntakeCardDetailModal({
     spend: {
       title: 'Milk Procurement Spend Breakdown',
       subtitle: `Total procurement expenditure of Rs. ${(totals.totalIntakeSpend || 0).toLocaleString()}`,
-      icon: DollarSign,
+      icon: Banknote,
       color: '#009966',
       badge: 'Procurement Spend',
     },

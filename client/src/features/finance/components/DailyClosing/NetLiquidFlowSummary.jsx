@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, ArrowUpRight, TrendingUp, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Banknote, ArrowUpRight, TrendingUp, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Typography } from '@/components/common/Typography';

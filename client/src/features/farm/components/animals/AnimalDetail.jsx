@@ -1,30 +1,5 @@
 import React, { useState, useMemo } from "react";
-import {
-  ArrowLeft,
-  Edit,
-  Trash2,
-  Beef,
-  Activity,
-  Milk,
-  DollarSign,
-  Calendar,
-  Tag,
-  ShieldCheck,
-  TrendingUp,
-  FileText,
-  Droplets,
-  Sun,
-  Moon,
-  Check,
-  ChevronRight,
-  X,
-  Eye,
-  CheckCircle2,
-  Clock,
-  Plus,
-  Loader2,
-  Heart,
-} from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Beef, Activity, Milk, Banknote, Calendar, Tag, ShieldCheck, TrendingUp, FileText, Droplets, Sun, Moon, Check, ChevronRight, X, Eye, CheckCircle2, Clock, Plus, Loader2, Heart } from 'lucide-react';
 import { toast } from "sonner";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import PKRIcon from "@/components/common/PKRIcon";
@@ -705,7 +680,7 @@ export default function AnimalDetail({
             {/* Valuation & Notes */}
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
               <h3 className="font-bold text-slate-900 flex items-center gap-2 text-xs uppercase tracking-wider text-slate-600">
-                <DollarSign className="w-4 h-4 text-slate-500" />
+                <Banknote className="w-4 h-4 text-slate-500" />
                 Valuation &amp; Notes
               </h3>
               <div className="space-y-2.5 divide-y divide-slate-200/60 text-slate-700">

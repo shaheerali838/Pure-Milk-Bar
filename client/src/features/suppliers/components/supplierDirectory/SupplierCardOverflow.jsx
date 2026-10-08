@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Droplets, DollarSign, Receipt, Clock, ChevronRight } from 'lucide-react';
+import { Users, Droplets, Banknote, Receipt, Clock, ChevronRight } from 'lucide-react';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { KpiGridSkeleton } from '@/components/ui/skeleton';
 import SupplierCardDetailModal from './SupplierCardDetailModal';
@@ -36,7 +36,7 @@ export default function SupplierCardOverflow({ onSelectSupplier }) {
       label: 'Total Intake Spend',
       value: `Rs. ${(totals.totalIntakeSpend ?? totals.totalProcurementValue ?? 0).toLocaleString()}`,
       sub: 'Gross value of all milk procured',
-      icon: DollarSign,
+      icon: Banknote,
       color: '#0d9488',
       badge: 'Total Spend',
     },

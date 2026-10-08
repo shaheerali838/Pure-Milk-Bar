@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ShoppingCart } from 'lucide-react';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { isDateInFilterRange } from '@/utils/dateUtils';
 import DeliveryFilters from './DeliveryFilters';
 import DeliveryTable from './DeliveryTable';
 
-export default function DropPoints({ onViewDelivery }) {
+export default function DropPoints({ onViewDelivery, onBookDelivery }) {
+  const navigate = useNavigate();
   const {
     deliveries = [],
     dateFilter = 'Today',
@@ -53,17 +56,28 @@ export default function DropPoints({ onViewDelivery }) {
 
   return (
     <div className="space-y-1.5">
-      <div className="no-print">
-        <DeliveryFilters
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          typeFilter={typeFilter}
-          setTypeFilter={setTypeFilter}
-          shiftFilter={shiftFilter}
-          setShiftFilter={setShiftFilter}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-        />
+      <div className="flex flex-wrap items-center justify-between gap-1.5 no-print">
+        <div className="flex-1 min-w-[280px]">
+          <DeliveryFilters
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            typeFilter={typeFilter}
+            setTypeFilter={setTypeFilter}
+            shiftFilter={shiftFilter}
+            setShiftFilter={setShiftFilter}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={onBookDelivery || (() => navigate('/pos?category=delivery'))}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+        >
+          <ShoppingCart className="w-3.5 h-3.5" />
+          <span>New Delivery via POS</span>
+        </button>
       </div>
 
       <DeliveryTable
@@ -73,5 +87,3 @@ export default function DropPoints({ onViewDelivery }) {
     </div>
   );
 }
-
-

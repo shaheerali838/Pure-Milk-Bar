@@ -41,7 +41,6 @@ export default function DeliveryFilters({
     { id: 'Custom Range', label: 'Custom Range' },
   ];
 
-
   return (
     <div className="space-y-1.5">
       <div className="bg-white p-1.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-1.5">
@@ -174,5 +173,3 @@ export default function DeliveryFilters({
     </div>
   );
 }
-
-

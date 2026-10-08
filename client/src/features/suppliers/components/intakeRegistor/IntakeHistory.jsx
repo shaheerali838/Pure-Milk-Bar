@@ -224,7 +224,7 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
         {/* Filter Controls (Date, Shift, Settlement, Pay) */}
         <div className="flex items-center gap-2 flex-wrap w-full xl:w-auto">
           {/* 1. Date Filter (All / Today / Custom Range) */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full text-xs font-semibold text-slate-600">
+          <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold">
             <button
               type="button"
               onClick={() => {
@@ -233,10 +233,10 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
                 setStartDate('');
                 setEndDate('');
               }}
-              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 dateFilter === 'All' && !startDate && !endDate && !customDate
                   ? 'bg-white text-emerald-700 shadow-xs font-bold'
-                  : 'hover:text-slate-900'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               All Dates
@@ -249,10 +249,10 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
                 setStartDate('');
                 setEndDate('');
               }}
-              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 dateFilter === 'Today' && !startDate && !endDate && !customDate
                   ? 'bg-white text-emerald-700 shadow-xs font-bold'
-                  : 'hover:text-slate-900'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Today
@@ -262,10 +262,10 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
               onClick={() => {
                 setDateFilter('Custom');
               }}
-              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 dateFilter === 'Custom' || startDate || endDate || customDate
                   ? 'bg-white text-emerald-700 shadow-xs font-bold'
-                  : 'hover:text-slate-900'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Custom Range

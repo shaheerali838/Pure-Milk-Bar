@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LayoutDashboard, Users, Droplets, Plus } from 'lucide-react';
+import DashboardDateFilter from '@/components/common/DashboardDateFilter';
 import SupplierDashboardCard from '../components/SupplierDashboardCard';
 import SupplierDashboardCharts from '../components/SupplierDashboardCharts';
 
@@ -17,6 +18,11 @@ import { useIntakeContext } from '@/context/IntakeContext';
 export default function SupplierDashboard() {
   const { suppliers = [] } = useSupplierContext() || {};
   const { intakeLogs = [] } = useIntakeContext() || {};
+
+  // Date Filtering State
+  const [timeRange, setTimeRange] = useState('today'); // 'today' | 'week' | 'month' | 'all' | 'custom'
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
 
   const [activeBottomTab, setActiveBottomTab] = useState('suppliers'); // 'suppliers' | 'intake'
   const [selectedSupplier, setSelectedSupplier] = useState(null);
@@ -103,33 +109,27 @@ export default function SupplierDashboard() {
   }
 
   return (
-    <div className="relative min-h-screen bg-slate-50/50 pb-10">
-      {/* Dynamic Header */}
-      <div className="flex items-center justify-between mb-4 pt-2">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-            <LayoutDashboard className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 font-display tracking-tight leading-none">
-              Supplier Operations Dashboard
-            </h1>
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                Overview &amp; Analytics
-              </span>
-              <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
-                Active Dashboard
-              </span>
-            </div>
-          </div>
-        </div>
+    <div className="space-y-4">
+      {/* Date Filter Toolbar */}
+      <div className="flex items-center justify-between gap-3 pb-1">
+        <DashboardDateFilter
+          timeRange={timeRange}
+          setTimeRange={setTimeRange}
+          customStartDate={customStartDate}
+          setCustomStartDate={setCustomStartDate}
+          customEndDate={customEndDate}
+          setCustomEndDate={setCustomEndDate}
+          showAll={true}
+          activeTheme="blue"
+        />
       </div>
 
       {/* Main Content Areas */}
-      <SupplierDashboardCard />
+      <SupplierDashboardCard
+        timeRange={timeRange}
+        customStartDate={customStartDate}
+        customEndDate={customEndDate}
+      />
 
       <SupplierDashboardCharts
         onLogIntake={() => setIsLogIntakeOpen(true)}

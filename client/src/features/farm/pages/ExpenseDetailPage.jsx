@@ -3,13 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useExpense } from '../../../context/ExpenseContext';
 import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ExpenseDetailPage() {
   const { expenses, deleteExpense } = useExpense();
   const navigate = useNavigate();
   const { id } = useParams();
 
-  const expense = expenses.find(e => e.id === id);
+  const expense = expenses.find(e => e.id === id || e._id === id || String(e.id) === String(id));
 
   if (!expense) {
     return (
@@ -22,13 +23,21 @@ export default function ExpenseDetailPage() {
     );
   }
 
-  const handleDelete = () => {
-    deleteExpense(expense.id);
-    navigate('/farm/expenses');
+  const handleDelete = async () => {
+    if (window.confirm(`Are you sure you want to delete this expense (${expense.category}: Rs. ${Number(expense.amount).toLocaleString()})?`)) {
+      try {
+        await deleteExpense(expense.id || expense._id);
+        toast.success('Expense deleted successfully');
+        navigate('/farm/expenses');
+      } catch (err) {
+        console.error('Error deleting expense:', err);
+        toast.error('Failed to delete expense');
+      }
+    }
   };
 
   const handleEditClick = () => {
-    navigate(`/farm/expenses/edit/${expense.id}`);
+    navigate(`/farm/expenses/edit/${expense.id || expense._id}`);
   };
 
   return (

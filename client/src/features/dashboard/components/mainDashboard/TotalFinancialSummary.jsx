@@ -1,12 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  TrendingUp,
-  DollarSign,
-  Droplets,
-  Layers,
-  Building2,
-  ArrowRight,
-} from 'lucide-react';
+import { TrendingUp, Banknote, Droplets, Layers, Building2, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePOSContext } from '@/context/POSContext';
 import { useExpense } from '@/context/ExpenseContext';
@@ -20,7 +13,9 @@ import { getPktTodayString } from '@/utils/dateUtils';
 export default function TotalFinancialSummary() {
   const [period, setPeriod] = useState('today'); // 'today' (default) | 'this_month' | 'all'
 
-  const { farmSalesHistory = [], supplierSalesHistory = [] } = usePOSContext();
+  const { farmSalesHistory = [], supplierSalesHistory = [], inventoryMetrics = {} } = usePOSContext();
+  const availableFarmStock = Number(inventoryMetrics.rawFarmMilkStock ?? inventoryMetrics.rawAvailableFarmStock ?? 0) || 0;
+  const availableSupplierStock = Number(inventoryMetrics.rawSupplierMilkStock ?? 0) || 0;
   const { expenses: farmExpensesList = [] } = useExpense();
   const { intakeLogs = [] } = useIntakeContext();
   const { expenses: supplierExpensesList = [] } = useSourcExpenseContext() || {};
@@ -88,63 +83,16 @@ export default function TotalFinancialSummary() {
     return true; // 'all'
   };
 
-  // Dahi Processing Delta Cost Calculation (Filtered by period)
-  // Delta Cost = Total Dahi Cost - Milk Cost Transferred (Gas/Labor only)
-  const dahiCosts = useMemo(() => {
-    let farmDahiCost = 0;
-    let supplierDahiCost = 0;
-    let farmMilkCostTransferred = 0;
-    let supplierMilkCostTransferred = 0;
-
-    processingBatches.forEach((b) => {
-      const bDate = b.date || '';
-      if (!isMatchingPeriod(bDate)) return;
-
-      const pName = (b.product || '').toLowerCase();
-      const isDahi = pName.includes('dahi') || pName.includes('yogurt') || !pName.includes('milk');
-      if (!isDahi) return;
-
-      const src = (b.source || '').toLowerCase();
-      const totalCost = Number(b.totalDahiCost || b.dahiProductionCost) || 0;
-      const milkTransferred = Number(b.milkCostTransferred || b.milkUsedCost) || 0;
-      const farmUsed = Number(b.farmMilkUsed) || 0;
-      const supUsed = Number(b.supplierMilkUsed) || 0;
-      const totalMilk = farmUsed + supUsed || Number(b.milkUsedQuantity || b.milkUsedVal) || 0;
-      const unitCost = Number(b.unitCost) || (src.includes('supplier') && !src.includes('farm') ? 220 : 230);
-      const dahiCostRate = Number(b.dahiCostRate) || 250;
-      const outputQty = Number(b.outputQuantity || b.outputVal) || (totalMilk * 0.985);
-
-      const fCost = Number(b.farmMilkCost) || (farmUsed > 0 ? Math.round(farmUsed * (src.includes('farm') && !src.includes('supplier') ? unitCost : 230)) : 0);
-      const sCost = Number(b.supplierMilkCost) || (supUsed > 0 ? Math.round(supUsed * (src.includes('supplier') && !src.includes('farm') ? unitCost : 220)) : 0);
-
-      if (src.includes('farm') && !src.includes('supplier') && !src.includes('mix') && !src.includes('both')) {
-        farmDahiCost += (totalCost || Math.round(outputQty * dahiCostRate));
-        farmMilkCostTransferred += (milkTransferred || fCost || Math.round(totalMilk * unitCost));
-      } else if (src.includes('supplier') && !src.includes('farm') && !src.includes('mix') && !src.includes('both')) {
-        supplierDahiCost += (totalCost || Math.round(outputQty * dahiCostRate));
-        supplierMilkCostTransferred += (milkTransferred || sCost || Math.round(totalMilk * unitCost));
-      } else {
-        farmDahiCost += (totalCost || Math.round(outputQty * dahiCostRate));
-        farmMilkCostTransferred += (milkTransferred || fCost || Math.round(totalMilk * unitCost));
-      }
-    });
-
-    const farmProcessingDeltaCost = Math.max(0, farmDahiCost - farmMilkCostTransferred);
-    const supplierProcessingDeltaCost = Math.max(0, supplierDahiCost - supplierMilkCostTransferred);
-
-    return { 
-      farmDahiCost, 
-      supplierDahiCost, 
-      farmProcessingDeltaCost, 
-      supplierProcessingDeltaCost 
-    };
-  }, [processingBatches, period, todayStr, currentMonthStr]);
+  // Client rule: Farm milk/dahi has NO cost price, and supplier milk cost is fully
+  // captured via procurement (intake logs). No hardcoded dahi processing costs.
 
   // 1. FARM METRICS CALCULATION
   const farmFinancials = useMemo(() => {
     const activeFarmSales = farmSalesHistory;
     let milkSales = 0;
     let dahiSales = 0;
+    let milkQty = 0;
+    let dahiQty = 0;
 
     activeFarmSales.forEach((sale) => {
       const saleDate = getSaleDate(sale);
@@ -159,8 +107,10 @@ export default function TotalFinancialSummary() {
         const isDahi = name.includes('dahi') || cat.includes('dahi') || name.includes('yogurt');
         if (isDahi) {
           dahiSales += rev;
+          dahiQty += qty;
         } else {
           milkSales += rev;
+          milkQty += qty;
         }
       });
     });
@@ -184,19 +134,22 @@ export default function TotalFinancialSummary() {
       }
     });
 
-    // Total Farm Expenses = General Farm Expenses + Dahi Processing Delta + Total Staff Salary Paid
-    const totalFarmExpenses = generalFarmExpenses + dahiCosts.farmProcessingDeltaCost + staffSalaryPaid;
+    // Total Farm Expenses = General Farm Expenses (Chara etc.) + Staff Salary Paid (No milk/dahi cost)
+    const totalFarmExpenses = generalFarmExpenses + staffSalaryPaid;
+    // farmNetProfit = farmRawMilkRevenue + Farm Dahi Revenue - Total Farm Expenses
     const netProfit = totalSales - totalFarmExpenses;
     const margin = totalSales > 0 ? Math.round((netProfit / totalSales) * 100) : 0;
 
-    return {milkSales,dahiSales,totalSales,totalExpenses: generalFarmExpenses,staffSalaryPaid,totalFarmExpenses,netProfit,margin,processingDeltaCost: dahiCosts.farmProcessingDeltaCost,dahiCost: dahiCosts.farmDahiCost,};
-  }, [farmSalesHistory, farmExpensesList, salaryPayments, dahiCosts, period, todayStr, currentMonthStr]);
+    return { milkSales, milkQty, dahiSales, dahiQty, totalSales, totalExpenses: generalFarmExpenses, staffSalaryPaid, totalFarmExpenses, netProfit, margin };
+  }, [farmSalesHistory, farmExpensesList, salaryPayments, period, todayStr, currentMonthStr]);
 
   // 2. SUPPLIER METRICS CALCULATION
   const supplierFinancials = useMemo(() => {
     const activeSupplierSales = supplierSalesHistory;
     let milkSales = 0;
     let dahiSales = 0;
+    let milkQty = 0;
+    let dahiQty = 0;
 
     activeSupplierSales.forEach((sale) => {
       const saleDate = getSaleDate(sale);
@@ -211,8 +164,10 @@ export default function TotalFinancialSummary() {
         const isDahi = name.includes('dahi') || cat.includes('dahi') || name.includes('yogurt');
         if (isDahi) {
           dahiSales += rev;
+          dahiQty += qty;
         } else {
           milkSales += rev;
+          milkQty += qty;
         }
       });
     });
@@ -220,9 +175,15 @@ export default function TotalFinancialSummary() {
     const totalSales = milkSales + dahiSales;
 
     let purchaseCost = 0;
+    let purchaseQty = 0;
     intakeLogs.forEach((log) => {
-      if (isMatchingPeriod(log.date || '')) {
-        purchaseCost += Number(log.totalCost) || 0;
+      if (isMatchingPeriod(log.date || log.createdAt || '')) {
+        const qty = Number(log.quantity || log.quantityLiters) || 0;
+        const explicit = Number(log.totalCost ?? log.totalAmount) || 0;
+        const rate = Number(log.ratePerLiter ?? log.rate ?? log.pricePerLiter) || 0;
+        // Procurement = Intake Qty * Procurement Price
+        purchaseCost += explicit > 0 ? explicit : qty * rate;
+        purchaseQty += qty;
       }
     });
 
@@ -233,27 +194,30 @@ export default function TotalFinancialSummary() {
       }
     });
 
-    const netProfit = totalSales - purchaseCost - totalExpenses - dahiCosts.supplierProcessingDeltaCost;
+    // supplierNetProfit = supplierRevenue - (Intake Qty * Procurement Price) - recorded supplier expenses
+    const netProfit = totalSales - purchaseCost - totalExpenses;
     const margin = totalSales > 0 ? Math.round((netProfit / totalSales) * 100) : 0;
 
-    return { milkSales, dahiSales, totalSales, purchaseCost, totalExpenses, netProfit, margin, processingDeltaCost: dahiCosts.supplierProcessingDeltaCost, dahiCost: dahiCosts.supplierDahiCost };
-  }, [supplierSalesHistory, intakeLogs, supplierExpensesList, dahiCosts, period, todayStr, currentMonthStr]);
+    return { milkSales, milkQty, dahiSales, dahiQty, totalSales, purchaseCost, purchaseQty, totalExpenses, netProfit, margin };
+  }, [supplierSalesHistory, intakeLogs, supplierExpensesList, period, todayStr, currentMonthStr]);
 
-  // 3. DAHI METRICS CALCULATION (Strictly Dahi P&L)
+  // 3. DAHI METRICS CALCULATION (Revenue split only - no hardcoded cost)
   const dahiFinancials = useMemo(() => {
-    const totalDahiSales = farmFinancials.dahiSales + supplierFinancials.dahiSales;
-    const totalDahiCost = dahiCosts.farmDahiCost + dahiCosts.supplierDahiCost;
-    const netProfit = totalDahiSales - totalDahiCost;
-    const margin = totalDahiSales > 0 ? Math.round((netProfit / totalDahiSales) * 100) : 0;
-    return { totalDahiSales, totalDahiCost, netProfit, margin };
-  }, [farmFinancials, supplierFinancials, dahiCosts]);
+    const farmDahiSales = farmFinancials.dahiSales;
+    const supplierDahiSales = supplierFinancials.dahiSales;
+    const totalDahiSales = farmDahiSales + supplierDahiSales;
+    const totalDahiQty = farmFinancials.dahiQty + supplierFinancials.dahiQty;
+    return { farmDahiSales, supplierDahiSales, totalDahiSales, totalDahiQty };
+  }, [farmFinancials, supplierFinancials]);
 
-  // 4. TOTAL BUSINESS SUMMARY
+  // 4. TOTAL BUSINESS SUMMARY (Farm + Supplier aggregation)
+  const totalMilkSoldQty = Number((farmFinancials.milkQty + supplierFinancials.milkQty).toFixed(2));
+  const totalMilkSalesRevenue = farmFinancials.milkSales + supplierFinancials.milkSales;
   const totalBusinessNetProfit = farmFinancials.netProfit + supplierFinancials.netProfit;
   const totalBusinessRevenue = farmFinancials.totalSales + supplierFinancials.totalSales;
-  const totalBusinessOutflow = farmFinancials.totalExpenses + farmFinancials.processingDeltaCost + supplierFinancials.purchaseCost + supplierFinancials.totalExpenses + supplierFinancials.processingDeltaCost;
-  const totalBusinessMargin = totalBusinessRevenue > 0 ? Math.round((totalBusinessNetProfit / totalBusinessRevenue) * 100) : 0;
   const isBusinessProfitable = totalBusinessNetProfit >= 0;
+  const periodLabel = period === 'today' ? 'Today' : period === 'this_month' ? 'This Month' : 'All Time';
+  const fmtQty = (n) => Number((Number(n) || 0).toFixed(1));
 
   return (
     <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-sm space-y-6">
@@ -261,7 +225,7 @@ export default function TotalFinancialSummary() {
         <div>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-linear-to-tr from-emerald-600 via-teal-600 to-indigo-600 flex items-center justify-center text-white shadow-2xs">
-              <DollarSign className="w-4 h-4" />
+              <Banknote className="w-4 h-4" />
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black text-slate-900 font-display tracking-tight">
@@ -336,6 +300,27 @@ export default function TotalFinancialSummary() {
         </div>
       </div>
 
+      {/* Combined Milk Summary Cards (Farm + Supplier) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="p-3.5 rounded-xl border border-slate-200 bg-white shadow-2xs">
+          <p className="text-[10px] uppercase font-bold text-slate-400">Total Milk Sold ({periodLabel})</p>
+          <p className="text-xl font-black text-slate-900 tabular mt-0.5">{fmtQty(totalMilkSoldQty)} L</p>
+          <p className="text-[10px] text-slate-500 font-medium">Farm {fmtQty(farmFinancials.milkQty)} L + Supplier {fmtQty(supplierFinancials.milkQty)} L</p>
+        </div>
+        <div className="p-3.5 rounded-xl border border-slate-200 bg-white shadow-2xs">
+          <p className="text-[10px] uppercase font-bold text-slate-400">Total Milk Sales Revenue</p>
+          <p className="text-xl font-black text-emerald-700 tabular mt-0.5">+ Rs. {totalMilkSalesRevenue.toLocaleString()}</p>
+          <p className="text-[10px] text-slate-500 font-medium">Farm Rs. {farmFinancials.milkSales.toLocaleString()} + Supplier Rs. {supplierFinancials.milkSales.toLocaleString()}</p>
+        </div>
+        <div className="p-3.5 rounded-xl border border-slate-200 bg-white shadow-2xs">
+          <p className="text-[10px] uppercase font-bold text-slate-400">Total Business Net Profit</p>
+          <p className={`text-xl font-black tabular mt-0.5 ${isBusinessProfitable ? 'text-emerald-700' : 'text-rose-700'}`}>
+            {isBusinessProfitable ? '+' : '-'} Rs. {Math.abs(totalBusinessNetProfit).toLocaleString()}
+          </p>
+          <p className="text-[10px] text-slate-500 font-medium">Farm Net + Supplier Net</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Module A: Farm P&L Card */}
         <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/20 p-4 flex flex-col justify-between space-y-4">
@@ -369,16 +354,28 @@ export default function TotalFinancialSummary() {
 
             <div className="mt-3 space-y-2 text-xs">
               <div className="flex justify-between items-center py-1 border-b border-emerald-100/60">
-                <span className="text-slate-600 font-medium">Farm Milk Sales</span>
-                <span className="font-bold text-slate-900 tabular">+ Rs. {farmFinancials.milkSales.toLocaleString()}</span>
+                <span className="text-slate-600 font-medium">Farm Milk Sales: <span className="font-bold text-slate-800 tabular">{Number(farmFinancials.milkQty.toFixed(1))} L</span></span>
+                <span className="font-bold text-slate-900 tabular">👉 + Rs. {farmFinancials.milkSales.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-emerald-100/60">
-                <span className="text-slate-600 font-medium">Farm Dahi Sales</span>
-                <span className="font-bold text-slate-900 tabular">+ Rs. {farmFinancials.dahiSales.toLocaleString()}</span>
+                <span className="text-slate-600 font-medium">Farm Dahi Sales: <span className="font-bold text-slate-800 tabular">{Number(farmFinancials.dahiQty.toFixed(1))} Kg</span></span>
+                <span className="font-bold text-slate-900 tabular">👉 + Rs. {farmFinancials.dahiSales.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-emerald-100/60 font-semibold bg-emerald-50/50 px-1.5 rounded">
                 <span className="text-emerald-900">Total Farm Sales (Money In)</span>
                 <span className="font-bold text-emerald-800 tabular">Rs. {farmFinancials.totalSales.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-emerald-100/60">
+                <span className="text-slate-600 font-medium">Farm Expenses (Chara etc.)</span>
+                <span className="font-bold text-rose-600 tabular">👉 - Rs. {farmFinancials.totalExpenses.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-emerald-100/60">
+                <span className="text-slate-600 font-medium">Staff Salary Paid</span>
+                <span className="font-bold text-rose-600 tabular">👉 - Rs. {farmFinancials.staffSalaryPaid.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center py-1.5 px-1.5 rounded bg-white border border-emerald-200">
+                <span className="text-emerald-900 font-semibold">Available Farm Stock</span>
+                <span className="font-black text-emerald-700 tabular">{fmtQty(availableFarmStock)} L</span>
               </div>
             </div>
           </div>
@@ -416,16 +413,30 @@ export default function TotalFinancialSummary() {
 
             <div className="mt-3 space-y-2 text-xs">
               <div className="flex justify-between items-center py-1 border-b border-blue-100/60">
-                <span className="text-slate-600 font-medium">Supplier Milk Sales</span>
-                <span className="font-bold text-slate-900 tabular">+ Rs. {supplierFinancials.milkSales.toLocaleString()}</span>
+                <span className="text-slate-600 font-medium">Supplier Milk Sales: <span className="font-bold text-slate-800 tabular">{Number(supplierFinancials.milkQty.toFixed(1))} L</span></span>
+                <span className="font-bold text-slate-900 tabular">👉 + Rs. {supplierFinancials.milkSales.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-blue-100/60">
-                <span className="text-slate-600 font-medium">Supplier Dahi Sales</span>
-                <span className="font-bold text-slate-900 tabular">+ Rs. {supplierFinancials.dahiSales.toLocaleString()}</span>
+                <span className="text-slate-600 font-medium">Supplier Dahi Sales: <span className="font-bold text-slate-800 tabular">{Number(supplierFinancials.dahiQty.toFixed(1))} Kg</span></span>
+                <span className="font-bold text-slate-900 tabular">👉 + Rs. {supplierFinancials.dahiSales.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-blue-100/60">
+                <span className="text-slate-600 font-medium">Milk Purchased: <span className="font-bold text-slate-800 tabular">{Number(supplierFinancials.purchaseQty.toFixed(1))} L</span></span>
+                <span className="font-bold text-rose-600 tabular">👉 - Rs. {supplierFinancials.purchaseCost.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-blue-100/60 font-semibold bg-blue-50/50 px-1.5 rounded">
                 <span className="text-blue-900">Total Supplier Sales (Money In)</span>
                 <span className="font-bold text-blue-800 tabular">Rs. {supplierFinancials.totalSales.toLocaleString()}</span>
+              </div>
+              {supplierFinancials.totalExpenses > 0 && (
+                <div className="flex justify-between items-center py-1 border-b border-blue-100/60">
+                  <span className="text-slate-600 font-medium">Supplier Expenses</span>
+                  <span className="font-bold text-rose-600 tabular">👉 - Rs. {supplierFinancials.totalExpenses.toLocaleString()}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center py-1.5 px-1.5 rounded bg-white border border-blue-200">
+                <span className="text-blue-900 font-semibold">Available Supplier Stock</span>
+                <span className="font-black text-blue-700 tabular">{fmtQty(availableSupplierStock)} L</span>
               </div>
             </div>
           </div>
@@ -440,31 +451,31 @@ export default function TotalFinancialSummary() {
                   <Layers className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Dahi Business P&L</h3>
+                  <h3 className="text-sm font-bold text-slate-900">Dahi Sales Breakdown</h3>
                 </div>
               </div>
             </div>
 
             <div className="mt-3 p-3 bg-white rounded-xl border border-amber-200/70 flex items-center justify-between shadow-2xs">
               <div>
-                <p className="text-[10px] font-bold uppercase text-slate-400">Net Profit</p>
-                <p className={`text-lg font-black font-display tabular ${
-                  dahiFinancials.netProfit >= 0 ? 'text-amber-700' : 'text-rose-700'
-                }`}>
-                  {dahiFinancials.netProfit >= 0 ? '+' : '-'} Rs. {Math.abs(dahiFinancials.netProfit).toLocaleString()}
+                <p className="text-[10px] font-bold uppercase text-slate-400">Total Dahi Revenue</p>
+                <p className="text-lg font-black font-display tabular text-amber-700">
+                  + Rs. {dahiFinancials.totalDahiSales.toLocaleString()}
                 </p>
               </div>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
-                dahiFinancials.netProfit >= 0 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'
-              }`}>
-                {dahiFinancials.margin}% Margin
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+                {fmtQty(dahiFinancials.totalDahiQty)} Kg
               </span>
             </div>
 
             <div className="mt-3 space-y-2 text-xs">
-              <div className="flex justify-between items-center py-1 border-b border-amber-100/60 font-semibold bg-amber-50/50 px-1.5 rounded">
-                <span className="text-amber-900">Total Dahi Sales (POS Money In)</span>
-                <span className="font-bold text-amber-800 tabular">+ Rs. {dahiFinancials.totalDahiSales.toLocaleString()}</span>
+              <div className="flex justify-between items-center py-1 border-b border-amber-100/60">
+                <span className="text-slate-600 font-medium">Farm Dahi (no cost)</span>
+                <span className="font-bold text-slate-900 tabular">+ Rs. {dahiFinancials.farmDahiSales.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-amber-100/60">
+                <span className="text-slate-600 font-medium">Supplier Dahi</span>
+                <span className="font-bold text-slate-900 tabular">+ Rs. {dahiFinancials.supplierDahiSales.toLocaleString()}</span>
               </div>
             </div>
             
