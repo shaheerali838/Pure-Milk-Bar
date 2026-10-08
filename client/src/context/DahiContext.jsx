@@ -162,10 +162,16 @@ export function DahiProvider({ children }) {
 
     const totalConverted = farmConverted + supplierConverted;
 
-    // Remaining liquid milk after BOTH POS sales AND Dahi conversion:
-    const remainingFarm = Math.max(0, Number((realFarmYield - farmMilkSold - farmConverted).toFixed(1)));
-    const remainingSupplier = Math.max(0, Number((realSupplierIntake - supplierMilkSold - supplierConverted).toFixed(1)));
-    const remainingTotal = Number((remainingFarm + remainingSupplier).toFixed(1));
+    // Remaining liquid milk after BOTH POS sales AND Dahi conversion (authoritative from posCtx):
+    const remainingFarm = posCtx?.inventoryMetrics?.rawFarmMilkStock !== undefined
+      ? Number(posCtx.inventoryMetrics.rawFarmMilkStock) || 0
+      : Math.max(0, Number((realFarmYield - farmMilkSold - farmConverted).toFixed(1)));
+    const remainingSupplier = posCtx?.inventoryMetrics?.rawSupplierMilkStock !== undefined
+      ? Number(posCtx.inventoryMetrics.rawSupplierMilkStock) || 0
+      : Math.max(0, Number((realSupplierIntake - supplierMilkSold - supplierConverted).toFixed(1)));
+    const remainingTotal = posCtx?.inventoryMetrics?.rawTotalMilkStock !== undefined
+      ? Number(posCtx.inventoryMetrics.rawTotalMilkStock) || 0
+      : Number((remainingFarm + remainingSupplier).toFixed(1));
 
     // Conversion yield %
     const yieldPct = totalConverted > 0
@@ -191,7 +197,7 @@ export function DahiProvider({ children }) {
       remainingTotal,
       netProfitValue,
     };
-  }, [batches, realFarmYield, realSupplierIntake, farmMilkSold, supplierMilkSold, liveDahiPosRate]);
+  }, [batches, realFarmYield, realSupplierIntake, farmMilkSold, supplierMilkSold, liveDahiPosRate, posCtx?.inventoryMetrics?.rawFarmMilkStock, posCtx?.inventoryMetrics?.rawSupplierMilkStock, posCtx?.inventoryMetrics?.rawTotalMilkStock]);
 
   // Read live POS sales history for Dahi sales & extra profit tracking
   const salesHistory = posCtx?.salesHistory || [];

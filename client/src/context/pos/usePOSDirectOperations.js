@@ -13,6 +13,7 @@ export function usePOSDirectOperations({
   setSalesHistory,
   setCompletedSaleReceipt,
   addLedgerEntry,
+  getMetrics,
   remainingFarmBuffaloMilk = 0,
 }) {
   const [processingBatches, setProcessingBatches] = useState([]);
@@ -141,7 +142,8 @@ export function usePOSDirectOperations({
         supplierQuantity: 0,
       });
     } else {
-      const availableFarmBuff = Math.max(0, Number(remainingFarmBuffaloMilk) || 0);
+      const liveMetrics = typeof getMetrics === 'function' ? getMetrics() : {};
+      const availableFarmBuff = Math.max(0, Number(liveMetrics?.remainingFarmBuffaloMilk ?? liveMetrics?.inventoryMetrics?.rawFarmBuffaloMilkStock ?? remainingFarmBuffaloMilk) || 0);
       const farmQty = Math.max(0, Math.min(availableFarmBuff, qty));
       const supplierQty = Math.max(0, Number((qty - farmQty).toFixed(2)));
 

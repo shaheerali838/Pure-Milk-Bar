@@ -68,6 +68,9 @@ export function POSProvider({ children }) {
   const [farmStock, setFarmStock] = useState(null);
   const [supplierStock, setSupplierStock] = useState(null);
 
+  // Mutable ref for live metrics state accessible across sub-hooks
+  const metricsRef = React.useRef(null);
+
   // 1. Modular Products Hook
   const productsState = usePOSProducts();
 
@@ -79,6 +82,7 @@ export function POSProvider({ children }) {
     setSupplierStock,
     setPosSyncVersion,
     addLedgerEntry,
+    getMetrics: () => metricsRef.current,
   });
 
   // 3. Modular Cart & Checkout State Hook
@@ -105,6 +109,7 @@ export function POSProvider({ children }) {
     setFarmStock,
     setSupplierStock,
     setPosSyncVersion,
+    getMetrics: () => metricsRef.current,
   });
 
   // Connect order receipt / history setters to directOpsState
@@ -129,10 +134,8 @@ export function POSProvider({ children }) {
     posSyncVersion,
   });
 
-  // Wire remaining stock & attribution resolution into ordersState
-  ordersState.remainingFarmBuffaloMilk = metricsState.remainingFarmBuffaloMilk;
-  ordersState.remainingFarmMilk = metricsState.inventoryMetrics?.rawFarmMilkStock || 0;
-  ordersState.resolveItemSourceAndRatios = metricsState.resolveItemSourceAndRatios;
+  // Keep metricsRef updated with live metricsState on every render
+  metricsRef.current = metricsState;
 
   // Real-Time Event Sync Engine & Heartbeat
   const { fetchOrders } = ordersState;
@@ -212,6 +215,7 @@ export function POSProvider({ children }) {
         editProduct: productsState.updateProduct,
         batchUpdateProducts: productsState.batchUpdateProducts,
         deleteProduct: productsState.deleteProduct,
+        deductStockAfterSale: productsState.deductStockAfterSale,
 
         // Cart
         cart: cartState.cart,
