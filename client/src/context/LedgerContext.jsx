@@ -87,15 +87,65 @@ export function normalizeLedgerEntry(entry) {
   }
 
   // 3. Payment Method & Channel
-  let paymentMethod = entry.paymentMethod || entry.method || 'Cash';
+  let paymentMethod = entry.paymentMethod || entry.method || (numCredit > 0 ? 'Cash Payment' : 'Cash');
+  const pmUpper = String(entry.paymentMethod || entry.method || '').toUpperCase();
+  const channelUpper = String(entry.paymentChannel || '').toUpperCase();
+  const providerUpper = String(entry.onlineTransferMeta?.provider || '').toUpperCase();
+  const notesUpper = String(entry.notes || '').toUpperCase();
+
   if (isOpeningEntry) {
     paymentMethod = 'Opening Balance';
-  } else if (/online/i.test(paymentMethod) || /easypaisa/i.test(paymentMethod) || /jazzcash/i.test(paymentMethod) || /bank/i.test(paymentMethod)) {
+  } else if (pmUpper.includes('SPLIT') || entry.splitPaymentMeta) {
+    const sCash = Number(entry.splitPaymentMeta?.cashAmount) || 0;
+    const sEp = Number(entry.splitPaymentMeta?.easyPaisaAmount) || 0;
+    const sJc = Number(entry.splitPaymentMeta?.jazzCashAmount) || 0;
+    const sOnline = Number(entry.splitPaymentMeta?.onlineAmount) || (sEp + sJc);
+
+    if (sCash > 0 && sEp > 0 && sJc === 0) {
+      paymentMethod = 'Split Payment: Cash + EasyPaisa';
+    } else if (sCash > 0 && sJc > 0 && sEp === 0) {
+      paymentMethod = 'Split Payment: Cash + JazzCash';
+    } else if (sEp > 0 && sJc > 0 && sCash === 0) {
+      paymentMethod = 'Split Payment: EasyPaisa + JazzCash';
+    } else if (sCash > 0 && (sEp > 0 || sJc > 0 || sOnline > 0)) {
+      paymentMethod = 'Split Payment: Cash + Online';
+    } else {
+      paymentMethod = 'Split Payment';
+    }
+  } else if (
+    pmUpper.includes('EASYPAISA') ||
+    channelUpper.includes('EASYPAISA') ||
+    providerUpper.includes('EASYPAISA') ||
+    notesUpper.includes('EASYPAISA') ||
+    desc.toUpperCase().includes('EASYPAISA')
+  ) {
+    paymentMethod = 'Online Payment (EasyPaisa)';
+  } else if (
+    pmUpper.includes('JAZZCASH') ||
+    channelUpper.includes('JAZZCASH') ||
+    providerUpper.includes('JAZZCASH') ||
+    notesUpper.includes('JAZZCASH') ||
+    desc.toUpperCase().includes('JAZZCASH')
+  ) {
+    paymentMethod = 'Online Payment (JazzCash)';
+  } else if (
+    pmUpper.includes('BANK') ||
+    channelUpper.includes('BANK') ||
+    providerUpper.includes('BANK')
+  ) {
+    paymentMethod = 'Online Payment (Bank Transfer)';
+  } else if (pmUpper.includes('ONLINE') || channelUpper.includes('ONLINE')) {
     paymentMethod = 'Online Payment';
-  } else if (/cod/i.test(paymentMethod) || /cod/i.test(desc)) {
+  } else if (pmUpper.includes('COD') || /cod/i.test(desc)) {
     paymentMethod = 'COD (Cash on Delivery)';
-  } else if (/khata/i.test(paymentMethod) || /credit/i.test(paymentMethod)) {
+  } else if (pmUpper.includes('CHEQUE')) {
+    paymentMethod = 'Cheque Payment';
+  } else if (pmUpper.includes('ADJUSTMENT')) {
+    paymentMethod = 'Account Adjustment';
+  } else if (pmUpper.includes('KHATA') || pmUpper.includes('CREDIT')) {
     paymentMethod = 'Khata Credit';
+  } else if (pmUpper.includes('CASH') || numCredit > 0) {
+    paymentMethod = 'Cash Payment';
   }
 
   // 4. Exact Amount Breakdown
@@ -174,6 +224,10 @@ export function normalizeLedgerEntry(entry) {
     items,
     fulfillmentType,
     paymentMethod,
+    paymentChannel: entry.paymentChannel || null,
+    splitPaymentMeta: entry.splitPaymentMeta || null,
+    onlineTransferMeta: entry.onlineTransferMeta || null,
+    notes: entry.notes || null,
     orderTotal,
     paidAmount,
     remainingAmount,
@@ -325,6 +379,9 @@ export function LedgerProvider({ children }) {
       remainingAmount,
       fulfillmentType,
       paymentMethod,
+      paymentChannel,
+      splitPaymentMeta,
+      onlineTransferMeta,
       invoiceId,
     },
     isPosOrder = false
@@ -382,7 +439,7 @@ export function LedgerProvider({ children }) {
       advanceReceived,
       advanceBalanceAfter: newAdvanceBalance,
       runningBalance: newKhataBalance,
-      method: method === 'EasyPaisa' || method === 'JazzCash' ? 'Online Payment' : method,
+      method: method,
       notes,
       items: Array.isArray(items) ? items : [],
       orderTotal: calculatedOrderTotal,
@@ -390,6 +447,9 @@ export function LedgerProvider({ children }) {
       remainingAmount: calculatedRemaining,
       fulfillmentType: fulfillmentType || (isOrderOrDebit ? (advanceUsed > 0 && khataAmount === 0 ? 'Paid from Advance' : 'Walk-in Counter') : 'Payment Clearance'),
       paymentMethod: paymentMethod || method,
+      paymentChannel: paymentChannel || (method === 'EasyPaisa' || method === 'JazzCash' ? method : undefined),
+      splitPaymentMeta: splitPaymentMeta || null,
+      onlineTransferMeta: onlineTransferMeta || null,
       invoiceId: invoiceId || undefined,
     });
 
@@ -426,20 +486,28 @@ export function LedgerProvider({ children }) {
     // Only post to api.finance.addKhataEntry if this is a MANUAL ledger entry (NOT from POS checkout)
     if (!isPosOrder && validId) {
       try {
+        const pmRaw = String(paymentMethod || method || '').toUpperCase();
+        let targetPaymentMethod = 'CASH';
+        if (pmRaw.includes('EASYPAISA')) targetPaymentMethod = 'EASYPAISA';
+        else if (pmRaw.includes('JAZZCASH')) targetPaymentMethod = 'JAZZCASH';
+        else if (pmRaw.includes('SPLIT')) targetPaymentMethod = 'SPLIT';
+        else if (pmRaw.includes('ONLINE') || pmRaw.includes('BANK')) targetPaymentMethod = 'ONLINE';
+        else if (pmRaw.includes('CHEQUE')) targetPaymentMethod = 'CHEQUE';
+        else if (pmRaw.includes('COD')) targetPaymentMethod = 'COD';
+        else if (pmRaw.includes('ADJUSTMENT')) targetPaymentMethod = 'ADJUSTMENT';
+        else if (pmRaw.includes('KHATA') || pmRaw.includes('DEBIT') || pmRaw.includes('CREDIT')) targetPaymentMethod = numDebit > 0 ? 'KHATA' : 'CASH';
+        else targetPaymentMethod = numDebit > 0 ? 'KHATA' : 'CASH';
+
         await api.finance.addKhataEntry({
           customerId: validId,
           transactionType: numDebit > 0 ? 'DEBIT' : 'CREDIT',
           amount: numDebit > 0 ? numDebit : numCredit,
           description: description || 'Khata Transaction',
-          paymentMethod: (() => {
-            const pm = String(paymentMethod || method || '').toUpperCase();
-            if (['CASH', 'ONLINE', 'ADJUSTMENT', 'CHEQUE', 'KHATA', 'SPLIT', 'COD'].includes(pm)) return pm;
-            if (pm.includes('ONLINE') || pm.includes('EASYPAISA') || pm.includes('JAZZCASH') || pm.includes('BANK')) return 'ONLINE';
-            if (pm.includes('CHEQUE')) return 'CHEQUE';
-            if (pm.includes('COD')) return 'COD';
-            if (pm.includes('DEBIT') || pm.includes('KHATA') || pm.includes('CREDIT')) return 'KHATA';
-            return numDebit > 0 ? 'KHATA' : 'CASH';
-          })(),
+          paymentMethod: targetPaymentMethod,
+          paymentChannel: paymentChannel || (targetPaymentMethod === 'EASYPAISA' ? 'EasyPaisa' : targetPaymentMethod === 'JAZZCASH' ? 'JazzCash' : undefined),
+          splitPaymentMeta: splitPaymentMeta || null,
+          onlineTransferMeta: onlineTransferMeta || (targetPaymentMethod === 'EASYPAISA' || targetPaymentMethod === 'JAZZCASH' ? { provider: targetPaymentMethod } : null),
+          notes: notes || null,
           date: date || new Date().toISOString().split('T')[0],
           items: Array.isArray(items) ? items : [],
           orderTotal: calculatedOrderTotal,

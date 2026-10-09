@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import Customer from '../../../models/Customer.model.js';
 import KhataEntry from '../../../models/KhataEntry.model.js';
 import { uploadToCloudinary } from '../../../config/cloudinary.js';
+import { recalculateCustomerStatementChronological } from '../../../utils/khataAdvanceHelper.js';
+export { recalculateCustomerStatementChronological };
 
 // Helper to validate Mongo ObjectId
 const validateObjectId = (id) => {
@@ -144,38 +146,24 @@ export const getAllCustomersService = async (queryParams) => {
 
   const customers = await Promise.all(
     rawCustomers.map(async (c) => {
-      const totalsAggregation = await KhataEntry.aggregate([
-        { $match: { customerId: c._id } },
-        {
-          $group: {
-            _id: null,
-            totalDebit: { $sum: '$debitAmount' },
-            totalCredit: { $sum: '$creditAmount' },
-          },
-        },
-      ]);
-      const totals = totalsAggregation[0] || { totalDebit: 0, totalCredit: 0 };
-      const isAdvance = String(c.openingPaymentMethod || '').toUpperCase().includes('ADVANCE') || c.openingPaymentMethod === 'CASH' || c.openingPaymentMethod === 'ONLINE';
+      const allEntries = await KhataEntry.find({ customerId: c._id }).lean();
+      const { summary } = recalculateCustomerStatementChronological(allEntries, c);
+      const calculatedBalance = summary.closingDueBalance;
+      const calculatedAdvance = summary.advanceRemaining;
 
-      const hasOpeningEntry = await KhataEntry.exists({
-        customerId: c._id,
-        $or: [{ voucherNumber: { $regex: /^KV-OP-/i } }, { referenceTransactionId: { $regex: /^OP-/i } }],
-      });
-
-      let calculatedBalance = 0;
-      if (hasOpeningEntry) {
-        calculatedBalance = Math.max(0, totals.totalDebit - totals.totalCredit);
-      } else {
-        const openingBal = Number(c.openingBalance || 0);
-        const initialDebit = isAdvance ? 0 : openingBal;
-        const initialCredit = isAdvance ? openingBal : 0;
-        calculatedBalance = Math.max(0, initialDebit + totals.totalDebit - (initialCredit + totals.totalCredit));
-      }
-
-      if (c.currentBalance !== calculatedBalance || c.khataBalance !== calculatedBalance) {
+      if (
+        c.currentBalance !== calculatedBalance ||
+        c.khataBalance !== calculatedBalance ||
+        c.advanceBalance !== calculatedAdvance
+      ) {
         c.currentBalance = calculatedBalance;
         c.khataBalance = calculatedBalance;
-        await Customer.findByIdAndUpdate(c._id, { currentBalance: calculatedBalance, khataBalance: calculatedBalance });
+        c.advanceBalance = calculatedAdvance;
+        await Customer.findByIdAndUpdate(c._id, {
+          currentBalance: calculatedBalance,
+          khataBalance: calculatedBalance,
+          advanceBalance: calculatedAdvance,
+        });
       }
       return c;
     })
@@ -335,15 +323,35 @@ export const updateCustomerCreditLimitService = async (customerId, creditLimit) 
 // Get single customer current balance info
 export const getCustomerBalanceService = async (customerId) => {
   validateObjectId(customerId);
-  const customer = await Customer.findById(customerId).select('name code phone currentBalance creditLimit status');
+  const customer = await Customer.findById(customerId);
   if (!customer) {
     const error = new Error('Customer not found.');
     error.statusCode = 404;
     throw error;
   }
 
-  const availableCredit = Math.max(0, customer.creditLimit - customer.currentBalance);
-  const isCreditExceeded = customer.currentBalance > customer.creditLimit;
+  const allEntries = await KhataEntry.find({ customerId: customer._id }).lean();
+  const { summary } = recalculateCustomerStatementChronological(allEntries, customer);
+  const calculatedBalance = summary.closingDueBalance;
+  const calculatedAdvance = summary.advanceRemaining;
+
+  if (
+    customer.currentBalance !== calculatedBalance ||
+    customer.khataBalance !== calculatedBalance ||
+    customer.advanceBalance !== calculatedAdvance
+  ) {
+    customer.currentBalance = calculatedBalance;
+    customer.khataBalance = calculatedBalance;
+    customer.advanceBalance = calculatedAdvance;
+    await Customer.findByIdAndUpdate(customer._id, {
+      currentBalance: calculatedBalance,
+      khataBalance: calculatedBalance,
+      advanceBalance: calculatedAdvance,
+    });
+  }
+
+  const availableCredit = Math.max(0, customer.creditLimit - calculatedBalance);
+  const isCreditExceeded = calculatedBalance > customer.creditLimit;
 
   return {
     customer: {
@@ -354,7 +362,8 @@ export const getCustomerBalanceService = async (customerId) => {
       status: customer.status,
     },
     balanceInfo: {
-      currentBalance: customer.currentBalance,
+      currentBalance: calculatedBalance,
+      advanceBalance: calculatedAdvance,
       creditLimit: customer.creditLimit,
       availableCredit,
       isCreditExceeded,

@@ -7,15 +7,18 @@ const DeliveryStaffContext = createContext();
 
 const isDeliveryRole = (role = '') => {
   const r = (role || '').toLowerCase().trim();
-  if (!r) return true;
+  if (!r) return false;
+  // Exclude non-delivery roles like manager, farm, security, cashier, etc.
   if (
-    r.includes('farm') ||
+    r.includes('manager') ||
     r.includes('milking') ||
+    r.includes('farm') ||
     r.includes('security') ||
     r.includes('cashier') ||
     r.includes('accountant') ||
-    r.includes('dairy manager') ||
-    r.includes('owner')
+    r.includes('owner') ||
+    r.includes('admin') ||
+    r.includes('vet')
   ) {
     return false;
   }
@@ -25,7 +28,8 @@ const isDeliveryRole = (role = '') => {
     r.includes('driver') ||
     r.includes('boy') ||
     r.includes('courier') ||
-    r.includes('fleet')
+    r.includes('fleet') ||
+    r.includes('walking')
   );
 };
 
@@ -36,6 +40,13 @@ export function DeliveryStaffProvider({ children }) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     staffPayrollContext = useStaffPayrollContext();
   } catch (_) {}
+
+  // Trigger staff fetch on mount if list is empty
+  useEffect(() => {
+    if (staffContext?.fetchStaff && (!staffContext?.staffList || staffContext?.staffList.length === 0)) {
+      staffContext.fetchStaff();
+    }
+  }, [staffContext]);
 
   const globalStaffList = [
     ...(staffContext?.staffList || []),

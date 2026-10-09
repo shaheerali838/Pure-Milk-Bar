@@ -62,31 +62,62 @@ export default function POSWalkinSection() {
           <span className="text-slate-600 capitalize">{paymentMethod}</span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
           <button
             type="button"
             onClick={() => setPaymentMethod('cash')}
-            className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            className={`py-2 px-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
               paymentMethod === 'cash'
                 ? 'bg-[#009966] text-white shadow-xs'
                 : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
             }`}
           >
             <Banknote className="w-3.5 h-3.5" />
-            <span>Cash Payment</span>
+            <span>Cash</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setPaymentMethod('online')}
-            className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-              paymentMethod === 'online'
-                ? 'bg-[#2563eb] text-white shadow-xs'
+            onClick={() => {
+              setPaymentMethod('easypaisa');
+              setOnlineDetails((prev) => ({ ...prev, provider: 'EasyPaisa' }));
+            }}
+            className={`py-2 px-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
+              paymentMethod === 'easypaisa'
+                ? 'bg-emerald-700 text-white shadow-xs'
                 : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span>Online (EasyPaisa/JazzCash)</span>
+            <span>EasyPaisa</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPaymentMethod('jazzcash');
+              setOnlineDetails((prev) => ({ ...prev, provider: 'JazzCash' }));
+            }}
+            className={`py-2 px-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
+              paymentMethod === 'jazzcash'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+            <span>JazzCash</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPaymentMethod('split')}
+            className={`py-2 px-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
+              paymentMethod === 'split'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <span>Split Pay</span>
           </button>
         </div>
 
@@ -126,28 +157,19 @@ export default function POSWalkinSection() {
           </div>
         )}
 
-        {paymentMethod === 'online' && (
+        {(paymentMethod === 'easypaisa' || paymentMethod === 'jazzcash' || paymentMethod === 'online') && (
           <div className="p-2.5 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-blue-900 uppercase">Gateway</span>
-              <select
-                value={onlineDetails.provider}
-                onChange={(e) =>
-                  setOnlineDetails({ ...onlineDetails, provider: e.target.value })
-                }
-                className="bg-white border border-blue-200 rounded px-2 py-0.5 text-xs font-bold text-blue-800"
-              >
-                <option value="JazzCash">JazzCash</option>
-                <option value="EasyPaisa">EasyPaisa</option>
-                <option value="Raast">Raast Instant</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-              </select>
+              <span className="text-[10px] font-bold text-blue-900 uppercase">
+                {paymentMethod === 'easypaisa' ? 'EasyPaisa Online' : paymentMethod === 'jazzcash' ? 'JazzCash Online' : 'Online Gateway'}
+              </span>
+              <span className="font-bold text-blue-900 font-mono">Total: Rs. {netPayable.toLocaleString()}</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="text"
                 placeholder="Sender Mobile #"
-                value={onlineDetails.senderAccount}
+                value={onlineDetails?.senderAccount || ''}
                 onChange={(e) =>
                   setOnlineDetails({ ...onlineDetails, senderAccount: e.target.value })
                 }
@@ -156,12 +178,56 @@ export default function POSWalkinSection() {
               <input
                 type="text"
                 placeholder="TRX ID #"
-                value={onlineDetails.trxId}
+                value={onlineDetails?.trxId || ''}
                 onChange={(e) =>
                   setOnlineDetails({ ...onlineDetails, trxId: e.target.value })
                 }
                 className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-mono"
               />
+            </div>
+          </div>
+        )}
+
+        {paymentMethod === 'split' && (
+          <div className="p-2.5 bg-purple-50/60 rounded-xl border border-purple-200 space-y-2 text-xs">
+            <div className="flex items-center justify-between text-[10px] font-bold text-purple-900 uppercase">
+              <span>Split Payment Allocation</span>
+              <span>Bill: Rs. {netPayable.toLocaleString()}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">Cash Amount</label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  min="0"
+                  value={splitDetails?.cash || ''}
+                  onChange={(e) => setSplitDetails((prev) => ({ ...prev, cash: e.target.value }))}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold tabular"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-emerald-700 block mb-0.5">EasyPaisa</label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  min="0"
+                  value={splitDetails?.easyPaisa || ''}
+                  onChange={(e) => setSplitDetails((prev) => ({ ...prev, easyPaisa: e.target.value }))}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold tabular"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-amber-700 block mb-0.5">JazzCash</label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  min="0"
+                  value={splitDetails?.jazzCash || ''}
+                  onChange={(e) => setSplitDetails((prev) => ({ ...prev, jazzCash: e.target.value }))}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold tabular"
+                />
+              </div>
             </div>
           </div>
         )}

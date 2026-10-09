@@ -267,6 +267,8 @@ export function POSProvider({ children }) {
         setKhataPaymentOption: cartState.setKhataPaymentOption,
         partialPaidAmount: cartState.partialPaidAmount,
         setPartialPaidAmount: cartState.setPartialPaidAmount,
+        splitDetails: cartState.splitDetails,
+        setSplitDetails: cartState.setSplitDetails,
         orderNotes: cartState.orderNotes,
         setOrderNotes: cartState.setOrderNotes,
         fulfillmentMode: cartState.fulfillmentMode,

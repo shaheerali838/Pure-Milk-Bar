@@ -115,6 +115,22 @@ export const addKhataEntryService = async (data, userId) => {
       customer.currentBalance = newKhataBalance;
     }
 
+    let normalizedPaymentMethod = null;
+    if (paymentMethod) {
+      const pmUpper = String(paymentMethod).toUpperCase();
+      if (pmUpper.includes('EASYPAISA')) normalizedPaymentMethod = 'EASYPAISA';
+      else if (pmUpper.includes('JAZZCASH')) normalizedPaymentMethod = 'JAZZCASH';
+      else if (pmUpper.includes('SPLIT')) normalizedPaymentMethod = 'SPLIT';
+      else if (pmUpper.includes('ONLINE')) normalizedPaymentMethod = 'ONLINE';
+      else if (pmUpper.includes('CHEQUE')) normalizedPaymentMethod = 'CHEQUE';
+      else if (pmUpper.includes('BANK')) normalizedPaymentMethod = 'ONLINE';
+      else if (pmUpper.includes('ADJUSTMENT')) normalizedPaymentMethod = 'ADJUSTMENT';
+      else if (pmUpper.includes('CASH')) normalizedPaymentMethod = 'CASH';
+      else normalizedPaymentMethod = pmUpper;
+    } else if (txType === 'CREDIT') {
+      normalizedPaymentMethod = 'CASH';
+    }
+
     const voucherNumber = generateKhataVoucher();
     const entry = await KhataEntry.create({
       customerId: customer._id,
@@ -129,7 +145,11 @@ export const addKhataEntryService = async (data, userId) => {
       advanceBalanceAfter,
       advanceReceived,
       runningBalance: newKhataBalance,
-      paymentMethod: paymentMethod ? paymentMethod.toUpperCase() : (txType === 'CREDIT' ? 'CASH' : null),
+      paymentMethod: normalizedPaymentMethod,
+      splitPaymentMeta: data.splitPaymentMeta || null,
+      onlineTransferMeta: data.onlineTransferMeta || null,
+      paymentChannel: data.paymentChannel || data.method || (normalizedPaymentMethod === 'EASYPAISA' ? 'EasyPaisa' : normalizedPaymentMethod === 'JAZZCASH' ? 'JazzCash' : normalizedPaymentMethod),
+      notes: data.notes || null,
       referenceTransactionId: referenceTransactionId || null,
       items: Array.isArray(data.items) ? data.items : [],
       orderTotal: Number(data.orderTotal ?? (txType === 'DEBIT' ? entryAmount : 0)),
