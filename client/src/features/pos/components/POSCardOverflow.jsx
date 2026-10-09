@@ -1,9 +1,55 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Droplets, CheckCircle2, ChevronRight, Milk, ShoppingBag, TrendingUp } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
+import { isDateInFilterRange, getDateRangeBoundaries } from '@/utils/dateUtils';
 
-export default function POSCardOverflow({ onSelectSource }) {
-  const { inventoryMetrics, farmSalesMetrics } = usePOSContext();
+export default function POSCardOverflow({
+  onSelectSource,
+  dateFilter = 'today',
+  startDate = '',
+  endDate = '',
+}) {
+  const { inventoryMetrics, salesHistory = [] } = usePOSContext();
+
+  const { detailedLabel: periodLabel } = useMemo(() => {
+    return getDateRangeBoundaries(dateFilter, startDate, endDate);
+  }, [dateFilter, startDate, endDate]);
+
+  const { milkSold, milkIncome, dahiSold, dahiIncome } = useMemo(() => {
+    let mQty = 0;
+    let mRev = 0;
+    let dQty = 0;
+    let dRev = 0;
+
+    const filtered = salesHistory.filter((s) => {
+      const raw = s.date || s.timestamp || s.formattedDate || s.createdAt || '';
+      return isDateInFilterRange(raw, dateFilter, startDate, endDate);
+    });
+
+    filtered.forEach((sale) => {
+      (sale.items || []).forEach((item) => {
+        const name = (item.name || '').toLowerCase();
+        const cat = (item.category || '').toLowerCase();
+        const qty = Number(item.quantity) || 0;
+        const rev = Number(item.subtotal || item.effectiveRevenue) || (qty * (Number(item.price) || 0));
+
+        if (name.includes('dahi') || cat.includes('dahi') || name.includes('yogurt')) {
+          dQty += qty;
+          dRev += rev;
+        } else {
+          mQty += qty;
+          mRev += rev;
+        }
+      });
+    });
+
+    return {
+      milkSold: parseFloat(mQty.toFixed(1)),
+      milkIncome: Math.round(mRev),
+      dahiSold: parseFloat(dQty.toFixed(1)),
+      dahiIncome: Math.round(dRev),
+    };
+  }, [salesHistory, dateFilter, startDate, endDate]);
 
   const cards = [
     {
@@ -19,38 +65,35 @@ export default function POSCardOverflow({ onSelectSource }) {
     },
     {
       id: 'dahi_stock',
-      title: 'Dahi Counter Stock',
-      amount: `${inventoryMetrics?.totalDahi ?? 0} kg`,
-      sub: Number(inventoryMetrics?.chilledDahiStock || 0) > 0
-        ? `Transferred: ${inventoryMetrics?.totalDahiTransferred || 0} kg (${inventoryMetrics?.chilledDahiStock || 0} kg chilled in kitchen)`
-        : `Transferred: ${inventoryMetrics?.totalDahiTransferred || 0} kg from kitchen`,
+      title: 'Total Dahi Stock',
+      amount: `${(Number(inventoryMetrics?.totalDahiStock ?? inventoryMetrics?.totalDahi ?? 0)).toFixed(2)} kg`,
+      sub: `Farm: ${(Number(inventoryMetrics?.farmDahiStock) || 0).toFixed(2)} kg | Sup: ${(Number(inventoryMetrics?.supplierDahiStock) || 0).toFixed(2)} kg`,
       icon: Milk,
       color: '#0284c7',
-      badge: 'Dahi Stock',
+      badge: 'Total Dahi',
       clickable: false,
     },
     {
       id: 'milk_sold',
-      title: 'Total Milk Sold',
-      amount: `${inventoryMetrics?.milkSold ?? 0} L`,
-      sub: `Income: Rs. ${(Number(inventoryMetrics?.totalMilkPrice) || 0).toLocaleString()}`,
+      title: dateFilter === 'today' ? "Today's Milk Sold" : `Milk Sold (${dateFilter.replace('_', ' ')})`,
+      amount: `${milkSold} L`,
+      sub: `Income: Rs. ${milkIncome.toLocaleString()}`,
       icon: CheckCircle2,
       color: '#155dfc',
-      badge: 'Milk Sold',
+      badge: dateFilter === 'today' ? 'Today Sales' : 'Sales',
       clickable: true,
       onClick: () => onSelectSource && onSelectSource('farm'),
     },
     {
       id: 'dahi_sold',
-      title: 'Dahi Sold & Revenue',
-      amount: `${inventoryMetrics?.dahiSold ?? 0} kg`,
-      sub: `Income: Rs. ${(Number(inventoryMetrics?.totalDahiPrice) || 0).toLocaleString()}`,
+      title: dateFilter === 'today' ? "Today's Dahi Sold" : `Dahi Sold (${dateFilter.replace('_', ' ')})`,
+      amount: `${dahiSold} kg`,
+      sub: `Income: Rs. ${dahiIncome.toLocaleString()}`,
       icon: ShoppingBag,
       color: '#009966',
-      badge: 'Dahi Sales',
+      badge: dateFilter === 'today' ? 'Today Dahi' : 'Dahi Sales',
       clickable: false,
     },
-
   ];
 
   return (

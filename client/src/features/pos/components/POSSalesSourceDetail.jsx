@@ -68,8 +68,8 @@ export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
     ? Number((farmSalesMetrics.milkSold + supplierSalesMetrics.milkSold).toFixed(1))
     : currentMetrics.milkSold;
   const totalDahiSold = isAll
-    ? Number((farmSalesMetrics.dahiSold + supplierSalesMetrics.dahiSold).toFixed(1))
-    : currentMetrics.dahiSold;
+    ? Number((farmSalesMetrics.dahiSold + supplierSalesMetrics.dahiSold).toFixed(2))
+    : Number((Number(currentMetrics.dahiSold) || 0).toFixed(2));
 
   const avgMilkRate =
     totalMilkSold > 0

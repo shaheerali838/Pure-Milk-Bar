@@ -349,6 +349,7 @@ export default function DailyClosing() {
         expenses={summaryData?.expenses || {}}
         cash={summaryData?.cash || {}}
         profit={summaryData?.profit || {}}
+        selectedDate={selectedDate}
       />
 
       {/* 7. Product-wise Sales & Profit Table (Collapsed by default) */}

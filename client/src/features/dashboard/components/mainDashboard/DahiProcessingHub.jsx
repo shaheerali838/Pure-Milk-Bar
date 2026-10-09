@@ -5,24 +5,26 @@ import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useDahiContext } from '@/context/DahiContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { isDateInFilterRange, getDateRangeBoundaries } from '@/utils/dateUtils';
 
-import { getPktTodayString } from '@/utils/dateUtils';
-
-export default function DahiProcessingHub() {
+export default function DahiProcessingHub({
+  dateFilter = 'today',
+  startDate = '',
+  endDate = '',
+}) {
   const navigate = useNavigate();
   const { products = [], inventoryMetrics = {} } = usePOSContext();
   const { animals = [] } = useAnimalContext();
   const { totals: intakeTotals = {} } = useIntakeContext();
   const { batches: processingBatches = [] } = useDahiContext() || {};
 
-  const todayISO = getPktTodayString();
+  const periodData = getDateRangeBoundaries(dateFilter, startDate, endDate);
+  const periodLabel = periodData.label;
 
-  // Batches recorded for today or all active batches
-  const todayBatches = processingBatches.filter((b) => {
-    const bDate = b.date ? String(b.date).slice(0, 10) : '';
-    return bDate === todayISO;
+  // Batches recorded for active date filter
+  const activeBatches = processingBatches.filter((b) => {
+    return isDateInFilterRange(b.date || b.createdAt, dateFilter, startDate, endDate);
   });
-  const activeBatches = todayBatches.length > 0 ? todayBatches : processingBatches;
 
   // Processed products from context
   const dahiProducts = products.filter(
@@ -123,9 +125,9 @@ export default function DahiProcessingHub() {
               </h3>
             </div>
           </div>
-          {/* <span className="px-3 py-1 rounded-full text-[11px] font-black bg-teal-50 text-teal-700 shrink-0">
-            +{marginUpliftPct}% Uplift
-          </span> */}
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200 shrink-0">
+            {periodLabel}
+          </span>
         </div>
 
         {/* Metric Data Rows */}
@@ -147,7 +149,7 @@ export default function DahiProcessingHub() {
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
             <span className="text-slate-600 text-xs font-semibold">Available Dahi Stock</span>
             <span className="font-mono font-bold text-teal-700 text-xs tabular">
-              {inventoryMetrics?.totalDahiStock || 0} kg (POS Ready)
+              {(Number(inventoryMetrics?.totalDahiStock ?? inventoryMetrics?.totalDahi ?? 0)).toFixed(2)} kg (Farm: {(Number(inventoryMetrics?.farmDahiStock) || 0).toFixed(2)} kg • Sup: {(Number(inventoryMetrics?.supplierDahiStock) || 0).toFixed(2)} kg)
             </span>
           </div>
 

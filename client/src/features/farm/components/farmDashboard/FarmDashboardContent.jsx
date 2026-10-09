@@ -3,7 +3,8 @@ import { Plus, ArrowRight } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { usePOSContext } from "../../../../context/POSContext";
 import { useExpense } from "../../../../context/ExpenseContext";
-import { getPktTodayString } from "@/utils/dateUtils";
+import { getPktTodayString, getDateRangeBoundaries, isDateInFilterRange } from "@/utils/dateUtils";
+import DashboardDateFilterBar from "@/components/common/DashboardDateFilterBar";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -39,25 +40,40 @@ export default function FarmDashboardContent() {
   const [editAnimal, setEditAnimal] = useState(null);
   const navigate = useNavigate();
 
+  // Date Filter State
+  const [dateFilter, setDateFilter] = useState('today');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const { detailedLabel: periodLabel } = useMemo(() => {
+    return getDateRangeBoundaries(dateFilter, startDate, endDate);
+  }, [dateFilter, startDate, endDate]);
+
   // Metrics
   const totalAnimals = animals.length;
   const cowsCount = animals.filter((a) => (a.species || "").toLowerCase().includes("cow")).length;
   const buffCount = animals.filter((a) => (a.species || "").toLowerCase().includes("buffalo")).length;
 
   const totalFarmYield = useMemo(() => {
-    const now = new Date();
-    const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const isoTodayStr = now.toISOString().split("T")[0];
-    const todayLogs = milkingLogs.filter((l) => {
-      if (!l.date) return false;
-      const d = l.date.split("T")[0];
-      return d === localTodayStr || d === isoTodayStr;
-    });
-    if (todayLogs.length > 0) {
-      return todayLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
+    const filteredLogs = milkingLogs.filter((l) =>
+      isDateInFilterRange(l.date || l.createdAt, dateFilter, startDate, endDate)
+    );
+    if (filteredLogs.length > 0) {
+      return filteredLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
+    }
+    if (dateFilter === 'today') {
+      let sumFromAnimals = 0;
+      animals.forEach((animal) => {
+        const historyList = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
+        const todayHist = historyList.find((h) => isDateInFilterRange(h.date, 'today'));
+        if (todayHist) {
+          sumFromAnimals += Number(todayHist.quantityLiters || todayHist.yieldLiters || todayHist.yield || ((Number(todayHist.morning) || 0) + (Number(todayHist.evening) || 0))) || 0;
+        }
+      });
+      if (sumFromAnimals > 0) return sumFromAnimals;
     }
     return 0;
-  }, [milkingLogs]);
+  }, [milkingLogs, animals, dateFilter, startDate, endDate]);
 
   // Available live farm stock in cold room / chiller
   // Formula: Available Farm Stock = Total Farm Intake - (Total Farm Milk Sold in POS + Total Farm Milk Converted to Dahi)
@@ -77,69 +93,54 @@ export default function FarmDashboardContent() {
 
   const avgAnimalYield = totalAnimals > 0 ? totalFarmYield / totalAnimals : 0;
 
-  // Real Financial Metrics from POS & Expenses (Accurately computed for Today and Month)
-  const realFarmRevenue = Number(posCtx?.farmSalesMetrics?.totalRevenue || 0);
-  const realFarmCost = Number(posCtx?.farmSalesMetrics?.totalCost || 0);
-
-  const { dailyNetProfit, monthlyNetProfit, todayFarmRevenue } = useMemo(() => {
-    let pktToday = '';
-    try {
-      pktToday = getPktTodayString();
-    } catch {
-      pktToday = '';
-    }
-    const now = new Date();
-    const localTodayStr = pktToday || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const isoTodayStr = now.toISOString().split('T')[0];
-    const currentMonthStr = localTodayStr.slice(0, 7);
-
-    const isToday = (dateVal) => {
-      if (!dateVal) return false;
-      const clean = String(dateVal).trim().slice(0, 10);
-      return clean === localTodayStr || clean === isoTodayStr;
-    };
-
-    const isMonth = (dateVal) => {
-      if (!dateVal) return false;
-      const clean = String(dateVal).trim().slice(0, 7);
-      return clean === currentMonthStr;
-    };
-
-    // Farm Sales
+  // Real Financial Metrics from POS & Expenses based on dateFilter
+  const { periodNetProfit, monthlyNetProfit, periodFarmSales, periodFarmExpense } = useMemo(() => {
+    // Farm Sales in range
     let tSales = 0;
-    let mSales = 0;
     (posCtx?.farmSalesHistory || []).forEach((s) => {
-      let sDate = '';
-      if (s.date && /^\d{4}-\d{2}-\d{2}/.test(s.date)) {
-        sDate = s.date.slice(0, 10);
-      } else if (s.timestamp && /^\d{4}-\d{2}-\d{2}/.test(s.timestamp)) {
-        sDate = s.timestamp.slice(0, 10);
-      } else if (s.createdAt && /^\d{4}-\d{2}-\d{2}/.test(s.createdAt)) {
-        sDate = s.createdAt.slice(0, 10);
-      }
+      const sDate = s.date || s.timestamp || s.createdAt || s.formattedDate;
       const netPay = Number(s.netPayable || s.subtotal) || 0;
-      if (isToday(sDate)) tSales += netPay;
-      if (isMonth(sDate)) mSales += netPay;
+      if (isDateInFilterRange(sDate, dateFilter, startDate, endDate)) {
+        tSales += netPay;
+      }
     });
 
-    // Farm Expenses
+    // Farm Expenses in range
     let tExp = 0;
+    (expenses || []).forEach((exp) => {
+      const scope = String(exp.scope || exp.expenseEntity || 'FARM').toUpperCase();
+      if (scope !== 'FARM') return;
+      const expDate = exp.date || exp.createdAt;
+      const amt = Number(exp.amount) || 0;
+      if (isDateInFilterRange(expDate, dateFilter, startDate, endDate)) {
+        tExp += amt;
+      }
+    });
+
+    // Reference monthly values
+    let mSales = 0;
+    (posCtx?.farmSalesHistory || []).forEach((s) => {
+      const sDate = s.date || s.timestamp || s.createdAt || s.formattedDate;
+      const netPay = Number(s.netPayable || s.subtotal) || 0;
+      if (isDateInFilterRange(sDate, 'this_month')) mSales += netPay;
+    });
+
     let mExp = 0;
     (expenses || []).forEach((exp) => {
       const scope = String(exp.scope || exp.expenseEntity || 'FARM').toUpperCase();
       if (scope !== 'FARM') return;
-      const expDate = exp.date ? String(exp.date).slice(0, 10) : '';
+      const expDate = exp.date || exp.createdAt;
       const amt = Number(exp.amount) || 0;
-      if (isToday(expDate)) tExp += amt;
-      if (isMonth(expDate)) mExp += amt;
+      if (isDateInFilterRange(expDate, 'this_month')) mExp += amt;
     });
 
     return {
-      dailyNetProfit: tSales - tExp,
+      periodNetProfit: tSales - tExp,
       monthlyNetProfit: mSales - mExp,
-      todayFarmRevenue: tSales,
+      periodFarmSales: tSales,
+      periodFarmExpense: tExp,
     };
-  }, [posCtx?.farmSalesHistory, expenses]);
+  }, [posCtx?.farmSalesHistory, expenses, dateFilter, startDate, endDate]);
 
   // Trend Data for 7 days (Using real milking logs and real sales)
   const trendData = useMemo(() => {
@@ -232,20 +233,26 @@ export default function FarmDashboardContent() {
     });
   }, [animals]);
 
-  // Aggregate expenses by category
+  // Aggregate expenses by category in selected period
   const expensesByCategory = useMemo(() => {
     const cats = {};
-    expenses.forEach(e => {
+    const filteredExpenses = expenses.filter((e) => {
+      const scope = String(e.scope || e.expenseEntity || 'FARM').toUpperCase();
+      if (scope !== 'FARM') return false;
+      return isDateInFilterRange(e.date || e.createdAt, dateFilter, startDate, endDate);
+    });
+
+    filteredExpenses.forEach(e => {
       const cat = e.category || 'Other';
       if (!cats[cat]) cats[cat] = 0;
       cats[cat] += parseFloat(e.amount) || 0;
     });
     const sorted = Object.entries(cats).sort((a,b) => b[1] - a[1]).slice(0, 5);
     const displayList = sorted.length > 0 ? sorted : [];
-    const sum = expenses.reduce((s, e) => s + (parseFloat(e.amount)||0), 0);
+    const sum = filteredExpenses.reduce((s, e) => s + (parseFloat(e.amount)||0), 0);
 
     return { list: displayList, total: sum };
-  }, [expenses]);
+  }, [expenses, dateFilter, startDate, endDate]);
 
   if (selectedAnimalId) {
     return (
@@ -276,6 +283,17 @@ export default function FarmDashboardContent() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Date Filter Bar */}
+      <DashboardDateFilterBar
+        dateFilter={dateFilter}
+        onFilterChange={setDateFilter}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        theme="emerald"
+      />
+
       {/* Metrics Row */}
       <FarmCardOverflow 
         totalAnimals={totalAnimals}
@@ -284,9 +302,12 @@ export default function FarmDashboardContent() {
         totalFarmYield={totalFarmYield}
         availableFarmStock={availableFarmStock}
         avgAnimalYield={avgAnimalYield}
-        dailyNetProfit={dailyNetProfit}
+        dailyNetProfit={periodNetProfit}
         monthlyNetProfit={monthlyNetProfit}
-        todayFarmRevenue={todayFarmRevenue}
+        todayFarmRevenue={periodFarmSales}
+        periodFarmExpense={periodFarmExpense}
+        dateFilter={dateFilter}
+        periodLabel={periodLabel}
       />
 
       {/* Grid Row 1: Area Chart & Bar Chart */}

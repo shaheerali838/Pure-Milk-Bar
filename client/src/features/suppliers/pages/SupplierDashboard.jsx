@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { LayoutDashboard, Users, Droplets, Plus } from 'lucide-react';
+import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
+import { getDateRangeBoundaries } from '@/utils/dateUtils';
 import SupplierDashboardCard from '../components/SupplierDashboardCard';
 import SupplierDashboardCharts from '../components/SupplierDashboardCharts';
 
@@ -17,6 +19,14 @@ import { useIntakeContext } from '@/context/IntakeContext';
 export default function SupplierDashboard() {
   const { suppliers = [] } = useSupplierContext() || {};
   const { intakeLogs = [] } = useIntakeContext() || {};
+
+  const [dateFilter, setDateFilter] = useState('today');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const { detailedLabel: periodLabel } = useMemo(() => {
+    return getDateRangeBoundaries(dateFilter, startDate, endDate);
+  }, [dateFilter, startDate, endDate]);
 
   const [activeBottomTab, setActiveBottomTab] = useState('suppliers'); // 'suppliers' | 'intake'
   const [selectedSupplier, setSelectedSupplier] = useState(null);
@@ -128,8 +138,26 @@ export default function SupplierDashboard() {
         </div>
       </div>
 
+      {/* Date Filter Bar */}
+      <div className="mb-3">
+        <DashboardDateFilterBar
+          dateFilter={dateFilter}
+          onFilterChange={setDateFilter}
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          theme="blue"
+        />
+      </div>
+
       {/* Main Content Areas */}
-      <SupplierDashboardCard />
+      <SupplierDashboardCard
+        dateFilter={dateFilter}
+        startDate={startDate}
+        endDate={endDate}
+        periodLabel={periodLabel}
+      />
 
       <SupplierDashboardCharts
         onLogIntake={() => setIsLogIntakeOpen(true)}
@@ -138,6 +166,10 @@ export default function SupplierDashboard() {
           setIsAddSupplierOpen(true);
         }}
         onAddExpense={() => setIsAddExpenseOpen(true)}
+        dateFilter={dateFilter}
+        startDate={startDate}
+        endDate={endDate}
+        periodLabel={periodLabel}
       />
 
       {/* Dynamic Bottom Register: Supplier Register & Procurement Intake History */}

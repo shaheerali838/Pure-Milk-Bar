@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { usePOSContext } from '@/context/POSContext';
 import { getProductIcon } from '@/features/inventory/components/AddProduct';
+import { isDateInFilterRange, formatStandardDate } from '@/utils/dateUtils';
 
 export default function POSWalkinHistoryModal({ isOpen, onClose }) {
   const { salesHistory = [], setCompletedSaleReceipt } = usePOSContext();
@@ -53,31 +54,13 @@ export default function POSWalkinHistoryModal({ isOpen, onClose }) {
 
   // Filter by selected date
   const filteredByDate = useMemo(() => {
-    const todayStr = new Date().toDateString();
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toDateString();
-
-    return walkinSales.filter((sale) => {
-      const saleDateObj = new Date(sale.timestamp || sale.date);
-      const saleDateStr = saleDateObj.toDateString();
-
-      if (dateFilter === 'today') {
-        return saleDateStr === todayStr;
-      }
-      if (dateFilter === 'yesterday') {
-        return saleDateStr === yesterdayStr;
-      }
-      if (dateFilter === 'week') {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return saleDateObj >= weekAgo;
-      }
-      if (dateFilter === 'custom') {
-        return saleDateObj.toISOString().split('T')[0] === customDate;
-      }
-      return true; // 'all'
-    });
+    if (dateFilter === 'custom' && customDate) {
+      return walkinSales.filter((sale) => isDateInFilterRange(sale.date || sale.timestamp, 'custom', customDate, customDate));
+    }
+    if (dateFilter && dateFilter !== 'all') {
+      return walkinSales.filter((sale) => isDateInFilterRange(sale.date || sale.timestamp, dateFilter));
+    }
+    return walkinSales;
   }, [walkinSales, dateFilter, customDate]);
 
   // Filter by search query
@@ -379,7 +362,7 @@ export default function POSWalkinHistoryModal({ isOpen, onClose }) {
                             </div>
                             <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
                               <Clock className="w-3 h-3 text-slate-400" />
-                              {formattedTime} · {sale.date || 'Today'}
+                              {formattedTime} · {formatStandardDate(sale.date || sale.timestamp)}
                             </div>
                           </td>
 

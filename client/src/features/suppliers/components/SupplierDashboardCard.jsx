@@ -2,22 +2,28 @@ import React, { useMemo } from 'react';
 import { Users, Droplets, Tag, Wallet, CheckCircle2 } from 'lucide-react';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { useIntakeContext } from '@/context/IntakeContext';
+import { isDateInFilterRange } from '@/utils/dateUtils';
 
-export default function SupplierDashboardCard() {
+export default function SupplierDashboardCard({
+  dateFilter = 'today',
+  startDate = '',
+  endDate = '',
+  periodLabel = 'Today',
+}) {
   const { totals: supplierTotals } = useSupplierContext();
   const { intakeLogs } = useIntakeContext();
 
-  const todayData = useMemo(() => {
-    const d = new Date();
-    const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const todayLogs = (intakeLogs || []).filter((log) => log.date === todayStr);
+  const periodData = useMemo(() => {
+    const logs = (intakeLogs || []).filter((log) =>
+      isDateInFilterRange(log.date || log.createdAt, dateFilter, startDate, endDate)
+    );
 
-    const todayVolume = todayLogs.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
-    const todayCost = todayLogs.reduce((sum, item) => sum + (parseFloat(item.totalCost) || 0), 0);
-    const avgRate = todayVolume > 0 ? todayCost / todayVolume : 0;
+    const volume = logs.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
+    const cost = logs.reduce((sum, item) => sum + (parseFloat(item.totalCost) || 0), 0);
+    const avgRate = volume > 0 ? cost / volume : 0;
 
-    return { todayVolume, todayCost, avgRate, logCount: todayLogs.length };
-  }, [intakeLogs]);
+    return { volume, cost, avgRate, logCount: logs.length };
+  }, [intakeLogs, dateFilter, startDate, endDate]);
 
   const cards = [
     {
@@ -30,19 +36,19 @@ export default function SupplierDashboardCard() {
       badge: 'Network',
     },
     {
-      id: 'today_procurement',
-      title: 'Today\'s Procurement',
-      amount: `${todayData.todayVolume.toFixed(1)} L`,
-      sub: `Cost: Rs. ${todayData.todayCost.toLocaleString()} · ${todayData.logCount} Batches`,
+      id: 'procurement',
+      title: dateFilter === 'today' ? "Today's Procurement" : `Procurement (${periodLabel})`,
+      amount: `${periodData.volume.toFixed(1)} L`,
+      sub: `Cost: Rs. ${periodData.cost.toLocaleString()} · ${periodData.logCount} Batches`,
       icon: Droplets,
       color: '#2563eb', // blue-600
-      badge: 'Intake',
+      badge: dateFilter === 'today' ? 'Today Intake' : 'Intake',
     },
     {
       id: 'avg_purchase_rate',
-      title: 'Avg Purchase Rate',
-      amount: `Rs. ${todayData.avgRate.toFixed(1)} / L`,
-      sub: 'Based on Today\'s Batches',
+      title: dateFilter === 'today' ? 'Avg Purchase Rate' : `Avg Rate (${periodLabel})`,
+      amount: `Rs. ${periodData.avgRate.toFixed(1)} / L`,
+      sub: `Based on ${periodLabel} Batches`,
       icon: Tag,
       color: '#9333ea', // purple-600
       badge: 'Pricing',

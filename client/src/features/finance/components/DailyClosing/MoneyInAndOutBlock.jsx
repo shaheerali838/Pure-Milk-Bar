@@ -12,6 +12,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useStaffContext } from '@/context/StaffContext';
+import { normalizeDateStr, getPktTodayString } from '@/utils/dateUtils';
 
 export default function MoneyInAndOutBlock({
   collections = {},
@@ -19,6 +20,7 @@ export default function MoneyInAndOutBlock({
   expenses = {},
   cash = {},
   profit = {},
+  selectedDate = null,
 }) {
   const formatRs = (val) => `Rs. ${Number(val || 0).toLocaleString('en-PK')}`;
 
@@ -30,15 +32,17 @@ export default function MoneyInAndOutBlock({
   const totalCollected = collections.totalCollected || (counterCash + counterOnline + codCash + khataCash + khataOnline);
 
   const { salaryPayments = [] } = useStaffContext();
-  const todayISO = React.useMemo(() => new Date().toISOString().split('T')[0], []);
+  const effectiveDate = React.useMemo(() => {
+    return selectedDate ? normalizeDateStr(selectedDate) : getPktTodayString();
+  }, [selectedDate]);
 
-  // Today's staff salary disbursements
+  // Selected date's staff salary disbursements
   const todaysStaffPayments = React.useMemo(() => {
     return (salaryPayments || []).filter((p) => {
-      const pDate = p.date ? p.date.slice(0, 10) : '';
-      return pDate === todayISO;
+      const pDate = normalizeDateStr(p.date || p.paymentDate || p.createdAt);
+      return pDate === effectiveDate;
     });
-  }, [salaryPayments, todayISO]);
+  }, [salaryPayments, effectiveDate]);
 
   const todaysStaffCashTotal = React.useMemo(() => {
     return todaysStaffPayments

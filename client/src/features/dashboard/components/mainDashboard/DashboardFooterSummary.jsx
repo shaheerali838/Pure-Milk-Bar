@@ -1,22 +1,34 @@
+import React, { useMemo } from 'react';
 import { Bike, Users, FileText, Droplets, ChevronRight } from 'lucide-react';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
+import { isDateInFilterRange } from '@/utils/dateUtils';
 
 import { Link } from 'react-router-dom';
 
-export default function DashboardFooterSummary() {
+export default function DashboardFooterSummary({
+  dateFilter = 'today',
+  startDate = '',
+  endDate = '',
+}) {
   const { deliveries = [] } = useDeliveryContext();
   const { suppliers = [], totals: supplierTotals = {} } = useSupplierContext();
   const { salesHistory = [], inventoryMetrics = {} } = usePOSContext();
-  const { animals = [] } = useAnimalContext();
+  const { animals = [], milkingLogs = [] } = useAnimalContext();
   const { totals: intakeTotals = {}, intakeLogs = [] } = useIntakeContext();
 
   // 1. Milk Deliveries
-  const deliveryCount = deliveries.length;
-  const deliveryLiters = deliveries.reduce((s, d) => s + (Number(d.qtyLiters) || 0), 0);
+  const filteredDeliveries = useMemo(() => {
+    return deliveries.filter((d) =>
+      isDateInFilterRange(d.date || d.deliveryDate || d.createdAt, dateFilter, startDate, endDate)
+    );
+  }, [deliveries, dateFilter, startDate, endDate]);
+
+  const deliveryCount = filteredDeliveries.length;
+  const deliveryLiters = filteredDeliveries.reduce((s, d) => s + (Number(d.qtyLiters) || 0), 0);
 
   // 2. Suppliers
   const totalSuppliers =
@@ -27,14 +39,26 @@ export default function DashboardFooterSummary() {
     suppliers.filter((s) => s.status === 'Active').length;
 
   // 3. Invoices
-  const invoicesCount = salesHistory.length;
+  const filteredSales = useMemo(() => {
+    return salesHistory.filter((s) =>
+      isDateInFilterRange(s.timestamp || s.date || s.createdAt, dateFilter, startDate, endDate)
+    );
+  }, [salesHistory, dateFilter, startDate, endDate]);
+  const invoicesCount = filteredSales.length;
 
   // 4. Total Milk Inflow
-  const farmLiters = Number(inventoryMetrics?.totalFarmYield) || 0;
-  const procuredLiters =
-    intakeTotals.totalProcuredVolume !== undefined
-      ? Number(intakeTotals.totalProcuredVolume)
-      : intakeLogs.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
+  const farmLiters = useMemo(() => {
+    return milkingLogs
+      .filter((l) => isDateInFilterRange(l.date || l.createdAt, dateFilter, startDate, endDate))
+      .reduce((acc, l) => acc + (Number(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
+  }, [milkingLogs, dateFilter, startDate, endDate]);
+
+  const procuredLiters = useMemo(() => {
+    return intakeLogs
+      .filter((l) => isDateInFilterRange(l.date || l.createdAt, dateFilter, startDate, endDate))
+      .reduce((acc, l) => acc + (parseFloat(l.quantity) || 0), 0);
+  }, [intakeLogs, dateFilter, startDate, endDate]);
+
   const totalInflow = farmLiters + procuredLiters;
 
   const footerCards = [

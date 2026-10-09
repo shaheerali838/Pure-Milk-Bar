@@ -15,6 +15,9 @@ export default function FarmCardOverflow({
   dailyNetProfit = 0, 
   monthlyNetProfit = 0,
   todayFarmRevenue = 0,
+  periodFarmExpense,
+  dateFilter = 'today',
+  periodLabel = 'Today',
 }) {
   const navigate = useNavigate();
   const { totals, expenses = [] } = useExpense();
@@ -41,7 +44,7 @@ export default function FarmCardOverflow({
   }
 
   const farmMilkStock = effectiveStock % 1 === 0 ? effectiveStock.toFixed(0) : effectiveStock.toFixed(1);
-  const totalFarmExpense = totals?.totalFarmExpense ?? 0;
+  const effectiveExpense = periodFarmExpense !== undefined ? periodFarmExpense : (totals?.totalFarmExpense ?? 0);
 
   const statCards = [
     {
@@ -56,10 +59,10 @@ export default function FarmCardOverflow({
     {
       label: "Total Farm Yield",
       value: `${totalFarmYield.toFixed(1)} L`,
-      sub: "Daily total production",
+      sub: dateFilter === 'today' ? "Daily total production" : `${periodLabel} production`,
       icon: Droplets,
       color: "#155dfc",
-      badge: "Today's Milk",
+      badge: dateFilter === 'today' ? "Today's Milk" : "Farm Milk",
       path: "/farm/milking"
     },
     {
@@ -81,26 +84,26 @@ export default function FarmCardOverflow({
     },
     {
       label: "Total Farm Expenses",
-      value: `Rs. ${totalFarmExpense.toLocaleString()}`,
-      sub: `${expenses.length} recorded expense${expenses.length === 1 ? '' : 's'}`,
+      value: `Rs. ${effectiveExpense.toLocaleString()}`,
+      sub: `${periodLabel} farm expenses`,
       icon: PKRIcon,
       color: "#e11d48",
       badge: "Expenses",
       path: "/farm/expenses"
     },
     {
-      label: dailyNetProfit < 0 ? "Farm Net Loss (Today)" : "Farm Net Profit (Today)",
+      label: dailyNetProfit < 0 ? `Farm Net Loss (${periodLabel})` : `Farm Net Profit (${periodLabel})`,
       value: dailyNetProfit < 0
         ? `-Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
         : `Rs. ${dailyNetProfit.toLocaleString()}`,
       sub: dailyNetProfit < 0
-        ? `Today expenses exceed sales by Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
+        ? `${periodLabel} expenses exceed sales by Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
         : dailyNetProfit > 0
-        ? `From Rs. ${todayFarmRevenue.toLocaleString()} today sales`
-        : "Today: Breakeven / No sales yet",
+        ? `From Rs. ${todayFarmRevenue.toLocaleString()} sales`
+        : `${periodLabel}: Breakeven / No sales`,
       icon: dailyNetProfit < 0 ? TrendingDown : dailyNetProfit > 0 ? TrendingUp : PKRIcon,
       color: dailyNetProfit < 0 ? "#e11d48" : dailyNetProfit > 0 ? "#10b981" : "#64748b",
-      badge: dailyNetProfit < 0 ? "Today Loss" : dailyNetProfit > 0 ? "Today Profit" : "Today Net",
+      badge: dailyNetProfit < 0 ? "Loss" : dailyNetProfit > 0 ? "Profit" : "Net",
       path: "/farm/pl"
     }
   ];

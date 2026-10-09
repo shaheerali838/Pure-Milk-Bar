@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   LayoutDashboard,
   Calendar,
@@ -9,6 +9,9 @@ import {
   ClipboardCheck,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+// Reusable Date Filter Bar
+import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
 
 // Modular Components
 import TopSummaryCards from '../components/mainDashboard/TopSummaryCards';
@@ -22,6 +25,10 @@ import SalesAndReceivablesSection from '../components/mainDashboard/SalesAndRece
 import DashboardFooterSummary from '../components/mainDashboard/DashboardFooterSummary';
 
 export default function MainDashboard() {
+  const [dateFilter, setDateFilter] = useState('today');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
   const todayFormatted = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -30,7 +37,7 @@ export default function MainDashboard() {
   });
 
   return (
-    <div className="space-y-2 animate-in fade-in duration-200 ">
+    <div className="space-y-3 animate-in fade-in duration-200 ">
       {/* 1. Header Bar with Business Title & Quick Action Shortcuts */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
@@ -44,7 +51,7 @@ export default function MainDashboard() {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
-            <span>Day: <strong className="text-slate-800">{todayFormatted}</strong></span>
+            <span>Today: <strong className="text-slate-800">{todayFormatted}</strong></span>
           </p>
         </div>
 
@@ -77,41 +84,80 @@ export default function MainDashboard() {
         </div>
       </div>
 
+      {/* Date Filter Bar */}
+      <DashboardDateFilterBar
+        dateFilter={dateFilter}
+        onFilterChange={setDateFilter}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        theme="slate"
+      />
+
       {/* 2. Top Summary Cards (6 Cards) */}
       <section aria-label="Top KPI Summary">
-        <TopSummaryCards />
+        <TopSummaryCards
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </section>
 
       {/* 3. Detailed Hub Cards (3 Detailed Cards: Farm, Supplier Procurement, Dahi Processing) */}
       <section aria-label="Core Business Hubs" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <FarmYieldHub />
-        <SupplierProcurementHub />
-        <DahiProcessingHub />
+        <FarmYieldHub
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
+        <SupplierProcurementHub
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
+        <DahiProcessingHub
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </section>
 
       {/* 4. Total Financial Summary (Aggregated Profit & Segregated Breakdowns) */}
       <section aria-label="Total Financial Summary">
-        <TotalFinancialSummary />
+        <TotalFinancialSummary
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </section>
 
       {/* 5. Profit & Loss Snapshot Component */}
       <section aria-label="Financial Profit & Loss Snapshot">
-        <ProfitLossSnapshot />
+        <ProfitLossSnapshot
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </section>
 
-      {/* 5. Charts & Milk Flow Component */}
+      {/* 6. Charts & Milk Flow Component */}
       <section aria-label="Milk Production & Flow Reconciliation">
         <MilkProductionAndFlow />
       </section>
 
-      {/* 6. Sales & Receivables Component */}
+      {/* 7. Sales & Receivables Component */}
       <section aria-label="Sales and Receivables Overview">
         <SalesAndReceivablesSection />
       </section>
 
-      {/* 7. Bottom Footer Summary (4 Simple Cards) */}
+      {/* 8. Bottom Footer Summary (4 Simple Cards) */}
       <section aria-label="Footer Metrics">
-        <DashboardFooterSummary />
+        <DashboardFooterSummary
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </section>
     </div>
   );

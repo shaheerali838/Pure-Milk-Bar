@@ -65,16 +65,22 @@ export function DahiProvider({ children }) {
           sRatio = totUsed > 0 && supUsed > 0 ? Number((supUsed / totUsed).toFixed(4)) : (b.supplierRatio !== undefined ? Number(b.supplierRatio) : 0.5);
         }
 
+        const outVal = Number(b.outputQuantity || b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
+        const farmDahi = b.farmDahiAdded !== undefined ? Number(b.farmDahiAdded) : Number((outVal * fRatio).toFixed(3));
+        const supplierDahi = b.supplierDahiAdded !== undefined ? Number(b.supplierDahiAdded) : Number((outVal * sRatio).toFixed(3));
+
         return {
           ...b,
           id: b._id || b.id || b.batchNumber,
           batchNumber: b.batchNumber || b.id,
-          outputVal: Number(b.outputQuantity || b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0,
+          outputVal: outVal,
           milkUsedVal: Number(b.milkUsedQuantity || b.milkUsedVal) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0,
           farmMilkUsed: farmUsed,
           supplierMilkUsed: supUsed,
           farmRatio: fRatio,
           supplierRatio: sRatio,
+          farmDahiAdded: farmDahi,
+          supplierDahiAdded: supplierDahi,
         };
       });
       setBatches(normalized);
@@ -230,13 +236,40 @@ export function DahiProvider({ children }) {
     };
   }, [salesHistory]);
 
-  const dahiTransferredToPOS = useMemo(() => {
-    return batches
+  const { farmDahiTransferred, supplierDahiTransferred, totalDahiTransferred } = useMemo(() => {
+    let fSum = 0;
+    let sSum = 0;
+    let totSum = 0;
+    batches
       .filter((b) => b.stage === 'pos')
-      .reduce((sum, b) => sum + (Number(b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0), 0);
+      .forEach((b) => {
+        const out = Number(b.outputVal || b.outputQuantity) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
+        const fRatio = b.farmRatio !== undefined ? Number(b.farmRatio) : 0.5;
+        const sRatio = b.supplierRatio !== undefined ? Number(b.supplierRatio) : 0.5;
+        const fAdded = b.farmDahiAdded !== undefined ? Number(b.farmDahiAdded) : Number((out * fRatio).toFixed(3));
+        const sAdded = b.supplierDahiAdded !== undefined ? Number(b.supplierDahiAdded) : Number((out * sRatio).toFixed(3));
+        fSum += fAdded;
+        sSum += sAdded;
+        totSum += out;
+      });
+    return {
+      farmDahiTransferred: fSum,
+      supplierDahiTransferred: sSum,
+      totalDahiTransferred: totSum,
+    };
   }, [batches]);
 
-  const liveDahiPOSStock = Math.max(0, Number((dahiTransferredToPOS - dahiSalesData.soldKg).toFixed(1)));
+  const dahiTransferredToPOS = totalDahiTransferred;
+
+  // Live stock synchronization with POS metrics
+  const liveFarmDahiStock = posCtx?.inventoryMetrics?.rawFarmDahiStock !== undefined
+    ? Number(posCtx.inventoryMetrics.rawFarmDahiStock)
+    : Math.max(0, Number((farmDahiTransferred - (posCtx?.inventoryMetrics?.todayFarmDahiSold || 0)).toFixed(2)));
+  const liveSupplierDahiStock = posCtx?.inventoryMetrics?.rawSupplierDahiStock !== undefined
+    ? Number(posCtx.inventoryMetrics.rawSupplierDahiStock)
+    : Math.max(0, Number((supplierDahiTransferred - (posCtx?.inventoryMetrics?.todaySupplierDahiSold || 0)).toFixed(2)));
+  const liveTotalDahiStock = Number((liveFarmDahiStock + liveSupplierDahiStock).toFixed(2));
+  const liveDahiPOSStock = liveTotalDahiStock;
 
   // Unified metrics for top KPI cards & widgets
   const metrics = useMemo(() => {
@@ -258,14 +291,23 @@ export function DahiProvider({ children }) {
       dahiSalesRevenue: dahiSalesData.revenue.toLocaleString(),
       dahiSalesOrdersCount: dahiSalesData.salesCount,
       dahiRealizedExtraProfit: dahiSalesData.extraProfitFromSales.toLocaleString(),
-      dahiPOSStock: String(liveDahiPOSStock),
-      dahiTransferredToPOS: String(dahiTransferredToPOS),
+      // Dynamic Proportional Dahi Stocks with .toFixed(2)
+      farmDahiStock: liveFarmDahiStock.toFixed(2),
+      supplierDahiStock: liveSupplierDahiStock.toFixed(2),
+      totalDahiStock: liveTotalDahiStock.toFixed(2),
+      rawFarmDahiStock: liveFarmDahiStock,
+      rawSupplierDahiStock: liveSupplierDahiStock,
+      rawTotalDahiStock: liveTotalDahiStock,
+      dahiPOSStock: liveTotalDahiStock.toFixed(2),
+      dahiTransferredToPOS: totalDahiTransferred.toFixed(2),
+      farmDahiTransferred: farmDahiTransferred.toFixed(2),
+      supplierDahiTransferred: supplierDahiTransferred.toFixed(2),
       // Remaining liquid milk after dahi conversion
       remainingFarmMilk: conversionData.remainingFarm,
       remainingSupplierMilk: conversionData.remainingSupplier,
       remainingTotalMilk: conversionData.remainingTotal,
     };
-  }, [realFarmYield, realSupplierIntake, conversionData, dahiSalesData, dahiTransferredToPOS, liveDahiPOSStock, liveDahiPosRate]);
+  }, [realFarmYield, realSupplierIntake, conversionData, dahiSalesData, totalDahiTransferred, farmDahiTransferred, supplierDahiTransferred, liveFarmDahiStock, liveSupplierDahiStock, liveTotalDahiStock, liveDahiPosRate]);
 
   // =========================================================================
   // 3. PIPELINE ACTIONS (Synced with database)
@@ -333,6 +375,12 @@ export function DahiProvider({ children }) {
         supplierRatio = totalMilkUsed > 0 ? Number((supPortion / totalMilkUsed).toFixed(4)) : 0.5;
       }
 
+      // 100% Dynamic proportional yield formulas:
+      // farmDahiAdded = totalDahiProduced * farmRatio
+      // supplierDahiAdded = totalDahiProduced * supplierRatio
+      const farmDahiAdded = Number((numOutput * farmRatio).toFixed(3));
+      const supplierDahiAdded = Number((numOutput * supplierRatio).toFixed(3));
+
       const resolvedUnitCost = Number(extraData.unitCost) || (normSource === 'Supplier Milk' ? 220 : 230);
       const resolvedDahiCostRate = Number(extraData.dahiCostRate) || 250;
       const resolvedFarmCost = Number(extraData.farmMilkCost) || (farmPortion * (normSource === 'Farm Milk' ? resolvedUnitCost : 230));
@@ -356,6 +404,8 @@ export function DahiProvider({ children }) {
         supplierMilkUsed: supPortion,
         farmRatio,
         supplierRatio,
+        farmDahiAdded,
+        supplierDahiAdded,
         unitCost: resolvedUnitCost,
         dahiCostRate: resolvedDahiCostRate,
         farmMilkCost: resolvedFarmCost,
@@ -381,6 +431,8 @@ export function DahiProvider({ children }) {
         time: timeNow,
         outputVal: numOutput,
         milkUsedVal: qty,
+        farmDahiAdded,
+        supplierDahiAdded,
         unitCost: resolvedUnitCost,
         dahiCostRate: resolvedDahiCostRate,
         farmMilkCost: resolvedFarmCost,
@@ -410,6 +462,8 @@ export function DahiProvider({ children }) {
           quantity: qty,
           farmMilkUsed: farmPortion,
           supplierMilkUsed: supPortion,
+          farmDahiAdded,
+          supplierDahiAdded,
           outputQuantity: numOutput,
           batch: newRecord,
           stage: initialStage,

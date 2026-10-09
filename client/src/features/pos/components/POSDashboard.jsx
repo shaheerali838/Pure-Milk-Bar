@@ -21,8 +21,12 @@ import POSSalesSourceDetail from './POSSalesSourceDetail';
 import POSWalkinHistoryModal from './POSWalkinHistoryModal';
 import POSDoorstepOrdersModal from './POSDoorstepOrdersModal';
 import { getProductIcon, getProductMeta } from '@/features/inventory/components/AddProduct';
+import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
 
 export default function POSDashboard() {
+  const [dateFilter, setDateFilter] = useState('today');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const context = usePOSContext() || {};
   const {
     products = [],
@@ -90,17 +94,19 @@ export default function POSDashboard() {
     const isBuff = name.includes('buffalo');
 
     if (cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt') || cat.includes('curd') || name.includes('curd')) {
-      const liveDahi = Number(inventoryMetrics?.totalDahiStock ?? inventoryMetrics?.totalDahi ?? inventoryMetrics?.rawDahiStock);
+      const farmD = Number(inventoryMetrics?.rawFarmDahiStock ?? inventoryMetrics?.farmDahiStock) || 0;
+      const supD = Number(inventoryMetrics?.rawSupplierDahiStock ?? inventoryMetrics?.supplierDahiStock) || 0;
+      const liveDahi = Number((farmD + supD).toFixed(2));
       if (!isNaN(liveDahi) && liveDahi >= 0) return liveDahi;
       return Math.max(0, Number(prod.stock) || 0);
     }
 
     if (cat.includes('milk') || name.includes('milk')) {
       if (isCow) {
-        // Strictly Farm Cow Milk only! Supplier milk is NOT added.
-        const farmCow = Number(inventoryMetrics?.farmCowMilkStock ?? inventoryMetrics?.rawFarmCowMilkStock);
-        if (!isNaN(farmCow) && farmCow >= 0) return farmCow;
-        return Math.max(0, Number(prod.stock) || 0);
+        // Combined Cow Milk Card: Farm Cow + Supplier Cow
+        const farmCow = Number(inventoryMetrics?.farmCowMilkStock ?? inventoryMetrics?.rawFarmCowMilkStock) || 0;
+        const supCow = Number(inventoryMetrics?.supplierCowMilkStock ?? inventoryMetrics?.rawSupplierCowMilkStock) || 0;
+        return Math.max(0, Number((farmCow + supCow).toFixed(1)));
       }
       if (isBuff) {
         // Combined Buffalo Milk Card: Farm Buffalo + Supplier Buffalo
@@ -264,7 +270,23 @@ export default function POSDashboard() {
         </div>
       </div>
 
-      <POSCardOverflow onSelectSource={setSelectedSalesSource} />
+      {/* Date Filter Bar */}
+      <DashboardDateFilterBar
+        dateFilter={dateFilter}
+        onFilterChange={setDateFilter}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        theme="emerald"
+      />
+
+      <POSCardOverflow
+        onSelectSource={setSelectedSalesSource}
+        dateFilter={dateFilter}
+        startDate={startDate}
+        endDate={endDate}
+      />
 
 
 
@@ -413,15 +435,22 @@ export default function POSDashboard() {
                             {displayStock > 0 ? (
                               <>
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                Stock: {displayStock} {unitLabel}
+                                {isDahi ? `Total Dahi: ${displayStock.toFixed(2)} ${unitLabel}` : `Stock: ${displayStock} ${unitLabel}`}
                               </>
                             ) : (
                               <>
                                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                                0 {unitLabel} (Out of Stock)
+                                {isDahi ? `Total Dahi: 0.00 ${unitLabel} (Out of Stock)` : `0 ${unitLabel} (Out of Stock)`}
                               </>
                             )}
                           </p>
+                          {isDahi && (
+                            <p className="text-[9px] text-slate-500 font-medium tracking-tight mt-0.5 flex items-center gap-1">
+                              <span className="font-semibold text-emerald-700">Farm: {(Number(inventoryMetrics?.farmDahiStock) || 0).toFixed(2)} kg</span>
+                              <span className="text-slate-300">|</span>
+                              <span className="font-semibold text-amber-700">Supplier: {(Number(inventoryMetrics?.supplierDahiStock) || 0).toFixed(2)} kg</span>
+                            </p>
+                          )}
                           {isMilk && isBuff && (
                             <p className="text-[9px] text-slate-500 font-medium tracking-tight mt-0.5 flex items-center gap-1">
                               <span className="font-semibold text-emerald-700">Farm: {Number(inventoryMetrics?.farmBuffaloMilkStock) || 0}L</span>
@@ -430,8 +459,10 @@ export default function POSDashboard() {
                             </p>
                           )}
                           {isMilk && isCow && (
-                            <p className="text-[9px] text-blue-600 font-semibold tracking-tight mt-0.5">
-                              Strictly Farm Cow Milk
+                            <p className="text-[9px] text-slate-500 font-medium tracking-tight mt-0.5 flex items-center gap-1">
+                              <span className="font-semibold text-emerald-700">Farm: {Number(inventoryMetrics?.farmCowMilkStock) || 0}L</span>
+                              <span className="text-slate-300">|</span>
+                              <span className="font-semibold text-blue-700">Supplier: {Number(inventoryMetrics?.supplierCowMilkStock) || 0}L</span>
                             </p>
                           )}
                         </div>

@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { isTodayDate } from './posHelpers';
+import { normalizeDateStr } from '../../utils/dateUtils';
 
 export function usePOSMetrics({
   animals = [],
@@ -47,19 +48,20 @@ export function usePOSMetrics({
         const y = parseFloat(log.yieldLiters || log.yield || log.quantityLiters) || 0;
         const tag = (log.animalTag || log.tag || log.animalId?.tagNumber || log.animalId?.tag || '').toUpperCase();
         const rawId = String(log.animalId?._id || log.animalId || '');
-        const dateStr = log.date ? (typeof log.date === 'string' && log.date.includes('T') ? log.date.split('T')[0] : String(log.date).slice(0, 10)) : '';
+        const animalObj = animals.find(a => String(a.id || a._id) === rawId || (tag && (String(a.tag || a.tagNumber).toUpperCase() === tag)));
+        const canonicalTag = (animalObj?.tag || animalObj?.tagNumber || tag || rawId).toUpperCase();
+        const dateStr = normalizeDateStr(log.date || log.createdAt) || '';
         const shiftStr = (log.shift || 'Morning').toUpperCase();
-        const dedupeKey = `${tag || rawId}-${dateStr}-${shiftStr}`;
+        const dedupeKey = `${canonicalTag}-${dateStr}-${shiftStr}`;
 
         if (!seenEntries.has(dedupeKey) && y > 0) {
           seenEntries.add(dedupeKey);
-          const animalObj = animals.find(a => String(a.id || a._id) === rawId || (tag && (String(a.tag || a.tagNumber).toUpperCase() === tag)));
 
           const isCow = (animalObj?.type || '').toUpperCase() === 'COW' ||
                         (animalObj?.species || '').toLowerCase().includes('cow') ||
-                        cowTagSet.has(tag) ||
+                        cowTagSet.has(canonicalTag) ||
                         cowTagSet.has(rawId) ||
-                        tag.startsWith('COW') ||
+                        canonicalTag.startsWith('COW') ||
                         (log.animalId?.type || '').toUpperCase() === 'COW';
 
           logSum += y;
@@ -87,7 +89,7 @@ export function usePOSMetrics({
         if (history.length > 0) {
           history.forEach((h) => {
             if (!h) return;
-            const dateStr = h.date ? (typeof h.date === 'string' && h.date.includes('T') ? h.date.split('T')[0] : String(h.date).slice(0, 10)) : '';
+            const dateStr = normalizeDateStr(h.date || h.createdAt) || '';
             const shiftStr = (h.shift || (h.morning > 0 ? 'Morning' : 'Evening') || 'Morning').toUpperCase();
             const dedupeKey = `${tag || id}-${dateStr}-${shiftStr}`;
             const y = Number(h.quantityLiters ?? h.yieldLiters ?? h.yield ?? (shiftStr === 'EVENING' ? h.evening : h.morning) ?? 0) || 0;
@@ -202,11 +204,18 @@ export function usePOSMetrics({
     const rawSrc = String(item.source || '').trim();
     const name = String(item.name || '').toLowerCase();
     const cat = String(item.category || '').toLowerCase();
-    const isDahi = cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt');
+    const srcLow = rawSrc.toLowerCase();
+    const isDahi = cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt') || cat.includes('curd') || name.includes('curd');
     const isMilk = !isDahi && (cat.includes('milk') || name.includes('milk') || cat.includes('cow') || cat.includes('buffalo') || name.includes('cow') || name.includes('buffalo'));
 
+    if (name.includes('supplier share') || srcLow === 'supplier') {
+      return { source: 'Supplier', farmRatio: 0, supplierRatio: 1, isDahi, isMilk };
+    }
+    if (name.includes('farm share') || srcLow === 'farm') {
+      return { source: 'Farm', farmRatio: 1, supplierRatio: 0, isDahi, isMilk };
+    }
+
     if (isDahi) {
-      const srcLow = rawSrc.toLowerCase();
       if (srcLow.includes('supplier')) {
         return { source: 'Supplier', farmRatio: 0, supplierRatio: 1, isDahi: true, isMilk: false };
       }
@@ -248,7 +257,6 @@ export function usePOSMetrics({
       return { source: 'Supplier', farmRatio: 0, supplierRatio: 1, isDahi: true, isMilk: false };
     }
 
-    const srcLow = rawSrc.toLowerCase();
     if (name.includes('supplier share') || srcLow === 'supplier') {
       return { source: 'Supplier', farmRatio: 0, supplierRatio: 1, isDahi: false, isMilk: true };
     }
@@ -620,7 +628,11 @@ export function usePOSMetrics({
   let farmMilkConvertedToDahi = 0;
   let supplierMilkConvertedToDahi = 0;
   let totalDahiTransferredToPOS = 0;
+  let totalFarmDahiTransferredToPOS = 0;
+  let totalSupplierDahiTransferredToPOS = 0;
   let totalDahiChilledInKitchen = 0;
+  let totalFarmDahiChilledInKitchen = 0;
+  let totalSupplierDahiChilledInKitchen = 0;
   let processedCowMilkStock = 0;
   let processedBuffaloMilkStock = 0;
   let totalProcessedMilk = 0;
@@ -642,24 +654,49 @@ export function usePOSMetrics({
     const numUsed = Number(b.milkUsedQuantity || b.milkUsedVal || b.milkUsedLiters) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0;
     const outNum = Number(b.outputQuantity || b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
 
-    if (isDahi || (!isMilk && numUsed > 0)) {
-      if (b.farmMilkUsed !== undefined && b.supplierMilkUsed !== undefined) {
-        farmMilkConvertedToDahi += Number(b.farmMilkUsed) || 0;
-        supplierMilkConvertedToDahi += Number(b.supplierMilkUsed) || 0;
+    // 100% Dynamic proportional yield inputs:
+    let farmMilkInput = 0;
+    let supplierMilkInput = 0;
+
+    if (b.farmMilkUsed !== undefined && b.supplierMilkUsed !== undefined) {
+      farmMilkInput = Number(b.farmMilkUsed) || 0;
+      supplierMilkInput = Number(b.supplierMilkUsed) || 0;
+    } else {
+      const src = (b.source || '').toLowerCase();
+      if (src.includes('farm') && !src.includes('supplier') && !src.includes('mix') && !src.includes('both')) {
+        farmMilkInput = numUsed;
+        supplierMilkInput = 0;
+      } else if (src.includes('supplier') && !src.includes('farm') && !src.includes('mix') && !src.includes('both')) {
+        farmMilkInput = 0;
+        supplierMilkInput = numUsed;
       } else {
-        const src = (b.source || '').toLowerCase();
-        if (src.includes('farm') && !src.includes('supplier') && !src.includes('mix')) {
-          farmMilkConvertedToDahi += numUsed;
-        } else if (src.includes('supplier') && !src.includes('farm') && !src.includes('mix')) {
-          supplierMilkConvertedToDahi += numUsed;
-        } else {
-          const totalSourced = totalFarmMilk + totalSupplierIntake;
-          const ratio = totalSourced > 0 ? totalFarmMilk / totalSourced : 0.5;
-          const fPortion = Math.round(numUsed * ratio);
-          farmMilkConvertedToDahi += fPortion;
-          supplierMilkConvertedToDahi += Math.max(0, numUsed - fPortion);
-        }
+        const totalSourced = totalFarmMilk + totalSupplierIntake;
+        const ratio = totalSourced > 0 ? totalFarmMilk / totalSourced : 0.5;
+        farmMilkInput = Math.round(numUsed * ratio);
+        supplierMilkInput = Math.max(0, numUsed - farmMilkInput);
       }
+    }
+
+    const totalMilkUsed = farmMilkInput + supplierMilkInput > 0 ? (farmMilkInput + supplierMilkInput) : numUsed;
+    let farmRatio = 0.5;
+    let supplierRatio = 0.5;
+    if (totalMilkUsed > 0) {
+      farmRatio = farmMilkInput / totalMilkUsed;
+      supplierRatio = supplierMilkInput / totalMilkUsed;
+    } else if (b.farmRatio !== undefined && b.supplierRatio !== undefined) {
+      farmRatio = Number(b.farmRatio) || 0.5;
+      supplierRatio = Number(b.supplierRatio) || 0.5;
+    }
+
+    // Formulas:
+    // farmDahiAdded = totalDahiProduced * farmRatio
+    // supplierDahiAdded = totalDahiProduced * supplierRatio
+    const farmDahiAdded = b.farmDahiAdded !== undefined ? Number(b.farmDahiAdded) : Number((outNum * farmRatio).toFixed(3));
+    const supplierDahiAdded = b.supplierDahiAdded !== undefined ? Number(b.supplierDahiAdded) : Number((outNum * supplierRatio).toFixed(3));
+
+    if (isDahi || (!isMilk && numUsed > 0)) {
+      farmMilkConvertedToDahi += farmMilkInput;
+      supplierMilkConvertedToDahi += supplierMilkInput;
     }
 
     const bStatus = String(b.status || '').toLowerCase();
@@ -672,8 +709,12 @@ export function usePOSMetrics({
       if (isDahi) {
         if (isTransferredToPOS) {
           totalDahiTransferredToPOS += outNum;
+          totalFarmDahiTransferredToPOS += farmDahiAdded;
+          totalSupplierDahiTransferredToPOS += supplierDahiAdded;
         } else if (isChilledInKitchen) {
           totalDahiChilledInKitchen += outNum;
+          totalFarmDahiChilledInKitchen += farmDahiAdded;
+          totalSupplierDahiChilledInKitchen += supplierDahiAdded;
         }
       } else if (isMilk && isReadyMilk) {
         totalProcessedMilk += outNum;
@@ -700,6 +741,8 @@ export function usePOSMetrics({
   let todaySupplierMilkSold = 0;
   let todaySupplierCowMilkSold = 0;
   let todaySupplierBuffaloMilkSold = 0;
+  let todayFarmDahiSold = 0;
+  let todaySupplierDahiSold = 0;
 
   salesHistory.forEach((sale) => {
     const isToday = !sale.timestamp && !sale.date && !sale.createdAt
@@ -713,10 +756,11 @@ export function usePOSMetrics({
         const cat = (item.category || '').toLowerCase();
         const qty = Number(item.quantity) || 0;
         
-        const isMilk = cat.includes('milk') || name.includes('milk') || cat.includes('buffalo') || cat.includes('cow') || name.includes('buffalo') || name.includes('cow');
+        const isDahi = cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt') || cat.includes('curd') || name.includes('curd');
+        const isMilk = !isDahi && (cat.includes('milk') || name.includes('milk') || cat.includes('buffalo') || cat.includes('cow') || name.includes('buffalo') || name.includes('cow'));
         
         if (isMilk) {
-          const isCow = name.includes('cow') || cat.includes('cow');
+          const isCow = item.milkType === 'cow' || name.includes('cow') || cat.includes('cow');
           let fQty = item.farmQuantity !== undefined ? Number(item.farmQuantity) || 0 : (src === 'Farm' ? qty : 0);
           let sQty = item.supplierQuantity !== undefined ? Number(item.supplierQuantity) || 0 : (src === 'Supplier' ? qty : 0);
           if (fQty === 0 && sQty === 0) {
@@ -734,6 +778,15 @@ export function usePOSMetrics({
             todayFarmBuffaloMilkSold += fQty;
             todaySupplierBuffaloMilkSold += sQty;
           }
+        } else if (isDahi) {
+          let fDahiQty = item.farmQuantity !== undefined ? Number(item.farmQuantity) || 0 : (src === 'Farm' ? qty : 0);
+          let sDahiQty = item.supplierQuantity !== undefined ? Number(item.supplierQuantity) || 0 : (src === 'Supplier' ? qty : 0);
+          if (fDahiQty === 0 && sDahiQty === 0) {
+            if (src === 'Supplier') sDahiQty = qty;
+            else fDahiQty = qty;
+          }
+          todayFarmDahiSold += fDahiQty;
+          todaySupplierDahiSold += sDahiQty;
         }
       });
     }
@@ -754,16 +807,7 @@ export function usePOSMetrics({
     }
   });
 
-  const totalFarmMilkSoldQty = todayFarmMilkSold;
-  const calculatedAvailableFarmStock = Math.max(0, Number((totalFarmMilk - totalFarmMilkSoldQty - farmMilkConvertedToDahi).toFixed(1)));
-  // Stock is always derived dynamically (intake - sold - converted) so intakes increase
-  // and POS sales decrease ONLY the matching entity. Legacy override state is ignored.
-  const availableFarmStock = calculatedAvailableFarmStock;
-  const remainingFarmMilk = availableFarmStock;
-  const calculatedRemainingSupplierMilk = Math.max(0, Number((todaySupplierIntake - todaySupplierMilkSold - supplierMilkConvertedToDahi).toFixed(1)));
-  const remainingSupplierMilk = calculatedRemainingSupplierMilk;
-  const remainingTotalMilk = Number((remainingFarmMilk + remainingSupplierMilk + totalProcessedMilk).toFixed(1));
-
+  // Calculate isolated Cow and Buffalo stocks first
   const preDahiCow = Math.max(0, totalFarmCowMilk - todayFarmCowMilkSold + processedCowMilkStock);
   const preDahiBuff = Math.max(0, totalFarmBuffaloMilk - todayFarmBuffaloMilkSold + processedBuffaloMilkStock);
   
@@ -782,7 +826,19 @@ export function usePOSMetrics({
   const remainingSupplierCowMilk = Math.max(0, Number((preDahiSupCow - supCowDeduction).toFixed(1)));
   const remainingSupplierBuffaloMilk = Math.max(0, Number((preDahiSupBuff - supBuffDeduction).toFixed(1)));
 
-  const availableDahiStock = Math.max(0, Number((totalDahiTransferredToPOS - totalDahiSold).toFixed(1)));
+  // Dynamic sums strictly derived from isolated stocks:
+  // Total Milk Stock = farmCowMilk + farmBuffaloMilk + supplierCowMilk + supplierBuffaloMilk (+ processed milk)
+  const availableFarmStock = Number((remainingFarmCowMilk + remainingFarmBuffaloMilk).toFixed(1));
+  const remainingFarmMilk = availableFarmStock;
+  const remainingSupplierMilk = Number((remainingSupplierCowMilk + remainingSupplierBuffaloMilk).toFixed(1));
+  const remainingTotalMilk = Number((remainingFarmCowMilk + remainingFarmBuffaloMilk + remainingSupplierCowMilk + remainingSupplierBuffaloMilk + totalProcessedMilk).toFixed(1));
+  const totalFarmMilkSoldQty = todayFarmMilkSold;
+
+  // 100% Dynamic Cascading Dahi Stocks: Total Dahi = farmDahiStock + supplierDahiStock
+  const rawFarmDahiStock = Math.max(0, Number((totalFarmDahiTransferredToPOS - todayFarmDahiSold).toFixed(2)));
+  const rawSupplierDahiStock = Math.max(0, Number((totalSupplierDahiTransferredToPOS - todaySupplierDahiSold).toFixed(2)));
+  const rawTotalDahiStock = Number((rawFarmDahiStock + rawSupplierDahiStock).toFixed(2));
+  const availableDahiStock = rawTotalDahiStock;
 
   const dahiExtraMarginPerKg = Math.max(0, (Number(activeDahiPrice) || 0) - (Number(activeMilkPrice) || 0));
   const dahiRealizedExtraProfit = Math.round(totalDahiSold * dahiExtraMarginPerKg);
@@ -808,10 +864,15 @@ export function usePOSMetrics({
     supplierMilkStock: remainingSupplierMilk % 1 === 0 ? remainingSupplierMilk.toFixed(0) : remainingSupplierMilk.toFixed(1),
     supplierCowMilkStock: remainingSupplierCowMilk % 1 === 0 ? remainingSupplierCowMilk.toFixed(0) : remainingSupplierCowMilk.toFixed(1),
     supplierBuffaloMilkStock: remainingSupplierBuffaloMilk % 1 === 0 ? remainingSupplierBuffaloMilk.toFixed(0) : remainingSupplierBuffaloMilk.toFixed(1),
-    totalDahi: availableDahiStock % 1 === 0 ? availableDahiStock.toFixed(0) : availableDahiStock.toFixed(1),
-    totalDahiStock: availableDahiStock % 1 === 0 ? availableDahiStock.toFixed(0) : availableDahiStock.toFixed(1),
-    totalDahiTransferred: totalDahiTransferredToPOS % 1 === 0 ? totalDahiTransferredToPOS.toFixed(0) : totalDahiTransferredToPOS.toFixed(1),
-    chilledDahiStock: totalDahiChilledInKitchen % 1 === 0 ? totalDahiChilledInKitchen.toFixed(0) : totalDahiChilledInKitchen.toFixed(1),
+    // Dynamic Proportional Dahi Stocks formatted with .toFixed(2)
+    farmDahiStock: rawFarmDahiStock.toFixed(2),
+    supplierDahiStock: rawSupplierDahiStock.toFixed(2),
+    totalDahi: rawTotalDahiStock.toFixed(2),
+    totalDahiStock: rawTotalDahiStock.toFixed(2),
+    totalDahiTransferred: totalDahiTransferredToPOS.toFixed(2),
+    totalFarmDahiTransferred: totalFarmDahiTransferredToPOS.toFixed(2),
+    totalSupplierDahiTransferred: totalSupplierDahiTransferredToPOS.toFixed(2),
+    chilledDahiStock: totalDahiChilledInKitchen.toFixed(2),
     rawFarmMilkStock: availableFarmStock,
     rawFarmCowMilkStock: remainingFarmCowMilk,
     rawFarmBuffaloMilkStock: remainingFarmBuffaloMilk,
@@ -819,13 +880,20 @@ export function usePOSMetrics({
     rawSupplierCowMilkStock: remainingSupplierCowMilk,
     rawSupplierBuffaloMilkStock: remainingSupplierBuffaloMilk,
     rawTotalMilkStock: remainingTotalMilk,
-    rawDahiStock: availableDahiStock,
+    rawFarmDahiStock,
+    rawSupplierDahiStock,
+    rawTotalDahiStock,
+    rawDahiStock: rawTotalDahiStock,
     rawChilledDahiStock: totalDahiChilledInKitchen,
     totalFarmMilkIntake: totalFarmMilk,
     totalFarmMilkSold: totalFarmMilkSoldQty,
     totalFarmMilkConvertedToDahi: farmMilkConvertedToDahi,
     milkSold: (totalMilkSold % 1 === 0 ? totalMilkSold.toFixed(0) : totalMilkSold.toFixed(2)),
     dahiSold: (totalDahiSold % 1 === 0 ? totalDahiSold.toFixed(0) : totalDahiSold.toFixed(2)),
+    todayFarmDahiSold: Number(todayFarmDahiSold.toFixed(2)),
+    todaySupplierDahiSold: Number(todaySupplierDahiSold.toFixed(2)),
+    farmDahiSold: Number(farmStats.dahiSold.toFixed(2)),
+    supplierDahiSold: Number(supplierStats.dahiSold.toFixed(2)),
     totalMilkPrice,
     totalDahiPrice,
     dahiExtraProfit: dahiRealizedExtraProfit,

@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import posService from '@/services/posService.js';
 import { broadcastSync } from '@/utils/syncBroadcaster';
 import { isLegacyDummySale, isObjectId } from './posHelpers';
+import { sortByDateDesc, ensureValidDate, normalizeDateStr, getPktTodayString, formatStandardDate } from '@/utils/dateUtils';
 
 export function usePOSOrders({
   cartState,
@@ -12,6 +13,7 @@ export function usePOSOrders({
   setFarmStock,
   setSupplierStock,
   setPosSyncVersion,
+  getLiveStock,
   remainingFarmBuffaloMilk = 0,
   remainingFarmMilk = 0,
   resolveItemSourceAndRatios,
@@ -48,14 +50,17 @@ export function usePOSOrders({
           const saleCategory = isDelivery ? 'delivery' : 'walkin';
           const fulfillmentType = order.fulfillmentType || (isDelivery ? 'DELIVERY' : 'COUNTER');
           const fulfillmentMode = isDelivery ? 'doorstep' : 'counter';
+          const orderDate = normalizeDateStr(order.date || order.createdAt) || getPktTodayString();
+          const orderTimestamp = order.createdAt || order.timestamp || (orderDate ? new Date(orderDate).toISOString() : new Date().toISOString());
 
           return {
               ...order,
               invoiceId: order.receiptNumber || order.orderNumber || order.invoiceId || (order._id ? `INV-${String(order._id).slice(-6)}` : `INV-${Date.now()}`),
               id: order._id || order.id,
-              timestamp: order.createdAt || new Date().toISOString(),
-              formattedTime: order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-              formattedDate: order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '',
+              date: orderDate,
+              timestamp: orderTimestamp,
+              formattedTime: orderTimestamp ? new Date(orderTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+              formattedDate: formatStandardDate(orderDate),
               items,
               itemCount: items.reduce((c, i) => c + (Number(i.quantity) || 0), 0),
               subtotal: Number(order.subtotal) || 0,
@@ -76,7 +81,7 @@ export function usePOSOrders({
               notes: order.notes || '',
             };
           });
-      setSalesHistory(normalized);
+      setSalesHistory(sortByDateDesc(normalized, 'date'));
     } catch (err) {
       console.warn('POS live order fetch notice:', err.message);
       setSalesHistory([]);
@@ -88,6 +93,7 @@ export function usePOSOrders({
   const handleCompleteSale = async () => {
     const {
       cart = [],
+      saleDate = getPktTodayString(),
       cartSubtotal = 0,
       effectiveDeliveryCharge = 0,
       effectiveDiscount = 0,
@@ -138,7 +144,10 @@ export function usePOSOrders({
 
     try {
       const invoiceId = `INV-${1001 + salesHistory.length}`;
-      const todayDate = new Date().toISOString().split('T')[0];
+      const effectiveSaleDate = ensureValidDate(saleDate);
+      const effectiveTimestamp = effectiveSaleDate === getPktTodayString()
+        ? new Date().toISOString()
+        : new Date(`${effectiveSaleDate}T12:00:00.000Z`).toISOString();
       const itemSummary = cart
         .map((i) => `${i.quantity} ${i.unit || 'unit'} ${i.name} (@Rs. ${i.price})`)
         .join(' + ');
@@ -146,30 +155,45 @@ export function usePOSOrders({
       const isRegisteredWalkin = saleCategory === 'walkin' && walkinCustomerType === 'registered';
       const isLegacyCustomerSale = saleCategory === 'customer';
 
+      // Retrieve current live stocks for cascading deduction
+      const liveStock = typeof getLiveStock === 'function' ? getLiveStock() : {};
+      let currentFarmBuffalo = Math.max(0, Number(liveStock.rawFarmBuffaloMilkStock ?? liveStock.farmBuffaloMilkStock ?? remainingFarmBuffaloMilk ?? 0));
+      let currentFarmCow = Math.max(0, Number(liveStock.rawFarmCowMilkStock ?? liveStock.farmCowMilkStock ?? 0));
+      let currentSupplierBuffalo = Math.max(0, Number(liveStock.rawSupplierBuffaloMilkStock ?? liveStock.supplierBuffaloMilkStock ?? 0));
+      let currentSupplierCow = Math.max(0, Number(liveStock.rawSupplierCowMilkStock ?? liveStock.supplierCowMilkStock ?? 0));
+      let currentFarmDahi = Math.max(0, Number(liveStock.rawFarmDahiStock ?? liveStock.farmDahiStock ?? 0));
+      let currentSupplierDahi = Math.max(0, Number(liveStock.rawSupplierDahiStock ?? liveStock.supplierDahiStock ?? 0));
+
       const saleRecord = {
         invoiceId,
-        date: todayDate,
-        timestamp: new Date().toISOString(),
-        formattedDate: todayDate,
+        date: effectiveSaleDate,
+        timestamp: effectiveTimestamp,
+        formattedDate: formatStandardDate(effectiveSaleDate),
+        formattedTime: new Date(effectiveTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         items: cart.flatMap((i) => {
           const qty = Number(i.quantity) || 0;
           const rate = Number(i.price) || 0;
           const lineSubtotal = Math.round(qty * rate);
           const name = (i.name || '').toLowerCase();
           const category = (i.category || '').toLowerCase();
-          const isBuffalo = name.includes('buffalo');
-          const isCow = name.includes('cow');
-          const isMilk = name.includes('milk') || category.includes('milk');
-          const isGenericMilk = isMilk && !isBuffalo && !isCow;
-
-          // The cashier's POS selection (source: 'Farm' | 'Supplier' | 'Mixed') is the single
-          // source of truth. Stock is deducted ONLY from the selected entity.
           const explicitSource = (i.source || '').toLowerCase();
-          const isExplicitFarm = explicitSource === 'farm';
-          const isExplicitSupplier = explicitSource === 'supplier';
-          const isExplicitMixed = explicitSource === 'mixed' || explicitSource.includes('both');
 
-          if (isExplicitMixed) {
+          // 1. Strict Item Type Isolation
+          let itemType = 'other';
+          const isDahi = category.includes('dahi') || name.includes('dahi') || category.includes('yogurt') || name.includes('yogurt') || category.includes('curd') || name.includes('curd');
+
+          if (isDahi) {
+            itemType = 'dahi';
+          } else if (name.includes('buffalo') || category.includes('buffalo')) {
+            itemType = 'buffalo';
+          } else if (name.includes('cow') || category.includes('cow')) {
+            itemType = 'cow';
+          } else if (name.includes('milk') || category.includes('milk')) {
+            itemType = 'buffalo';
+          }
+
+          // Handle explicit mixed source if user manually selected custom ratios
+          if (explicitSource === 'mixed' || explicitSource.includes('both')) {
             const fRatio = Math.min(1, Math.max(0, Number(i.farmRatio) || 0));
             const farmQty = Number((qty * fRatio).toFixed(3));
             const supQty = Number((qty - farmQty).toFixed(3));
@@ -182,6 +206,7 @@ export function usePOSOrders({
                 ...i,
                 name: `${baseName} (Farm Share)`,
                 source: 'Farm',
+                milkType: itemType !== 'other' ? itemType : undefined,
                 quantity: farmQty,
                 price: rate,
                 cost: 0,
@@ -199,6 +224,7 @@ export function usePOSOrders({
                 ...i,
                 name: `${baseName} (Supplier Share)`,
                 source: 'Supplier',
+                milkType: itemType !== 'other' ? itemType : undefined,
                 quantity: supQty,
                 price: rate,
                 cost: Number(i.cost) || 0,
@@ -214,142 +240,348 @@ export function usePOSOrders({
             return parts;
           }
 
-          if (isExplicitFarm || (isCow && !isExplicitSupplier)) {
-            return [{
-              ...i,
-              quantity: qty,
-              price: rate,
-              cost: Number(i.cost) || 0,
-              source: 'Farm',
-              farmRatio: 1,
-              supplierRatio: 0,
-              farmRevenue: lineSubtotal,
-              supplierRevenue: 0,
-              farmQuantity: qty,
-              supplierQuantity: 0,
-              subtotal: lineSubtotal,
-            }];
-          }
+          // 2. Cascading Deduction Logic: Buffalo Milk Sale (Farm Buffalo -> Supplier Buffalo)
+          if (itemType === 'buffalo') {
+            let remainingToDeduct = qty;
+            let farmBuffaloDeducted = 0;
+            let supplierBuffaloDeducted = 0;
 
-          if (isExplicitSupplier) {
-            return [{
-              ...i,
-              quantity: qty,
-              price: rate,
-              cost: Number(i.cost) || 0,
-              source: 'Supplier',
-              farmRatio: 0,
-              supplierRatio: 1,
-              farmRevenue: 0,
-              supplierRevenue: lineSubtotal,
-              farmQuantity: 0,
-              supplierQuantity: qty,
-              subtotal: lineSubtotal,
-            }];
-          }
+            // Step 1: Check Farm Buffalo stock
+            if (currentFarmBuffalo > 0) {
+              if (remainingToDeduct <= currentFarmBuffalo) {
+                // All quantity deducted from Farm Buffalo
+                farmBuffaloDeducted = remainingToDeduct;
+                currentFarmBuffalo = Number((currentFarmBuffalo - remainingToDeduct).toFixed(2));
+                remainingToDeduct = 0;
+              } else {
+                // Step 2: Sale quantity exceeds Farm Buffalo stock -> deduct all available Farm Buffalo
+                farmBuffaloDeducted = currentFarmBuffalo;
+                remainingToDeduct = Number((remainingToDeduct - currentFarmBuffalo).toFixed(2));
+                currentFarmBuffalo = 0;
+              }
+            }
 
-          if (isBuffalo || isGenericMilk) {
-            const availableFarm = isBuffalo ? Math.max(0, Number(remainingFarmBuffaloMilk) || 0) : Math.max(0, Number(remainingFarmMilk) || 0);
-            const farmQty = Math.min(availableFarm, qty);
-            const supQty = Math.max(0, qty - farmQty);
+            // Step 3: Deduct remaining quantity strictly from Supplier Buffalo
+            // Strict Rule: NEVER touch farmCowMilk or supplierCowMilk under any circumstances!
+            if (remainingToDeduct > 0) {
+              supplierBuffaloDeducted = remainingToDeduct;
+              currentSupplierBuffalo = Math.max(0, Number((currentSupplierBuffalo - remainingToDeduct).toFixed(2)));
+              remainingToDeduct = 0;
+            }
 
-            const farmRev = Math.round(farmQty * rate);
-            const supRev = lineSubtotal - farmRev;
+            // 3. Revenue Splitting (Farm vs Supplier)
+            const farmRevenue = Math.round(farmBuffaloDeducted * rate);
+            const supplierRevenue = lineSubtotal - farmRevenue;
+            const baseName = i.name || 'Buffalo Milk';
 
-            const baseName = isBuffalo ? 'Buffalo Milk' : (i.name || 'Milk');
-
-            if (farmQty > 0 && supQty > 0) {
+            if (farmBuffaloDeducted > 0 && supplierBuffaloDeducted > 0) {
               return [
                 {
                   ...i,
                   name: `${baseName} (Farm Share)`,
+                  milkType: 'buffalo',
                   source: 'Farm',
-                  quantity: Number(farmQty.toFixed(2)),
+                  quantity: Number(farmBuffaloDeducted.toFixed(2)),
                   price: rate,
-                  cost: Number(i.cost) || 0,
-                  subtotal: farmRev,
+                  cost: 0,
+                  subtotal: farmRevenue,
                   farmRatio: 1,
                   supplierRatio: 0,
-                  farmRevenue: farmRev,
+                  farmRevenue: farmRevenue,
                   supplierRevenue: 0,
-                  farmQuantity: Number(farmQty.toFixed(2)),
+                  farmQuantity: Number(farmBuffaloDeducted.toFixed(2)),
                   supplierQuantity: 0,
                 },
                 {
                   ...i,
                   name: `${baseName} (Supplier Share)`,
+                  milkType: 'buffalo',
                   source: 'Supplier',
-                  quantity: Number(supQty.toFixed(2)),
+                  quantity: Number(supplierBuffaloDeducted.toFixed(2)),
                   price: rate,
                   cost: Number(i.cost) || 0,
-                  subtotal: supRev,
+                  subtotal: supplierRevenue,
                   farmRatio: 0,
                   supplierRatio: 1,
                   farmRevenue: 0,
-                  supplierRevenue: supRev,
+                  supplierRevenue: supplierRevenue,
                   farmQuantity: 0,
-                  supplierQuantity: Number(supQty.toFixed(2)),
+                  supplierQuantity: Number(supplierBuffaloDeducted.toFixed(2)),
                 },
               ];
-            }
-
-            if (farmQty > 0) {
+            } else if (farmBuffaloDeducted > 0) {
               return [{
                 ...i,
                 name: baseName,
+                milkType: 'buffalo',
                 source: 'Farm',
-                quantity: Number(farmQty.toFixed(2)),
+                quantity: Number(farmBuffaloDeducted.toFixed(2)),
                 price: rate,
-                cost: Number(i.cost) || 0,
-                subtotal: farmRev,
+                cost: 0,
+                subtotal: farmRevenue,
                 farmRatio: 1,
                 supplierRatio: 0,
-                farmRevenue: farmRev,
+                farmRevenue: farmRevenue,
                 supplierRevenue: 0,
-                farmQuantity: Number(farmQty.toFixed(2)),
+                farmQuantity: Number(farmBuffaloDeducted.toFixed(2)),
                 supplierQuantity: 0,
               }];
+            } else {
+              return [{
+                ...i,
+                name: baseName,
+                milkType: 'buffalo',
+                source: 'Supplier',
+                quantity: Number(supplierBuffaloDeducted.toFixed(2)),
+                price: rate,
+                cost: Number(i.cost) || 0,
+                subtotal: supplierRevenue,
+                farmRatio: 0,
+                supplierRatio: 1,
+                farmRevenue: 0,
+                supplierRevenue: supplierRevenue,
+                farmQuantity: 0,
+                supplierQuantity: Number(supplierBuffaloDeducted.toFixed(2)),
+              }];
             }
+          }
+
+          // 2. Cascading Deduction Logic: Cow Milk Sale (Farm Cow -> Supplier Cow)
+          else if (itemType === 'cow') {
+            let remainingToDeduct = qty;
+            let farmCowDeducted = 0;
+            let supplierCowDeducted = 0;
+
+            // Step 1: Check Farm Cow stock
+            if (currentFarmCow > 0) {
+              if (remainingToDeduct <= currentFarmCow) {
+                // All quantity deducted from Farm Cow
+                farmCowDeducted = remainingToDeduct;
+                currentFarmCow = Number((currentFarmCow - remainingToDeduct).toFixed(2));
+                remainingToDeduct = 0;
+              } else {
+                // Step 2: Sale quantity exceeds Farm Cow stock -> deduct all available Farm Cow
+                farmCowDeducted = currentFarmCow;
+                remainingToDeduct = Number((remainingToDeduct - currentFarmCow).toFixed(2));
+                currentFarmCow = 0;
+              }
+            }
+
+            // Step 3: Deduct remaining quantity strictly from Supplier Cow
+            // Strict Rule: NEVER touch farmBuffaloMilk or supplierBuffaloMilk under any circumstances!
+            if (remainingToDeduct > 0) {
+              supplierCowDeducted = remainingToDeduct;
+              currentSupplierCow = Math.max(0, Number((currentSupplierCow - remainingToDeduct).toFixed(2)));
+              remainingToDeduct = 0;
+            }
+
+            // 3. Revenue Splitting (Farm vs Supplier)
+            const farmRevenue = Math.round(farmCowDeducted * rate);
+            const supplierRevenue = lineSubtotal - farmRevenue;
+            const baseName = i.name || 'Cow Milk';
+
+            if (farmCowDeducted > 0 && supplierCowDeducted > 0) {
+              return [
+                {
+                  ...i,
+                  name: `${baseName} (Farm Share)`,
+                  milkType: 'cow',
+                  source: 'Farm',
+                  quantity: Number(farmCowDeducted.toFixed(2)),
+                  price: rate,
+                  cost: 0,
+                  subtotal: farmRevenue,
+                  farmRatio: 1,
+                  supplierRatio: 0,
+                  farmRevenue: farmRevenue,
+                  supplierRevenue: 0,
+                  farmQuantity: Number(farmCowDeducted.toFixed(2)),
+                  supplierQuantity: 0,
+                },
+                {
+                  ...i,
+                  name: `${baseName} (Supplier Share)`,
+                  milkType: 'cow',
+                  source: 'Supplier',
+                  quantity: Number(supplierCowDeducted.toFixed(2)),
+                  price: rate,
+                  cost: Number(i.cost) || 0,
+                  subtotal: supplierRevenue,
+                  farmRatio: 0,
+                  supplierRatio: 1,
+                  farmRevenue: 0,
+                  supplierRevenue: supplierRevenue,
+                  farmQuantity: 0,
+                  supplierQuantity: Number(supplierCowDeducted.toFixed(2)),
+                },
+              ];
+            } else if (farmCowDeducted > 0) {
+              return [{
+                ...i,
+                name: baseName,
+                milkType: 'cow',
+                source: 'Farm',
+                quantity: Number(farmCowDeducted.toFixed(2)),
+                price: rate,
+                cost: 0,
+                subtotal: farmRevenue,
+                farmRatio: 1,
+                supplierRatio: 0,
+                farmRevenue: farmRevenue,
+                supplierRevenue: 0,
+                farmQuantity: Number(farmCowDeducted.toFixed(2)),
+                supplierQuantity: 0,
+              }];
+            } else {
+              return [{
+                ...i,
+                name: baseName,
+                milkType: 'cow',
+                source: 'Supplier',
+                quantity: Number(supplierCowDeducted.toFixed(2)),
+                price: rate,
+                cost: Number(i.cost) || 0,
+                subtotal: supplierRevenue,
+                farmRatio: 0,
+                supplierRatio: 1,
+                farmRevenue: 0,
+                supplierRevenue: supplierRevenue,
+                farmQuantity: 0,
+                supplierQuantity: Number(supplierCowDeducted.toFixed(2)),
+              }];
+            }
+          }
+
+          // 2. Cascading Deduction Logic: Dahi Sale (FIFO/Cascading: Farm Dahi -> Supplier Dahi)
+          else if (itemType === 'dahi') {
+            let remainingToDeduct = qty;
+            let farmDahiDeducted = 0;
+            let supplierDahiDeducted = 0;
+
+            // Step 1: Check Farm Dahi stock (Farm first)
+            if (currentFarmDahi > 0) {
+              if (remainingToDeduct <= currentFarmDahi) {
+                // All quantity deducted from Farm Dahi
+                farmDahiDeducted = remainingToDeduct;
+                currentFarmDahi = Number((currentFarmDahi - remainingToDeduct).toFixed(2));
+                remainingToDeduct = 0;
+              } else {
+                // Sale quantity exceeds Farm Dahi stock -> deduct all available Farm Dahi (drain to 0)
+                farmDahiDeducted = currentFarmDahi;
+                remainingToDeduct = Number((remainingToDeduct - currentFarmDahi).toFixed(2));
+                currentFarmDahi = 0;
+              }
+            }
+
+            // Step 2: Deduct remaining quantity strictly from Supplier Dahi
+            if (remainingToDeduct > 0) {
+              supplierDahiDeducted = remainingToDeduct;
+              currentSupplierDahi = Math.max(0, Number((currentSupplierDahi - remainingToDeduct).toFixed(2)));
+              remainingToDeduct = 0;
+            }
+
+            // Step 3: Strict Revenue Splitting (Farm P&L vs Supplier P&L)
+            const farmRevenue = Math.round(farmDahiDeducted * rate);
+            const supplierRevenue = lineSubtotal - farmRevenue;
+            const baseName = i.name || 'Fresh Dahi (Plain)';
+
+            if (farmDahiDeducted > 0 && supplierDahiDeducted > 0) {
+              return [
+                {
+                  ...i,
+                  name: `${baseName} (Farm Share)`,
+                  category: 'dahi',
+                  source: 'Farm',
+                  quantity: Number(farmDahiDeducted.toFixed(2)),
+                  price: rate,
+                  cost: 0,
+                  subtotal: farmRevenue,
+                  farmRatio: 1,
+                  supplierRatio: 0,
+                  farmRevenue: farmRevenue,
+                  supplierRevenue: 0,
+                  farmQuantity: Number(farmDahiDeducted.toFixed(2)),
+                  supplierQuantity: 0,
+                },
+                {
+                  ...i,
+                  name: `${baseName} (Supplier Share)`,
+                  category: 'dahi',
+                  source: 'Supplier',
+                  quantity: Number(supplierDahiDeducted.toFixed(2)),
+                  price: rate,
+                  cost: Number(i.cost) || 0,
+                  subtotal: supplierRevenue,
+                  farmRatio: 0,
+                  supplierRatio: 1,
+                  farmRevenue: 0,
+                  supplierRevenue: supplierRevenue,
+                  farmQuantity: 0,
+                  supplierQuantity: Number(supplierDahiDeducted.toFixed(2)),
+                },
+              ];
+            } else if (farmDahiDeducted > 0) {
+              return [{
+                ...i,
+                name: baseName,
+                category: 'dahi',
+                source: 'Farm',
+                quantity: Number(farmDahiDeducted.toFixed(2)),
+                price: rate,
+                cost: 0,
+                subtotal: farmRevenue,
+                farmRatio: 1,
+                supplierRatio: 0,
+                farmRevenue: farmRevenue,
+                supplierRevenue: 0,
+                farmQuantity: Number(farmDahiDeducted.toFixed(2)),
+                supplierQuantity: 0,
+              }];
+            } else {
+              return [{
+                ...i,
+                name: baseName,
+                category: 'dahi',
+                source: 'Supplier',
+                quantity: Number(supplierDahiDeducted.toFixed(2)),
+                price: rate,
+                cost: Number(i.cost) || 0,
+                subtotal: supplierRevenue,
+                farmRatio: 0,
+                supplierRatio: 1,
+                farmRevenue: 0,
+                supplierRevenue: supplierRevenue,
+                farmQuantity: 0,
+                supplierQuantity: Number(supplierDahiDeducted.toFixed(2)),
+              }];
+            }
+          }
+
+          // Non-raw-milk and non-dahi items (packaged goods, general grocery products)
+          else {
+            const resolved = resolveItemSourceAndRatios ? resolveItemSourceAndRatios(i) : { source: i.source || 'Farm', farmRatio: 1, supplierRatio: 0 };
+            const farmRatio = resolved.farmRatio !== undefined ? resolved.farmRatio : (i.source === 'Supplier' ? 0 : 1);
+            const supplierRatio = resolved.supplierRatio !== undefined ? resolved.supplierRatio : (i.source === 'Supplier' ? 1 : 0);
+            const farmRev = Math.round(lineSubtotal * farmRatio);
+            const supRev = lineSubtotal - farmRev;
+            const farmQty = Number((qty * farmRatio).toFixed(3));
+            const supQty = Number((qty * supplierRatio).toFixed(3));
 
             return [{
               ...i,
-              name: baseName,
-              source: 'Supplier',
-              quantity: Number(supQty.toFixed(2)),
+              quantity: qty,
               price: rate,
               cost: Number(i.cost) || 0,
-              subtotal: supRev,
-              farmRatio: 0,
-              supplierRatio: 1,
-              farmRevenue: 0,
+              source: resolved.source || (supplierRatio > farmRatio ? 'Supplier' : 'Farm'),
+              farmRatio,
+              supplierRatio,
+              farmRevenue: farmRev,
               supplierRevenue: supRev,
-              farmQuantity: 0,
-              supplierQuantity: Number(supQty.toFixed(2)),
+              farmQuantity: farmQty,
+              supplierQuantity: supQty,
+              subtotal: lineSubtotal,
             }];
           }
-
-          const resolved = resolveItemSourceAndRatios ? resolveItemSourceAndRatios(i) : { source: i.source || 'Farm', farmRatio: 1, supplierRatio: 0 };
-          const farmRatio = resolved.farmRatio !== undefined ? resolved.farmRatio : (i.source === 'Farm' ? 1 : 0);
-          const supplierRatio = resolved.supplierRatio !== undefined ? resolved.supplierRatio : (i.source === 'Supplier' ? 1 : 0);
-          const farmRev = Math.round(lineSubtotal * farmRatio);
-          const supRev = lineSubtotal - farmRev;
-          const farmQty = Number((qty * farmRatio).toFixed(3));
-          const supQty = Number((qty * supplierRatio).toFixed(3));
-
-          return [{
-            ...i,
-            quantity: qty,
-            price: rate,
-            cost: Number(i.cost) || 0,
-            source: resolved.source || i.source || 'Farm',
-            farmRatio,
-            supplierRatio,
-            farmRevenue: farmRev,
-            supplierRevenue: supRev,
-            farmQuantity: farmQty,
-            supplierQuantity: supQty,
-            subtotal: lineSubtotal,
-          }];
         }),
         itemCount: cart.reduce((c, i) => c + (Number(i.quantity) || 0), 0),
         subtotal: cartSubtotal,
@@ -499,7 +731,7 @@ export function usePOSOrders({
               description: `POS Counter Buy: ${itemSummary}`,
               debit: netPayable,
               credit: 0,
-              date: todayDate,
+              date: effectiveSaleDate,
               orderTotal: netPayable,
               paidAmount: calculatedPaidAmount,
               remainingAmount: calculatedRemainingAmount,
@@ -519,7 +751,7 @@ export function usePOSOrders({
                 description: `Payment Received (Against Order #${invoiceId}) [${payMethodLabel}]`,
                 debit: 0,
                 credit: calculatedPaidAmount,
-                date: todayDate,
+                date: effectiveSaleDate,
                 orderTotal: netPayable,
                 paidAmount: calculatedPaidAmount,
                 remainingAmount: calculatedRemainingAmount,
@@ -566,7 +798,7 @@ export function usePOSOrders({
               : (dropAddress || activeCustomer?.address || activeCustomer?.area || 'Direct Drop Point');
 
           addDelivery({
-            date: todayDate,
+            date: effectiveSaleDate,
             shift: activeCustomer?.shift || 'MORNING',
             route: deliverySubType === 'ontime' ? ontimeDeliveryArea.trim() : (activeCustomer?.area || deliveryLandmark || 'Standard Route'),
             riderNameSnapshot: customRiderName || activeRider?.name || null,
@@ -601,7 +833,7 @@ export function usePOSOrders({
         ) {
           addFuelLog({
             staffName: activeRider?.name || customRiderName || 'Unassigned',
-            date: todayDate,
+            date: effectiveSaleDate,
             liters: Number(fuelLog.liters),
             amount: Number(fuelLog.amount),
             distanceKm: Number(fuelLog.distanceKm) || 0,
@@ -610,7 +842,7 @@ export function usePOSOrders({
         }
       }
 
-      setSalesHistory((prev) => [saleRecord, ...prev]);
+      setSalesHistory((prev) => sortByDateDesc([saleRecord, ...(prev || [])], 'date'));
 
       // Save order to live backend POS API
       try {
@@ -626,6 +858,7 @@ export function usePOSOrders({
 
         if (posService && posService.createOrder) {
           await posService.createOrder({
+            date: effectiveSaleDate,
             customerId: deliverySubType === 'monthly' ? validCustomerId : null,
             customerNameSnapshot: orderCustomerName,
             customerPhoneSnapshot: orderCustomerPhone,

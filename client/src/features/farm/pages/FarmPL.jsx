@@ -104,6 +104,24 @@ export default function FarmPL() {
     return clean === todayLocal || clean === todayISO;
   };
 
+  const { mondayISO, sundayISO } = useMemo(() => {
+    const now = new Date();
+    const day = now.getDay();
+    const diffToMonday = (day === 0 ? -6 : 1) - day;
+    const mon = new Date(now);
+    mon.setDate(now.getDate() + diffToMonday);
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { mondayISO: fmt(mon), sundayISO: fmt(sun) };
+  }, []);
+
+  const isMatchThisWeek = (dateStr) => {
+    if (!dateStr) return false;
+    const clean = String(dateStr).trim().slice(0, 10);
+    return clean >= mondayISO && clean <= sundayISO;
+  };
+
   // Smart monthly cycle check: includes current month, rolling 35-day cycle, or recent billing month
   const isDateInMonthlyCycle = (dateStr) => {
     if (!dateStr) return true;
@@ -158,6 +176,9 @@ export default function FarmPL() {
       if (dateFilterMode === 'today') {
         return isMatchToday(saleDate);
       }
+      if (dateFilterMode === 'this_week') {
+        return isMatchThisWeek(saleDate);
+      }
       if (dateFilterMode === 'this_month') {
         return isDateInMonthlyCycle(saleDate);
       }
@@ -166,7 +187,7 @@ export default function FarmPL() {
       }
       return true; // 'all'
     });
-  }, [activeFarmSales, dateFilterMode, selectedDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
+  }, [activeFarmSales, dateFilterMode, selectedDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo, mondayISO, sundayISO]);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter((exp) => {
@@ -175,21 +196,23 @@ export default function FarmPL() {
 
       const expDate = exp.date ? String(exp.date).slice(0, 10) : '';
       if (dateFilterMode === 'today') return isMatchToday(expDate);
+      if (dateFilterMode === 'this_week') return isMatchThisWeek(expDate);
       if (dateFilterMode === 'this_month') return isDateInMonthlyCycle(expDate);
       if (dateFilterMode === 'custom' && selectedDate) return expDate === selectedDate;
       return true;
     });
-  }, [expenses, dateFilterMode, selectedDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
+  }, [expenses, dateFilterMode, selectedDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo, mondayISO, sundayISO]);
 
   const filteredSalaries = useMemo(() => {
     return salaryPayments.filter((sal) => {
       const salDate = sal.date ? String(sal.date).slice(0, 10) : '';
       if (dateFilterMode === 'today') return isMatchToday(salDate);
+      if (dateFilterMode === 'this_week') return isMatchThisWeek(salDate);
       if (dateFilterMode === 'this_month') return isDateInMonthlyCycle(salDate);
       if (dateFilterMode === 'custom' && selectedDate) return salDate === selectedDate;
       return true;
     });
-  }, [salaryPayments, dateFilterMode, selectedDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo]);
+  }, [salaryPayments, dateFilterMode, selectedDate, todayLocal, todayISO, currentMonthISO, previousMonthISO, thirtyDaysAgo, mondayISO, sundayISO]);
 
   const totalStaffSalaryPaidInPeriod = useMemo(() => {
     return filteredSalaries.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
@@ -851,6 +874,20 @@ export default function FarmPL() {
               }`}
             >
               Today
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDateFilterMode('this_week');
+                setSelectedDate('');
+              }}
+              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                dateFilterMode === 'this_week'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              This Week
             </button>
             <button
               type="button"

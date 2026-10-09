@@ -4,38 +4,55 @@ import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useLedgerContext } from '@/context/LedgerContext';
-import { getPktTodayString } from '@/utils/dateUtils';
+import { getPktTodayString, getDateRangeBoundaries, isDateInFilterRange } from '@/utils/dateUtils';
 
 import { Link } from 'react-router-dom';
 import { KpiGridSkeleton } from '@/components/ui/skeleton';
 
-export default function TopSummaryCards() {
-  const { animals = [], isLoading: isAnimalsLoading } = useAnimalContext();
+export default function TopSummaryCards({
+  dateFilter = 'today',
+  startDate = '',
+  endDate = '',
+}) {
+  const { animals = [], milkingLogs = [], isLoading: isAnimalsLoading } = useAnimalContext();
   const { intakeLogs = [], totals: intakeTotals = {}, isLoading: isIntakeLoading } = useIntakeContext();
   const { salesHistory = [], inventoryMetrics = {}, businessFinancialMetrics = {} } = usePOSContext();
   const { ledgers = {} } = useLedgerContext();
+
+  const periodData = getDateRangeBoundaries(dateFilter, startDate, endDate);
+  const periodLabel = periodData.label;
 
   if (isAnimalsLoading && isIntakeLoading && animals.length === 0 && intakeLogs.length === 0) {
     return <KpiGridSkeleton count={8} />;
   }
 
   // 1. Farm Milk Production
-  const totalFarmMilk = Number(inventoryMetrics.totalFarmYield) || 0;
+  const filteredMilking = milkingLogs.filter((l) =>
+    isDateInFilterRange(l.date || l.createdAt, dateFilter, startDate, endDate)
+  );
+
+  const totalFarmMilk = filteredMilking.length > 0
+    ? filteredMilking.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0)
+    : (dateFilter === 'today' ? (Number(inventoryMetrics.totalFarmYield) || 0) : 0);
+
   const milkingAnimalsCount = animals.filter(
     (a) => a.lactationStatus === 'Milking'
   ).length;
 
   // 2. Purchased Supplier Milk
-  const totalProcuredMilk =
-    intakeTotals.totalProcuredVolume !== undefined
-      ? intakeTotals.totalProcuredVolume
-      : intakeLogs.reduce((sum, i) => sum + (parseFloat(i.quantity) || 0), 0);
+  const filteredIntake = intakeLogs.filter((i) =>
+    isDateInFilterRange(i.date || i.createdAt, dateFilter, startDate, endDate)
+  );
+
+  const totalProcuredMilk = filteredIntake.length > 0
+    ? filteredIntake.reduce((sum, i) => sum + (parseFloat(i.quantity) || 0), 0)
+    : (dateFilter === 'all' && intakeTotals.totalProcuredVolume !== undefined ? intakeTotals.totalProcuredVolume : 0);
+
+  const totalProcuredCost = filteredIntake.reduce((sum, i) => sum + (parseFloat(i.totalCost) || 0), 0);
   const avgPurchaseRate =
-    intakeTotals.avgPurchaseRate ||
-    (totalProcuredMilk > 0
-      ? intakeLogs.reduce((sum, i) => sum + (parseFloat(i.totalCost) || 0), 0) /
-        totalProcuredMilk
-      : 0);
+    totalProcuredMilk > 0
+      ? totalProcuredCost / totalProcuredMilk
+      : (intakeTotals.avgPurchaseRate || 0);
 
   // 3. Total Milk Sourced (Farm + Procurement)
   const totalMilkSourced = totalFarmMilk + totalProcuredMilk;
@@ -45,24 +62,23 @@ export default function TopSummaryCards() {
   const totalNetProfit = Number(businessFinancialMetrics.totalBusinessNetProfit) || 0;
   const netMargin = Number(businessFinancialMetrics.totalBusinessMargin) || 0;
 
-  const todayISO = getPktTodayString();
-  const todaySales = salesHistory.filter((s) => {
+  // 4. Sales in active period
+  const periodSales = salesHistory.filter((s) => {
     const raw = s.date || s.timestamp || s.formattedDate || s.createdAt || '';
-    const saleDate = raw.includes('T') ? raw.split('T')[0] : (raw.includes('-') ? raw.slice(0, 10) : '');
-    return saleDate === todayISO || s.date === todayISO;
+    return isDateInFilterRange(raw, dateFilter, startDate, endDate);
   });
 
-  let todaySalesRevenue = 0;
-  let todayMilkSoldQty = 0;
-  let todayMilkSalesRevenue = 0;
-  let todayFarmMilkSoldQty = 0;
-  let todaySupplierMilkSoldQty = 0;
-  let todayFarmMilkRevenue = 0;
-  let todaySupplierMilkRevenue = 0;
-  let todayDahiSoldQty = 0;
+  let periodSalesRevenue = 0;
+  let periodMilkSoldQty = 0;
+  let periodMilkSalesRevenue = 0;
+  let periodFarmMilkSoldQty = 0;
+  let periodSupplierMilkSoldQty = 0;
+  let periodFarmMilkRevenue = 0;
+  let periodSupplierMilkRevenue = 0;
+  let periodDahiSoldQty = 0;
 
-  todaySales.forEach((sale) => {
-    todaySalesRevenue += (Number(sale.netPayable || sale.totalAmount || sale.grandTotal) || 0);
+  periodSales.forEach((sale) => {
+    periodSalesRevenue += (Number(sale.netPayable || sale.totalAmount || sale.grandTotal) || 0);
     (sale.items || []).forEach((item) => {
       const name = (item.name || '').toLowerCase();
       const cat = (item.category || '').toLowerCase();
@@ -70,18 +86,18 @@ export default function TopSummaryCards() {
       const rev = Number(item.subtotal || item.effectiveRevenue) || (qty * (Number(item.price) || 0));
       const isDahi = name.includes('dahi') || cat.includes('dahi') || name.includes('yogurt');
       if (isDahi) {
-        todayDahiSoldQty += qty;
+        periodDahiSoldQty += qty;
       } else {
-        todayMilkSoldQty += qty;
-        todayMilkSalesRevenue += rev;
+        periodMilkSoldQty += qty;
+        periodMilkSalesRevenue += rev;
         const fQty = item.farmQuantity !== undefined ? Number(item.farmQuantity) || 0 : (item.source === 'Farm' ? qty : 0);
         const sQty = item.supplierQuantity !== undefined ? Number(item.supplierQuantity) || 0 : (item.source === 'Supplier' ? qty : 0);
         const fRev = item.farmRevenue !== undefined ? Number(item.farmRevenue) || 0 : (item.source === 'Farm' ? rev : 0);
         const sRev = item.supplierRevenue !== undefined ? Number(item.supplierRevenue) || 0 : (item.source === 'Supplier' ? rev : 0);
-        todayFarmMilkSoldQty += fQty;
-        todaySupplierMilkSoldQty += sQty;
-        todayFarmMilkRevenue += fRev;
-        todaySupplierMilkRevenue += sRev;
+        periodFarmMilkSoldQty += fQty;
+        periodSupplierMilkSoldQty += sQty;
+        periodFarmMilkRevenue += fRev;
+        periodSupplierMilkRevenue += sRev;
       }
     });
   });
@@ -134,7 +150,7 @@ export default function TopSummaryCards() {
     },
     {
       id: 'available-milk-stock',
-      title: 'Available Milk Stock',
+      title: 'Total Milk Stock',
       value: `${totalMilkStock} L`,
       subtitle: `Farm: ${farmMilkStock}L • Sup: ${supplierMilkStock}L`,
       icon: Droplets,
@@ -144,49 +160,49 @@ export default function TopSummaryCards() {
     },
     {
       id: 'total-sourced',
-      title: 'Total Milk Sourced',
+      title: `Milk Sourced (${periodLabel})`,
       value: `${totalMilkSourced.toFixed(1)} L`,
       subtitle: `Farm: ${totalFarmMilk.toFixed(0)}L • Procured: ${totalProcuredMilk.toFixed(0)}L`,
       icon: Droplets,
       color: '#155dfc',
-      tag: 'Combined Inflow',
+      tag: periodLabel,
       to: '/supplier/intake',
     },
     {
       id: 'todays-milk-sold',
-      title: "Total Milk Sold Today",
-      value: `${Number(todayMilkSoldQty.toFixed(1))} L`,
-      subtitle: `Farm: ${Number(todayFarmMilkSoldQty.toFixed(1))}L • Sup: ${Number(todaySupplierMilkSoldQty.toFixed(1))}L`,
+      title: dateFilter === 'today' ? "Total Milk Sold Today" : `Milk Sold (${periodLabel})`,
+      value: `${Number(periodMilkSoldQty.toFixed(1))} L`,
+      subtitle: `Farm: ${Number(periodFarmMilkSoldQty.toFixed(1))}L • Sup: ${Number(periodSupplierMilkSoldQty.toFixed(1))}L`,
       icon: Droplets,
       color: '#10b981',
-      tag: 'Combined Sales',
+      tag: periodLabel,
       to: '/pos',
     },
     {
       id: 'todays-milk-revenue',
-      title: 'Total Milk Sales Revenue',
-      value: `+ Rs. ${todayMilkSalesRevenue.toLocaleString()}`,
-      subtitle: `Farm: Rs. ${todayFarmMilkRevenue.toLocaleString()} • Sup: Rs. ${todaySupplierMilkRevenue.toLocaleString()}`,
+      title: dateFilter === 'today' ? "Milk Sales Revenue" : `Milk Revenue (${periodLabel})`,
+      value: `+ Rs. ${periodMilkSalesRevenue.toLocaleString()}`,
+      subtitle: `Farm: Rs. ${periodFarmMilkRevenue.toLocaleString()} • Sup: Rs. ${periodSupplierMilkRevenue.toLocaleString()}`,
       icon: DollarSign,
       color: '#059669',
-      tag: 'Combined Revenue',
+      tag: periodLabel,
       to: '/pos',
     },
     {
       id: 'todays-dahi-sold',
-      title: "Today's Dahi Sold",
-      value: `${Number(todayDahiSoldQty.toFixed(1))} Kg`,
+      title: dateFilter === 'today' ? "Today's Dahi Sold" : `Dahi Sold (${periodLabel})`,
+      value: `${Number(periodDahiSoldQty.toFixed(1))} Kg`,
       subtitle: `Farm + Supplier Dahi`,
       icon: Layers,
-      color: '#0284c7',
-      tag: 'Live Counter',
-      to: '/pos',
+      color: '#009966',
+      tag: periodLabel,
+      to: '/dahi',
     },
     {
       id: 'todays-sales',
-      title: "Total Business Revenue",
-      value: `Rs. ${todaySalesRevenue.toLocaleString()}`,
-      subtitle: `${todaySales.length} orders today`,
+      title: dateFilter === 'today' ? "Total Business Revenue" : `Total Revenue (${periodLabel})`,
+      value: `Rs. ${periodSalesRevenue.toLocaleString()}`,
+      subtitle: `${periodSales.length} orders in period`,
       icon: ShoppingBag,
       color: '#059669',
       tag: 'POS Money In',

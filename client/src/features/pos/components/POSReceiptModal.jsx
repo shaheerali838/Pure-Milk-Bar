@@ -3,6 +3,7 @@ import { X, CheckCircle, Printer, ArrowRight } from "lucide-react";
 import { usePOSContext } from "@/context/POSContext";
 import { useSettingsContext } from "@/context/SettingsContext";
 import { getProductIcon } from "@/features/inventory/components/AddProduct";
+import { formatStandardDateTime } from "@/utils/dateUtils";
 
 export default function POSReceiptModal() {
   const { completedSaleReceipt, setCompletedSaleReceipt } = usePOSContext();
@@ -60,9 +61,8 @@ export default function POSReceiptModal() {
                 {displayPhone}
               </p>
             )}
-            <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-              {completedSaleReceipt.formattedDate} ·{" "}
-              {completedSaleReceipt.formattedTime}
+            <p className="text-[10px] text-slate-500 font-mono mt-0.5 font-medium">
+              {formatStandardDateTime(completedSaleReceipt.timestamp || completedSaleReceipt.date)}
             </p>
           </div>
 
