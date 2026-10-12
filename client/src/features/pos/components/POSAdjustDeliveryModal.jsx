@@ -247,7 +247,7 @@ export default function POSAdjustDeliveryModal({
       if (custId && !isOntime && typeof addLedgerEntry === 'function') {
         const itemSummary = items.map((i) => `${i.quantity}x ${i.name}`).join(' + ');
 
-        // Add Ledger Debit for new total amount
+        // Unified Ledger Entry for order settlement (Advance + Direct Cash + Due)
         await addLedgerEntry(
           custId,
           {
@@ -266,32 +266,6 @@ export default function POSAdjustDeliveryModal({
           },
           false
         );
-
-        // If customer paid some cash/online at doorstep, credit the customer ledger
-        if (numPaid > 0) {
-          const payMethodDesc =
-            paymentMethod === 'Online'
-              ? `Doorstep Online (${onlineProvider}${onlineTrxId ? ` #${onlineTrxId}` : ''})`
-              : 'Doorstep Cash (COD)';
-
-          await addLedgerEntry(
-            custId,
-            {
-              description: `Payment Received on Delivery (#${delivery.runCode || 'DEL'})`,
-              debit: 0,
-              credit: numPaid,
-              date: new Date().toISOString().split('T')[0],
-              orderTotal: newOrderTotal,
-              paidAmount: numPaid,
-              remainingAmount: remainingKhata,
-              fulfillmentType: 'Doorstep Collection',
-              paymentMethod: payMethodDesc,
-              invoiceId: delivery.receiptNumber || delivery.runCode || undefined,
-              notes: `Collected Rs. ${numPaid.toLocaleString()} at doorstep. Remaining Baqi: Rs. ${remainingKhata.toLocaleString()}`,
-            },
-            false
-          );
-        }
 
         if (typeof fetchCustomerLedger === 'function') {
           fetchCustomerLedger(custId);

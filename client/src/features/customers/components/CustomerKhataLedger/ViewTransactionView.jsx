@@ -45,32 +45,48 @@ export default function ViewTransactionView({
       0,
   );
 
+  const isDebit = Number(transaction.debit) > 0 && !isAdvanceOpening;
+  const isCredit = Number(transaction.credit) > 0 || isAdvanceOpening;
+  const isPayment = transaction.isPayment || (Number(transaction.credit) > 0 && Number(transaction.debit) === 0);
+
   const displayOrderTotal = isAdvanceOpening
     ? rawOpeningVal
-    : Number(
-        transaction.orderTotal || transaction.debit || transaction.credit || 0,
-      );
+    : isPayment
+      ? 0
+      : Number(transaction.orderTotal !== undefined && Number(transaction.orderTotal) > 0 ? transaction.orderTotal : (transaction.debit || 0));
 
   const displayPaidAmount = isAdvanceOpening
     ? rawOpeningVal
-    : Number(
-        transaction.paidAmount ||
-          (Number(transaction.credit) > 0 ? transaction.credit : 0),
-      );
+    : isPayment
+      ? Number(transaction.credit || transaction.paidAmount || 0)
+      : Number(
+          transaction.cashPaid !== undefined
+            ? transaction.cashPaid
+            : (Number(transaction.paidAmount || 0) > Number(transaction.advanceUsed || 0)
+              ? Number(transaction.paidAmount || 0) - Number(transaction.advanceUsed || 0)
+              : 0)
+        );
 
   const displayBalanceDue = isAdvanceOpening
     ? 0
     : Number(
-        transaction.remainingAmount ||
-          (Number(transaction.debit) > 0
-            ? Number(transaction.debit) - Number(transaction.paidAmount || 0)
-            : 0),
+        transaction.khataAmount !== undefined
+          ? transaction.khataAmount
+          : (transaction.remainingAmount !== undefined
+            ? transaction.remainingAmount
+            : Math.max(0, displayOrderTotal - Number(transaction.advanceUsed || 0) - displayPaidAmount))
       );
 
-  const isDebit = Number(transaction.debit) > 0 && !isAdvanceOpening;
-  const isCredit = Number(transaction.credit) > 0 || isAdvanceOpening;
   const hasItems =
     Array.isArray(transaction.items) && transaction.items.length > 0;
+
+  const isObjectId = (str) => typeof str === 'string' && /^[0-9a-fA-F]{24}$/.test(str);
+  const displayTxnNumber =
+    transaction.voucherNumber ||
+    (transaction.invoiceId && !isObjectId(transaction.invoiceId) ? transaction.invoiceId : null) ||
+    (transaction.receiptNumber && !isObjectId(transaction.receiptNumber) ? transaction.receiptNumber : null) ||
+    (transaction.id && !isObjectId(transaction.id) ? transaction.id : null) ||
+    (isAdvanceOpening ? 'ADV-01' : isOpening ? 'OP-01' : 'TXN-01');
 
   return (
     <div className="space-y-3 animate-in fade-in duration-200 pb-4">
@@ -92,7 +108,7 @@ export default function ViewTransactionView({
               : isOpening
                 ? "Opening Balance Audit Spec"
                 : "Transaction Audit Spec"}{" "}
-            &bull; #{transaction.invoiceId || transaction.id || "TXN-01"}
+            &bull; #{displayTxnNumber}
           </h1>
           <p className="text-xs text-slate-500">
             {isAdvanceOpening
@@ -302,7 +318,46 @@ export default function ViewTransactionView({
                   : "Advance Cash Deposit"
                 : transaction.paymentMethod || "Cash"}
             </p>
+            {transaction.onlineTransferMeta?.transactionReference && (
+              <span className="text-[10px] font-mono text-purple-600 block mt-0.5">
+                Ref: {transaction.onlineTransferMeta.transactionReference}
+              </span>
+            )}
           </div>
+
+          {transaction.splitPaymentMeta && (
+            <div className="col-span-1 sm:col-span-2 lg:col-span-3 p-3 bg-purple-50/70 border border-purple-200 rounded-xl">
+              <span className="text-[10px] font-bold text-purple-800 uppercase tracking-wider block mb-1">
+                Split Payment Allocations Breakdown
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                {Number(transaction.splitPaymentMeta.cashAmount || 0) > 0 && (
+                  <div className="bg-white p-2 rounded-lg border border-purple-100">
+                    <span className="text-[10px] text-slate-500 block font-medium">Cash</span>
+                    <span className="font-bold text-slate-800 font-mono">Rs. {Number(transaction.splitPaymentMeta.cashAmount).toLocaleString()}</span>
+                  </div>
+                )}
+                {Number(transaction.splitPaymentMeta.easyPaisaAmount || 0) > 0 && (
+                  <div className="bg-white p-2 rounded-lg border border-purple-100">
+                    <span className="text-[10px] text-emerald-600 block font-medium">EasyPaisa (Online)</span>
+                    <span className="font-bold text-emerald-800 font-mono">Rs. {Number(transaction.splitPaymentMeta.easyPaisaAmount).toLocaleString()}</span>
+                  </div>
+                )}
+                {Number(transaction.splitPaymentMeta.jazzCashAmount || 0) > 0 && (
+                  <div className="bg-white p-2 rounded-lg border border-purple-100">
+                    <span className="text-[10px] text-amber-600 block font-medium">JazzCash (Online)</span>
+                    <span className="font-bold text-amber-800 font-mono">Rs. {Number(transaction.splitPaymentMeta.jazzCashAmount).toLocaleString()}</span>
+                  </div>
+                )}
+                {Number(transaction.splitPaymentMeta.khataAmount || 0) > 0 && (
+                  <div className="bg-white p-2 rounded-lg border border-purple-100">
+                    <span className="text-[10px] text-rose-600 block font-medium">Khata / Due</span>
+                    <span className="font-bold text-rose-800 font-mono">Rs. {Number(transaction.splitPaymentMeta.khataAmount).toLocaleString()}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="p-3 bg-slate-50/70 border border-slate-100 rounded-xl">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">

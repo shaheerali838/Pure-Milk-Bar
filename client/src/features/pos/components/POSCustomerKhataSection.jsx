@@ -12,6 +12,10 @@ export default function POSCustomerKhataSection() {
     setKhataPaymentOption,
     partialPaidAmount = '',
     setPartialPaidAmount,
+    splitDetails = {},
+    setSplitDetails,
+    onlineDetails = {},
+    setOnlineDetails,
     orderNotes = '',
     setOrderNotes,
     netPayable = 0,
@@ -19,12 +23,17 @@ export default function POSCustomerKhataSection() {
 
   const currentKhataBal = Number(activeCustomer?.khataBalance || 0);
   const creditLimit = Number(activeCustomer?.creditLimit || 0);
+  const totalDirect =
+    khataPaymentOption === 'cash' || khataPaymentOption === 'easypaisa' || khataPaymentOption === 'jazzcash'
+      ? netPayable
+      : khataPaymentOption === 'split'
+      ? (Number(splitDetails?.cash || 0) + Number(splitDetails?.easyPaisa || 0) + Number(splitDetails?.jazzCash || 0))
+      : (parseFloat(partialPaidAmount) || 0);
+
   const projectedCustomerBalance =
     khataPaymentOption === 'khata'
       ? currentKhataBal + netPayable
-      : khataPaymentOption === 'cash'
-      ? currentKhataBal
-      : currentKhataBal + Math.max(0, netPayable - (parseFloat(partialPaidAmount) || 0));
+      : currentKhataBal + Math.max(0, netPayable - totalDirect);
 
   const isLimitExceeded = creditLimit > 0 && (currentKhataBal >= creditLimit || projectedCustomerBalance > creditLimit);
 
@@ -101,15 +110,15 @@ export default function POSCustomerKhataSection() {
               Khata &amp; Payment Settlement
             </span>
 
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
               <label
-                className={`flex flex-col p-2 rounded-xl border cursor-pointer transition-all ${
+                className={`flex flex-col p-2.5 rounded-xl border cursor-pointer transition-all ${
                   khataPaymentOption === 'khata'
-                    ? 'border-purple-500 bg-purple-50/60 text-purple-900 font-bold'
+                    ? 'border-purple-500 bg-purple-50/70 text-purple-900 font-bold shadow-2xs'
                     : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <input
                     type="radio"
                     name="khataPaymentOption"
@@ -118,19 +127,21 @@ export default function POSCustomerKhataSection() {
                     onChange={() => setKhataPaymentOption('khata')}
                     className="text-purple-600 focus:ring-purple-500"
                   />
-                  <span className="text-xs">Charge Khata</span>
+                  <span className="text-xs font-bold">Charge on Khata</span>
                 </div>
-                <span className="text-[9px] text-slate-400 font-normal mt-0.5">Full on ledger</span>
+                <span className="text-[10px] text-slate-500 font-normal mt-1">
+                  Full amount debited to customer's monthly ledger
+                </span>
               </label>
 
               <label
-                className={`flex flex-col p-2 rounded-xl border cursor-pointer transition-all ${
+                className={`flex flex-col p-2.5 rounded-xl border cursor-pointer transition-all ${
                   khataPaymentOption === 'cash'
-                    ? 'border-emerald-500 bg-emerald-50/60 text-emerald-900 font-bold'
+                    ? 'border-emerald-500 bg-emerald-50/70 text-emerald-900 font-bold shadow-2xs'
                     : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <input
                     type="radio"
                     name="khataPaymentOption"
@@ -139,49 +150,13 @@ export default function POSCustomerKhataSection() {
                     onChange={() => setKhataPaymentOption('cash')}
                     className="text-emerald-600 focus:ring-emerald-500"
                   />
-                  <span className="text-xs">Paid in Cash</span>
+                  <span className="text-xs font-bold">Cash</span>
                 </div>
-                <span className="text-[9px] text-slate-400 font-normal mt-0.5">Immediate full pay</span>
-              </label>
-
-              <label
-                className={`flex flex-col p-2 rounded-xl border cursor-pointer transition-all ${
-                  khataPaymentOption === 'partial'
-                    ? 'border-amber-500 bg-amber-50/60 text-amber-900 font-bold'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="radio"
-                    name="khataPaymentOption"
-                    value="partial"
-                    checked={khataPaymentOption === 'partial'}
-                    onChange={() => setKhataPaymentOption('partial')}
-                    className="text-amber-600 focus:ring-amber-500"
-                  />
-                  <span className="text-xs">Partial Pay</span>
-                </div>
-                <span className="text-[9px] text-slate-400 font-normal mt-0.5">Part cash, part khata</span>
+                <span className="text-[10px] text-slate-500 font-normal mt-1">
+                  Customer pays cash at counter
+                </span>
               </label>
             </div>
-
-            {khataPaymentOption === 'partial' && (
-              <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
-                <label className="block text-[10px] font-bold text-amber-900 uppercase">
-                  Cash Paid Now (Rs.):
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max={netPayable}
-                  value={partialPaidAmount}
-                  onChange={(e) => setPartialPaidAmount(e.target.value)}
-                  placeholder="Enter value"
-                  className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 tabular"
-                />
-              </div>
-            )}
 
             <div>
               <input

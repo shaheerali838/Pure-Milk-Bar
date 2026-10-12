@@ -88,11 +88,20 @@ export default function CustomerDailyReport() {
     initDate(todayStr);
 
     // 1. Process POS Sales History (Separating Walk-in vs Deliveries)
+    const seenDeliveryKeys = new Set();
+
     salesHistory.forEach((sale) => {
       const d = normalizeDateStr(
         sale.date || sale.timestamp || sale.createdAt || sale.formattedDate
       );
       initDate(d);
+
+      if (sale.deliveryRunId) seenDeliveryKeys.add(String(sale.deliveryRunId));
+      if (sale.runCode) seenDeliveryKeys.add(String(sale.runCode));
+      if (sale.receiptNumber) seenDeliveryKeys.add(String(sale.receiptNumber));
+      if (sale.invoiceId) seenDeliveryKeys.add(String(sale.invoiceId));
+      if (sale.id) seenDeliveryKeys.add(String(sale.id));
+      if (sale._id) seenDeliveryKeys.add(String(sale._id));
 
       const netAmt = Number(sale.netPayable || sale.totalAmount || sale.grandTotal) || 0;
       const method = (sale.paymentMethod || 'cash').toLowerCase();
@@ -183,6 +192,101 @@ export default function CustomerDailyReport() {
         dates[d].walkinDue += khataDue;
         dates[d].walkinEntries.push(entryObj);
       }
+    });
+
+    // 1b. Process Deliveries from DeliveryContext that are not already in salesHistory
+    deliveries.forEach((del) => {
+      const delId = String(del.id || del._id || '');
+      const receiptNum = String(del.receiptNumber || '');
+      const runCode = String(del.runCode || '');
+      const linkedId = String(del.linkedOrderId || '');
+
+      if (
+        (delId && seenDeliveryKeys.has(delId)) ||
+        (receiptNum && seenDeliveryKeys.has(receiptNum)) ||
+        (runCode && seenDeliveryKeys.has(runCode)) ||
+        (linkedId && seenDeliveryKeys.has(linkedId))
+      ) {
+        return; // Already accounted for in salesHistory
+      }
+
+      if (del.status === 'CANCELLED') return;
+
+      const d = normalizeDateStr(del.deliveredAt || del.date || del.createdAt);
+      initDate(d);
+
+      let itemsTotal = Array.isArray(del.items) && del.items.length > 0
+        ? del.items.reduce((sum, it) => sum + (Number(it.subtotal) || (Number(it.quantity || 1) * Number(it.unitPrice || 0)) || 0), 0)
+        : 0;
+
+      const deliveryFee = Number(del.deliveryFee) || 0;
+      const orderTotal = Math.max(
+        itemsTotal + deliveryFee,
+        itemsTotal,
+        (Number(del.amountPaid) || 0) + (Number(del.amountDue) || 0),
+        Number(del.codAmountToCollect) || 0
+      );
+
+      let totalQty = 0;
+      if (Array.isArray(del.items) && del.items.length > 0) {
+        del.items.forEach((it) => {
+          totalQty += Number(it.quantity) || 0;
+        });
+      } else {
+        totalQty = Number(del.qtyLiters) || 0;
+      }
+
+      const paidAmt = Number(del.amountPaid !== undefined ? del.amountPaid : ((Number(del.cashCollected) || 0) + (Number(del.onlineCollected) || 0)));
+      const khataDue = Number(del.amountDue !== undefined ? del.amountDue : Math.max(0, orderTotal - paidAmt));
+
+      const isMonthly = del.deliverySubType === 'monthly' || (!del.deliverySubType && (del.customerId || del.route));
+
+      const activeCust =
+        (typeof del.customerId === 'object' ? del.customerId : null) ||
+        customerMap[String(del.customerId)];
+
+      const custName =
+        activeCust?.name ||
+        del.customerName ||
+        'Delivery Customer';
+
+      const custPhone =
+        activeCust?.phone ||
+        del.customerPhone ||
+        '';
+
+      const entryObj = {
+        id: del.id || del._id || `DEL-${Math.random()}`,
+        invoiceId: del.receiptNumber || del.runCode || `DEL-${(del.id || del._id || '').toString().slice(-4)}`,
+        customerName: custName,
+        customerPhone: custPhone,
+        customerId: activeCust?.id || activeCust?._id || del.customerId,
+        quantity: totalQty,
+        orderTotal: orderTotal,
+        paidAmount: paidAmt,
+        khataDue,
+        items: del.items || [],
+        paymentMethod: del.paymentMode ? del.paymentMode.toUpperCase() : (paidAmt >= orderTotal && orderTotal > 0 ? 'CASH' : 'KHATA'),
+        rawSale: del,
+      };
+
+      dates[d].totalDaySales += orderTotal;
+      dates[d].totalDayPaid += paidAmt;
+      dates[d].totalDayKhataDue += khataDue;
+
+      dates[d].totalDeliveryVolume += totalQty;
+      dates[d].totalDeliveryRev += orderTotal;
+      dates[d].deliveryPaid += paidAmt;
+      dates[d].deliveryDue += khataDue;
+
+      if (isMonthly) {
+        dates[d].monthlyDeliveryVolume += totalQty;
+        dates[d].monthlyDeliveryRev += orderTotal;
+      } else {
+        dates[d].ontimeDeliveryVolume += totalQty;
+        dates[d].ontimeDeliveryRev += orderTotal;
+      }
+      dates[d].deliveryEntries.push(entryObj);
     });
 
     // 2. Process Delivery & Fuel Expenses

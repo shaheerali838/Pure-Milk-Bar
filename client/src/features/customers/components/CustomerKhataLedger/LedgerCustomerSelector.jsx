@@ -64,16 +64,6 @@ export default function LedgerCustomerSelector({
           <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
-              onClick={onOpenAddDebit}
-              disabled={!selectedCustomerId}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-50"
-            >
-              <Plus className="w-3.5 h-3.5 text-slate-500" />
-              <span>Manual Debit</span>
-            </button>
-
-            <button
-              type="button"
               onClick={onOpenRecordPayment}
               disabled={!selectedCustomerId}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/60 hover:bg-blue-100 text-blue-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-50"
