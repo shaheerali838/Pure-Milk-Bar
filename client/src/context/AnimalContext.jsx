@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import farmService from '@/services/farmService';
 import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
+import { normalizeDateStr, sortByDateDesc, ensureValidDate, getPktTodayString } from '@/utils/dateUtils';
 
 const defaultAnimalContextValue = {
   animals: [],
@@ -40,9 +41,7 @@ const normalizeAnimal = (animal, history = []) => {
 
   [...dbIntakeHistory, ...existingHistory].forEach((item) => {
     if (!item) return;
-    const dateStr = item.date
-      ? (typeof item.date === 'string' && item.date.includes('T') ? item.date.split('T')[0] : String(item.date).slice(0, 10))
-      : '';
+    const dateStr = normalizeDateStr(item.date || item.createdAt) || '';
     if (!dateStr) return;
 
     const rawShift = item.shift || (item.morning > 0 ? 'Morning' : (item.evening > 0 ? 'Evening' : 'Morning'));
@@ -192,12 +191,12 @@ export function AnimalProvider({ children }) {
 
       // 1. Add records from API logList
       logList.forEach((log) => {
-        const tag = log.animalTag || log.tag || log.animal?.tag || log.animalId?.tagNumber || log.animalId?.tag || 'COW-01';
-        const dateStr = log.date ? (typeof log.date === 'string' && log.date.includes('T') ? log.date.split('T')[0] : String(log.date).slice(0, 10)) : new Date().toISOString().split('T')[0];
+        const tag = (log.animalTag || log.tag || log.animal?.tag || log.animalId?.tagNumber || log.animalId?.tag || 'COW-01').toUpperCase();
+        const dateStr = normalizeDateStr(log.date || log.createdAt) || getPktTodayString();
         const rawShift = log.shift || 'Morning';
         const normShift = rawShift.charAt(0).toUpperCase() + rawShift.slice(1).toLowerCase();
         const yVal = parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0;
-        const key = `${tag.toUpperCase()}-${dateStr}-${normShift.toUpperCase()}`;
+        const key = `${tag}-${dateStr}-${normShift.toUpperCase()}`;
 
         if (!seenLogKeys.has(key)) {
           seenLogKeys.add(key);
@@ -220,7 +219,7 @@ export function AnimalProvider({ children }) {
         const animalHist = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
         animalHist.forEach((item) => {
           if (!item) return;
-          const dateStr = item.date ? (typeof item.date === 'string' && item.date.includes('T') ? item.date.split('T')[0] : String(item.date).slice(0, 10)) : '';
+          const dateStr = normalizeDateStr(item.date || item.createdAt) || '';
           const rawShift = item.shift || (item.morning > 0 ? 'Morning' : 'Evening') || 'Morning';
           const normShift = rawShift.charAt(0).toUpperCase() + rawShift.slice(1).toLowerCase();
           const yVal = Number(item.quantityLiters ?? item.yieldLiters ?? item.yield ?? (normShift === 'Evening' ? item.evening : item.morning) ?? 0) || 0;
@@ -254,7 +253,7 @@ export function AnimalProvider({ children }) {
       });
 
       setAnimals(normalized);
-      setMilkingLogs(normalizedLogs);
+      setMilkingLogs(sortByDateDesc(normalizedLogs, 'date'));
     } catch (err) {
       console.error('Failed to fetch farm data from API:', err);
       setError(err.message || 'Failed to load herd animals');
@@ -477,14 +476,14 @@ export function AnimalProvider({ children }) {
         yieldLiters: val,
         yield: val,
         quantityLiters: val,
-        date: dateStr,
+        date: ensureValidDate(dateStr),
         fat: intakeData.fat || null,
         snf: intakeData.snf || null,
         notes: intakeData.notes || '',
         operator: intakeData.operator || intakeData.milker || '',
         createdAt: newIntake.createdAt,
       };
-      setMilkingLogs((prev) => [newLogEntry, ...(prev || [])]);
+      setMilkingLogs((prev) => sortByDateDesc([newLogEntry, ...(prev || [])], 'date'));
       broadcastSync('pure_milk_bar_milking_updated');
       broadcastSync('pure_milk_bar_inventory_updated');
 
@@ -631,11 +630,11 @@ export function AnimalProvider({ children }) {
         setMilkingLogs((prev) => {
           const filtered = (prev || []).filter((l) => {
             const lTag = (l.animalTag || l.tag || '').toUpperCase();
-            const lDate = l.date ? (typeof l.date === 'string' && l.date.includes('T') ? l.date.split('T')[0] : String(l.date).slice(0, 10)) : '';
+            const lDate = normalizeDateStr(l.date || l.createdAt);
             const lShift = (l.shift || '').toUpperCase();
             return !(lDate === shiftDate && lShift === normShift.toUpperCase() && newLogs.some(nl => nl.animalTag.toUpperCase() === lTag));
           });
-          return [...newLogs, ...filtered];
+          return sortByDateDesc([...newLogs, ...filtered], 'date');
         });
       }
 

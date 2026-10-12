@@ -56,9 +56,11 @@ export default function LedgerCustomerProfileCard({
                     ⚠️ Limit Exceeded
                   </Badge>
                 )}
-                <span className="font-mono text-[10px] text-slate-400">
-                  #{customer.id}
-                </span>
+                {customer.code && !/^[0-9a-fA-F]{24}$/.test(customer.code) && (
+                  <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-semibold">
+                    {customer.code}
+                  </span>
+                )}
               </div>
             </div>
           </div>

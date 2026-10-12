@@ -4,17 +4,26 @@ import { useSupplierContext } from '@/context/SupplierContext';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useDahiContext } from '@/context/DahiContext';
-import { isMatchingTimeframe } from '@/utils/dateUtils';
+import { isDateInFilterRange, isMatchingTimeframe } from '@/utils/dateUtils';
 
 export default function SupplierDashboardCard({
-  timeRange = 'today',
-  customStartDate = '',
-  customEndDate = '',
+  timeRange,
+  dateFilter: propDateFilter,
+  startDate: propStartDate,
+  endDate: propEndDate,
+  customStartDate,
+  customEndDate,
+  periodLabel: propPeriodLabel,
 }) {
   const { totals: supplierTotals } = useSupplierContext();
   const { intakeLogs = [] } = useIntakeContext();
   const posCtx = usePOSContext();
   const dahiCtx = useDahiContext();
+
+  const effectiveFilter = propDateFilter || timeRange || 'today';
+  const effectiveStart = propStartDate || customStartDate || '';
+  const effectiveEnd = propEndDate || customEndDate || '';
+  const periodLabel = propPeriodLabel || (effectiveFilter === 'today' ? 'Today' : 'Selected Period');
 
   const availableSupplierStock = useMemo(() => {
     if (posCtx?.inventoryMetrics?.rawSupplierMilkStock !== undefined) {
@@ -35,19 +44,20 @@ export default function SupplierDashboardCard({
   }, [posCtx?.inventoryMetrics?.rawSupplierBuffaloMilkStock]);
 
   const periodData = useMemo(() => {
-    const matchedLogs = (intakeLogs || []).filter((log) =>
-      isMatchingTimeframe(log.date, timeRange, customStartDate, customEndDate)
-    );
+    const logs = (intakeLogs || []).filter((log) => {
+      const logDate = log.date || log.createdAt;
+      if (typeof isDateInFilterRange === 'function') {
+        return isDateInFilterRange(logDate, effectiveFilter, effectiveStart, effectiveEnd);
+      }
+      return isMatchingTimeframe(logDate, effectiveFilter, effectiveStart, effectiveEnd);
+    });
 
-    const periodVolume = matchedLogs.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
-    const periodCost = matchedLogs.reduce((sum, item) => sum + (parseFloat(item.totalCost || item.totalAmount) || 0), 0);
-    const avgRate = periodVolume > 0 ? periodCost / periodVolume : 0;
+    const volume = logs.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
+    const cost = logs.reduce((sum, item) => sum + (parseFloat(item.totalCost || item.totalAmount) || 0), 0);
+    const avgRate = volume > 0 ? cost / volume : 0;
 
-    return { periodVolume, periodCost, avgRate, logCount: matchedLogs.length };
-  }, [intakeLogs, timeRange, customStartDate, customEndDate]);
-
-  const isToday = timeRange === 'today';
-  const periodTitle = isToday ? "Today's Procurement" : 'Procurement Volume';
+    return { volume, cost, avgRate, logCount: logs.length };
+  }, [intakeLogs, effectiveFilter, effectiveStart, effectiveEnd]);
 
   const cards = [
     {
@@ -62,19 +72,19 @@ export default function SupplierDashboardCard({
       badge: 'Available',
     },
     {
-      id: 'today_procurement',
-      title: periodTitle,
-      amount: `${periodData.periodVolume.toFixed(1)} L`,
-      sub: `Cost: Rs. ${periodData.periodCost.toLocaleString()} · ${periodData.logCount} Batches`,
+      id: 'procurement',
+      title: effectiveFilter === 'today' ? "Today's Procurement" : `Procurement (${periodLabel})`,
+      amount: `${periodData.volume.toFixed(1)} L`,
+      sub: `Cost: Rs. ${periodData.cost.toLocaleString()} · ${periodData.logCount} Batches`,
       icon: Droplets,
       color: '#2563eb', // blue-600
-      badge: isToday ? 'Intake' : 'Period Intake',
+      badge: effectiveFilter === 'today' ? 'Today Intake' : 'Intake',
     },
     {
       id: 'avg_purchase_rate',
-      title: 'Avg Purchase Rate',
+      title: effectiveFilter === 'today' ? 'Avg Purchase Rate' : `Avg Rate (${periodLabel})`,
       amount: `Rs. ${periodData.avgRate.toFixed(1)} / L`,
-      sub: isToday ? "Based on Today's Batches" : 'Based on Selected Batches',
+      sub: `Based on ${periodLabel} Batches`,
       icon: Tag,
       color: '#9333ea', // purple-600
       badge: 'Pricing',

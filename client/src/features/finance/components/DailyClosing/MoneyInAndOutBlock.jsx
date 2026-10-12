@@ -1,6 +1,7 @@
 import React from 'react';
 import { Wallet, ArrowDownLeft, ArrowUpRight, CreditCard, Building, Truck, Banknote, Receipt, PiggyBank, Users } from 'lucide-react';
 import { useStaffContext } from '@/context/StaffContext';
+import { normalizeDateStr, getPktTodayString } from '@/utils/dateUtils';
 
 export default function MoneyInAndOutBlock({
   collections = {},
@@ -8,26 +9,33 @@ export default function MoneyInAndOutBlock({
   expenses = {},
   cash = {},
   profit = {},
+  selectedDate = null,
 }) {
   const formatRs = (val) => `Rs. ${Number(val || 0).toLocaleString('en-PK')}`;
 
   const counterCash = collections.counterCash || 0;
+  const counterEasyPaisa = collections.counterEasyPaisa || 0;
+  const counterJazzCash = collections.counterJazzCash || 0;
   const counterOnline = collections.counterOnline || 0;
   const codCash = collections.codCash || 0;
   const khataCash = collections.khataRecoveredCash || 0;
+  const khataEasyPaisa = collections.khataRecoveredEasyPaisa || 0;
+  const khataJazzCash = collections.khataRecoveredJazzCash || 0;
   const khataOnline = collections.khataRecoveredOnline || 0;
   const totalCollected = collections.totalCollected || (counterCash + counterOnline + codCash + khataCash + khataOnline);
 
   const { salaryPayments = [] } = useStaffContext();
-  const todayISO = React.useMemo(() => new Date().toISOString().split('T')[0], []);
+  const effectiveDate = React.useMemo(() => {
+    return selectedDate ? normalizeDateStr(selectedDate) : getPktTodayString();
+  }, [selectedDate]);
 
-  // Today's staff salary disbursements
+  // Selected date's staff salary disbursements
   const todaysStaffPayments = React.useMemo(() => {
     return (salaryPayments || []).filter((p) => {
-      const pDate = p.date ? p.date.slice(0, 10) : '';
-      return pDate === todayISO;
+      const pDate = normalizeDateStr(p.date || p.paymentDate || p.createdAt);
+      return pDate === effectiveDate;
     });
-  }, [salaryPayments, todayISO]);
+  }, [salaryPayments, effectiveDate]);
 
   const todaysStaffCashTotal = React.useMemo(() => {
     return todaysStaffPayments
@@ -105,13 +113,35 @@ export default function MoneyInAndOutBlock({
               <span className="font-semibold text-slate-900 dark:text-white">{formatRs(counterCash)}</span>
             </div>
 
-            <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
-              <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                <CreditCard className="w-3.5 h-3.5 text-slate-400" />
-                2. Digital Online (JazzCash / EasyPaisa / Bank)
-              </span>
-              <span className="font-semibold text-slate-900 dark:text-white">{formatRs(counterOnline)}</span>
-            </div>
+            {counterEasyPaisa > 0 && (
+              <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
+                <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                  <CreditCard className="w-3.5 h-3.5 text-emerald-500" />
+                  2a. Digital POS (EasyPaisa)
+                </span>
+                <span className="font-semibold text-slate-900 dark:text-white">{formatRs(counterEasyPaisa)}</span>
+              </div>
+            )}
+
+            {counterJazzCash > 0 && (
+              <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
+                <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                  <CreditCard className="w-3.5 h-3.5 text-amber-500" />
+                  2b. Digital POS (JazzCash)
+                </span>
+                <span className="font-semibold text-slate-900 dark:text-white">{formatRs(counterJazzCash)}</span>
+              </div>
+            )}
+
+            {counterOnline > 0 && counterEasyPaisa === 0 && counterJazzCash === 0 && (
+              <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
+                <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                  <CreditCard className="w-3.5 h-3.5 text-slate-400" />
+                  2. Digital Online (JazzCash / EasyPaisa / Bank)
+                </span>
+                <span className="font-semibold text-slate-900 dark:text-white">{formatRs(counterOnline)}</span>
+              </div>
+            )}
 
             <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
               <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
@@ -129,7 +159,27 @@ export default function MoneyInAndOutBlock({
               <span className="font-semibold text-emerald-700 dark:text-emerald-400">+{formatRs(khataCash)}</span>
             </div>
 
-            {khataOnline > 0 && (
+            {khataEasyPaisa > 0 && (
+              <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
+                <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                  <CreditCard className="w-3.5 h-3.5 text-emerald-500" />
+                  5a. Ledger Recovered (EasyPaisa)
+                </span>
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">+{formatRs(khataEasyPaisa)}</span>
+              </div>
+            )}
+
+            {khataJazzCash > 0 && (
+              <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
+                <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                  <CreditCard className="w-3.5 h-3.5 text-amber-500" />
+                  5b. Ledger Recovered (JazzCash)
+                </span>
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">+{formatRs(khataJazzCash)}</span>
+              </div>
+            )}
+
+            {khataOnline > 0 && khataEasyPaisa === 0 && khataJazzCash === 0 && (
               <div className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-800/50">
                 <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
                   <CreditCard className="w-3.5 h-3.5 text-slate-400" />

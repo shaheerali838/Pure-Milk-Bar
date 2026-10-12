@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Banknote, Wallet, ArrowDownLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Users, Banknote, Wallet, ArrowDownLeft, ChevronRight, CreditCard } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 import { KpiGridSkeleton } from '@/components/ui/skeleton';
@@ -60,7 +60,7 @@ export default function CustomerStatsCards({ onOpenAdvanceDetails }) {
       label: "Advance Payments",
       value: `Rs. ${(aggregates.totalAllAdvanceReceived || 0).toLocaleString()}`,
       sub: `Rs. ${(aggregates.totalRemainingAdvance || 0).toLocaleString()} bal · ${aggregates.advanceAccountsCount || 0} accts`,
-      icon: Sparkles,
+      icon: CreditCard,
       color: "#2563eb", // blue-600
       badge: "Advance ➔",
       badgeClass: "bg-blue-50 text-blue-700 border border-blue-200/80 hover:bg-blue-100 transition-colors",

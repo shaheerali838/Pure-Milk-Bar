@@ -178,6 +178,19 @@ const deliveryRunSchema = new Schema(
       default: 0,
       min: 0,
     },
+    isStockDeducted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    stockDeductedAt: {
+      type: Date,
+      default: null,
+    },
+    stockDeductionDetails: {
+      type: Array,
+      default: [],
+    },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },

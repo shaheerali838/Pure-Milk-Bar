@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Edit, Trash2, Printer, Receipt, Banknote, Calendar, Tag, CreditCard, User, MapPin, CheckCircle2, Search, X, Sparkles } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Printer, Receipt, Banknote, Calendar, Tag, CreditCard, User, MapPin, CheckCircle2, Search, X } from 'lucide-react';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import RecordExpenseForm from './RecordExpenseForm';
 

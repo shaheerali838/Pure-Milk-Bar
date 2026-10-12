@@ -12,6 +12,12 @@ const khataEntrySchema = new Schema(
       required: [true, 'Customer ID is required'],
       index: true,
     },
+    orderId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Order',
+      default: null,
+      index: true,
+    },
     date: {
       type: Date,
       required: [true, 'Transaction date is required'],
@@ -73,7 +79,23 @@ const khataEntrySchema = new Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['CASH', 'ONLINE', 'ADJUSTMENT', 'CHEQUE', 'KHATA', 'SPLIT', 'COD', null],
+      enum: ['CASH', 'ONLINE', 'EASYPAISA', 'JAZZCASH', 'ADJUSTMENT', 'CHEQUE', 'KHATA', 'SPLIT', 'COD', null],
+      default: null,
+    },
+    splitPaymentMeta: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+    onlineTransferMeta: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+    paymentChannel: {
+      type: String,
+      default: null,
+    },
+    notes: {
+      type: String,
       default: null,
     },
     referenceTransactionId: {

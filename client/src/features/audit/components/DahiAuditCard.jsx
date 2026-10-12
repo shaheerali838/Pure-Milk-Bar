@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layers, Droplets, ArrowUpRight, CheckCircle2, ChevronDown, ChevronUp, History, Sparkles } from 'lucide-react';
+import { Layers, Droplets, ArrowUpRight, CheckCircle2, ChevronDown, ChevronUp, History } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { useDahiContext } from '@/context/DahiContext';
 

@@ -8,10 +8,15 @@ import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { useDahiContext } from '@/context/DahiContext';
 import { useStaffContext } from '@/context/StaffContext';
 
-import { getPktTodayString } from '@/utils/dateUtils';
+import { getPktTodayString, isDateInFilterRange, getDateRangeBoundaries } from '@/utils/dateUtils';
 
-export default function TotalFinancialSummary() {
-  const [period, setPeriod] = useState('today'); // 'today' (default) | 'this_month' | 'all'
+export default function TotalFinancialSummary({
+  dateFilter,
+  startDate = '',
+  endDate = '',
+}) {
+  const [localPeriod, setLocalPeriod] = useState('today'); // 'today' (default) | 'this_week' | 'this_month' | 'all'
+  const activePeriod = dateFilter || localPeriod;
 
   const { farmSalesHistory = [], supplierSalesHistory = [], inventoryMetrics = {} } = usePOSContext();
   const availableFarmStock = Number(inventoryMetrics.rawFarmMilkStock ?? inventoryMetrics.rawAvailableFarmStock ?? 0) || 0;
@@ -22,65 +27,12 @@ export default function TotalFinancialSummary() {
   const { batches: processingBatches = [] } = useDahiContext() || {};
   const { salaryPayments = [] } = useStaffContext();
 
-  const todayStr = useMemo(() => {
-    try {
-      return getPktTodayString();
-    } catch {
-      return new Date().toISOString().split('T')[0];
-    }
-  }, []);
-  const currentMonthStr = useMemo(() => (todayStr ? todayStr.slice(0, 7) : ''), [todayStr]);
-
-  const parseISODate = (val) => {
-    if (!val) return '';
-    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
-      return val.slice(0, 10);
-    }
-    const d = new Date(val);
-    if (!isNaN(d.getTime())) {
-      try {
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      } catch {
-        return '';
-      }
-    }
-    return '';
-  };
-
   const getSaleDate = (sale) => {
-    if (!sale) return '';
-    if (sale.timestamp) {
-      const parsed = parseISODate(sale.timestamp);
-      if (parsed) return parsed;
-    }
-    if (sale.date) {
-      const parsed = parseISODate(sale.date);
-      if (parsed) return parsed;
-    }
-    if (sale.createdAt) {
-      const parsed = parseISODate(sale.createdAt);
-      if (parsed) return parsed;
-    }
-    if (sale.formattedDate) {
-      const parsed = parseISODate(sale.formattedDate);
-      if (parsed) return parsed;
-    }
-    return '';
+    return sale.timestamp || sale.date || sale.createdAt || sale.formattedDate || '';
   };
 
   const isMatchingPeriod = (dateVal) => {
-    if (period === 'all') return true;
-    if (!dateVal) return false;
-    const cleanDate = typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateVal)
-      ? dateVal.slice(0, 10)
-      : parseISODate(dateVal);
-    if (!cleanDate) return false;
-    if (period === 'today') return cleanDate === todayStr || cleanDate === new Date().toISOString().split('T')[0];
-    if (period === 'this_month') return cleanDate.startsWith(currentMonthStr);
-    return true; // 'all'
+    return isDateInFilterRange(dateVal, activePeriod, startDate, endDate);
   };
 
   // Client rule: Farm milk/dahi has NO cost price, and supplier milk cost is fully
@@ -141,7 +93,7 @@ export default function TotalFinancialSummary() {
     const margin = totalSales > 0 ? Math.round((netProfit / totalSales) * 100) : 0;
 
     return { milkSales, milkQty, dahiSales, dahiQty, totalSales, totalExpenses: generalFarmExpenses, staffSalaryPaid, totalFarmExpenses, netProfit, margin };
-  }, [farmSalesHistory, farmExpensesList, salaryPayments, period, todayStr, currentMonthStr]);
+  }, [farmSalesHistory, farmExpensesList, salaryPayments, activePeriod, startDate, endDate]);
 
   // 2. SUPPLIER METRICS CALCULATION
   const supplierFinancials = useMemo(() => {
@@ -199,7 +151,7 @@ export default function TotalFinancialSummary() {
     const margin = totalSales > 0 ? Math.round((netProfit / totalSales) * 100) : 0;
 
     return { milkSales, milkQty, dahiSales, dahiQty, totalSales, purchaseCost, purchaseQty, totalExpenses, netProfit, margin };
-  }, [supplierSalesHistory, intakeLogs, supplierExpensesList, period, todayStr, currentMonthStr]);
+  }, [supplierSalesHistory, intakeLogs, supplierExpensesList, activePeriod, startDate, endDate]);
 
   // 3. DAHI METRICS CALCULATION (Revenue split only - no hardcoded cost)
   const dahiFinancials = useMemo(() => {
@@ -216,7 +168,9 @@ export default function TotalFinancialSummary() {
   const totalBusinessNetProfit = farmFinancials.netProfit + supplierFinancials.netProfit;
   const totalBusinessRevenue = farmFinancials.totalSales + supplierFinancials.totalSales;
   const isBusinessProfitable = totalBusinessNetProfit >= 0;
-  const periodLabel = period === 'today' ? 'Today' : period === 'this_month' ? 'This Month' : 'All Time';
+  const { detailedLabel: periodLabel } = useMemo(() => {
+    return getDateRangeBoundaries(activePeriod, startDate, endDate);
+  }, [activePeriod, startDate, endDate]);
   const fmtQty = (n) => Number((Number(n) || 0).toFixed(1));
 
   return (
@@ -238,15 +192,16 @@ export default function TotalFinancialSummary() {
         <div className="inline-flex items-center p-1 bg-slate-100 rounded-full shadow-2xs self-start sm:self-auto text-xs">
           {[
             { id: 'today', label: 'Today' },
+            { id: 'this_week', label: 'This Week' },
             { id: 'this_month', label: 'This Month' },
             { id: 'all', label: 'All Time' },
           ].map((tab) => (
             <button
               key={tab.id}
               type="button"
-              onClick={() => setPeriod(tab.id)}
+              onClick={() => setLocalPeriod(tab.id)}
               className={`px-3 py-1 font-bold rounded-full transition-all cursor-pointer ${
-                period === tab.id
+                activePeriod === tab.id
                   ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`}

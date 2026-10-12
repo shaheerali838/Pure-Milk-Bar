@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { estimateDistanceKm } from '../../features/pos/utils/estimateDeliveryDistance.js';
+import { getPktTodayString } from '@/utils/dateUtils';
 
 export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicRiders = [] } = {}) {
   const [cart, setCart] = useState([]);
+  const [saleDate, setSaleDate] = useState(getPktTodayString());
   const [discount, setDiscount] = useState(0);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [fulfillmentMode, setFulfillmentMode] = useState('counter'); // 'counter' | 'doorstep'
@@ -34,11 +36,17 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
   const [codPaymentOption, setCodPaymentOption] = useState('full');
   const [codPaidAmount, setCodPaidAmount] = useState('');
 
-  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'khata' | 'online' | 'cod'
+  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'khata' | 'online' | 'easypaisa' | 'jazzcash' | 'split' | 'cod'
   const [cashTendered, setCashTendered] = useState('');
 
+  const [splitDetails, setSplitDetails] = useState({
+    cash: '',
+    easyPaisa: '',
+    jazzCash: '',
+  });
+
   const [onlineDetails, setOnlineDetails] = useState({
-    provider: 'JazzCash',
+    provider: 'EasyPaisa',
     senderAccount: '',
     trxId: '',
   });
@@ -272,10 +280,12 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
     setLinkedCustomerId('');
     setSelectedRiderId('');
     setCustomRiderName('');
+    setSaleDate(getPktTodayString());
     setShowFuelLog(false);
     setFuelLog({ liters: '', amount: '', distanceKm: '', notes: '' });
     setWalkinCustomerType('first_time');
-    setOnlineDetails({ provider: 'JazzCash', senderAccount: '', trxId: '' });
+    setOnlineDetails({ provider: 'EasyPaisa', senderAccount: '', trxId: '' });
+    setSplitDetails({ cash: '', easyPaisa: '', jazzCash: '' });
   };
 
   // Pricing calculations
@@ -357,6 +367,8 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
     setKhataPaymentOption,
     partialPaidAmount,
     setPartialPaidAmount,
+    splitDetails,
+    setSplitDetails,
     orderNotes,
     setOrderNotes,
     codPaymentOption,
@@ -399,5 +411,7 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
     handleRemoveFromCart,
     handleClearCart,
     resolveCartProductSource,
+    saleDate,
+    setSaleDate,
   };
 }

@@ -7,6 +7,9 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+// Reusable Date Filter Bar
+import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
+
 // Modular Components
 import DashboardDateFilter from '@/components/common/DashboardDateFilter';
 import TopSummaryCards from '../components/mainDashboard/TopSummaryCards';
@@ -20,9 +23,9 @@ import SalesAndReceivablesSection from '../components/mainDashboard/SalesAndRece
 import DashboardFooterSummary from '../components/mainDashboard/DashboardFooterSummary';
 
 export default function MainDashboard() {
-  const [timeRange, setTimeRange] = useState('today'); // 'today' | 'week' | 'month' | 'all' | 'custom'
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
+  const [dateFilter, setDateFilter] = useState('today');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const todayFormatted = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -84,44 +87,61 @@ export default function MainDashboard() {
         </div>
       </div>
 
-      {/* Date Filter Toolbar */}
-      <div className="flex items-center justify-between gap-3 pb-1">
-        <DashboardDateFilter
-          timeRange={timeRange}
-          setTimeRange={setTimeRange}
-          customStartDate={customStartDate}
-          setCustomStartDate={setCustomStartDate}
-          customEndDate={customEndDate}
-          setCustomEndDate={setCustomEndDate}
-          showAll={true}
-          activeTheme="emerald"
-        />
-      </div>
+      {/* Date Filter Bar */}
+      <DashboardDateFilterBar
+        dateFilter={dateFilter}
+        onFilterChange={setDateFilter}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        theme="emerald"
+      />
 
       {/* 2. Top Summary Cards (10 Cards responding to selected date timeframe) */}
       <section aria-label="Top KPI Summary">
         <TopSummaryCards
-          timeRange={timeRange}
-          customStartDate={customStartDate}
-          customEndDate={customEndDate}
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
         />
       </section>
 
       {/* 3. Detailed Hub Cards (3 Detailed Cards: Farm, Supplier Procurement, Dahi Processing) */}
       <section aria-label="Core Business Hubs" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <FarmYieldHub />
-        <SupplierProcurementHub />
-        <DahiProcessingHub />
+        <FarmYieldHub
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
+        <SupplierProcurementHub
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
+        <DahiProcessingHub
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </section>
 
       {/* 4. Total Financial Summary (Aggregated Profit & Segregated Breakdowns) */}
       <section aria-label="Total Financial Summary">
-        <TotalFinancialSummary />
+        <TotalFinancialSummary
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </section>
 
       {/* 5. Profit & Loss Snapshot Component */}
       <section aria-label="Financial Profit & Loss Snapshot">
-        <ProfitLossSnapshot />
+        <ProfitLossSnapshot
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </section>
 
       {/* 6. Charts & Milk Flow Component */}
@@ -136,7 +156,11 @@ export default function MainDashboard() {
 
       {/* 8. Bottom Footer Summary (4 Simple Cards) */}
       <section aria-label="Footer Metrics">
-        <DashboardFooterSummary />
+        <DashboardFooterSummary
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </section>
     </div>
   );

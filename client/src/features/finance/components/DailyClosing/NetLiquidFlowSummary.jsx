@@ -1,5 +1,5 @@
 import React from 'react';
-import { Banknote, ArrowUpRight, TrendingUp, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Banknote, ArrowUpRight, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Typography } from '@/components/common/Typography';
@@ -31,7 +31,7 @@ export default function NetLiquidFlowSummary({
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="p-1 rounded-md bg-emerald-800/80 text-emerald-300">
-              <Sparkles className="w-3.5 h-3.5" />
+              <Banknote className="w-3.5 h-3.5" />
             </span>
             <Typography variant="overline" className="text-[10px] font-extrabold tracking-widest text-emerald-300 uppercase">
               NET LIQUID CASH FLOW TODAY

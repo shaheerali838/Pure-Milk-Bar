@@ -47,7 +47,7 @@ const orderSchema = new Schema(
     paymentMethod: {
       type: String,
       required: [true, 'Payment method is required'],
-      enum: ['CASH', 'KHATA', 'ONLINE', 'SPLIT'],
+      enum: ['CASH', 'KHATA', 'ONLINE', 'EASYPAISA', 'JAZZCASH', 'SPLIT', 'COD'],
       index: true,
     },
     items: {

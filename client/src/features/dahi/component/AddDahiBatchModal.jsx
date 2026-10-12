@@ -246,6 +246,12 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
     const numOutput = parseFloat(formData.output) || Number((rawVal * 0.985).toFixed(1));
     const totalDahiCost = Math.round(numOutput * dahiCostRate);
 
+    // 100% Dynamic Proportional Yield formulas:
+    // farmDahiAdded = totalDahiProduced * farmRatio
+    // supplierDahiAdded = totalDahiProduced * supplierRatio
+    const farmDahiAdded = Number((numOutput * farmRatio).toFixed(3));
+    const supplierDahiAdded = Number((numOutput * supplierRatio).toFixed(3));
+
     onAddBatch({
       ...formData,
       unitCost: activeUnitCost,
@@ -263,6 +269,8 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
       supplierMilkUsed: supPortion,
       farmRatio,
       supplierRatio,
+      farmDahiAdded,
+      supplierDahiAdded,
       output: formData.output ? `${formData.output} kg` : `${numOutput} kg`,
       outputVal: numOutput,
     });
@@ -501,6 +509,30 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                     </div>
                   </div>
                   
+                  {/* Dynamic Proportional Yield Preview */}
+                  {parseFloat(formData.output || (parseFloat(formData.milkUsed) * 0.985)) > 0 && parseFloat(formData.milkUsed) > 0 && (
+                    <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-[11px] font-semibold text-slate-600">
+                      <span>Proportional Yield Output:</span>
+                      <span className="font-bold text-slate-800">
+                        Farm Dahi:{' '}
+                        <strong className="text-emerald-700">
+                          {(
+                            (parseFloat(formData.output) || (parseFloat(formData.milkUsed) || 0) * 0.985) *
+                            ((parseFloat(formData.farmMilkUsed) || 0) / (parseFloat(formData.milkUsed) || 1))
+                          ).toFixed(2)}{' '}
+                          kg
+                        </strong>{' '}
+                        · Sup Dahi:{' '}
+                        <strong className="text-blue-700">
+                          {(
+                            (parseFloat(formData.output) || (parseFloat(formData.milkUsed) || 0) * 0.985) *
+                            ((parseFloat(formData.supplierMilkUsed) || 0) / (parseFloat(formData.milkUsed) || 1))
+                          ).toFixed(2)}{' '}
+                          kg
+                        </strong>
+                      </span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="hidden"></div>

@@ -4,7 +4,6 @@ import {
   Maximize2,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   ExternalLink,
   Layers,
   Image as ImageIcon,

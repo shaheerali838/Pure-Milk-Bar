@@ -14,7 +14,6 @@ import {
   MapPin,
   FileText,
   PlusCircle,
-  Sparkles,
   Percent,
   TrendingDown,
   TrendingUp,

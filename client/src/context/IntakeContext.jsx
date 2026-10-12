@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import supplierService from '../services/supplierService';
 import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
+import { normalizeDateStr, sortByDateDesc, ensureValidDate, getPktTodayString } from '@/utils/dateUtils';
 
 const IntakeContext = createContext(null);
 
@@ -22,11 +23,12 @@ export function IntakeProvider({ children }) {
         const cost = parseFloat(p.totalAmount || p.totalCost || qty * rate);
         const paid = parseFloat(p.amountPaid ?? p.paidAmount ?? 0);
         const pending = Math.max(0, cost - paid);
+        const dateStr = normalizeDateStr(p.date || p.createdAt) || getPktTodayString();
 
         return {
           ...p,
           id: p._id || p.id || `INT-${Date.now()}`,
-          date: p.date ? new Date(p.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          date: dateStr,
           time: p.time || p.shift || 'Morning',
           supplierId: p.supplierId?._id || p.supplierId || '',
           supplierName: p.supplierId?.name || p.supplierName || 'Supplier',
@@ -44,7 +46,7 @@ export function IntakeProvider({ children }) {
           status: p.qualityGrade === 'REJECTED' ? 'Rejected' : 'Accepted',
         };
       });
-      setIntakeLogs(normalized);
+      setIntakeLogs(sortByDateDesc(normalized, 'date'));
     } catch (err) {
       console.error('Failed to fetch procurements from API:', err);
       setError(err.message || 'Failed to load intake records');
@@ -81,9 +83,10 @@ export function IntakeProvider({ children }) {
       const lrVal = parseFloat(newRecord.lr) || 0;
       const snfVal = parseFloat(newRecord.snf) || 0;
 
+      const recordDate = ensureValidDate(newRecord.date);
       const payload = {
         supplierId: newRecord.supplierId,
-        date: newRecord.date || new Date().toISOString().split('T')[0],
+        date: recordDate,
         shift: (newRecord.shift || 'Morning').toUpperCase(),
         milkType: (newRecord.milkType || 'COW').toUpperCase(),
         quantityLiters: qty,
@@ -102,7 +105,7 @@ export function IntakeProvider({ children }) {
       const normalized = {
         ...created,
         id: created._id || created.id || `INT-${Date.now()}`,
-        date: payload.date,
+        date: recordDate,
         time: newRecord.time || '10:00 AM',
         supplierId: newRecord.supplierId,
         supplierName: newRecord.supplierName || 'Supplier',
@@ -120,7 +123,7 @@ export function IntakeProvider({ children }) {
         status: 'Accepted',
       };
 
-      setIntakeLogs((prev) => [normalized, ...prev]);
+      setIntakeLogs((prev) => sortByDateDesc([normalized, ...(prev || [])], 'date'));
 
       broadcastSync('pure_milk_bar_intake_updated');
       broadcastSync('pure_milk_bar_inventory_updated');

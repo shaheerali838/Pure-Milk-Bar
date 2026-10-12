@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Filter, ArrowUpRight, ChevronRight, Droplets, Layers, Sparkles, Store, Truck } from 'lucide-react';
+import { Filter, ArrowUpRight, ChevronRight, Droplets, Layers, Store, Truck } from 'lucide-react';
 
 const CATEGORY_OPTIONS = [
   'All Categories',

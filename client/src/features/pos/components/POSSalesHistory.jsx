@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Eye, Receipt, Search, User, Phone, Package, TrendingUp, Users, Banknote, Activity } from 'lucide-react';
+import { ArrowLeft, Eye, Receipt, Search, User, Phone, Package, TrendingUp, Users, DollarSign, Banknote, Activity, Calendar } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
+import { formatStandardDate, formatStandardDateTime, isDateInFilterRange } from '@/utils/dateUtils';
 
 const getCustomer = (sale) => sale.customer || sale.walkinCustomer || { name: 'Walk-in Customer', phone: 'N/A' };
 const getSaleItems = (sale) => sale.items || [];
@@ -91,15 +92,6 @@ export default function POSSalesHistory({ compact = false }) {
       );
     }
 
-    if (dateFilter === 'today') {
-      const todayStr = new Date().toDateString();
-      return list.filter(sale => new Date(sale.timestamp || sale.date).toDateString() === todayStr);
-    }
-    if (dateFilter === 'week') {
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      return list.filter(sale => new Date(sale.timestamp || sale.date) >= weekAgo);
-    }
     if (dateFilter === 'custom') {
       return list.filter((sale) => {
         const raw = sale.timestamp || sale.date || sale.createdAt || sale.formattedDate;
@@ -111,6 +103,8 @@ export default function POSSalesHistory({ compact = false }) {
         if (endDate && sDate > endDate) return false;
         return true;
       });
+    } else if (dateFilter && dateFilter !== 'all') {
+      return list.filter((sale) => isDateInFilterRange(sale.date || sale.timestamp, dateFilter));
     }
     return list;
   }, [salesHistory, dateFilter, startDate, endDate, channelFilter]);
@@ -182,25 +176,31 @@ export default function POSSalesHistory({ compact = false }) {
             </div>
 
             {/* Date Filter */}
-            <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold">
-              {['today', 'week', 'all', 'custom'].map((filter) => (
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+              {[
+                { id: 'today', label: 'Today' },
+                { id: 'week', label: 'This Week' },
+                { id: 'month', label: 'This Month' },
+                { id: 'all', label: 'All History' },
+                { id: 'custom', label: 'Custom' },
+              ].map(({ id, label }) => (
                 <button
-                  key={filter}
+                  key={id}
                   type="button"
                   onClick={() => {
-                    setDateFilter(filter);
-                    if (filter !== 'custom') {
+                    setDateFilter(id);
+                    if (id !== 'custom') {
                       setStartDate('');
                       setEndDate('');
                     }
                   }}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    dateFilter === filter
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    dateFilter === id
                       ? 'bg-white text-emerald-700 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  {filter === 'today' ? 'Today' : filter === 'week' ? 'Last 7 Days' : filter === 'custom' ? 'Custom Range' : 'All History'}
+                  {label}
                 </button>
               ))}
             </div>
@@ -287,7 +287,62 @@ export default function POSSalesHistory({ compact = false }) {
           <div><h2 className="text-sm font-black text-slate-900 flex items-center gap-2"><Receipt className="w-4 h-4 text-emerald-600" /> POS sales</h2></div>
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5"><Search className="w-3.5 h-3.5 text-slate-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search invoice or customer" className="w-44 bg-transparent outline-none text-xs" /></div>
         </div>
-        {filteredSales.length === 0 ? <div className="py-10 text-center text-xs text-slate-400">No POS sales found.</div> : <div className={compact ? 'max-h-72 overflow-y-auto' : 'overflow-x-auto'}><table className="w-full text-left text-xs"><thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400"><tr><th className="px-4 py-2">Invoice</th><th className="px-4 py-2">Customer</th><th className="px-4 py-2">Items</th><th className="px-4 py-2 text-right">Total</th><th className="px-4 py-2 text-right">Action</th></tr></thead><tbody className="divide-y divide-slate-100">{filteredSales.map((sale) => { const customer = getCustomer(sale); return <tr key={sale.invoiceId} className="hover:bg-emerald-50/40 transition-colors"><td className="px-4 py-2.5 font-mono font-bold text-slate-700">{sale.invoiceId}</td><td className="px-4 py-2.5"><div className="font-bold text-slate-800 flex items-center gap-1"><User className="w-3 h-3 text-slate-400" /> {customer.name}</div><div className="text-[10px] text-slate-400">{customer.phone || 'N/A'}</div></td><td className="px-4 py-2.5 text-slate-500">{getSaleItems(sale).map((item) => item.name).join(', ') || 'Dairy item'}</td><td className="px-4 py-2.5 text-right font-black text-emerald-700">Rs. {getTotal(sale).toLocaleString()}</td><td className="px-4 py-2.5 text-right"><button type="button" title="View sale details" onClick={() => setSelectedSale(sale)} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 font-bold hover:bg-blue-600 hover:text-white cursor-pointer transition-colors"><Eye className="w-3.5 h-3.5" /> View</button></td></tr>; })}</tbody></table></div>}
+        {filteredSales.length === 0 ? (
+          <div className="py-10 text-center text-xs text-slate-400">No POS sales found.</div>
+        ) : (
+          <div className={compact ? 'max-h-72 overflow-y-auto' : 'overflow-x-auto'}>
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400">
+                <tr>
+                  <th className="px-4 py-2">Invoice</th>
+                  <th className="px-4 py-2">Date &amp; Time</th>
+                  <th className="px-4 py-2">Customer</th>
+                  <th className="px-4 py-2">Items</th>
+                  <th className="px-4 py-2 text-right">Total</th>
+                  <th className="px-4 py-2 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredSales.map((sale) => {
+                  const customer = getCustomer(sale);
+                  return (
+                    <tr key={sale.invoiceId} className="hover:bg-emerald-50/40 transition-colors">
+                      <td className="px-4 py-2.5 font-mono font-bold text-slate-700 whitespace-nowrap">{sale.invoiceId}</td>
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <div className="font-semibold text-slate-800">{formatStandardDate(sale.date || sale.timestamp)}</div>
+                        <div className="text-[10px] text-slate-400 font-mono">
+                          {sale.formattedTime || (sale.timestamp ? new Date(sale.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '')}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <div className="font-bold text-slate-800 flex items-center gap-1">
+                          <User className="w-3 h-3 text-slate-400" /> {customer.name}
+                        </div>
+                        <div className="text-[10px] text-slate-400">{customer.phone || 'N/A'}</div>
+                      </td>
+                      <td className="px-4 py-2.5 text-slate-500">
+                        {getSaleItems(sale).map((item) => item.name).join(', ') || 'Dairy item'}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-black text-emerald-700">
+                        Rs. {getTotal(sale).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <button
+                          type="button"
+                          title="View sale details"
+                          onClick={() => setSelectedSale(sale)}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 font-bold hover:bg-blue-600 hover:text-white cursor-pointer transition-colors"
+                        >
+                          <Eye className="w-3.5 h-3.5" /> View
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
