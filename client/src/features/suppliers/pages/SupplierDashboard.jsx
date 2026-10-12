@@ -114,19 +114,6 @@ export default function SupplierDashboard() {
 
   return (
     <div className="space-y-4">
-      {/* Date Filter Toolbar */}
-      <div className="flex items-center justify-between gap-3 pb-1">
-        <DashboardDateFilter
-          timeRange={timeRange}
-          setTimeRange={setTimeRange}
-          customStartDate={customStartDate}
-          setCustomStartDate={setCustomStartDate}
-          customEndDate={customEndDate}
-          setCustomEndDate={setCustomEndDate}
-          showAll={true}
-          activeTheme="blue"
-        />
-      </div>
 
       {/* Date Filter Bar */}
       <div className="mb-3">
