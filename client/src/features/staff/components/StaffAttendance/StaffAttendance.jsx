@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
 import AttendanceSheetDetail from './AttendanceSheetDetail';
+import { formatStaffId } from '../../utils/formatStaffId';
 
 export default function StaffAttendance() {
   const {
@@ -106,6 +107,8 @@ export default function StaffAttendance() {
     const matchesQuery =
       !q ||
       (staff.name || '').toLowerCase().includes(q) ||
+      (staff.staffCode || '').toLowerCase().includes(q) ||
+      (staff.displayId || '').toLowerCase().includes(q) ||
       (staff.id || '').toLowerCase().includes(q) ||
       (staff.role || '').toLowerCase().includes(q);
 
@@ -469,7 +472,7 @@ export default function StaffAttendance() {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/70 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
-                  <th className="py-3 px-4">Staff ID</th>
+                  <th className="py-3 px-4"># ID</th>
                   <th className="py-3 px-4">Employee Name</th>
                   <th className="py-3 px-4">Role &amp; Route</th>
                   <th className="py-3 px-4">Shift</th>
@@ -482,7 +485,7 @@ export default function StaffAttendance() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                {filteredStaff.map((staff) => {
+                {filteredStaff.map((staff, idx) => {
                   const currentStatus = getStaffStatusOnDate(staff.id, selectedDate);
                   const isPres = currentStatus === 'present';
                   const isLeave = currentStatus === 'leave';
@@ -500,7 +503,7 @@ export default function StaffAttendance() {
                       className="hover:bg-emerald-50/50 transition duration-150 cursor-pointer group"
                     >
                       <td className="py-3 px-4 font-mono font-bold text-slate-900">
-                        {staff.id}
+                        {formatStaffId(staff, idx)}
                       </td>
 
                       <td className="py-3 px-4">

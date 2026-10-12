@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { useCustomerContext } from './CustomerContext';
 import { useLedgerContext } from './LedgerContext';
 import { useAnimalContext } from './AnimalContext';
@@ -68,8 +68,8 @@ export function POSProvider({ children }) {
   const [farmStock, setFarmStock] = useState(null);
   const [supplierStock, setSupplierStock] = useState(null);
 
-  // Mutable ref for live metrics state accessible across sub-hooks
-  const metricsRef = React.useRef(null);
+  // Ref to hold live metricsState so other hooks can access real-time stock without dependency cycles
+  const metricsRef = useRef(null);
 
   // 1. Modular Products Hook
   const productsState = usePOSProducts();
@@ -83,6 +83,7 @@ export function POSProvider({ children }) {
     setPosSyncVersion,
     addLedgerEntry,
     getMetrics: () => metricsRef.current,
+    getLiveStock: () => metricsRef.current?.inventoryMetrics || {},
   });
 
   // 3. Modular Cart & Checkout State Hook
@@ -110,6 +111,8 @@ export function POSProvider({ children }) {
     setSupplierStock,
     setPosSyncVersion,
     getMetrics: () => metricsRef.current,
+    getLiveStock: () => metricsRef.current?.inventoryMetrics || {},
+    resolveItemSourceAndRatios: (...args) => metricsRef.current?.resolveItemSourceAndRatios?.(...args),
   });
 
   // Connect order receipt / history setters to directOpsState
@@ -134,8 +137,16 @@ export function POSProvider({ children }) {
     posSyncVersion,
   });
 
-  // Keep metricsRef updated with live metricsState on every render
+  // Keep metricsRef updated synchronously on every render
   metricsRef.current = metricsState;
+
+  // Wire remaining stock & attribution resolution into ordersState and directOpsState
+  ordersState.remainingFarmBuffaloMilk = metricsState.remainingFarmBuffaloMilk;
+  ordersState.remainingFarmMilk = metricsState.inventoryMetrics?.rawFarmMilkStock || 0;
+  ordersState.resolveItemSourceAndRatios = metricsState.resolveItemSourceAndRatios;
+  ordersState.getLiveStock = () => metricsRef.current?.inventoryMetrics || {};
+  directOpsState.remainingFarmBuffaloMilk = metricsState.remainingFarmBuffaloMilk;
+  directOpsState.getLiveStock = () => metricsRef.current?.inventoryMetrics || {};
 
   // Real-Time Event Sync Engine & Heartbeat
   const { fetchOrders } = ordersState;

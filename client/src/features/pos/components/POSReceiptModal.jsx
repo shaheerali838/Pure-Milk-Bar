@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { X, CheckCircle2, Printer, ArrowRight, Milk, Phone, MapPin, Receipt, Check } from "lucide-react";
 import { usePOSContext } from "@/context/POSContext";
 import { useSettingsContext } from "@/context/SettingsContext";
+import { getProductIcon } from "@/features/inventory/components/AddProduct";
+import { formatStandardDateTime } from "@/utils/dateUtils";
 
 /**
  * Generates an isolated, ultra-clean thermal receipt document for 80mm/58mm POS printers & A4
@@ -423,9 +425,10 @@ export default function POSReceiptModal() {
                 {displayPhone}
               </p>
             )}
-            <p className="text-[10px] text-slate-400 font-mono mt-1">
-              {completedSaleReceipt.formattedDate || new Date().toLocaleDateString()} ·{" "}
-              {completedSaleReceipt.formattedTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <p className="text-[10px] text-slate-500 font-mono mt-0.5 font-medium">
+              {completedSaleReceipt.formattedDate
+                ? `${completedSaleReceipt.formattedDate} · ${completedSaleReceipt.formattedTime || ""}`
+                : formatStandardDateTime(completedSaleReceipt.timestamp || completedSaleReceipt.date)}
             </p>
           </div>
 

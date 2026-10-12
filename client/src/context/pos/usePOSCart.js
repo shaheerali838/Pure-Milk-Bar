@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { estimateDistanceKm } from '../../features/pos/utils/estimateDeliveryDistance.js';
+import { getPktTodayString } from '@/utils/dateUtils';
 
 export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicRiders = [] } = {}) {
   const [cart, setCart] = useState([]);
+  const [saleDate, setSaleDate] = useState(getPktTodayString());
   const [discount, setDiscount] = useState(0);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [fulfillmentMode, setFulfillmentMode] = useState('counter'); // 'counter' | 'doorstep'
@@ -278,6 +280,7 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
     setLinkedCustomerId('');
     setSelectedRiderId('');
     setCustomRiderName('');
+    setSaleDate(getPktTodayString());
     setShowFuelLog(false);
     setFuelLog({ liters: '', amount: '', distanceKm: '', notes: '' });
     setWalkinCustomerType('first_time');
@@ -408,5 +411,7 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
     handleRemoveFromCart,
     handleClearCart,
     resolveCartProductSource,
+    saleDate,
+    setSaleDate,
   };
 }

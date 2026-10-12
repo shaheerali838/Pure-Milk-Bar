@@ -7,6 +7,7 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   Layers,
+  Sparkles,
   Table,
   Clock,
   ArrowRight,

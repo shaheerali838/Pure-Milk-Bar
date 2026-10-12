@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../services/api.js';
+import { normalizeDateStr, sortByDateDesc, ensureValidDate, getPktTodayString } from '@/utils/dateUtils';
 
 const ExpenseContext = createContext();
 
@@ -42,7 +43,7 @@ export function ExpenseProvider({ children }) {
                     id: exp._id || exp.id || `EXP-${Date.now()}`,
                     category: exp.category || 'General Expense',
                     amount: Number(exp.amountRupees ?? exp.amount) || 0,
-                    date: exp.date ? String(exp.date).split('T')[0] : new Date().toISOString().split('T')[0],
+                    date: normalizeDateStr(exp.date || exp.createdAt) || getPktTodayString(),
                     description: exp.description || exp.notes || exp.title || '',
                     authorizedBy: exp.authorizedBy || 'Admin',
                     scope: exp.scope || 'FARM',
@@ -53,7 +54,7 @@ export function ExpenseProvider({ children }) {
                     animalName: exp.animalName || (exp.costAttribution && String(exp.costAttribution).startsWith('Animal: ') ? String(exp.costAttribution).replace('Animal: ', '') : ''),
                 }));
 
-                setExpenses(normalized);
+                setExpenses(sortByDateDesc(normalized, 'date'));
             }
         } catch (err) {
             console.warn('Failed to load expenses from database API:', err.message);
@@ -77,15 +78,16 @@ export function ExpenseProvider({ children }) {
 
     const addExpense = async (expense) => {
         const tempId = expense.id || `EXP-${Date.now()}`;
+        const expenseDate = ensureValidDate(expense.date);
         const newExpense = {
             ...expense,
             id: tempId,
-            date: expense.date || new Date().toISOString().split('T')[0],
+            date: expenseDate,
             amount: Number(expense.amount) || 0,
             scope: (expense.expenseEntity || 'FARM').toUpperCase(),
             expenseEntity: expense.expenseEntity || 'Farm',
         };
-        setExpenses(prev => [newExpense, ...prev]);
+        setExpenses(prev => sortByDateDesc([newExpense, ...prev], 'date'));
 
         // Map to allowed backend categories
         const allowedCats = ['UTILITIES', 'SALARIES', 'MAINTENANCE', 'FEED', 'PACKAGING', 'RENT', 'TRANSPORT', 'MISC'];

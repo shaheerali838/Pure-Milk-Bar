@@ -26,6 +26,7 @@ import { usePOSContext } from "@/context/POSContext";
 import { getProductIcon } from "@/features/inventory/components/AddProduct";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getPktTodayString } from "@/utils/dateUtils";
 import POSDeliverySection from "./POSDeliverySection";
 
 export default function POSSale() {
@@ -33,6 +34,8 @@ export default function POSSale() {
   const [isProcessingSale, setIsProcessingSale] = React.useState(false);
 
   const {
+    saleDate,
+    setSaleDate,
     cart = [],
     cartCount = 0,
     cartSubtotal = 0,
@@ -123,16 +126,18 @@ export default function POSSale() {
     const isBuff = name.includes('buffalo');
 
     if (cat.includes('dahi') || name.includes('dahi')) {
-      const liveDahi = Number(inventoryMetrics?.totalDahiStock);
+      const farmD = Number(inventoryMetrics?.rawFarmDahiStock ?? inventoryMetrics?.farmDahiStock) || 0;
+      const supD = Number(inventoryMetrics?.rawSupplierDahiStock ?? inventoryMetrics?.supplierDahiStock) || 0;
+      const liveDahi = Number((farmD + supD).toFixed(2));
       if (!isNaN(liveDahi) && liveDahi >= 0) return liveDahi;
       return Number(prod.stock) || 0;
     }
 
     if (cat.includes('milk') || name.includes('milk')) {
       if (isCow) {
-        // Strictly Farm Cow Milk only! Supplier doodh isme add nahi hoga.
+        // Combined Cow Milk Card: Farm Cow + Supplier Cow
         const farmCow = Number(inventoryMetrics?.farmCowMilkStock) || 0;
-        return farmCow;
+        return Number((farmCow).toFixed(1));
       }
       if (isBuff) {
         // Combined Buffalo Milk Card: Farm Buffalo + Supplier Buffalo
@@ -857,6 +862,32 @@ export default function POSSale() {
       )}
 
       {saleCategory === "delivery" && <POSDeliverySection />}
+      </div>
+
+      {/* Sale Date Selector (Defaults to today, allows past dates for back-dated sales) */}
+      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-slate-50 border border-slate-200/90 rounded-xl text-xs mt-1">
+        <div className="flex items-center gap-1.5 text-slate-600 font-semibold">
+          <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Sale Date:</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <input
+            type="date"
+            value={saleDate || getPktTodayString()}
+            onChange={(e) => setSaleDate && setSaleDate(e.target.value)}
+            className="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-semibold shadow-2xs focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+          />
+          {saleDate && saleDate !== getPktTodayString() && (
+            <button
+              type="button"
+              onClick={() => setSaleDate && setSaleDate(getPktTodayString())}
+              className="text-[10px] font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 px-1.5 py-0.5 rounded cursor-pointer transition"
+              title="Reset to today's date"
+            >
+              Today
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Fixed Bottom Checkout Action */}

@@ -11,10 +11,12 @@ export default function FarmCardOverflow({
   availableFarmStock = null,
   avgAnimalYield = 0, 
   dailyNetProfit = 0, 
-  todayFarmRevenue = 0,
   totalFarmExpense = 0,
+  periodFarmExpense,
   expenseCount = 0,
   timeRange = 'today',
+  dateFilter,
+  periodLabel,
 }) {
   const navigate = useNavigate();
   const posCtx = usePOSContext?.();
@@ -39,8 +41,9 @@ export default function FarmCardOverflow({
   }
 
   const farmMilkStock = effectiveStock % 1 === 0 ? effectiveStock.toFixed(0) : effectiveStock.toFixed(1);
-  const isToday = timeRange === 'today';
-  const periodLabel = isToday ? '(Today)' : timeRange === 'week' ? '(This Week)' : timeRange === 'month' ? '(This Month)' : '';
+  const activeDateFilter = dateFilter || timeRange || 'today';
+  const resolvedPeriodLabel = periodLabel || (activeDateFilter === 'today' ? 'Today' : activeDateFilter === 'week' || activeDateFilter === 'this_week' ? 'This Week' : activeDateFilter === 'month' || activeDateFilter === 'this_month' ? 'This Month' : 'All Time');
+  const effectiveExpense = periodFarmExpense !== undefined ? periodFarmExpense : totalFarmExpense;
 
   const statCards = [
     {
@@ -53,12 +56,12 @@ export default function FarmCardOverflow({
       path: "/farm/animals"
     },
     {
-      label: `Total Farm Yield ${periodLabel}`.trim(),
+      label: `Total Farm Yield (${resolvedPeriodLabel})`.trim(),
       value: `${totalFarmYield.toFixed(1)} L`,
-      sub: isToday ? "Daily Total Production" : "Production in Period",
+      sub: activeDateFilter === 'today' ? "Daily total production" : `${resolvedPeriodLabel} production`,
       icon: Droplets,
       color: "#2563eb",
-      badge: isToday ? "Today's Milk" : "Farm Milk",
+      badge: activeDateFilter === 'today' ? "Today's Milk" : "Farm Milk",
       path: "/farm/milking"
     },
     {
@@ -80,24 +83,24 @@ export default function FarmCardOverflow({
       path: "/farm/animals"
     },
     {
-      label: `Farm Expenses ${periodLabel}`.trim(),
-      value: `Rs. ${totalFarmExpense.toLocaleString()}`,
-      sub: `${expenseCount} recorded expense${expenseCount === 1 ? '' : 's'}`,
+      label: `Farm Expenses (${resolvedPeriodLabel})`.trim(),
+      value: `Rs. ${effectiveExpense.toLocaleString()}`,
+      sub: expenseCount ? `${expenseCount} recorded expenses` : `${resolvedPeriodLabel} farm expenses`,
       icon: Banknote,
       color: "#e11d48",
       badge: "Expenses",
       path: "/farm/expenses"
     },
     {
-      label: dailyNetProfit < 0 ? `Farm Net Loss ${periodLabel}`.trim() : `Farm Net Profit ${periodLabel}`.trim(),
+      label: dailyNetProfit < 0 ? `Farm Net Loss (${resolvedPeriodLabel})` : `Farm Net Profit (${resolvedPeriodLabel})`,
       value: dailyNetProfit < 0
         ? `Rs. -${Math.abs(dailyNetProfit).toLocaleString()}`
         : `Rs. ${dailyNetProfit.toLocaleString()}`,
       sub: dailyNetProfit < 0
-        ? `Loss: Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
+        ? `${resolvedPeriodLabel} expenses exceed sales by Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
         : dailyNetProfit > 0
         ? `From Rs. ${todayFarmRevenue.toLocaleString()} sales`
-        : "Breakeven / No sales yet",
+        : `${resolvedPeriodLabel}: Breakeven / No sales`,
       icon: dailyNetProfit < 0 ? TrendingDown : dailyNetProfit > 0 ? TrendingUp : Banknote,
       color: dailyNetProfit < 0 ? "#e11d48" : dailyNetProfit > 0 ? "#10b981" : "#64748b",
       badge: dailyNetProfit < 0 ? "Loss" : dailyNetProfit > 0 ? "Profit" : "Net",

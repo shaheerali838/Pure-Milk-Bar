@@ -10,12 +10,27 @@ import { Link } from "react-router-dom";
 
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { useDahiContext } from '@/context/DahiContext';
-import { getPktTodayString, getPktDaysAgoString } from '@/utils/dateUtils';
+import { getPktTodayString, getPktDaysAgoString, isDateInFilterRange } from '@/utils/dateUtils';
 
-export default function ProfitLossSnapshot() {
-  const [timeRange, setTimeRange] = useState("today"); // 'today' | 'week' | 'month' | 'custom'
-  const [customStartDate, setCustomStartDate] = useState("");
-  const [customEndDate, setCustomEndDate] = useState("");
+export default function ProfitLossSnapshot({
+  dateFilter,
+  startDate = '',
+  endDate = '',
+  timeRange,
+  customStartDate = '',
+  customEndDate = '',
+}) {
+  const [localRange, setLocalRange] = useState(dateFilter || timeRange || "today");
+  const [customStart, setCustomStart] = useState(startDate || customStartDate || '');
+  const [customEnd, setCustomEnd] = useState(endDate || customEndDate || '');
+
+  React.useEffect(() => {
+    if (dateFilter) setLocalRange(dateFilter);
+    if (startDate) setCustomStart(startDate);
+    if (endDate) setCustomEnd(endDate);
+  }, [dateFilter, startDate, endDate]);
+
+  const activeRange = localRange;
 
   const { salesHistory = [], inventoryMetrics = {} } = usePOSContext();
   const { expenses: farmExpensesList = [], totals: expenseTotals = {} } = useExpense();
@@ -34,62 +49,22 @@ export default function ProfitLossSnapshot() {
     : totalKhataReceivable;
   const pendingDuesAccounts = customerAggregates?.khataAccountsCount ?? withKhataBalCount;
 
-  const todayStr = useMemo(() => getPktTodayString(), []);
-  const weekStartStr = useMemo(() => getPktDaysAgoString(7), []);
-  const monthStartStr = useMemo(() => getPktDaysAgoString(30), []);
-
-  const parseCleanDate = (val) => {
-    if (!val) return '';
-    if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
-      return val.slice(0, 10);
-    }
-    const d = new Date(val);
-    if (!isNaN(d.getTime())) {
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-    return '';
-  };
-
   const isMatchingTimeframe = (dateVal) => {
-    const cleanDate = parseCleanDate(dateVal);
-    if (!cleanDate) return true;
-
-    if (timeRange === 'today') {
-      return cleanDate === todayStr;
-    }
-    if (timeRange === 'week') {
-      return cleanDate >= weekStartStr;
-    }
-    if (timeRange === 'month') {
-      return cleanDate >= monthStartStr;
-    }
-    if (timeRange === 'custom') {
-      if (customStartDate && cleanDate < customStartDate) return false;
-      if (customEndDate && cleanDate > customEndDate) return false;
-      return true;
-    }
-    return true;
+    return isDateInFilterRange(dateVal, activeRange, customStart, customEnd);
   };
 
   // Filtered Income & Expense Calculations
   const filteredSales = salesHistory.filter((s) => isMatchingTimeframe(s.timestamp || s.date || s.createdAt || s.formattedDate));
-  const activeSalesList = (timeRange === 'today' && filteredSales.length === 0) ? salesHistory : filteredSales;
-  const totalIncome = Math.round(activeSalesList.reduce((sum, s) => sum + (Number(s.netPayable) || Number(s.subtotal) || 0), 0));
+  const totalIncome = Math.round(filteredSales.reduce((sum, s) => sum + (Number(s.netPayable) || Number(s.subtotal) || 0), 0));
 
   const filteredIntakes = intakeLogs.filter((log) => isMatchingTimeframe(log.date));
-  const activeIntakesList = (timeRange === 'today' && filteredIntakes.length === 0) ? intakeLogs : filteredIntakes;
-  const totalProcurement = Math.round(activeIntakesList.reduce((sum, log) => sum + (Number(log.totalCost || log.totalAmount) || 0), 0));
+  const totalProcurement = Math.round(filteredIntakes.reduce((sum, log) => sum + (Number(log.totalCost || log.totalAmount) || 0), 0));
 
   const filteredFarmExp = farmExpensesList.filter((exp) => isMatchingTimeframe(exp.date));
-  const activeFarmExpList = (timeRange === 'today' && filteredFarmExp.length === 0) ? farmExpensesList : filteredFarmExp;
-  const totalFarmExp = Math.round(activeFarmExpList.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0));
+  const totalFarmExp = Math.round(filteredFarmExp.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0));
 
   const filteredShopExp = supplierExpensesList.filter((exp) => isMatchingTimeframe(exp.date));
-  const activeShopExpList = (timeRange === 'today' && filteredShopExp.length === 0) ? supplierExpensesList : filteredShopExp;
-  const totalShopExp = Math.round(activeShopExpList.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0));
+  const totalShopExp = Math.round(filteredShopExp.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0));
 
   let totalDahiDeltaCost = 0;
   processingBatches.forEach((b) => {
@@ -137,61 +112,28 @@ export default function ProfitLossSnapshot() {
           </h3>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Time Tabs */}
-          <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold self-start sm:self-auto">
-            {[
-              { id: "today", label: "Today" },
-              { id: "week", label: "This Week" },
-              { id: "month", label: "This Month" },
-              { id: "custom", label: "Custom Range" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setTimeRange(tab.id)}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  timeRange === tab.id
-                    ? "bg-white text-emerald-700 shadow-xs font-bold"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
 
-          {/* Custom Date Range Inputs */}
-          {timeRange === 'custom' && (
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs">
-              <span className="text-[11px] font-semibold text-slate-500">From:</span>
-              <input
-                type="date"
-                value={customStartDate}
-                onChange={(e) => setCustomStartDate(e.target.value)}
-                className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
-              />
-              <span className="text-[11px] font-semibold text-slate-500">To:</span>
-              <input
-                type="date"
-                value={customEndDate}
-                onChange={(e) => setCustomEndDate(e.target.value)}
-                className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
-              />
-              {(customStartDate || customEndDate) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCustomStartDate('');
-                    setCustomEndDate('');
-                  }}
-                  className="text-[10px] font-bold text-rose-600 hover:underline ml-1 cursor-pointer"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          )}
+        {/* Time Tabs */}
+        <div className="inline-flex items-center p-1 bg-slate-100 rounded-full shadow-2xs self-start sm:self-auto">
+          {[
+            { id: "today", label: "Today" },
+            { id: "this_week", label: "This Week" },
+            { id: "this_month", label: "This Month" },
+            { id: "all", label: "All Time" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setLocalRange(tab.id)}
+              className={`px-3.5 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                activeRange === tab.id
+                  ? "bg-white text-slate-900 shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 

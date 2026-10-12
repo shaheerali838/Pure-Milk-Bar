@@ -7,15 +7,21 @@ import { useLedgerContext } from '@/context/LedgerContext';
 import { useCustomerContext } from '@/context/CustomerContext';
 import { useExpense } from '@/context/ExpenseContext';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
-import { isMatchingTimeframe } from '@/utils/dateUtils';
+import { getPktTodayString, getDateRangeBoundaries, isDateInFilterRange, isMatchingTimeframe } from '@/utils/dateUtils';
 import { Link } from 'react-router-dom';
 import { KpiGridSkeleton } from '@/components/ui/skeleton';
 
 export default function TopSummaryCards({
-  timeRange = 'today',
+  dateFilter = 'today',
+  startDate = '',
+  endDate = '',
+  timeRange,
   customStartDate = '',
   customEndDate = '',
 }) {
+  const activeRange = dateFilter || timeRange || 'today';
+  const activeStart = startDate || customStartDate || '';
+  const activeEnd = endDate || customEndDate || '';
   const { animals = [], milkingLogs = [], isLoading: isAnimalsLoading } = useAnimalContext();
   const { intakeLogs = [], totals: intakeTotals = {}, isLoading: isIntakeLoading } = useIntakeContext();
   const { salesHistory = [], inventoryMetrics = {}, businessFinancialMetrics = {} } = usePOSContext();
@@ -159,6 +165,9 @@ export default function TopSummaryCards({
     intakeTotals,
   ]);
 
+  const periodData = getDateRangeBoundaries(activeRange, activeStart, activeEnd);
+  const periodLabel = periodData.label;
+
   if (isAnimalsLoading && isIntakeLoading && animals.length === 0 && intakeLogs.length === 0) {
     return <KpiGridSkeleton count={8} />;
   }
@@ -207,7 +216,7 @@ export default function TopSummaryCards({
     },
     {
       id: 'available-milk-stock',
-      title: 'Available Milk Stock (With Me)',
+      title: 'Total Milk Stock',
       value: `${totalMilkStock} L`,
       subtitle: `Farm: ${farmMilkStock}L · Sup: ${supplierMilkStock}L`,
       icon: Droplets,
@@ -217,49 +226,49 @@ export default function TopSummaryCards({
     },
     {
       id: 'total-sourced',
-      title: 'Total Milk Sourced',
+      title: activeRange === 'today' ? 'Total Milk Sourced Today' : `Milk Sourced (${periodLabel})`,
       value: `${dateMetrics.totalSourced.toFixed(1)} L`,
       subtitle: `Farm: ${dateMetrics.farmYield.toFixed(0)}L · Sup: ${dateMetrics.procuredVolume.toFixed(0)}L`,
       icon: Droplets,
-      color: '#2563eb',
-      tag: 'Inflow',
+      color: '#155dfc',
+      tag: periodLabel,
       to: '/supplier/intake',
     },
     {
       id: 'todays-milk-sold',
-      title: `Total Milk Sold${timeSuffix}`,
+      title: activeRange === 'today' ? "Total Milk Sold Today" : `Milk Sold (${periodLabel})`,
       value: `${Number(dateMetrics.milkSoldQty.toFixed(1))} L`,
       subtitle: `Farm: ${Number(dateMetrics.farmMilkSoldQty.toFixed(1))}L · Sup: ${Number(dateMetrics.supplierMilkSoldQty.toFixed(1))}L`,
       icon: Droplets,
       color: '#10b981',
-      tag: 'Sales',
+      tag: periodLabel,
       to: '/pos',
     },
     {
       id: 'todays-milk-revenue',
-      title: 'Milk Sales Revenue',
+      title: activeRange === 'today' ? "Milk Sales Revenue" : `Milk Revenue (${periodLabel})`,
       value: `Rs. ${dateMetrics.milkSalesRevenue.toLocaleString()}`,
       subtitle: `Farm: Rs. ${dateMetrics.farmMilkRevenue.toLocaleString()} · Sup: Rs. ${dateMetrics.supplierMilkRevenue.toLocaleString()}`,
       icon: Banknote,
       color: '#059669',
-      tag: 'Revenue',
+      tag: periodLabel,
       to: '/pos',
     },
     {
       id: 'todays-dahi-sold',
-      title: `Dahi Sold${timeSuffix}`,
+      title: activeRange === 'today' ? "Today's Dahi Sold" : `Dahi Sold (${periodLabel})`,
       value: `${Number(dateMetrics.dahiSoldQty.toFixed(1))} kg`,
       subtitle: `Farm + Supplier Dahi`,
       icon: Layers,
-      color: '#0284c7',
-      tag: 'Dahi',
+      color: '#009966',
+      tag: periodLabel,
       to: '/pos',
     },
     {
       id: 'todays-sales',
-      title: 'Total Business Revenue',
+      title: activeRange === 'today' ? "Total Business Revenue" : `Total Revenue (${periodLabel})`,
       value: `Rs. ${dateMetrics.salesRevenue.toLocaleString()}`,
-      subtitle: `${dateMetrics.orderCount} orders${isToday ? ' today' : ''}`,
+      subtitle: `${dateMetrics.orderCount} orders${isToday ? ' today' : ' in period'}`,
       icon: ShoppingBag,
       color: '#059669',
       tag: 'POS Sales',

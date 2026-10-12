@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { usePOSContext } from '@/context/POSContext';
 import { getProductIcon } from '@/features/inventory/components/AddProduct';
+import { isDateInFilterRange, formatStandardDate } from '@/utils/dateUtils';
 
 export default function POSWalkinHistoryModal({ isOpen, onClose, initialSearch = '' }) {
   const { salesHistory = [], setCompletedSaleReceipt } = usePOSContext();
@@ -62,35 +63,17 @@ export default function POSWalkinHistoryModal({ isOpen, onClose, initialSearch =
 
   // Filter by selected date
   const filteredByDate = useMemo(() => {
-    const todayStr = new Date().toDateString();
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toDateString();
-
-    return walkinSales.filter((sale) => {
-      const saleDateObj = new Date(sale.timestamp || sale.date);
-      const saleDateStr = saleDateObj.toDateString();
-
-      if (dateFilter === 'today') {
-        return saleDateStr === todayStr;
+    if (dateFilter === 'custom') {
+      const from = startDate || customDate;
+      const to = endDate || customDate;
+      if (from || to) {
+        return walkinSales.filter((sale) => isDateInFilterRange(sale.date || sale.timestamp, 'custom', from, to));
       }
-      if (dateFilter === 'yesterday') {
-        return saleDateStr === yesterdayStr;
-      }
-      if (dateFilter === 'week') {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return saleDateObj >= weekAgo;
-      }
-      if (dateFilter === 'custom') {
-        const sDate = saleDateObj.toISOString().split('T')[0];
-        if (startDate && sDate < startDate) return false;
-        if (endDate && sDate > endDate) return false;
-        if (customDate && !startDate && !endDate) return sDate === customDate;
-        return true;
-      }
-      return true; // 'all'
-    });
+    }
+    if (dateFilter && dateFilter !== 'all') {
+      return walkinSales.filter((sale) => isDateInFilterRange(sale.date || sale.timestamp, dateFilter));
+    }
+    return walkinSales;
   }, [walkinSales, dateFilter, customDate, startDate, endDate]);
 
   // Filter by search query
@@ -427,8 +410,9 @@ export default function POSWalkinHistoryModal({ isOpen, onClose, initialSearch =
                             <div className="font-mono font-bold text-slate-800 text-xs">
                               {sale.invoiceId}
                             </div>
-                            <div className="text-[10px] text-slate-400 mt-0.5">
-                              {formattedTime} · {sale.date || 'Today'}
+                            <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              {formattedTime} · {formatStandardDate(sale.date || sale.timestamp)}
                             </div>
                           </td>
 

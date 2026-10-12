@@ -15,6 +15,7 @@ export function usePOSDirectOperations({
   addLedgerEntry,
   getMetrics,
   remainingFarmBuffaloMilk = 0,
+  getLiveStock,
 }) {
   const [processingBatches, setProcessingBatches] = useState([]);
 
@@ -122,39 +123,41 @@ export function usePOSDirectOperations({
     const orderId = `ORD-POS-${Date.now()}`;
     const splitItems = [];
 
-    if (isCow) {
-      const lineSub = Number((qty * activeRate).toFixed(2));
-      splitItems.push({
-        id: matchedProduct?.id || 'prod-cow-milk',
-        sku: matchedProduct?.sku || 'PRD-001',
-        name: 'Cow Milk',
-        category: 'Milk',
-        quantity: qty,
-        price: activeRate,
-        subtotal: lineSub,
-        unit: 'per liter',
-        source: 'Farm',
-        farmRatio: 1,
-        supplierRatio: 0,
-        farmRevenue: lineSub,
-        supplierRevenue: 0,
-        farmQuantity: qty,
-        supplierQuantity: 0,
-      });
-    } else {
-      const liveMetrics = typeof getMetrics === 'function' ? getMetrics() : {};
-      const availableFarmBuff = Math.max(0, Number(liveMetrics?.remainingFarmBuffaloMilk ?? liveMetrics?.inventoryMetrics?.rawFarmBuffaloMilkStock ?? remainingFarmBuffaloMilk) || 0);
-      const farmQty = Math.max(0, Math.min(availableFarmBuff, qty));
-      const supplierQty = Math.max(0, Number((qty - farmQty).toFixed(2)));
+    const liveStock = typeof getLiveStock === 'function'
+      ? getLiveStock()
+      : (typeof getMetrics === 'function' ? (getMetrics()?.inventoryMetrics || getMetrics() || {}) : {});
+    const availableFarmBuff = Math.max(0, Number(liveStock.rawFarmBuffaloMilkStock ?? liveStock.farmBuffaloMilkStock ?? remainingFarmBuffaloMilk ?? 0));
+    const availableFarmCow = Math.max(0, Number(liveStock.rawFarmCowMilkStock ?? liveStock.farmCowMilkStock ?? 0));
 
-      if (farmQty > 0) {
-        const farmSub = Number((farmQty * activeRate).toFixed(2));
+    if (isCow) {
+      let remainingToDeduct = qty;
+      let farmCowQty = 0;
+      let supplierCowQty = 0;
+
+      if (availableFarmCow > 0) {
+        if (remainingToDeduct <= availableFarmCow) {
+          farmCowQty = remainingToDeduct;
+          remainingToDeduct = 0;
+        } else {
+          farmCowQty = availableFarmCow;
+          remainingToDeduct = Number((remainingToDeduct - availableFarmCow).toFixed(2));
+        }
+      }
+
+      if (remainingToDeduct > 0) {
+        supplierCowQty = remainingToDeduct;
+        remainingToDeduct = 0;
+      }
+
+      if (farmCowQty > 0) {
+        const farmSub = Number((farmCowQty * activeRate).toFixed(2));
         splitItems.push({
-          id: matchedProduct?.id || 'prod-buffalo-milk',
-          sku: matchedProduct?.sku || 'PRD-002',
-          name: supplierQty > 0 ? 'Buffalo Milk (Farm Share)' : (matchedProduct?.name || 'Buffalo Milk'),
+          id: matchedProduct?.id || 'prod-cow-milk',
+          sku: matchedProduct?.sku || 'PRD-001',
+          name: supplierCowQty > 0 ? 'Cow Milk (Farm Share)' : (matchedProduct?.name || 'Cow Milk'),
+          milkType: 'cow',
           category: 'Milk',
-          quantity: Number(farmQty.toFixed(2)),
+          quantity: Number(farmCowQty.toFixed(2)),
           price: activeRate,
           subtotal: farmSub,
           unit: 'per liter',
@@ -163,19 +166,20 @@ export function usePOSDirectOperations({
           supplierRatio: 0,
           farmRevenue: farmSub,
           supplierRevenue: 0,
-          farmQuantity: Number(farmQty.toFixed(2)),
+          farmQuantity: Number(farmCowQty.toFixed(2)),
           supplierQuantity: 0,
         });
       }
 
-      if (supplierQty > 0) {
-        const supSub = Number((supplierQty * activeRate).toFixed(2));
+      if (supplierCowQty > 0) {
+        const supSub = Number((supplierCowQty * activeRate).toFixed(2));
         splitItems.push({
-          id: matchedProduct?.id || 'prod-buffalo-milk',
-          sku: matchedProduct?.sku || 'PRD-002',
-          name: farmQty > 0 ? 'Buffalo Milk (Supplier Share)' : (matchedProduct?.name || 'Buffalo Milk'),
+          id: matchedProduct?.id || 'prod-cow-milk',
+          sku: matchedProduct?.sku || 'PRD-001',
+          name: farmCowQty > 0 ? 'Cow Milk (Supplier Share)' : (matchedProduct?.name || 'Cow Milk'),
+          milkType: 'cow',
           category: 'Milk',
-          quantity: Number(supplierQty.toFixed(2)),
+          quantity: Number(supplierCowQty.toFixed(2)),
           price: activeRate,
           subtotal: supSub,
           unit: 'per liter',
@@ -185,7 +189,70 @@ export function usePOSDirectOperations({
           farmRevenue: 0,
           supplierRevenue: supSub,
           farmQuantity: 0,
-          supplierQuantity: Number(supplierQty.toFixed(2)),
+          supplierQuantity: Number(supplierCowQty.toFixed(2)),
+        });
+      }
+    } else {
+      let remainingToDeduct = qty;
+      let farmBuffQty = 0;
+      let supplierBuffQty = 0;
+
+      if (availableFarmBuff > 0) {
+        if (remainingToDeduct <= availableFarmBuff) {
+          farmBuffQty = remainingToDeduct;
+          remainingToDeduct = 0;
+        } else {
+          farmBuffQty = availableFarmBuff;
+          remainingToDeduct = Number((remainingToDeduct - availableFarmBuff).toFixed(2));
+        }
+      }
+
+      if (remainingToDeduct > 0) {
+        supplierBuffQty = remainingToDeduct;
+        remainingToDeduct = 0;
+      }
+
+      if (farmBuffQty > 0) {
+        const farmSub = Number((farmBuffQty * activeRate).toFixed(2));
+        splitItems.push({
+          id: matchedProduct?.id || 'prod-buffalo-milk',
+          sku: matchedProduct?.sku || 'PRD-002',
+          name: supplierBuffQty > 0 ? 'Buffalo Milk (Farm Share)' : (matchedProduct?.name || 'Buffalo Milk'),
+          milkType: 'buffalo',
+          category: 'Milk',
+          quantity: Number(farmBuffQty.toFixed(2)),
+          price: activeRate,
+          subtotal: farmSub,
+          unit: 'per liter',
+          source: 'Farm',
+          farmRatio: 1,
+          supplierRatio: 0,
+          farmRevenue: farmSub,
+          supplierRevenue: 0,
+          farmQuantity: Number(farmBuffQty.toFixed(2)),
+          supplierQuantity: 0,
+        });
+      }
+
+      if (supplierBuffQty > 0) {
+        const supSub = Number((supplierBuffQty * activeRate).toFixed(2));
+        splitItems.push({
+          id: matchedProduct?.id || 'prod-buffalo-milk',
+          sku: matchedProduct?.sku || 'PRD-002',
+          name: farmBuffQty > 0 ? 'Buffalo Milk (Supplier Share)' : (matchedProduct?.name || 'Buffalo Milk'),
+          milkType: 'buffalo',
+          category: 'Milk',
+          quantity: Number(supplierBuffQty.toFixed(2)),
+          price: activeRate,
+          subtotal: supSub,
+          unit: 'per liter',
+          source: 'Supplier',
+          farmRatio: 0,
+          supplierRatio: 1,
+          farmRevenue: 0,
+          supplierRevenue: supSub,
+          farmQuantity: 0,
+          supplierQuantity: Number(supplierBuffQty.toFixed(2)),
         });
       }
     }
@@ -337,6 +404,12 @@ export function usePOSDirectOperations({
       const resolvedSupplierCost = Number(extraData.supplierMilkCost) || (supPortion * (normSource === 'Supplier Milk' ? resolvedUnitCost : 180));
       const resolvedMilkUsedCost = Number(extraData.dahiProductionCost || extraData.milkUsedCost || extraData.totalMilkCost) || (resolvedFarmCost + resolvedSupplierCost);
 
+      const totalMilkUsed = farmPortion + supPortion || qty;
+      const farmRatio = totalMilkUsed > 0 ? farmPortion / totalMilkUsed : 0.5;
+      const supplierRatio = totalMilkUsed > 0 ? supPortion / totalMilkUsed : 0.5;
+      const farmDahiAdded = Number((outputQty * farmRatio).toFixed(3));
+      const supplierDahiAdded = Number((outputQty * supplierRatio).toFixed(3));
+
       const newBatch = {
         id: batchId,
         _id: batchId,
@@ -349,8 +422,10 @@ export function usePOSDirectOperations({
         milkUsedVal: qty,
         farmMilkUsed: farmPortion,
         supplierMilkUsed: supPortion,
-        farmRatio: qty > 0 ? Number((farmPortion / qty).toFixed(4)) : 0.5,
-        supplierRatio: qty > 0 ? Number((supPortion / qty).toFixed(4)) : 0.5,
+        farmRatio: Number(farmRatio.toFixed(4)),
+        supplierRatio: Number(supplierRatio.toFixed(4)),
+        farmDahiAdded,
+        supplierDahiAdded,
         unitCost: resolvedUnitCost,
         farmMilkCost: resolvedFarmCost,
         supplierMilkCost: resolvedSupplierCost,
@@ -381,6 +456,8 @@ export function usePOSDirectOperations({
         farmMilkUsed: farmPortion,
         supplierMilkUsed: supPortion,
         outputQuantity: outputQty,
+        farmDahiAdded,
+        supplierDahiAdded,
         batch: newBatch,
       });
 
@@ -395,6 +472,8 @@ export function usePOSDirectOperations({
           supplierMilkUsed: supPortion,
           farmRatio: newBatch.farmRatio,
           supplierRatio: newBatch.supplierRatio,
+          farmDahiAdded: newBatch.farmDahiAdded,
+          supplierDahiAdded: newBatch.supplierDahiAdded,
           unitCost: resolvedUnitCost,
           farmMilkCost: resolvedFarmCost,
           supplierMilkCost: resolvedSupplierCost,

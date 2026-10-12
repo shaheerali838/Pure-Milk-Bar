@@ -12,6 +12,8 @@ import { useIntakeContext } from '@/context/IntakeContext';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { useDahiContext } from '@/context/DahiContext';
 import { useLedgerContext } from '@/context/LedgerContext';
+import { getDateRangeBoundaries, isDateInFilterRange, formatStandardDate, getPktTodayString } from '@/utils/dateUtils';
+import { Calendar } from 'lucide-react';
 
 export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelectRiderFinance, onSelectFarmReport, onSelectSupplierReport, onSelectDahiReport, onSelectPos }) {
   const {
@@ -42,10 +44,31 @@ export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelect
   const { expenses: supplierExpensesList = [] } = useSourcExpenseContext() || {};
   const { batches = [] } = useDahiContext() || {};
 
-  const totalSalariesPaid = salaries.reduce((sum, s) => sum + (Number(s.paidAmount) || 0), 0);
+  // Date Filter State: 'today' (default) | 'week' | 'month' | 'all' | 'custom'
+  const [dateFilter, setDateFilter] = React.useState('today');
+  const [customStart, setCustomStart] = React.useState('');
+  const [customEnd, setCustomEnd] = React.useState('');
 
-  // Live Farm Financial Metrics
-  const activeFarmSales = farmSalesHistory.length > 0 ? farmSalesHistory : salesHistory;
+  const { detailedLabel: periodLabel } = React.useMemo(() => {
+    return getDateRangeBoundaries(dateFilter, customStart, customEnd);
+  }, [dateFilter, customStart, customEnd]);
+
+  // Filtered Salaries
+  const filteredSalaries = React.useMemo(() => {
+    return salaries.filter((s) =>
+      isDateInFilterRange(s.paymentDate || s.date || s.createdAt, dateFilter, customStart, customEnd)
+    );
+  }, [salaries, dateFilter, customStart, customEnd]);
+  const totalSalariesPaid = filteredSalaries.reduce((sum, s) => sum + (Number(s.paidAmount) || 0), 0);
+
+  // Live Farm Financial Metrics filtered strictly by selected date range
+  const activeFarmSales = React.useMemo(() => {
+    const list = farmSalesHistory.length > 0 ? farmSalesHistory : salesHistory;
+    return list.filter((s) =>
+      isDateInFilterRange(s.date || s.timestamp || s.createdAt, dateFilter, customStart, customEnd)
+    );
+  }, [farmSalesHistory, salesHistory, dateFilter, customStart, customEnd]);
+
   const farmSalesRev = activeFarmSales.reduce((acc, sale) => {
     return acc + (sale.items || []).reduce((iAcc, item) => {
       const src = (item.source || '').toLowerCase();
@@ -53,11 +76,23 @@ export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelect
       return iAcc + (Number(item.subtotal || item.effectiveRevenue) || 0);
     }, 0);
   }, 0);
-  const farmExpensesTotal = farmExpensesList.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+  const filteredFarmExpenses = React.useMemo(() => {
+    return farmExpensesList.filter((e) =>
+      isDateInFilterRange(e.date || e.createdAt, dateFilter, customStart, customEnd)
+    );
+  }, [farmExpensesList, dateFilter, customStart, customEnd]);
+  const farmExpensesTotal = filteredFarmExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   const farmNetProfit = farmSalesRev - farmExpensesTotal;
 
-  // Live Supplier Financial Metrics
-  const activeSupplierSales = supplierSalesHistory.length > 0 ? supplierSalesHistory : salesHistory;
+  // Live Supplier Financial Metrics filtered strictly by selected date range
+  const activeSupplierSales = React.useMemo(() => {
+    const list = supplierSalesHistory.length > 0 ? supplierSalesHistory : salesHistory;
+    return list.filter((s) =>
+      isDateInFilterRange(s.date || s.timestamp || s.createdAt, dateFilter, customStart, customEnd)
+    );
+  }, [supplierSalesHistory, salesHistory, dateFilter, customStart, customEnd]);
+
   const supplierSalesRev = activeSupplierSales.reduce((acc, sale) => {
     return acc + (sale.items || []).reduce((iAcc, item) => {
       const src = (item.source || '').toLowerCase();
@@ -65,17 +100,42 @@ export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelect
       return iAcc + (Number(item.subtotal || item.effectiveRevenue) || 0);
     }, 0);
   }, 0);
-  const supplierPurchasesTotal = intakeLogs.reduce((sum, l) => sum + (Number(l.totalCost) || 0), 0);
-  const supplierExpensesTotal = supplierExpensesList.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+  const filteredIntakeLogs = React.useMemo(() => {
+    return intakeLogs.filter((l) =>
+      isDateInFilterRange(l.date || l.createdAt, dateFilter, customStart, customEnd)
+    );
+  }, [intakeLogs, dateFilter, customStart, customEnd]);
+  const supplierPurchasesTotal = filteredIntakeLogs.reduce((sum, l) => sum + (Number(l.totalCost) || 0), 0);
+
+  const filteredSupplierExpenses = React.useMemo(() => {
+    return supplierExpensesList.filter((e) =>
+      isDateInFilterRange(e.date || e.createdAt, dateFilter, customStart, customEnd)
+    );
+  }, [supplierExpensesList, dateFilter, customStart, customEnd]);
+  const supplierExpensesTotal = filteredSupplierExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   const supplierNetProfit = supplierSalesRev - supplierPurchasesTotal - supplierExpensesTotal;
 
-  // Live Dahi Financial Metrics
+  // Live Dahi Financial Metrics filtered by date
+  const filteredBatches = React.useMemo(() => {
+    return batches.filter((b) =>
+      isDateInFilterRange(b.date || b.createdAt, dateFilter, customStart, customEnd)
+    );
+  }, [batches, dateFilter, customStart, customEnd]);
+
   let dahiOutputKg = 0;
-  batches.forEach((b) => {
+  filteredBatches.forEach((b) => {
     dahiOutputKg += Number(b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
   });
+
+  const filteredAllSales = React.useMemo(() => {
+    return salesHistory.filter((s) =>
+      isDateInFilterRange(s.date || s.timestamp || s.createdAt, dateFilter, customStart, customEnd)
+    );
+  }, [salesHistory, dateFilter, customStart, customEnd]);
+
   let dahiSalesRev = 0;
-  salesHistory.forEach((sale) => {
+  filteredAllSales.forEach((sale) => {
     (sale.items || []).forEach((item) => {
       const name = (item.name || '').toLowerCase();
       const cat = (item.category || '').toLowerCase();
@@ -88,8 +148,8 @@ export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelect
 
   return (
     <div className="space-y-4">
-      {/* Sleek Minimal Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
+      {/* Sleek Minimal Header with Date Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
         <div>
           <h1 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <Wallet className="w-5 h-5 text-emerald-600" />
@@ -99,14 +159,63 @@ export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelect
             Manage customer accounts, rider logistics, and segregated Farm, Supplier &amp; Dahi reports.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onSelectPos}
-          className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-200/60 self-start sm:self-center cursor-pointer transition-colors"
-        >
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-          <span>POS Sales &amp; Ledger</span>
-        </button>
+
+        {/* Date Filter Pills */}
+        <div className="flex items-center gap-1.5 flex-wrap self-start sm:self-center">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold text-slate-600">
+            {[
+              { id: 'today', label: 'Today' },
+              { id: 'this_week', label: 'This Week' },
+              { id: 'this_month', label: 'This Month' },
+              { id: 'all', label: 'All Time' },
+              { id: 'custom', label: 'Custom' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setDateFilter(tab.id)}
+                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                  dateFilter === tab.id
+                    ? 'bg-white text-emerald-700 shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {dateFilter === 'custom' && (
+            <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-2 py-1 text-xs">
+              <input
+                type="date"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                className="text-[11px] outline-none cursor-pointer"
+              />
+              <span className="text-slate-400">to</span>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                className="text-[11px] outline-none cursor-pointer"
+              />
+            </div>
+          )}
+
+          <Badge variant="outline" className="text-[10px] font-semibold border-slate-200 bg-slate-50 text-slate-600">
+            {periodLabel}
+          </Badge>
+
+          <button
+            type="button"
+            onClick={onSelectPos}
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-200/60 cursor-pointer transition-colors"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>POS Sales &amp; Ledger</span>
+          </button>
+        </div>
       </div>
 
       {/* Grid: 5 Interactive Report Cards */}
