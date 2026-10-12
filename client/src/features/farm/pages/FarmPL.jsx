@@ -19,8 +19,11 @@ import { usePOSContext } from '@/context/POSContext';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useStaffContext } from '@/context/StaffContext';
+import { useDailyClose } from '@/context/DailyCloseContext';
 import { exportMultiSectionCSV } from '@/utils/csvExport';
-import { getPktTodayString } from '@/utils/dateUtils';
+import { getPktTodayString, normalizeDateStr, getActiveBusinessDate } from '@/utils/dateUtils';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 
 import PLCardOverflow from '../components/F&LReport/PLCardOverflow';
 import SellingRevenue from '../components/F&LReport/SellingRevenue';
@@ -58,6 +61,8 @@ export default function FarmPL() {
   const { animals = [] } = useAnimalContext();
   const { deliveries = [] } = useDeliveryContext();
   const { salaryPayments = [], deleteSalaryPayment } = useStaffContext();
+  const { activeDate } = useDailyClose() || {};
+  const effectiveToday = activeDate || getActiveBusinessDate();
 
   const handleDeleteSalaryPayment = async (paymentId) => {
     try {
@@ -68,24 +73,41 @@ export default function FarmPL() {
     if (fetchExpenses) fetchExpenses();
   };
 
-  // 2. Filter & Date State
-  const [dateFilterMode, setDateFilterMode] = useState('today'); // 'today' (default) | 'this_month' | 'all' | 'custom'
-  const [selectedDate, setSelectedDate] = useState('');
+  // 2. Filter & Date State strictly initialized to Today
+  const { globalDate, setGlobalDate } = useGlobalDate();
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [dateFilterMode, setDateFilterMode] = useState('today');
+
+  React.useEffect(() => {
+    if (globalDate) {
+      setSelectedDate(globalDate);
+      if (globalDate === new Date().toISOString().split('T')[0]) {
+        setDateFilterMode('today');
+      } else {
+        setDateFilterMode('custom');
+      }
+    }
+  }, [globalDate]);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    setGlobalDate(newDate);
+    if (newDate === new Date().toISOString().split('T')[0]) {
+      setDateFilterMode('today');
+    } else {
+      setDateFilterMode('custom');
+    }
+  };
 
   // Slide-over state: activeCardDrawer ('raw_milk', 'value_added', etc.) or selectedProduct (for table row clicks)
   const [activeCardDrawer, setActiveCardDrawer] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   const todayLocal = useMemo(() => {
-    try {
-      return getPktTodayString();
-    } catch {
-      const now = new Date();
-      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    }
-  }, []);
-  const todayISO = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const currentMonthISO = useMemo(() => (todayLocal || todayISO).slice(0, 7), [todayLocal, todayISO]); // e.g. YYYY-MM
+    return selectedDate;
+  }, [selectedDate]);
+  const todayISO = useMemo(() => selectedDate, [selectedDate]);
+  const currentMonthISO = useMemo(() => selectedDate.slice(0, 7), [selectedDate]); // e.g. YYYY-MM
   const previousMonthISO = useMemo(() => {
     const d = new Date();
     d.setMonth(d.getMonth() - 1);
@@ -100,8 +122,8 @@ export default function FarmPL() {
 
   const isMatchToday = (dateStr) => {
     if (!dateStr) return false;
-    const clean = String(dateStr).trim().slice(0, 10);
-    return clean === todayLocal || clean === todayISO;
+    const clean = normalizeDateStr(dateStr);
+    return clean === selectedDate;
   };
 
   const { mondayISO, sundayISO } = useMemo(() => {
@@ -846,6 +868,14 @@ export default function FarmPL() {
 
   return (
     <div className="flex flex-col gap-2 pb-16 animate-in fade-in duration-200">
+      {/* DateHeader at Top of Farm P&L */}
+      <DateHeader
+        date={selectedDate}
+        setDate={handleDateChange}
+        title="Farm Profit & Loss (P&L)"
+        subtitle={`Realized farm sales, herd feed costs, wages, and net profit strictly for ${selectedDate}`}
+      />
+
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
         <div>
           <div className="flex items-center gap-2">

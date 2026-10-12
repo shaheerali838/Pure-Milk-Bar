@@ -112,14 +112,11 @@ export default function MilkProductionAndFlow() {
 
   // 2. TODAY'S MILK FLOW STEP-BY-STEP CALCULATION
   const totalFarmMilk = Number(inventoryMetrics.totalFarmYield) || 0;
-  const totalProcured =
-    intakeTotals.totalProcuredVolume !== undefined
-      ? Number(intakeTotals.totalProcuredVolume)
-      : intakeLogs.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
+  const totalProcured = Number(inventoryMetrics.todaySupplierIntake ?? inventoryMetrics.totalSupplierIntake) || 0;
 
-  const openingStock = 0; // Cold room reserve base
+  const openingStock = Number(inventoryMetrics.openingStock?.farm || 0) + Number(inventoryMetrics.openingStock?.supplier || 0);
   const posMilkSold = parseFloat(inventoryMetrics.milkSold) || 0;
-  const convertedToDahi = Math.round((parseFloat(inventoryMetrics.dahiSold) || 0) * 1.1);
+  const convertedToDahi = Math.round(Number(inventoryMetrics.totalFarmMilkConvertedToDahi || 0));
   const estimatedWastage = 0; // Chiller loss / sampling
 
   // Math: Opening + Farm + Procurement - POS - Dahi - Wastage

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { MapPin, Users, Printer } from 'lucide-react';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
@@ -9,10 +9,33 @@ import FleetAndStaff from '../components/FleetAndStaff';
 import DeliveryDetailView from '../components/DeliveryDetailView';
 import RegisterStaffView from '../components/RegisterStaffView';
 import StaffDetailView from '../components/StaffDetailView';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 
 export default function Delivery() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { globalDate, setGlobalDate, setToday } = useGlobalDate();
+
+  // Strict "Starts with Today" initialization
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    setSelectedDate(today);
+    if (typeof setToday === 'function') {
+      setToday();
+    }
+  }, [location.pathname]);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    if (typeof setGlobalDate === 'function') {
+      setGlobalDate(newDate);
+    }
+  };
+
   const { deliveries = [] } = useDeliveryContext();
   const { staffList = [] } = useDeliveryStaffContext();
 
@@ -120,6 +143,9 @@ export default function Delivery() {
 
   return (
     <div className="space-y-2">
+      {/* Global Date Header with Today Default */}
+      <DateHeader date={selectedDate} setDate={handleDateChange} />
+
       <div className="flex flex-wrap items-center justify-between gap-2 pb-0.5 no-print">
         <div>
           <h3 className="font-display text-lg font-bold text-slate-800 leading-tight">

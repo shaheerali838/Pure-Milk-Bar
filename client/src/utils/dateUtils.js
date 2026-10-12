@@ -6,35 +6,70 @@
 export const PKT_TIMEZONE = 'Asia/Karachi';
 
 /**
+ * Returns YYYY-MM-DD exactly in local timezone.
+ * Never uses toISOString() which shifts to UTC date.
+ */
+export const getLocalDate = (d = new Date()) => {
+  try {
+    const dateObj = d instanceof Date ? d : new Date(d);
+    if (isNaN(dateObj.getTime())) return new Date().toLocaleDateString('en-CA');
+    return dateObj.toLocaleDateString('en-CA');
+  } catch {
+    return new Date().toLocaleDateString('en-CA');
+  }
+};
+
+/**
  * Get current business date string in PKT timezone (YYYY-MM-DD)
  * Never relies on toISOString() which returns UTC date.
  * @returns {string} e.g. "2026-09-28"
  */
 export function getPktTodayString() {
-  const now = new Date();
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: PKT_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  return formatter.format(now);
+  return getLocalDate();
 }
 
 /**
- * Get date string N days ago in PKT timezone
+ * Returns today's ISO date string (YYYY-MM-DD) strictly using local timezone
+ */
+export function getTodayDateStr() {
+  return getLocalDate();
+}
+
+
+/**
+ * Get active business date string (YYYY-MM-DD) from persisted DailyClose state.
+ * Falls back to current local calendar date if not set or invalid.
+ * @returns {string} e.g. "2026-10-10"
+ */
+export function getActiveBusinessDate() {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('pure_milk_bar_daily_closing_state');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.activeDate && /^\d{4}-\d{2}-\d{2}$/.test(parsed.activeDate)) {
+          const today = getLocalDate();
+          if (parsed.activeDate < today && !parsed.isDayClosed) {
+            return today;
+          }
+          return parsed.activeDate;
+        }
+      }
+    } catch {
+      // Ignore parse failure and fall back
+    }
+  }
+  return getLocalDate();
+}
+
+/**
+ * Get date string N days ago in local timezone
  * @param {number} days
  * @returns {string} e.g. "2026-09-21"
  */
 export function getPktDaysAgoString(days = 7) {
   const d = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: PKT_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  return formatter.format(d);
+  return getLocalDate(d);
 }
 
 /**
@@ -70,29 +105,41 @@ const MONTH_NAME_MAP = {
 };
 
 /**
- * Normalizes any date value (ISO string, timestamp, Date instance, or human "Thu Oct 01") into YYYY-MM-DD
+ * Normalizes any date value (ISO string, timestamp, Date instance, or human "Thu Oct 01") into local YYYY-MM-DD
  */
 export function normalizeDateStr(raw) {
   if (!raw) return '';
   if (typeof raw === 'string') {
     const trimmed = raw.trim();
-    if (trimmed.includes('T')) return trimmed.split('T')[0];
-    if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return trimmed.slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+    // If string like "Mon Oct 12" has no 4-digit year, match month & day and use current business year
+    const hasFourDigitYear = /\b(19|20)\d{2}\b/.test(trimmed);
     const match = trimmed.match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2})/i);
-    if (match) {
+    if (match && !hasFourDigitYear) {
       const month = MONTH_NAME_MAP[match[1].toLowerCase()];
       const day = match[2].padStart(2, '0');
       const year = new Date().getFullYear();
       return `${year}-${month}-${day}`;
     }
+
+    const d = new Date(trimmed);
+    if (!isNaN(d.getTime())) {
+      if (d.getFullYear() < 2020 && !hasFourDigitYear) {
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const year = new Date().getFullYear();
+        return `${year}-${month}-${day}`;
+      }
+      return getLocalDate(d);
+    }
+  } else if (raw instanceof Date) {
+    return getLocalDate(raw);
   }
   try {
     const d = new Date(raw);
     if (!isNaN(d.getTime())) {
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+      return getLocalDate(d);
     }
   } catch {}
   return String(raw).slice(0, 10);
@@ -157,20 +204,20 @@ export function sortByDateDesc(array = [], dateField = 'date') {
 }
 
 /**
- * Ensures payload always has a valid date string (defaults to today in PKT)
+ * Ensures payload always has a valid date string (defaults to local date)
  */
 export function ensureValidDate(dateVal) {
-  if (!dateVal) return getPktTodayString();
+  if (!dateVal) return getLocalDate();
   const normalized = normalizeDateStr(dateVal);
-  return normalized || getPktTodayString();
+  return normalized || getLocalDate();
 }
 
 /**
  * Returns boundaries { start: 'YYYY-MM-DD', end: 'YYYY-MM-DD', label: string }
- * for a given dateFilter mode: 'today' | 'this_week' | 'this_month' | 'custom' | 'all'
+ * for a given dateFilter mode: 'today' | 'yesterday' | 'this_week' | 'this_month' | 'custom' | 'all'
  */
-export function getDateRangeBoundaries(dateFilter = 'today', customStart = '', customEnd = '') {
-  const todayStr = getPktTodayString();
+export function getDateRangeBoundaries(dateFilter = 'today', customStart = '', customEnd = '', activeBusinessDate = null) {
+  const todayStr = getLocalDate();
   const now = new Date();
 
   if (dateFilter === 'today') {
@@ -182,6 +229,18 @@ export function getDateRangeBoundaries(dateFilter = 'today', customStart = '', c
     };
   }
 
+  if (dateFilter === 'yesterday') {
+    const y = new Date();
+    y.setDate(y.getDate() - 1);
+    const yesterdayStr = getLocalDate(y);
+    return {
+      start: yesterdayStr,
+      end: yesterdayStr,
+      label: 'Yesterday',
+      detailedLabel: `Yesterday (${yesterdayStr})`,
+    };
+  }
+
   if (dateFilter === 'this_week' || dateFilter === 'week') {
     const day = now.getDay(); // 0 = Sun, 1 = Mon ...
     const diffToMonday = (day === 0 ? -6 : 1) - day;
@@ -190,9 +249,8 @@ export function getDateRangeBoundaries(dateFilter = 'today', customStart = '', c
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
 
-    const format = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const start = format(monday);
-    const end = format(sunday);
+    const start = getLocalDate(monday);
+    const end = getLocalDate(sunday);
     return {
       start,
       end,
@@ -204,9 +262,8 @@ export function getDateRangeBoundaries(dateFilter = 'today', customStart = '', c
   if (dateFilter === 'this_month' || dateFilter === 'month') {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const format = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const start = format(monthStart);
-    const end = format(monthEnd);
+    const start = getLocalDate(monthStart);
+    const end = getLocalDate(monthEnd);
     return {
       start,
       end,
@@ -241,12 +298,22 @@ export function getDateRangeBoundaries(dateFilter = 'today', customStart = '', c
 /**
  * Checks if a given raw date falls within the selected date filter range
  */
-export function isDateInFilterRange(rawDate, dateFilter = 'today', customStart = '', customEnd = '') {
+export function isDateInFilterRange(rawDate, dateFilter = 'today', customStart = '', customEnd = '', activeBusinessDate = null) {
   if (dateFilter === 'all') return true;
   const dStr = normalizeDateStr(rawDate);
   if (!dStr) return false;
 
-  const { start, end } = getDateRangeBoundaries(dateFilter, customStart, customEnd);
+  if (dateFilter === 'today') {
+    return dStr === getLocalDate();
+  }
+
+  if (dateFilter === 'yesterday') {
+    const y = new Date();
+    y.setDate(y.getDate() - 1);
+    return dStr === getLocalDate(y);
+  }
+
+  const { start, end } = getDateRangeBoundaries(dateFilter, customStart, customEnd, activeBusinessDate);
 
   if (start && end) {
     return dStr >= start && dStr <= end;

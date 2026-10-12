@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Plus, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSupplierContext } from '@/context/SupplierContext';
@@ -6,8 +6,29 @@ import SupplierCardOverflow from '../components/supplierDirectory/SupplierCardOv
 import SupplierTable from '../components/supplierDirectory/SupplierTable';
 import AddSupplier from '../components/supplierDirectory/AddSupplier';
 import SupplierDetail from '../components/supplierDirectory/SupplierDetail';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 
 export default function SupplierDirectory() {
+  const { globalDate, setGlobalDate, setToday } = useGlobalDate();
+
+  // Strict "Starts with Today" initialization
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    setSelectedDate(today);
+    if (typeof setToday === 'function') {
+      setToday();
+    }
+  }, []);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    if (typeof setGlobalDate === 'function') {
+      setGlobalDate(newDate);
+    }
+  };
 
   // Active view: 'list' | 'form' | 'detail'
   const [viewMode, setViewMode] = useState('list');
@@ -62,6 +83,9 @@ export default function SupplierDirectory() {
   // 3. MAIN DIRECTORY: Summary Cards & Supplier Table View
   return (
     <div className="space-y-2 animate-in fade-in duration-150">
+      {/* Global Date Header */}
+      <DateHeader date={selectedDate} setDate={handleDateChange} />
+
       {/* 1. Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>

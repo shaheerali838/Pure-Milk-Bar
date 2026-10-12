@@ -52,7 +52,7 @@ class MilkingYieldLogService {
 
     // 2. Resolve operatorId safely (must be valid ObjectId or Admin user)
     let resolvedOperatorId = null;
-    const rawOp = operatorId || data.operatorId;
+    const rawOp = operatorId || data.operatorId || data.milkingStaff;
     if (rawOp && mongoose.Types.ObjectId.isValid(rawOp)) {
       resolvedOperatorId = new mongoose.Types.ObjectId(rawOp);
     } else {
@@ -89,16 +89,40 @@ class MilkingYieldLogService {
     );
 
     // 5. Update/append intake record in intakeHistory while preserving animal's purchase benchmark yields
-    const dateStr = data.date
-      ? (typeof data.date === 'string' && data.date.includes('T') ? data.date.split('T')[0] : String(data.date).slice(0, 10))
-      : logDate.toISOString().split('T')[0];
+    let dateStr = '';
+    if (typeof data.date === 'string') {
+      const trimmed = data.date.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        dateStr = trimmed;
+      } else if (trimmed.includes('T')) {
+        dateStr = trimmed.split('T')[0];
+      } else {
+        const d = new Date(trimmed);
+        dateStr = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : trimmed.slice(0, 10);
+      }
+    } else if (data.date instanceof Date) {
+      dateStr = data.date.toISOString().split('T')[0];
+    } else {
+      dateStr = logDate.toISOString().split('T')[0];
+    }
 
     const normShiftName = shift === 'EVENING' ? 'Evening' : 'Morning';
 
     // Check if an entry already exists in animal's intakeHistory for this date & shift
     const existingHistory = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : [];
     const existingIndex = existingHistory.findIndex((h) => {
-      const hDate = h.date ? (typeof h.date === 'string' && h.date.includes('T') ? h.date.split('T')[0] : String(h.date).slice(0, 10)) : '';
+      let hDate = '';
+      if (typeof h.date === 'string') {
+        const ht = h.date.trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(ht)) hDate = ht;
+        else if (ht.includes('T')) hDate = ht.split('T')[0];
+        else {
+          const hd = new Date(ht);
+          hDate = !isNaN(hd.getTime()) ? hd.toISOString().split('T')[0] : ht.slice(0, 10);
+        }
+      } else if (h.date instanceof Date) {
+        hDate = h.date.toISOString().split('T')[0];
+      }
       const hShift = (h.shift || 'Morning').toLowerCase();
       return hDate === dateStr && hShift === normShiftName.toLowerCase();
     });

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   FileText,
   Calendar,
@@ -27,13 +27,12 @@ import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
+import { useDailyClose } from '@/context/DailyCloseContext';
 import { exportMultiSectionCSV } from '@/utils/csvExport';
 import { PageSkeleton } from '@/components/ui/skeleton';
-
-const getTodayDateStr = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+import { getActiveBusinessDate } from '@/utils/dateUtils';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 
 const normalizeDate = (dateVal) => {
   if (!dateVal) return '';
@@ -44,20 +43,27 @@ const normalizeDate = (dateVal) => {
 };
 
 export default function ProcurementSheet() {
-  const [date, setDate] = useState(() => getTodayDateStr());
+  const { globalDate, setGlobalDate } = useGlobalDate();
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [isLocked, setIsLocked] = useState(false);
   const [shiftFilter, setShiftFilter] = useState('All'); // 'All' | 'Morning' | 'Evening'
+
+  useEffect(() => {
+    if (globalDate) {
+      setDate(globalDate);
+    }
+  }, [globalDate]);
+
+  const handleDateChange = (newDate) => {
+    setDate(newDate);
+    setGlobalDate(newDate);
+  };
 
   const { intakeLogs, isLoading: isIntakeLoading } = useIntakeContext();
   const { suppliers, isLoading: isSupplierLoading } = useSupplierContext();
   const { expenses } = useSourcExpenseContext();
   const { supplierSalesHistory = [], salesHistory = [] } = usePOSContext() || {};
 
-  if ((isIntakeLoading || isSupplierLoading) && intakeLogs.length === 0 && suppliers.length === 0) {
-    return <PageSkeleton />;
-  }
-
-  const todayStr = getTodayDateStr();
   const isToday = date === todayStr;
 
   const handlePrevDay = () => {
@@ -273,8 +279,20 @@ export default function ProcurementSheet() {
     });
   };
 
+  if ((isIntakeLoading || isSupplierLoading) && intakeLogs.length === 0 && suppliers.length === 0) {
+    return <PageSkeleton />;
+  }
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      {/* DateHeader at Top of Procurement Sheet */}
+      <DateHeader
+        date={date}
+        setDate={handleDateChange}
+        title="Daily Procurement Master Sheet"
+        subtitle={`Route-wise milk intake, fat rates, and supplier payments strictly for ${date}`}
+      />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>

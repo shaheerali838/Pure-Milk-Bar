@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Beef, Edit3, Trash2, Eye, X, Users, UserCheck, TrendingUp, TrendingDown, Heart, Tag } from "lucide-react";
 import AnimalStatsCards from "./AnimalStatsCards";
@@ -9,6 +9,7 @@ import AnimalSaleModal from "./AnimalSaleModal";
 import PKRIcon from "@/components/common/PKRIcon";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { useStaffPayrollContext } from "@/context/StaffPayrollContext";
+import { useStaffContext } from "@/context/StaffContext";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -41,8 +42,29 @@ export default function AnimalCardOverflow() {
   } = useAnimalContext() || {};
 
   const navigate = useNavigate();
-  const { staffList = [] } = useStaffPayrollContext() || {};
-  const displayWorkers = staffList.filter(s => s.role === 'Farm Worker' || s.role === 'Milking Staff');
+  const payrollCtx = useStaffPayrollContext();
+  const staffCtx = useStaffContext();
+  const staffList = (payrollCtx?.staffList?.length > 0 ? payrollCtx.staffList : staffCtx?.staffList) || [];
+  const farmWorkers = staffList.filter((s) => {
+    const r = (s.role || "").toLowerCase();
+    return (
+      r.includes("farm") ||
+      r.includes("milk") ||
+      r.includes("herd") ||
+      r.includes("work") ||
+      r.includes("labor") ||
+      r.includes("oper") ||
+      r.includes("staff") ||
+      r.includes("manag") ||
+      r.includes("superv")
+    );
+  });
+  const displayWorkers = farmWorkers.length > 0 ? farmWorkers : staffList;
+
+  useEffect(() => {
+    console.log("Staff list in Animals Herd:", staffList.length);
+  }, [staffList]);
+
   const [activeTab, setActiveTab] = useState("registry"); // 'registry', 'workers', or 'sales'
   const [searchTerm, setSearchTerm] = useState("");
   const [speciesFilter, setSpeciesFilter] = useState("all");
@@ -464,8 +486,8 @@ export default function AnimalCardOverflow() {
                   </TableCell>
                 </TableRow>
               ) : (
-                displayWorkers.map((w) => (
-                  <TableRow key={w.id} className="hover:bg-slate-50/60 transition-colors">
+                displayWorkers.map((w, idx) => (
+                  <TableRow key={w._id || w.id || idx} className="hover:bg-slate-50/60 transition-colors">
                     <TableCell className="px-6 py-4 font-bold text-slate-800 flex items-center gap-2">
                       <UserCheck className="w-4 h-4 text-emerald-600" />
                       {w.name}

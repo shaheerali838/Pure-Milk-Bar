@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   ArrowLeft,
   Edit,
@@ -27,8 +27,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAnimalContext } from "../../../../context/AnimalContext";
+import { useStaffPayrollContext } from "../../../../context/StaffPayrollContext";
+import { useStaffContext } from "../../../../context/StaffContext";
 import PKRIcon from "@/components/common/PKRIcon";
 import AnimalSaleModal from "./AnimalSaleModal";
+import { useDailyClose } from "@/context/DailyCloseContext";
+import DayClosedLockOverlay from "@/components/common/DayClosedLockOverlay";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -61,6 +65,7 @@ export default function AnimalDetail({
   onEdit,
   onDelete,
 }) {
+  const { isDayClosed = false } = useDailyClose() || {};
   const {
     animals = [],
     milkingLogs = [],
@@ -68,7 +73,14 @@ export default function AnimalDetail({
     addAnimalIntake,
     saveMilkingShift,
   } = useAnimalContext();
+  const payrollCtx = useStaffPayrollContext();
+  const staffCtx = useStaffContext();
+  const staffList = (payrollCtx?.staffList?.length > 0 ? payrollCtx.staffList : staffCtx?.staffList) || [];
   const handleBack = onBack || onClose;
+
+  useEffect(() => {
+    console.log("Staff list in AnimalDetail:", staffList.length);
+  }, [staffList]);
 
   const [isEditingInline, setIsEditingInline] = useState(false);
   const [shiftFilter, setShiftFilter] = useState("All");
@@ -77,16 +89,27 @@ export default function AnimalDetail({
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
 
-  // Quick milk intake state directly for this animal
   const [isIntakeModalOpen, setIsIntakeModalOpen] = useState(false);
   const [intakeForm, setIntakeForm] = useState({
     date: getTodayDateStr(),
     shift: "Morning",
     quantity: "",
-    milkedBy: "Morning Milker",
+    milkedBy: "",
+    milkingStaff: "",
     notes: "",
   });
   const [isSubmittingIntake, setIsSubmittingIntake] = useState(false);
+
+  useEffect(() => {
+    if (staffList.length > 0 && !intakeForm.milkingStaff) {
+      const firstStaff = staffList[0];
+      setIntakeForm((prev) => ({
+        ...prev,
+        milkingStaff: String(firstStaff._id || firstStaff.id),
+        milkedBy: firstStaff.name,
+      }));
+    }
+  }, [staffList, intakeForm.milkingStaff]);
 
   const animal = animals.find(
     (a) =>
@@ -107,8 +130,9 @@ export default function AnimalDetail({
     const name = (animal.name || "").trim().toLowerCase();
 
     const isBuff = (animal.species || "").toLowerCase().includes("buffalo");
-    const mExp = parseFloat(animal.morningYield || 0) || (isBuff ? 9.0 : 8.0);
-    const eExp = parseFloat(animal.eveningYield || 0) || (isBuff ? 7.5 : 7.0);
+    const expBenchmark = parseFloat(animal.expectedDailyYield || animal.expectedYield || animal.purchaseExpectedYield || 0);
+    const mExp = parseFloat(animal.expectedMorningYield || animal.morningYield || 0) || (expBenchmark > 0 ? parseFloat((expBenchmark / 2).toFixed(1)) : (isBuff ? 9.0 : 8.0));
+    const eExp = parseFloat(animal.expectedEveningYield || animal.eveningYield || 0) || (expBenchmark > 0 ? parseFloat((expBenchmark - mExp).toFixed(1)) : (isBuff ? 7.5 : 7.0));
 
     const mergedList = [];
     const seenShiftDate = new Set();
@@ -376,23 +400,38 @@ export default function AnimalDetail({
       return;
     }
 
+    if (!intakeForm.milkingStaff) {
+      toast.error("milking staff is not added");
+      return;
+    }
+
+    const selectedStaffMember = staffList.find(
+      (s) => String(s._id || s.id) === String(intakeForm.milkingStaff)
+    );
+    const staffName = selectedStaffMember ? selectedStaffMember.name : (intakeForm.milkedBy || "Milking Staff");
+
+    const intakePayload = {
+      date: intakeForm.date,
+      shift: intakeForm.shift,
+      quantityLiters: qty,
+      yieldLiters: qty,
+      operator: staffName,
+      operatorId: intakeForm.milkingStaff,
+      milkingStaff: intakeForm.milkingStaff,
+      notes: intakeForm.notes,
+    };
+    console.log("Milk Intake submission payload:", intakePayload);
+
     setIsSubmittingIntake(true);
     try {
       if (addAnimalIntake) {
-        await addAnimalIntake(animal.id || animal._id, {
-          date: intakeForm.date,
-          shift: intakeForm.shift,
-          quantityLiters: qty,
-          yieldLiters: qty,
-          operator: intakeForm.milkedBy,
-          notes: intakeForm.notes,
-        });
+        await addAnimalIntake(animal.id || animal._id, intakePayload);
       } else if (saveMilkingShift) {
         await saveMilkingShift(
           intakeForm.shift,
           intakeForm.date,
           { [animal.tag]: qty },
-          intakeForm.milkedBy,
+          intakeForm.milkingStaff,
         );
       }
       toast.success(
@@ -403,7 +442,8 @@ export default function AnimalDetail({
         date: getTodayDateStr(),
         shift: "Morning",
         quantity: "",
-        milkedBy: "Morning Milker",
+        milkedBy: staffList[0]?.name || "",
+        milkingStaff: String(staffList[0]?._id || staffList[0]?.id || ""),
         notes: "",
       });
     } catch (err) {
@@ -424,6 +464,7 @@ export default function AnimalDetail({
 
   return (
     <div className="space-y-4 animate-in fade-in duration-150 pb-8">
+      {isDayClosed && <DayClosedLockOverlay inline className="mb-2" />}
       {/* Top action & header bar - EXACT SupplierDetail match */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
         <div className="flex items-center gap-3">
@@ -871,15 +912,21 @@ export default function AnimalDetail({
               {/* Direct Intake Button */}
               <button
                 type="button"
+                disabled={isDayClosed}
                 onClick={() => {
+                  if (isDayClosed) return;
                   setIntakeForm((prev) => ({
                     ...prev,
                     date: getTodayDateStr(),
                   }));
                   setIsIntakeModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-2xs cursor-pointer"
-                title={`Record Milk Intake for ${animal.tag}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs ${
+                  isDayClosed
+                    ? "bg-slate-200 text-slate-400 cursor-not-allowed opacity-60"
+                    : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                }`}
+                title={isDayClosed ? "🔒 Day is Closed" : `Record Milk Intake for ${animal.tag}`}
               >
                 <Plus className="w-3.5 h-3.5" />
                 Intake Milk
@@ -1257,9 +1304,10 @@ export default function AnimalDetail({
           onClick={() => !isSubmittingIntake && setIsIntakeModalOpen(false)}
         >
           <div
-            className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-slate-200 overflow-hidden"
+            className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-slate-200 overflow-hidden relative"
             onClick={(e) => e.stopPropagation()}
           >
+            {isDayClosed && <DayClosedLockOverlay />}
             {/* Modal Header */}
             <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-3">
@@ -1364,20 +1412,37 @@ export default function AnimalDetail({
                 </div>
               </div>
 
-              {/* Milker / Operator */}
               <div>
                 <label className="text-xs font-bold text-slate-700 mb-1 block">
-                  Milker / Operator Name
+                  Milking Staff *
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Morning Milker"
-                  value={intakeForm.milkedBy}
-                  onChange={(e) =>
-                    setIntakeForm({ ...intakeForm, milkedBy: e.target.value })
-                  }
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
+                <select
+                  value={intakeForm.milkingStaff}
+                  disabled={staffList.length === 0}
+                  onChange={(e) => {
+                    const selId = e.target.value;
+                    const member = staffList.find((s) => String(s._id || s.id) === String(selId));
+                    setIntakeForm({
+                      ...intakeForm,
+                      milkingStaff: selId,
+                      milkedBy: member ? member.name : "",
+                    });
+                  }}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {staffList.length === 0 ? (
+                    <option value="">Please add staff first</option>
+                  ) : (
+                    <>
+                      <option value="">Select Milking Staff</option>
+                      {staffList.map((w) => (
+                        <option key={w._id || w.id} value={w._id || w.id}>
+                          {w.name}
+                        </option>
+                      ))}
+                    </>
+                  )}
+                </select>
               </div>
 
               {/* Notes */}

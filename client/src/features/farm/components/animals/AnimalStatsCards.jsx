@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Beef, Activity, Droplets, Users } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { useStaffContext } from "@/context/StaffContext";
+import { useStaffPayrollContext } from "@/context/StaffPayrollContext";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { KpiGridSkeleton } from "@/components/ui/skeleton";
@@ -10,7 +11,9 @@ import { KpiGridSkeleton } from "@/components/ui/skeleton";
 export default function AnimalStatsCards() {
   const navigate = useNavigate();
   const { animals = [], milkingLogs = [], isLoading } = useAnimalContext();
-  const { staffList = [] } = useStaffContext();
+  const staffCtx = useStaffContext();
+  const payrollCtx = useStaffPayrollContext();
+  const staffList = (payrollCtx?.staffList?.length > 0 ? payrollCtx.staffList : staffCtx?.staffList) || [];
 
   if (isLoading && animals.length === 0) {
     return <KpiGridSkeleton count={4} className="grid-cols-2 lg:grid-cols-4 gap-3 mb-2" />;
@@ -36,6 +39,11 @@ export default function AnimalStatsCards() {
     const val = parseFloat(l.yieldLiters || l.yield) || 0;
     return sum + val;
   }, 0)).toFixed(1);
+
+  const totalExpectedYield = animals.reduce((sum, a) => {
+    const exp = parseFloat(a.expectedDailyYield || a.expectedYield || a.purchaseExpectedYield || 0);
+    return sum + (exp > 0 ? exp : 15.0);
+  }, 0);
 
   // Dynamic Staff Stats from StaffContext
   const totalStaff = staffList.length;
@@ -64,7 +72,9 @@ export default function AnimalStatsCards() {
     {
       title: "Total Daily Output",
       amount: `${totalDailyYield} L`,
-      sub: "Morning + Evening Yield",
+      sub: totalExpectedYield > 0
+        ? `Expected: ${totalExpectedYield.toFixed(1)} L Benchmark`
+        : "Morning + Evening Yield",
       icon: Droplets,
       color: "#009689",
       badge: "Yield",

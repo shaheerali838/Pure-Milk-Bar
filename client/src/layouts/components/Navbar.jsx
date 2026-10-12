@@ -28,8 +28,10 @@ import { usePOSContext } from '@/context/POSContext';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 import { PKRIcon } from '@/components/common/PKRIcon';
 import ExportCSVModal from '@/components/common/ExportCSVModal';
+import DateHeader from '@/components/common/DateHeader';
 
 const APP_ROUTES = [
   { label: 'Dashboard Overview', path: '/dashboard', icon: LayoutGrid, category: 'Pages', keywords: ['home', 'overview', 'main', 'summary'] },
@@ -65,6 +67,7 @@ export default function Navbar({ onToggleSidebar }) {
   const { animals = [] } = useAnimalContext() || {};
   const { deliveries = [] } = useDeliveryContext() || {};
   const { staffList = [] } = useDeliveryStaffContext() || {};
+  const { globalDate, setGlobalDate, setToday, isToday, formattedDate } = useGlobalDate();
 
   // Close search dropdown on click outside
   useEffect(() => {
@@ -395,6 +398,9 @@ export default function Navbar({ onToggleSidebar }) {
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        {/* Synchronized Reusable Global DateHeader */}
+        <DateHeader compact date={globalDate} setDate={setGlobalDate} />
+
         <Button
           type="button"
           size="sm"

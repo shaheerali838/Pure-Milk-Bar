@@ -28,9 +28,23 @@ export default function FarmYieldHub({
     return isDateInFilterRange(l.date || l.createdAt, dateFilter, startDate, endDate);
   });
 
-  const totalFarmYield = filteredLogs.length > 0
-    ? filteredLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0)
-    : (dateFilter === 'today' ? (Number(inventoryMetrics.totalFarmYield) || 0) : 0);
+  let totalFarmYield = 0;
+  if (filteredLogs.length > 0) {
+    totalFarmYield = filteredLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
+  } else {
+    let sumFromAnimals = 0;
+    animals.forEach((animal) => {
+      const historyList = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
+      historyList.forEach((h) => {
+        if (isDateInFilterRange(h.date || h.createdAt, dateFilter, startDate, endDate)) {
+          sumFromAnimals += Number(h.quantityLiters || h.yieldLiters || h.yield || ((Number(h.morning) || 0) + (Number(h.evening) || 0))) || 0;
+        }
+      });
+    });
+    totalFarmYield = sumFromAnimals > 0
+      ? sumFromAnimals
+      : (dateFilter === 'today' ? (Number(inventoryMetrics.totalFarmYield) || 0) : 0);
+  }
 
   // Valuation: Farm milk value @ retail milk rate
   const milkProduct = products.find(

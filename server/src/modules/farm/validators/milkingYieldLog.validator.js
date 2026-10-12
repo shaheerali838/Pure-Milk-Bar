@@ -75,6 +75,10 @@ export const createMilkingYieldLogSchema = Joi.object({
   operatorId: Joi.string()
     .allow(null, '')
     .optional(),
+
+  milkingStaff: Joi.string()
+    .allow(null, '')
+    .optional(),
 }).options({ stripUnknown: true });
 
 // ─── UPDATE MilkingYieldLog Schema ──────────────────────────────────────────

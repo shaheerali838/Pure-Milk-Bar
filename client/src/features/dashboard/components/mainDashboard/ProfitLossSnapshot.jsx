@@ -69,17 +69,13 @@ export default function ProfitLossSnapshot({
   const isPositive = netProfit >= 0;
 
   // Milk Discrepancy / Variance Calculation
-  const totalFarmMilk = Number(inventoryMetrics.totalFarmYield) || 0;
-  const totalProcured =
-    intakeTotals.totalProcuredVolume !== undefined
-      ? Number(intakeTotals.totalProcuredVolume)
-      : 0;
-  const totalMilkIn = totalFarmMilk + totalProcured;
+  const openingStock = Number(inventoryMetrics.openingStock || 0);
+  const totalFarmMilk = Number(inventoryMetrics.totalFarmYield || 0);
+  const totalProcured = Number(inventoryMetrics.todaySupplierIntake || 0);
+  const totalMilkIn = openingStock + totalFarmMilk + totalProcured;
   const totalMilkSold = parseFloat(inventoryMetrics.milkSold) || 0;
-  const totalDahiMilk = Math.round(
-    (parseFloat(inventoryMetrics.dahiSold) || 0) * 1.1,
-  );
-  const totalMilkOut = totalMilkSold + totalDahiMilk;
+  const convertedToDahi = Number(inventoryMetrics.totalFarmMilkConvertedToDahi || 0);
+  const totalMilkOut = totalMilkSold + convertedToDahi;
   const expectedClosing = Math.max(0, totalMilkIn - totalMilkOut);
   const actualClosing =
     parseFloat(inventoryMetrics.totalMilk) || expectedClosing;

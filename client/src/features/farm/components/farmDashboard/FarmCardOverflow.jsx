@@ -10,6 +10,7 @@ export default function FarmCardOverflow({
   cowsCount = 0, 
   buffCount = 0, 
   totalFarmYield = 0, 
+  totalExpectedYield = 0,
   availableFarmStock = null,
   avgAnimalYield = 0, 
   dailyNetProfit = 0, 
@@ -59,7 +60,9 @@ export default function FarmCardOverflow({
     {
       label: "Total Farm Yield",
       value: `${totalFarmYield.toFixed(1)} L`,
-      sub: dateFilter === 'today' ? "Daily total production" : `${periodLabel} production`,
+      sub: totalExpectedYield > 0
+        ? `Exp: ${totalExpectedYield.toFixed(1)} L (${totalFarmYield >= totalExpectedYield ? '+' : ''}${(totalFarmYield - totalExpectedYield).toFixed(1)} L)`
+        : (dateFilter === 'today' ? "Daily total production" : `${periodLabel} production`),
       icon: Droplets,
       color: "#155dfc",
       badge: dateFilter === 'today' ? "Today's Milk" : "Farm Milk",
@@ -77,7 +80,9 @@ export default function FarmCardOverflow({
     {
       label: "Average Animal Yield",
       value: `${avgAnimalYield.toFixed(1)} L`,
-      sub: "Avg output per animal",
+      sub: totalExpectedYield > 0 && totalAnimals > 0
+        ? `Benchmark: ${(totalExpectedYield / totalAnimals).toFixed(1)} L/head`
+        : "Avg output per animal",
       icon: Activity,
       color: "#009689",
       badge: "Yield / Head"

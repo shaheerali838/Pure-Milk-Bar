@@ -61,30 +61,61 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
 
   // Sync saved entries from backend milkingLogs when date changes
   useEffect(() => {
+    const morningMap = {};
+    const eveningMap = {};
+
     if (Array.isArray(milkingLogs) && milkingLogs.length > 0) {
-      const morningMap = {};
-      const eveningMap = {};
       milkingLogs.forEach((log) => {
-        const logDate = normalizeDate(log.date);
+        const logDate = normalizeDate(log.date || log.createdAt);
         if (!selectedDate || logDate === selectedDate) {
           const s = (log.shift || "").toLowerCase();
-          const tag = log.animalTag || log.tag || log.animal?.tag;
-          const y = parseFloat(log.yieldLiters || log.yield) || 0;
-          if (tag && y > 0) {
-            if (s === "morning") morningMap[tag] = y.toString();
-            else if (s === "evening") eveningMap[tag] = y.toString();
+          const rawTag = log.animalTag || log.tag || log.animal?.tag || log.animalId?.tagNumber || log.animalId?.tag || '';
+          const tag = String(rawTag).trim().toUpperCase();
+          const rawId = String(log.animalId?._id || log.animalId?.id || log.animalId || '');
+          const y = parseFloat(log.yieldLiters || log.yield || log.quantityLiters) || 0;
+          if (y > 0) {
+            if (s === "morning") {
+              if (tag) morningMap[tag] = y.toString();
+              if (rawId) morningMap[rawId] = y.toString();
+            } else if (s === "evening") {
+              if (tag) eveningMap[tag] = y.toString();
+              if (rawId) eveningMap[rawId] = y.toString();
+            }
           }
         }
       });
-      if (Object.keys(morningMap).length > 0 || Object.keys(eveningMap).length > 0) {
-        setSavedEntries({ Morning: morningMap, Evening: eveningMap });
-      }
     }
-  }, [milkingLogs, selectedDate]);
+
+    if (Array.isArray(animals) && animals.length > 0) {
+      animals.forEach((animal) => {
+        const aTag = String(animal.tag || animal.tagNumber || '').trim().toUpperCase();
+        const aId = String(animal.id || animal._id || '');
+        const hist = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
+        hist.forEach((h) => {
+          const hDate = normalizeDate(h.date || h.createdAt);
+          if (!selectedDate || hDate === selectedDate) {
+            const hs = (h.shift || 'Morning').toLowerCase();
+            const hy = parseFloat(h.quantityLiters || h.yieldLiters || h.yield || (hs === 'evening' ? h.evening : h.morning)) || 0;
+            if (hy > 0) {
+              if (hs === 'morning') {
+                if (aTag && !morningMap[aTag]) morningMap[aTag] = hy.toString();
+                if (aId && !morningMap[aId]) morningMap[aId] = hy.toString();
+              } else if (hs === 'evening') {
+                if (aTag && !eveningMap[aTag]) eveningMap[aTag] = hy.toString();
+                if (aId && !eveningMap[aId]) eveningMap[aId] = hy.toString();
+              }
+            }
+          }
+        });
+      });
+    }
+
+    setSavedEntries({ Morning: morningMap, Evening: eveningMap });
+  }, [milkingLogs, animals, selectedDate]);
 
   // Process registered animals from context
   const cattleList = animals.map((a, idx) => {
-    const isBuff = a.species && a.species.toLowerCase().includes("buffalo");
+    const isBuff = (a.species || a.type || "").toLowerCase().includes("buffalo");
     
     // Strictly read purchase / registration benchmark quantity
     const mBenchmark = parseFloat(a.expectedMorningYield ?? a.purchaseMorningYield ?? a.morningYield ?? 0);
@@ -95,16 +126,11 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
     const avgMorning = mBenchmark > 0 ? mBenchmark : parseFloat((expectedDaily / 2).toFixed(1));
     const avgEvening = eBenchmark > 0 ? eBenchmark : parseFloat((expectedDaily / 2).toFixed(1));
 
-    let displayName = a.tag;
-    if (a.tag.startsWith("COW-")) {
-      displayName = `Cow ${a.tag.replace("COW-", "")}`;
-    } else if (a.tag.startsWith("BUF-")) {
-      displayName = `Buffalo ${a.tag.replace("BUF-", "")}`;
-    }
+    const displayName = a.name || a.tag || `Cattle ${idx + 1}`;
 
     return {
-      id: a.id || idx + 1,
-      tag: a.tag,
+      id: a.id || a._id || idx + 1,
+      tag: a.tag || a.tagNumber,
       name: displayName,
       type: isBuff ? "Buffalo" : "Cow",
       expectedDaily,
@@ -122,14 +148,17 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
   }, 0);
 
   const shiftEntered = cattleList.reduce((sum, item) => {
-    return sum + (parseFloat(activeSaved[item.tag]) || 0);
+    const canonicalTag = (item.tag || '').toUpperCase();
+    const val = activeSaved[item.tag] || activeSaved[canonicalTag] || activeSaved[canonicalTag.toLowerCase()] || (item.id && activeSaved[item.id]);
+    return sum + (parseFloat(val) || 0);
   }, 0);
 
   // Total daily variance across both shifts
   const totalDailyExpected = cattleList.reduce((sum, item) => sum + item.expectedDaily, 0);
   const totalDailyEntered = cattleList.reduce((sum, item) => {
-    const m = parseFloat(savedEntries.Morning?.[item.tag] || 0);
-    const e = parseFloat(savedEntries.Evening?.[item.tag] || 0);
+    const canonicalTag = (item.tag || '').toUpperCase();
+    const m = parseFloat(savedEntries.Morning?.[item.tag] || savedEntries.Morning?.[canonicalTag] || (item.id && savedEntries.Morning?.[item.id]) || 0);
+    const e = parseFloat(savedEntries.Evening?.[item.tag] || savedEntries.Evening?.[canonicalTag] || (item.id && savedEntries.Evening?.[item.id]) || 0);
     return sum + m + e;
   }, 0);
 
@@ -137,7 +166,8 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
 
   // Logged count for current shift
   const loggedCount = cattleList.filter((item) => {
-    const val = activeSaved[item.tag];
+    const canonicalTag = (item.tag || '').toUpperCase();
+    const val = activeSaved[item.tag] || activeSaved[canonicalTag] || activeSaved[canonicalTag.toLowerCase()] || (item.id && activeSaved[item.id]);
     return val !== undefined && val !== "" && !isNaN(parseFloat(val)) && parseFloat(val) > 0;
   }).length;
 
@@ -334,13 +364,20 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
                 cattleList.map((item) => {
                   const avgYield = shift === "Morning" ? item.avgMorning : item.avgEvening;
                   const currentInput = activeInputs[item.tag] ?? "";
-                  const savedVal = activeSaved[item.tag];
+                  const canonicalTag = (item.tag || '').toUpperCase();
+                  const savedVal =
+                    activeSaved[item.tag] ||
+                    activeSaved[canonicalTag] ||
+                    activeSaved[canonicalTag.toLowerCase()] ||
+                    (item.id && activeSaved[item.id]);
 
                   const isSavedLogged =
                     savedVal !== undefined &&
                     savedVal !== "" &&
                     !isNaN(parseFloat(savedVal)) &&
                     parseFloat(savedVal) > 0;
+
+                  const displayValue = currentInput !== "" ? currentInput : (isSavedLogged ? String(savedVal) : "");
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
@@ -370,9 +407,13 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
                           step="0.1"
                           min="0"
                           placeholder={avgYield.toString()}
-                          value={currentInput}
+                          value={displayValue}
                           onChange={(e) => handleInputChange(item.tag, e.target.value)}
-                          className="w-36 bg-white border border-slate-200 rounded-full px-4 py-1.5 text-sm font-semibold text-slate-800 text-center focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+                          className={`w-36 bg-white border rounded-full px-4 py-1.5 text-sm font-semibold text-center focus:outline-none transition-all ${
+                            isSavedLogged
+                              ? "border-emerald-300 text-emerald-800 bg-emerald-50/30 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                              : "border-slate-200 text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                          }`}
                         />
                       </td>
 

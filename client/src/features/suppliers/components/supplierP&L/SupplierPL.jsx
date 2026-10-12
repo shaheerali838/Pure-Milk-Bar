@@ -17,7 +17,11 @@ import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useSettingsContext } from '@/context/SettingsContext';
+import { useDailyClose } from '@/context/DailyCloseContext';
 import { exportTableToCSV } from '@/utils/csvExport';
+import { normalizeDateStr, getActiveBusinessDate } from '@/utils/dateUtils';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 import SupplierPLCards from './SupplierPLCards';
 import SupplierPLCharts from './SupplierPLCharts';
 import SupplierPLTable from './SupplierPLTable';
@@ -29,30 +33,51 @@ export default function SupplierPL() {
   const { supplierSalesHistory = [], salesHistory = [], products: catalogProducts = [], supplierSalesMetrics } = usePOSContext();
   const { deliveries = [] } = useDeliveryContext();
   const { expenses: allExpenses = [] } = useSourcExpenseContext() || {};
+  const { activeDate } = useDailyClose() || {};
   const settingsCtx = useSettingsContext?.();
   const settingsPricing = settingsCtx?.settings?.pricing || {};
 
-  // Top-right Date/Period filter states
-  const [periodFilter, setPeriodFilter] = useState('All Time'); // 'All Time' | 'Today' | 'This Month'
+  // STRICT RULE: Force initialization to 'Today'
+  const { globalDate, setGlobalDate } = useGlobalDate();
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [periodFilter, setPeriodFilter] = useState('Today'); // 'Today' | 'This Month' | 'All Time'
   const [customDate, setCustomDate] = useState('');
+
+  React.useEffect(() => {
+    if (globalDate) {
+      setSelectedDate(globalDate);
+    }
+  }, [globalDate]);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    setGlobalDate(newDate);
+    if (newDate === new Date().toISOString().split('T')[0]) {
+      setPeriodFilter('Today');
+      setCustomDate('');
+    } else {
+      setPeriodFilter('Custom');
+      setCustomDate(newDate);
+    }
+  };
 
   // Active Drawers / Slide-overs state
   const [activeCardDetail, setActiveCardDetail] = useState(null); // 'cost' | 'volume' | 'paid' | 'due' | 'rate' | 'income' | null
   const [selectedProductRow, setSelectedProductRow] = useState(null); // product object | null
 
-  // 1. Filter Records by Selected Date / Period
-  const todayStr = new Date().toISOString().split('T')[0];
+  // 1. Filter Records strictly by Selected Date / Period
+  const todayStr = selectedDate;
   const currentMonthStr = todayStr.slice(0, 7); // YYYY-MM
 
   const filteredIntakeLogs = useMemo(() => {
     if (customDate) {
-      return intakeLogs.filter((item) => item.date === customDate);
+      return intakeLogs.filter((item) => normalizeDateStr(item.date || item.createdAt) === customDate);
     }
     if (periodFilter === 'Today') {
-      return intakeLogs.filter((item) => item.date === todayStr);
+      return intakeLogs.filter((item) => normalizeDateStr(item.date || item.createdAt) === todayStr);
     }
     if (periodFilter === 'This Month') {
-      return intakeLogs.filter((item) => (item.date || '').startsWith(currentMonthStr));
+      return intakeLogs.filter((item) => (normalizeDateStr(item.date || item.createdAt) || '').startsWith(currentMonthStr));
     }
     return intakeLogs;
   }, [intakeLogs, customDate, periodFilter, todayStr, currentMonthStr]);
@@ -60,26 +85,7 @@ export default function SupplierPL() {
   const activeSupplierSales = supplierSalesHistory;
   const filteredSales = useMemo(() => {
     return activeSupplierSales.filter((sale) => {
-      let sDate = '';
-      if (sale.date && /^\d{4}-\d{2}-\d{2}/.test(sale.date)) {
-        sDate = sale.date.slice(0, 10);
-      } else if (sale.timestamp && /^\d{4}-\d{2}-\d{2}/.test(sale.timestamp)) {
-        sDate = sale.timestamp.slice(0, 10);
-      } else if (sale.createdAt && /^\d{4}-\d{2}-\d{2}/.test(sale.createdAt)) {
-        sDate = sale.createdAt.slice(0, 10);
-      } else {
-        const raw = sale.date || sale.timestamp || sale.createdAt || sale.formattedDate || '';
-        if (raw) {
-          const parsed = new Date(raw);
-          if (!isNaN(parsed.getTime())) {
-            try {
-              sDate = parsed.toISOString().split('T')[0];
-            } catch {
-              sDate = '';
-            }
-          }
-        }
-      }
+      const sDate = normalizeDateStr(sale.date || sale.timestamp || sale.createdAt || sale.formattedDate);
       if (customDate) return sDate === customDate;
       if (periodFilter === 'Today') return sDate === todayStr;
       if (periodFilter === 'This Month') return sDate.startsWith(currentMonthStr);
@@ -88,16 +94,13 @@ export default function SupplierPL() {
   }, [activeSupplierSales, customDate, periodFilter, todayStr, currentMonthStr]);
 
   const filteredExpenses = useMemo(() => {
-    if (customDate) {
-      return allExpenses.filter((e) => e.date === customDate);
-    }
-    if (periodFilter === 'Today') {
-      return allExpenses.filter((e) => e.date === todayStr);
-    }
-    if (periodFilter === 'This Month') {
-      return allExpenses.filter((e) => (e.date || '').startsWith(currentMonthStr));
-    }
-    return allExpenses;
+    return allExpenses.filter((e) => {
+      const eDate = normalizeDateStr(e.date || e.createdAt);
+      if (customDate) return eDate === customDate;
+      if (periodFilter === 'Today') return eDate === todayStr;
+      if (periodFilter === 'This Month') return eDate.startsWith(currentMonthStr);
+      return true;
+    });
   }, [allExpenses, customDate, periodFilter, todayStr, currentMonthStr]);
 
   // Compute Supplier Milk and Dahi Sales strictly isolated from filtered sales
@@ -389,6 +392,14 @@ export default function SupplierPL() {
 
   return (
     <div className="space-y-3 animate-in fade-in duration-150">
+      {/* DateHeader at Top of Supplier P&L */}
+      <DateHeader
+        date={selectedDate}
+        setDate={handleDateChange}
+        title="Supplier Procurement Profit & Loss (P&L)"
+        subtitle={`Milk procurement cost, processing margins, and resale profit strictly for ${selectedDate}`}
+      />
+
       {/* 1. Page Header with Title and Filter Toolbar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200/90 shadow-2xs">
         <div>

@@ -38,7 +38,9 @@ export default function SupplierProcurementHub({
 
   // Collection transport / van diesel overheads from expense records
   const collectionDiesel =
-    Number(expenseTotals.fuelTransportRepairs) || (procuredVolume > 0 ? 1000 : 0);
+    dateFilter === 'all'
+      ? (Number(expenseTotals.fuelTransportRepairs) || 0)
+      : (procuredVolume > 0 ? 1000 : 0);
 
   // Valuation at retail price
   const milkProduct = products.find(

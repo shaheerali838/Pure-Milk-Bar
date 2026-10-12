@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import {
   getPktTodayString,
   getPktDaysAgoString,
+  normalizeDateStr,
 } from '@/utils/dateUtils';
 
 import DailyClosingHeader from '../components/DailyClosing/DailyClosingHeader';
@@ -20,6 +21,7 @@ import DailyClosingModuleDetails from '../components/DailyClosing/DailyClosingMo
 import PreviousClosingsHistory from '../components/DailyClosing/PreviousClosingsHistory';
 import AddWastageDialog from '../components/DailyClosing/AddWastageDialog';
 import ConfirmClosingDialog from '../components/DailyClosing/ConfirmClosingDialog';
+import DailyClosingPLBreakdown from '../components/DailyClosing/DailyClosingPLBreakdown';
 
 import {
   getDailyClosingSummary,
@@ -27,18 +29,45 @@ import {
   exportDailyClosingCsv,
   reopenDailyClosing,
 } from '../services/dailyClosingService';
+import { useDailyClose } from '@/context/DailyCloseContext';
+import { useGlobalDate } from '@/context/GlobalDateContext';
+import { usePOSContext } from '@/context/POSContext';
+import { useIntakeContext } from '@/context/IntakeContext';
+import { useExpense } from '@/context/ExpenseContext';
+import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 
 export default function DailyClosing() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
+  const { globalDate } = useGlobalDate();
+  const {
+    isDayClosed: isGlobalDayClosed,
+    closeDay,
+    openNewDay,
+    reopenDay,
+    closingStock: liveClosingStock,
+    dailyCloseHistory = [],
+  } = useDailyClose();
+
+  const { salesHistory = [] } = usePOSContext() || {};
+  const { intakeLogs = [] } = useIntakeContext() || {};
+  const { expenses: farmExpenses = [] } = useExpense() || {};
+  const { expenses: supplierExpenses = [] } = useSourcExpenseContext() || {};
 
   const todayStr = getPktTodayString();
   const sevenDaysAgoStr = getPktDaysAgoString(7);
 
   const [period, setPeriod] = useState('today'); // 'today' | 'weekly' | 'monthly' | 'custom'
-  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [selectedDate, setSelectedDate] = useState(() => globalDate || todayStr);
   const [startDate, setStartDate] = useState(sevenDaysAgoStr);
   const [endDate, setEndDate] = useState(todayStr);
+
+  // Synchronize selectedDate when globalDate changes
+  useEffect(() => {
+    if (globalDate) {
+      setSelectedDate(globalDate);
+    }
+  }, [globalDate]);
 
   const [summaryData, setSummaryData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -170,8 +199,168 @@ export default function DailyClosing() {
     setVarianceReason('');
     setProductPhysicalCounts({});
     setSupervisorNotes('');
+
+    // Advance Day & Carry forward remaining closing stock to next day opening stock
+    openNewDay(nextDateStr);
+
     toast.success(`Advanced to new business day: ${nextDateStr}. Opening stocks automatically carried forward!`);
   };
+
+  // Dynamic Farm P&L, Supplier P&L, and Total Business Final P&L calculation for selectedDate
+  const computedPL = React.useMemo(() => {
+    // 1. If an existing finalized closing snapshot exists with farm/supplier data, use it
+    if (summaryData?.closing?.farm && summaryData?.closing?.supplier) {
+      return {
+        farm: summaryData.closing.farm,
+        supplier: summaryData.closing.supplier,
+        totalBusinessProfit: summaryData.closing.totalBusinessProfit ?? (Number(summaryData.closing.farm.netProfit || 0) + Number(summaryData.closing.supplier.netProfit || 0)),
+      };
+    }
+
+    // Check saved dailyCloseHistory for this date
+    const historicalClose = (dailyCloseHistory || []).find((h) => h.date === selectedDate);
+    if (historicalClose?.farm && historicalClose?.supplier) {
+      return {
+        farm: historicalClose.farm,
+        supplier: historicalClose.supplier,
+        totalBusinessProfit: historicalClose.totalBusinessProfit ?? (Number(historicalClose.farm.netProfit || 0) + Number(historicalClose.supplier.netProfit || 0)),
+      };
+    }
+
+    // 2. Dynamic Calculation from live transactions for selectedDate
+    const targetDate = selectedDate;
+
+    // A. Sales Revenue Breakdown (Farm vs Supplier)
+    const activeSales = (salesHistory && salesHistory.length > 0) ? salesHistory : (summaryData?.breakdown?.orders?.logs || []);
+    let farmMilkRevenue = 0;
+    let farmDahiRevenue = 0;
+    let supplierMilkRevenue = 0;
+    let supplierDahiRevenue = 0;
+
+    activeSales.forEach((sale) => {
+      const sDate = normalizeDateStr(sale.date || sale.timestamp || sale.createdAt || sale.formattedDate);
+      if (sDate !== targetDate) return;
+
+      const items = Array.isArray(sale.items) ? sale.items : [];
+      if (items.length === 0) {
+        const rev = Number(sale.grandTotal || sale.netPayable || sale.subtotal) || 0;
+        farmMilkRevenue += rev;
+        return;
+      }
+
+      items.forEach((item) => {
+        const src = (item.source || 'Farm').toLowerCase();
+        const isSupplier = src.includes('supplier');
+        const isMixed = src.includes('mixed');
+        const farmRatio = isMixed ? (Number(item.farmRatio) || 0.5) : (isSupplier ? 0 : 1);
+        const supplierRatio = isMixed ? (Number(item.supplierRatio) || 0.5) : (isSupplier ? 1 : 0);
+
+        const itemName = (item.name || '').toLowerCase();
+        const itemCat = (item.category || '').toLowerCase();
+        const isDahi = itemName.includes('dahi') || itemCat.includes('dahi') || itemName.includes('yogurt') || itemCat.includes('yogurt');
+
+        const itemTotal = Number(item.subtotal || item.effectiveRevenue) || ((Number(item.quantity) || 0) * (Number(item.price || item.unitPrice) || 0));
+
+        if (isDahi) {
+          farmDahiRevenue += itemTotal * farmRatio;
+          supplierDahiRevenue += itemTotal * supplierRatio;
+        } else {
+          farmMilkRevenue += itemTotal * farmRatio;
+          supplierMilkRevenue += itemTotal * supplierRatio;
+        }
+      });
+    });
+
+    const farmTotalRevenue = Math.round(farmMilkRevenue + farmDahiRevenue);
+    const supplierTotalRevenue = Math.round(supplierMilkRevenue + supplierDahiRevenue);
+
+    // B. Supplier Milk Purchased & Procurement Cost
+    // Calculate total procurement cost dynamically from today's supplier purchase records:
+    // totalProcurementCost = todaySupplierPurchases.reduce((total, item) => total + Number(item.qty || 0) * Number(item.price || 0), 0)
+    const activeIntakes = (intakeLogs && intakeLogs.length > 0) ? intakeLogs : (summaryData?.breakdown?.procurement?.logs || []);
+    let supplierPurchasedQty = 0;
+    let totalProcurementCost = 0;
+
+    activeIntakes.forEach((item) => {
+      const iDate = normalizeDateStr(item.date || item.createdAt);
+      if (iDate !== targetDate) return;
+
+      const qty = Number(item.quantity || item.quantityLiters || item.qty || 0);
+      const rate = Number(item.rate || item.ratePerLiter || item.price || item.unitPrice || 0);
+      const itemCost = (item.totalCost !== undefined && item.totalCost !== null)
+        ? Number(item.totalCost)
+        : (item.totalAmount !== undefined && item.totalAmount !== null)
+        ? Number(item.totalAmount)
+        : (qty * rate);
+
+      supplierPurchasedQty += qty;
+      totalProcurementCost += itemCost;
+    });
+
+    if (totalProcurementCost === 0 && summaryData?.breakdown?.procurement?.totalBill) {
+      totalProcurementCost = Number(summaryData.breakdown.procurement.totalBill);
+      supplierPurchasedQty = Number(summaryData.breakdown.procurement.totalLiters || 0);
+    }
+
+    const supplierAvgRate = supplierPurchasedQty > 0
+      ? (totalProcurementCost / supplierPurchasedQty).toFixed(1)
+      : 0;
+
+    // C. Farm and Supplier Expenses
+    const activeFarmExpenses = (farmExpenses && farmExpenses.length > 0) ? farmExpenses : [];
+    let farmTotalExpenses = 0;
+    activeFarmExpenses.forEach((exp) => {
+      const eDate = normalizeDateStr(exp.date || exp.createdAt);
+      if (eDate === targetDate) {
+        farmTotalExpenses += (Number(exp.amount) || 0);
+      }
+    });
+
+    const activeSupplierExpenses = (supplierExpenses && supplierExpenses.length > 0) ? supplierExpenses : [];
+    let supplierTotalExpenses = 0;
+    activeSupplierExpenses.forEach((exp) => {
+      const eDate = normalizeDateStr(exp.date || exp.createdAt);
+      if (eDate === targetDate) {
+        supplierTotalExpenses += (Number(exp.amount) || 0);
+      }
+    });
+
+    // Fallback to summaryData expenses if farmTotalExpenses is 0
+    if (farmTotalExpenses === 0 && summaryData?.expenses?.total) {
+      farmTotalExpenses = Number(summaryData.expenses.total);
+    }
+
+    // D. Net Profit Calculations
+    // Farm Net Profit: Do not subtract milk procurement cost from Farm P&L
+    const farmNetProfit = farmTotalRevenue - farmTotalExpenses;
+
+    // Supplier Net Profit: supplierTotalRevenue - totalProcurementCost - supplierTotalExpenses
+    const supplierNetProfit = supplierTotalRevenue - totalProcurementCost - supplierTotalExpenses;
+
+    // Total Business Profit = farmNetProfit + supplierNetProfit
+    const totalBusinessProfit = farmNetProfit + supplierNetProfit;
+
+    return {
+      farm: {
+        milkRevenue: farmMilkRevenue,
+        dahiRevenue: farmDahiRevenue,
+        totalRevenue: farmTotalRevenue,
+        totalExpenses: farmTotalExpenses,
+        netProfit: farmNetProfit,
+      },
+      supplier: {
+        purchasedQty: supplierPurchasedQty,
+        avgRate: supplierAvgRate,
+        totalProcurementCost,
+        milkRevenue: supplierMilkRevenue,
+        dahiRevenue: supplierDahiRevenue,
+        totalRevenue: supplierTotalRevenue,
+        totalExpenses: supplierTotalExpenses,
+        netProfit: supplierNetProfit,
+      },
+      totalBusinessProfit,
+    };
+  }, [summaryData, dailyCloseHistory, selectedDate, salesHistory, intakeLogs, farmExpenses, supplierExpenses]);
 
   // Confirm and save closing
   const handleConfirmDailyClosing = async () => {
@@ -186,13 +375,38 @@ export default function DailyClosing() {
 
     setIsConfirming(true);
     try {
+      const closingRecord = {
+        date: selectedDate,
+        farm: {
+          totalRevenue: computedPL.farm.totalRevenue,
+          totalExpenses: computedPL.farm.totalExpenses,
+          netProfit: computedPL.farm.netProfit,
+        },
+        supplier: {
+          totalRevenue: computedPL.supplier.totalRevenue,
+          totalProcurementCost: computedPL.supplier.totalProcurementCost,
+          totalExpenses: computedPL.supplier.totalExpenses,
+          netProfit: computedPL.supplier.netProfit,
+        },
+        totalBusinessProfit: computedPL.totalBusinessProfit,
+        totalRevenue: (computedPL.farm.totalRevenue + computedPL.supplier.totalRevenue),
+        totalExpenses: (computedPL.farm.totalExpenses + computedPL.supplier.totalExpenses),
+        netProfit: computedPL.totalBusinessProfit,
+        closingStock: liveClosingStock,
+        closedAt: new Date().toISOString(),
+      };
+
       const res = await confirmDailyClosing({
         date: selectedDate,
         physicalMilkLiters: physicalMilk !== '' ? Number(physicalMilk) : 0,
         varianceReason,
         notes: supervisorNotes,
         productPhysicalCounts: countsArray,
+        report: closingRecord,
       });
+
+      // Synchronize with global DailyCloseContext after save operation succeeds
+      closeDay(closingRecord);
 
       toast.success(res?.message || 'Daily closing successfully confirmed and locked!');
       setConfirmDialogOpen(false);
@@ -214,6 +428,7 @@ export default function DailyClosing() {
 
     try {
       await reopenDailyClosing(summaryData.closing.id, reason);
+      reopenDay(reason);
       toast.success('Day end closing reopened successfully. Calculations are now live.');
       setHistoryRefreshTrigger((prev) => prev + 1);
       loadSummary(true);
@@ -222,7 +437,7 @@ export default function DailyClosing() {
     }
   };
 
-  const isClosed = ['CLOSED', 'APPROVED', 'LOCKED', 'RECONCILED'].includes(summaryData?.status);
+  const isClosed = ['CLOSED', 'APPROVED', 'LOCKED', 'RECONCILED'].includes(summaryData?.status) || isGlobalDayClosed;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDER STATES (Loading Skeleton & Error State)
@@ -264,7 +479,7 @@ export default function DailyClosing() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-5 pb-8 max-w-7xl mx-auto px-2 sm:px-4 transition-all">
+    <div className="space-y-2 sm:space-y-2 transition-all">
       {/* 1. Compact Header (Status, Date Picker, Period Dropdown, CSV & Confirm Buttons) */}
       <DailyClosingHeader
         period={period}
@@ -305,6 +520,15 @@ export default function DailyClosing() {
         totalSales={summaryData?.profit?.grossRevenue ?? 0}
         moneyCollected={summaryData?.collections?.totalCollected ?? 0}
         estimatedProfit={summaryData?.profit?.estimatedProfit ?? 0}
+        isClosed={isClosed}
+      />
+
+      {/* 2.5 Farm P&L, Supplier P&L, and Total Business Final P&L Segregated Analysis */}
+      <DailyClosingPLBreakdown
+        farmPL={computedPL.farm}
+        supplierPL={computedPL.supplier}
+        totalBusinessProfit={computedPL.totalBusinessProfit}
+        date={selectedDate}
         isClosed={isClosed}
       />
 
@@ -390,6 +614,7 @@ export default function DailyClosing() {
         onConfirm={handleConfirmDailyClosing}
         isSubmitting={isConfirming}
         summaryData={summaryData || {}}
+        computedPL={computedPL}
         physicalMilk={physicalMilk}
         varianceReason={varianceReason}
         notes={supervisorNotes}

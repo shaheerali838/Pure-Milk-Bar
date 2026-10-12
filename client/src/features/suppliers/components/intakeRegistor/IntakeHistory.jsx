@@ -28,21 +28,50 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
-import { formatStandardDate, normalizeDateStr, sortByDateDesc, getPktTodayString } from '@/utils/dateUtils';
+import { formatStandardDate, normalizeDateStr, sortByDateDesc, getPktTodayString, getLocalDate } from '@/utils/dateUtils';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 
-const getTodayDateStr = () => getPktTodayString();
+const getTodayDateStr = () => getLocalDate();
 
 const normalizeDate = (dateVal) => normalizeDateStr(dateVal);
 
 export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSupplier }) {
   const { intakeLogs, deleteIntake, isLoading } = useIntakeContext();
+  const { globalDate, setGlobalDate } = useGlobalDate();
   const [search, setSearch] = useState('');
-  const [dateFilter, setDateFilter] = useState('All'); // 'All' | 'Today' | 'Custom'
+  const [selectedDate, setSelectedDate] = useState(() => getLocalDate());
+  const [dateFilter, setDateFilter] = useState('Today'); // 'Today' | 'All' | 'Custom'
   const [customDate, setCustomDate] = useState('');
   const [shiftFilter, setShiftFilter] = useState('All'); // 'All' | 'Morning' | 'Evening'
   const [settlementFilter, setSettlementFilter] = useState('All');
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [expandedKeys, setExpandedKeys] = useState(() => new Set());
+
+  React.useEffect(() => {
+    if (globalDate) {
+      setSelectedDate(globalDate);
+      if (globalDate === getLocalDate()) {
+        setDateFilter('Today');
+        setCustomDate('');
+      } else {
+        setDateFilter('Custom');
+        setCustomDate(globalDate);
+      }
+    }
+  }, [globalDate]);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    setGlobalDate(newDate);
+    if (newDate === getLocalDate()) {
+      setDateFilter('Today');
+      setCustomDate('');
+    } else {
+      setDateFilter('Custom');
+      setCustomDate(newDate);
+    }
+  };
 
   const todayStr = getTodayDateStr();
 
@@ -79,7 +108,7 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
       const itemDate = normalizeDate(item.date);
       let matchesDate = true;
       if (dateFilter === 'Today') {
-        matchesDate = itemDate === todayStr;
+        matchesDate = itemDate === getLocalDate();
       } else if (dateFilter === 'Custom' && customDate) {
         matchesDate = itemDate === customDate;
       }
@@ -190,7 +219,16 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
   };
 
   return (
-    <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+    <div className="space-y-3">
+      {/* DateHeader at Top of Supplier Intake History */}
+      <DateHeader
+        date={selectedDate}
+        setDate={handleDateChange}
+        title="Supplier Milk Intake History"
+        subtitle={`Daily supplier collections, fat rates, and settlements strictly for ${selectedDate}`}
+      />
+
+      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
       {/* Search and Filters Header */}
       <div className="p-4 border-b border-slate-100 flex flex-col xl:flex-row gap-3 items-start xl:items-center justify-between">
         {/* Search Input */}
@@ -790,6 +828,7 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

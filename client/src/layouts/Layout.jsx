@@ -2,6 +2,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 import {
   PageSkeleton,
   DashboardSkeleton,
@@ -11,11 +12,15 @@ import {
 export default function Layout() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const location = useLocation();
+  const { setToday } = useGlobalDate();
 
-  // Close mobile sidebar on route change
+  // Close mobile sidebar and STRICTLY enforce 'Today' on route transition
   useEffect(() => {
     setIsMobileSidebarOpen(false);
-  }, [location.pathname]);
+    if (typeof setToday === 'function') {
+      setToday();
+    }
+  }, [location.pathname, setToday]);
 
   const getFallbackSkeleton = () => {
     const path = location.pathname.toLowerCase();

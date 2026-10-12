@@ -4,6 +4,7 @@ import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useLedgerContext } from '@/context/LedgerContext';
+import { useExpense } from '@/context/ExpenseContext';
 import { getPktTodayString, getDateRangeBoundaries, isDateInFilterRange } from '@/utils/dateUtils';
 
 import { Link } from 'react-router-dom';
@@ -18,6 +19,7 @@ export default function TopSummaryCards({
   const { intakeLogs = [], totals: intakeTotals = {}, isLoading: isIntakeLoading } = useIntakeContext();
   const { salesHistory = [], inventoryMetrics = {}, businessFinancialMetrics = {} } = usePOSContext();
   const { ledgers = {} } = useLedgerContext();
+  const { expenses = [] } = useExpense();
 
   const periodData = getDateRangeBoundaries(dateFilter, startDate, endDate);
   const periodLabel = periodData.label;
@@ -31,12 +33,26 @@ export default function TopSummaryCards({
     isDateInFilterRange(l.date || l.createdAt, dateFilter, startDate, endDate)
   );
 
-  const totalFarmMilk = filteredMilking.length > 0
-    ? filteredMilking.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0)
-    : (dateFilter === 'today' ? (Number(inventoryMetrics.totalFarmYield) || 0) : 0);
+  let totalFarmMilk = 0;
+  if (filteredMilking.length > 0) {
+    totalFarmMilk = filteredMilking.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
+  } else {
+    let sumFromAnimals = 0;
+    animals.forEach((animal) => {
+      const historyList = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
+      historyList.forEach((h) => {
+        if (isDateInFilterRange(h.date || h.createdAt, dateFilter, startDate, endDate)) {
+          sumFromAnimals += Number(h.quantityLiters || h.yieldLiters || h.yield || ((Number(h.morning) || 0) + (Number(h.evening) || 0))) || 0;
+        }
+      });
+    });
+    totalFarmMilk = sumFromAnimals > 0
+      ? sumFromAnimals
+      : (dateFilter === 'today' ? (Number(inventoryMetrics.totalFarmYield) || 0) : 0);
+  }
 
   const milkingAnimalsCount = animals.filter(
-    (a) => a.lactationStatus === 'Milking'
+    (a) => (a.lactationStatus || a.status || '').toLowerCase() === 'milking'
   ).length;
 
   // 2. Purchased Supplier Milk
@@ -57,11 +73,6 @@ export default function TopSummaryCards({
   // 3. Total Milk Sourced (Farm + Procurement)
   const totalMilkSourced = totalFarmMilk + totalProcuredMilk;
 
-  const farmNetProfit = Number(businessFinancialMetrics.farmNetProfit) || 0;
-  const supplierNetProfit = Number(businessFinancialMetrics.supplierNetProfit) || 0;
-  const totalNetProfit = Number(businessFinancialMetrics.totalBusinessNetProfit) || 0;
-  const netMargin = Number(businessFinancialMetrics.totalBusinessMargin) || 0;
-
   // 4. Sales in active period
   const periodSales = salesHistory.filter((s) => {
     const raw = s.date || s.timestamp || s.formattedDate || s.createdAt || '';
@@ -76,6 +87,9 @@ export default function TopSummaryCards({
   let periodFarmMilkRevenue = 0;
   let periodSupplierMilkRevenue = 0;
   let periodDahiSoldQty = 0;
+  let periodDahiSalesRevenue = 0;
+  let periodFarmDahiRevenue = 0;
+  let periodSupplierDahiRevenue = 0;
 
   periodSales.forEach((sale) => {
     periodSalesRevenue += (Number(sale.netPayable || sale.totalAmount || sale.grandTotal) || 0);
@@ -87,6 +101,11 @@ export default function TopSummaryCards({
       const isDahi = name.includes('dahi') || cat.includes('dahi') || name.includes('yogurt');
       if (isDahi) {
         periodDahiSoldQty += qty;
+        periodDahiSalesRevenue += rev;
+        const fRev = item.farmRevenue !== undefined ? Number(item.farmRevenue) || 0 : (item.farmDahiRevenue !== undefined ? Number(item.farmDahiRevenue) || 0 : (item.source === 'Farm' ? rev : 0));
+        const sRev = item.supplierRevenue !== undefined ? Number(item.supplierRevenue) || 0 : (item.source === 'Supplier' ? rev : Math.max(0, rev - fRev));
+        periodFarmDahiRevenue += fRev;
+        periodSupplierDahiRevenue += sRev;
       } else {
         periodMilkSoldQty += qty;
         periodMilkSalesRevenue += rev;
@@ -101,6 +120,51 @@ export default function TopSummaryCards({
       }
     });
   });
+
+  // Period Expenses segregation
+  const periodFarmExpenses = (expenses || []).reduce((sum, exp) => {
+    const scope = String(exp.scope || exp.expenseEntity || 'FARM').toUpperCase();
+    if (scope !== 'FARM') return sum;
+    const d = exp.date || exp.createdAt;
+    if (isDateInFilterRange(d, dateFilter, startDate, endDate)) {
+      return sum + (Number(exp.amount) || 0);
+    }
+    return sum;
+  }, 0);
+
+  const periodSupplierExpenses = (expenses || []).reduce((sum, exp) => {
+    const scope = String(exp.scope || exp.expenseEntity || 'FARM').toUpperCase();
+    if (scope === 'FARM') return sum;
+    const d = exp.date || exp.createdAt;
+    if (isDateInFilterRange(d, dateFilter, startDate, endDate)) {
+      return sum + (Number(exp.amount) || 0);
+    }
+    return sum;
+  }, 0);
+
+  // Period P&L Calculations
+  const periodFarmTotalIncome = periodFarmMilkRevenue + periodFarmDahiRevenue;
+  const periodFarmNetProfit = periodFarmTotalIncome - periodFarmExpenses;
+
+  const periodSupplierTotalIncome = periodSupplierMilkRevenue + periodSupplierDahiRevenue;
+  const periodSupplierTotalCosts = totalProcuredCost + periodSupplierExpenses;
+  const periodSupplierNetProfit = periodSupplierTotalIncome - periodSupplierTotalCosts;
+
+  const periodTotalNetProfit = periodFarmNetProfit + periodSupplierNetProfit;
+  const periodNetMargin = periodSalesRevenue > 0 ? Math.round((periodTotalNetProfit / periodSalesRevenue) * 100) : 0;
+
+  const farmNetProfit = dateFilter === 'today'
+    ? (businessFinancialMetrics.farmNetProfit !== undefined ? Number(businessFinancialMetrics.farmNetProfit) : periodFarmNetProfit)
+    : periodFarmNetProfit;
+  const supplierNetProfit = dateFilter === 'today'
+    ? (businessFinancialMetrics.supplierNetProfit !== undefined ? Number(businessFinancialMetrics.supplierNetProfit) : periodSupplierNetProfit)
+    : periodSupplierNetProfit;
+  const totalNetProfit = dateFilter === 'today'
+    ? (businessFinancialMetrics.totalBusinessNetProfit !== undefined ? Number(businessFinancialMetrics.totalBusinessNetProfit) : periodTotalNetProfit)
+    : periodTotalNetProfit;
+  const netMargin = dateFilter === 'today'
+    ? (businessFinancialMetrics.totalBusinessMargin !== undefined ? Number(businessFinancialMetrics.totalBusinessMargin) : periodNetMargin)
+    : periodNetMargin;
 
   // 6. Recoveries (Credit payments into Ledgers)
   let totalRecoveries = 0;

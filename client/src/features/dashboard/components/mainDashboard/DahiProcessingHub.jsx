@@ -39,9 +39,9 @@ export default function DahiProcessingHub({
   const milkPrice = Number(inventoryMetrics.milkPrice) || Number(milkProducts[0]?.price) || 210;
 
   const dahiOutputKg = activeBatches.reduce((sum, b) => {
-    const outVal = parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
+    const outVal = parseFloat(String(b.output).replace(/[^\d.]/g, '')) || Number(b.outputVal || b.outputQuantity) || 0;
     return sum + outVal;
-  }, 0) || (parseFloat(inventoryMetrics.totalDahi) || parseFloat(inventoryMetrics.dahiSold) || 0);
+  }, 0);
 
   // Source allocation (Farm vs Supplier)
   const totalFarmMilk = Number(inventoryMetrics.totalFarmYield) || 0;
@@ -81,16 +81,7 @@ export default function DahiProcessingHub({
     }
   });
 
-  if (rawMilkConverted === 0) {
-    // Fallback to POS context inventory metrics if no batches exist today
-    rawMilkConverted = parseFloat(inventoryMetrics.totalDahi) ? parseFloat((parseFloat(inventoryMetrics.totalDahi) * 1.05).toFixed(1)) : 0;
-    if (rawMilkConverted > 0 && totalAvailable > 0) {
-      farmMilkPortion = Math.round((totalFarmMilk / totalAvailable) * rawMilkConverted);
-      supMilkPortion = Math.max(0, Math.round(rawMilkConverted - farmMilkPortion));
-    } else if (rawMilkConverted > 0) {
-      farmMilkPortion = Math.round(rawMilkConverted);
-    }
-  }
+
 
   // Yield %
   const yieldPct = rawMilkConverted > 0 ? ((dahiOutputKg / rawMilkConverted) * 100).toFixed(1) : '0.0';

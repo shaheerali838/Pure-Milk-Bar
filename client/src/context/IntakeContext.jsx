@@ -1,18 +1,28 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import supplierService from '../services/supplierService';
 import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
-import { normalizeDateStr, sortByDateDesc, ensureValidDate, getPktTodayString } from '@/utils/dateUtils';
+import { normalizeDateStr, sortByDateDesc, ensureValidDate, getPktTodayString, getLocalDate } from '@/utils/dateUtils';
 
 const IntakeContext = createContext(null);
 
 export function IntakeProvider({ children }) {
-  const [intakeLogs, setIntakeLogs] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [intakeLogs, setIntakeLogs] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('pmb_supplier_intakes');
+        if (saved) return JSON.parse(saved);
+      } catch (_) {}
+    }
+    return [];
+  });
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // Fetch live procurements from API
-  const fetchIntakes = useCallback(async () => {
-    setIsLoading(true);
+  const fetchIntakes = useCallback(async (silent = false) => {
+    if (!silent && intakeLogs.length === 0) {
+      setIsLoading(true);
+    }
     setError(null);
     try {
       const data = await supplierService.getProcurements();
@@ -46,7 +56,13 @@ export function IntakeProvider({ children }) {
           status: p.qualityGrade === 'REJECTED' ? 'Rejected' : 'Accepted',
         };
       });
-      setIntakeLogs(sortByDateDesc(normalized, 'date'));
+      const sorted = sortByDateDesc(normalized, 'date');
+      setIntakeLogs(sorted);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('pmb_supplier_intakes', JSON.stringify(sorted));
+        } catch (_) {}
+      }
     } catch (err) {
       console.error('Failed to fetch procurements from API:', err);
       setError(err.message || 'Failed to load intake records');
@@ -123,7 +139,15 @@ export function IntakeProvider({ children }) {
         status: 'Accepted',
       };
 
-      setIntakeLogs((prev) => sortByDateDesc([normalized, ...(prev || [])], 'date'));
+      setIntakeLogs((prev) => {
+        const sorted = sortByDateDesc([normalized, ...(prev || [])], 'date');
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('pmb_supplier_intakes', JSON.stringify(sorted));
+          } catch (_) {}
+        }
+        return sorted;
+      });
 
       broadcastSync('pure_milk_bar_intake_updated');
       broadcastSync('pure_milk_bar_inventory_updated');
@@ -168,7 +192,7 @@ export function IntakeProvider({ children }) {
               pendingAmount: Math.max(0, cost - paid),
               paymentMethod: method || log.paymentMethod || 'Cash',
               paymentNotes: notes || log.paymentNotes || '',
-              paidDate: new Date().toISOString().split('T')[0],
+              paidDate: getLocalDate(),
             };
           }
           return log;

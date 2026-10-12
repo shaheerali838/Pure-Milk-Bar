@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { LayoutDashboard, Users, Droplets, Plus } from 'lucide-react';
 import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 import { getDateRangeBoundaries } from '@/utils/dateUtils';
 import SupplierDashboardCard from '../components/SupplierDashboardCard';
 import SupplierDashboardCharts from '../components/SupplierDashboardCharts';
@@ -19,10 +21,37 @@ import { useIntakeContext } from '@/context/IntakeContext';
 export default function SupplierDashboard() {
   const { suppliers = [] } = useSupplierContext() || {};
   const { intakeLogs = [] } = useIntakeContext() || {};
+  const { globalDate, setGlobalDate, setToday } = useGlobalDate();
 
+  // Strict "Starts with Today" initialization
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [dateFilter, setDateFilter] = useState('today');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    setSelectedDate(today);
+    if (typeof setToday === 'function') {
+      setToday();
+    }
+  }, []);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    if (typeof setGlobalDate === 'function') {
+      setGlobalDate(newDate);
+    }
+    if (newDate === new Date().toISOString().split('T')[0]) {
+      setDateFilter('today');
+      setStartDate('');
+      setEndDate('');
+    } else {
+      setDateFilter('custom');
+      setStartDate(newDate);
+      setEndDate(newDate);
+    }
+  };
 
   const { detailedLabel: periodLabel } = useMemo(() => {
     return getDateRangeBoundaries(dateFilter, startDate, endDate);
@@ -137,6 +166,9 @@ export default function SupplierDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Global Date Header */}
+      <DateHeader date={selectedDate} setDate={handleDateChange} />
 
       {/* Date Filter Bar */}
       <div className="mb-3">

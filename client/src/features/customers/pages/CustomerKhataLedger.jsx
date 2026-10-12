@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { AlertTriangle, CreditCard, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCustomerContext } from '../../../context/CustomerContext';
@@ -17,12 +17,34 @@ import ViewTransactionView from '../components/CustomerKhataLedger/ViewTransacti
 import HowToFinishView from '../components/CustomerKhataLedger/HowToFinishView';
 import CustomerDetailsView from '../components/Customer_&_Accounts/CustomerDetailsView';
 import EditCustomerModal from '../components/Customer_&_Accounts/EditCustomerModal';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 
 export default function CustomerKhataLedger() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { customers } = useCustomerContext();
   const { getLedgerForCustomer, fetchCustomerLedger, settleKhata, ledgers } = useLedgerContext();
+  const { globalDate, setGlobalDate, setToday } = useGlobalDate();
+
+  // Strict "Starts with Today" initialization
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    setSelectedDate(today);
+    if (typeof setToday === 'function') {
+      setToday();
+    }
+  }, [location.pathname]);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    if (typeof setGlobalDate === 'function') {
+      setGlobalDate(newDate);
+    }
+  };
 
   const urlCustomerId = searchParams.get('customerId');
   const [selectedCustomerId, setSelectedCustomerId] = useState(urlCustomerId || '');
@@ -217,6 +239,9 @@ export default function CustomerKhataLedger() {
 
   return (
     <div className="space-y-3 p-1 sm:p-2.5 w-full animate-in fade-in duration-150">
+      {/* Global Date Header */}
+      <DateHeader date={selectedDate} setDate={handleDateChange} />
+
       <LedgerHeader
         onHowToFinish={() => setCurrentSubView('howToFinish')}
         onPrint={handlePrint}
