@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   Clock,
   Printer,
-  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePOSContext } from '@/context/POSContext';

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, Download, Filter, TrendingUp, TrendingDown, Banknote, Droplets, Receipt, FileSpreadsheet, RotateCcw, Clock, Sparkles, Info } from 'lucide-react';
+import { Calendar, Download, Filter, TrendingUp, TrendingDown, Banknote, Droplets, Receipt, FileSpreadsheet, RotateCcw, Clock, Info } from 'lucide-react';
 import { useExpense } from '@/context/ExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useAnimalContext } from '@/context/AnimalContext';

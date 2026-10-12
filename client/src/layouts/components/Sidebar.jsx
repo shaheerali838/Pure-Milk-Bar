@@ -11,7 +11,6 @@ import {
   Bike,
   Wallet,
   Package,
-  Sparkles,
   LogOut,
   LogIn,
   ShieldCheck,

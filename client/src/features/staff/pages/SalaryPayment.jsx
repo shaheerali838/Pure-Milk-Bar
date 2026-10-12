@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Banknote, UserCheck, Calendar, CreditCard, Building, CheckCircle2, Clock, AlertCircle, Users, FileText, Trash2, Sparkles, ArrowRight, Receipt, Wallet } from 'lucide-react';
+import { Banknote, UserCheck, Calendar, CreditCard, Building, CheckCircle2, Clock, AlertCircle, Users, FileText, Trash2, ArrowRight, Receipt, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { useStaffPayrollContext } from '@/context/StaffPayrollContext';
 import { useExpense } from '@/context/ExpenseContext';

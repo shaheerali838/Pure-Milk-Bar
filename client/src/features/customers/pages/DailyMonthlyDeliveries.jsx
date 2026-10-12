@@ -20,7 +20,6 @@ import {
   Phone,
   Receipt,
   RotateCcw,
-  Sparkles,
   ArrowUpRight,
   Check,
   ChevronDown,
