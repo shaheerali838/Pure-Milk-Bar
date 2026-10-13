@@ -56,7 +56,11 @@ export default function DoorstepSettlementModal({
     ? delivery.items.reduce((acc, it) => acc + (Number(it.subtotal) || Number(it.unitPrice * it.quantity) || 0), 0)
     : 0;
 
+  const deliveryFee = Number(delivery?.deliveryFee) || 0;
+  const itemsPlusFee = itemsTotal > 0 ? itemsTotal + deliveryFee : 0;
+
   const orderTotal = Math.max(
+    itemsPlusFee,
     itemsTotal,
     prevPaid + (prevDue > 0 ? prevDue : codToCollect),
     codToCollect,
@@ -178,12 +182,36 @@ export default function DoorstepSettlementModal({
       // 2. Customer Khata Ledger Entry (Credit payment received - for registered customers)
       const custId = delivery.customerId?._id || delivery.customerId?.id || delivery.customerId;
       if (custId && totalCollectedNow > 0 && typeof addLedgerEntry === 'function') {
-        const payMethodDesc =
-          onlineCollected > 0 && cashCollected > 0
-            ? `Doorstep Split (Cash: Rs. ${cashCollected}, ${onlineProvider}: Rs. ${onlineCollected})`
-            : onlineCollected > 0
-            ? `Doorstep Online (${onlineProvider}${onlineTrxId ? ` #${onlineTrxId}` : ''})`
-            : 'Doorstep Cash (COD)';
+        const isSplit = onlineCollected > 0 && cashCollected > 0;
+        const isPureOnline = onlineCollected > 0 && cashCollected === 0;
+        
+        let payMethodDesc = 'Doorstep Cash (COD)';
+        let finalChannel = 'Cash';
+        let splitMeta = null;
+        let onlineMeta = null;
+
+        if (isSplit) {
+          payMethodDesc = `Split Payment: Cash + ${onlineProvider}`;
+          finalChannel = 'Split';
+          splitMeta = {
+            cashAmount: cashCollected,
+            onlineAmount: onlineCollected,
+            onlineMethod: onlineProvider.toUpperCase() === 'JAZZCASH' ? 'JAZZCASH' : 'EASYPAISA',
+          };
+          onlineMeta = {
+            provider: onlineProvider,
+            transactionId: onlineTrxId || undefined,
+            senderAccount: onlineSenderAccount || undefined,
+          };
+        } else if (isPureOnline) {
+          payMethodDesc = `Online Payment (${onlineProvider})`;
+          finalChannel = onlineProvider;
+          onlineMeta = {
+            provider: onlineProvider,
+            transactionId: onlineTrxId || undefined,
+            senderAccount: onlineSenderAccount || undefined,
+          };
+        }
 
         await addLedgerEntry(
           custId,
@@ -197,6 +225,9 @@ export default function DoorstepSettlementModal({
             remainingAmount: remainingKhataDue,
             fulfillmentType: 'Doorstep Collection',
             paymentMethod: payMethodDesc,
+            paymentChannel: finalChannel,
+            splitPaymentMeta: splitMeta,
+            onlineTransferMeta: onlineMeta,
             invoiceId: delivery.receiptNumber || delivery.runCode || undefined,
             notes: combinedNotes,
           },

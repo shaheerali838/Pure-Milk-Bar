@@ -22,6 +22,7 @@ const userSchema = new Schema(
       type: String,
       required: [true, 'Phone number is required'],
       unique: true,
+      sparse: true,
       trim: true,
       index: true,
     },
@@ -77,4 +78,31 @@ const userSchema = new Schema(
 );
 
 export const User = model('User', userSchema);
+
+// Auto-fix duplicate phone numbers in database before syncing unique indexes
+const syncUserIndexes = async () => {
+  try {
+    const duplicates = await User.aggregate([
+      { $group: { _id: '$phone', count: { $sum: 1 }, docs: { $push: '$_id' } } },
+      { $match: { count: { $gt: 1 }, _id: { $ne: null } } },
+    ]);
+
+    for (const group of duplicates) {
+      const docsToUpdate = group.docs.slice(1);
+      for (let i = 0; i < docsToUpdate.length; i++) {
+        await User.updateOne(
+          { _id: docsToUpdate[i] },
+          { $set: { phone: `${group._id}_${i + 1}` } }
+        );
+      }
+    }
+
+    await User.syncIndexes();
+  } catch (err) {
+    console.log('[User Model] Syncing indexes notice:', err.message);
+  }
+};
+
+syncUserIndexes();
+
 export default User;

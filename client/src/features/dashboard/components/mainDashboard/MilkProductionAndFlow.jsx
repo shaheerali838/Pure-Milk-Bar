@@ -29,86 +29,47 @@ export default function MilkProductionAndFlow() {
 
   // 1. DYNAMIC 7-DAY MILK PRODUCTION (FARM VS PURCHASED)
   const productionChartData = useMemo(() => {
-    // Collect dates from real animal history, milking logs, and intake logs
-    const dateSet = new Set();
-    animals.forEach((a) => {
-      (a.history || []).forEach((h) => {
-        if (h.date) dateSet.add(h.date);
-      });
-    });
-    milkingLogs.forEach((l) => {
-      if (l.date) {
-        const d = new Date(l.date);
-        const label = !isNaN(d.getTime())
-          ? d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
-          : l.date;
-        dateSet.add(label);
-      }
-    });
-    intakeLogs.forEach((l) => {
-      if (l.date) {
-        const d = new Date(l.date);
-        const label = !isNaN(d.getTime())
-          ? d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
-          : l.date;
-        dateSet.add(label);
-      }
-    });
-
-    let days = Array.from(dateSet);
-    if (days.length === 0) {
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        days.push(d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }));
-      }
-    } else {
-      days = days.slice(-7);
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const isoKey = `${yyyy}-${mm}-${dd}`;
+      const label = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+      days.push({ isoKey, label });
     }
 
-    return days.map((day) => {
-      // Farm yield for this day from milkingLogs and animal histories
+    return days.map(({ isoKey, label }) => {
       let farmDayYield = 0;
-      milkingLogs.forEach((log) => {
-        const logDateObj = new Date(log.date);
-        const logLabel = !isNaN(logDateObj.getTime())
-          ? logDateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
-          : log.date;
-        if (log.date === day || logLabel === day) {
+      (milkingLogs || []).forEach((log) => {
+        const rawDate = log.date || log.createdAt;
+        if (!rawDate) return;
+        const logDateStr = typeof rawDate === 'string' && rawDate.includes('T') ? rawDate.split('T')[0] : String(rawDate).slice(0, 10);
+        if (logDateStr === isoKey) {
           farmDayYield += Number(log.yieldLiters || log.yield || log.quantityLiters) || 0;
         }
       });
 
-      if (farmDayYield === 0) {
-        animals.forEach((animal) => {
-          const historyList = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
-          const historyEntry = historyList.find((h) => h.date === day);
-          if (historyEntry) {
-            farmDayYield += Number(historyEntry.quantityLiters || historyEntry.yieldLiters || historyEntry.yield || ((Number(historyEntry.morning) || 0) + (Number(historyEntry.evening) || 0))) || 0;
-          }
-        });
-      }
-
-      // Intake quantity for this day from intakeLogs
       let purchasedYield = 0;
-      intakeLogs.forEach((log) => {
-        const logDateObj = new Date(log.date);
-        const logLabel = !isNaN(logDateObj.getTime())
-          ? logDateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
-          : log.date;
-        if (log.date === day || logLabel === day) {
-          purchasedYield += Number(log.quantity) || 0;
+      (intakeLogs || []).forEach((log) => {
+        const rawDate = log.date || log.createdAt;
+        if (!rawDate) return;
+        const logDateStr = typeof rawDate === 'string' && rawDate.includes('T') ? rawDate.split('T')[0] : String(rawDate).slice(0, 10);
+        if (logDateStr === isoKey) {
+          purchasedYield += Number(log.quantity || log.quantityLiters) || 0;
         }
       });
 
       return {
-        date: day,
+        date: label,
         farm: parseFloat(farmDayYield.toFixed(1)),
         purchased: parseFloat(purchasedYield.toFixed(1)),
         total: parseFloat((farmDayYield + purchasedYield).toFixed(1)),
       };
     });
-  }, [animals, milkingLogs, intakeLogs]);
+  }, [milkingLogs, intakeLogs]);
 
   // 2. TODAY'S MILK FLOW STEP-BY-STEP CALCULATION
   const totalFarmMilk = Number(inventoryMetrics.totalFarmYield) || 0;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Truck, Milk, DollarSign, Fuel, Users } from 'lucide-react';
+import { Truck, Milk, Banknote, Fuel, Users } from 'lucide-react';
 
 export default function DeliveryFinanceStats({
   filteredDeliveries = [],
@@ -54,7 +54,7 @@ export default function DeliveryFinanceStats({
       label: 'COD & CASH INFLOWS',
       value: `Rs. ${totalRevenue.toLocaleString()}`,
       sub: 'Cash collected on delivery',
-      icon: DollarSign,
+      icon: Banknote,
       color: '#059669',
       badge: 'Revenue',
       isClickable: false,

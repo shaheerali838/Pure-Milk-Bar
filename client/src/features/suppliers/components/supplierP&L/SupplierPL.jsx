@@ -1,17 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  TrendingUp,
-  Download,
-  Calendar,
-  Layers,
-  Droplets,
-  DollarSign,
-  Receipt,
-  Truck,
-  Scale,
-  Milk,
-  RefreshCw,
-} from 'lucide-react';
+import { TrendingUp, Download, Calendar, Layers, Droplets, Banknote, Receipt, Truck, Scale, Milk, RefreshCw } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
@@ -22,6 +10,7 @@ import { exportTableToCSV } from '@/utils/csvExport';
 import { normalizeDateStr, getActiveBusinessDate } from '@/utils/dateUtils';
 import DateHeader from '@/components/common/DateHeader';
 import { useGlobalDate } from '@/context/GlobalDateContext';
+import { useSupplierPLMetrics } from './useSupplierPLMetrics';
 import SupplierPLCards from './SupplierPLCards';
 import SupplierPLCharts from './SupplierPLCharts';
 import SupplierPLTable from './SupplierPLTable';
@@ -39,9 +28,11 @@ export default function SupplierPL() {
 
   // STRICT RULE: Force initialization to 'Today'
   const { globalDate, setGlobalDate } = useGlobalDate();
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [periodFilter, setPeriodFilter] = useState('Today'); // 'Today' | 'This Month' | 'All Time'
+  const [selectedDate, setSelectedDate] = useState(() => globalDate || new Date().toISOString().split('T')[0]);
+  const [periodFilter, setPeriodFilter] = useState('Today'); // 'Today' | 'This Month' | 'All Time' | 'Custom Range'
   const [customDate, setCustomDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   React.useEffect(() => {
     if (globalDate) {
@@ -70,6 +61,15 @@ export default function SupplierPL() {
   const currentMonthStr = todayStr.slice(0, 7); // YYYY-MM
 
   const filteredIntakeLogs = useMemo(() => {
+    if (periodFilter === 'Custom Range' || startDate || endDate) {
+      return intakeLogs.filter((item) => {
+        const iDate = (item.date || '').slice(0, 10);
+        if (startDate && iDate < startDate) return false;
+        if (endDate && iDate > endDate) return false;
+        if (customDate && !startDate && !endDate) return iDate === customDate;
+        return true;
+      });
+    }
     if (customDate) {
       return intakeLogs.filter((item) => normalizeDateStr(item.date || item.createdAt) === customDate);
     }
@@ -80,272 +80,58 @@ export default function SupplierPL() {
       return intakeLogs.filter((item) => (normalizeDateStr(item.date || item.createdAt) || '').startsWith(currentMonthStr));
     }
     return intakeLogs;
-  }, [intakeLogs, customDate, periodFilter, todayStr, currentMonthStr]);
+  }, [intakeLogs, customDate, startDate, endDate, periodFilter, todayStr, currentMonthStr]);
 
   const activeSupplierSales = supplierSalesHistory;
   const filteredSales = useMemo(() => {
     return activeSupplierSales.filter((sale) => {
       const sDate = normalizeDateStr(sale.date || sale.timestamp || sale.createdAt || sale.formattedDate);
+      if (periodFilter === 'Custom Range' || startDate || endDate) {
+        if (startDate && sDate < startDate) return false;
+        if (endDate && sDate > endDate) return false;
+        if (customDate && !startDate && !endDate) return sDate === customDate;
+        return true;
+      }
       if (customDate) return sDate === customDate;
       if (periodFilter === 'Today') return sDate === todayStr;
       if (periodFilter === 'This Month') return sDate.startsWith(currentMonthStr);
       return true;
     });
-  }, [activeSupplierSales, customDate, periodFilter, todayStr, currentMonthStr]);
+  }, [activeSupplierSales, customDate, startDate, endDate, periodFilter, todayStr, currentMonthStr]);
 
   const filteredExpenses = useMemo(() => {
     return allExpenses.filter((e) => {
       const eDate = normalizeDateStr(e.date || e.createdAt);
+      if (periodFilter === 'Custom Range' || startDate || endDate) {
+        if (startDate && eDate < startDate) return false;
+        if (endDate && eDate > endDate) return false;
+        if (customDate && !startDate && !endDate) return eDate === customDate;
+        return true;
+      }
       if (customDate) return eDate === customDate;
       if (periodFilter === 'Today') return eDate === todayStr;
       if (periodFilter === 'This Month') return eDate.startsWith(currentMonthStr);
       return true;
     });
-  }, [allExpenses, customDate, periodFilter, todayStr, currentMonthStr]);
+  }, [allExpenses, customDate, startDate, endDate, periodFilter, todayStr, currentMonthStr]);
 
-  // Compute Supplier Milk and Dahi Sales strictly isolated from filtered sales
-  const { supplierMilkSales, supplierMilkVolume, supplierDahiSales, supplierDahiVolume, totalSupplierSales } = useMemo(() => {
-    let mSales = 0;
-    let mVol = 0;
-    let dSales = 0;
-    let dVol = 0;
-
-    filteredSales.forEach((sale) => {
-      (sale.items || []).forEach((item) => {
-        const iName = (item.name || '').toLowerCase();
-        const cat = (item.category || '').toLowerCase();
-        const qty = Number(item.quantity) || 0;
-        const sub = Number(item.subtotal || item.effectiveRevenue) || (qty * (Number(item.price || item.unitPrice) || 0));
-
-        const isDahi = iName.includes('dahi') || cat.includes('dahi') || iName.includes('yogurt') || cat.includes('yogurt');
-        if (isDahi) {
-          dSales += sub;
-          dVol += qty;
-        } else {
-          mSales += sub;
-          mVol += qty;
-        }
-      });
-    });
-
-    return {
-      supplierMilkSales: mSales,
-      supplierMilkVolume: mVol,
-      supplierDahiSales: dSales,
-      supplierDahiVolume: dVol,
-      totalSupplierSales: mSales + dSales,
-    };
-  }, [filteredSales]);
-
-  // 2. Real Milk Procurement Streams Dynamically From Intake Records
-  const productStreams = useMemo(() => {
-    const buffaloLogs = [...filteredIntakeLogs];
-
-    // Real Sourced Volumes (Liters) from IntakeContext
-    const buffaloVolume = buffaloLogs.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
-
-    // Real Base Sourcing Costs (Rs.) from IntakeContext
-    const buffaloCost = buffaloLogs.reduce((sum, r) => sum + (Number(r.totalCost) || 0), 0);
-
-    // Real Payments & Pending Balances
-    const buffaloPaid = buffaloLogs.reduce((sum, r) => sum + (Number(r.paidAmount) || 0), 0);
-    const buffaloPending = buffaloLogs.reduce((sum, r) => sum + (Number(r.pendingAmount) || 0), 0);
-
-    const buildIntakeChannels = (logs, totalVol, totalCostVal) => {
-      const morningLogs = logs.filter((l) => (l.shift || '').toLowerCase().includes('morning') || (l.time || '').toLowerCase().includes('morning'));
-      const eveningLogs = logs.filter((l) => (l.shift || '').toLowerCase().includes('evening') || (l.time || '').toLowerCase().includes('evening'));
-      const otherLogs = logs.filter((l) => !morningLogs.includes(l) && !eveningLogs.includes(l));
-
-      const mVol = morningLogs.reduce((s, l) => s + (Number(l.quantity) || 0), 0);
-      const mCost = morningLogs.reduce((s, l) => s + (Number(l.totalCost) || 0), 0);
-      const eVol = eveningLogs.reduce((s, l) => s + (Number(l.quantity) || 0), 0);
-      const eCost = eveningLogs.reduce((s, l) => s + (Number(l.totalCost) || 0), 0);
-      const oVol = otherLogs.reduce((s, l) => s + (Number(l.quantity) || 0), 0);
-      const oCost = otherLogs.reduce((s, l) => s + (Number(l.totalCost) || 0), 0);
-
-      const channels = [];
-      if (mVol > 0 || logs.length === 0) {
-        channels.push({
-          channelName: 'Morning Shift Procurement',
-          channelSubtext: 'Direct morning dock intake batches',
-          volume: mVol,
-          cost: mCost,
-          avgRate: mVol > 0 ? Math.round(mCost / mVol) : 0,
-          sharePercent: totalVol > 0 ? Math.round((mVol / totalVol) * 100) : 0,
-          revenue: 0,
-          grossMargin: 0,
-        });
-      }
-      if (eVol > 0) {
-        channels.push({
-          channelName: 'Evening Shift Procurement',
-          channelSubtext: 'Evening collection route dock intake',
-          volume: eVol,
-          cost: eCost,
-          avgRate: eVol > 0 ? Math.round(eCost / eVol) : 0,
-          sharePercent: totalVol > 0 ? Math.round((eVol / totalVol) * 100) : 0,
-          revenue: 0,
-          grossMargin: 0,
-        });
-      }
-      if (oVol > 0) {
-        channels.push({
-          channelName: 'Special / Direct Sourcing',
-          channelSubtext: 'Spot intake batches and tanker deliveries',
-          volume: oVol,
-          cost: oCost,
-          avgRate: oVol > 0 ? Math.round(oCost / oVol) : 0,
-          sharePercent: totalVol > 0 ? Math.round((oVol / totalVol) * 100) : 0,
-          revenue: 0,
-          grossMargin: 0,
-        });
-      }
-      if (channels.length === 0) {
-        channels.push({
-          channelName: 'Standard Milk Intake',
-          channelSubtext: 'Supplier intake batches',
-          volume: totalVol,
-          cost: totalCostVal,
-          avgRate: totalVol > 0 ? Math.round(totalCostVal / totalVol) : 0,
-          sharePercent: 100,
-          revenue: 0,
-          grossMargin: 0,
-        });
-      }
-      return channels;
-    };
-
-    const streams = [
-      {
-        id: 'LINE-BUF-02',
-        streamName: 'Sourced Buffalo Milk',
-        category: 'Raw Sourced Milk',
-        sourceType: 'Supplier Milk Procurement',
-        originDetails: 'Direct Supplier Intake & High-Fat Sourcing',
-        sourcedVolume: buffaloVolume,
-        unit: 'L',
-        baseCost: buffaloCost,
-        paidAmount: buffaloPaid,
-        pendingAmount: buffaloPending,
-        avgPurchaseRate: buffaloVolume > 0 ? buffaloCost / buffaloVolume : 0,
-        resaleRevenue: supplierMilkSales,
-        soldVolume: supplierMilkVolume,
-        avgResaleRate: supplierMilkVolume > 0 ? Math.round(supplierMilkSales / supplierMilkVolume) : 0,
-        grossMargin: supplierMilkSales - buffaloCost,
-        grossMarginPercent: supplierMilkSales > 0 ? Math.round(((supplierMilkSales - buffaloCost) / supplierMilkSales) * 100) : 0,
-        allocatedOverhead: 0,
-        netProfit: supplierMilkSales - buffaloCost,
-        realizationPerUnit: buffaloVolume > 0 ? buffaloCost / buffaloVolume : 0,
-        channels: buildIntakeChannels(buffaloLogs, buffaloVolume, buffaloCost),
-        logsCount: buffaloLogs.length,
-      },
-    ];
-
-    if (supplierDahiSales > 0 || supplierDahiVolume > 0) {
-      streams.push({
-        id: 'LINE-DAHI-SUP',
-        streamName: 'Supplier & Mixed Dahi (Supplier Share)',
-        category: 'Processed & Chilled',
-        sourceType: 'Dahi Value Addition',
-        originDetails: 'Supplier-Sourced & Mixed Batch Dahi Conversion',
-        sourcedVolume: supplierDahiVolume,
-        unit: 'kg',
-        baseCost: 0,
-        paidAmount: 0,
-        pendingAmount: 0,
-        avgPurchaseRate: 0,
-        resaleRevenue: supplierDahiSales,
-        soldVolume: supplierDahiVolume,
-        avgResaleRate: supplierDahiVolume > 0 ? Math.round(supplierDahiSales / supplierDahiVolume) : 320,
-        grossMargin: supplierDahiSales - (supplierSalesMetrics?.dahiProductionCost || 0),
-        grossMarginPercent: supplierDahiSales > 0 ? Math.round(((supplierDahiSales - (supplierSalesMetrics?.dahiProductionCost || 0)) / supplierDahiSales) * 100) : 0,
-        allocatedOverhead: 0,
-        netProfit: supplierDahiSales - (supplierSalesMetrics?.dahiProductionCost || 0),
-        realizationPerUnit: supplierDahiVolume > 0 ? Math.round((supplierDahiSales - (supplierSalesMetrics?.dahiProductionCost || 0)) / supplierDahiVolume) : 0,
-        channels: [
-          {
-            channelName: 'POS Counter & Delivery Dahi Sales',
-            channelSubtext: 'Supplier portion of Dahi sales',
-            volume: supplierDahiVolume,
-            cost: 0,
-            avgRate: 0,
-            sharePercent: 100,
-            revenue: supplierDahiSales,
-            grossMargin: supplierDahiSales,
-          },
-        ],
-        logsCount: 1,
-      });
-    }
-
-    return streams;
-  }, [filteredIntakeLogs, supplierMilkSales, supplierMilkVolume, supplierDahiSales, supplierDahiVolume]);
-
-  // 3. Aggregate Summary Data for the Cards
-  // CRITICAL FORMULA: (Supplier Milk Sales + Supplier Dahi Sales) - Supplier Purchase Cost - Supplier Expenses = Supplier Net Profit
-  const summaryData = useMemo(() => {
-    const totalVolume = filteredIntakeLogs.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
-    const totalSupplierCost = filteredIntakeLogs.reduce((sum, r) => sum + (Number(r.totalCost) || 0), 0);
-    const totalPaid = filteredIntakeLogs.reduce((sum, r) => sum + (Number(r.paidAmount) || 0), 0);
-    const totalPending = filteredIntakeLogs.reduce((sum, r) => sum + (Number(r.pendingAmount) || 0), 0);
-    const totalRealizedSales = totalSupplierSales;
-    const totalExpenses = filteredExpenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
-
-    const supplierNetProfit = totalSupplierSales - totalSupplierCost - totalExpenses;
-    const totalGross = totalSupplierSales - totalSupplierCost;
-
-    const avgPurchaseRate = totalVolume > 0 ? totalSupplierCost / totalVolume : 0;
-    const avgResalePerLiter = supplierMilkVolume > 0 ? supplierMilkSales / supplierMilkVolume : 0;
-    const grossMarginPercent = totalRealizedSales > 0 ? Math.round((totalGross / totalRealizedSales) * 100) : 0;
-
-    return {
-      income: totalRealizedSales,
-      cost: totalSupplierCost,
-      gross: totalGross,
-      logistics: totalExpenses,
-      net: supplierNetProfit,
-      realizationPerLiter: avgPurchaseRate,
-      totalVolume,
-      buffaloVolume: totalVolume,
-      avgPurchaseRate,
-      avgResalePerLiter,
-      overheadPerLiter: totalVolume > 0 ? totalExpenses / totalVolume : 0,
-      grossMarginPercent,
-      netMarginPercent: totalRealizedSales > 0 ? Math.round((supplierNetProfit / totalRealizedSales) * 100) : 0,
-      paidSpend: totalPaid,
-      pendingSpend: totalPending,
-      realSoldVolume: supplierMilkVolume,
-      dahiSoldVolume: supplierDahiVolume,
-      milkSales: supplierMilkSales,
-      dahiSales: supplierDahiSales,
-      products: productStreams,
-      intakeRecords: filteredIntakeLogs,
-      expenses: filteredExpenses,
-      expenseVouchersCount: filteredExpenses.length,
-    };
-  }, [productStreams, filteredIntakeLogs, filteredExpenses, totalSupplierSales, supplierMilkSales, supplierDahiSales, supplierMilkVolume, supplierDahiVolume]);
-
-  // 4. Data for Bar Chart ('Procurement Cost & Volume by Stream')
-  const barChartData = useMemo(() => {
-    return productStreams.map((p) => ({
-      name: p.streamName.replace('Sourced ', '').replace('Standardized ', ''),
-      fullName: p.streamName,
-      baseCost: p.baseCost,
-      sourcedVolume: p.sourcedVolume,
-      resaleRevenue: p.resaleRevenue,
-      grossMargin: p.grossMargin,
-    }));
-  }, [productStreams]);
-
-  // 5. Data for Donut Chart ('Sales Revenue Allocation')
-  const donutChartData = useMemo(() => {
-    return productStreams
-      .filter((p) => p.resaleRevenue > 0)
-      .map((p) => ({
-        name: p.streamName,
-        value: p.resaleRevenue,
-      }));
-  }, [productStreams]);
+  // 2. Metrics & Streams computation via custom hook (modularized)
+  const {
+    supplierMilkSales,
+    supplierMilkVolume,
+    supplierDahiSales,
+    supplierDahiVolume,
+    totalSupplierSales,
+    productStreams,
+    summaryData,
+    barChartData,
+    donutChartData,
+  } = useSupplierPLMetrics({
+    filteredIntakeLogs,
+    filteredSales,
+    filteredExpenses,
+    supplierSalesMetrics,
+  });
 
   // 6. CSV Export Functionality
   const handleExportCSV = () => {
@@ -412,20 +198,25 @@ export default function SupplierPL() {
         {/* Toolbar matching user's exact screenshot design */}
         <div className="flex flex-wrap items-center gap-2">
           {/* A. Period Segmented Pills */}
-          <div className="flex items-center bg-slate-100/90 p-1 rounded-full border border-slate-200/70">
-            {['All Time', 'Today', 'This Month'].map((period) => {
-              const isActive = periodFilter === period && !customDate;
+          <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold">
+            {['All Time', 'Today', 'This Month', 'Custom Range'].map((period) => {
+              const isActive = periodFilter === period && !customDate && !startDate && !endDate;
+              const isCustomActive = period === 'Custom Range' && (periodFilter === 'Custom Range' || startDate || endDate || customDate);
               return (
                 <button
                   key={period}
                   type="button"
                   onClick={() => {
                     setPeriodFilter(period);
-                    setCustomDate('');
+                    if (period !== 'Custom Range') {
+                      setCustomDate('');
+                      setStartDate('');
+                      setEndDate('');
+                    }
                   }}
-                  className={`px-3.5 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    (period === 'Custom Range' ? isCustomActive : isActive)
+                      ? 'bg-white text-blue-700 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -435,19 +226,48 @@ export default function SupplierPL() {
             })}
           </div>
 
-          {/* B. Specific Date Picker input */}
-          <div className="relative flex items-center">
-            <Calendar className="w-3.5 h-3.5 text-slate-400 absolute left-3 pointer-events-none" />
-            <input
-              type="date"
-              value={customDate}
-              onChange={(e) => {
-                setCustomDate(e.target.value);
-                if (e.target.value) setPeriodFilter('');
-              }}
-              className="h-9 pl-8 pr-3 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-700 shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-[#0092b8] focus:border-[#0092b8] transition cursor-pointer"
-            />
-          </div>
+          {/* B. Date Range / Custom Date Picker inputs */}
+          {(periodFilter === 'Custom Range' || startDate || endDate || customDate) && (
+            <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-full px-3 h-9 text-xs shadow-2xs">
+              <Calendar className="w-3.5 h-3.5 text-[#0092b8] shrink-0" />
+              <span className="text-slate-400 font-medium text-[11px]">From:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setCustomDate('');
+                  setPeriodFilter('Custom Range');
+                }}
+                className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+              />
+              <span className="text-slate-400 font-medium text-[11px]">To:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setCustomDate('');
+                  setPeriodFilter('Custom Range');
+                }}
+                className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+              />
+              {(startDate || endDate || customDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                    setCustomDate('');
+                    setPeriodFilter('All Time');
+                  }}
+                  className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer ml-1"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
 
           {/* C. Export CSV Button */}
           <button

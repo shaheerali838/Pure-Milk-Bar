@@ -7,12 +7,9 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
   const { businessFinancialMetrics = {}, inventoryMetrics = {} } = usePOSContext() || {};
   const {
     totalDahiRevenue = 0,
-    totalDahiProductionCost = 0,
     totalDahiNetProfit = 0,
-    totalDahiSold = 0,
-    dahiSalePrice = null,          // null = not set in Product Module
-    isDahiPriceDefined = false,    // true only when price > 0 in Product Module
-    dahiProductName = null,
+    dahiSalePrice = null,
+    isDahiPriceDefined = false,
   } = businessFinancialMetrics;
 
   const {
@@ -40,34 +37,31 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
   const displayFarm     = remainingFarmMilk     !== undefined ? remainingFarmMilk     : farmSourced;
   const displaySupplier = remainingSupplierMilk !== undefined ? remainingSupplierMilk : supplierSourced;
 
-  // ── Condition A: Price NOT defined ── show qty only, hide all revenue/profit
-  // ── Condition B: Price defined      ── show qty + Rs. amount
-  const dahiSalesAmount  = isDahiPriceDefined
-    ? `${dahiSoldInPOS} kg  👉  +Rs. ${Number(totalDahiRevenue).toLocaleString()}`
+  const dahiSalesAmount = isDahiPriceDefined
+    ? `${dahiSoldInPOS} kg · Rs. ${Number(totalDahiRevenue).toLocaleString()}`
     : `${dahiSoldInPOS} kg`;
 
-  const dahiSalesSub     = isDahiPriceDefined
-    ? `Rs. ${dahiSalePrice}/kg · ${dahiSalesOrdersCount} sale${dahiSalesOrdersCount !== 1 ? 's' : ''}`
-    : `${dahiSalesOrdersCount} sale${dahiSalesOrdersCount !== 1 ? 's' : ''} · Price not set in Products`;
+  const dahiSalesSub = isDahiPriceDefined
+    ? `Rs. ${dahiSalePrice}/kg · ${dahiSalesOrdersCount} sales`
+    : `${dahiSalesOrdersCount} sales · Rate not set`;
 
   const dahiProfitAmount = isDahiPriceDefined
     ? `Rs. ${Number(totalDahiNetProfit).toLocaleString()}`
     : `${dahiProduced} kg`;
 
-  const dahiProfitTitle  = isDahiPriceDefined ? 'Dahi Net Profit' : 'Dahi Produced (Qty)';
+  const dahiProfitTitle = isDahiPriceDefined ? 'Dahi Net Profit' : 'Dahi Produced';
+  const dahiProfitSub   = isDahiPriceDefined
+    ? `${totalDahiRevenue > 0 ? Math.round((totalDahiNetProfit / totalDahiRevenue) * 100) : 0}% Net Margin`
+    : 'Pending price in Products';
 
-  const dahiProfitSub    = isDahiPriceDefined
-    ? `${totalDahiRevenue > 0 ? Math.round((totalDahiNetProfit / totalDahiRevenue) * 100) : 0}% Net Margin · Realized Gain`
-    : 'Set sale price in Products to see revenue';
-
-  const dahiProfitColor  = isDahiPriceDefined ? '#10b981' : '#94a3b8';
+  const dahiProfitColor = isDahiPriceDefined ? '#059669' : '#94a3b8';
 
   const cards = [
     {
       id: 'sourced',
-      title: 'Available Liquid Milk',
+      title: 'Available Liquid Milk (With Me)',
       amount: `${displayTotal} kg`,
-      sub: `Farm: ${displayFarm} kg · Supplier: ${displaySupplier} kg`,
+      sub: `Farm: ${displayFarm}kg · Sup: ${displaySupplier}kg`,
       icon: Droplets,
       color: '#155dfc',
       badge: 'Available',
@@ -76,7 +70,7 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
       id: 'converted',
       title: 'Converted to Dahi',
       amount: `${convertedToDahi} kg`,
-      sub: `Farm: ${farmConverted} kg · Supplier: ${supplierConverted} kg`,
+      sub: `Farm: ${farmConverted}kg · Sup: ${supplierConverted}kg`,
       icon: Layers,
       color: '#009966',
       badge: 'Processing',
@@ -92,12 +86,12 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
     },
     {
       id: 'dahi_sales',
-      title: isDahiPriceDefined ? 'POS Dahi Sales' : 'Total Dahi Available/Sold',
+      title: isDahiPriceDefined ? 'POS Dahi Sales' : 'Total Dahi Sold',
       amount: dahiSalesAmount,
       sub: dahiSalesSub,
       icon: ShoppingBag,
-      color: isDahiPriceDefined ? '#4f39f6' : '#64748b',
-      badge: isDahiPriceDefined ? 'Live Sales' : 'Qty Only',
+      color: isDahiPriceDefined ? '#4f46e5' : '#64748b',
+      badge: isDahiPriceDefined ? 'Sales' : 'Qty',
       noPriceBadge: !isDahiPriceDefined,
     },
     {
@@ -107,54 +101,54 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
       sub: dahiProfitSub,
       icon: TrendingUp,
       color: dahiProfitColor,
-      badge: isDahiPriceDefined ? 'Specific P&L' : 'Pending Price',
+      badge: isDahiPriceDefined ? 'Profit' : 'Output',
       noPriceBadge: !isDahiPriceDefined,
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-2">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
       {cards.map(({ id, title, amount, sub, icon: Icon, color, badge, noPriceBadge }) => (
         <div
           key={id}
           onClick={() => onSelectCard && onSelectCard(id)}
           role={onSelectCard ? 'button' : undefined}
           tabIndex={onSelectCard ? 0 : undefined}
-          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+          className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs hover:border-slate-300 cursor-pointer"
           title={`Detailed ${title}`}
         >
           {/* Top header row: icon + badge */}
           <div className="flex items-start justify-between mb-1.5">
             <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
               style={{ background: `${color}15` }}
             >
-              <Icon style={{ width: 16, height: 16, color }} />
+              <Icon style={{ width: 15, height: 15, color }} />
             </div>
             <div className="flex items-center gap-1">
               {noPriceBadge && (
                 <AlertCircle
-                  className="w-3 h-3 text-amber-500"
+                  className="w-3 h-3 text-amber-500 shrink-0"
                   title="Sale price not set in Product Module"
                 />
               )}
-              <span className="text-[10px] font-bold px-3 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
                 {badge}
               </span>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronRight className="w-2.5 h-2.5 text-slate-300" />
             </div>
           </div>
 
           {/* Value, title, and subtext */}
           <div>
             <p
-              className={`font-display font-black leading-tight tracking-tight mb-0.5 tabular ${amount.length > 16 ? 'text-lg' : 'text-2xl'}`}
+              className="text-lg font-black leading-tight tracking-tight mb-0.5 tabular font-display"
               style={{ color: noPriceBadge ? '#475569' : '#0f172a' }}
             >
               {amount}
             </p>
-            <p className="text-xs font-bold text-slate-700">{title}</p>
-            <p className="text-[11px] font-medium text-slate-400 line-clamp-1" title={sub}>
+            <p className="text-xs font-bold text-slate-800 line-clamp-1">{title}</p>
+            <p className="text-[10px] font-medium text-slate-400 line-clamp-1" title={sub}>
               {sub}
             </p>
           </div>

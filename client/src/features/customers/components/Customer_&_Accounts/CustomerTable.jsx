@@ -18,7 +18,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
   const { addLedgerEntry, getCustomerCalculatedStats } = useLedgerContext();
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
+    <div className="compact-surface bg-white rounded-lg border border-slate-200 overflow-hidden">
       <div className="overflow-x-auto max-h-[calc(100vh-270px)]">
         <Table className="w-full text-left border-collapse min-w-190">
           <TableHeader sticky className="bg-slate-50 border-b border-slate-100">
@@ -71,7 +71,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                     title={`Click to view Khata ledger & complete details of ${c.name}`}
                     className="hover:bg-slate-50/70 transition-colors cursor-pointer"
                   >
-                    <TableCell className="px-3.5 py-2">
+                    <TableCell className="px-2 py-1.5">
                       <div className="flex items-center gap-2">
                         {c.image ? (
                           <img
@@ -91,7 +91,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                       </div>
                     </TableCell>
 
-                    <TableCell className="px-3.5 py-2">
+                    <TableCell className="px-2 py-1.5">
                       <div className="font-semibold text-slate-800 leading-tight">{c.phone}</div>
                       {c.onlineAccount && (
                         <div className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200/60">
@@ -101,18 +101,18 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                       )}
                     </TableCell>
 
-                    <TableCell className="px-3.5 py-2">
+                    <TableCell className="px-2 py-1.5">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium text-[11px] border border-slate-200/60">
                         <Milk className="w-2.5 h-2.5 text-slate-500" />
                         {c.subscription || '2 L Cow Milk'}
                       </span>
                     </TableCell>
 
-                    <TableCell className="px-3.5 py-2 font-bold text-slate-800 tabular">
+                    <TableCell className="px-2 py-1.5 font-bold text-slate-800 tabular">
                       Rs. {(c.creditLimit || 0).toLocaleString()}
                     </TableCell>
 
-                    <TableCell className="px-3.5 py-2">
+                    <TableCell className="px-2 py-1.5">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <div className="font-bold text-slate-900 leading-tight tabular">
                           Rs. {khataBal.toLocaleString()}
@@ -131,7 +131,7 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                       </div>
                     </TableCell>
 
-                    <TableCell className="px-3.5 py-2">
+                    <TableCell className="px-2 py-1.5">
                       {c.paymentMode === 'Online Payment' ? (
                         <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-semibold border border-emerald-200/60">
                           Online Payment
@@ -166,14 +166,14 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                               ? 'Click to direct finish & clear Khata'
                               : 'Khata account (No outstanding debt)'
                           }
-                          className="px-2 py-0.5 rounded bg-purple-50 hover:bg-purple-100 text-purple-700 text-[10px] font-semibold border border-purple-200/60 transition cursor-pointer"
+                          className="px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-[11px] font-bold border border-purple-200/80 shadow-2xs transition-all cursor-pointer"
                         >
                           Khata · Finish
                         </button>
                       )}
                     </TableCell>
 
-                    <TableCell className="px-3.5 py-2">
+                    <TableCell className="px-2 py-1.5">
                       <Badge
                         variant={c.status === 'Active' ? 'green' : 'slate'}
                         className="text-[10px] font-semibold px-2 py-0.5"
@@ -182,34 +182,30 @@ export default function CustomerTable({ onViewCustomer, onEditCustomer }) {
                       </Badge>
                     </TableCell>
 
-                    <TableCell className="px-3.5 py-2 text-right">
-                      <div className="flex items-center justify-end gap-1 text-slate-400">
-                        <Button
+                    <TableCell className="px-2 py-1.5 text-right">
+                      <div className="flex items-center justify-end gap-1.5 text-slate-400">
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (onViewCustomer) onViewCustomer(c);
                           }}
                           title="View Khata Ledger & Details"
-                          className="h-7 w-7 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                          className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-blue-50 text-slate-500 hover:text-blue-600 shadow-2xs flex items-center justify-center transition-all cursor-pointer"
                         >
                           <Eye className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
+                        </button>
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (onEditCustomer) onEditCustomer(c);
                           }}
                           title="Edit Customer"
-                          className="h-7 w-7 p-0 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50"
+                          className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 shadow-2xs flex items-center justify-center transition-all cursor-pointer"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
-                        </Button>
+                        </button>
                       </div>
                     </TableCell>
                   </TableRow>

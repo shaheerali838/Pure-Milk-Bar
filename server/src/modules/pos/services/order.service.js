@@ -5,6 +5,7 @@ import Customer from '../../../models/Customer.model.js';
 import KhataEntry from '../../../models/KhataEntry.model.js';
 import User from '../../../models/User.model.js';
 import AppError from '../../../utils/AppError.js';
+import { processBillAgainstAdvance, recalculateCustomerStatementChronological } from '../../../utils/khataAdvanceHelper.js';
 
 class OrderService {
   async generateReceiptNumber() {
@@ -54,30 +55,54 @@ class OrderService {
     }
 
     // 3. Khata Payment Verification & Limits
-    const isKhataPayment = orderData.paymentMethod === 'KHATA';
-    const splitKhataAmount =
-      orderData.paymentMethod === 'SPLIT' && orderData.splitPaymentMeta?.khataAmount
-        ? Number(orderData.splitPaymentMeta.khataAmount)
-        : 0;
-    const totalKhataDebit = isKhataPayment ? orderData.grandTotal : splitKhataAmount;
+    const pMethod = String(orderData.paymentMethod || 'CASH').toUpperCase();
+    const isKhataPayment = pMethod === 'KHATA';
+    const isDeliveryUnpaid =
+      (orderData.fulfillmentType === 'DELIVERY' || pMethod === 'COD' || isKhataPayment) &&
+      pMethod !== 'CASH' &&
+      pMethod !== 'ONLINE' &&
+      pMethod !== 'EASYPAISA' &&
+      pMethod !== 'JAZZCASH' &&
+      pMethod !== 'SPLIT';
 
-    if (totalKhataDebit > 0) {
-      if (!customer) {
-        throw new AppError(
-          'An active customer account must be selected for Khata credit payments.',
-          400,
-          'CUSTOMER_REQUIRED_FOR_KHATA'
-        );
-      }
+    let cashReceived = 0;
+    let easyPaisaReceived = 0;
+    let jazzCashReceived = 0;
+    let onlineReceived = 0;
+    let directPaymentTotal = 0;
 
-      const availableCredit = customer.creditLimit - customer.currentBalance;
-      if (totalKhataDebit > availableCredit) {
-        throw new AppError(
-          `Credit limit exceeded. Customer available credit is Rs. ${availableCredit.toLocaleString()}, but order requires Rs. ${totalKhataDebit.toLocaleString()}.`,
-          400,
-          'CREDIT_LIMIT_EXCEEDED'
-        );
+    if (pMethod === 'CASH') {
+      const amtRec = Number(orderData.amountReceived);
+      cashReceived = !isNaN(amtRec) && amtRec > 0 ? amtRec : orderData.grandTotal;
+      directPaymentTotal = cashReceived;
+    } else if (pMethod === 'EASYPAISA') {
+      const amtRec = Number(orderData.amountReceived);
+      easyPaisaReceived = !isNaN(amtRec) && amtRec > 0 ? amtRec : orderData.grandTotal;
+      onlineReceived = easyPaisaReceived;
+      directPaymentTotal = easyPaisaReceived;
+    } else if (pMethod === 'JAZZCASH') {
+      const amtRec = Number(orderData.amountReceived);
+      jazzCashReceived = !isNaN(amtRec) && amtRec > 0 ? amtRec : orderData.grandTotal;
+      onlineReceived = jazzCashReceived;
+      directPaymentTotal = jazzCashReceived;
+    } else if (pMethod === 'ONLINE') {
+      const provider = String(orderData.onlineTransferMeta?.provider || '').toUpperCase();
+      const amtRec = Number(orderData.amountReceived);
+      const val = !isNaN(amtRec) && amtRec > 0 ? amtRec : orderData.grandTotal;
+      if (provider.includes('EASYPAISA')) {
+        easyPaisaReceived = val;
+      } else if (provider.includes('JAZZCASH')) {
+        jazzCashReceived = val;
       }
+      onlineReceived = val;
+      directPaymentTotal = val;
+    } else if (pMethod === 'SPLIT') {
+      cashReceived = Math.max(0, Number(orderData.splitPaymentMeta?.cashAmount) || 0);
+      easyPaisaReceived = Math.max(0, Number(orderData.splitPaymentMeta?.easyPaisaAmount) || 0);
+      jazzCashReceived = Math.max(0, Number(orderData.splitPaymentMeta?.jazzCashAmount) || 0);
+      const directOnline = Math.max(0, Number(orderData.splitPaymentMeta?.onlineAmount) || 0);
+      onlineReceived = directOnline > 0 ? directOnline : (easyPaisaReceived + jazzCashReceived);
+      directPaymentTotal = cashReceived + onlineReceived;
     }
 
     // 4. Generate unique receipt number if not supplied
@@ -86,18 +111,59 @@ class OrderService {
       : await this.generateReceiptNumber();
 
     // 5. Calculate Change for Cash transactions
-    let amountReceived = orderData.amountReceived || 0;
+    let amountReceived = orderData.amountReceived !== undefined ? Number(orderData.amountReceived) : directPaymentTotal;
     let changeGiven = orderData.changeGiven || 0;
 
-    if (orderData.paymentMethod === 'CASH') {
-      if (amountReceived > 0 && amountReceived >= orderData.grandTotal) {
-        changeGiven = Math.max(0, amountReceived - orderData.grandTotal);
+    if (pMethod === 'CASH' && amountReceived > orderData.grandTotal) {
+      changeGiven = Math.max(0, amountReceived - orderData.grandTotal);
+    }
+
+    // 5.5 Pre-order Inventory Stock Validation
+    if (Array.isArray(orderData.items) && orderData.items.length > 0) {
+      for (const item of orderData.items) {
+        const qty = Number(item.quantity) || 0;
+        if (qty <= 0) continue;
+
+        let prod = null;
+        if (item.productId && mongoose.Types.ObjectId.isValid(item.productId)) {
+          prod = await Product.findById(item.productId);
+        }
+        if (!prod && item.sku) {
+          prod = await Product.findOne({ sku: item.sku });
+        }
+        if (!prod && item.name) {
+          const cleanName = item.name.replace(/\s*\((Farm|Supplier)\s*Share\)/i, '').trim();
+          const nameRegex = new RegExp(`^${cleanName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i');
+          prod = await Product.findOne({ name: nameRegex });
+        }
+        if (!prod && item.name) {
+          const lower = item.name.toLowerCase();
+          if (lower.includes('cow')) {
+            prod = await Product.findOne({ name: /cow/i });
+          } else if (lower.includes('buffalo')) {
+            prod = await Product.findOne({ name: /buffalo/i });
+          } else if (lower.includes('dahi')) {
+            prod = await Product.findOne({ name: /dahi/i });
+          }
+        }
+
+        if (prod) {
+          const availStock = Number(prod.currentStock || 0);
+          if (availStock <= 0 || qty > availStock) {
+            throw new AppError(
+              `Insufficient stock for "${prod.name}". Available: ${availStock} ${prod.unit || ''}, Requested: ${qty}`,
+              400,
+              'INSUFFICIENT_STOCK'
+            );
+          }
+        }
       }
     }
 
     // 6. Assemble Order document
     const newOrderPayload = {
       ...orderData,
+      paymentMethod: pMethod,
       receiptNumber,
       cashierId,
       customerId: customer ? customer._id : null,
@@ -110,9 +176,12 @@ class OrderService {
     const order = await Order.create(newOrderPayload);
 
     // 7. Inventory Stock Adjustment
-    // Deduct stock for all items connected to tracked inventory products (strictly zero-validated)
+    // Deduct stock for all items connected to tracked inventory products (atomic & resilient)
     if (Array.isArray(order.items) && order.items.length > 0) {
       for (const item of order.items) {
+        const qty = Number(item.quantity) || 0;
+        if (qty <= 0) continue;
+
         let prod = null;
         if (item.productId && mongoose.Types.ObjectId.isValid(item.productId)) {
           prod = await Product.findById(item.productId);
@@ -121,40 +190,52 @@ class OrderService {
           prod = await Product.findOne({ sku: item.sku });
         }
         if (!prod && item.name) {
-          const nameRegex = new RegExp(`^${item.name.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i');
+          const cleanName = item.name.replace(/\s*\((Farm|Supplier)\s*Share\)/i, '').trim();
+          const nameRegex = new RegExp(`^${cleanName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i');
           prod = await Product.findOne({ name: nameRegex });
         }
+        if (!prod && item.name) {
+          const lower = item.name.toLowerCase();
+          if (lower.includes('cow')) {
+            prod = await Product.findOne({ name: /cow/i });
+          } else if (lower.includes('buffalo')) {
+            prod = await Product.findOne({ name: /buffalo/i });
+          } else if (lower.includes('dahi')) {
+            prod = await Product.findOne({ name: /dahi/i });
+          }
+        }
         if (prod) {
-          const qty = Number(item.quantity) || 0;
-          prod.currentStock = Math.max(0, Number(((prod.currentStock || 0) - qty).toFixed(2)));
-          await prod.save();
+          const newStock = Math.max(0, Number(((prod.currentStock || 0) - qty).toFixed(2)));
+          await Product.findByIdAndUpdate(prod._id, { $set: { currentStock: newStock } });
         }
       }
     }
 
     // 8. Update Customer Khata and create Khata Ledger Entry for customer purchase history
     if (customer) {
-      const totals = await KhataEntry.aggregate([
-        { $match: { customerId: customer._id } },
-        {
-          $group: {
-            _id: null,
-            totalDebit: { $sum: '$debitAmount' },
-            totalCredit: { $sum: '$creditAmount' },
-          },
-        },
-      ]);
-      const currentTotals = totals[0] || { totalDebit: 0, totalCredit: 0 };
-      const newTotalDebit = currentTotals.totalDebit + (totalKhataDebit > 0 ? totalKhataDebit : 0);
-      const newTotalCredit = currentTotals.totalCredit;
-      const updatedBalance = Math.max(0, newTotalDebit - newTotalCredit);
+      const availAdvance = Math.max(0, Number(customer.advanceBalance || 0));
+      const curKhata = Math.max(0, Number(customer.khataBalance ?? customer.currentBalance ?? 0));
 
-      const updatedCustomer = await Customer.findByIdAndUpdate(
-        customer._id,
-        { currentBalance: updatedBalance, khataBalance: updatedBalance },
-        { new: true }
+      const { advanceUsed, khataAmount: billUncoveredAfterAdv, advanceBalanceAfter } = processBillAgainstAdvance(
+        order.grandTotal,
+        availAdvance,
+        curKhata
       );
-      let currentRunningBalance = updatedCustomer.currentBalance;
+
+      // Direct payment applies to bill after advance
+      const actualDirectPaymentApplied = Math.min(billUncoveredAfterAdv, directPaymentTotal);
+      const finalKhataAdded = Math.max(0, billUncoveredAfterAdv - actualDirectPaymentApplied);
+      const newKhataBalance = curKhata + finalKhataAdded;
+
+      customer.advanceBalance = advanceBalanceAfter;
+      customer.khataBalance = newKhataBalance;
+      customer.currentBalance = newKhataBalance;
+      await customer.save();
+
+      order.advanceUsed = advanceUsed;
+      order.khataAmount = finalKhataAdded;
+      order.advanceBalanceAfter = advanceBalanceAfter;
+      await order.save();
 
       const orderItemsSnapshot = Array.isArray(order.items)
         ? order.items.map((it) => {
@@ -185,21 +266,28 @@ class OrderService {
 
       await KhataEntry.create({
         customerId: customer._id,
+        orderId: order._id,
         date: order.date,
         voucherNumber: `KV-${order.receiptNumber}`,
         transactionType: 'DEBIT',
         description: `POS Order #${order.receiptNumber} (${order.fulfillmentType})`,
-        debitAmount: totalKhataDebit,
+        debitAmount: order.grandTotal,
         creditAmount: 0,
-        runningBalance: currentRunningBalance,
+        advanceUsed,
+        khataAmount: finalKhataAdded,
+        advanceBalanceAfter,
+        advanceReceived: 0,
+        runningBalance: newKhataBalance,
         paymentMethod: order.paymentMethod,
+        splitPaymentMeta: order.splitPaymentMeta || null,
+        onlineTransferMeta: order.onlineTransferMeta || null,
         referenceTransactionId: order.receiptNumber,
         cashierId,
         items: orderItemsSnapshot,
         orderTotal: order.grandTotal,
-        paidAmount: Math.max(0, order.grandTotal - totalKhataDebit),
-        remainingAmount: totalKhataDebit,
-        fulfillmentType: order.fulfillmentType === 'DELIVERY' ? 'Doorstep Delivery' : 'Walk-in Counter',
+        paidAmount: advanceUsed + actualDirectPaymentApplied,
+        remainingAmount: finalKhataAdded,
+        fulfillmentType: order.fulfillmentType === 'DELIVERY' ? 'Doorstep Delivery' : (advanceUsed > 0 && finalKhataAdded === 0 ? 'Paid from Advance' : 'Walk-in Counter'),
         riderName: order.deliveryMeta?.riderName || order.deliveryMeta?.riderNameSnapshot || orderData.deliveryMeta?.riderName || orderData.riderName || null,
         deliveryAddress: order.deliveryMeta?.deliveryAddress || order.deliveryMeta?.dropAddress || customer.address || null,
       });
@@ -208,7 +296,7 @@ class OrderService {
     // 9. Return fully populated order
     return await Order.findById(order._id)
       .populate('cashierId', 'name username role')
-      .populate('customerId', 'name phone code currentBalance creditLimit')
+      .populate('customerId', 'name phone code currentBalance advanceBalance khataBalance creditLimit')
       .lean();
   }
 
@@ -418,22 +506,26 @@ class OrderService {
       }
     }
 
-    // 2. Reverse Khata debt if applicable
+    // 2. Reverse Khata debt & Advance if applicable
+    const advanceUsedToReverse = Number(order.advanceUsed || 0);
     const isKhataPayment = order.paymentMethod === 'KHATA';
     const splitKhata =
       order.paymentMethod === 'SPLIT' && order.splitPaymentMeta?.khataAmount
         ? Number(order.splitPaymentMeta.khataAmount)
         : 0;
-    const khataAmountToReverse = isKhataPayment ? order.grandTotal : splitKhata;
+    const khataAmountToReverse = Number(order.khataAmount !== undefined ? order.khataAmount : (isKhataPayment ? order.grandTotal : splitKhata));
 
-    if (order.customerId && khataAmountToReverse > 0) {
-      const updatedCustomer = await Customer.findByIdAndUpdate(
-        order.customerId,
-        { $inc: { currentBalance: -khataAmountToReverse } },
-        { new: true }
-      );
+    if (order.customerId && (khataAmountToReverse > 0 || advanceUsedToReverse > 0)) {
+      const customer = await Customer.findById(order.customerId);
+      if (customer) {
+        const newAdvance = Math.max(0, (customer.advanceBalance || 0) + advanceUsedToReverse);
+        const newKhata = Math.max(0, (customer.currentBalance || customer.khataBalance || 0) - khataAmountToReverse);
 
-      if (updatedCustomer) {
+        customer.advanceBalance = newAdvance;
+        customer.khataBalance = newKhata;
+        customer.currentBalance = newKhata;
+        await customer.save();
+
         await KhataEntry.create({
           customerId: order.customerId,
           date: new Date(),
@@ -442,7 +534,11 @@ class OrderService {
           description: `Order Voided / Reversal #${order.receiptNumber}: ${reason}`,
           debitAmount: 0,
           creditAmount: khataAmountToReverse,
-          runningBalance: updatedCustomer.currentBalance,
+          advanceUsed: 0,
+          khataAmount: 0,
+          advanceReceived: advanceUsedToReverse,
+          advanceBalanceAfter: newAdvance,
+          runningBalance: newKhata,
           paymentMethod: 'ADJUSTMENT',
           referenceTransactionId: order.receiptNumber,
           cashierId: cancelledByUserId || order.cashierId,

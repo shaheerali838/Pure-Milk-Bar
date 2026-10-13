@@ -1,12 +1,13 @@
-import React from 'react';
-import { Droplets,Beef,Truck,Layers,ShoppingBag,ArrowDownLeft,ChevronRight,DollarSign,TrendingUp,} from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Droplets, Layers, ShoppingBag, ArrowDownLeft, ChevronRight, Banknote, TrendingUp } from 'lucide-react';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useLedgerContext } from '@/context/LedgerContext';
+import { useCustomerContext } from '@/context/CustomerContext';
 import { useExpense } from '@/context/ExpenseContext';
-import { getPktTodayString, getDateRangeBoundaries, isDateInFilterRange } from '@/utils/dateUtils';
-
+import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
+import { getPktTodayString, getDateRangeBoundaries, isDateInFilterRange, isMatchingTimeframe } from '@/utils/dateUtils';
 import { Link } from 'react-router-dom';
 import { KpiGridSkeleton } from '@/components/ui/skeleton';
 
@@ -14,201 +15,202 @@ export default function TopSummaryCards({
   dateFilter = 'today',
   startDate = '',
   endDate = '',
+  timeRange,
+  customStartDate = '',
+  customEndDate = '',
 }) {
+  const activeRange = dateFilter || timeRange || 'today';
+  const activeStart = startDate || customStartDate || '';
+  const activeEnd = endDate || customEndDate || '';
   const { animals = [], milkingLogs = [], isLoading: isAnimalsLoading } = useAnimalContext();
   const { intakeLogs = [], totals: intakeTotals = {}, isLoading: isIntakeLoading } = useIntakeContext();
   const { salesHistory = [], inventoryMetrics = {}, businessFinancialMetrics = {} } = usePOSContext();
-  const { ledgers = {} } = useLedgerContext();
-  const { expenses = [] } = useExpense();
+  const { ledgers = {}, getAllCustomersAggregates } = useLedgerContext() || {};
+  const { totalKhataReceivable = 0, withKhataBalCount = 0 } = useCustomerContext() || {};
+  const { expenses: farmExpenses = [] } = useExpense() || {};
+  const { expenses: supplierExpenses = [] } = useSourcExpenseContext() || {};
 
-  const periodData = getDateRangeBoundaries(dateFilter, startDate, endDate);
+  // Filtered dataset calculations based on timeRange
+  const dateMetrics = useMemo(() => {
+    // 1. Milking Logs within timeframe
+    const matchedMilking = milkingLogs.filter((l) =>
+      isMatchingTimeframe(l.date, timeRange, customStartDate, customEndDate)
+    );
+    const farmYield =
+      timeRange === 'today' && matchedMilking.length === 0
+        ? Number(inventoryMetrics.totalFarmYield) || 0
+        : matchedMilking.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
+
+    // 2. Intake Logs within timeframe
+    const matchedIntakes = intakeLogs.filter((i) =>
+      isMatchingTimeframe(i.date, timeRange, customStartDate, customEndDate)
+    );
+    const procuredVolume =
+      timeRange === 'today' && matchedIntakes.length === 0 && intakeTotals.totalProcuredVolume !== undefined
+        ? intakeTotals.totalProcuredVolume
+        : matchedIntakes.reduce((sum, i) => sum + (parseFloat(i.quantity) || 0), 0);
+
+    const totalSourced = farmYield + procuredVolume;
+
+    // 3. Sales History within timeframe
+    const matchedSales = salesHistory.filter((s) => {
+      const raw = s.date || s.timestamp || s.formattedDate || s.createdAt || '';
+      return isMatchingTimeframe(raw, timeRange, customStartDate, customEndDate);
+    });
+
+    let salesRevenue = 0;
+    let milkSoldQty = 0;
+    let milkSalesRevenue = 0;
+    let farmMilkSoldQty = 0;
+    let supplierMilkSoldQty = 0;
+    let farmMilkRevenue = 0;
+    let supplierMilkRevenue = 0;
+    let dahiSoldQty = 0;
+    let dahiSalesRevenue = 0;
+
+    matchedSales.forEach((sale) => {
+      salesRevenue += Number(sale.netPayable || sale.totalAmount || sale.grandTotal) || 0;
+      (sale.items || []).forEach((item) => {
+        const name = (item.name || '').toLowerCase();
+        const cat = (item.category || '').toLowerCase();
+        const qty = Number(item.quantity) || 0;
+        const rev = Number(item.subtotal || item.effectiveRevenue) || qty * (Number(item.price) || 0);
+        const isDahi = name.includes('dahi') || cat.includes('dahi') || name.includes('yogurt');
+
+        if (isDahi) {
+          dahiSoldQty += qty;
+          dahiSalesRevenue += rev;
+        } else {
+          milkSoldQty += qty;
+          milkSalesRevenue += rev;
+          const fQty = item.farmQuantity !== undefined ? Number(item.farmQuantity) || 0 : (item.source === 'Farm' ? qty : 0);
+          const sQty = item.supplierQuantity !== undefined ? Number(item.supplierQuantity) || 0 : (item.source === 'Supplier' ? qty : 0);
+          const fRev = item.farmRevenue !== undefined ? Number(item.farmRevenue) || 0 : (item.source === 'Farm' ? rev : 0);
+          const sRev = item.supplierRevenue !== undefined ? Number(item.supplierRevenue) || 0 : (item.source === 'Supplier' ? rev : 0);
+          todayFarmMilkSoldQty(fQty);
+          todaySupplierMilkSoldQty(sQty);
+          todayFarmMilkRevenue(fRev);
+          todaySupplierMilkRevenue(sRev);
+        }
+      });
+    });
+
+    function todayFarmMilkSoldQty(v) { farmMilkSoldQty += v; }
+    function todaySupplierMilkSoldQty(v) { supplierMilkSoldQty += v; }
+    function todayFarmMilkRevenue(v) { farmMilkRevenue += v; }
+    function todaySupplierMilkRevenue(v) { supplierMilkRevenue += v; }
+
+    // 4. Expenses within timeframe
+    const matchedFarmExp = farmExpenses.filter((e) =>
+      isMatchingTimeframe(e.date, timeRange, customStartDate, customEndDate)
+    );
+    const totalFarmExp = matchedFarmExp.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+
+    const matchedSupExp = supplierExpenses.filter((e) =>
+      isMatchingTimeframe(e.date, timeRange, customStartDate, customEndDate)
+    );
+    const totalSupExp = matchedSupExp.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const totalProcurementCost = matchedIntakes.reduce((s, i) => s + (Number(i.totalCost || i.totalAmount) || 0), 0);
+
+    // Dynamic Net Profits for period
+    const fNetProfit = farmMilkRevenue - totalFarmExp;
+    const sNetProfit = supplierMilkRevenue - (totalProcurementCost + totalSupExp);
+    const totNetProfit = salesRevenue - (totalFarmExp + totalProcurementCost + totalSupExp);
+    const margin = salesRevenue > 0 ? Math.round((totNetProfit / salesRevenue) * 100) : 0;
+
+    // 5. Recoveries
+    let ledgerSum = 0;
+    Object.values(ledgers).forEach((entries) => {
+      (entries || []).forEach((entry) => {
+        if (
+          (entry.type === 'CREDIT' || Number(entry.credit) > 0) &&
+          isMatchingTimeframe(entry.date || entry.createdAt, timeRange, customStartDate, customEndDate)
+        ) {
+          ledgerSum += Number(entry.credit) || 0;
+        }
+      });
+    });
+
+    return {
+      farmYield,
+      procuredVolume,
+      totalSourced,
+      salesRevenue,
+      orderCount: matchedSales.length,
+      milkSoldQty,
+      milkSalesRevenue,
+      farmMilkSoldQty,
+      supplierMilkSoldQty,
+      farmMilkRevenue,
+      supplierMilkRevenue,
+      dahiSoldQty,
+      dahiSalesRevenue,
+      farmNetProfit: fNetProfit,
+      supplierNetProfit: sNetProfit,
+      totalNetProfit: totNetProfit,
+      netMargin: margin,
+      recoveries: ledgerSum,
+    };
+  }, [
+    milkingLogs,
+    intakeLogs,
+    salesHistory,
+    farmExpenses,
+    supplierExpenses,
+    ledgers,
+    timeRange,
+    customStartDate,
+    customEndDate,
+    inventoryMetrics,
+    intakeTotals,
+  ]);
+
+  const periodData = getDateRangeBoundaries(activeRange, activeStart, activeEnd);
   const periodLabel = periodData.label;
 
   if (isAnimalsLoading && isIntakeLoading && animals.length === 0 && intakeLogs.length === 0) {
     return <KpiGridSkeleton count={8} />;
   }
 
-  // 1. Farm Milk Production
-  const filteredMilking = milkingLogs.filter((l) =>
-    isDateInFilterRange(l.date || l.createdAt, dateFilter, startDate, endDate)
-  );
-
-  let totalFarmMilk = 0;
-  if (filteredMilking.length > 0) {
-    totalFarmMilk = filteredMilking.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
-  } else {
-    let sumFromAnimals = 0;
-    animals.forEach((animal) => {
-      const historyList = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
-      historyList.forEach((h) => {
-        if (isDateInFilterRange(h.date || h.createdAt, dateFilter, startDate, endDate)) {
-          sumFromAnimals += Number(h.quantityLiters || h.yieldLiters || h.yield || ((Number(h.morning) || 0) + (Number(h.evening) || 0))) || 0;
-        }
-      });
-    });
-    totalFarmMilk = sumFromAnimals > 0
-      ? sumFromAnimals
-      : (dateFilter === 'today' ? (Number(inventoryMetrics.totalFarmYield) || 0) : 0);
-  }
-
-  const milkingAnimalsCount = animals.filter(
-    (a) => (a.lactationStatus || a.status || '').toLowerCase() === 'milking'
-  ).length;
-
-  // 2. Purchased Supplier Milk
-  const filteredIntake = intakeLogs.filter((i) =>
-    isDateInFilterRange(i.date || i.createdAt, dateFilter, startDate, endDate)
-  );
-
-  const totalProcuredMilk = filteredIntake.length > 0
-    ? filteredIntake.reduce((sum, i) => sum + (parseFloat(i.quantity) || 0), 0)
-    : (dateFilter === 'all' && intakeTotals.totalProcuredVolume !== undefined ? intakeTotals.totalProcuredVolume : 0);
-
-  const totalProcuredCost = filteredIntake.reduce((sum, i) => sum + (parseFloat(i.totalCost) || 0), 0);
-  const avgPurchaseRate =
-    totalProcuredMilk > 0
-      ? totalProcuredCost / totalProcuredMilk
-      : (intakeTotals.avgPurchaseRate || 0);
-
-  // 3. Total Milk Sourced (Farm + Procurement)
-  const totalMilkSourced = totalFarmMilk + totalProcuredMilk;
-
-  // 4. Sales in active period
-  const periodSales = salesHistory.filter((s) => {
-    const raw = s.date || s.timestamp || s.formattedDate || s.createdAt || '';
-    return isDateInFilterRange(raw, dateFilter, startDate, endDate);
-  });
-
-  let periodSalesRevenue = 0;
-  let periodMilkSoldQty = 0;
-  let periodMilkSalesRevenue = 0;
-  let periodFarmMilkSoldQty = 0;
-  let periodSupplierMilkSoldQty = 0;
-  let periodFarmMilkRevenue = 0;
-  let periodSupplierMilkRevenue = 0;
-  let periodDahiSoldQty = 0;
-  let periodDahiSalesRevenue = 0;
-  let periodFarmDahiRevenue = 0;
-  let periodSupplierDahiRevenue = 0;
-
-  periodSales.forEach((sale) => {
-    periodSalesRevenue += (Number(sale.netPayable || sale.totalAmount || sale.grandTotal) || 0);
-    (sale.items || []).forEach((item) => {
-      const name = (item.name || '').toLowerCase();
-      const cat = (item.category || '').toLowerCase();
-      const qty = Number(item.quantity) || 0;
-      const rev = Number(item.subtotal || item.effectiveRevenue) || (qty * (Number(item.price) || 0));
-      const isDahi = name.includes('dahi') || cat.includes('dahi') || name.includes('yogurt');
-      if (isDahi) {
-        periodDahiSoldQty += qty;
-        periodDahiSalesRevenue += rev;
-        const fRev = item.farmRevenue !== undefined ? Number(item.farmRevenue) || 0 : (item.farmDahiRevenue !== undefined ? Number(item.farmDahiRevenue) || 0 : (item.source === 'Farm' ? rev : 0));
-        const sRev = item.supplierRevenue !== undefined ? Number(item.supplierRevenue) || 0 : (item.source === 'Supplier' ? rev : Math.max(0, rev - fRev));
-        periodFarmDahiRevenue += fRev;
-        periodSupplierDahiRevenue += sRev;
-      } else {
-        periodMilkSoldQty += qty;
-        periodMilkSalesRevenue += rev;
-        const fQty = item.farmQuantity !== undefined ? Number(item.farmQuantity) || 0 : (item.source === 'Farm' ? qty : 0);
-        const sQty = item.supplierQuantity !== undefined ? Number(item.supplierQuantity) || 0 : (item.source === 'Supplier' ? qty : 0);
-        const fRev = item.farmRevenue !== undefined ? Number(item.farmRevenue) || 0 : (item.source === 'Farm' ? rev : 0);
-        const sRev = item.supplierRevenue !== undefined ? Number(item.supplierRevenue) || 0 : (item.source === 'Supplier' ? rev : 0);
-        periodFarmMilkSoldQty += fQty;
-        periodSupplierMilkSoldQty += sQty;
-        periodFarmMilkRevenue += fRev;
-        periodSupplierMilkRevenue += sRev;
-      }
-    });
-  });
-
-  // Period Expenses segregation
-  const periodFarmExpenses = (expenses || []).reduce((sum, exp) => {
-    const scope = String(exp.scope || exp.expenseEntity || 'FARM').toUpperCase();
-    if (scope !== 'FARM') return sum;
-    const d = exp.date || exp.createdAt;
-    if (isDateInFilterRange(d, dateFilter, startDate, endDate)) {
-      return sum + (Number(exp.amount) || 0);
-    }
-    return sum;
-  }, 0);
-
-  const periodSupplierExpenses = (expenses || []).reduce((sum, exp) => {
-    const scope = String(exp.scope || exp.expenseEntity || 'FARM').toUpperCase();
-    if (scope === 'FARM') return sum;
-    const d = exp.date || exp.createdAt;
-    if (isDateInFilterRange(d, dateFilter, startDate, endDate)) {
-      return sum + (Number(exp.amount) || 0);
-    }
-    return sum;
-  }, 0);
-
-  // Period P&L Calculations
-  const periodFarmTotalIncome = periodFarmMilkRevenue + periodFarmDahiRevenue;
-  const periodFarmNetProfit = periodFarmTotalIncome - periodFarmExpenses;
-
-  const periodSupplierTotalIncome = periodSupplierMilkRevenue + periodSupplierDahiRevenue;
-  const periodSupplierTotalCosts = totalProcuredCost + periodSupplierExpenses;
-  const periodSupplierNetProfit = periodSupplierTotalIncome - periodSupplierTotalCosts;
-
-  const periodTotalNetProfit = periodFarmNetProfit + periodSupplierNetProfit;
-  const periodNetMargin = periodSalesRevenue > 0 ? Math.round((periodTotalNetProfit / periodSalesRevenue) * 100) : 0;
-
-  const farmNetProfit = dateFilter === 'today'
-    ? (businessFinancialMetrics.farmNetProfit !== undefined ? Number(businessFinancialMetrics.farmNetProfit) : periodFarmNetProfit)
-    : periodFarmNetProfit;
-  const supplierNetProfit = dateFilter === 'today'
-    ? (businessFinancialMetrics.supplierNetProfit !== undefined ? Number(businessFinancialMetrics.supplierNetProfit) : periodSupplierNetProfit)
-    : periodSupplierNetProfit;
-  const totalNetProfit = dateFilter === 'today'
-    ? (businessFinancialMetrics.totalBusinessNetProfit !== undefined ? Number(businessFinancialMetrics.totalBusinessNetProfit) : periodTotalNetProfit)
-    : periodTotalNetProfit;
-  const netMargin = dateFilter === 'today'
-    ? (businessFinancialMetrics.totalBusinessMargin !== undefined ? Number(businessFinancialMetrics.totalBusinessMargin) : periodNetMargin)
-    : periodNetMargin;
-
-  // 6. Recoveries (Credit payments into Ledgers)
-  let totalRecoveries = 0;
-  Object.values(ledgers).forEach((entries) => {
-    (entries || []).forEach((entry) => {
-      if (entry.type === 'CREDIT' || Number(entry.credit) > 0) {
-        totalRecoveries += Number(entry.credit) || 0;
-      }
-    });
-  });
+  const customerAggregates = getAllCustomersAggregates ? getAllCustomersAggregates() : null;
+  const pendingKhataTotal = customerAggregates?.totalAllDue !== undefined ? customerAggregates.totalAllDue : totalKhataReceivable;
+  const pendingAccountsCount = customerAggregates?.khataAccountsCount ?? withKhataBalCount;
 
   const totalMilkStock = inventoryMetrics?.totalMilkStock ?? '0';
   const farmMilkStock = inventoryMetrics?.farmMilkStock ?? '0';
   const supplierMilkStock = inventoryMetrics?.supplierMilkStock ?? '0';
-  const totalDahiStock = inventoryMetrics?.totalDahiStock ?? '0';
+
+  const isToday = timeRange === 'today';
+  const timeSuffix = isToday ? ' Today' : '';
 
   const cards = [
     {
       id: 'total-net-profit',
       title: 'Total Business Net Profit',
-      value: `${totalNetProfit >= 0 ? '+' : '-'}Rs. ${Math.abs(totalNetProfit).toLocaleString()}`,
-      subtitle: `${netMargin}% Consolidated Margin`,
-      icon: DollarSign,
-      color: totalNetProfit >= 0 ? '#059669' : '#dc2626',
+      value: `Rs. ${dateMetrics.totalNetProfit < 0 ? '-' : ''}${Math.abs(dateMetrics.totalNetProfit).toLocaleString()}`,
+      subtitle: `${dateMetrics.netMargin}% Margin`,
+      icon: Banknote,
+      color: dateMetrics.totalNetProfit >= 0 ? '#059669' : '#dc2626',
       tag: 'Main P&L',
       to: '/farm/pl',
     },
     {
       id: 'farm-net-profit',
       title: 'Farm Net Profit',
-      value: `${farmNetProfit >= 0 ? '+' : '-'}Rs. ${Math.abs(farmNetProfit).toLocaleString()}`,
+      value: `Rs. ${dateMetrics.farmNetProfit < 0 ? '-' : ''}${Math.abs(dateMetrics.farmNetProfit).toLocaleString()}`,
       subtitle: `In-House Dairy P&L`,
       icon: TrendingUp,
-      color: farmNetProfit >= 0 ? '#009966' : '#dc2626',
+      color: dateMetrics.farmNetProfit >= 0 ? '#009966' : '#dc2626',
       tag: 'Farm P&L',
       to: '/farm/pl',
     },
     {
       id: 'supplier-net-profit',
       title: 'Supplier Net Profit',
-      value: `${supplierNetProfit >= 0 ? '+' : '-'}Rs. ${Math.abs(supplierNetProfit).toLocaleString()}`,
+      value: `Rs. ${dateMetrics.supplierNetProfit < 0 ? '-' : ''}${Math.abs(dateMetrics.supplierNetProfit).toLocaleString()}`,
       subtitle: `Procurement P&L`,
       icon: TrendingUp,
-      color: supplierNetProfit >= 0 ? '#0284c7' : '#dc2626',
+      color: dateMetrics.supplierNetProfit >= 0 ? '#0284c7' : '#dc2626',
       tag: 'Supplier P&L',
       to: '/farm/pl',
     },
@@ -216,17 +218,17 @@ export default function TopSummaryCards({
       id: 'available-milk-stock',
       title: 'Total Milk Stock',
       value: `${totalMilkStock} L`,
-      subtitle: `Farm: ${farmMilkStock}L • Sup: ${supplierMilkStock}L`,
+      subtitle: `Farm: ${farmMilkStock}L · Sup: ${supplierMilkStock}L`,
       icon: Droplets,
       color: '#059669',
-      tag: 'Chiller Stock',
+      tag: 'Stock',
       to: '/pos',
     },
     {
       id: 'total-sourced',
-      title: `Milk Sourced (${periodLabel})`,
-      value: `${totalMilkSourced.toFixed(1)} L`,
-      subtitle: `Farm: ${totalFarmMilk.toFixed(0)}L • Procured: ${totalProcuredMilk.toFixed(0)}L`,
+      title: activeRange === 'today' ? 'Total Milk Sourced Today' : `Milk Sourced (${periodLabel})`,
+      value: `${dateMetrics.totalSourced.toFixed(1)} L`,
+      subtitle: `Farm: ${dateMetrics.farmYield.toFixed(0)}L · Sup: ${dateMetrics.procuredVolume.toFixed(0)}L`,
       icon: Droplets,
       color: '#155dfc',
       tag: periodLabel,
@@ -234,9 +236,9 @@ export default function TopSummaryCards({
     },
     {
       id: 'todays-milk-sold',
-      title: dateFilter === 'today' ? "Total Milk Sold Today" : `Milk Sold (${periodLabel})`,
-      value: `${Number(periodMilkSoldQty.toFixed(1))} L`,
-      subtitle: `Farm: ${Number(periodFarmMilkSoldQty.toFixed(1))}L • Sup: ${Number(periodSupplierMilkSoldQty.toFixed(1))}L`,
+      title: activeRange === 'today' ? "Total Milk Sold Today" : `Milk Sold (${periodLabel})`,
+      value: `${Number(dateMetrics.milkSoldQty.toFixed(1))} L`,
+      subtitle: `Farm: ${Number(dateMetrics.farmMilkSoldQty.toFixed(1))}L · Sup: ${Number(dateMetrics.supplierMilkSoldQty.toFixed(1))}L`,
       icon: Droplets,
       color: '#10b981',
       tag: periodLabel,
@@ -244,39 +246,39 @@ export default function TopSummaryCards({
     },
     {
       id: 'todays-milk-revenue',
-      title: dateFilter === 'today' ? "Milk Sales Revenue" : `Milk Revenue (${periodLabel})`,
-      value: `+ Rs. ${periodMilkSalesRevenue.toLocaleString()}`,
-      subtitle: `Farm: Rs. ${periodFarmMilkRevenue.toLocaleString()} • Sup: Rs. ${periodSupplierMilkRevenue.toLocaleString()}`,
-      icon: DollarSign,
+      title: activeRange === 'today' ? "Milk Sales Revenue" : `Milk Revenue (${periodLabel})`,
+      value: `Rs. ${dateMetrics.milkSalesRevenue.toLocaleString()}`,
+      subtitle: `Farm: Rs. ${dateMetrics.farmMilkRevenue.toLocaleString()} · Sup: Rs. ${dateMetrics.supplierMilkRevenue.toLocaleString()}`,
+      icon: Banknote,
       color: '#059669',
       tag: periodLabel,
       to: '/pos',
     },
     {
       id: 'todays-dahi-sold',
-      title: dateFilter === 'today' ? "Today's Dahi Sold" : `Dahi Sold (${periodLabel})`,
-      value: `${Number(periodDahiSoldQty.toFixed(1))} Kg`,
+      title: activeRange === 'today' ? "Today's Dahi Sold" : `Dahi Sold (${periodLabel})`,
+      value: `${Number(dateMetrics.dahiSoldQty.toFixed(1))} kg`,
       subtitle: `Farm + Supplier Dahi`,
       icon: Layers,
       color: '#009966',
       tag: periodLabel,
-      to: '/dahi',
+      to: '/pos',
     },
     {
       id: 'todays-sales',
-      title: dateFilter === 'today' ? "Total Business Revenue" : `Total Revenue (${periodLabel})`,
-      value: `Rs. ${periodSalesRevenue.toLocaleString()}`,
-      subtitle: `${periodSales.length} orders in period`,
+      title: activeRange === 'today' ? "Total Business Revenue" : `Total Revenue (${periodLabel})`,
+      value: `Rs. ${dateMetrics.salesRevenue.toLocaleString()}`,
+      subtitle: `${dateMetrics.orderCount} orders${isToday ? ' today' : ' in period'}`,
       icon: ShoppingBag,
       color: '#059669',
-      tag: 'POS Money In',
+      tag: 'POS Sales',
       to: '/pos',
     },
     {
       id: 'recoveries',
       title: 'Recoveries',
-      value: `Rs. ${totalRecoveries.toLocaleString()}`,
-      subtitle: 'Khata receivables collected',
+      value: `Rs. ${(dateMetrics.recoveries || 0).toLocaleString()}`,
+      subtitle: `${pendingAccountsCount} accounts · Due: Rs. ${Number(pendingKhataTotal || 0).toLocaleString()}`,
       icon: ArrowDownLeft,
       color: '#d97706',
       tag: 'Recovery',
@@ -285,37 +287,37 @@ export default function TopSummaryCards({
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
       {cards.map((card) => {
         const Icon = card.icon;
         return (
           <Link
             key={card.id}
             to={card.to}
-            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-3xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 cursor-pointer select-none group relative overflow-hidden"
+            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs hover:border-slate-300 group cursor-pointer"
             title={`Open ${card.title}`}
           >
-            <div className="flex items-start justify-between mb-2.5">
+            <div className="flex items-start justify-between mb-1.5">
               <div
-                className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform"
-                style={{ background: `${card.color}18` }}
+                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
+                style={{ background: `${card.color}15` }}
               >
-                <Icon style={{ width: 18, height: 18, color: card.color }} />
+                <Icon style={{ width: 15, height: 15, color: card.color }} />
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full text-slate-700 bg-slate-100/90 shadow-2xs">
+                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
                   {card.tag}
                 </span>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight className="w-2.5 h-2.5 text-slate-300 group-hover:text-slate-500 transition-colors" />
               </div>
             </div>
 
             <div>
-              <p className="text-xl sm:text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5 font-display tabular">
+              <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
                 {card.value}
               </p>
-              <p className="text-xs font-bold text-slate-700">{card.title}</p>
-              <p className="text-[11px] font-medium text-slate-400 mt-0.5 truncate">
+              <p className="text-xs font-bold text-slate-800 line-clamp-1">{card.title}</p>
+              <p className="text-[10px] font-medium text-slate-400 line-clamp-1">
                 {card.subtitle}
               </p>
             </div>
@@ -325,4 +327,3 @@ export default function TopSummaryCards({
     </div>
   );
 }
-

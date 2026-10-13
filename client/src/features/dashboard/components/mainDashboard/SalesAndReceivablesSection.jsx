@@ -23,7 +23,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { usePOSContext } from "@/context/POSContext";
-import { useCustomerContext } from "@/context/CustomerContext";
+import { useCustomerContext, getCustomerDueBalance } from "@/context/CustomerContext";
 import { useExpense } from "@/context/ExpenseContext";
 import { useIntakeContext } from "@/context/IntakeContext";
 import { Link, useNavigate } from "react-router-dom";
@@ -144,15 +144,33 @@ export default function SalesAndReceivablesSection() {
 
   // 3. RECENT SALES TABLE (Real sales records only)
   const recentSales = useMemo(() => {
-    return salesHistory.slice(0, 5).map((s) => {
+    return salesHistory.slice(0, 6).map((s) => {
+      const activeCust = s.activeCustomer || (typeof s.customerId === "object" ? s.customerId : null);
       const customerName =
-        s.activeCustomer?.name ||
+        activeCust?.name ||
+        s.customerNameSnapshot ||
+        s.customerName ||
         s.walkinName ||
         (s.saleCategory === "delivery" ? "Home Delivery" : "Walk-in Counter");
 
+      const customerId =
+        activeCust?.id ||
+        activeCust?._id ||
+        (typeof s.customerId === "string" ? s.customerId : s.customerId?._id) ||
+        null;
+      const customerPhone =
+        activeCust?.phone ||
+        s.customerPhoneSnapshot ||
+        s.customerPhone ||
+        s.walkinPhone ||
+        "";
+
       return {
-        invoice: s.invoiceId || `INV-${(s.id || "").toString().slice(-4)}`,
+        id: s.id || s._id,
+        invoice: s.invoiceId || s.receiptNumber || `INV-${(s.id || s._id || "").toString().slice(-4)}`,
         customer: customerName,
+        customerId,
+        customerPhone,
         time:
           s.formattedTime ||
           (s.timestamp
@@ -160,10 +178,10 @@ export default function SalesAndReceivablesSection() {
                 hour: "2-digit",
                 minute: "2-digit",
               })
-            : "—"),
-        total: Number(s.netPayable) || 0,
+            : s.date || "—"),
+        total: Number(s.netPayable || s.totalAmount || s.grandTotal) || 0,
         method: s.paymentMethod ? s.paymentMethod.toUpperCase() : "CASH",
-        balance: s.activeCustomer?.khataBalance || 0,
+        balance: activeCust ? getCustomerDueBalance(activeCust) : (s.activeCustomer?.khataBalance || 0),
         rawSale: s,
       };
     });
@@ -173,20 +191,20 @@ export default function SalesAndReceivablesSection() {
   const topReceivables = useMemo(() => {
     const list = rawCustomers.length > 0 ? rawCustomers : customers;
     return [...list]
-      .filter((c) => Number(c.khataBalance) > 0)
-      .sort((a, b) => Number(b.khataBalance) - Number(a.khataBalance))
-      .slice(0, 5)
       .map((c) => {
-        const balance = Number(c.khataBalance) || 0;
+        const balance = getCustomerDueBalance(c);
         const limit = Number(c.creditLimit) || 15000;
-        const pct = Math.min(100, Math.round((balance / limit) * 100));
+        const pct = limit > 0 ? Math.min(100, Math.round((balance / limit) * 100)) : 0;
         return {
           ...c,
           balance,
           limit,
           pct,
         };
-      });
+      })
+      .filter((c) => c.balance > 0)
+      .sort((a, b) => b.balance - a.balance)
+      .slice(0, 5);
   }, [rawCustomers, customers]);
 
   return (
@@ -438,10 +456,25 @@ export default function SalesAndReceivablesSection() {
                         <td className="py-2.5 px-3 text-right">
                           <button
                             type="button"
-                            onClick={() => navigate("/pos")}
-                            className="text-[11px] font-semibold text-slate-500 hover:text-emerald-700 transition-colors cursor-pointer"
+                            onClick={() => {
+                              const searchVal =
+                                sale.invoice ||
+                                (sale.customer &&
+                                sale.customer !== "Walk-in Counter" &&
+                                sale.customer !== "Home Delivery"
+                                  ? sale.customer
+                                  : "");
+                              const queryParams = new URLSearchParams({
+                                modal: "walkin_history",
+                                ...(searchVal ? { search: searchVal } : {}),
+                              });
+                              navigate(`/pos?${queryParams.toString()}`);
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white transition-all cursor-pointer border border-blue-200 hover:border-blue-600 shadow-2xs group/btn"
+                            title={`Open Walk-in History for ${sale.customer}`}
                           >
-                            View &rarr;
+                            <span>Walk-in History</span>
+                            <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" />
                           </button>
                         </td>
                       </tr>

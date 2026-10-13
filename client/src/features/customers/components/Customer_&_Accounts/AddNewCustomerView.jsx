@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { ArrowLeft, ShieldCheck, UserPlus, CheckCircle2, Loader2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, ShieldCheck, UserPlus, CheckCircle2, Loader2, Plus, Trash2 } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { usePOSContext } from '../../../../context/POSContext';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,14 @@ import {
 } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import ImageUpload from '@/components/common/ImageUpload';
+import { toast } from 'sonner';
+
+const normalizeUnit = (unit) => {
+  const value = String(unit || '').toLowerCase();
+  if (value.includes('liter') || value === 'l') return 'L';
+  if (value.includes('kg') || value.includes('kilo')) return 'KG';
+  return null;
+};
 
 export default function AddNewCustomerView({ onBack }) {
   const { addCustomer } = useCustomerContext();
@@ -31,7 +39,6 @@ export default function AddNewCustomerView({ onBack }) {
     deliveryFee: '',
     secondaryPhone: '',
     referenceName: '',
-    subscription: '2 L Cow Milk',
     creditLimit: '10000',
     openingBalance: '',
     openingPaymentMethod: 'CASH_ADVANCE',
@@ -39,42 +46,107 @@ export default function AddNewCustomerView({ onBack }) {
     image: '',
   });
 
-  const milkProducts = useMemo(() => {
-    if (products && products.length > 0) {
-      const milkOnly = products.filter(
-        (p) => p.category?.toLowerCase() === 'milk' || /milk/i.test(p.name)
-      );
-      if (milkOnly.length > 0) return milkOnly;
-      return products;
-    }
-    return [
-      { id: 'cow-milk', name: 'Cow Milk', price: 240, unit: 'L' },
-      { id: 'buffalo-milk', name: 'Buffalo Milk', price: 260, unit: 'L' },
-      { id: 'mixed-milk', name: 'Mixed Milk', price: 250, unit: 'L' },
-    ];
+  const availableProducts = useMemo(() => {
+    return (products || [])
+      .filter((p) => p?.id || p?._id || p?.sku)
+      .map((p) => ({
+        id: String(p.id || p._id || p.sku),
+        name: p.name || 'Unnamed product',
+        price: Number(p.price !== undefined ? p.price : (p.sellingPrice || 0)),
+        unit: normalizeUnit(p.unit),
+        category: p.category || 'General',
+      }))
+      .filter((p) => {
+        const productText = `${p.name} ${p.category}`.toLowerCase();
+        return p.unit && (productText.includes('milk') || productText.includes('dahi'));
+      });
   }, [products]);
 
-  const [selectedProductId, setSelectedProductId] = useState(() => {
-    return milkProducts[0]?.id || 'cow-milk';
-  });
+  const [agreementItems, setAgreementItems] = useState({ morning: [], evening: [] });
 
-  const selectedProduct = milkProducts.find((p) => String(p.id) === String(selectedProductId)) || milkProducts[0];
-  const currentPrice = Number(selectedProduct?.price) || 240;
+  useEffect(() => {
+    setAgreementItems((current) => ({
+      morning: current.morning.filter((item) => availableProducts.some((p) => p.id === item.productId)),
+      evening: current.evening.filter((item) => availableProducts.some((p) => p.id === item.productId)),
+    }));
+  }, [availableProducts]);
 
-  const [subQty, setSubQty] = useState('2');
-  const [subUnit, setSubUnit] = useState('L');
+  const addAgreementItem = (shift) => {
+    if (!availableProducts.length) return;
+    setAgreementItems((current) => ({
+      ...current,
+      [shift]: [...current[shift], { productId: availableProducts[0].id, qty: '' }],
+    }));
+  };
 
-  const numQty = parseFloat(subQty) || 0;
-  const dailyCost = numQty * currentPrice;
+  const updateAgreementItem = (shift, index, field, value) => {
+    setAgreementItems((current) => ({
+      ...current,
+      [shift]: current[shift].map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item),
+    }));
+  };
+
+  const removeAgreementItem = (shift, index) => {
+    setAgreementItems((current) => ({
+      ...current,
+      [shift]: current[shift].filter((_, itemIndex) => itemIndex !== index),
+    }));
+  };
+
+  const serializeAgreementItems = (items) => items
+    .map((item) => {
+      const product = availableProducts.find((p) => p.id === item.productId);
+      const qty = Number(item.qty) || 0;
+      return product && qty > 0
+        ? { productId: product.id, name: product.name, qty, unit: product.unit, unitPrice: product.price }
+        : null;
+    })
+    .filter(Boolean);
+
+  const morningItems = serializeAgreementItems(agreementItems.morning);
+  const eveningItems = serializeAgreementItems(agreementItems.evening);
+  const morningTotal = morningItems.reduce((sum, item) => sum + item.qty * item.unitPrice, 0);
+  const eveningTotal = eveningItems.reduce((sum, item) => sum + item.qty * item.unitPrice, 0);
+  const dailyCost = morningTotal + eveningTotal;
   const monthlyCost = dailyCost * 30;
+
+  // Kept only while the previous single-product markup remains hidden below.
+  const selectedProductId = '';
+  const selectedProduct = null;
+  const currentPrice = 0;
+  const morningQty = '';
+  const eveningQty = '';
+  const subUnit = 'L';
+  const totalDailyQty = 0;
+  const handleProductChange = () => {};
+  const setMorningQty = () => {};
+  const setEveningQty = () => {};
+  const setSubUnit = () => {};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
-    if (!formData.name || !formData.phone) return;
+    if (!formData.name.trim() || !formData.phone.trim()) {
+      toast.error('Customer name and primary phone are required.');
+      return;
+    }
+    if (agreementItems.morning.length > 0 && morningItems.length !== agreementItems.morning.length || agreementItems.evening.length > 0 && eveningItems.length !== agreementItems.evening.length) {
+      toast.error('Enter a valid quantity for every selected agreement product.');
+      return;
+    }
+    if (morningItems.length === 0 && eveningItems.length === 0) {
+      toast.error('Add at least one Milk or Dahi agreement item.');
+      return;
+    }
 
     setIsSubmitting(true);
-    const formattedSubscription = `${subQty} ${subUnit} ${selectedProduct?.name || 'Cow Milk'}`.trim();
+    const morningMilkQty = morningItems.filter((item) => item.unit === 'L').reduce((sum, item) => sum + item.qty, 0);
+    const eveningMilkQty = eveningItems.filter((item) => item.unit === 'L').reduce((sum, item) => sum + item.qty, 0);
+    const formatShiftItems = (items) => items.map((item) => `${item.qty} ${item.unit} ${item.name}`).join(' + ');
+    const formattedSubscription = [
+      morningItems.length ? `Morning: ${formatShiftItems(morningItems)}` : '',
+      eveningItems.length ? `Evening: ${formatShiftItems(eveningItems)}` : '',
+    ].filter(Boolean).join(' | ');
 
     try {
       await addCustomer({
@@ -89,6 +161,16 @@ export default function AddNewCustomerView({ onBack }) {
         deliveryFee: formData.deliveryFee !== '' ? (Number(formData.deliveryFee) || 0) : 0,
         secondaryPhone: formData.secondaryPhone || '',
         referenceName: formData.referenceName || '',
+        morningMilkQty,
+        eveningMilkQty,
+        morningItems,
+        eveningItems,
+        standingOrder: {
+          morningMilkQty,
+          eveningMilkQty,
+          morningItems,
+          eveningItems,
+        },
         subscription: formattedSubscription,
         creditLimit: Number(formData.creditLimit) || 10000,
         openingBalance: Number(formData.openingBalance) || 0,
@@ -98,16 +180,18 @@ export default function AddNewCustomerView({ onBack }) {
         image: formData.image || null,
       });
 
+      toast.success(`${formData.name} has been added successfully.`);
       onBack();
     } catch (err) {
       console.error('Failed to add customer:', err);
+      toast.error(err?.message || 'Customer could not be saved. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-200 pb-4">
+    <div className="space-y-3 animate-in fade-in duration-200 pb-0">
       <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
         <Button
           type="button"
@@ -126,7 +210,7 @@ export default function AddNewCustomerView({ onBack }) {
         </div>
       </div>
 
-      <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
+      <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
@@ -284,6 +368,7 @@ export default function AddNewCustomerView({ onBack }) {
               </h3>
             </div>
 
+            <div className="hidden">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
@@ -328,39 +413,60 @@ export default function AddNewCustomerView({ onBack }) {
                 </span>
               </div>
 
-              <div>
+              <div className="hidden">
                 <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
-                  Milk Product (From Products)
+                  Product (From Catalog)
                 </label>
                 <Select
                   value={String(selectedProductId)}
-                  onValueChange={(val) => setSelectedProductId(val)}
+                  onValueChange={(val) => handleProductChange(val)}
+                  disabled={!availableProducts.length}
                 >
                   <SelectTrigger className="h-8.5 bg-slate-50/50 border-slate-200 rounded-lg text-xs font-medium">
                     <SelectValue placeholder="Select Product" />
                   </SelectTrigger>
                   <SelectContent>
-                    {milkProducts.map((p) => (
+                    {availableProducts.map((p) => (
                       <SelectItem key={p.id} value={String(p.id)} className="text-xs">
-                        {p.name} (Rs. {Number(p.price) || 0}/{p.unit ? p.unit.replace(/^per\s+/i, '') : 'L'})
+                        {p.name} (Rs. {Number(p.price) || 0} / {p.unit || 'L'})
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {!availableProducts.length && (
+                  <span className="text-[9px] text-amber-700 block mt-1">
+                    Add a product in Products first.
+                  </span>
+                )}
               </div>
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
-                  Daily Subscription Qty
+                  🌅 Morning Shift Requirement
                 </label>
                 <Input
                   type="number"
                   step="any"
                   min="0"
-                  value={subQty}
-                  onChange={(e) => setSubQty(e.target.value)}
-                  placeholder="Enter quantity"
-                  className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg focus-visible:bg-white font-bold"
+                  value={morningQty}
+                  onChange={(e) => setMorningQty(e.target.value)}
+                  placeholder="Morning Qty"
+                  className="h-8.5 px-2.5 py-1 text-xs bg-amber-50/40 border-amber-200 rounded-lg focus-visible:bg-white font-bold text-amber-900"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
+                  🌙 Evening Shift Requirement
+                </label>
+                <Input
+                  type="number"
+                  step="any"
+                  min="0"
+                  value={eveningQty}
+                  onChange={(e) => setEveningQty(e.target.value)}
+                  placeholder="Evening Qty"
+                  className="h-8.5 px-2.5 py-1 text-xs bg-indigo-50/40 border-indigo-200 rounded-lg focus-visible:bg-white font-bold text-indigo-900"
                 />
               </div>
 
@@ -369,7 +475,7 @@ export default function AddNewCustomerView({ onBack }) {
                   Unit
                 </label>
                 <Select
-                  value={subUnit}
+                  value={subUnit || selectedProduct?.unit || 'Piece'}
                   onValueChange={(val) => setSubUnit(val)}
                 >
                   <SelectTrigger className="h-8.5 bg-slate-50/50 border-slate-200 rounded-lg text-xs font-bold">
@@ -378,8 +484,23 @@ export default function AddNewCustomerView({ onBack }) {
                   <SelectContent>
                     <SelectItem value="L" className="text-xs font-semibold">L (Liters)</SelectItem>
                     <SelectItem value="KG" className="text-xs font-semibold">KG (Kilos)</SelectItem>
+                    <SelectItem value="Pack" className="text-xs font-semibold">Pack</SelectItem>
+                    <SelectItem value="Pcs" className="text-xs font-semibold">Pcs</SelectItem>
+                    <SelectItem value="Piece" className="text-xs font-semibold">Piece</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
+                  Total Daily Agreement Qty
+                </label>
+                <Input
+                  disabled
+                  readOnly
+                  value={`${totalDailyQty} ${subUnit} / day`}
+                  className="h-8.5 px-2.5 py-1 text-xs bg-emerald-50/50 border-emerald-200 rounded-lg font-bold text-emerald-800 cursor-not-allowed select-none shadow-none"
+                />
               </div>
 
               <div>
@@ -417,6 +538,98 @@ export default function AddNewCustomerView({ onBack }) {
                   className="h-8.5 px-2.5 py-1 text-xs bg-slate-100/90 border-slate-200 rounded-lg font-bold text-slate-800 cursor-not-allowed select-none shadow-none"
                 />
               </div>
+            </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1 text-[11px]">Area / Sector</label>
+                <Input value={formData.area} onChange={(event) => setFormData({ ...formData, area: event.target.value })} placeholder="Enter area" className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1 text-[11px]">Street / House Address</label>
+                <Input value={formData.address} onChange={(event) => setFormData({ ...formData, address: event.target.value })} placeholder="Enter address" className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg" />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1 text-[11px]">Doorstep Delivery Charges (Rs.)</label>
+                <Input inputMode="numeric" value={formData.deliveryFee} onChange={(event) => setFormData({ ...formData, deliveryFee: event.target.value.replace(/\D/g, '') })} placeholder="0 (optional)" className="h-8.5 px-2.5 py-1 text-xs bg-slate-50/50 border-slate-200 rounded-lg font-bold tabular" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {[
+                { key: 'morning', title: 'Morning Agreement', tone: 'amber', items: agreementItems.morning },
+                { key: 'evening', title: 'Evening Agreement', tone: 'indigo', items: agreementItems.evening },
+              ].map(({ key, title, tone, items }) => (
+                <div key={key} className={`border rounded-xl p-3 space-y-2 ${tone === 'amber' ? 'border-amber-200 bg-amber-50/30' : 'border-indigo-200 bg-indigo-50/30'}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-xs font-bold text-slate-800">{title}</h4>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => addAgreementItem(key)}
+                      disabled={!availableProducts.length}
+                      className="h-7 px-2 text-[10px]"
+                    >
+                      <Plus className="w-3 h-3 mr-1" /> Add item
+                    </Button>
+                  </div>
+
+                  {items.length === 0 ? (
+                    <p className="py-3 text-center text-[11px] text-slate-500">No {key} delivery agreed.</p>
+                  ) : items.map((item, index) => {
+                    const product = availableProducts.find((p) => p.id === item.productId);
+                    return (
+                      <div key={`${key}-${index}`} className="grid grid-cols-[minmax(0,1fr)_76px_42px] gap-2 items-end">
+                        <div>
+                          <label className="block mb-1 text-[10px] font-semibold text-slate-600">Milk or Dahi</label>
+                          <Select value={item.productId} onValueChange={(value) => updateAgreementItem(key, index, 'productId', value)}>
+                            <SelectTrigger className="h-8.5 bg-white text-xs">
+                              <SelectValue placeholder="Select product" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableProducts.map((productOption) => (
+                                <SelectItem key={productOption.id} value={productOption.id} className="text-xs">
+                                  {productOption.name} (Rs. {productOption.price}/{productOption.unit})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="block mb-1 text-[10px] font-semibold text-slate-600">Qty {product?.unit || ''}</label>
+                          <Input
+                            type="number"
+                            min="0.1"
+                            step="any"
+                            value={item.qty}
+                            onChange={(event) => updateAgreementItem(key, index, 'qty', event.target.value)}
+                            className="h-8.5 bg-white px-2 text-center text-xs font-bold"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => removeAgreementItem(key, index)}
+                          className="h-8.5 w-8.5 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                          title="Remove item"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <Input disabled readOnly value={`Morning: Rs. ${morningTotal.toLocaleString()}`} className="h-8.5 bg-amber-50 border-amber-200 text-xs font-bold text-amber-900" />
+              <Input disabled readOnly value={`Evening: Rs. ${eveningTotal.toLocaleString()}`} className="h-8.5 bg-indigo-50 border-indigo-200 text-xs font-bold text-indigo-900" />
+              <Input disabled readOnly value={`Daily agreement: Rs. ${dailyCost.toLocaleString()}`} className="h-8.5 bg-emerald-50 border-emerald-200 text-xs font-bold text-emerald-800" />
+              <Input disabled readOnly value={`Monthly estimate: Rs. ${monthlyCost.toLocaleString()}`} className="h-8.5 bg-slate-100 border-slate-200 text-xs font-bold text-slate-800" />
             </div>
           </div>
 

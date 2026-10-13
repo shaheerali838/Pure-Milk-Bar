@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import deliveryService from '../services/deliveryService.js';
+import { getPktTodayString, getDateRangeFromFilter } from '../utils/dateUtils.js';
 
 const DeliveryContext = createContext();
 
@@ -8,12 +9,26 @@ export function DeliveryProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchDeliveries = useCallback(async () => {
+  // Date Filtering State - Default to 'Today'
+  const [dateFilter, setDateFilter] = useState('Today');
+  const [startDate, setStartDate] = useState(() => getPktTodayString());
+  const [endDate, setEndDate] = useState(() => getPktTodayString());
+
+  // Keep start and end dates synchronized when date filter changes
+  useEffect(() => {
+    if (dateFilter !== 'Custom Range') {
+      const range = getDateRangeFromFilter(dateFilter);
+      if (range.startDate !== undefined) setStartDate(range.startDate);
+      if (range.endDate !== undefined) setEndDate(range.endDate);
+    }
+  }, [dateFilter]);
+
+  const fetchDeliveries = useCallback(async (customParams = {}) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await deliveryService.getDeliveries();
-      const list = Array.isArray(data) ? data : data?.deliveries || [];
+      const data = await deliveryService.getDeliveries(customParams);
+      const list = Array.isArray(data) ? data : data?.deliveryRuns || data?.deliveries || [];
       const normalized = list.map((d) => ({
         ...d,
         id: d._id || d.id,
@@ -32,6 +47,7 @@ export function DeliveryProvider({ children }) {
     fetchDeliveries();
   }, [fetchDeliveries]);
 
+
   const addDelivery = async (data) => {
     try {
       const todayISO = new Date().toISOString().split('T')[0];
@@ -46,6 +62,7 @@ export function DeliveryProvider({ children }) {
         deliveryAddress: data.deliveryAddress ? data.deliveryAddress.trim() : '',
         itemDescription: data.itemDescription ? data.itemDescription.trim() : 'Dairy Delivery',
         qtyLiters: Number(data.qtyLiters) || 0,
+        deliveryFee: data.deliveryFee !== null && data.deliveryFee !== undefined ? Number(data.deliveryFee) || 0 : null,
         paymentMode: data.paymentMode || 'CASH',
         codAmountToCollect: Number(data.codAmountToCollect) || 0,
         items: Array.isArray(data.items) ? data.items : [],
@@ -55,6 +72,9 @@ export function DeliveryProvider({ children }) {
         source: data.source || 'SCHEDULED_ROUTE',
         linkedOrderId: data.linkedOrderId || null,
         receiptNumber: data.receiptNumber || null,
+        customerPhone: data.customerPhone || '',
+        deliverySubType: data.deliverySubType || 'monthly',
+        notes: data.notes || '',
         status: data.status || 'PENDING',
         bottlesReturned: Number(data.bottlesReturned) || 0,
       };
@@ -71,6 +91,13 @@ export function DeliveryProvider({ children }) {
         id: deliveryDoc._id || deliveryDoc.id || Date.now(),
       };
       setDeliveries((prev) => [normalized, ...prev]);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('pure_milk_bar_deliveries_updated'));
+        if (payload.status === 'DELIVERED') {
+          window.dispatchEvent(new Event('pure_milk_bar_inventory_updated'));
+          window.dispatchEvent(new Event('pure_milk_bar_pos_sale_completed'));
+        }
+      }
       return normalized;
     } catch (err) {
       console.error('Failed to create delivery via API:', err);
@@ -79,13 +106,27 @@ export function DeliveryProvider({ children }) {
   };
 
   const updateDelivery = async (id, data) => {
+    const previousDeliveries = deliveries;
     setDeliveries((prev) =>
       prev.map((d) => ((d._id || d.id) === id ? { ...d, ...data } : d))
     );
     try {
-      await deliveryService.updateDelivery(id, data);
+      const updated = await deliveryService.updateDelivery(id, data);
+      const deliveryDoc = updated?.deliveryRun || updated;
+      if (deliveryDoc && typeof deliveryDoc === 'object') {
+        setDeliveries((prev) => prev.map((d) => (
+          (d._id || d.id) === id ? { ...d, ...deliveryDoc, id: deliveryDoc._id || deliveryDoc.id || id } : d
+        )));
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('pure_milk_bar_deliveries_updated'));
+        window.dispatchEvent(new Event('pure_milk_bar_inventory_updated'));
+      }
+      return deliveryDoc;
     } catch (err) {
+      setDeliveries(previousDeliveries);
       console.warn('Failed to update delivery on API:', err.message);
+      throw err;
     }
   };
 
@@ -106,6 +147,11 @@ export function DeliveryProvider({ children }) {
             : d
         )
       );
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('pure_milk_bar_deliveries_updated'));
+        window.dispatchEvent(new Event('pure_milk_bar_inventory_updated'));
+        window.dispatchEvent(new Event('pure_milk_bar_pos_sale_completed'));
+      }
     } catch (err) {
       console.error('Failed to update delivery status:', err);
     }
@@ -115,6 +161,10 @@ export function DeliveryProvider({ children }) {
     setDeliveries((prev) => prev.filter((d) => (d._id || d.id) !== id && d.id !== id));
     try {
       await deliveryService.deleteDelivery(id);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('pure_milk_bar_deliveries_updated'));
+        window.dispatchEvent(new Event('pure_milk_bar_inventory_updated'));
+      }
     } catch (err) {
       console.warn('Failed to delete delivery on API:', err.message);
     }
@@ -126,6 +176,12 @@ export function DeliveryProvider({ children }) {
         deliveries,
         isLoading,
         error,
+        dateFilter,
+        setDateFilter,
+        startDate,
+        setStartDate,
+        endDate,
+        setEndDate,
         refreshDeliveries: fetchDeliveries,
         addDelivery,
         updateDelivery,

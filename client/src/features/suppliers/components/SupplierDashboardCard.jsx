@@ -1,52 +1,88 @@
 import React, { useMemo } from 'react';
-import { Users, Droplets, Tag, Wallet, CheckCircle2 } from 'lucide-react';
+import { Users, Droplets, Tag, Banknote, PackageCheck } from 'lucide-react';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { useIntakeContext } from '@/context/IntakeContext';
-import { isDateInFilterRange } from '@/utils/dateUtils';
+import { usePOSContext } from '@/context/POSContext';
+import { useDahiContext } from '@/context/DahiContext';
+import { isDateInFilterRange, isMatchingTimeframe } from '@/utils/dateUtils';
 
 export default function SupplierDashboardCard({
-  dateFilter = 'today',
-  startDate = '',
-  endDate = '',
-  periodLabel = 'Today',
+  timeRange,
+  dateFilter: propDateFilter,
+  startDate: propStartDate,
+  endDate: propEndDate,
+  customStartDate,
+  customEndDate,
+  periodLabel: propPeriodLabel,
 }) {
   const { totals: supplierTotals } = useSupplierContext();
-  const { intakeLogs } = useIntakeContext();
+  const { intakeLogs = [] } = useIntakeContext();
+  const posCtx = usePOSContext();
+  const dahiCtx = useDahiContext();
+
+  const effectiveFilter = propDateFilter || timeRange || 'today';
+  const effectiveStart = propStartDate || customStartDate || '';
+  const effectiveEnd = propEndDate || customEndDate || '';
+  const periodLabel = propPeriodLabel || (effectiveFilter === 'today' ? 'Today' : 'Selected Period');
+
+  const availableSupplierStock = useMemo(() => {
+    if (posCtx?.inventoryMetrics?.rawSupplierMilkStock !== undefined) {
+      return Math.max(0, Number(posCtx.inventoryMetrics.rawSupplierMilkStock) || 0);
+    }
+    if (dahiCtx?.metrics?.remainingSupplierMilk !== undefined) {
+      return Math.max(0, Number(dahiCtx.metrics.remainingSupplierMilk) || 0);
+    }
+    return 0;
+  }, [posCtx?.inventoryMetrics?.rawSupplierMilkStock, dahiCtx?.metrics?.remainingSupplierMilk]);
+
+  const cowStock = useMemo(() => {
+    return Math.max(0, Number(posCtx?.inventoryMetrics?.rawSupplierCowMilkStock) || 0);
+  }, [posCtx?.inventoryMetrics?.rawSupplierCowMilkStock]);
+
+  const buffStock = useMemo(() => {
+    return Math.max(0, Number(posCtx?.inventoryMetrics?.rawSupplierBuffaloMilkStock) || 0);
+  }, [posCtx?.inventoryMetrics?.rawSupplierBuffaloMilkStock]);
 
   const periodData = useMemo(() => {
-    const logs = (intakeLogs || []).filter((log) =>
-      isDateInFilterRange(log.date || log.createdAt, dateFilter, startDate, endDate)
-    );
+    const logs = (intakeLogs || []).filter((log) => {
+      const logDate = log.date || log.createdAt;
+      if (typeof isDateInFilterRange === 'function') {
+        return isDateInFilterRange(logDate, effectiveFilter, effectiveStart, effectiveEnd);
+      }
+      return isMatchingTimeframe(logDate, effectiveFilter, effectiveStart, effectiveEnd);
+    });
 
     const volume = logs.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
-    const cost = logs.reduce((sum, item) => sum + (parseFloat(item.totalCost) || 0), 0);
+    const cost = logs.reduce((sum, item) => sum + (parseFloat(item.totalCost || item.totalAmount) || 0), 0);
     const avgRate = volume > 0 ? cost / volume : 0;
 
     return { volume, cost, avgRate, logCount: logs.length };
-  }, [intakeLogs, dateFilter, startDate, endDate]);
+  }, [intakeLogs, effectiveFilter, effectiveStart, effectiveEnd]);
 
   const cards = [
     {
-      id: 'active_suppliers',
-      title: 'Active Suppliers',
-      amount: `${supplierTotals?.activeVendors || 0} Suppliers`,
-      sub: `${supplierTotals?.activeVendors || 0} Active · ${supplierTotals?.inactiveVendors || 0} Inactive`,
-      icon: Users,
-      color: '#4f46e5', // indigo-600
-      badge: 'Network',
+      id: 'available_stock',
+      title: 'Available Stock (With Me)',
+      amount: `${availableSupplierStock % 1 === 0 ? availableSupplierStock.toFixed(0) : availableSupplierStock.toFixed(1)} L`,
+      sub: (cowStock > 0 || buffStock > 0)
+        ? `Cow: ${cowStock % 1 === 0 ? cowStock.toFixed(0) : cowStock.toFixed(1)} L · Buff: ${buffStock % 1 === 0 ? buffStock.toFixed(0) : buffStock.toFixed(1)} L`
+        : 'Live In-Stock Liquid Milk',
+      icon: PackageCheck,
+      color: '#059669', // emerald-600
+      badge: 'Available',
     },
     {
       id: 'procurement',
-      title: dateFilter === 'today' ? "Today's Procurement" : `Procurement (${periodLabel})`,
+      title: effectiveFilter === 'today' ? "Today's Procurement" : `Procurement (${periodLabel})`,
       amount: `${periodData.volume.toFixed(1)} L`,
       sub: `Cost: Rs. ${periodData.cost.toLocaleString()} · ${periodData.logCount} Batches`,
       icon: Droplets,
       color: '#2563eb', // blue-600
-      badge: dateFilter === 'today' ? 'Today Intake' : 'Intake',
+      badge: effectiveFilter === 'today' ? 'Today Intake' : 'Intake',
     },
     {
       id: 'avg_purchase_rate',
-      title: dateFilter === 'today' ? 'Avg Purchase Rate' : `Avg Rate (${periodLabel})`,
+      title: effectiveFilter === 'today' ? 'Avg Purchase Rate' : `Avg Rate (${periodLabel})`,
       amount: `Rs. ${periodData.avgRate.toFixed(1)} / L`,
       sub: `Based on ${periodLabel} Batches`,
       icon: Tag,
@@ -58,14 +94,23 @@ export default function SupplierDashboardCard({
       title: 'Supplier Payables',
       amount: `Rs. ${(supplierTotals?.outstandingBalances || 0).toLocaleString()}`,
       sub: 'Total Pending Vendor Balance',
-      icon: Wallet,
+      icon: Banknote,
       color: '#d97706', // amber-600
       badge: 'Finance',
+    },
+    {
+      id: 'active_suppliers',
+      title: 'Active Suppliers',
+      amount: `${supplierTotals?.activeVendors || 0} Suppliers`,
+      sub: `${supplierTotals?.activeVendors || 0} Active · ${supplierTotals?.inactiveVendors || 0} Inactive`,
+      icon: Users,
+      color: '#4f46e5', // indigo-600
+      badge: 'Network',
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
       {cards.map(({ id, title, amount, sub, icon: Icon, color, badge }) => (
         <div
           key={id}

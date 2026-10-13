@@ -158,10 +158,38 @@ const deliveryRunSchema = new Schema(
       trim: true,
       default: '',
     },
+    deliveryFee: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+    fuelLitres: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+    fuelAmount: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
     bottlesReturned: {
       type: Number,
       default: 0,
       min: 0,
+    },
+    isStockDeducted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    stockDeductedAt: {
+      type: Date,
+      default: null,
+    },
+    stockDeductionDetails: {
+      type: Array,
+      default: [],
     },
   },
   {

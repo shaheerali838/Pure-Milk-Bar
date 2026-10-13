@@ -101,6 +101,7 @@ export function POSProvider({ children }) {
     setSupplierStock,
     setPosSyncVersion,
     addLedgerEntry,
+    getMetrics: () => metricsRef.current,
     getLiveStock: () => metricsRef.current?.inventoryMetrics || {},
   });
 
@@ -130,6 +131,7 @@ export function POSProvider({ children }) {
     setFarmStock,
     setSupplierStock,
     setPosSyncVersion,
+    getMetrics: () => metricsRef.current,
     getLiveStock: () => metricsRef.current?.inventoryMetrics || {},
     resolveItemSourceAndRatios: (...args) => metricsRef.current?.resolveItemSourceAndRatios?.(...args),
   });
@@ -244,6 +246,7 @@ export function POSProvider({ children }) {
         editProduct: productsState.updateProduct,
         batchUpdateProducts: productsState.batchUpdateProducts,
         deleteProduct: productsState.deleteProduct,
+        deductStockAfterSale: productsState.deductStockAfterSale,
 
         // Cart
         cart: cartState.cart,
@@ -295,6 +298,8 @@ export function POSProvider({ children }) {
         setKhataPaymentOption: cartState.setKhataPaymentOption,
         partialPaidAmount: cartState.partialPaidAmount,
         setPartialPaidAmount: cartState.setPartialPaidAmount,
+        splitDetails: cartState.splitDetails,
+        setSplitDetails: cartState.setSplitDetails,
         orderNotes: cartState.orderNotes,
         setOrderNotes: cartState.setOrderNotes,
         fulfillmentMode: cartState.fulfillmentMode,

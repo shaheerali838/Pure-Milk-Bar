@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, CreditCard, Clock, CheckCircle2 } from 'lucide-react';
+import { Banknote, CreditCard, Clock, CheckCircle2 } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 import { useDeliveryContext } from '../../../../context/DeliveryContext';
@@ -76,7 +76,7 @@ export default function CollectionPayoutsStats() {
       label: "Total Recovered Today",
       value: `Rs. ${totalRecoveredToday.toLocaleString()}`,
       sub: totalRecoveredToday > 0 ? "Direct Khata cash & online today" : `All-time: Rs. ${totalRecoveredAllTime.toLocaleString()}`,
-      icon: DollarSign,
+      icon: Banknote,
       color: "#009966",
       badge: "Today's Recovery",
     },

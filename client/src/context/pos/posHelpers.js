@@ -76,5 +76,6 @@ export const defaultPOSContextValue = {
   handleAddToCart: () => {},
   handleAddToCartByRupees: () => {},
   handleClearCart: () => {},
+  deductStockAfterSale: () => {},
   handleCompleteSale: async () => null,
 };

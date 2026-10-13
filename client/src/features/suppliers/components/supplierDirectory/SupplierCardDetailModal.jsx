@@ -1,19 +1,5 @@
 import React, { useState } from 'react';
-import {
-  X,
-  Users,
-  Droplets,
-  DollarSign,
-  Receipt,
-  Clock,
-  MapPin,
-  Phone,
-  CheckCircle2,
-  XCircle,
-  Wallet,
-  ArrowRight,
-  Search,
-} from 'lucide-react';
+import { X, Users, Droplets, Banknote, Receipt, Clock, MapPin, Phone, CheckCircle2, XCircle, Wallet, ArrowRight, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 // Modal dialog for supplier directory summary card drilldown
@@ -77,7 +63,7 @@ export default function SupplierCardDetailModal({
     intake_spend: {
       title: 'Total Milk Intake Spend Breakdown',
       subtitle: `Gross intake spend of Rs. ${(totals.totalIntakeSpend || totals.totalProcurementValue || 0).toLocaleString()} across all suppliers`,
-      icon: DollarSign,
+      icon: Banknote,
       color: '#0d9488',
       badge: 'Total Spend',
     },

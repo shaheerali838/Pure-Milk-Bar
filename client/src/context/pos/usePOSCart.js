@@ -43,11 +43,17 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
   const [codPaymentOption, setCodPaymentOption] = useState('full');
   const [codPaidAmount, setCodPaidAmount] = useState('');
 
-  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'khata' | 'online' | 'cod'
+  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'khata' | 'online' | 'easypaisa' | 'jazzcash' | 'split' | 'cod'
   const [cashTendered, setCashTendered] = useState('');
 
+  const [splitDetails, setSplitDetails] = useState({
+    cash: '',
+    easyPaisa: '',
+    jazzCash: '',
+  });
+
   const [onlineDetails, setOnlineDetails] = useState({
-    provider: 'JazzCash',
+    provider: 'EasyPaisa',
     senderAccount: '',
     trxId: '',
   });
@@ -269,7 +275,8 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
     setShowFuelLog(false);
     setFuelLog({ liters: '', amount: '', distanceKm: '', notes: '' });
     setWalkinCustomerType('first_time');
-    setOnlineDetails({ provider: 'JazzCash', senderAccount: '', trxId: '' });
+    setOnlineDetails({ provider: 'EasyPaisa', senderAccount: '', trxId: '' });
+    setSplitDetails({ cash: '', easyPaisa: '', jazzCash: '' });
   };
 
   // Pricing calculations
@@ -351,6 +358,8 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
     setKhataPaymentOption,
     partialPaidAmount,
     setPartialPaidAmount,
+    splitDetails,
+    setSplitDetails,
     orderNotes,
     setOrderNotes,
     codPaymentOption,

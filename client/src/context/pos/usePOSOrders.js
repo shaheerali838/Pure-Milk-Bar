@@ -13,6 +13,7 @@ export function usePOSOrders({
   setFarmStock,
   setSupplierStock,
   setPosSyncVersion,
+  getMetrics,
   getLiveStock,
   remainingFarmBuffaloMilk = 0,
   remainingFarmMilk = 0,
@@ -32,17 +33,37 @@ export function usePOSOrders({
       const normalized = list
         .filter((order) => !isLegacyDummySale(order))
         .map((order) => {
-          const items = (order.items || []).map((i) => ({
-            ...i,
-            id: i.productId || i._id || i.id,
-            name: i.name,
-            category: i.category || (i.name && i.name.toLowerCase().includes('dahi') ? 'Dahi' : (i.name && (i.name.toLowerCase().includes('milk') || i.name.toLowerCase().includes('cow') || i.name.toLowerCase().includes('buffalo')) ? 'Milk' : 'General')),
-            quantity: Number(i.quantity) || 0,
-            price: Number(i.unitPrice || i.price) || 0,
-            cost: Number(i.cost) || 0,
-            source: i.source || 'Farm',
-            subtotal: Number(i.subtotal) || ((Number(i.quantity) || 0) * (Number(i.unitPrice || i.price) || 0)),
-          }));
+          const items = (order.items || []).map((i) => {
+            const qty = Number(i.quantity) || 0;
+            const price = Number(i.unitPrice || i.price) || 0;
+            const subtotal = Number(i.subtotal) || (qty * price);
+            const source = i.source || 'Farm';
+            const farmQty = i.farmQuantity !== undefined ? Number(i.farmQuantity) : (source === 'Farm' ? qty : 0);
+            const supQty = i.supplierQuantity !== undefined ? Number(i.supplierQuantity) : (source === 'Supplier' ? qty : 0);
+            const farmRev = i.farmRevenue !== undefined ? Number(i.farmRevenue) : (source === 'Farm' ? subtotal : 0);
+            const supRev = i.supplierRevenue !== undefined ? Number(i.supplierRevenue) : (source === 'Supplier' ? subtotal : 0);
+            const farmRatio = i.farmRatio !== undefined ? Number(i.farmRatio) : (source === 'Farm' ? 1 : 0);
+            const supRatio = i.supplierRatio !== undefined ? Number(i.supplierRatio) : (source === 'Supplier' ? 1 : 0);
+
+            return {
+              ...i,
+              id: i.productId || i._id || i.id,
+              name: i.name,
+              category: i.category || (i.name && i.name.toLowerCase().includes('dahi') ? 'Dahi' : (i.name && (i.name.toLowerCase().includes('milk') || i.name.toLowerCase().includes('cow') || i.name.toLowerCase().includes('buffalo')) ? 'Milk' : 'General')),
+              quantity: qty,
+              price: price,
+              unitPrice: price,
+              cost: Number(i.cost) || 0,
+              source: source,
+              farmQuantity: farmQty,
+              supplierQuantity: supQty,
+              farmRevenue: farmRev,
+              supplierRevenue: supRev,
+              farmRatio: farmRatio,
+              supplierRatio: supRatio,
+              subtotal: subtotal,
+            };
+          });
 
           const isDelivery =
             order.fulfillmentType === 'DELIVERY' ||
@@ -109,6 +130,7 @@ export function usePOSOrders({
       deliverySubType = 'ontime',
       khataPaymentOption = 'khata',
       partialPaidAmount = '',
+      splitDetails = {},
       orderNotes = '',
       paymentMethod = 'cash',
       cashTendered = '',
@@ -141,9 +163,41 @@ export function usePOSOrders({
       }
     }
 
+    // Strict inventory stock check: Prevent order if stock is 0 or insufficient
+    const allProds = productsState?.products || [];
+    for (const cartItem of cart) {
+      const reqQty = Number(cartItem.quantity) || 0;
+      if (reqQty <= 0) continue;
+      const prod = allProds.find(
+        (p) =>
+          p.id === cartItem.id ||
+          p._id === cartItem.id ||
+          (cartItem.productId && (p.id === cartItem.productId || p._id === cartItem.productId)) ||
+          (p.sku && cartItem.sku && String(p.sku).toUpperCase() === String(cartItem.sku).toUpperCase()) ||
+          (p.name && cartItem.name && p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase()) ||
+          (cartItem.name && p.name && (
+            (cartItem.name.toLowerCase().includes('cow') && p.name.toLowerCase().includes('cow')) ||
+            (cartItem.name.toLowerCase().includes('buffalo') && p.name.toLowerCase().includes('buffalo')) ||
+            (cartItem.name.toLowerCase().includes('dahi') && p.name.toLowerCase().includes('dahi'))
+          ))
+      );
+      if (prod) {
+        const avail = Number(prod.currentStock ?? prod.stock ?? 0);
+        if (avail <= 0 || reqQty > avail) {
+          toast.error(`Cannot place sale: Insufficient stock for "${prod.name}". Available: ${avail} ${prod.unit || ''}, Requested: ${reqQty}`);
+          return null;
+        }
+      }
+    }
+
     setIsSaleRefreshing(true);
 
     try {
+      const liveMetrics = typeof getMetrics === 'function' ? getMetrics() : {};
+      const activeRemainingFarmBuffalo = Number(liveMetrics?.remainingFarmBuffaloMilk ?? liveMetrics?.inventoryMetrics?.rawFarmBuffaloMilkStock ?? remainingFarmBuffaloMilk) || 0;
+      const activeRemainingFarm = Number(liveMetrics?.inventoryMetrics?.rawFarmMilkStock ?? remainingFarmMilk) || 0;
+      const activeResolver = liveMetrics?.resolveItemSourceAndRatios || resolveItemSourceAndRatios;
+
       const invoiceId = `INV-${1001 + salesHistory.length}`;
       const effectiveSaleDate = ensureValidDate(saleDate) || getLocalDate();
       const effectiveTimestamp = effectiveSaleDate === getLocalDate()
@@ -621,6 +675,7 @@ export function usePOSOrders({
               subtotal: lineSubtotal,
             }];
           }
+
         }),
         itemCount: cart.reduce((c, i) => c + (Number(i.quantity) || 0), 0),
         subtotal: cartSubtotal,
@@ -705,59 +760,133 @@ export function usePOSOrders({
         subtotal: Math.round((Number(i.quantity) || 0) * (Number(i.price) || 0)),
       }));
 
-      let calculatedPaidAmount = netPayable;
+      let directCash = 0;
+      let directEasyPaisa = 0;
+      let directJazzCash = 0;
+      let directOnline = 0;
       let calculatedRemainingAmount = 0;
 
-      if (saleCategory === 'walkin' && isRegisteredWalkin && activeCustomer) {
-        if (khataPaymentOption === 'cash' || paymentMethod === 'cash' || paymentMethod === 'online') {
-          calculatedPaidAmount = netPayable;
-          calculatedRemainingAmount = 0;
+      const isRegisteredCust = (saleCategory === 'walkin' && isRegisteredWalkin && activeCustomer) || isLegacyCustomerSale;
+
+      if (saleCategory === 'delivery') {
+        calculatedRemainingAmount = netPayable;
+      } else if (isRegisteredCust) {
+        if (khataPaymentOption === 'cash' || paymentMethod === 'cash') {
+          directCash = netPayable;
+        } else if (khataPaymentOption === 'easypaisa' || paymentMethod === 'easypaisa') {
+          directEasyPaisa = netPayable;
+        } else if (khataPaymentOption === 'jazzcash' || paymentMethod === 'jazzcash') {
+          directJazzCash = netPayable;
+        } else if (khataPaymentOption === 'online' || paymentMethod === 'online') {
+          const prov = String(onlineDetails?.provider || '').toUpperCase();
+          if (prov.includes('EASYPAISA')) directEasyPaisa = netPayable;
+          else if (prov.includes('JAZZCASH')) directJazzCash = netPayable;
+          else directOnline = netPayable;
+        } else if (khataPaymentOption === 'split' || paymentMethod === 'split') {
+          directCash = Number(splitDetails?.cash || 0);
+          directEasyPaisa = Number(splitDetails?.easyPaisa || 0);
+          directJazzCash = Number(splitDetails?.jazzCash || 0);
+          const totalDirect = directCash + directEasyPaisa + directJazzCash;
+          calculatedRemainingAmount = Math.max(0, netPayable - totalDirect);
         } else if (khataPaymentOption === 'partial') {
-          calculatedPaidAmount = Math.min(netPayable, Math.max(0, parseFloat(partialPaidAmount) || 0));
-          calculatedRemainingAmount = Math.max(0, netPayable - calculatedPaidAmount);
+          directCash = Math.min(netPayable, Math.max(0, parseFloat(partialPaidAmount) || 0));
+          calculatedRemainingAmount = Math.max(0, netPayable - directCash);
         } else {
-          calculatedPaidAmount = 0;
+          // khata
           calculatedRemainingAmount = netPayable;
         }
-      } else if (saleCategory === 'delivery') {
-        calculatedPaidAmount = 0;
-        calculatedRemainingAmount = netPayable;
+      } else {
+        // Anonymous walk-in
+        if (paymentMethod === 'easypaisa') {
+          directEasyPaisa = netPayable;
+        } else if (paymentMethod === 'jazzcash') {
+          directJazzCash = netPayable;
+        } else if (paymentMethod === 'online') {
+          const prov = String(onlineDetails?.provider || '').toUpperCase();
+          if (prov.includes('EASYPAISA')) directEasyPaisa = netPayable;
+          else if (prov.includes('JAZZCASH')) directJazzCash = netPayable;
+          else directOnline = netPayable;
+        } else if (paymentMethod === 'split') {
+          directCash = Number(splitDetails?.cash || 0);
+          directEasyPaisa = Number(splitDetails?.easyPaisa || 0);
+          directJazzCash = Number(splitDetails?.jazzCash || 0);
+        } else {
+          directCash = netPayable;
+        }
       }
+
+      const totalDirectPaid = directCash + directEasyPaisa + directJazzCash + directOnline;
+      const calculatedPaidAmount = totalDirectPaid;
 
       let backendPaymentMethod = 'CASH';
       let splitPaymentMeta = null;
+      let onlineTransferMeta = null;
 
       if (saleCategory === 'delivery') {
         backendPaymentMethod = 'COD';
-      } else if (calculatedPaidAmount >= netPayable) {
-        backendPaymentMethod = paymentMethod === 'online' ? 'ONLINE' : 'CASH';
-      } else if (calculatedPaidAmount <= 0) {
+      } else if (directCash > 0 && directEasyPaisa === 0 && directJazzCash === 0 && directOnline === 0 && calculatedRemainingAmount === 0) {
+        backendPaymentMethod = 'CASH';
+      } else if (directEasyPaisa > 0 && directCash === 0 && directJazzCash === 0 && directOnline === 0 && calculatedRemainingAmount === 0) {
+        backendPaymentMethod = 'EASYPAISA';
+        onlineTransferMeta = { provider: 'EasyPaisa', transactionReference: onlineDetails?.trxId || null, senderAccount: onlineDetails?.senderAccount || null };
+      } else if (directJazzCash > 0 && directCash === 0 && directEasyPaisa === 0 && directOnline === 0 && calculatedRemainingAmount === 0) {
+        backendPaymentMethod = 'JAZZCASH';
+        onlineTransferMeta = { provider: 'JazzCash', transactionReference: onlineDetails?.trxId || null, senderAccount: onlineDetails?.senderAccount || null };
+      } else if (directOnline > 0 && directCash === 0 && directEasyPaisa === 0 && directJazzCash === 0 && calculatedRemainingAmount === 0) {
+        backendPaymentMethod = 'ONLINE';
+        onlineTransferMeta = { provider: onlineDetails?.provider || 'Online Transfer', transactionReference: onlineDetails?.trxId || null, senderAccount: onlineDetails?.senderAccount || null };
+      } else if (calculatedRemainingAmount >= netPayable && totalDirectPaid === 0) {
         backendPaymentMethod = 'KHATA';
       } else {
         backendPaymentMethod = 'SPLIT';
         splitPaymentMeta = {
-          cashAmount: paymentMethod === 'online' ? 0 : calculatedPaidAmount,
-          onlineAmount: paymentMethod === 'online' ? calculatedPaidAmount : 0,
+          cashAmount: directCash,
+          easyPaisaAmount: directEasyPaisa,
+          jazzCashAmount: directJazzCash,
+          onlineAmount: directOnline + directEasyPaisa + directJazzCash,
           khataAmount: calculatedRemainingAmount,
         };
+        if (directEasyPaisa > 0 || directJazzCash > 0 || directOnline > 0) {
+          onlineTransferMeta = {
+            provider: directEasyPaisa > 0 && directJazzCash > 0 ? 'EasyPaisa + JazzCash' : directEasyPaisa > 0 ? 'EasyPaisa' : directJazzCash > 0 ? 'JazzCash' : (onlineDetails?.provider || 'Online Transfer'),
+            transactionReference: onlineDetails?.trxId || null,
+            senderAccount: onlineDetails?.senderAccount || null,
+          };
+        }
       }
 
-      // Ledger Sync
+      // Ledger Sync for Active Customers (Walk-in Registered & Monthly Delivery Customers)
       const { addLedgerEntry, fetchCustomerLedger, addDelivery, addFuelLog, refreshCustomers, animalCtx, intakeCtx } = farmContexts || {};
 
-      if (activeCustomer && saleCategory !== 'delivery') {
+      const validCustomerId = activeCustomer?._id || activeCustomer?.id || null;
+
+      if (activeCustomer) {
+        const isDelivery = saleCategory === 'delivery';
         const isFullPaid = calculatedPaidAmount >= netPayable;
         const isPartialPaid = calculatedPaidAmount > 0 && calculatedPaidAmount < netPayable;
 
-        const fulfillmentLabel = 'Walk-in Counter';
-        const payMethodLabel =
-          paymentMethod === 'online'
-            ? 'Online Payment'
-            : paymentMethod === 'khata'
-            ? 'Khata Credit'
-            : 'Cash';
+        const fulfillmentLabel = isDelivery ? 'Doorstep Delivery' : 'Walk-in Counter';
+        let payMethodLabel = 'Cash Payment';
+        if (isDelivery) {
+          payMethodLabel = 'Khata Credit';
+        } else if (backendPaymentMethod === 'EASYPAISA') {
+          payMethodLabel = 'Online Payment (EasyPaisa)';
+        } else if (backendPaymentMethod === 'JAZZCASH') {
+          payMethodLabel = 'Online Payment (JazzCash)';
+        } else if (backendPaymentMethod === 'ONLINE') {
+          payMethodLabel = `Online Payment (${onlineDetails?.provider || 'Online Transfer'})`;
+        } else if (backendPaymentMethod === 'SPLIT') {
+          if (directCash > 0 && directEasyPaisa > 0 && directJazzCash === 0) payMethodLabel = 'Split Payment: Cash + EasyPaisa';
+          else if (directCash > 0 && directJazzCash > 0 && directEasyPaisa === 0) payMethodLabel = 'Split Payment: Cash + JazzCash';
+          else if (directEasyPaisa > 0 && directJazzCash > 0 && directCash === 0) payMethodLabel = 'Split Payment: EasyPaisa + JazzCash';
+          else payMethodLabel = 'Split Payment';
+        } else if (backendPaymentMethod === 'KHATA') {
+          payMethodLabel = 'Khata Credit';
+        }
 
-        const noteMsg = isFullPaid
+        const noteMsg = isDelivery
+          ? 'Scheduled Doorstep Delivery (Charged to Customer Khata)'
+          : isFullPaid
           ? 'No Khata / Fully Paid in Full'
           : isPartialPaid
           ? `Partial Paid: Rs. ${calculatedPaidAmount.toLocaleString()}, Remaining Baqi: Rs. ${calculatedRemainingAmount.toLocaleString()}`
@@ -767,7 +896,7 @@ export function usePOSOrders({
           addLedgerEntry(
             activeCustomer.id || activeCustomer._id,
             {
-              description: `POS Counter Buy: ${itemSummary}`,
+              description: `POS ${isDelivery ? 'Delivery Order' : 'Counter Buy'}: ${itemSummary}`,
               debit: netPayable,
               credit: 0,
               date: effectiveSaleDate,
@@ -776,13 +905,14 @@ export function usePOSOrders({
               remainingAmount: calculatedRemainingAmount,
               fulfillmentType: fulfillmentLabel,
               paymentMethod: payMethodLabel,
+              splitPaymentMeta,
+              onlineTransferMeta,
               items: cartItemsSnapshot,
               invoiceId,
               notes: orderNotes ? `${noteMsg}. ${orderNotes}` : noteMsg,
             },
             true
           );
-
           if (calculatedPaidAmount > 0 && calculatedRemainingAmount > 0) {
             addLedgerEntry(
               activeCustomer.id || activeCustomer._id,
@@ -804,10 +934,6 @@ export function usePOSOrders({
           }
         }
       }
-
-      const validCustomerId = isObjectId(activeCustomer?._id || activeCustomer?.id)
-        ? (activeCustomer?._id || activeCustomer?.id)
-        : null;
 
       if (saleCategory === 'delivery') {
         if (typeof addDelivery === 'function') {
@@ -854,7 +980,7 @@ export function usePOSOrders({
             amountPaid: 0,
             amountDue: netPayable,
             paymentStatus: 'UNPAID',
-            paymentMode: 'COD',
+            paymentMode: 'KHATA',
             codAmountToCollect: netPayable,
             source: deliverySubType === 'monthly' ? 'SCHEDULED_ROUTE' : 'POS_ONE_TIME',
             receiptNumber: invoiceId,
@@ -898,7 +1024,7 @@ export function usePOSOrders({
         if (posService && posService.createOrder) {
           await posService.createOrder({
             date: effectiveSaleDate,
-            customerId: deliverySubType === 'monthly' ? validCustomerId : null,
+            customerId: deliverySubType === 'monthly' || saleCategory === 'walkin' ? validCustomerId : null,
             customerNameSnapshot: orderCustomerName,
             customerPhoneSnapshot: orderCustomerPhone,
             fulfillmentType: saleCategory === 'delivery' ? 'DELIVERY' : 'COUNTER',
@@ -936,6 +1062,7 @@ export function usePOSOrders({
             changeGiven: paymentMethod === 'cash' && calculatedPaidAmount > netPayable ? calculatedPaidAmount - netPayable : 0,
             paymentMethod: backendPaymentMethod,
             splitPaymentMeta,
+            onlineTransferMeta,
             deliveryMeta: saleCategory === 'delivery' ? {
               riderId: activeRider?.id || null,
               riderName: customRiderName || activeRider?.name || null,
@@ -952,21 +1079,36 @@ export function usePOSOrders({
         console.warn('POS API order sync error:', e);
       }
 
-      // Deduct sold quantities from active products stock immediately
-      if (productsState?.setProducts) {
+      // Deduct sold quantities from active products stock immediately via deductStockAfterSale
+      if (typeof productsState?.deductStockAfterSale === 'function') {
+        productsState.deductStockAfterSale(cart);
+      } else if (productsState?.setProducts) {
         productsState.setProducts((prevProducts) =>
           prevProducts.map((prod) => {
-            const soldInCart = cart.find(
-              (i) =>
+            const prodBase = (prod.name || '').replace(/\s*\((Farm|Supplier)\s*Share\)/i, '').trim().toLowerCase();
+            let totalSoldQty = 0;
+            cart.forEach((i) => {
+              const cartBase = (i.name || '').replace(/\s*\((Farm|Supplier)\s*Share\)/i, '').trim().toLowerCase();
+              if (
                 i.id === prod.id ||
-                i.sku === prod.sku ||
-                (prod.name && i.name && prod.name.trim().toLowerCase() === i.name.trim().toLowerCase())
-            );
-            if (soldInCart) {
-              const qty = Number(soldInCart.quantity) || 0;
+                i.id === prod._id ||
+                (prod._id && i.productId === prod._id) ||
+                (prod.id && i.productId === prod.id) ||
+                (prod.sku && i.sku === prod.sku) ||
+                (prodBase && cartBase && prodBase === cartBase)
+              ) {
+                totalSoldQty += Number(i.quantity) || 0;
+              }
+            });
+
+            if (totalSoldQty > 0) {
+              const curStock = prod.stock !== undefined ? Number(prod.stock) : (prod.currentStock !== undefined ? Number(prod.currentStock) : 0);
+              const nextStock = Math.max(0, Number((curStock - totalSoldQty).toFixed(2)));
               return {
                 ...prod,
-                stock: Math.max(0, Number(((prod.stock || 0) - qty).toFixed(2))),
+                stock: nextStock,
+                currentStock: nextStock,
+                quantity: nextStock,
               };
             }
             return prod;

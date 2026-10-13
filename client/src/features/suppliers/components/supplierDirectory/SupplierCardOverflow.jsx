@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Users, Droplets, DollarSign, Receipt, Clock, ChevronRight } from 'lucide-react';
+import { Users, Droplets, Banknote, DollarSign, Receipt, Clock, ChevronRight } from 'lucide-react';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { KpiGridSkeleton } from '@/components/ui/skeleton';
@@ -78,7 +78,7 @@ export default function SupplierCardOverflow({ onSelectSupplier, selectedDate })
       label: isToday ? "Today's Intake Spend" : `Intake Spend (${targetDate})`,
       value: `Rs. ${dateStats.spend.toLocaleString()}`,
       sub: `All-Time: Rs. ${(totals.totalIntakeSpend ?? totals.totalProcurementValue ?? 0).toLocaleString()}`,
-      icon: DollarSign,
+      icon: Banknote,
       color: '#0d9488',
       badge: isToday ? 'Spend Today' : 'Date Spend',
     },

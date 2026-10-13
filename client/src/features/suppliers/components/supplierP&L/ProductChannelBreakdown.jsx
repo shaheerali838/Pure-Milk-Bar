@@ -1,19 +1,5 @@
 import React from 'react';
-import {
-  X,
-  Building2,
-  Truck,
-  Store,
-  Layers,
-  ArrowUpRight,
-  Droplets,
-  DollarSign,
-  TrendingUp,
-  Percent,
-  MapPin,
-  ShieldCheck,
-  CheckCircle2,
-} from 'lucide-react';
+import { X, Building2, Truck, Store, Layers, ArrowUpRight, Droplets, Banknote, TrendingUp, Percent, MapPin, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 export default function ProductChannelBreakdown({ product, onClose }) {
   if (!product) return null;

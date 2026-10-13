@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Droplets, Truck, Store, Layers, TrendingUp, DollarSign, Package, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Droplets, Truck, Store, Layers, TrendingUp, Banknote, Package, CheckCircle2 } from 'lucide-react';
 
 export default function ProductDetailSlideOver({ product, onClose, onBack }) {
   if (!product) return null;

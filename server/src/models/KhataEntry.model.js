@@ -12,6 +12,12 @@ const khataEntrySchema = new Schema(
       required: [true, 'Customer ID is required'],
       index: true,
     },
+    orderId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Order',
+      default: null,
+      index: true,
+    },
     date: {
       type: Date,
       required: [true, 'Transaction date is required'],
@@ -51,9 +57,45 @@ const khataEntrySchema = new Schema(
       type: Number,
       required: [true, 'Running balance is required'],
     },
+    advanceUsed: {
+      type: Number,
+      default: 0,
+      min: [0, 'Advance used cannot be negative'],
+    },
+    khataAmount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Khata amount cannot be negative'],
+    },
+    advanceBalanceAfter: {
+      type: Number,
+      default: 0,
+      min: [0, 'Advance balance after cannot be negative'],
+    },
+    advanceReceived: {
+      type: Number,
+      default: 0,
+      min: [0, 'Advance received cannot be negative'],
+    },
     paymentMethod: {
       type: String,
-      enum: ['CASH', 'ONLINE', 'ADJUSTMENT', 'CHEQUE', 'KHATA', 'SPLIT', 'COD', null],
+      enum: ['CASH', 'ONLINE', 'EASYPAISA', 'JAZZCASH', 'ADJUSTMENT', 'CHEQUE', 'KHATA', 'SPLIT', 'COD', null],
+      default: null,
+    },
+    splitPaymentMeta: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+    onlineTransferMeta: {
+      type: Schema.Types.Mixed,
+      default: null,
+    },
+    paymentChannel: {
+      type: String,
+      default: null,
+    },
+    notes: {
+      type: String,
       default: null,
     },
     referenceTransactionId: {

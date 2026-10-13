@@ -11,7 +11,6 @@ import {
   Building2,
   ShoppingCart,
   Tractor,
-  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AuthInput from "./AuthInput";
@@ -173,7 +172,7 @@ const LoginForm = ({ initialEmail = "", externalError = "" }) => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 Quick Role Switcher
               </span>
               <span className="text-[10px] font-semibold text-slate-400">

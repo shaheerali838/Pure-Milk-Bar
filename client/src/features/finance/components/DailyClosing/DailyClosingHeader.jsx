@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Clock,
   RotateCcw,
-  Sparkles,
   ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -54,7 +53,7 @@ export default function DailyClosingHeader({
     if (isRangeMode) {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800">
-          <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+          <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
           Multi-Day Summary
         </span>
       );
@@ -115,7 +114,7 @@ export default function DailyClosingHeader({
               onClick={onStartNextDay}
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm h-9 px-4 gap-1.5 shadow-sm shadow-emerald-600/20"
             >
-              <Sparkles className="w-4 h-4" />
+              <Clock className="w-4 h-4" />
               Start Next Day Closing
             </Button>
           )}

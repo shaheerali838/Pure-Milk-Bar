@@ -11,6 +11,7 @@ import {
   Trash2,
   Power,
   Package,
+  UserCheck,
 } from 'lucide-react';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
@@ -57,6 +58,24 @@ export default function StaffDetailView({ staff, onBack, onViewDelivery }) {
 
   const handleToggle = () => {
     toggleStaffActive(staff.id);
+  };
+
+  const formatDeliveryDate = (dateVal) => {
+    if (!dateVal) return '—';
+    try {
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) {
+        const parts = String(dateVal).split('T')[0].split('-');
+        if (parts.length === 3) {
+          const dateObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          return dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        return String(dateVal);
+      }
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+      return String(dateVal);
+    }
   };
 
   return (
@@ -220,9 +239,9 @@ export default function StaffDetailView({ staff, onBack, onViewDelivery }) {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50/80">
-                  <TableHead className="w-[110px] py-1 text-xs">Date & Shift</TableHead>
+                  <TableHead className="w-[130px] py-1 text-xs">Date &amp; Shift</TableHead>
                   <TableHead className="py-1 text-xs">Customer</TableHead>
-                  <TableHead className="py-1 text-xs">Item & Qty</TableHead>
+                  <TableHead className="py-1 text-xs">Item &amp; Qty</TableHead>
                   <TableHead className="py-1 text-xs">Route</TableHead>
                   <TableHead className="py-1 text-xs">Payment</TableHead>
                   <TableHead className="py-1 text-xs">Status</TableHead>
@@ -235,8 +254,19 @@ export default function StaffDetailView({ staff, onBack, onViewDelivery }) {
                     onClick={() => onViewDelivery && onViewDelivery(delivery)}
                     className="cursor-pointer hover:bg-slate-50 transition-colors"
                   >
-                    <TableCell className="text-xs font-mono tabular py-2">
-                      {delivery.date} ({delivery.shift})
+                    <TableCell className="text-xs py-2">
+                      <div className="font-semibold text-slate-900 leading-none">
+                        {formatDeliveryDate(delivery.date)}
+                      </div>
+                      <div className="mt-1">
+                        <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.2 text-[9px] font-bold border ${
+                          String(delivery.shift || '').toUpperCase() === 'EVENING'
+                            ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                            : 'bg-amber-50 text-amber-800 border-amber-200'
+                        }`}>
+                          {String(delivery.shift || '').toUpperCase() === 'EVENING' ? '🌙 Evening' : '🌅 Morning'}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-xs font-bold text-slate-900 py-2 font-display">
                       {delivery.customerName}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, TrendingUp, DollarSign, Truck, Store, Layers, PieChart as PieIcon } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Banknote, Truck, Store, Layers, PieChart as PieIcon } from 'lucide-react';
 
 export default function GrossRevenueDetail({ data, onClose, onBack }) {
   const handleBack = onBack || onClose;

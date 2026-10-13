@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Layers, Package, TrendingUp, Sparkles, DollarSign } from 'lucide-react';
+import { ArrowLeft, Layers, Package, TrendingUp, Banknote } from 'lucide-react';
 
 export default function ValueAddedDetail({ data, onClose, onBack }) {
   const handleBack = onBack || onClose;
@@ -199,7 +199,7 @@ export default function ValueAddedDetail({ data, onClose, onBack }) {
 
       <div className="p-5 rounded-2xl bg-linear-to-br from-teal-50/70 via-white to-emerald-50/50 border border-teal-200/60 shadow-xs flex items-start gap-3.5">
         <div className="w-9 h-9 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 shadow-2xs">
-          <Sparkles className="w-4 h-4 text-teal-600" />
+          <TrendingUp className="w-4 h-4 text-teal-600" />
         </div>
         <div>
           <h4 className="text-xs font-bold text-teal-950 mb-1">Value-Added Margin Lift Strategy</h4>

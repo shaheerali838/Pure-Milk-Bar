@@ -220,16 +220,22 @@ export function DahiProvider({ children }) {
 
     const totalConverted = farmConverted + supplierConverted;
 
-    // Remaining liquid milk: seamlessly reflect live chiller stock if available, or calculated from yield
-    const posFarmStock = Number(posCtx?.inventoryMetrics?.farmMilkStock ?? posCtx?.inventoryMetrics?.availableFarmStock);
-    const posSupStock = Number(posCtx?.inventoryMetrics?.supplierMilkStock ?? posCtx?.inventoryMetrics?.availableSupplierStock);
+    // Remaining liquid milk after BOTH POS sales AND Dahi conversion:
+    const posFarmStock = posCtx?.inventoryMetrics?.rawFarmMilkStock !== undefined
+      ? Number(posCtx.inventoryMetrics.rawFarmMilkStock)
+      : Number(posCtx?.inventoryMetrics?.farmMilkStock ?? posCtx?.inventoryMetrics?.availableFarmStock);
+    const posSupStock = posCtx?.inventoryMetrics?.rawSupplierMilkStock !== undefined
+      ? Number(posCtx.inventoryMetrics.rawSupplierMilkStock)
+      : Number(posCtx?.inventoryMetrics?.supplierMilkStock ?? posCtx?.inventoryMetrics?.availableSupplierStock);
 
     const calculatedFarm = Math.max(0, Number((realFarmYield - farmMilkSold - farmConverted).toFixed(1)));
     const calculatedSup = Math.max(0, Number((realSupplierIntake - supplierMilkSold - supplierConverted).toFixed(1)));
 
-    const remainingFarm = !isNaN(posFarmStock) && posFarmStock > 0 ? posFarmStock : calculatedFarm;
-    const remainingSupplier = !isNaN(posSupStock) && posSupStock > 0 ? posSupStock : calculatedSup;
-    const remainingTotal = Number((remainingFarm + remainingSupplier).toFixed(1));
+    const remainingFarm = !isNaN(posFarmStock) && posFarmStock >= 0 ? posFarmStock : calculatedFarm;
+    const remainingSupplier = !isNaN(posSupStock) && posSupStock >= 0 ? posSupStock : calculatedSup;
+    const remainingTotal = posCtx?.inventoryMetrics?.rawTotalMilkStock !== undefined
+      ? Number(posCtx.inventoryMetrics.rawTotalMilkStock) || 0
+      : Number((remainingFarm + remainingSupplier).toFixed(1));
 
     const posFarmCowStock = Number(posCtx?.inventoryMetrics?.rawFarmCowMilkStock ?? posCtx?.inventoryMetrics?.farmCowMilkStock);
     const posFarmBuffStock = Number(posCtx?.inventoryMetrics?.rawFarmBuffaloMilkStock ?? posCtx?.inventoryMetrics?.farmBuffaloMilkStock);
@@ -475,8 +481,19 @@ export function DahiProvider({ children }) {
       const rateNum = parseFloat(String(extraData.posRate || '').replace(/[^\d.]/g, '')) || liveDahiPosRate;
       const expectedProfitVal = Math.round((numOutput * rateNum) - resolvedDahiProductionCost);
 
-      const initialStage = extraData.stage || 'incubating';
-      const initialStatus = extraData.status || (initialStage === 'incubating' ? 'In Progress' : 'Completed');
+      const initialStage = extraData.stage || (extraData.status === 'Completed' ? 'pos' : 'incubating');
+      const initialStatus = extraData.status || (initialStage === 'pos' || initialStage === 'sold_out' ? 'Completed' : 'In Progress');
+
+      const initialChecklist = extraData.checklist || {
+        milkSourced: true,
+        boiledAndCooled: initialStage !== 'incubating' ? true : (extraData.boiledAndCooled ?? true),
+        starterAdded: initialStage !== 'incubating' ? true : (extraData.starterAdded ?? true),
+        incubated: initialStage === 'chilled' || initialStage === 'pos' || initialStage === 'sold_out',
+        chilled4C: initialStage === 'chilled' || initialStage === 'pos' || initialStage === 'sold_out',
+        qualityChecked: initialStage === 'chilled' || initialStage === 'pos' || initialStage === 'sold_out',
+        posTransferred: initialStage === 'pos' || initialStage === 'sold_out',
+        soldOut: initialStage === 'sold_out',
+      };
 
       const resolvedMilkType = extraData.milkType || 'Buffalo Milk';
 
@@ -510,6 +527,7 @@ export function DahiProvider({ children }) {
         stage: initialStage,
         posRate: extraData.posRate || `Rs. ${rateNum} / kg`,
         notes: extraData.notes || '',
+        checklist: initialChecklist,
       };
 
       console.log('[Dahi Conversion Action Payload]:', {
@@ -546,6 +564,7 @@ export function DahiProvider({ children }) {
         totalDahiCost: resolvedDahiProductionCost,
         dahiProductionCost: resolvedDahiProductionCost,
         expectedProfit: `${expectedProfitVal >= 0 ? '+' : '-'}Rs. ${Math.abs(expectedProfitVal).toLocaleString()}`,
+        checklist: initialChecklist,
       };
 
       // 1. Instantly update DahiContext local state
@@ -607,10 +626,7 @@ export function DahiProvider({ children }) {
         console.warn('Backend API createProcessingBatch error:', e.message);
       }
 
-      // 4. Removed 'Milk Cost for Dahi' expense creation to prevent double counting.
-      // Final Entity Profit = All Revenues - All Real Costs.
-
-      // 5. Notify global listeners
+      // 4. Notify global listeners
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('pure_milk_bar_dahi_updated'));
         window.dispatchEvent(new Event('pure_milk_bar_inventory_updated'));
@@ -641,24 +657,80 @@ export function DahiProvider({ children }) {
     [convertToDahi]
   );
 
+  // Toggle individual checklist item inside a batch
+  const toggleBatchChecklist = useCallback(async (batchId, taskKey) => {
+    let targetBatch = null;
+    setBatches((prev) =>
+      prev.map((b) => {
+        if (b.id !== batchId && b._id !== batchId && b.batchNumber !== batchId) return b;
+        const currentList = b.checklist || {
+          milkSourced: true,
+          boiledAndCooled: true,
+          starterAdded: true,
+          incubated: b.stage === 'chilled' || b.stage === 'pos' || b.stage === 'sold_out',
+          chilled4C: b.stage === 'pos' || b.stage === 'sold_out',
+          qualityChecked: b.stage === 'chilled' || b.stage === 'pos' || b.stage === 'sold_out',
+          posTransferred: b.stage === 'pos' || b.stage === 'sold_out',
+          soldOut: b.stage === 'sold_out',
+        };
+        const nextList = {
+          ...currentList,
+          [taskKey]: !currentList[taskKey],
+        };
+        targetBatch = { ...b, checklist: nextList };
+        return targetBatch;
+      })
+    );
+
+    if (targetBatch) {
+      try {
+        await farmService.updateProcessingBatch(batchId, { checklist: targetBatch.checklist });
+        broadcastSync('pure_milk_bar_dahi_updated');
+      } catch (e) {
+        console.warn('Backend API updateProcessingBatch checklist error:', e.message);
+      }
+    }
+  }, []);
+
   // Stage transition 1 -> 2: Move from Incubating to Chilled Storage
   const moveToChiller = useCallback(async (batchId) => {
     setBatches((prev) =>
       prev.map((b) => {
-        if (b.id !== batchId && b._id !== batchId) return b;
-        const rateNum = parseFloat(String(b.posRate || '').replace(/[^\d.]/g, '')) || liveDahiPosRate;
+        if (b.id !== batchId && b._id !== batchId && b.batchNumber !== batchId) return b;
+        const rateNum = parseFloat(String(b.posRate || '').replace(/[^\d.]/g, '')) || liveDahiPosRate || 320;
         const profit = Math.round((b.outputVal || 0) * Math.max(0, rateNum - 220));
+        const currentChecklist = b.checklist || {};
         return {
           ...b,
           stage: 'chilled',
-          status: 'Completed',
+          status: 'In Progress',
           expectedProfit: `+Rs. ${profit.toLocaleString()}`,
+          checklist: {
+            ...currentChecklist,
+            milkSourced: true,
+            boiledAndCooled: true,
+            starterAdded: true,
+            incubated: true,
+            chilled4C: true,
+            qualityChecked: true,
+          },
         };
       })
     );
 
     try {
-      await farmService.updateProcessingBatch(batchId, { stage: 'chilled', status: 'Completed' });
+      await farmService.updateProcessingBatch(batchId, {
+        stage: 'chilled',
+        status: 'In Progress',
+        checklist: {
+          milkSourced: true,
+          boiledAndCooled: true,
+          starterAdded: true,
+          incubated: true,
+          chilled4C: true,
+          qualityChecked: true,
+        },
+      });
       broadcastSync('pure_milk_bar_dahi_updated');
       broadcastSync('pure_milk_bar_inventory_updated');
     } catch (e) {
@@ -674,23 +746,46 @@ export function DahiProvider({ children }) {
 
     setBatches((prev) =>
       prev.map((b) => {
-        if (b.id !== batchId && b._id !== batchId) return b;
+        if (b.id !== batchId && b._id !== batchId && b.batchNumber !== batchId) return b;
         batchOut = Number(b.outputVal || b.outputQuantity) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
         batchProduct = b.product || '';
         const rateNum = parseFloat(String(b.posRate || '').replace(/[^\d.]/g, '')) || 320;
         const rev = Math.round((b.outputVal || 0) * rateNum);
+        const currentChecklist = b.checklist || {};
         return {
           ...b,
           stage: 'pos',
           status: 'Completed',
           revenueValue: `Rs. ${rev.toLocaleString()}`,
           transferredAt: timeNow,
+          checklist: {
+            ...currentChecklist,
+            milkSourced: true,
+            boiledAndCooled: true,
+            starterAdded: true,
+            incubated: true,
+            chilled4C: true,
+            qualityChecked: true,
+            posTransferred: true,
+          },
         };
       })
     );
 
     try {
-      await farmService.updateProcessingBatch(batchId, { stage: 'pos', status: 'Completed' });
+      await farmService.updateProcessingBatch(batchId, {
+        stage: 'pos',
+        status: 'Completed',
+        checklist: {
+          milkSourced: true,
+          boiledAndCooled: true,
+          starterAdded: true,
+          incubated: true,
+          chilled4C: true,
+          qualityChecked: true,
+          posTransferred: true,
+        },
+      });
       broadcastSync('pure_milk_bar_dahi_updated');
       broadcastSync('pure_milk_bar_inventory_updated');
     } catch (e) {
@@ -727,24 +822,63 @@ export function DahiProvider({ children }) {
   const markSoldOut = useCallback(async (batchId) => {
     const target = String(batchId || '').trim();
     setBatches((prev) =>
-      prev.map((b) =>
-        String(b.id || '').trim() === target ||
-        String(b._id || '').trim() === target ||
-        String(b.batchNumber || '').trim() === target
-          ? {
-              ...b,
-              stage: 'sold_out',
-              status: 'Completed',
-            }
-          : b
-      )
+      prev.map((b) => {
+        if (
+          String(b.id || '').trim() !== target &&
+          String(b._id || '').trim() !== target &&
+          String(b.batchNumber || '').trim() !== target
+        ) {
+          return b;
+        }
+        const currentChecklist = b.checklist || {};
+        return {
+          ...b,
+          stage: 'sold_out',
+          status: 'Completed',
+          checklist: {
+            ...currentChecklist,
+            soldOut: true,
+          },
+        };
+      })
     );
 
     try {
-      await farmService.updateProcessingBatch(batchId, { stage: 'sold_out', status: 'Completed' });
+      await farmService.updateProcessingBatch(batchId, {
+        stage: 'sold_out',
+        status: 'Completed',
+        checklist: {
+          soldOut: true,
+        },
+      });
       broadcastSync('pure_milk_bar_dahi_updated');
     } catch (e) {
       console.warn('Backend API updateProcessingBatch markSoldOut error:', e.message);
+    }
+  }, []);
+
+  // Move back / step back stage if needed
+  const revertStage = useCallback(async (batchId, targetStage) => {
+    setBatches((prev) =>
+      prev.map((b) => {
+        if (b.id !== batchId && b._id !== batchId && b.batchNumber !== batchId) return b;
+        return {
+          ...b,
+          stage: targetStage,
+          status: targetStage === 'pos' || targetStage === 'sold_out' ? 'Completed' : 'In Progress',
+        };
+      })
+    );
+
+    try {
+      await farmService.updateProcessingBatch(batchId, {
+        stage: targetStage,
+        status: targetStage === 'pos' || targetStage === 'sold_out' ? 'Completed' : 'In Progress',
+      });
+      broadcastSync('pure_milk_bar_dahi_updated');
+      broadcastSync('pure_milk_bar_inventory_updated');
+    } catch (e) {
+      console.warn('Backend API revertStage error:', e.message);
     }
   }, []);
 
@@ -755,7 +889,7 @@ export function DahiProvider({ children }) {
     } catch (e) {
       console.warn('Backend API deleteProcessingBatch error:', e.message);
     }
-    setBatches((prev) => prev.filter((b) => b.id !== batchId && b._id !== batchId));
+    setBatches((prev) => prev.filter((b) => b.id !== batchId && b._id !== batchId && b.batchNumber !== batchId));
   }, []);
 
   const clearBatches = useCallback(() => {
@@ -771,9 +905,11 @@ export function DahiProvider({ children }) {
         refreshBatches: fetchBatches,
         addBatch,
         convertToDahi,
+        toggleBatchChecklist,
         moveToChiller,
         sendToPOS,
         markSoldOut,
+        revertStage,
         deleteBatch,
         clearBatches,
       }}

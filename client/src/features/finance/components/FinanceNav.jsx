@@ -49,7 +49,7 @@ export default function FinanceNav({ activeTab, onTabChange }) {
             {isCustomer ? (
               <>
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span>Customer Finance</span>
+                <span>Customer Daily Report</span>
               </>
             ) : isFarm ? (
               <>

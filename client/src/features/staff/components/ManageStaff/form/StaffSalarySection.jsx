@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, ShieldCheck, Calendar } from 'lucide-react';
+import { Banknote, ShieldCheck, Calendar } from 'lucide-react';
 import { STATUS_OPTIONS } from './staffFormConstants';
 
 export default function StaffSalarySection({
@@ -12,7 +12,7 @@ export default function StaffSalarySection({
     <div className="pt-2 border-t border-slate-100">
       <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-3">
         <div className="w-6 h-6 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center text-xs">
-          <DollarSign className="w-3.5 h-3.5" />
+          <Banknote className="w-3.5 h-3.5" />
         </div>
         <h2 className="text-xs font-bold text-slate-800 font-display uppercase tracking-wider">
           4. Monthly Salary &amp; Payroll Rate Terms

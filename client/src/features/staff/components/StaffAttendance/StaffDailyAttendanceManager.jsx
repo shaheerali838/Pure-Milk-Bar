@@ -10,7 +10,6 @@ import {
   Check,
   X,
   Printer,
-  Sparkles,
   ChevronLeft,
   ChevronRight,
   TrendingUp,
@@ -327,7 +326,7 @@ export default function StaffDailyAttendanceManager({
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
               style={{ background: '#6366f115' }}
             >
-              <Sparkles style={{ width: 16, height: 16, color: '#6366f1' }} />
+              <CheckCircle2 style={{ width: 16, height: 16, color: '#6366f1' }} />
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-indigo-700 bg-indigo-50 border border-indigo-200">
               Quick Batch

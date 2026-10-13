@@ -1,24 +1,5 @@
 import React, { useState } from 'react';
-import {
-  ArrowLeft,
-  Droplets,
-  Layers,
-  Truck,
-  Scale,
-  DollarSign,
-  Receipt,
-  Calendar,
-  CheckCircle2,
-  AlertCircle,
-  Building2,
-  TrendingUp,
-  Milk,
-  Wallet,
-  Tag,
-  ShieldCheck,
-  MapPin,
-  Clock,
-} from 'lucide-react';
+import { ArrowLeft, Droplets, Layers, Truck, Scale, Banknote, Receipt, Calendar, CheckCircle2, AlertCircle, Building2, TrendingUp, Milk, Wallet, Tag, ShieldCheck, MapPin, Clock } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 import { getProductIcon } from '@/features/inventory/components/AddProduct';
 
@@ -206,7 +187,7 @@ export default function POSSalesSourceDetail({ source = 'farm', onBack }) {
         <div className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 text-xs font-bold mb-1.5">
             <span className="flex items-center gap-1.5 text-emerald-700">
-              <DollarSign className="w-4 h-4 text-emerald-600" />
+              <Banknote className="w-4 h-4 text-emerald-600" />
               Total Sales (Income)
             </span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold">

@@ -1,8 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Beef, Droplets, Activity, TrendingUp, TrendingDown } from 'lucide-react';
-import { PKRIcon } from '@/components/common/PKRIcon';
-import { useExpense } from '../../../../context/ExpenseContext';
+import { Beef, Droplets, Activity, TrendingUp, TrendingDown, ChevronRight, Banknote } from 'lucide-react';
 import { usePOSContext } from '../../../../context/POSContext';
 
 export default function FarmCardOverflow({ 
@@ -14,18 +12,17 @@ export default function FarmCardOverflow({
   availableFarmStock = null,
   avgAnimalYield = 0, 
   dailyNetProfit = 0, 
-  monthlyNetProfit = 0,
-  todayFarmRevenue = 0,
+  totalFarmExpense = 0,
   periodFarmExpense,
-  dateFilter = 'today',
-  periodLabel = 'Today',
+  expenseCount = 0,
+  timeRange = 'today',
+  dateFilter,
+  periodLabel,
 }) {
   const navigate = useNavigate();
-  const { totals, expenses = [] } = useExpense();
   const posCtx = usePOSContext?.();
   
   // Resilient calculation for Available Farm Stock (Cold room / Chiller):
-  // Formula: Available Farm Stock = Total Farm Intake - (Total Farm Milk Sold in POS + Total Farm Milk Converted to Dahi)
   const parsedPropStock = availableFarmStock !== null && availableFarmStock !== undefined ? parseFloat(availableFarmStock) : NaN;
   const parsedPosStock = parseFloat(
     posCtx?.inventoryMetrics?.availableFarmStock ??
@@ -45,36 +42,38 @@ export default function FarmCardOverflow({
   }
 
   const farmMilkStock = effectiveStock % 1 === 0 ? effectiveStock.toFixed(0) : effectiveStock.toFixed(1);
-  const effectiveExpense = periodFarmExpense !== undefined ? periodFarmExpense : (totals?.totalFarmExpense ?? 0);
+  const activeDateFilter = dateFilter || timeRange || 'today';
+  const resolvedPeriodLabel = periodLabel || (activeDateFilter === 'today' ? 'Today' : activeDateFilter === 'week' || activeDateFilter === 'this_week' ? 'This Week' : activeDateFilter === 'month' || activeDateFilter === 'this_month' ? 'This Month' : 'All Time');
+  const effectiveExpense = periodFarmExpense !== undefined ? periodFarmExpense : totalFarmExpense;
 
   const statCards = [
     {
       label: "Total Animals",
       value: `${totalAnimals}`,
-      sub: `${cowsCount} Cows • ${buffCount} Buffaloes`,
+      sub: `${cowsCount} Cows · ${buffCount} Buffaloes`,
       icon: Beef,
       color: "#009966",
-      badge: "Active Herd",
+      badge: "Herd",
       path: "/farm/animals"
     },
     {
-      label: "Total Farm Yield",
+      label: `Total Farm Yield (${resolvedPeriodLabel})`.trim(),
       value: `${totalFarmYield.toFixed(1)} L`,
       sub: totalExpectedYield > 0
         ? `Exp: ${totalExpectedYield.toFixed(1)} L (${totalFarmYield >= totalExpectedYield ? '+' : ''}${(totalFarmYield - totalExpectedYield).toFixed(1)} L)`
-        : (dateFilter === 'today' ? "Daily total production" : `${periodLabel} production`),
+        : (activeDateFilter === 'today' ? "Daily total production" : `${resolvedPeriodLabel} production`),
       icon: Droplets,
-      color: "#155dfc",
-      badge: dateFilter === 'today' ? "Today's Milk" : "Farm Milk",
+      color: "#2563eb",
+      badge: activeDateFilter === 'today' ? "Today's Milk" : "Farm Milk",
       path: "/farm/milking"
     },
     {
-      label: "Available Farm Stock",
+      label: "Available Stock (With Me)",
       value: `${farmMilkStock} L`,
-      sub: "In farm cold room",
+      sub: "In Cold Room Chiller",
       icon: Droplets,
       color: "#059669",
-      badge: "Chiller Stock",
+      badge: "Available",
       path: "/pos"
     },
     {
@@ -82,31 +81,32 @@ export default function FarmCardOverflow({
       value: `${avgAnimalYield.toFixed(1)} L`,
       sub: totalExpectedYield > 0 && totalAnimals > 0
         ? `Benchmark: ${(totalExpectedYield / totalAnimals).toFixed(1)} L/head`
-        : "Avg output per animal",
+        : "Avg Output Per Head",
       icon: Activity,
-      color: "#009689",
-      badge: "Yield / Head"
+      color: "#4f46e5",
+      badge: "Yield / Head",
+      path: "/farm/animals"
     },
     {
-      label: "Total Farm Expenses",
+      label: `Farm Expenses (${resolvedPeriodLabel})`.trim(),
       value: `Rs. ${effectiveExpense.toLocaleString()}`,
-      sub: `${periodLabel} farm expenses`,
-      icon: PKRIcon,
+      sub: expenseCount ? `${expenseCount} recorded expenses` : `${resolvedPeriodLabel} farm expenses`,
+      icon: Banknote,
       color: "#e11d48",
       badge: "Expenses",
       path: "/farm/expenses"
     },
     {
-      label: dailyNetProfit < 0 ? `Farm Net Loss (${periodLabel})` : `Farm Net Profit (${periodLabel})`,
+      label: dailyNetProfit < 0 ? `Farm Net Loss (${resolvedPeriodLabel})` : `Farm Net Profit (${resolvedPeriodLabel})`,
       value: dailyNetProfit < 0
-        ? `-Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
+        ? `Rs. -${Math.abs(dailyNetProfit).toLocaleString()}`
         : `Rs. ${dailyNetProfit.toLocaleString()}`,
       sub: dailyNetProfit < 0
-        ? `${periodLabel} expenses exceed sales by Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
+        ? `${resolvedPeriodLabel} expenses exceed sales by Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
         : dailyNetProfit > 0
         ? `From Rs. ${todayFarmRevenue.toLocaleString()} sales`
-        : `${periodLabel}: Breakeven / No sales`,
-      icon: dailyNetProfit < 0 ? TrendingDown : dailyNetProfit > 0 ? TrendingUp : PKRIcon,
+        : `${resolvedPeriodLabel}: Breakeven / No sales`,
+      icon: dailyNetProfit < 0 ? TrendingDown : dailyNetProfit > 0 ? TrendingUp : Banknote,
       color: dailyNetProfit < 0 ? "#e11d48" : dailyNetProfit > 0 ? "#10b981" : "#64748b",
       badge: dailyNetProfit < 0 ? "Loss" : dailyNetProfit > 0 ? "Profit" : "Net",
       path: "/farm/pl"
@@ -114,32 +114,38 @@ export default function FarmCardOverflow({
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-2">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
       {statCards.map(({ label, value, sub, icon: Icon, color, badge, path }) => (
         <div
           key={label}
           onClick={() => path && navigate(path)}
-          className={`flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2 shadow-sm hover:shadow-md transition-all duration-200 ${
-            path ? 'cursor-pointer' : ''
+          role={path ? 'button' : undefined}
+          tabIndex={path ? 0 : undefined}
+          className={`flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs ${
+            path ? 'cursor-pointer hover:border-slate-300' : ''
           }`}
         >
-          <div className="flex items-start justify-between mb-1">
+          <div className="flex items-start justify-between mb-1.5">
             <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
               style={{ background: `${color}15` }}
             >
-              <Icon style={{ width: 16, height: 16, color }} />
+              <Icon style={{ width: 15, height: 15, color }} />
             </div>
-            <span className="text-[10px] font-bold px-6 py-0.5 rounded-md text-slate-600 bg-slate-100 border border-slate-200">
-              {badge}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
+                {badge}
+              </span>
+              {path && <ChevronRight className="w-2.5 h-2.5 text-slate-300" />}
+            </div>
           </div>
+
           <div>
-            <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight mb-0.5">
+            <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
               {value}
             </p>
-            <p className="text-xs font-bold text-slate-700">{label}</p>
-            <p className="text-[11px] font-medium text-slate-400">{sub}</p>
+            <p className="text-xs font-bold text-slate-800 line-clamp-1">{label}</p>
+            <p className="text-[10px] font-medium text-slate-400 line-clamp-1">{sub}</p>
           </div>
         </div>
       ))}

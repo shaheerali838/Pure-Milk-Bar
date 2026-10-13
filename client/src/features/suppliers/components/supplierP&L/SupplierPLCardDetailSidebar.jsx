@@ -1,22 +1,5 @@
 import React from 'react';
-import {
-  X,
-  TrendingUp,
-  DollarSign,
-  Receipt,
-  Truck,
-  Scale,
-  Milk,
-  Building2,
-  CheckCircle2,
-  AlertCircle,
-  Layers,
-  ArrowUpRight,
-  Droplets,
-  Calendar,
-  User,
-  MapPin,
-} from 'lucide-react';
+import { X, TrendingUp, Banknote, Receipt, Truck, Scale, Milk, Building2, CheckCircle2, AlertCircle, Layers, ArrowUpRight, Droplets, Calendar, User, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function SupplierPLCardDetailSidebar({
@@ -42,7 +25,7 @@ export default function SupplierPLCardDetailSidebar({
     paid: {
       title: 'Settled Disbursements to Suppliers',
       subtitle: 'Actual Payments Cleared to Supplier Khatas',
-      icon: DollarSign,
+      icon: Banknote,
       color: 'bg-emerald-100 text-emerald-800',
     },
     due: {

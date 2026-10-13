@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle2, DollarSign, ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Banknote, ArrowRight, Loader2 } from 'lucide-react';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +37,9 @@ export default function RecordPaymentView({ customer, prefillAmount, onBack }) {
       reference: '',
       date: getLocalDateString(),
       notes: '',
+      splitCash: '',
+      splitOnline: '',
+      splitProvider: 'EasyPaisa',
     };
   });
 
@@ -75,10 +78,15 @@ export default function RecordPaymentView({ customer, prefillAmount, onBack }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const payAmt = Number(formData.amount);
+    const isSplit = formData.method === 'Split Payment';
+    const splitCashAmt = Number(formData.splitCash) || 0;
+    const splitOnlineAmt = Number(formData.splitOnline) || 0;
+    const payAmt = isSplit ? (splitCashAmt + splitOnlineAmt) : Number(formData.amount);
     if (!payAmt || payAmt <= 0) return;
 
-    const desc = formData.reference
+    const desc = isSplit
+      ? `Split Payment Received (Cash: Rs. ${splitCashAmt.toLocaleString()} + ${formData.splitProvider || 'Online'}: Rs. ${splitOnlineAmt.toLocaleString()})${formData.reference ? ` [Ref: ${formData.reference}]` : ''}`
+      : formData.reference
       ? `${formData.description} - ${formData.method} (${formData.reference})`
       : `${formData.description} - ${formData.method}`;
 
@@ -89,14 +97,27 @@ export default function RecordPaymentView({ customer, prefillAmount, onBack }) {
         debit: 0,
         credit: payAmt,
         date: formData.date || getLocalDateString(),
-        method: formData.method,
+        method: isSplit ? 'Split Payment' : formData.method,
         notes: formData.notes,
         paymentType: paymentType,
         paidAmount: payAmt,
         remainingAmount: remainingBalance,
         orderTotal: 0,
         fulfillmentType: 'Payment Clearance',
-        paymentMethod: formData.method,
+        paymentMethod: isSplit ? `Split (${formData.splitProvider || 'Online'})` : formData.method,
+        paymentChannel: isSplit ? 'Split' : formData.method,
+        splitPaymentMeta: isSplit
+          ? {
+              cashAmount: splitCashAmt,
+              onlineAmount: splitOnlineAmt,
+              onlineMethod: (formData.splitProvider || 'EASYPAISA').toUpperCase(),
+            }
+          : null,
+        onlineTransferMeta: isSplit
+          ? { provider: formData.splitProvider || 'Online Transfer', transactionReference: formData.reference || null }
+          : ['EasyPaisa', 'JazzCash', 'Bank Transfer', 'Online Payment'].includes(formData.method)
+          ? { provider: formData.method, transactionReference: formData.reference || null }
+          : null,
       });
 
       onBack();
@@ -203,14 +224,29 @@ export default function RecordPaymentView({ customer, prefillAmount, onBack }) {
               </label>
               <Select
                 value={formData.method}
-                onValueChange={(val) => setFormData({ ...formData, method: val })}
+                onValueChange={(val) => {
+                  if (val === 'Split Payment') {
+                    const half = Math.round(totalDue / 2);
+                    setFormData({
+                      ...formData,
+                      method: val,
+                      splitCash: String(half),
+                      splitOnline: String(totalDue - half),
+                      amount: String(totalDue),
+                    });
+                  } else {
+                    setFormData({ ...formData, method: val });
+                  }
+                }}
               >
                 <SelectTrigger className="h-8.5 bg-slate-50/50 border-slate-200 rounded-lg text-xs font-medium">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Cash" className="text-xs">Cash</SelectItem>
-                  <SelectItem value="Online Payment" className="text-xs">Online Payment (EasyPaisa/JazzCash)</SelectItem>
+                  <SelectItem value="Cash" className="text-xs">Cash Payment</SelectItem>
+                  <SelectItem value="EasyPaisa" className="text-xs">Online Payment (EasyPaisa)</SelectItem>
+                  <SelectItem value="JazzCash" className="text-xs">Online Payment (JazzCash)</SelectItem>
+                  <SelectItem value="Split Payment" className="text-xs">Split Payment (Cash + Online)</SelectItem>
                   <SelectItem value="Bank Transfer" className="text-xs">Bank Transfer (1Link / Raast)</SelectItem>
                   <SelectItem value="Cheque" className="text-xs">Cheque</SelectItem>
                 </SelectContent>
@@ -244,6 +280,71 @@ export default function RecordPaymentView({ customer, prefillAmount, onBack }) {
             </div>
           </div>
 
+          {/* Split Payment Controls if Split Payment is selected */}
+          {formData.method === 'Split Payment' && (
+            <div className="p-3 bg-purple-50/60 border border-purple-200 rounded-xl space-y-2 animate-in fade-in duration-150">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-900 block">
+                Split Breakdown (Cash + Online Gateway)
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block text-[11px] font-semibold text-purple-900 mb-1">
+                    Cash Amount (Rs.)
+                  </label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={formData.splitCash}
+                    onChange={(e) => {
+                      const sc = e.target.value;
+                      const so = formData.splitOnline;
+                      const tot = (Number(sc) || 0) + (Number(so) || 0);
+                      setFormData({ ...formData, splitCash: sc, amount: String(tot) });
+                    }}
+                    placeholder="0"
+                    className="h-8 bg-white border-purple-200 text-xs font-bold tabular"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-purple-900 mb-1">
+                    Online Amount (Rs.)
+                  </label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={formData.splitOnline}
+                    onChange={(e) => {
+                      const so = e.target.value;
+                      const sc = formData.splitCash;
+                      const tot = (Number(sc) || 0) + (Number(so) || 0);
+                      setFormData({ ...formData, splitOnline: so, amount: String(tot) });
+                    }}
+                    placeholder="0"
+                    className="h-8 bg-white border-purple-200 text-xs font-bold tabular"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-purple-900 mb-1">
+                    Online Provider
+                  </label>
+                  <Select
+                    value={formData.splitProvider || 'EasyPaisa'}
+                    onValueChange={(val) => setFormData({ ...formData, splitProvider: val })}
+                  >
+                    <SelectTrigger className="h-8 bg-white border-purple-200 text-xs font-bold text-purple-900">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="EasyPaisa" className="text-xs">EasyPaisa</SelectItem>
+                      <SelectItem value="JazzCash" className="text-xs">JazzCash</SelectItem>
+                      <SelectItem value="Bank Transfer" className="text-xs">Bank Transfer (Raast)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block font-semibold text-slate-700 mb-1 text-[11px]">
@@ -272,7 +373,7 @@ export default function RecordPaymentView({ customer, prefillAmount, onBack }) {
             </div>
           </div>
 
-          {totalDue > 0 && (
+          {enteredAmount > 0 && (
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs flex items-center justify-between">
               <div>
                 <span className="text-slate-400 text-[10px] uppercase font-bold block">Current Khata Due</span>
@@ -285,9 +386,11 @@ export default function RecordPaymentView({ customer, prefillAmount, onBack }) {
               </div>
               <ArrowRight className="w-4 h-4 text-slate-300" />
               <div>
-                <span className="text-slate-400 text-[10px] uppercase font-bold block">Remaining Due</span>
-                <span className={`font-bold tabular text-sm ${remainingBalance === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                  Rs. {remainingBalance.toLocaleString()}
+                <span className="text-slate-400 text-[10px] uppercase font-bold block">
+                  {enteredAmount > totalDue ? 'Surplus to Advance' : 'Remaining Due'}
+                </span>
+                <span className={`font-bold tabular text-sm ${enteredAmount > totalDue ? 'text-teal-700' : remainingBalance === 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  Rs. {enteredAmount > totalDue ? (enteredAmount - totalDue).toLocaleString() : remainingBalance.toLocaleString()}
                 </span>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, Eye, Receipt, Search, User, Phone, Package, TrendingUp, Users, DollarSign, Activity, Calendar } from 'lucide-react';
+import { ArrowLeft, Eye, Receipt, Search, User, Phone, Package, TrendingUp, Users, DollarSign, Banknote, Activity, Calendar } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 import { formatStandardDate, formatStandardDateTime, isDateInFilterRange, getLocalDate, normalizeDateStr } from '@/utils/dateUtils';
 import DateHeader from '@/components/common/DateHeader';
@@ -67,7 +67,9 @@ export default function POSSalesHistory({ compact = false }) {
   const [selectedDate, setSelectedDate] = useState(() => getLocalDate());
   const [search, setSearch] = useState('');
   const [selectedSale, setSelectedSale] = useState(null);
-  const [dateFilter, setDateFilter] = useState('today');
+  const [dateFilter, setDateFilter] = useState('all'); // 'today' | 'week' | 'all' | 'custom'
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [channelFilter, setChannelFilter] = useState('all'); // 'all' | 'walkin' | 'delivery'
 
   useEffect(() => {
@@ -110,18 +112,29 @@ export default function POSSalesHistory({ compact = false }) {
     }
 
     if (dateFilter === 'today') {
-      const todayStr = getLocalDate();
+      const todayStr = selectedDate || getLocalDate();
       return list.filter((sale) => {
         const dStr = normalizeDateStr(sale.date || sale.timestamp || sale.createdAt);
         return dStr === todayStr;
       });
     }
 
-    if (dateFilter && dateFilter !== 'all') {
-      return list.filter((sale) => isDateInFilterRange(sale.date || sale.timestamp || sale.createdAt, dateFilter));
+    if (dateFilter === 'custom') {
+      return list.filter((sale) => {
+        const raw = sale.timestamp || sale.date || sale.createdAt || sale.formattedDate;
+        if (!raw) return true;
+        const d = new Date(raw);
+        if (isNaN(d.getTime())) return true;
+        const sDate = d.toISOString().split('T')[0];
+        if (startDate && sDate < startDate) return false;
+        if (endDate && sDate > endDate) return false;
+        return true;
+      });
+    } else if (dateFilter && dateFilter !== 'all') {
+      return list.filter((sale) => isDateInFilterRange(sale.date || sale.timestamp || sale.createdAt, dateFilter, startDate, endDate, selectedDate));
     }
     return list;
-  }, [salesHistory, dateFilter, channelFilter, selectedDate]);
+  }, [salesHistory, dateFilter, startDate, endDate, channelFilter, selectedDate]);
 
   const filteredSales = filteredByDate.filter((sale) => {
     const customer = getCustomer(sale);
@@ -168,13 +181,10 @@ export default function POSSalesHistory({ compact = false }) {
               <Receipt className="w-4.5 h-4.5 text-emerald-600" />
               POS Sales Finance Report
             </h2>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Comprehensive overview of total sales, income, and customer data.
-            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {/* Channel Filter */}
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+            <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold">
               {[
                 { id: 'all', label: 'All Channels' },
                 { id: 'walkin', label: '🥛 Walk-in Counter' },
@@ -184,9 +194,9 @@ export default function POSSalesHistory({ compact = false }) {
                   key={tab.id}
                   type="button"
                   onClick={() => setChannelFilter(tab.id)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                     channelFilter === tab.id
-                      ? 'bg-slate-900 text-white shadow-xs font-bold'
+                      ? 'bg-white text-slate-900 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -202,12 +212,19 @@ export default function POSSalesHistory({ compact = false }) {
                 { id: 'week', label: 'This Week' },
                 { id: 'month', label: 'This Month' },
                 { id: 'all', label: 'All History' },
+                { id: 'custom', label: 'Custom' },
               ].map(({ id, label }) => (
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setDateFilter(id)}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  onClick={() => {
+                    setDateFilter(id);
+                    if (id !== 'custom') {
+                      setStartDate('');
+                      setEndDate('');
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     dateFilter === id
                       ? 'bg-white text-emerald-700 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
@@ -217,6 +234,39 @@ export default function POSSalesHistory({ compact = false }) {
                 </button>
               ))}
             </div>
+
+            {/* Custom Date Range Inputs */}
+            {dateFilter === 'custom' && (
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs">
+                <span className="text-[11px] font-semibold text-slate-500">From:</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+                />
+                <span className="text-[11px] font-semibold text-slate-500">To:</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
+                />
+                {(startDate || endDate) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStartDate('');
+                      setEndDate('');
+                      setDateFilter('all');
+                    }}
+                    className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer ml-1"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -264,7 +314,7 @@ export default function POSSalesHistory({ compact = false }) {
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
-          <div><h2 className="text-sm font-black text-slate-900 flex items-center gap-2"><Receipt className="w-4 h-4 text-emerald-600" /> POS sales</h2><p className="text-[11px] text-slate-500 mt-0.5">Milk sales and customer details saved at checkout.</p></div>
+          <div><h2 className="text-sm font-black text-slate-900 flex items-center gap-2"><Receipt className="w-4 h-4 text-emerald-600" /> POS sales</h2></div>
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5"><Search className="w-3.5 h-3.5 text-slate-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search invoice or customer" className="w-44 bg-transparent outline-none text-xs" /></div>
         </div>
         {filteredSales.length === 0 ? (

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Plus, ArrowRight } from "lucide-react";
+import { Plus, ArrowRight, LayoutDashboard, Droplets } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { usePOSContext } from "../../../../context/POSContext";
 import { useExpense } from "../../../../context/ExpenseContext";
@@ -36,8 +36,7 @@ const parseYield = (val) => {
 export default function FarmDashboardContent() {
   const { animals = [], milkingLogs = [] } = useAnimalContext();
   const posCtx = usePOSContext();
-  const products = posCtx?.products || [];
-  const { expenses = [], totals = {} } = useExpense();
+  const { expenses = [] } = useExpense();
   const [selectedAnimalId, setSelectedAnimalId] = useState(null);
   const [editAnimal, setEditAnimal] = useState(null);
   const navigate = useNavigate();
@@ -98,6 +97,7 @@ export default function FarmDashboardContent() {
     (a) => (a.lactationStatus || a.status || '').toLowerCase() === 'milking'
   );
 
+  // Farm Yield filtered by timeframe
   const totalFarmYield = useMemo(() => {
     const filteredLogs = milkingLogs.filter((l) =>
       isDateInFilterRange(l.date || l.createdAt, dateFilter, startDate, endDate)
@@ -126,7 +126,6 @@ export default function FarmDashboardContent() {
   }, [milkingLogs, animals, dateFilter, startDate, endDate, posCtx?.inventoryMetrics?.totalFarmYield]);
 
   // Available live farm stock in cold room / chiller
-  // Formula: Available Farm Stock = Total Farm Intake - (Total Farm Milk Sold in POS + Total Farm Milk Converted to Dahi)
   const availableFarmStock = useMemo(() => {
     const rawPos = parseFloat(
       posCtx?.inventoryMetrics?.availableFarmStock ??
@@ -152,7 +151,7 @@ export default function FarmDashboardContent() {
   }, [animals]);
 
   // Real Financial Metrics from POS & Expenses based on dateFilter
-  const { periodNetProfit, monthlyNetProfit, periodFarmSales, periodFarmExpense } = useMemo(() => {
+  const { periodNetProfit, monthlyNetProfit, periodFarmSales, periodFarmExpense, periodFarmRevenue, periodFarmExpenses, periodExpenseCount } = useMemo(() => {
     // Farm Sales in range
     let tSales = 0;
     (posCtx?.farmSalesHistory || []).forEach((s) => {
@@ -165,6 +164,7 @@ export default function FarmDashboardContent() {
 
     // Farm Expenses in range
     let tExp = 0;
+    let count = 0;
     (expenses || []).forEach((exp) => {
       const scope = String(exp.scope || exp.expenseEntity || 'FARM').toUpperCase();
       if (scope !== 'FARM') return;
@@ -172,6 +172,7 @@ export default function FarmDashboardContent() {
       const amt = Number(exp.amount) || 0;
       if (isDateInFilterRange(expDate, dateFilter, startDate, endDate)) {
         tExp += amt;
+        count += 1;
       }
     });
 
@@ -197,10 +198,13 @@ export default function FarmDashboardContent() {
       monthlyNetProfit: mSales - mExp,
       periodFarmSales: tSales,
       periodFarmExpense: tExp,
+      periodFarmRevenue: tSales,
+      periodFarmExpenses: tExp,
+      periodExpenseCount: count,
     };
   }, [posCtx?.farmSalesHistory, expenses, dateFilter, startDate, endDate]);
 
-  // Trend Data for 7 days (Using real milking logs and real sales)
+  // Trend Data for 7 days
   const trendData = useMemo(() => {
     const days = [];
     for (let i = 6; i >= 0; i--) {
@@ -276,20 +280,37 @@ export default function FarmDashboardContent() {
     });
   }, [milkingLogs, animals, posCtx?.farmSalesHistory]);
 
-  // Data for Current Lactation Yield by Animal
+  // Data for Current Lactation Yield by Animal (from actual recorded shift logs in current timeframe)
   const animalBarData = useMemo(() => {
-    return animals.slice(0, 6).map(a => {
-      const morning = parseYield(a.morningYield);
-      const evening = parseYield(a.eveningYield);
-      const mVal = morning > 0 ? morning : (parseYield(a.totalDailyYield) / 2) || 8;
-      const eVal = evening > 0 ? evening : (parseYield(a.totalDailyYield) / 2) || 7;
+    const matchedLogs = (milkingLogs || []).filter((l) =>
+      isDateInFilterRange(l.date || l.createdAt, dateFilter, startDate, endDate)
+    );
+
+    return animals.slice(0, 6).map((a) => {
+      const tag = (a.tag || a.tagNumber || '').toUpperCase();
+      const id = String(a.id || a._id || '');
+
+      const logsForAnimal = matchedLogs.filter((l) => {
+        const lTag = (l.animalTag || l.tag || l.animalId?.tagNumber || l.animalId?.tag || '').toUpperCase();
+        const lId = String(l.animalId?._id || l.animalId || '');
+        return (tag && lTag === tag) || (id && lId === id);
+      });
+
+      const morningYield = logsForAnimal
+        .filter((l) => (l.shift || 'Morning').toLowerCase().includes('morning'))
+        .reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
+
+      const eveningYield = logsForAnimal
+        .filter((l) => (l.shift || '').toLowerCase().includes('evening'))
+        .reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
+
       return {
-        name: a.tag,
-        morning: parseFloat(mVal.toFixed(1)),
-        evening: parseFloat(eVal.toFixed(1)),
+        name: a.tag || 'Animal',
+        morning: parseFloat(morningYield.toFixed(1)),
+        evening: parseFloat(eveningYield.toFixed(1)),
       };
     });
-  }, [animals]);
+  }, [animals, milkingLogs, dateFilter, startDate, endDate]);
 
   // Aggregate expenses by category in selected period
   const expensesByCategory = useMemo(() => {
@@ -373,6 +394,8 @@ export default function FarmDashboardContent() {
         monthlyNetProfit={monthlyNetProfit}
         todayFarmRevenue={periodFarmSales}
         periodFarmExpense={periodFarmExpense}
+        totalFarmExpense={periodFarmExpenses}
+        expenseCount={periodExpenseCount}
         dateFilter={dateFilter}
         periodLabel={periodLabel}
       />
@@ -388,16 +411,18 @@ export default function FarmDashboardContent() {
             </div>
             <div className="flex items-center gap-2">
               <button 
+                type="button"
                 onClick={() => navigate('/farm/milking')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5 text-slate-500" /> Log Shift
               </button>
               <button 
+                type="button"
                 onClick={() => navigate('/farm/animals')}
-                className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer"
               >
-                Register <ArrowRight className="w-3.5 h-3.5" />
+                <span>Register</span> <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -483,14 +508,16 @@ export default function FarmDashboardContent() {
               </div>
               <div className="flex items-center gap-2">
                 <button 
+                  type="button"
                   onClick={() => navigate('/farm/expenses')}
-                  className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Add
+                  <Plus className="w-3.5 h-3.5 text-slate-500" /> Add
                 </button>
                 <button 
+                  type="button"
                   onClick={() => navigate('/farm/expenses')}
-                  className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
                 >
                   All <ArrowRight className="w-3.5 h-3.5" />
                 </button>
@@ -555,8 +582,38 @@ export default function FarmDashboardContent() {
 
       </div>
 
-      {/* Grid Row 3: Herd Table */}
-      <div className="mt-4">
+      {/* Dynamic Bottom Register: Herd Directory */}
+      <div className="mt-8 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1 pb-2 border-b border-slate-200">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-900 font-display">
+                Herd Register &amp; Directory
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {animals.length} Animals Registered
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Comprehensive registry of active dairy cows and buffaloes with yields, health status, and lifecycle records
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEditAnimal(null);
+                navigate('/farm/animals');
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-3" />
+              <span>Add Animal</span>
+            </button>
+          </div>
+        </div>
+
         <AnimalTable
           onSelectAnimal={(id) => setSelectedAnimalId(id)}
           onEditAnimal={(animal) => setEditAnimal(animal)}

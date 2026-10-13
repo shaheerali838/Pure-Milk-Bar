@@ -14,6 +14,7 @@ export function usePOSDirectOperations({
   setSalesHistory,
   setCompletedSaleReceipt,
   addLedgerEntry,
+  getMetrics,
   remainingFarmBuffaloMilk = 0,
   getLiveStock,
 }) {
@@ -169,7 +170,9 @@ export function usePOSDirectOperations({
     const orderId = `ORD-POS-${Date.now()}`;
     const splitItems = [];
 
-    const liveStock = typeof getLiveStock === 'function' ? getLiveStock() : {};
+    const liveStock = typeof getLiveStock === 'function'
+      ? getLiveStock()
+      : (typeof getMetrics === 'function' ? (getMetrics()?.inventoryMetrics || getMetrics() || {}) : {});
     const availableFarmBuff = Math.max(0, Number(liveStock.rawFarmBuffaloMilkStock ?? liveStock.farmBuffaloMilkStock ?? remainingFarmBuffaloMilk ?? 0));
     const availableFarmCow = Math.max(0, Number(liveStock.rawFarmCowMilkStock ?? liveStock.farmCowMilkStock ?? 0));
 

@@ -5,11 +5,11 @@ import User from '../../../models/User.model.js';
 export const createUserService = async (userData) => {
   const { username, phone, email, password, ...rest } = userData;
 
-  // Check for duplicate username or phone
+  // Check for duplicate username, phone, or email
   const existingUser = await User.findOne({
     $or: [
       { username: username.toLowerCase() },
-      { phone },
+      ...(phone ? [{ phone }] : []),
       ...(email ? [{ email: email.toLowerCase() }] : []),
     ],
   });
@@ -17,7 +17,7 @@ export const createUserService = async (userData) => {
   if (existingUser) {
     let field = 'User';
     if (existingUser.username === username.toLowerCase()) field = 'Username';
-    else if (existingUser.phone === phone) field = 'Phone number';
+    else if (phone && existingUser.phone === phone) field = 'Phone number';
     else if (email && existingUser.email === email.toLowerCase()) field = 'Email';
 
     const error = new Error(`${field} is already registered.`);
@@ -128,6 +128,8 @@ export const updateUserService = async (userId, updateData) => {
     error.statusCode = 404;
     throw error;
   }
+
+
 
   // Check phone uniqueness if phone is being updated
   if (updateData.phone && updateData.phone !== user.phone) {

@@ -181,6 +181,8 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
   let counterSalesMilk = 0;
   let counterCash = 0;
   let counterOnline = 0;
+  let counterEasyPaisa = 0;
+  let counterJazzCash = 0;
   let creditGivenFromOrders = 0;
   let grossRevenue = 0;
   let posCashOrdersCount = 0;
@@ -212,24 +214,42 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
     grossRevenue += orderTotal;
 
     const isDeliveryOrder = order.fulfillmentType === 'DELIVERY';
+    const pMethod = String(order.paymentMethod || 'CASH').toUpperCase();
 
     // Payment collection breakdown
-    if (order.paymentMethod === 'CASH') {
+    if (pMethod === 'CASH') {
       posCashOrdersCount += 1;
       const netCash = (Number(order.amountReceived) || 0) - (Number(order.changeGiven) || 0);
       counterCash += netCash > 0 ? netCash : orderTotal;
-    } else if (order.paymentMethod === 'ONLINE') {
+    } else if (pMethod === 'EASYPAISA') {
       posOnlineOrdersCount += 1;
       counterOnline += orderTotal;
-    } else if (order.paymentMethod === 'SPLIT') {
+      counterEasyPaisa += orderTotal;
+    } else if (pMethod === 'JAZZCASH') {
+      posOnlineOrdersCount += 1;
+      counterOnline += orderTotal;
+      counterJazzCash += orderTotal;
+    } else if (pMethod === 'ONLINE') {
+      posOnlineOrdersCount += 1;
+      counterOnline += orderTotal;
+      const provider = String(order.onlineTransferMeta?.provider || '').toUpperCase();
+      if (provider.includes('EASYPAISA')) counterEasyPaisa += orderTotal;
+      else if (provider.includes('JAZZCASH')) counterJazzCash += orderTotal;
+    } else if (pMethod === 'SPLIT') {
       posSplitOrdersCount += 1;
       const splitCash = Number(order.splitPaymentMeta?.cashAmount) || 0;
-      const splitOnline = Number(order.splitPaymentMeta?.onlineAmount) || 0;
+      const splitEasyPaisa = Number(order.splitPaymentMeta?.easyPaisaAmount) || 0;
+      const splitJazzCash = Number(order.splitPaymentMeta?.jazzCashAmount) || 0;
+      const splitOnlineDirect = Number(order.splitPaymentMeta?.onlineAmount) || 0;
+      const splitOnline = splitOnlineDirect > 0 ? splitOnlineDirect : (splitEasyPaisa + splitJazzCash);
       const splitKhata = Number(order.splitPaymentMeta?.khataAmount) || 0;
+
       counterCash += splitCash;
       counterOnline += splitOnline;
+      counterEasyPaisa += splitEasyPaisa;
+      counterJazzCash += splitJazzCash;
       creditGivenFromOrders += splitKhata;
-    } else if (order.paymentMethod === 'KHATA') {
+    } else if (pMethod === 'KHATA') {
       posKhataOrdersCount += 1;
       creditGivenFromOrders += orderTotal;
     }
@@ -355,7 +375,7 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
   });
   milkWastage = Number(milkWastage.toFixed(2));
 
-  // 9. Khata Customer Recoveries (Cash & Online)
+  // 9. Khata Customer Recoveries (Cash & Online: EasyPaisa, JazzCash, Bank)
   const khataEntries = await KhataEntry.find({
     date: { $gte: startOfDay, $lte: endOfDay },
   })
@@ -364,11 +384,34 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
 
   let khataRecoveredCash = 0;
   let khataRecoveredOnline = 0;
+  let khataRecoveredEasyPaisa = 0;
+  let khataRecoveredJazzCash = 0;
+
   khataEntries.forEach((entry) => {
     if (entry.transactionType === 'CREDIT' && !['ADJUSTMENT', null].includes(entry.paymentMethod)) {
       const credit = Number(entry.creditAmount) || 0;
-      if (entry.paymentMethod === 'ONLINE' || entry.paymentMethod === 'CHEQUE') {
+      const pm = String(entry.paymentMethod || '').toUpperCase();
+      const channel = String(entry.paymentChannel || '').toUpperCase();
+      const provider = String(entry.onlineTransferMeta?.provider || '').toUpperCase();
+
+      if (pm === 'EASYPAISA' || channel === 'EASYPAISA' || provider.includes('EASYPAISA')) {
         khataRecoveredOnline += credit;
+        khataRecoveredEasyPaisa += credit;
+      } else if (pm === 'JAZZCASH' || channel === 'JAZZCASH' || provider.includes('JAZZCASH')) {
+        khataRecoveredOnline += credit;
+        khataRecoveredJazzCash += credit;
+      } else if (pm === 'ONLINE' || pm === 'CHEQUE' || channel === 'ONLINE' || channel === 'BANK') {
+        khataRecoveredOnline += credit;
+      } else if (pm === 'SPLIT' && entry.splitPaymentMeta) {
+        const sCash = Number(entry.splitPaymentMeta.cashAmount) || 0;
+        const sEp = Number(entry.splitPaymentMeta.easyPaisaAmount) || 0;
+        const sJc = Number(entry.splitPaymentMeta.jazzCashAmount) || 0;
+        const sOnline = Number(entry.splitPaymentMeta.onlineAmount) || (sEp + sJc);
+
+        khataRecoveredCash += sCash;
+        khataRecoveredOnline += sOnline;
+        khataRecoveredEasyPaisa += sEp;
+        khataRecoveredJazzCash += sJc;
       } else {
         khataRecoveredCash += credit;
       }
@@ -376,6 +419,8 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
   });
   khataRecoveredCash = Number(khataRecoveredCash.toFixed(2));
   khataRecoveredOnline = Number(khataRecoveredOnline.toFixed(2));
+  khataRecoveredEasyPaisa = Number(khataRecoveredEasyPaisa.toFixed(2));
+  khataRecoveredJazzCash = Number(khataRecoveredJazzCash.toFixed(2));
 
   // 10. Operational Expenses by Category (Wages, Feed, Fuel, Misc)
   const expenses = await Expense.find({
@@ -693,9 +738,18 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
     collections: {
       counterCash: Number(counterCash.toFixed(2)),
       counterOnline: Number(counterOnline.toFixed(2)),
+      counterEasyPaisa: Number(counterEasyPaisa.toFixed(2)),
+      counterJazzCash: Number(counterJazzCash.toFixed(2)),
       codCash: Number(deliveryCodCash.toFixed(2)),
+      deliveryOnline: Number(deliveryOnline.toFixed(2)),
       khataRecoveredCash,
       khataRecoveredOnline,
+      khataRecoveredEasyPaisa,
+      khataRecoveredJazzCash,
+      totalEasyPaisa: Number((counterEasyPaisa + khataRecoveredEasyPaisa).toFixed(2)),
+      totalJazzCash: Number((counterJazzCash + khataRecoveredJazzCash).toFixed(2)),
+      totalCash: Number((counterCash + deliveryCodCash + khataRecoveredCash).toFixed(2)),
+      totalOnline: Number((counterOnline + deliveryOnline + khataRecoveredOnline).toFixed(2)),
       totalCollected,
     },
     creditGiven: totalCreditGiven,
@@ -875,12 +929,21 @@ export const getDailyClosingSummaryService = async (queryParams = {}) => {
   const rangeCollections = {
     counterCash: dailySummaries.reduce((acc, d) => acc + (d.collections?.counterCash || 0), 0),
     counterOnline: dailySummaries.reduce((acc, d) => acc + (d.collections?.counterOnline || 0), 0),
+    counterEasyPaisa: dailySummaries.reduce((acc, d) => acc + (d.collections?.counterEasyPaisa || 0), 0),
+    counterJazzCash: dailySummaries.reduce((acc, d) => acc + (d.collections?.counterJazzCash || 0), 0),
     codCash: dailySummaries.reduce((acc, d) => acc + (d.collections?.codCash || 0), 0),
+    deliveryOnline: dailySummaries.reduce((acc, d) => acc + (d.collections?.deliveryOnline || 0), 0),
     khataRecoveredCash: dailySummaries.reduce((acc, d) => acc + (d.collections?.khataRecoveredCash || 0), 0),
     khataRecoveredOnline: dailySummaries.reduce((acc, d) => acc + (d.collections?.khataRecoveredOnline || 0), 0),
+    khataRecoveredEasyPaisa: dailySummaries.reduce((acc, d) => acc + (d.collections?.khataRecoveredEasyPaisa || 0), 0),
+    khataRecoveredJazzCash: dailySummaries.reduce((acc, d) => acc + (d.collections?.khataRecoveredJazzCash || 0), 0),
   };
+  rangeCollections.totalEasyPaisa = Number((rangeCollections.counterEasyPaisa + rangeCollections.khataRecoveredEasyPaisa).toFixed(2));
+  rangeCollections.totalJazzCash = Number((rangeCollections.counterJazzCash + rangeCollections.khataRecoveredJazzCash).toFixed(2));
+  rangeCollections.totalCash = Number((rangeCollections.counterCash + rangeCollections.codCash + rangeCollections.khataRecoveredCash).toFixed(2));
+  rangeCollections.totalOnline = Number((rangeCollections.counterOnline + rangeCollections.deliveryOnline + rangeCollections.khataRecoveredOnline).toFixed(2));
   rangeCollections.totalCollected = Number(
-    (rangeCollections.counterCash + rangeCollections.counterOnline + rangeCollections.codCash + rangeCollections.khataRecoveredCash + rangeCollections.khataRecoveredOnline).toFixed(2)
+    (rangeCollections.totalCash + rangeCollections.totalOnline).toFixed(2)
   );
 
   const rangeExpenses = {

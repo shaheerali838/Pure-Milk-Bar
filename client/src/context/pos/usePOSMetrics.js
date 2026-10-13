@@ -120,8 +120,10 @@ export function usePOSMetrics({
                       tag.startsWith('COW');
 
         const history = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
-        if (history.length > 0) {
-          history.forEach((h) => {
+        const todayHistory = history.filter((h) => h && isTodayDate(h.date || h.createdAt));
+
+        if (todayHistory.length > 0) {
+          todayHistory.forEach((h) => {
             if (!h) return;
             const dateStr = normalizeDateStr(h.date || h.createdAt) || '';
             const shiftStr = (h.shift || (h.morning > 0 ? 'Morning' : 'Evening') || 'Morning').toUpperCase();
@@ -980,6 +982,33 @@ export function usePOSMetrics({
     }
   });
 
+  // Direct Product Catalog Stock from MongoDB Products Collection
+  const catalogFarmMilkStock = useMemo(() => {
+    return (products || []).reduce((sum, p) => {
+      const name = (p.name || '').toLowerCase();
+      const cat = (p.category || '').toLowerCase();
+      const isMilk = cat.includes('milk') || name.includes('milk');
+      const isSupplier = String(p.source || '').toLowerCase().includes('supplier');
+      if (isMilk && !isSupplier) {
+        return sum + Math.max(0, Number(p.currentStock ?? p.stock) || 0);
+      }
+      return sum;
+    }, 0);
+  }, [products]);
+
+  const catalogSupplierMilkStock = useMemo(() => {
+    return (products || []).reduce((sum, p) => {
+      const name = (p.name || '').toLowerCase();
+      const cat = (p.category || '').toLowerCase();
+      const isMilk = cat.includes('milk') || name.includes('milk');
+      const isSupplier = String(p.source || '').toLowerCase().includes('supplier');
+      if (isMilk && isSupplier) {
+        return sum + Math.max(0, Number(p.currentStock ?? p.stock) || 0);
+      }
+      return sum;
+    }, 0);
+  }, [products]);
+
   // Requirement 2 & 4: Inventory Carry-Over (Opening Stock carries forward, new intake dynamically adds)
   const openingFarmCow = Number(openingStock?.farmCowMilk || 0);
   const openingFarmBuff = Number(openingStock?.farmBuffaloMilk || 0);
@@ -1158,7 +1187,7 @@ export function usePOSMetrics({
     rawDahiStock: rawTotalDahiStock,
     rawChilledDahiStock: totalDahiChilledInKitchen,
     totalFarmMilkIntake: totalFarmMilk,
-    totalFarmMilkSold: totalFarmMilkSoldQty,
+    totalFarmMilkSold: todayFarmMilkSold,
     totalFarmMilkConvertedToDahi: farmMilkConvertedToDahi,
     milkSold: (totalMilkSold % 1 === 0 ? totalMilkSold.toFixed(0) : totalMilkSold.toFixed(2)),
     dahiSold: (totalDahiSold % 1 === 0 ? totalDahiSold.toFixed(0) : totalDahiSold.toFixed(2)),

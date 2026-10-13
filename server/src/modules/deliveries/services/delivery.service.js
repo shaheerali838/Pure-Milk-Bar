@@ -2,12 +2,263 @@ import mongoose from 'mongoose';
 import DeliveryRun from '../../../models/DeliveryRun.model.js';
 import VehicleFuelLog from '../../../models/VehicleFuelLog.model.js';
 import User from '../../../models/User.model.js';
+import Product from '../../../models/Product.model.js';
+import Customer from '../../../models/Customer.model.js';
 
 class DeliveryService {
   generateRunCode() {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     return `DR-${today}-${randomSuffix}`;
+  }
+
+  // ====================================================
+  // Inventory Stock Deduction and Restoration Helpers
+  // ====================================================
+
+  /**
+   * Smart product resolver matching delivery items to authoritative inventory Product records.
+   */
+  resolveProductForDeliveryItem(item, allProducts) {
+    if (!item) return null;
+
+    // 1. Direct ID match
+    if (item.productId && mongoose.Types.ObjectId.isValid(item.productId)) {
+      const prod = allProducts.find((p) => String(p._id) === String(item.productId));
+      if (prod) return prod;
+    }
+
+    // 2. Direct SKU match
+    if (item.sku) {
+      const prod = allProducts.find(
+        (p) => String(p.sku || '').toUpperCase() === String(item.sku).toUpperCase()
+      );
+      if (prod) return prod;
+    }
+
+    const rawName = String(item.name || '').trim();
+    const cleanName = rawName.replace(/\s*\((Farm|Supplier)\s*Share\)/i, '').trim();
+
+    // 3. Exact name match (case-insensitive)
+    const exactMatch = allProducts.find(
+      (p) => String(p.name || '').trim().toLowerCase() === cleanName.toLowerCase()
+    );
+    if (exactMatch) return exactMatch;
+
+    const nameLower = cleanName.toLowerCase();
+
+    // 4. Cow milk variant match
+    if (nameLower.includes('cow') || nameLower.includes('gai')) {
+      const cowProd = allProducts.find((p) => /cow/i.test(p.name) || /cow/i.test(p.sku));
+      if (cowProd) return cowProd;
+    }
+
+    // 5. Buffalo milk variant match
+    if (nameLower.includes('buffalo') || nameLower.includes('bhains')) {
+      const buffProd = allProducts.find((p) => /buffalo/i.test(p.name) || /buffalo/i.test(p.sku));
+      if (buffProd) return buffProd;
+    }
+
+    // 6. Dahi / Yogurt variant match
+    if (nameLower.includes('dahi') || nameLower.includes('yogurt') || nameLower.includes('curd')) {
+      const dahiProd = allProducts.find(
+        (p) => /dahi|yogurt|curd/i.test(p.name) || /dahi|yogurt|curd/i.test(p.category)
+      );
+      if (dahiProd) return dahiProd;
+    }
+
+    // 7. General "Fresh Milk" or "Milk" without cow/buffalo specified
+    if (nameLower === 'fresh milk' || nameLower === 'milk' || nameLower.includes('milk')) {
+      const buffProd = allProducts.find((p) => /buffalo/i.test(p.name));
+      if (buffProd) return buffProd;
+      const generalMilkProd = allProducts.find(
+        (p) => /milk/i.test(p.category) || /milk/i.test(p.name)
+      );
+      if (generalMilkProd) return generalMilkProd;
+    }
+
+    return null;
+  }
+
+  /**
+   * Deducts inventory stock exactly once when a delivery is completed.
+   */
+  async deductDeliveryStock(delivery) {
+    if (!delivery) return { skipped: true, reason: 'No delivery provided' };
+
+    // Idempotency: Skip if stock already deducted for this delivery run
+    if (delivery.isStockDeducted) {
+      return { skipped: true, reason: 'Stock already deducted for this delivery' };
+    }
+
+    // Check if order was placed via POS counter (which already deducted inventory upon order creation)
+    if (delivery.source === 'POS_ONE_TIME' || delivery.linkedOrderId) {
+      await DeliveryRun.findByIdAndUpdate(delivery._id || delivery.id, {
+        $set: {
+          isStockDeducted: true,
+          stockDeductedAt: new Date(),
+        },
+      });
+      return { skipped: true, reason: 'POS order already deducted stock at counter' };
+    }
+
+    let itemsToDeduct = [];
+    if (Array.isArray(delivery.items) && delivery.items.length > 0) {
+      itemsToDeduct = delivery.items.filter((it) => (Number(it.quantity) || 0) > 0);
+    }
+
+    // Fallback if delivery.items was empty: derive items from customer standing order or itemDescription
+    if (itemsToDeduct.length === 0) {
+      if (delivery.customerId) {
+        try {
+          const customer = await Customer.findById(delivery.customerId);
+          if (customer) {
+            const isMorning = String(delivery.shift || '').toUpperCase() === 'MORNING';
+            const agreementItems = isMorning
+              ? (customer.morningItems || customer.standingOrder?.morningItems || [])
+              : (customer.eveningItems || customer.standingOrder?.eveningItems || []);
+
+            if (Array.isArray(agreementItems) && agreementItems.length > 0) {
+              itemsToDeduct = agreementItems
+                .map((it) => ({
+                  name: it.name || 'Product',
+                  quantity: Number(it.qty || it.quantity) || 0,
+                  unit: it.unit || 'L',
+                }))
+                .filter((it) => it.quantity > 0);
+            }
+          }
+        } catch (_) {}
+      }
+
+      // Final fallback from qtyLiters / itemDescription
+      if (itemsToDeduct.length === 0) {
+        const totalQty = Number(delivery.qtyLiters) || 0;
+        const desc = String(delivery.itemDescription || '').toLowerCase();
+        if (totalQty > 0 || desc) {
+          if (desc.includes('cow')) {
+            itemsToDeduct.push({ name: 'Fresh Milk Cow', quantity: totalQty || 1, unit: 'L' });
+          } else if (desc.includes('dahi') || desc.includes('yogurt')) {
+            itemsToDeduct.push({ name: 'Dahi', quantity: totalQty || 1, unit: 'KG' });
+          } else {
+            itemsToDeduct.push({ name: 'Buffalo Milk', quantity: totalQty || 1, unit: 'L' });
+          }
+        }
+      }
+    }
+
+    if (itemsToDeduct.length === 0) {
+      await DeliveryRun.findByIdAndUpdate(delivery._id || delivery.id, {
+        $set: {
+          isStockDeducted: true,
+          stockDeductedAt: new Date(),
+        },
+      });
+      return { success: true, deducted: [] };
+    }
+
+    const allProducts = await Product.find({});
+    const deductionRecords = [];
+
+    for (const item of itemsToDeduct) {
+      const qty = Number(item.quantity) || 0;
+      if (qty <= 0) continue;
+
+      const matchedProd = this.resolveProductForDeliveryItem(item, allProducts);
+      if (matchedProd) {
+        const prevStock = Number(matchedProd.currentStock || 0);
+        const newStock = Math.max(0, Number((prevStock - qty).toFixed(2)));
+
+        await Product.findByIdAndUpdate(matchedProd._id, {
+          $set: { currentStock: newStock },
+        });
+
+        // Update in-memory reference for multiple items matching same product
+        matchedProd.currentStock = newStock;
+
+        deductionRecords.push({
+          productId: matchedProd._id,
+          sku: matchedProd.sku,
+          productName: matchedProd.name,
+          quantity: qty,
+          unit: item.unit || matchedProd.unit,
+          previousStock: prevStock,
+          newStock: newStock,
+          deductedAt: new Date(),
+        });
+      }
+    }
+
+    await DeliveryRun.findByIdAndUpdate(delivery._id || delivery.id, {
+      $set: {
+        isStockDeducted: true,
+        stockDeductedAt: new Date(),
+        stockDeductionDetails: deductionRecords,
+      },
+    });
+
+    return { success: true, deducted: deductionRecords };
+  }
+
+  /**
+   * Restores inventory stock if a delivered run is reverted to PENDING/SKIPPED/FAILED or deleted.
+   */
+  async restoreDeliveryStock(delivery) {
+    if (!delivery || !delivery.isStockDeducted) {
+      return { skipped: true, reason: 'Stock was not deducted' };
+    }
+
+    // If originated from POS, POS manages its own refunds/voids
+    if (delivery.source === 'POS_ONE_TIME' || delivery.linkedOrderId) {
+      await DeliveryRun.findByIdAndUpdate(delivery._id || delivery.id, {
+        $set: {
+          isStockDeducted: false,
+          stockDeductedAt: null,
+        },
+      });
+      return { skipped: true };
+    }
+
+    const details = Array.isArray(delivery.stockDeductionDetails) ? delivery.stockDeductionDetails : [];
+
+    if (details.length > 0) {
+      for (const rec of details) {
+        const qty = Number(rec.quantity) || 0;
+        if (qty > 0 && rec.productId) {
+          const prod = await Product.findById(rec.productId);
+          if (prod) {
+            const restoredStock = Number(((prod.currentStock || 0) + qty).toFixed(2));
+            await Product.findByIdAndUpdate(prod._id, {
+              $set: { currentStock: restoredStock },
+            });
+          }
+        }
+      }
+    } else if (Array.isArray(delivery.items) && delivery.items.length > 0) {
+      const allProducts = await Product.find({});
+      for (const item of delivery.items) {
+        const qty = Number(item.quantity) || 0;
+        if (qty <= 0) continue;
+        const matchedProd = this.resolveProductForDeliveryItem(item, allProducts);
+        if (matchedProd) {
+          const restoredStock = Number(((matchedProd.currentStock || 0) + qty).toFixed(2));
+          await Product.findByIdAndUpdate(matchedProd._id, {
+            $set: { currentStock: restoredStock },
+          });
+          matchedProd.currentStock = restoredStock;
+        }
+      }
+    }
+
+    await DeliveryRun.findByIdAndUpdate(delivery._id || delivery.id, {
+      $set: {
+        isStockDeducted: false,
+        stockDeductedAt: null,
+        stockDeductionDetails: [],
+      },
+    });
+
+    return { success: true };
   }
 
   async createDeliveryRun(payload) {
@@ -22,6 +273,27 @@ class DeliveryService {
       const rider = await User.findById(deliveryData.riderId).select('name');
       if (rider) {
         deliveryData.riderNameSnapshot = rider.name;
+      }
+    }
+
+    // Pre-order Inventory Stock Validation
+    if (Array.isArray(deliveryData.items) && deliveryData.items.length > 0) {
+      const allProducts = await Product.find({});
+      for (const item of deliveryData.items) {
+        const qty = Number(item.quantity) || 0;
+        if (qty <= 0) continue;
+        const matchedProd = this.resolveProductForDeliveryItem(item, allProducts);
+        if (matchedProd) {
+          const availStock = Number(matchedProd.currentStock || 0);
+          if (availStock <= 0 || qty > availStock) {
+            const err = new Error(
+              `Insufficient stock for "${matchedProd.name}". Available: ${availStock} ${matchedProd.unit || 'L'}, Requested: ${qty}`
+            );
+            err.statusCode = 400;
+            err.code = 'INSUFFICIENT_STOCK';
+            throw err;
+          }
+        }
       }
     }
 
@@ -45,6 +317,10 @@ class DeliveryService {
         await session.commitTransaction();
         session.endSession();
 
+        if (createdRun.status === 'DELIVERED') {
+          await this.deductDeliveryStock(createdRun);
+        }
+
         return {
           deliveryRun: createdRun,
           fuelLog: createdFuelLog,
@@ -58,12 +334,17 @@ class DeliveryService {
 
     // Normal Delivery Run creation
     const deliveryRun = await DeliveryRun.create(deliveryData);
+    if (deliveryRun.status === 'DELIVERED') {
+      await this.deductDeliveryStock(deliveryRun);
+    }
     return { deliveryRun };
   }
 
   async getDeliveryRuns(query = {}) {
     const {
       date,
+      startDate,
+      endDate,
       shift,
       route,
       status,
@@ -77,7 +358,19 @@ class DeliveryService {
 
     const filter = {};
 
-    if (date) {
+    if (startDate || endDate) {
+      filter.date = {};
+      if (startDate) {
+        const s = new Date(startDate);
+        s.setHours(0, 0, 0, 0);
+        filter.date.$gte = s;
+      }
+      if (endDate) {
+        const e = new Date(endDate);
+        e.setHours(23, 59, 59, 999);
+        filter.date.$lte = e;
+      }
+    } else if (date) {
       const startOfDay = new Date(date);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(date);
@@ -136,6 +429,16 @@ class DeliveryService {
       throw error;
     }
 
+    const existingRun = await DeliveryRun.findById(id);
+    if (!existingRun) {
+      const error = new Error(`Delivery Run with ID '${id}' not found`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const prevStatus = existingRun.status;
+    const newStatus = updateData.status || prevStatus;
+
     // Check if updating riderId to keep riderNameSnapshot in sync
     if (updateData.riderId && !updateData.riderNameSnapshot) {
       const rider = await User.findById(updateData.riderId).select('name');
@@ -151,24 +454,30 @@ class DeliveryService {
       .populate('riderId', 'name phone role')
       .populate('customerId', 'name phone deliveryRoute');
 
-    if (!updatedRun) {
-      const error = new Error(`Delivery Run with ID '${id}' not found`);
-      error.statusCode = 404;
-      throw error;
+    // Handle stock deduction / restoration on status transitions
+    if (newStatus === 'DELIVERED' && (!existingRun.isStockDeducted || prevStatus !== 'DELIVERED')) {
+      await this.deductDeliveryStock(updatedRun);
+    } else if (prevStatus === 'DELIVERED' && newStatus !== 'DELIVERED') {
+      await this.restoreDeliveryStock(existingRun);
     }
 
     return updatedRun;
   }
 
   async deleteDeliveryRun(id) {
-    const deletedRun = await DeliveryRun.findByIdAndDelete(id);
-
-    if (!deletedRun) {
+    const existingRun = await DeliveryRun.findById(id);
+    if (!existingRun) {
       const error = new Error(`Delivery Run with ID '${id}' not found`);
       error.statusCode = 404;
       throw error;
     }
 
+    // Restore deducted stock if deleting an already delivered run
+    if (existingRun.status === 'DELIVERED' && existingRun.isStockDeducted) {
+      await this.restoreDeliveryStock(existingRun);
+    }
+
+    const deletedRun = await DeliveryRun.findByIdAndDelete(id);
     return deletedRun;
   }
 
@@ -202,6 +511,14 @@ class DeliveryService {
   }
 
   async updateDeliveryStatus(id, statusData) {
+    const existingRun = await DeliveryRun.findById(id);
+    if (!existingRun) {
+      const error = new Error(`Delivery Run with ID '${id}' not found`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const prevStatus = existingRun.status;
     const {
       status,
       deliveredAt,
@@ -216,9 +533,10 @@ class DeliveryService {
       notes,
     } = statusData;
 
-    const updateFields = { status };
+    const newStatus = status || prevStatus;
+    const updateFields = { status: newStatus };
 
-    if (status === 'DELIVERED') {
+    if (newStatus === 'DELIVERED') {
       updateFields.deliveredAt = deliveredAt || new Date();
     } else if (deliveredAt !== undefined) {
       updateFields.deliveredAt = deliveredAt;
@@ -267,10 +585,11 @@ class DeliveryService {
       .populate('riderId', 'name phone role')
       .populate('customerId', 'name phone');
 
-    if (!updatedRun) {
-      const error = new Error(`Delivery Run with ID '${id}' not found`);
-      error.statusCode = 404;
-      throw error;
+    // Handle stock deduction / restoration on status transitions
+    if (newStatus === 'DELIVERED' && (!existingRun.isStockDeducted || prevStatus !== 'DELIVERED')) {
+      await this.deductDeliveryStock(updatedRun);
+    } else if (prevStatus === 'DELIVERED' && newStatus !== 'DELIVERED') {
+      await this.restoreDeliveryStock(existingRun);
     }
 
     return updatedRun;

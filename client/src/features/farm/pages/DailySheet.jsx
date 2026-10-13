@@ -1,18 +1,5 @@
 import React, { useState, useMemo } from "react";
-import {
-  FileText,
-  Calendar,
-  Download,
-  Printer,
-  CheckCircle2,
-  Lock,
-  Droplets,
-  Sun,
-  Moon,
-  DollarSign,
-  TrendingUp,
-  Layers,
-} from "lucide-react";
+import { FileText, Calendar, Download, Printer, CheckCircle2, Lock, Droplets, Sun, Moon, Banknote, TrendingUp, Layers } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -503,7 +490,7 @@ export default function DailySheet() {
             title: "Farm POS Sales",
             amount: `Rs. ${totals.totalFarmSales.toLocaleString()}`,
             sub: "Direct milk & Dahi sales",
-            icon: DollarSign,
+            icon: Banknote,
             color: "#009966",
             badge: "Sales",
           },

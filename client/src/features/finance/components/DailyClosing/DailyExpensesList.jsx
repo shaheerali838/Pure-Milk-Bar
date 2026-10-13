@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, ArrowUpRight } from 'lucide-react';
+import { Banknote, ArrowUpRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Typography } from '@/components/common/Typography';
 

@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import {TrendingUp,TrendingDown,DollarSign,Wallet,Store,Beef,AlertTriangle,ArrowUpRight,ArrowDownRight,} from "lucide-react";
+import { TrendingUp, TrendingDown, Banknote, Wallet, Store, Beef, AlertTriangle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { usePOSContext } from "@/context/POSContext";
 import { useExpense } from "@/context/ExpenseContext";
 import { useIntakeContext } from "@/context/IntakeContext";
 import { useCustomerContext } from "@/context/CustomerContext";
+import { useLedgerContext } from "@/context/LedgerContext";
 import { useAnimalContext } from "@/context/AnimalContext";
 import { Link } from "react-router-dom";
 
@@ -15,14 +16,19 @@ export default function ProfitLossSnapshot({
   dateFilter,
   startDate = '',
   endDate = '',
+  timeRange,
+  customStartDate = '',
+  customEndDate = '',
 }) {
-  const [localRange, setLocalRange] = useState(dateFilter || "today"); // 'today' | 'this_week' | 'this_month' | 'all'
+  const [localRange, setLocalRange] = useState(dateFilter || timeRange || "today");
+  const [customStart, setCustomStart] = useState(startDate || customStartDate || '');
+  const [customEnd, setCustomEnd] = useState(endDate || customEndDate || '');
 
   React.useEffect(() => {
-    if (dateFilter) {
-      setLocalRange(dateFilter);
-    }
-  }, [dateFilter]);
+    if (dateFilter) setLocalRange(dateFilter);
+    if (startDate) setCustomStart(startDate);
+    if (endDate) setCustomEnd(endDate);
+  }, [dateFilter, startDate, endDate]);
 
   const activeRange = localRange;
 
@@ -31,10 +37,20 @@ export default function ProfitLossSnapshot({
   const { intakeLogs = [], totals: intakeTotals = {} } = useIntakeContext();
   const { expenses: supplierExpensesList = [] } = useSourcExpenseContext() || {};
   const { batches: processingBatches = [] } = useDahiContext() || {};
-  const { totalKhataReceivable = 0 } = useCustomerContext();
+  const { totalKhataReceivable = 0, withKhataBalCount = 0 } = useCustomerContext() || {};
+  const { getAllCustomersAggregates } = useLedgerContext() || {};
+
+  const customerAggregates = useMemo(() => {
+    return getAllCustomersAggregates ? getAllCustomersAggregates() : null;
+  }, [getAllCustomersAggregates]);
+
+  const exactPendingKhata = customerAggregates?.totalAllDue !== undefined
+    ? customerAggregates.totalAllDue
+    : totalKhataReceivable;
+  const pendingDuesAccounts = customerAggregates?.khataAccountsCount ?? withKhataBalCount;
 
   const isMatchingTimeframe = (dateVal) => {
-    return isDateInFilterRange(dateVal, activeRange, startDate, endDate);
+    return isDateInFilterRange(dateVal, activeRange, customStart, customEnd);
   };
 
   // Filtered Income & Expense Calculations
@@ -84,14 +100,14 @@ export default function ProfitLossSnapshot({
   return (
     <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
       {/* 1. Top Section Header with Time Range Switcher */}
-      <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
         <div>
           <h3 className="text-base font-extrabold text-slate-900 font-display flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-emerald-600" />
             <span>Profit &amp; Loss Financial Snapshot</span>
           </h3>
-          
         </div>
+
 
         {/* Time Tabs */}
         <div className="inline-flex items-center p-1 bg-slate-100 rounded-full shadow-2xs self-start sm:self-auto">
@@ -174,7 +190,7 @@ export default function ProfitLossSnapshot({
                 isPositive ? "text-emerald-700" : "text-rose-700"
               }`}
             >
-              {isPositive ? "+" : "-"} Rs.{" "}
+              Rs. {isPositive ? "" : "-"}
               {Math.abs(netProfit).toLocaleString()}
             </span>
             <span className="text-[11px] font-bold text-slate-600 block mt-0.5">
@@ -199,17 +215,18 @@ export default function ProfitLossSnapshot({
         >
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-slate-600 transition-colors">
-              Receivables
+              Customer Khata Pending
             </span>
             <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Wallet className="w-3.5 h-3.5" />
             </div>
           </div>
           <p className="text-lg font-black text-slate-900 font-display tabular">
-            Rs. {totalKhataReceivable.toLocaleString()}
+            Rs. {Number(exactPendingKhata || 0).toLocaleString()}
           </p>
-          <p className="text-[11px] text-amber-700 font-semibold mt-0.5">
-            Customer Khata ledger pending &rarr;
+          <p className="text-[11px] text-amber-700 font-semibold mt-0.5 flex items-center justify-between">
+            <span>Customer Khata ledger pending</span>
+            <span className="text-[10px] font-bold px-1.5 py-0.2 bg-amber-100/80 rounded">{pendingDuesAccounts} dues &rarr;</span>
           </p>
         </Link>
 

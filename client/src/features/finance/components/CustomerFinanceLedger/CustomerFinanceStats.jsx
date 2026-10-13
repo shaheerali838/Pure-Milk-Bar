@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, CreditCard, DollarSign, Wallet, Sparkles, ChevronRight } from 'lucide-react';
+import { Users, CreditCard, Banknote, Wallet, ChevronRight } from 'lucide-react';
 import { useCustomerContext } from '../../../../context/CustomerContext';
 import { useLedgerContext } from '../../../../context/LedgerContext';
 
@@ -47,7 +47,7 @@ export default function CustomerFinanceStats({ onOpenAdvanceDetails }) {
       label: "Advance Deposits Held",
       value: `Rs. ${totalAdvanceHeld.toLocaleString()}`,
       sub: `Rs. ${remainingAdvance.toLocaleString()} remaining • ${advanceAccountsCount} accounts`,
-      icon: Sparkles,
+      icon: Wallet,
       color: "#059669",
       badge: "Advance • View Details ➔",
       badgeClass: "bg-emerald-500 text-white font-extrabold shadow-xs hover:bg-emerald-600 transition-colors",
@@ -60,7 +60,7 @@ export default function CustomerFinanceStats({ onOpenAdvanceDetails }) {
       label: "Total Collected",
       value: `Rs. ${totalCollected.toLocaleString()}`,
       sub: "Realized sales & bill collections",
-      icon: DollarSign,
+      icon: Banknote,
       color: "#009966",
       badge: "Earned Revenue",
       clickable: false,

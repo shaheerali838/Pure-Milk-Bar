@@ -47,7 +47,7 @@ const orderSchema = new Schema(
     paymentMethod: {
       type: String,
       required: [true, 'Payment method is required'],
-      enum: ['CASH', 'KHATA', 'ONLINE', 'SPLIT'],
+      enum: ['CASH', 'KHATA', 'ONLINE', 'EASYPAISA', 'JAZZCASH', 'SPLIT', 'COD'],
       index: true,
     },
     items: {
@@ -80,6 +80,21 @@ const orderSchema = new Schema(
       min: 0,
     },
     changeGiven: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    advanceUsed: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    khataAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    advanceBalanceAfter: {
       type: Number,
       default: 0,
       min: 0,

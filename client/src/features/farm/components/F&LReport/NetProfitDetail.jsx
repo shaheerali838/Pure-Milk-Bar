@@ -68,7 +68,7 @@ export default function NetProfitDetail({ data, onClose, onBack }) {
           </span>
         </div>
         <div className="text-3xl md:text-4xl font-black tracking-tight tabular my-2">
-          {isProfitable ? fmt(netProfit) : `-Rs. ${Math.abs(Math.round(netProfit)).toLocaleString()}`}
+          {isProfitable ? fmt(netProfit) : `Rs. -${Math.abs(Math.round(netProfit)).toLocaleString()}`}
         </div>
         <p className="text-xs text-indigo-100/90">
           {isProfitable 
