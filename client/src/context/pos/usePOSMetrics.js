@@ -1007,10 +1007,6 @@ export function usePOSMetrics({
   const preDahiBuff = hasFarmBuffEntry
     ? (openingFarmBuff + totalFarmBuffaloMilk - todayFarmBuffaloMilkSold) + processedBuffaloMilkStock
     : 0;
-
-  // Strict Single Deduction based strictly on milkType:
-  // If Cow Milk was converted: only cow milk is deducted. Buffalo milk is completely untouched.
-  // If Buffalo Milk was converted: only buffalo milk is deducted. Cow milk is completely untouched.
   const activeFarmCowDahi = hasFarmCowEntry ? farmCowConvertedToDahi : 0;
   const activeFarmBuffDahi = hasFarmBuffEntry ? farmBuffConvertedToDahi : 0;
 

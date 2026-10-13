@@ -8,7 +8,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { KpiGridSkeleton } from "@/components/ui/skeleton";
 
-export default function AnimalStatsCards() {
+import { getTodayDateStr, normalizeDateStr } from "@/utils/dateUtils";
+
+export default function AnimalStatsCards({ selectedDate }) {
   const navigate = useNavigate();
   const { animals = [], milkingLogs = [], isLoading } = useAnimalContext();
   const staffCtx = useStaffContext();
@@ -26,17 +28,15 @@ export default function AnimalStatsCards() {
   const milkingCount = animals.filter((a) => a.lactationStatus === "Milking").length;
   const nonMilkingCount = totalAnimals - milkingCount;
 
-  const now = new Date();
-  const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const isoTodayStr = now.toISOString().split("T")[0];
-  const todayLogs = (milkingLogs || []).filter((l) => {
-    if (!l.date) return false;
-    const d = l.date.split("T")[0];
-    return d === localTodayStr || d === isoTodayStr;
+  const targetDateStr = selectedDate || getTodayDateStr();
+  const targetLogs = (milkingLogs || []).filter((l) => {
+    if (!l.date && !l.createdAt) return false;
+    const d = normalizeDateStr(l.date || l.createdAt);
+    return d === targetDateStr;
   });
 
-  const totalDailyYield = (todayLogs.reduce((sum, l) => {
-    const val = parseFloat(l.yieldLiters || l.yield) || 0;
+  const totalDailyYield = (targetLogs.reduce((sum, l) => {
+    const val = parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0;
     return sum + val;
   }, 0)).toFixed(1);
 

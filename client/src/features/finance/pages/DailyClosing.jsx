@@ -49,7 +49,7 @@ export default function DailyClosing() {
     dailyCloseHistory = [],
   } = useDailyClose();
 
-  const { salesHistory = [] } = usePOSContext() || {};
+  const { salesHistory = [], supplierSalesHistory = [] } = usePOSContext() || {};
   const { intakeLogs = [] } = useIntakeContext() || {};
   const { expenses: farmExpenses = [] } = useExpense() || {};
   const { expenses: supplierExpenses = [] } = useSourcExpenseContext() || {};
@@ -249,27 +249,58 @@ export default function DailyClosing() {
       }
 
       items.forEach((item) => {
-        const src = (item.source || 'Farm').toLowerCase();
-        const isSupplier = src.includes('supplier');
-        const isMixed = src.includes('mixed');
-        const farmRatio = isMixed ? (Number(item.farmRatio) || 0.5) : (isSupplier ? 0 : 1);
-        const supplierRatio = isMixed ? (Number(item.supplierRatio) || 0.5) : (isSupplier ? 1 : 0);
-
+        const src = (item.source || '').toLowerCase();
         const itemName = (item.name || '').toLowerCase();
         const itemCat = (item.category || '').toLowerCase();
         const isDahi = itemName.includes('dahi') || itemCat.includes('dahi') || itemName.includes('yogurt') || itemCat.includes('yogurt');
 
         const itemTotal = Number(item.subtotal || item.effectiveRevenue) || ((Number(item.quantity) || 0) * (Number(item.price || item.unitPrice) || 0));
 
-        if (isDahi) {
-          farmDahiRevenue += itemTotal * farmRatio;
-          supplierDahiRevenue += itemTotal * supplierRatio;
+        if (item.supplierRevenue !== undefined && item.farmRevenue !== undefined) {
+          const sRev = Number(item.supplierRevenue) || 0;
+          const fRev = Number(item.farmRevenue) || 0;
+          if (isDahi) {
+            farmDahiRevenue += fRev;
+            supplierDahiRevenue += sRev;
+          } else {
+            farmMilkRevenue += fRev;
+            supplierMilkRevenue += sRev;
+          }
         } else {
-          farmMilkRevenue += itemTotal * farmRatio;
-          supplierMilkRevenue += itemTotal * supplierRatio;
+          const isSupplier = src.includes('supplier');
+          const isMixed = src.includes('mixed');
+          const farmRatio = isMixed ? (Number(item.farmRatio) || 0.5) : (isSupplier ? 0 : 1);
+          const supplierRatio = isMixed ? (Number(item.supplierRatio) || 0.5) : (isSupplier ? 1 : 0);
+
+          if (isDahi) {
+            farmDahiRevenue += itemTotal * farmRatio;
+            supplierDahiRevenue += itemTotal * supplierRatio;
+          } else {
+            farmMilkRevenue += itemTotal * farmRatio;
+            supplierMilkRevenue += itemTotal * supplierRatio;
+          }
         }
       });
     });
+
+    // Fallback: If supplier revenue was isolated in supplierSalesHistory
+    if (supplierMilkRevenue === 0 && supplierDahiRevenue === 0 && supplierSalesHistory.length > 0) {
+      supplierSalesHistory.forEach((sale) => {
+        const sDate = normalizeDateStr(sale.date || sale.timestamp || sale.createdAt || sale.formattedDate);
+        if (sDate !== targetDate) return;
+        (sale.items || []).forEach((item) => {
+          const itemName = (item.name || '').toLowerCase();
+          const itemCat = (item.category || '').toLowerCase();
+          const isDahi = itemName.includes('dahi') || itemCat.includes('dahi');
+          const rev = Number(item.effectiveRevenue || item.subtotal || item.supplierRevenue) || 0;
+          if (isDahi) {
+            supplierDahiRevenue += rev;
+          } else {
+            supplierMilkRevenue += rev;
+          }
+        });
+      });
+    }
 
     const farmTotalRevenue = Math.round(farmMilkRevenue + farmDahiRevenue);
     const supplierTotalRevenue = Math.round(supplierMilkRevenue + supplierDahiRevenue);
@@ -360,7 +391,7 @@ export default function DailyClosing() {
       },
       totalBusinessProfit,
     };
-  }, [summaryData, dailyCloseHistory, selectedDate, salesHistory, intakeLogs, farmExpenses, supplierExpenses]);
+  }, [summaryData, dailyCloseHistory, selectedDate, salesHistory, supplierSalesHistory, intakeLogs, farmExpenses, supplierExpenses]);
 
   // Confirm and save closing
   const handleConfirmDailyClosing = async () => {
@@ -517,9 +548,9 @@ export default function DailyClosing() {
         milkSold={(summaryData?.milk?.counterSales ?? 0) + (summaryData?.milk?.doorstepSales ?? 0)}
         counterSales={summaryData?.milk?.counterSales ?? 0}
         doorstepSales={summaryData?.milk?.doorstepSales ?? 0}
-        totalSales={summaryData?.profit?.grossRevenue ?? 0}
+        totalSales={summaryData?.profit?.grossRevenue ?? (computedPL.farm.totalRevenue + computedPL.supplier.totalRevenue)}
         moneyCollected={summaryData?.collections?.totalCollected ?? 0}
-        estimatedProfit={summaryData?.profit?.estimatedProfit ?? 0}
+        estimatedProfit={computedPL.totalBusinessProfit ?? (summaryData?.profit?.estimatedProfit ?? 0)}
         isClosed={isClosed}
       />
 

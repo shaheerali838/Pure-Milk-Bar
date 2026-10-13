@@ -30,7 +30,7 @@ import { usePOSContext } from '@/context/POSContext';
 import { useDailyClose } from '@/context/DailyCloseContext';
 import { exportMultiSectionCSV } from '@/utils/csvExport';
 import { PageSkeleton } from '@/components/ui/skeleton';
-import { getActiveBusinessDate } from '@/utils/dateUtils';
+import { getTodayDateStr } from '@/utils/dateUtils';
 import DateHeader from '@/components/common/DateHeader';
 import { useGlobalDate } from '@/context/GlobalDateContext';
 
@@ -44,7 +44,8 @@ const normalizeDate = (dateVal) => {
 
 export default function ProcurementSheet() {
   const { globalDate, setGlobalDate } = useGlobalDate();
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const todayStr = getTodayDateStr();
+  const [date, setDate] = useState(() => globalDate || todayStr);
   const [isLocked, setIsLocked] = useState(false);
   const [shiftFilter, setShiftFilter] = useState('All'); // 'All' | 'Morning' | 'Evening'
 
@@ -56,7 +57,9 @@ export default function ProcurementSheet() {
 
   const handleDateChange = (newDate) => {
     setDate(newDate);
-    setGlobalDate(newDate);
+    if (typeof setGlobalDate === 'function') {
+      setGlobalDate(newDate);
+    }
   };
 
   const { intakeLogs, isLoading: isIntakeLoading } = useIntakeContext();
@@ -70,14 +73,14 @@ export default function ProcurementSheet() {
     const parts = (date || '').split('-').map(Number);
     const cur = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
     cur.setDate(cur.getDate() - 1);
-    setDate(normalizeDate(cur));
+    handleDateChange(normalizeDate(cur));
   };
 
   const handleNextDay = () => {
     const parts = (date || '').split('-').map(Number);
     const cur = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
     cur.setDate(cur.getDate() + 1);
-    setDate(normalizeDate(cur));
+    handleDateChange(normalizeDate(cur));
   };
 
   // Dynamic Data Aggregation
@@ -342,7 +345,7 @@ export default function ProcurementSheet() {
               <input
                 type="date"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(e) => handleDateChange(e.target.value)}
                 className="border-none outline-none bg-transparent cursor-pointer font-bold text-xs"
               />
             </div>
@@ -359,7 +362,7 @@ export default function ProcurementSheet() {
             {!isToday && (
               <button
                 type="button"
-                onClick={() => setDate(todayStr)}
+                onClick={() => handleDateChange(todayStr)}
                 className="px-3 h-9.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition cursor-pointer shadow-xs"
                 title="Jump to Today"
               >

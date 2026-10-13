@@ -1,12 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Users, Droplets, DollarSign, Receipt, Clock, ChevronRight } from 'lucide-react';
 import { useSupplierContext } from '@/context/SupplierContext';
+import { useIntakeContext } from '@/context/IntakeContext';
 import { KpiGridSkeleton } from '@/components/ui/skeleton';
+import { getTodayDateStr, normalizeDateStr } from '@/utils/dateUtils';
 import SupplierCardDetailModal from './SupplierCardDetailModal';
 
-export default function SupplierCardOverflow({ onSelectSupplier }) {
+export default function SupplierCardOverflow({ onSelectSupplier, selectedDate }) {
   const { totals, suppliers, settleSupplierBalance, isLoading } = useSupplierContext();
+  const { intakeLogs = [] } = useIntakeContext() || {};
   const [activeModalCard, setActiveModalCard] = useState(null);
+
+  const todayStr = getTodayDateStr();
+  const targetDate = selectedDate || todayStr;
+  const isToday = targetDate === todayStr;
+
+  const dateStats = useMemo(() => {
+    const logs = (intakeLogs || []).filter((l) => {
+      const lDate = normalizeDateStr(l.date || l.createdAt);
+      return lDate === targetDate;
+    });
+
+    const activeSuppliersSet = new Set();
+    let sourcedLiters = 0;
+    let spend = 0;
+    let payouts = 0;
+
+    logs.forEach((b) => {
+      if (b.supplierId) activeSuppliersSet.add(String(b.supplierId));
+      else if (b.supplierName) activeSuppliersSet.add(b.supplierName.trim().toLowerCase());
+
+      const qty = parseFloat(b.quantity || b.quantityLiters) || 0;
+      const rate = parseFloat(b.ratePerLiter || b.rate) || 220;
+      const cost = parseFloat(b.totalCost || b.totalAmount) || (qty * rate);
+      const paid = b.paidAmount !== undefined && b.paidAmount !== ''
+        ? Math.min(cost, Math.max(0, parseFloat(b.paidAmount) || 0))
+        : (b.settlement === 'Paid' ? cost : (b.settlement === 'Partial' ? cost * 0.5 : 0));
+
+      sourcedLiters += qty;
+      spend += cost;
+      payouts += paid;
+    });
+
+    return {
+      activeCount: activeSuppliersSet.size,
+      sourcedLiters: parseFloat(sourcedLiters.toFixed(1)),
+      spend: Math.round(spend),
+      payouts: Math.round(payouts),
+    };
+  }, [intakeLogs, targetDate]);
 
   if (isLoading && suppliers.length === 0) {
     return <KpiGridSkeleton count={5} className="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mb-4" />;
@@ -17,37 +59,37 @@ export default function SupplierCardOverflow({ onSelectSupplier }) {
       id: 'suppliers',
       label: 'Registered Suppliers',
       value: `${totals.totalSuppliers ?? totals.totalVendors} Suppliers`,
-      sub: `${totals.activeSuppliers ?? totals.activeVendors} Active • ${totals.inactiveSuppliers ?? totals.inactiveVendors} Inactive`,
+      sub: `${dateStats.activeCount} Supplied on ${targetDate} • ${(totals.totalSuppliers ?? 0) - dateStats.activeCount} No Intake`,
       icon: Users,
       color: '#009966',
-      badge: 'Total Suppliers',
+      badge: isToday ? 'Active Today' : `Date: ${targetDate}`,
     },
     {
       id: 'sourced',
-      label: 'Total Sourced Liters',
-      value: `${totals.totalSourcedLiters.toLocaleString()} L`,
-      sub: 'Total milk volume procured',
+      label: isToday ? "Today's Sourced" : `Sourced (${targetDate})`,
+      value: `${dateStats.sourcedLiters.toLocaleString()} L`,
+      sub: `All-Time: ${totals.totalSourcedLiters.toLocaleString()} L Total`,
       icon: Droplets,
       color: '#155dfc',
-      badge: 'Procured Volume',
+      badge: isToday ? 'Procured Today' : 'Date Volume',
     },
     {
       id: 'intake_spend',
-      label: 'Total Intake Spend',
-      value: `Rs. ${(totals.totalIntakeSpend ?? totals.totalProcurementValue ?? 0).toLocaleString()}`,
-      sub: 'Gross value of all milk procured',
+      label: isToday ? "Today's Intake Spend" : `Intake Spend (${targetDate})`,
+      value: `Rs. ${dateStats.spend.toLocaleString()}`,
+      sub: `All-Time: Rs. ${(totals.totalIntakeSpend ?? totals.totalProcurementValue ?? 0).toLocaleString()}`,
       icon: DollarSign,
       color: '#0d9488',
-      badge: 'Total Spend',
+      badge: isToday ? 'Spend Today' : 'Date Spend',
     },
     {
       id: 'payouts',
-      label: 'Total Supplier Payouts',
-      value: `Rs. ${totals.totalPayouts.toLocaleString()}`,
-      sub: 'Disbursed supplier payments',
+      label: isToday ? "Today's Payouts" : `Payouts (${targetDate})`,
+      value: `Rs. ${dateStats.payouts.toLocaleString()}`,
+      sub: `All-Time: Rs. ${totals.totalPayouts.toLocaleString()}`,
       icon: Receipt,
       color: '#10b981',
-      badge: 'Total Paid',
+      badge: isToday ? 'Paid Today' : 'Date Payout',
     },
     {
       id: 'balances',

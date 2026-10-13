@@ -8,20 +8,19 @@ import AddSupplier from '../components/supplierDirectory/AddSupplier';
 import SupplierDetail from '../components/supplierDirectory/SupplierDetail';
 import DateHeader from '@/components/common/DateHeader';
 import { useGlobalDate } from '@/context/GlobalDateContext';
+import { getTodayDateStr } from '@/utils/dateUtils';
 
 export default function SupplierDirectory() {
   const { globalDate, setGlobalDate, setToday } = useGlobalDate();
+  const todayStr = getTodayDateStr();
 
-  // Strict "Starts with Today" initialization
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(() => globalDate || todayStr);
 
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    setSelectedDate(today);
-    if (typeof setToday === 'function') {
-      setToday();
+    if (globalDate) {
+      setSelectedDate(globalDate);
     }
-  }, []);
+  }, [globalDate]);
 
   const handleDateChange = (newDate) => {
     setSelectedDate(newDate);
@@ -71,6 +70,7 @@ export default function SupplierDirectory() {
     return (
       <SupplierDetail
         supplier={viewingSupplier}
+        initialDate={selectedDate}
         onBack={() => {
           setViewMode('list');
           setViewingSupplier(null);
@@ -84,7 +84,12 @@ export default function SupplierDirectory() {
   return (
     <div className="space-y-2 animate-in fade-in duration-150">
       {/* Global Date Header */}
-      <DateHeader date={selectedDate} setDate={handleDateChange} />
+      <DateHeader
+        date={selectedDate}
+        setDate={handleDateChange}
+        title="Supplier Profiles & Directory"
+        subtitle={`Procurement tracking, supplier payouts, and active ledger balances for ${selectedDate}`}
+      />
 
       {/* 1. Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -92,7 +97,6 @@ export default function SupplierDirectory() {
           <h2 className="text-xl font-bold text-slate-900 font-display flex items-center gap-2">
             Supplier Profiles &amp; Directory
           </h2>
-          
         </div>
 
         <div className="flex items-center gap-2">
@@ -109,13 +113,18 @@ export default function SupplierDirectory() {
       </div>
 
       {/* 2. Summary Cards (Farm card design) */}
-      <SupplierCardOverflow onSelectSupplier={handleOpenView} />
+      <SupplierCardOverflow
+        onSelectSupplier={handleOpenView}
+        selectedDate={selectedDate}
+      />
 
       {/* 3. Supplier Table */}
       <SupplierTable
         onView={handleOpenView}
         onEdit={handleOpenEdit}
+        selectedDate={selectedDate}
       />
     </div>
   );
 }
+

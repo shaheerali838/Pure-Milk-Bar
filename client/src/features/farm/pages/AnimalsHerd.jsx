@@ -2,32 +2,37 @@ import React, { useState, useEffect } from "react";
 import AnimalDashboard from "../components/animals/AnimalDashboard";
 import DateHeader from "@/components/common/DateHeader";
 import { useGlobalDate } from "@/context/GlobalDateContext";
+import { getTodayDateStr } from "@/utils/dateUtils";
 
 export default function AnimalsHerd() {
-  const { globalDate, setGlobalDate, setToday } = useGlobalDate();
+  const { globalDate, setGlobalDate } = useGlobalDate();
+  const todayStr = getTodayDateStr();
 
-  // Strict "Starts with Today" initialization
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(() => globalDate || todayStr);
 
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    setSelectedDate(today);
-    if (typeof setToday === 'function') {
-      setToday();
+    if (globalDate) {
+      setSelectedDate(globalDate);
     }
-  }, []);
+  }, [globalDate]);
 
   const handleDateChange = (newDate) => {
     setSelectedDate(newDate);
-    if (typeof setGlobalDate === 'function') {
+    if (typeof setGlobalDate === "function") {
       setGlobalDate(newDate);
     }
   };
 
   return (
     <div className="flex flex-col gap-2">
-      <DateHeader date={selectedDate} setDate={handleDateChange} />
+      <DateHeader
+        date={selectedDate}
+        setDate={handleDateChange}
+        title="Livestock & Herd Management"
+        subtitle={`Livestock registry, daily milk output benchmarks, and animal records for ${selectedDate}`}
+      />
       <AnimalDashboard selectedDate={selectedDate} />
     </div>
   );
 }
+
