@@ -70,7 +70,9 @@ export default function FarmCardOverflow({
     {
       label: "Available Stock (With Me)",
       value: `${farmMilkStock} L`,
-      sub: "In Cold Room Chiller",
+      sub: Number(posCtx?.inventoryMetrics?.totalMilk) > Number(farmMilkStock)
+        ? `Farm Chiller · Total: ${posCtx?.inventoryMetrics?.totalMilk} L`
+        : "In Cold Room Chiller",
       icon: Droplets,
       color: "#059669",
       badge: "Available",

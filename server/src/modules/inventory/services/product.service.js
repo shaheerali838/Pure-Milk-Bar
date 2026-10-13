@@ -1,6 +1,7 @@
 import Product from '../../../models/Product.model.js';
 import AppError from '../../../utils/AppError.js';
 import { uploadToCloudinary } from '../../../config/cloudinary.js';
+import { getLiveAvailableStock, isMilkVariant, isDahiVariant } from '../../../utils/stockResolver.js';
 
 class ProductService {
   async createProduct(data) {
@@ -50,7 +51,22 @@ class ProductService {
       Product.countDocuments(filter),
     ]);
 
-    return { products, total, page, limit };
+    const enrichedProducts = await Promise.all(
+      products.map(async (p) => {
+        if (isMilkVariant(p.name, p.category) || isDahiVariant(p.name, p.category)) {
+          const liveStock = await getLiveAvailableStock(p);
+          const stockVal = Math.max(Number(p.currentStock || 0), liveStock);
+          return {
+            ...p,
+            currentStock: stockVal,
+            stock: stockVal,
+          };
+        }
+        return p;
+      })
+    );
+
+    return { products: enrichedProducts, total, page, limit };
   }
 
   async getProductById(id) {
@@ -58,6 +74,13 @@ class ProductService {
 
     if (!product) {
       throw new AppError('Product not found', 404, 'PRODUCT_NOT_FOUND');
+    }
+
+    if (isMilkVariant(product.name, product.category) || isDahiVariant(product.name, product.category)) {
+      const liveStock = await getLiveAvailableStock(product);
+      const stockVal = Math.max(Number(product.currentStock || 0), liveStock);
+      product.currentStock = stockVal;
+      product.stock = stockVal;
     }
 
     return product;

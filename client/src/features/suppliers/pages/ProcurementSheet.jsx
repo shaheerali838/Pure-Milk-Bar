@@ -26,8 +26,6 @@ import { useDailyClose } from '@/context/DailyCloseContext';
 import { exportMultiSectionCSV } from '@/utils/csvExport';
 import { PageSkeleton } from '@/components/ui/skeleton';
 import { getTodayDateStr } from '@/utils/dateUtils';
-import DateHeader from '@/components/common/DateHeader';
-import { useGlobalDate } from '@/context/GlobalDateContext';
 
 const normalizeDate = (dateVal) => {
   if (!dateVal) return '';
@@ -38,24 +36,10 @@ const normalizeDate = (dateVal) => {
 };
 
 export default function ProcurementSheet() {
-  const { globalDate, setGlobalDate } = useGlobalDate();
   const todayStr = getTodayDateStr();
-  const [date, setDate] = useState(() => globalDate || todayStr);
+  const [date, setDate] = useState(() => todayStr);
   const [isLocked, setIsLocked] = useState(false);
   const [shiftFilter, setShiftFilter] = useState('All'); // 'All' | 'Morning' | 'Evening'
-
-  useEffect(() => {
-    if (globalDate) {
-      setDate(globalDate);
-    }
-  }, [globalDate]);
-
-  const handleDateChange = (newDate) => {
-    setDate(newDate);
-    if (typeof setGlobalDate === 'function') {
-      setGlobalDate(newDate);
-    }
-  };
 
   const { intakeLogs, isLoading: isIntakeLoading } = useIntakeContext();
   const { suppliers, isLoading: isSupplierLoading } = useSupplierContext();
@@ -283,14 +267,6 @@ export default function ProcurementSheet() {
 
   return (
     <div className="space-y-3">
-      {/* DateHeader at Top of Procurement Sheet */}
-      <DateHeader
-        date={date}
-        setDate={handleDateChange}
-        title="Daily Procurement Master Sheet"
-        subtitle={`Route-wise milk intake, fat rates, and supplier payments strictly for ${date}`}
-      />
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>

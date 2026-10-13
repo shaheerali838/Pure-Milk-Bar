@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import posService from '@/services/posService.js';
 import { broadcastSync } from '@/utils/syncBroadcaster';
-import { isLegacyDummySale, isObjectId } from './posHelpers';
+import { isLegacyDummySale, isObjectId, matchProductForOrderItem, resolveAvailableStock } from './posHelpers';
 import { sortByDateDesc, ensureValidDate, normalizeDateStr, getPktTodayString, formatStandardDate, getActiveBusinessDate, getLocalDate } from '@/utils/dateUtils';
 
 export function usePOSOrders({
@@ -163,26 +163,15 @@ export function usePOSOrders({
       }
     }
 
-    // Strict inventory stock check: Prevent order if stock is 0 or insufficient
+    // Strict inventory stock check: Prevent order if live stock is 0 or insufficient
     const allProds = productsState?.products || [];
+    const liveMetrics = typeof getMetrics === 'function' ? getMetrics() : {};
     for (const cartItem of cart) {
       const reqQty = Number(cartItem.quantity) || 0;
       if (reqQty <= 0) continue;
-      const prod = allProds.find(
-        (p) =>
-          p.id === cartItem.id ||
-          p._id === cartItem.id ||
-          (cartItem.productId && (p.id === cartItem.productId || p._id === cartItem.productId)) ||
-          (p.sku && cartItem.sku && String(p.sku).toUpperCase() === String(cartItem.sku).toUpperCase()) ||
-          (p.name && cartItem.name && p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase()) ||
-          (cartItem.name && p.name && (
-            (cartItem.name.toLowerCase().includes('cow') && p.name.toLowerCase().includes('cow')) ||
-            (cartItem.name.toLowerCase().includes('buffalo') && p.name.toLowerCase().includes('buffalo')) ||
-            (cartItem.name.toLowerCase().includes('dahi') && p.name.toLowerCase().includes('dahi'))
-          ))
-      );
+      const prod = matchProductForOrderItem(cartItem, allProds);
       if (prod) {
-        const avail = Number(prod.currentStock ?? prod.stock ?? 0);
+        const avail = resolveAvailableStock(prod, cartItem, liveMetrics);
         if (avail <= 0 || reqQty > avail) {
           toast.error(`Cannot place sale: Insufficient stock for "${prod.name}". Available: ${avail} ${prod.unit || ''}, Requested: ${reqQty}`);
           return null;
