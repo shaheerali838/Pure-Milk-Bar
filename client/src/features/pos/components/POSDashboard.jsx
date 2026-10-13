@@ -264,7 +264,7 @@ export default function POSDashboard() {
             onClick={() => setIsWalkinHistoryOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300 transition shadow-2xs cursor-pointer"
           >
-            <span>🥛</span>
+            <span></span>
             <span>Walk-in History</span>
           </button>
 
@@ -327,7 +327,6 @@ export default function POSDashboard() {
                   { id: 'all', label: 'All Items' },
                   { id: 'milk', label: 'Milk' },
                   { id: 'dahi', label: 'Dahi' },
-                  { id: 'lassi', label: 'Lassi' },
                 ].map((cat) => (
                   <button
                     key={cat.id}
@@ -420,10 +419,7 @@ export default function POSDashboard() {
           <div className="bg-white p-6 rounded-2xl shadow-2xl border border-slate-100 flex flex-col items-center text-center max-w-sm mx-4 space-y-4">
             <div className="relative">
               <div className="w-16 h-16 rounded-full border-4 border-emerald-100 border-t-emerald-600 animate-spin flex items-center justify-center"></div>
-              <div className="absolute inset-0 flex items-center justify-center text-2xl">
-                🥛
               </div>
-            </div>
             <div>
               <h3 className="text-base font-black text-slate-900 font-display">
                 Applying Sale &amp; Refreshing...
