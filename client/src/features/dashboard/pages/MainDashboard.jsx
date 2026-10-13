@@ -11,7 +11,6 @@ import { Link } from 'react-router-dom';
 import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
 
 // Modular Components
-import DashboardDateFilter from '@/components/common/DashboardDateFilter';
 import TopSummaryCards from '../components/mainDashboard/TopSummaryCards';
 import FarmYieldHub from '../components/mainDashboard/FarmYieldHub';
 import SupplierProcurementHub from '../components/mainDashboard/SupplierProcurementHub';
