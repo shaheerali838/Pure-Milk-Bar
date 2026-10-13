@@ -6,6 +6,9 @@ import { X, Receipt, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useExpense } from '../../../../context/ExpenseContext';
 import { useAnimalContext } from '../../../../context/AnimalContext';
+import { useDailyClose } from '../../../../context/DailyCloseContext';
+import { useGlobalDate, getTodayDateStr } from '../../../../context/GlobalDateContext';
+import DayClosedLockOverlay from '@/components/common/DayClosedLockOverlay';
 
 const EXPENSE_CATEGORIES = [
   "Feed & Fodder (Silage, Wanda, Vanda)",
@@ -26,6 +29,8 @@ const EXPENSE_CATEGORIES = [
 export default function RecordExpenseForm({ expenseId, onClose }) {
   const { addExpense, editExpense, expenses } = useExpense();
   const { animals = [] } = useAnimalContext();
+  const { isDayClosed } = useDailyClose();
+  const { globalDate } = useGlobalDate();
 
   const editingRecord = expenseId ? expenses.find(e => e.id === expenseId || e._id === expenseId || String(e.id) === String(expenseId)) : null;
 
@@ -35,7 +40,7 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
     category: '',
     description: '',
     amount: '',
-    date: new Date().toISOString().split('T')[0],
+    date: globalDate || getTodayDateStr(),
     paymentMethod: 'Cash',
     receiptRef: '',
     authorizedBy: '',
@@ -60,6 +65,10 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isDayClosed) {
+      toast.error("Day is Closed. Open New Day to continue operations.");
+      return;
+    }
     if (!formData.amount || Number(formData.amount) <= 0) {
       toast.error('Please enter a valid expense amount greater than 0');
       return;
@@ -119,7 +128,8 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
           </Button>
         </div>
 
-        <div className="flex-1 p-6 overflow-y-auto no-scrollbar">
+        <div className="flex-1 p-6 overflow-y-auto no-scrollbar relative">
+          {isDayClosed && <DayClosedLockOverlay />}
           <form id="record-expense-form" onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -259,8 +269,8 @@ export default function RecordExpenseForm({ expenseId, onClose }) {
           <Button 
             type="submit" 
             form="record-expense-form" 
-            disabled={isSubmitting}
-            className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-sm transition-all active:scale-95 cursor-pointer flex items-center gap-2"
+            disabled={isSubmitting || isDayClosed}
+            className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-sm transition-all active:scale-95 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
             {editingRecord ? 'Update Expense' : 'Save Expense'}

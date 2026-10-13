@@ -1,26 +1,33 @@
-import React, { useState, useMemo } from 'react';
-import { FileText, Calendar, Download, Printer, CheckCircle2, Lock, Droplets, Layers, Banknote, Sun, Moon, TrendingUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table';
+  FileText,
+  Calendar,
+  Download,
+  Printer,
+  CheckCircle2,
+  Lock,
+  Droplets,
+  Layers,
+  Banknote,
+  DollarSign,
+  Sun,
+  Moon,
+  TrendingUp,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import ProcurementMasterTable from '../components/procurementSheet/ProcurementMasterTable';
+import ProcurementKPICards from '../components/procurementSheet/ProcurementKPICards';
 
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
+import { useDailyClose } from '@/context/DailyCloseContext';
 import { exportMultiSectionCSV } from '@/utils/csvExport';
 import { PageSkeleton } from '@/components/ui/skeleton';
-
-const getTodayDateStr = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+import { getTodayDateStr } from '@/utils/dateUtils';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 
 const normalizeDate = (dateVal) => {
   if (!dateVal) return '';
@@ -31,34 +38,44 @@ const normalizeDate = (dateVal) => {
 };
 
 export default function ProcurementSheet() {
-  const [date, setDate] = useState(() => getTodayDateStr());
+  const { globalDate, setGlobalDate } = useGlobalDate();
+  const todayStr = getTodayDateStr();
+  const [date, setDate] = useState(() => globalDate || todayStr);
   const [isLocked, setIsLocked] = useState(false);
   const [shiftFilter, setShiftFilter] = useState('All'); // 'All' | 'Morning' | 'Evening'
+
+  useEffect(() => {
+    if (globalDate) {
+      setDate(globalDate);
+    }
+  }, [globalDate]);
+
+  const handleDateChange = (newDate) => {
+    setDate(newDate);
+    if (typeof setGlobalDate === 'function') {
+      setGlobalDate(newDate);
+    }
+  };
 
   const { intakeLogs, isLoading: isIntakeLoading } = useIntakeContext();
   const { suppliers, isLoading: isSupplierLoading } = useSupplierContext();
   const { expenses } = useSourcExpenseContext();
   const { supplierSalesHistory = [], salesHistory = [] } = usePOSContext() || {};
 
-  if ((isIntakeLoading || isSupplierLoading) && intakeLogs.length === 0 && suppliers.length === 0) {
-    return <PageSkeleton />;
-  }
-
-  const todayStr = getTodayDateStr();
   const isToday = date === todayStr;
 
   const handlePrevDay = () => {
     const parts = (date || '').split('-').map(Number);
     const cur = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
     cur.setDate(cur.getDate() - 1);
-    setDate(normalizeDate(cur));
+    handleDateChange(normalizeDate(cur));
   };
 
   const handleNextDay = () => {
     const parts = (date || '').split('-').map(Number);
     const cur = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date();
     cur.setDate(cur.getDate() + 1);
-    setDate(normalizeDate(cur));
+    handleDateChange(normalizeDate(cur));
   };
 
   // Dynamic Data Aggregation
@@ -260,8 +277,20 @@ export default function ProcurementSheet() {
     });
   };
 
+  if ((isIntakeLoading || isSupplierLoading) && intakeLogs.length === 0 && suppliers.length === 0) {
+    return <PageSkeleton />;
+  }
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      {/* DateHeader at Top of Procurement Sheet */}
+      <DateHeader
+        date={date}
+        setDate={handleDateChange}
+        title="Daily Procurement Master Sheet"
+        subtitle={`Route-wise milk intake, fat rates, and supplier payments strictly for ${date}`}
+      />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
@@ -308,7 +337,7 @@ export default function ProcurementSheet() {
               <input
                 type="date"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(e) => handleDateChange(e.target.value)}
                 className="border-none outline-none bg-transparent cursor-pointer font-bold text-xs"
               />
             </div>
@@ -325,7 +354,7 @@ export default function ProcurementSheet() {
             {!isToday && (
               <button
                 type="button"
-                onClick={() => setDate(todayStr)}
+                onClick={() => handleDateChange(todayStr)}
                 className="px-3 h-9.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition cursor-pointer shadow-xs"
                 title="Jump to Today"
               >
@@ -371,81 +400,7 @@ export default function ProcurementSheet() {
       </div>
 
       {/* Primary KPI Ribbon (Purchases, POS Sales, Expenses, Net Profit, Quality) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
-        {[
-          {
-            id: 'total_procured',
-            title: 'Procured Volume',
-            amount: `${totals.totalCollected.toFixed(1)} L`,
-            sub: `${totals.farmersCount} Farmers intake`,
-            icon: Droplets,
-            color: '#009966',
-            badge: 'Intake',
-          },
-          {
-            id: 'total_payable',
-            title: 'Milk Purchases',
-            amount: `Rs. ${totals.totalNetPayable.toLocaleString()}`,
-            sub: 'Farmer Disbursements',
-            icon: Banknote,
-            color: '#d97706',
-            badge: 'Khata',
-          },
-          {
-            id: 'supplier_sales',
-            title: 'Supplier POS Sales',
-            amount: `Rs. ${totals.totalSupplierSales.toLocaleString()}`,
-            sub: 'Resale milk + Dahi',
-            icon: TrendingUp,
-            color: '#009966',
-            badge: 'Sales',
-          },
-          {
-            id: 'supplier_expenses',
-            title: 'Sourcing Expenses',
-            amount: `Rs. ${totals.totalExpenses.toLocaleString()}`,
-            sub: 'Chilling & transit',
-            icon: Banknote,
-            color: '#e11d48',
-            badge: 'Expense',
-          },
-          {
-            id: 'net_profit',
-            title: 'Supplier Net Profit',
-            amount: `${totals.daySupplierNetProfit >= 0 ? '+' : '-'} Rs. ${Math.abs(totals.daySupplierNetProfit).toLocaleString()}`,
-            sub: 'Net Trading Margin',
-            icon: TrendingUp,
-            color: totals.daySupplierNetProfit >= 0 ? '#059669' : '#dc2626',
-            badge: 'Bachat',
-          },
-        ].map(({ id, title, amount, sub, icon: Icon, color, badge }) => (
-          <div
-            key={id}
-            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs"
-          >
-            <div className="flex items-start justify-between mb-1.5">
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
-                style={{ background: `${color}15` }}
-              >
-                <Icon style={{ width: 15, height: 15, color }} />
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
-                  {badge}
-                </span>
-              </div>
-            </div>
-            <div>
-              <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
-                {amount}
-              </p>
-              <p className="text-xs font-bold text-slate-800">{title}</p>
-              <p className="text-[10px] font-medium text-slate-400 line-clamp-1">{sub}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      <ProcurementKPICards totals={totals} />
 
       {/* Route-Wise Collections Cards */}
       {routeSummaries.length > 0 && (
@@ -495,147 +450,8 @@ export default function ProcurementSheet() {
         </div>
       )}
 
-      {/* Detailed Master Procurement Table */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden mt-4">
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h4 className="font-bold text-slate-900 font-display text-sm sm:text-base">
-              Daily Master Intake & Payables Sheet
-            </h4>
-            <p className="text-xs text-slate-500">
-              Shift-wise intake volume, quality testing, and final calculated payables.
-            </p>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <Table className="w-full text-left text-xs sm:text-sm">
-            <TableHeader className="bg-slate-50/80 border-b border-slate-200">
-              <TableRow>
-                <TableHead className="py-3 px-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                  Supplier
-                </TableHead>
-                <TableHead className="py-3 px-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
-                  Morning (L/Fat)
-                </TableHead>
-                <TableHead className="py-3 px-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
-                  Evening (L/Fat)
-                </TableHead>
-                <TableHead className="py-3 px-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
-                  Total (L)
-                </TableHead>
-                <TableHead className="py-3 px-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-center">
-                  Avg Fat
-                </TableHead>
-                <TableHead className="py-3 px-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
-                  Net Rate
-                </TableHead>
-                <TableHead className="py-3 px-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
-                  Gross (Rs.)
-                </TableHead>
-                <TableHead className="py-3 px-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
-                  Advance (Rs.)
-                </TableHead>
-                <TableHead className="py-3 px-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
-                  Net Due (Rs.)
-                </TableHead>
-                <TableHead className="py-3 px-3 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-center">
-                  Dispatch
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody className="divide-y divide-slate-100">
-              {rows.length > 0 ? (
-                rows.map((row) => (
-                  <TableRow
-                    key={row.code}
-                    className="hover:bg-slate-50/60 transition-colors duration-150"
-                  >
-                    <TableCell className="py-3.5 px-3">
-                      <div className="font-bold text-slate-900 font-display">{row.farmer}</div>
-                      <div className="text-[11px] text-slate-400 font-mono">
-                        {row.code} • {row.route}
-                      </div>
-                    </TableCell>
-
-                    <TableCell className="py-3.5 px-3 text-right tabular text-xs">
-                      <span className="font-bold text-slate-800">{row.morningLiters.toFixed(1)} L</span>
-                      <span className="text-[11px] text-amber-600 block">({row.morningFat.toFixed(2)}%)</span>
-                    </TableCell>
-
-                    <TableCell className="py-3.5 px-3 text-right tabular text-xs">
-                      <span className="font-bold text-slate-800">{row.eveningLiters.toFixed(1)} L</span>
-                      <span className="text-[11px] text-indigo-600 block">({row.eveningFat.toFixed(2)}%)</span>
-                    </TableCell>
-
-                    <TableCell className="py-3.5 px-3 text-right font-bold text-slate-900 tabular">
-                      {row.totalLiters.toFixed(1)} L
-                    </TableCell>
-
-                    <TableCell className="py-3.5 px-3 text-center">
-                      <span className="inline-block px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-bold tabular text-xs">
-                        {row.weightedFat.toFixed(2)}%
-                      </span>
-                    </TableCell>
-
-                    <TableCell className="py-3.5 px-3 text-right font-medium text-slate-700 tabular text-xs">
-                      Rs. {row.rate.toFixed(1)}
-                    </TableCell>
-
-                    <TableCell className="py-3.5 px-3 text-right font-semibold text-slate-800 tabular text-xs">
-                      Rs. {row.grossDue.toLocaleString()}
-                    </TableCell>
-
-                    <TableCell className="py-3.5 px-3 text-right text-rose-600 font-medium tabular text-xs">
-                      {row.advanceDeduction > 0
-                        ? `-Rs. ${row.advanceDeduction.toLocaleString()}`
-                        : '-'}
-                    </TableCell>
-
-                    <TableCell className="py-3.5 px-3 text-right font-bold text-emerald-700 tabular">
-                      Rs. {row.netPayable.toLocaleString()}
-                    </TableCell>
-
-                    <TableCell className="py-3.5 px-3 text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
-                        {row.dispatchStatus}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={10} className="py-8 text-center text-slate-500">
-                    No intake records found for {date}.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* Footer Summary */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-4 text-slate-600">
-            <span>
-              Total Filtered Volume: <strong>{totals.totalCollected.toFixed(1)} Liters</strong>
-            </span>
-            <span>•</span>
-            <span>
-              Morning: <strong>{totals.totalMorning.toFixed(1)} L</strong> | Evening:{' '}
-              <strong>{totals.totalEvening.toFixed(1)} L</strong>
-            </span>
-          </div>
-
-          <div className="text-right">
-            <span className="text-slate-500 font-medium mr-2">Total Net Payable:</span>
-            <span className="text-base font-bold text-slate-900 tabular font-display">
-              Rs. {totals.totalNetPayable.toLocaleString()}
-            </span>
-          </div>
-        </div>
-      </div>
+      {/* Detailed Master Procurement Table Component */}
+      <ProcurementMasterTable rows={rows} totals={totals} date={date} />
     </div>
   );
 }

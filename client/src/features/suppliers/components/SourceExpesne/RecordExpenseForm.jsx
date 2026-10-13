@@ -7,10 +7,13 @@ import {
 } from '@/context/SourcExpenseContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
 import { useStaffContext } from '@/context/StaffContext';
+import { useDailyClose } from '@/context/DailyCloseContext';
+import { useGlobalDate, getTodayDateStr } from '@/context/GlobalDateContext';
+import DayClosedLockOverlay from '@/components/common/DayClosedLockOverlay';
 
 const initialForm = {
   category: 'Collection Route Fuel',
-  date: new Date().toISOString().split('T')[0],
+  date: getTodayDateStr(),
   paymentMode: 'Cash on Hand',
   description: '',
   amount: '',
@@ -30,11 +33,16 @@ export default function RecordExpenseForm({
   const { staffList: deliveryStaff = [] } = useDeliveryStaffContext() || {};
   const staffCtx = useStaffContext?.();
   const generalStaff = staffCtx?.staffList || [];
+  const { isDayClosed } = useDailyClose();
+  const { globalDate } = useGlobalDate();
 
   const handleBack = onBack || onClose;
   const isEdit = Boolean(editingExpense);
 
-  const [formData, setFormData] = useState(initialForm);
+  const [formData, setFormData] = useState(() => ({
+    ...initialForm,
+    date: globalDate || getTodayDateStr(),
+  }));
   const [errors, setErrors] = useState({});
 
   // Delivery staff options
@@ -106,6 +114,10 @@ export default function RecordExpenseForm({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isDayClosed) {
+      alert("Day is Closed. Open New Day to continue operations.");
+      return;
+    }
 
     const newErrors = {};
     if (!formData.description.trim()) {
@@ -172,7 +184,8 @@ export default function RecordExpenseForm({
       </div>
 
       {/* Main form container */}
-      <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs no-scrollbar">
+      <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs no-scrollbar relative">
+        {isDayClosed && <DayClosedLockOverlay />}
         <form onSubmit={handleSubmit} className="space-y-3.5">
           {/* Section 1: Classification & Timing */}
           <div>
@@ -436,7 +449,8 @@ export default function RecordExpenseForm({
             </button>
             <button
               type="submit"
-              className={`flex items-center gap-1.5 px-5 py-2 rounded-lg text-white text-xs font-bold shadow-xs transition cursor-pointer ${
+              disabled={isDayClosed}
+              className={`flex items-center gap-1.5 px-5 py-2 rounded-lg text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                 isEdit
                   ? 'bg-indigo-600 hover:bg-indigo-700'
                   : 'bg-[#4f39f6] hover:bg-[#3d29df]'

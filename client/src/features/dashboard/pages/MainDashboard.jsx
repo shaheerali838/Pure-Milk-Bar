@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -9,6 +9,9 @@ import { Link } from 'react-router-dom';
 
 // Reusable Date Filter Bar
 import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
+import { getLocalDate } from '@/utils/dateUtils';
 
 // Modular Components
 import TopSummaryCards from '../components/mainDashboard/TopSummaryCards';
@@ -22,9 +25,48 @@ import SalesAndReceivablesSection from '../components/mainDashboard/SalesAndRece
 import DashboardFooterSummary from '../components/mainDashboard/DashboardFooterSummary';
 
 export default function MainDashboard() {
+  const { globalDate, setGlobalDate } = useGlobalDate();
+  const [selectedDate, setSelectedDate] = useState(() => getLocalDate());
   const [dateFilter, setDateFilter] = useState('today');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  // Strict rule: MainDashboard MUST always open directly on 'today'
+  useEffect(() => {
+    const today = getLocalDate();
+    setSelectedDate(today);
+    setDateFilter('today');
+    setStartDate('');
+    setEndDate('');
+    if (globalDate && globalDate !== today) {
+      setGlobalDate(today);
+    }
+  }, []);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    setGlobalDate(newDate);
+    if (newDate === getLocalDate()) {
+      setDateFilter('today');
+      setStartDate('');
+      setEndDate('');
+    } else {
+      setDateFilter('custom');
+      setStartDate(newDate);
+      setEndDate(newDate);
+    }
+  };
+
+  const handleFilterChange = (newFilter) => {
+    setDateFilter(newFilter);
+    if (newFilter === 'today') {
+      const today = getLocalDate();
+      setSelectedDate(today);
+      setGlobalDate(today);
+      setStartDate('');
+      setEndDate('');
+    }
+  };
 
   const todayFormatted = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -35,6 +77,13 @@ export default function MainDashboard() {
 
   return (
     <div className="relative min-h-screen bg-slate-50/50 pb-10 space-y-4 animate-in fade-in duration-200">
+      {/* DateHeader at Top of Main Dashboard */}
+      <DateHeader
+        date={selectedDate}
+        setDate={handleDateChange}
+        title="Enterprise Command Center"
+        subtitle={`Viewing daily operations strictly for ${selectedDate}`}
+      />
       {/* 1. Header Bar with Business Title & Quick Action Shortcuts */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2 pt-2">
         <div className="flex items-center gap-3">
@@ -89,7 +138,7 @@ export default function MainDashboard() {
       {/* Date Filter Bar */}
       <DashboardDateFilterBar
         dateFilter={dateFilter}
-        onFilterChange={setDateFilter}
+        onFilterChange={handleFilterChange}
         startDate={startDate}
         endDate={endDate}
         onStartDateChange={setStartDate}

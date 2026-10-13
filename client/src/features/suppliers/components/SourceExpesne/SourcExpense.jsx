@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Plus, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
+import { useDailyClose } from '@/context/DailyCloseContext';
+import DayClosedLockOverlay from '@/components/common/DayClosedLockOverlay';
 import SourcExpenseCards from './SourcExpenseCards';
 import SourcExpenseTable from './SourcExpenseTable';
 import RecordExpenseForm from './RecordExpenseForm';
@@ -9,6 +11,7 @@ import ExpenseVoucherDetail from './ExpenseVoucherDetail';
 
 export default function SourcExpense() {
   const { deleteExpense } = useSourcExpenseContext();
+  const { isDayClosed } = useDailyClose();
 
   // Full-space view modes matching Animal module (AnimalAdd & AnimalDetail)
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -58,6 +61,7 @@ export default function SourcExpense() {
   // Default: Main Dashboard / Table View
   return (
     <div className="space-y-2 animate-in fade-in duration-150">
+      {isDayClosed && <DayClosedLockOverlay inline className="mb-2" />}
       {/* 1. Page Header with Title and 'Record Sourcing Expense' Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
@@ -70,8 +74,9 @@ export default function SourcExpense() {
         <div className="flex items-center gap-2">
           <Button
             type="button"
+            disabled={isDayClosed}
             onClick={() => setIsAddOpen(true)}
-            className="flex items-center gap-2 px-4 h-[40px] rounded-full text-white text-xs font-semibold shadow-sm transition-all hover:brightness-110 active:translate-y-0 cursor-pointer"
+            className="flex items-center gap-2 px-4 h-[40px] rounded-full text-white text-xs font-semibold shadow-sm transition-all hover:brightness-110 active:translate-y-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ backgroundColor: '#4f39f6' }}
           >
             <Plus className="w-4 h-4 shrink-0" />

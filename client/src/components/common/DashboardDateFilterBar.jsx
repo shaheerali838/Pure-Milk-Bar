@@ -4,6 +4,7 @@ import { getDateRangeBoundaries } from '@/utils/dateUtils';
 
 export const DATE_FILTER_TABS = [
   { id: 'today',      label: 'Today' },
+  { id: 'yesterday',  label: 'Yesterday' },
   { id: 'this_week',  label: 'This Week' },
   { id: 'this_month', label: 'This Month' },
   { id: 'custom',     label: 'Custom' },

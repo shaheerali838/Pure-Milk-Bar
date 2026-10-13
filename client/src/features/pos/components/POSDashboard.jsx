@@ -23,14 +23,48 @@ import POSWalkinHistoryModal from './POSWalkinHistoryModal';
 import POSDoorstepOrdersModal from './POSDoorstepOrdersModal';
 import { getProductIcon, getProductMeta } from '@/features/inventory/components/AddProduct';
 import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
+import DayClosedLockOverlay from '@/components/common/DayClosedLockOverlay';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 
-export default function POSDashboard() {
   const [searchParams] = useSearchParams();
+  const { globalDate, setGlobalDate } = useGlobalDate();
+  const [selectedDate, setSelectedDate] = useState(() => globalDate || new Date().toISOString().split('T')[0]);
   const [dateFilter, setDateFilter] = useState('today');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  React.useEffect(() => {
+    if (globalDate) {
+      setSelectedDate(globalDate);
+      if (globalDate === new Date().toISOString().split('T')[0]) {
+        setDateFilter('today');
+        setStartDate('');
+        setEndDate('');
+      } else {
+        setDateFilter('custom');
+        setStartDate(globalDate);
+        setEndDate(globalDate);
+      }
+    }
+  }, [globalDate]);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    setGlobalDate(newDate);
+    if (newDate === new Date().toISOString().split('T')[0]) {
+      setDateFilter('today');
+      setStartDate('');
+      setEndDate('');
+    } else {
+      setDateFilter('custom');
+      setStartDate(newDate);
+      setEndDate(newDate);
+    }
+  };
   const context = usePOSContext() || {};
   const {
+    isDayClosed = false,
     products = [],
     cart = [],
     deleteProduct,
@@ -134,8 +168,8 @@ export default function POSDashboard() {
       const farmD = Number(inventoryMetrics?.rawFarmDahiStock ?? inventoryMetrics?.farmDahiStock) || 0;
       const supD = Number(inventoryMetrics?.rawSupplierDahiStock ?? inventoryMetrics?.supplierDahiStock) || 0;
       const liveDahi = Number((farmD + supD).toFixed(2));
-      if (!isNaN(liveDahi) && liveDahi >= 0) return liveDahi;
-      return Math.max(0, Number(prod.stock) || 0);
+      if (liveDahi > 0) return liveDahi;
+      return Math.max(0, Number(prod.stock) || liveDahi || 0);
     }
 
     if (cat.includes('milk') || name.includes('milk')) {
@@ -166,6 +200,10 @@ export default function POSDashboard() {
 
   // Handle product click
   const handleProductCardClick = (product) => {
+    if (isDayClosed) {
+      toast.error('🔒 Day is Closed. Open New Day to continue operations.');
+      return;
+    }
     if (isSaleRefreshing) return;
     const displayStock = getProductDisplayStock(product);
     const unitLabel = product.unit?.replace('per ', '') || 'L';
@@ -209,6 +247,13 @@ export default function POSDashboard() {
 
   return (
     <div className="h-[calc(100vh-4.2rem)] max-h-[calc(100vh-4.2rem)] flex flex-col overflow-hidden space-y-2">
+      {/* DateHeader at Top of POS Dashboard */}
+      <DateHeader
+        date={selectedDate}
+        setDate={handleDateChange}
+        title="Point of Sale & Counter Checkout"
+        subtitle={`Live register, sales orders, and cash drawer strictly for ${selectedDate}`}
+      />
       <div className="flex flex-wrap items-center justify-between gap-2 shrink-0">
         <div>
           <div className="flex items-center gap-2.5">
@@ -296,6 +341,7 @@ export default function POSDashboard() {
 
           {/* Product Items Catalog Container */}
           <div className="flex-1 min-h-0 flex flex-col bg-white border border-slate-200/90 rounded-2xl p-3 shadow-2xs overflow-hidden">
+            {isDayClosed && <DayClosedLockOverlay inline className="mb-2" />}
             {/* Search & Category Filter Toolbar */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 justify-between pb-2.5 border-b border-slate-100 shrink-0">
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-3.5 py-1.5 text-sm text-slate-700 w-full sm:w-64 md:w-72 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">

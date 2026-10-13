@@ -1,22 +1,11 @@
-// Helper to determine if a given date or timestamp matches today in local calendar
-export const isTodayDate = (dateVal) => {
+import { normalizeDateStr, getActiveBusinessDate, getLocalDate } from '../../utils/dateUtils';
+
+// Helper to determine if a given date or timestamp matches today in local timezone
+export const isTodayDate = (dateVal, activeBusinessDate = null) => {
   if (!dateVal) return false;
-  if (typeof dateVal === 'string' && dateVal.includes('T')) {
-    dateVal = dateVal.split('T')[0];
-  }
-  if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateVal.trim())) {
-    const [y, m, d] = dateVal.trim().split('-').map(Number);
-    const now = new Date();
-    return y === now.getFullYear() && m === (now.getMonth() + 1) && d === now.getDate();
-  }
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return false;
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
+  const targetDate = activeBusinessDate || getLocalDate();
+  const dStr = normalizeDateStr(dateVal);
+  return Boolean(dStr && dStr === targetDate);
 };
 
 // Helper to identify and purge any legacy dummy sales records (e.g. INV-1025..1028, mock names)
@@ -70,6 +59,13 @@ export const defaultPOSContextValue = {
     totalDahiStock: 0,
   },
   isSaleRefreshing: false,
+  isDayClosed: false,
+  activeDate: null,
+  openingStock: {},
+  dailyCloseHistory: [],
+  closeDay: () => {},
+  openNewDay: () => {},
+  reopenDay: () => {},
   farmStock: null,
   setFarmStock: () => {},
   supplierStock: null,

@@ -4,7 +4,11 @@ import { useExpense } from '@/context/ExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useStaffContext } from '@/context/StaffContext';
+import { useDailyClose } from '@/context/DailyCloseContext';
 import { exportMultiSectionCSV } from '@/utils/csvExport';
+import { getPktTodayString, normalizeDateStr, getActiveBusinessDate } from '@/utils/dateUtils';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 
 import PLCardOverflow from '../components/F&LReport/PLCardOverflow';
 import SellingRevenue from '../components/F&LReport/SellingRevenue';
@@ -18,6 +22,8 @@ export default function FarmPL() {
   const { farmSalesHistory = [], farmSalesMetrics } = usePOSContext();
   const { milkingLogs = [] } = useAnimalContext();
   const { salaryPayments = [], deleteSalaryPayment } = useStaffContext();
+  const { activeDate } = useDailyClose() || {};
+  const effectiveToday = activeDate || getActiveBusinessDate();
 
   const handleDeleteSalaryPayment = async (paymentId) => {
     try {
@@ -28,11 +34,33 @@ export default function FarmPL() {
     if (fetchExpenses) fetchExpenses();
   };
 
-  // 1. Filter & Date State
-  const [dateFilterMode, setDateFilterMode] = useState('today'); // 'today' (default) | 'this_week' | 'this_month' | 'all' | 'custom'
-  const [selectedDate, setSelectedDate] = useState('');
+  // 1. Filter & Date State strictly initialized to Today
+  const { globalDate, setGlobalDate } = useGlobalDate();
+  const [selectedDate, setSelectedDate] = useState(() => globalDate || new Date().toISOString().split('T')[0]);
+  const [dateFilterMode, setDateFilterMode] = useState('today');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  React.useEffect(() => {
+    if (globalDate) {
+      setSelectedDate(globalDate);
+      if (globalDate === new Date().toISOString().split('T')[0]) {
+        setDateFilterMode('today');
+      } else {
+        setDateFilterMode('custom');
+      }
+    }
+  }, [globalDate]);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    if (typeof setGlobalDate === 'function') setGlobalDate(newDate);
+    if (newDate === new Date().toISOString().split('T')[0]) {
+      setDateFilterMode('today');
+    } else {
+      setDateFilterMode('custom');
+    }
+  };
 
   // 2. Slide-over / Detail view state
   const [activeCardDrawer, setActiveCardDrawer] = useState(null);
@@ -152,6 +180,14 @@ export default function FarmPL() {
   // 6. Main Dashboard View
   return (
     <div className="flex flex-col gap-2 pb-16 animate-in fade-in duration-200">
+      {/* DateHeader at Top of Farm P&L */}
+      <DateHeader
+        date={selectedDate}
+        setDate={handleDateChange}
+        title="Farm Profit & Loss (P&L)"
+        subtitle={`Realized farm sales, herd feed costs, wages, and net profit strictly for ${selectedDate}`}
+      />
+
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs">
         <div>
           <div className="flex items-center gap-2">

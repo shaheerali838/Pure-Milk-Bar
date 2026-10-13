@@ -25,6 +25,7 @@ import { useStaffContext } from '@/context/StaffContext';
 
 export default function AuditLogTable({
   events = [],
+  selectedDate,
   onViewDetail,
 }) {
   const { staffList = [] } = useStaffContext();
@@ -68,8 +69,13 @@ export default function AuditLogTable({
         if (isNaN(evtTime)) return false;
 
         if (period === 'today') {
-          if (evtTime < startOfToday.getTime() || evtTime > endOfToday.getTime()) {
-            return false;
+          if (selectedDate) {
+            const dateStr = new Date(e.timestamp).toISOString().split('T')[0];
+            if (dateStr !== selectedDate) return false;
+          } else {
+            if (evtTime < startOfToday.getTime() || evtTime > endOfToday.getTime()) {
+              return false;
+            }
           }
         } else if (period === 'weekly') {
           if (evtTime < sevenDaysAgo.getTime() || evtTime > endOfToday.getTime()) {

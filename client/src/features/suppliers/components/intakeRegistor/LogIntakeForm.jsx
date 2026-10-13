@@ -13,12 +13,17 @@ import {
 } from "lucide-react";
 import { useIntakeContext } from "@/context/IntakeContext";
 import { useSupplierContext } from "@/context/SupplierContext";
+import { useDailyClose } from "@/context/DailyCloseContext";
+import { useGlobalDate, getTodayDateStr } from "@/context/GlobalDateContext";
+import DayClosedLockOverlay from "@/components/common/DayClosedLockOverlay";
 import { Button } from "@/components/ui/button";
 
 // Form to log or edit single supplier milk intake entries
 export default function LogIntakeForm({ onCancel, editItem = null }) {
   const { addIntake, updateIntake } = useIntakeContext();
   const { suppliers = [] } = useSupplierContext();
+  const { isDayClosed } = useDailyClose();
+  const { globalDate } = useGlobalDate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isFullyPaid = Boolean(
@@ -35,7 +40,7 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
     supplierId: "",
     supplierName: "",
     area: "",
-    date: new Date().toISOString().split("T")[0],
+    date: globalDate || getTodayDateStr(),
     shift: "Morning",
     quantity: "",
     ratePerLiter: "228",
@@ -149,6 +154,10 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isDayClosed) {
+      alert("Day is Closed. Open New Day to continue operations.");
+      return;
+    }
     if (!formData.supplierName) {
       alert("Please select or specify a supplier.");
       return;
@@ -222,7 +231,8 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
       </div>
 
       {/* Main form container */}
-      <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs no-scrollbar">
+      <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs no-scrollbar relative">
+        {isDayClosed && <DayClosedLockOverlay />}
         <form
           id="log-intake-form"
           onSubmit={handleSubmit}
@@ -502,7 +512,7 @@ export default function LogIntakeForm({ onCancel, editItem = null }) {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isDayClosed}
               className="flex items-center gap-1.5 px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-bold shadow-xs transition cursor-pointer"
             >
               {isSubmitting ? (

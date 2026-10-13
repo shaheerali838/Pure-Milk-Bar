@@ -1,11 +1,11 @@
 import React from "react";
 import AnimalCardOverflow from "./AnimalCardOverflow";
 
-export default function AnimalDashboard() {
+export default function AnimalDashboard({ selectedDate }) {
   return (
     <div className="bg-slate-50">
-      <div >
-        <AnimalCardOverflow />
+      <div>
+        <AnimalCardOverflow selectedDate={selectedDate} />
       </div>
     </div>
   );
