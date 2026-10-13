@@ -8,32 +8,10 @@ import FarmDailyReport from '../components/FarmDailyReport';
 import SupplierDailyReport from '../components/SupplierDailyReport';
 import DahiDailyReport from '../../dahi/component/DahiDailyReport';
 import POSSalesHistory from '../../pos/components/POSSalesHistory';
-import DateHeader from '@/components/common/DateHeader';
-import { useGlobalDate } from '@/context/GlobalDateContext';
 
 export default function FinancePage({ initialTab }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { globalDate, setGlobalDate, setToday } = useGlobalDate();
-
-  // Strict "Starts with Today" initialization
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
-
-  // Ensure fresh today date on initial page load / navigation
-  useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    setSelectedDate(today);
-    if (typeof setToday === 'function') {
-      setToday();
-    }
-  }, [location.pathname]);
-
-  const handleDateChange = (newDate) => {
-    setSelectedDate(newDate);
-    if (typeof setGlobalDate === 'function') {
-      setGlobalDate(newDate);
-    }
-  };
 
   // Determine active tab from prop, pathname, or state
   const getTabFromLocation = () => {
@@ -74,9 +52,6 @@ export default function FinancePage({ initialTab }) {
 
   return (
     <div className="space-y-4">
-      {/* Global Date Header with Today Default */}
-      <DateHeader date={selectedDate} setDate={handleDateChange} />
-
       {/* Top Header / Navigation Bar */}
       <FinanceNav activeTab={activeTab} onTabChange={handleTabChange} />
 

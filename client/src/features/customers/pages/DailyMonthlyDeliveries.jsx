@@ -42,6 +42,8 @@ import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
 import { useStaffContext } from '@/context/StaffContext';
 import { exportTableToCSV } from '@/utils/csvExport';
 import posService from '@/services/posService';
+import { usePOSContext } from '@/context/POSContext';
+import { matchProductForOrderItem, resolveAvailableStock } from '@/context/pos/posHelpers';
 
 const getShiftAgreementItems = (customer, shift) => {
   const standing = customer.standingOrder || {};
@@ -82,6 +84,7 @@ export default function DailyMonthlyDeliveries() {
   const { deliveries = [], addDelivery, deleteDelivery, refreshDeliveries, isLoading: deliveriesLoading } = useDeliveryContext();
   const { staffList: deliveryStaffList = [] } = useDeliveryStaffContext() || {};
   const { staffList: generalStaffList = [], fetchStaff } = useStaffContext() || {};
+  const { inventoryMetrics = {} } = usePOSContext() || {};
 
   // Ensure staff records are fetched fresh from database
   React.useEffect(() => {
@@ -408,16 +411,9 @@ export default function DailyMonthlyDeliveries() {
         for (const it of items) {
           const itQty = Number(it.quantity) || 0;
           if (itQty <= 0) continue;
-          const cleanName = (it.name || '').trim().toLowerCase();
-          const matched = availableProducts.find(
-            (p) =>
-              p.name.trim().toLowerCase() === cleanName ||
-              (cleanName.includes('cow') && p.name.toLowerCase().includes('cow')) ||
-              (cleanName.includes('buffalo') && p.name.toLowerCase().includes('buffalo')) ||
-              (cleanName.includes('dahi') && p.name.toLowerCase().includes('dahi'))
-          );
+          const matched = matchProductForOrderItem(it, availableProducts);
           if (matched) {
-            const avail = Number(matched.currentStock ?? matched.stock ?? 0);
+            const avail = resolveAvailableStock(matched, it, inventoryMetrics);
             if (avail <= 0 || itQty > avail) {
               toast.error(`Cannot dispatch: Insufficient stock for "${matched.name}". Available: ${avail} ${matched.unit || ''}, Requested: ${itQty}`);
               return;

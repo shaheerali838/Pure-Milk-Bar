@@ -124,15 +124,15 @@ export default function POSSale() {
     const prod = products.find(p => p.id === prodId) || {};
     const name = (prod.name || '').toLowerCase();
     const cat = (prod.category || '').toLowerCase();
-    const isCow = name.includes('cow');
-    const isBuff = name.includes('buffalo');
+    const isCow = name.includes('cow') || name.includes('gai');
+    const isBuff = name.includes('buffalo') || name.includes('bufflo') || name.includes('buff') || name.includes('bhains');
+    const catalogBaseStock = Math.max(0, Number(prod.currentStock ?? prod.stock) || 0);
 
     if (cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt') || cat.includes('curd') || name.includes('curd')) {
       const farmD = Number(inventoryMetrics?.rawFarmDahiStock ?? inventoryMetrics?.farmDahiStock) || 0;
       const supD = Number(inventoryMetrics?.rawSupplierDahiStock ?? inventoryMetrics?.supplierDahiStock) || 0;
       const liveDahi = Number((farmD + supD).toFixed(2));
-      if (liveDahi > 0) return liveDahi;
-      return Math.max(0, Number(prod.stock) || liveDahi || 0);
+      return liveDahi > 0 ? liveDahi : catalogBaseStock;
     }
 
     if (cat.includes('milk') || name.includes('milk')) {
@@ -140,20 +140,25 @@ export default function POSSale() {
         // Combined Cow Milk Card: Farm Cow + Supplier Cow
         const farmCow = Number(inventoryMetrics?.farmCowMilkStock ?? inventoryMetrics?.rawFarmCowMilkStock) || 0;
         const supCow = Number(inventoryMetrics?.supplierCowMilkStock ?? inventoryMetrics?.rawSupplierCowMilkStock) || 0;
-        return Number((farmCow + supCow).toFixed(1));
+        const liveCow = Number((farmCow + supCow).toFixed(1));
+        return liveCow > 0 ? liveCow : catalogBaseStock;
       }
       if (isBuff) {
         // Combined Buffalo Milk Card: Farm Buffalo + Supplier Buffalo
         const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock ?? inventoryMetrics?.rawFarmBuffaloMilkStock) || 0;
         const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock ?? inventoryMetrics?.rawSupplierBuffaloMilkStock) || 0;
-        return Number((farmBuff + supBuff).toFixed(1));
+        const liveBuff = Number((farmBuff + supBuff).toFixed(1));
+        if (liveBuff > 0) return liveBuff;
+        const liveTot = Number(inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock) || 0;
+        if (liveTot > 0) return liveTot;
+        return catalogBaseStock;
       }
-      const liveTot = Number(inventoryMetrics?.totalMilkStock);
-      if (!isNaN(liveTot) && liveTot >= 0) return liveTot;
-      return Number(prod.stock) || 0;
+      const liveTot = Number(inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock);
+      if (!isNaN(liveTot) && liveTot > 0) return liveTot;
+      return catalogBaseStock;
     }
 
-    return Number(prod.stock) || 0;
+    return catalogBaseStock;
   };
 
   // Sync category & customer info from URL search params (e.g. /pos?category=walkin&customerId=... or /pos?category=delivery)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ShieldCheck, History } from 'lucide-react';
 import { useAuditContext } from '@/context/AuditContext';
 import { Typography } from '@/components/common/Typography';
@@ -6,31 +6,10 @@ import AuditLogStats from '../components/AuditLogStats';
 import DahiAuditCard from '../components/DahiAuditCard';
 import AuditLogTable from '../components/AuditLogTable';
 import AuditLogDetailView from '../components/AuditLogDetailView';
-import DateHeader from '@/components/common/DateHeader';
-import { useGlobalDate } from '@/context/GlobalDateContext';
 
 export default function TransactionAuditLog() {
   const [currentView, setCurrentView] = useState('list'); // 'list' | 'detail'
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const { globalDate, setGlobalDate, setToday } = useGlobalDate();
-
-  // Strict "Starts with Today" initialization
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
-
-  useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    setSelectedDate(today);
-    if (typeof setToday === 'function') {
-      setToday();
-    }
-  }, []);
-
-  const handleDateChange = (newDate) => {
-    setSelectedDate(newDate);
-    if (typeof setGlobalDate === 'function') {
-      setGlobalDate(newDate);
-    }
-  };
 
   const { auditEvents = [] } = useAuditContext();
 
@@ -57,9 +36,6 @@ export default function TransactionAuditLog() {
 
   return (
     <div className="space-y-4 pb-8">
-      {/* Date Header Filter */}
-      <DateHeader date={selectedDate} setDate={handleDateChange} />
-
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-200/80">
         <div className="space-y-0.5">
@@ -86,7 +62,6 @@ export default function TransactionAuditLog() {
       {/* Searchable and Filterable Audit Table */}
       <AuditLogTable
         events={auditEvents}
-        selectedDate={selectedDate}
         onViewDetail={handleViewDetail}
       />
     </div>

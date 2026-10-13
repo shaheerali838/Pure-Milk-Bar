@@ -8,8 +8,6 @@ import { useSettingsContext } from '@/context/SettingsContext';
 import { useDailyClose } from '@/context/DailyCloseContext';
 import { exportTableToCSV } from '@/utils/csvExport';
 import { normalizeDateStr, getActiveBusinessDate } from '@/utils/dateUtils';
-import DateHeader from '@/components/common/DateHeader';
-import { useGlobalDate } from '@/context/GlobalDateContext';
 import { useSupplierPLMetrics } from './useSupplierPLMetrics';
 import SupplierPLCards from './SupplierPLCards';
 import SupplierPLCharts from './SupplierPLCharts';
@@ -26,38 +24,17 @@ export default function SupplierPL() {
   const settingsCtx = useSettingsContext?.();
   const settingsPricing = settingsCtx?.settings?.pricing || {};
 
-  // STRICT RULE: Force initialization to 'Today'
-  const { globalDate, setGlobalDate } = useGlobalDate();
-  const [selectedDate, setSelectedDate] = useState(() => globalDate || new Date().toISOString().split('T')[0]);
   const [periodFilter, setPeriodFilter] = useState('Today'); // 'Today' | 'This Month' | 'All Time' | 'Custom Range'
   const [customDate, setCustomDate] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-
-  React.useEffect(() => {
-    if (globalDate) {
-      setSelectedDate(globalDate);
-    }
-  }, [globalDate]);
-
-  const handleDateChange = (newDate) => {
-    setSelectedDate(newDate);
-    setGlobalDate(newDate);
-    if (newDate === new Date().toISOString().split('T')[0]) {
-      setPeriodFilter('Today');
-      setCustomDate('');
-    } else {
-      setPeriodFilter('Custom');
-      setCustomDate(newDate);
-    }
-  };
 
   // Active Drawers / Slide-overs state
   const [activeCardDetail, setActiveCardDetail] = useState(null); // 'cost' | 'volume' | 'paid' | 'due' | 'rate' | 'income' | null
   const [selectedProductRow, setSelectedProductRow] = useState(null); // product object | null
 
   // 1. Filter Records strictly by Selected Date / Period
-  const todayStr = selectedDate;
+  const todayStr = getActiveBusinessDate();
   const currentMonthStr = todayStr.slice(0, 7); // YYYY-MM
 
   const filteredIntakeLogs = useMemo(() => {
@@ -178,14 +155,6 @@ export default function SupplierPL() {
 
   return (
     <div className="space-y-3 animate-in fade-in duration-150">
-      {/* DateHeader at Top of Supplier P&L */}
-      <DateHeader
-        date={selectedDate}
-        setDate={handleDateChange}
-        title="Supplier Procurement Profit & Loss (P&L)"
-        subtitle={`Milk procurement cost, processing margins, and resale profit strictly for ${selectedDate}`}
-      />
-
       {/* 1. Page Header with Title and Filter Toolbar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200/90 shadow-2xs">
         <div>

@@ -1,65 +1,34 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { LayoutDashboard, Users, Droplets, Plus } from "lucide-react";
-import DashboardDateFilterBar from "@/components/common/DashboardDateFilterBar";
-import DateHeader from "@/components/common/DateHeader";
-import { useGlobalDate } from "@/context/GlobalDateContext";
-import { getDateRangeBoundaries } from "@/utils/dateUtils";
-import SupplierDashboardCard from "../components/SupplierDashboardCard";
-import SupplierDashboardCharts from "../components/SupplierDashboardCharts";
+import React, { useState, useMemo } from 'react';
+import { LayoutDashboard, Users, Droplets, Plus } from 'lucide-react';
+import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
+import { getDateRangeBoundaries } from '@/utils/dateUtils';
+import SupplierDashboardCard from '../components/SupplierDashboardCard';
+import SupplierDashboardCharts from '../components/SupplierDashboardCharts';
 
-import AddSupplier from "../components/supplierDirectory/AddSupplier";
-import SupplierTable from "../components/supplierDirectory/SupplierTable";
-import SupplierDetail from "../components/supplierDirectory/SupplierDetail";
-import LogIntakeForm from "../components/intakeRegistor/LogIntakeForm";
-import RecordExpenseForm from "../components/SourceExpesne/RecordExpenseForm";
-import IntakeDetail from "../components/intakeRegistor/IntakeDetail";
-import PaySupplierForm from "../components/intakeRegistor/PaySupplierForm";
-import IntakeHistory from "../components/intakeRegistor/IntakeHistory";
-import { useSupplierContext } from "@/context/SupplierContext";
-import { useIntakeContext } from "@/context/IntakeContext";
+import AddSupplier from '../components/supplierDirectory/AddSupplier';
+import SupplierTable from '../components/supplierDirectory/SupplierTable';
+import SupplierDetail from '../components/supplierDirectory/SupplierDetail';
+import LogIntakeForm from '../components/intakeRegistor/LogIntakeForm';
+import RecordExpenseForm from '../components/SourceExpesne/RecordExpenseForm';
+import IntakeDetail from '../components/intakeRegistor/IntakeDetail';
+import PaySupplierForm from '../components/intakeRegistor/PaySupplierForm';
+import IntakeHistory from '../components/intakeRegistor/IntakeHistory';
+import { useSupplierContext } from '@/context/SupplierContext';
+import { useIntakeContext } from '@/context/IntakeContext';
 
 export default function SupplierDashboard() {
   const { suppliers = [] } = useSupplierContext() || {};
   const { intakeLogs = [] } = useIntakeContext() || {};
-  const { globalDate, setGlobalDate, setToday } = useGlobalDate();
 
-  // Strict "Starts with Today" initialization
-  const [selectedDate, setSelectedDate] = useState(
-    () => new Date().toISOString().split("T")[0],
-  );
-  const [dateFilter, setDateFilter] = useState("today");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    setSelectedDate(today);
-    if (typeof setToday === "function") {
-      setToday();
-    }
-  }, []);
-
-  const handleDateChange = (newDate) => {
-    setSelectedDate(newDate);
-    if (typeof setGlobalDate === "function") {
-      setGlobalDate(newDate);
-    }
-    if (newDate === new Date().toISOString().split("T")[0]) {
-      setDateFilter("today");
-      setStartDate("");
-      setEndDate("");
-    } else {
-      setDateFilter("custom");
-      setStartDate(newDate);
-      setEndDate(newDate);
-    }
-  };
+  const [dateFilter, setDateFilter] = useState('today');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const { detailedLabel: periodLabel } = useMemo(() => {
     return getDateRangeBoundaries(dateFilter, startDate, endDate);
   }, [dateFilter, startDate, endDate]);
 
-  const [activeBottomTab, setActiveBottomTab] = useState("suppliers"); // 'suppliers' | 'intake'
+  const [activeBottomTab, setActiveBottomTab] = useState('suppliers'); // 'suppliers' | 'intake'
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [editingSupplier, setEditingSupplier] = useState(null);
 
@@ -144,33 +113,7 @@ export default function SupplierDashboard() {
   }
 
   return (
-    <div className="relative min-h-screen bg-slate-50/50 pb-10">
-      {/* Dynamic Header */}
-      <div className="flex items-center justify-between mb-4 pt-2">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-            <LayoutDashboard className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 font-display tracking-tight leading-none">
-              Supplier Operations Dashboard
-            </h1>
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                Overview &amp; Analytics
-              </span>
-              <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
-                Active Dashboard
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Global Date Header */}
-      <DateHeader date={selectedDate} setDate={handleDateChange} />
+    <div className="space-y-4">
       {/* Date Filter Bar */}
       <div className="mb-3">
         <DashboardDateFilterBar
@@ -211,20 +154,16 @@ export default function SupplierDashboard() {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-bold text-slate-900 font-display">
-                {activeBottomTab === "suppliers"
-                  ? "Supplier Register & Directory"
-                  : "Procurement Intake History"}
+                {activeBottomTab === 'suppliers' ? 'Supplier Register & Directory' : 'Procurement Intake History'}
               </h3>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                {activeBottomTab === "suppliers"
-                  ? `${suppliers.length} Registered Suppliers`
-                  : `${intakeLogs.length} Intake Logs`}
+                {activeBottomTab === 'suppliers' ? `${suppliers.length} Registered Suppliers` : `${intakeLogs.length} Intake Logs`}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              {activeBottomTab === "suppliers"
-                ? "Directory of all active milk suppliers, rates, daily expected volumes, and current ledger balances"
-                : "Consolidated logs of raw milk procurements, shifts, rates, and payments"}
+              {activeBottomTab === 'suppliers'
+                ? 'Directory of all active milk suppliers, rates, daily expected volumes, and current ledger balances'
+                : 'Consolidated logs of raw milk procurements, shifts, rates, and payments'}
             </p>
           </div>
 
@@ -233,11 +172,11 @@ export default function SupplierDashboard() {
             <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold">
               <button
                 type="button"
-                onClick={() => setActiveBottomTab("suppliers")}
+                onClick={() => setActiveBottomTab('suppliers')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeBottomTab === "suppliers"
-                    ? "bg-white text-blue-700 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
+                  activeBottomTab === 'suppliers'
+                    ? 'bg-white text-blue-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Users className="w-3.5 h-3.5" />
@@ -246,11 +185,11 @@ export default function SupplierDashboard() {
 
               <button
                 type="button"
-                onClick={() => setActiveBottomTab("intake")}
+                onClick={() => setActiveBottomTab('intake')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeBottomTab === "intake"
-                    ? "bg-white text-emerald-700 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
+                  activeBottomTab === 'intake'
+                    ? 'bg-white text-emerald-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Droplets className="w-3.5 h-3.5" />
@@ -258,7 +197,7 @@ export default function SupplierDashboard() {
               </button>
             </div>
 
-            {activeBottomTab === "suppliers" && (
+            {activeBottomTab === 'suppliers' && (
               <button
                 type="button"
                 onClick={() => {
@@ -275,7 +214,7 @@ export default function SupplierDashboard() {
         </div>
 
         {/* Tab 1: Supplier Register */}
-        {activeBottomTab === "suppliers" && (
+        {activeBottomTab === 'suppliers' && (
           <SupplierTable
             onView={(supplier) => setSelectedSupplier(supplier)}
             onEdit={(supplier) => {
@@ -286,7 +225,7 @@ export default function SupplierDashboard() {
         )}
 
         {/* Tab 2: Procurement Intake History */}
-        {activeBottomTab === "intake" && (
+        {activeBottomTab === 'intake' && (
           <IntakeHistory
             onView={(log) => setSelectedIntakeRow(log)}
             onEdit={(log) => {
@@ -297,12 +236,8 @@ export default function SupplierDashboard() {
             onViewSupplier={(supplierName, supplierId) => {
               const matched = suppliers.find(
                 (s) =>
-                  (supplierId &&
-                    (s.id === supplierId || s._id === supplierId)) ||
-                  (s.name &&
-                    supplierName &&
-                    s.name.trim().toLowerCase() ===
-                      supplierName.trim().toLowerCase()),
+                  (supplierId && (s.id === supplierId || s._id === supplierId)) ||
+                  (s.name && supplierName && s.name.trim().toLowerCase() === supplierName.trim().toLowerCase())
               );
               if (matched) setSelectedSupplier(matched);
               else setSelectedSupplier({ name: supplierName, id: supplierId });

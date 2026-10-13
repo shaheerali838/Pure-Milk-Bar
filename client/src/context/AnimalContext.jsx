@@ -235,7 +235,21 @@ export function AnimalProvider({ children }) {
 
       // 1. Add records from API logList
       logList.forEach((log) => {
-        const tag = (log.animalTag || log.tag || log.animal?.tag || log.animalId?.tagNumber || log.animalId?.tag || 'COW-01').toUpperCase();
+        const rawAnimalId = String(log.animalId?._id || log.animalId || '');
+        const matchedAnimal =
+          (animals || []).find((a) => String(a.id || a._id) === rawAnimalId) ||
+          (animalList || []).find((a) => String(a.id || a._id) === rawAnimalId);
+        const tag = (
+          log.animalTag ||
+          log.tag ||
+          log.animal?.tag ||
+          log.animalId?.tagNumber ||
+          log.animalId?.tag ||
+          matchedAnimal?.tagNumber ||
+          matchedAnimal?.tag ||
+          rawAnimalId ||
+          'ANIMAL'
+        ).toUpperCase();
         const dateStr = normalizeDateStr(log.date || log.createdAt) || getPktTodayString();
         const rawShift = log.shift || 'Morning';
         const normShift = rawShift.charAt(0).toUpperCase() + rawShift.slice(1).toLowerCase();

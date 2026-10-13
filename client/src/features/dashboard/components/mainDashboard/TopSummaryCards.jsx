@@ -34,19 +34,19 @@ export default function TopSummaryCards({
   const dateMetrics = useMemo(() => {
     // 1. Milking Logs within timeframe
     const matchedMilking = milkingLogs.filter((l) =>
-      isMatchingTimeframe(l.date, timeRange, customStartDate, customEndDate)
+      isMatchingTimeframe(l.date, activeRange, activeStart, activeEnd)
     );
     const farmYield =
-      timeRange === 'today' && matchedMilking.length === 0
+      activeRange === 'today' && matchedMilking.length === 0
         ? Number(inventoryMetrics.totalFarmYield) || 0
         : matchedMilking.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
 
     // 2. Intake Logs within timeframe
     const matchedIntakes = intakeLogs.filter((i) =>
-      isMatchingTimeframe(i.date, timeRange, customStartDate, customEndDate)
+      isMatchingTimeframe(i.date, activeRange, activeStart, activeEnd)
     );
     const procuredVolume =
-      timeRange === 'today' && matchedIntakes.length === 0 && intakeTotals.totalProcuredVolume !== undefined
+      activeRange === 'today' && matchedIntakes.length === 0 && intakeTotals.totalProcuredVolume !== undefined
         ? intakeTotals.totalProcuredVolume
         : matchedIntakes.reduce((sum, i) => sum + (parseFloat(i.quantity) || 0), 0);
 
@@ -55,7 +55,7 @@ export default function TopSummaryCards({
     // 3. Sales History within timeframe
     const matchedSales = salesHistory.filter((s) => {
       const raw = s.date || s.timestamp || s.formattedDate || s.createdAt || '';
-      return isMatchingTimeframe(raw, timeRange, customStartDate, customEndDate);
+      return isMatchingTimeframe(raw, activeRange, activeStart, activeEnd);
     });
 
     let salesRevenue = 0;
@@ -158,9 +158,9 @@ export default function TopSummaryCards({
     farmExpenses,
     supplierExpenses,
     ledgers,
-    timeRange,
-    customStartDate,
-    customEndDate,
+    activeRange,
+    activeStart,
+    activeEnd,
     inventoryMetrics,
     intakeTotals,
   ]);
@@ -180,7 +180,7 @@ export default function TopSummaryCards({
   const farmMilkStock = inventoryMetrics?.farmMilkStock ?? '0';
   const supplierMilkStock = inventoryMetrics?.supplierMilkStock ?? '0';
 
-  const isToday = timeRange === 'today';
+  const isToday = activeRange === 'today';
   const timeSuffix = isToday ? ' Today' : '';
 
   const cards = [
