@@ -4,16 +4,10 @@ import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useLedgerContext } from '@/context/LedgerContext';
-<<<<<<< HEAD
 import { useCustomerContext } from '@/context/CustomerContext';
 import { useExpense } from '@/context/ExpenseContext';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { getPktTodayString, getDateRangeBoundaries, isDateInFilterRange, isMatchingTimeframe } from '@/utils/dateUtils';
-=======
-import { useExpense } from '@/context/ExpenseContext';
-import { getPktTodayString, getDateRangeBoundaries, isDateInFilterRange } from '@/utils/dateUtils';
-
->>>>>>> farman
 import { Link } from 'react-router-dom';
 import { KpiGridSkeleton } from '@/components/ui/skeleton';
 
@@ -31,15 +25,10 @@ export default function TopSummaryCards({
   const { animals = [], milkingLogs = [], isLoading: isAnimalsLoading } = useAnimalContext();
   const { intakeLogs = [], totals: intakeTotals = {}, isLoading: isIntakeLoading } = useIntakeContext();
   const { salesHistory = [], inventoryMetrics = {}, businessFinancialMetrics = {} } = usePOSContext();
-<<<<<<< HEAD
   const { ledgers = {}, getAllCustomersAggregates } = useLedgerContext() || {};
   const { totalKhataReceivable = 0, withKhataBalCount = 0 } = useCustomerContext() || {};
   const { expenses: farmExpenses = [] } = useExpense() || {};
   const { expenses: supplierExpenses = [] } = useSourcExpenseContext() || {};
-=======
-  const { ledgers = {} } = useLedgerContext();
-  const { expenses = [] } = useExpense();
->>>>>>> farman
 
   // Filtered dataset calculations based on timeRange
   const dateMetrics = useMemo(() => {

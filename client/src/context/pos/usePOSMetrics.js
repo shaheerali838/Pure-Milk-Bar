@@ -70,19 +70,12 @@ export function usePOSMetrics({
     });
 
     const seenEntries = new Set();
-<<<<<<< HEAD
-    const todayMilkingLogs = (milkingLogs || []).filter((l) => isTodayDate(l.date || l.createdAt));
-
-    if (Array.isArray(todayMilkingLogs) && todayMilkingLogs.length > 0) {
-      todayMilkingLogs.forEach((log) => {
-=======
     const seenLogIds = new Set();
 
     if (Array.isArray(milkingLogs) && milkingLogs.length > 0) {
       milkingLogs.forEach((log) => {
         const logId = String(log._id || log.id || '');
         if (logId) seenLogIds.add(logId);
->>>>>>> farman
         const y = parseFloat(log.yieldLiters || log.yield || log.quantityLiters) || 0;
         const tag = (log.animalTag || log.tag || log.animalId?.tagNumber || log.animalId?.tag || '').toUpperCase();
         const rawId = String(log.animalId?._id || log.animalId || '');
@@ -115,11 +108,7 @@ export function usePOSMetrics({
       });
     }
 
-<<<<<<< HEAD
-    // Incorporate any animal intakeHistory entries strictly dated today
-=======
     // Incorporate any animal intakeHistory entries
->>>>>>> farman
     if (Array.isArray(animals) && animals.length > 0) {
       animals.forEach((animal) => {
         const tag = (animal.tag || animal.tagNumber || '').toUpperCase();
@@ -184,18 +173,8 @@ export function usePOSMetrics({
     let allCow = 0;
     let allBuff = 0;
 
-<<<<<<< HEAD
-  // Separate Supplier Cow & Buffalo intake totals for today
-  const { totalSupplierIntake, totalSupplierCowIntake, totalSupplierBuffaloIntake } = useMemo(() => {
-    let tot = 0;
-    let cowIn = 0;
-    let buffIn = 0;
-    const todayIntakes = (intakeLogs || []).filter((item) => isTodayDate(item.date || item.createdAt));
-    todayIntakes.forEach((item) => {
-=======
     (intakeLogs || []).forEach((item) => {
       const dateStr = normalizeDateStr(item.date || item.createdAt);
->>>>>>> farman
       const qty = Number(item.quantity || item.quantityLiters) || 0;
       const type = (item.milkType || '').toUpperCase();
 

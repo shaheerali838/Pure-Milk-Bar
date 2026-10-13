@@ -27,6 +27,7 @@ import DayClosedLockOverlay from '@/components/common/DayClosedLockOverlay';
 import DateHeader from '@/components/common/DateHeader';
 import { useGlobalDate } from '@/context/GlobalDateContext';
 
+export default function POSDashboard() {
   const [searchParams] = useSearchParams();
   const { globalDate, setGlobalDate } = useGlobalDate();
   const [selectedDate, setSelectedDate] = useState(() => globalDate || new Date().toISOString().split('T')[0]);
