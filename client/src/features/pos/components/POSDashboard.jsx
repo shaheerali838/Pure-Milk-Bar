@@ -300,7 +300,7 @@ export default function POSDashboard() {
             onClick={() => setIsWalkinHistoryOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300 transition shadow-2xs cursor-pointer"
           >
-            <span>🥛</span>
+            <span></span>
             <span>Walk-in History</span>
           </button>
 
@@ -328,17 +328,16 @@ export default function POSDashboard() {
         theme="emerald"
       />
 
-      <POSCardOverflow
-        onSelectSource={setSelectedSalesSource}
-        dateFilter={dateFilter}
-        startDate={startDate}
-        endDate={endDate}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        {/* Left Side: POS Card Overflow at top, Product Cards below */}
+        <div className="lg:col-span-7 space-y-3">
+          <POSCardOverflow
+            onSelectSource={setSelectedSalesSource}
+            dateFilter={dateFilter}
+            startDate={startDate}
+            endDate={endDate}
+          />
 
-
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
-        <div className="lg:col-span-7 space-y-2 ">
           <div className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 shadow-2xs space-y-3">
             {isDayClosed && <DayClosedLockOverlay inline className="mb-2" />}
 
@@ -359,7 +358,6 @@ export default function POSDashboard() {
                   { id: 'all', label: 'All Items' },
                   { id: 'milk', label: 'Milk' },
                   { id: 'dahi', label: 'Dahi' },
-                  { id: 'lassi', label: 'Lassi' },
                 ].map((cat) => (
                   <button
                     key={cat.id}
@@ -390,8 +388,8 @@ export default function POSDashboard() {
                     ? 'Products added in the Products Management page will automatically appear here.'
                     : 'Try adjusting your search query or category filter.'}
                 </p>
-              </div>
-            ) : (
+              </div>) 
+              : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                 {filteredProducts.map((product, idx) => {
                   const prodId = product.id || product._id || product.sku || `prod-${idx}`;
@@ -571,7 +569,8 @@ export default function POSDashboard() {
           </div>
         </div>
 
-        <div className="lg:col-span-5">
+        {/* Right Side: POS Sale Register / Cow Milk Sale Cart */}
+        <div className="lg:col-span-5 lg:sticky lg:top-3 self-start">
           <POSSale />
         </div>
       </div>
@@ -592,10 +591,7 @@ export default function POSDashboard() {
           <div className="bg-white p-6 rounded-2xl shadow-2xl border border-slate-100 flex flex-col items-center text-center max-w-sm mx-4 space-y-4">
             <div className="relative">
               <div className="w-16 h-16 rounded-full border-4 border-emerald-100 border-t-emerald-600 animate-spin flex items-center justify-center"></div>
-              <div className="absolute inset-0 flex items-center justify-center text-2xl">
-                🥛
               </div>
-            </div>
             <div>
               <h3 className="text-base font-black text-slate-900 font-display">
                 Applying Sale &amp; Refreshing...
