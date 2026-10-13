@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { LayoutDashboard, Users, Droplets, Plus } from 'lucide-react';
 import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 import { getDateRangeBoundaries } from '@/utils/dateUtils';
 import SupplierDashboardCard from '../components/SupplierDashboardCard';
 import SupplierDashboardCharts from '../components/SupplierDashboardCharts';
@@ -19,10 +21,37 @@ import { useIntakeContext } from '@/context/IntakeContext';
 export default function SupplierDashboard() {
   const { suppliers = [] } = useSupplierContext() || {};
   const { intakeLogs = [] } = useIntakeContext() || {};
+  const { globalDate, setGlobalDate, setToday } = useGlobalDate();
 
+  // Strict "Starts with Today" initialization
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [dateFilter, setDateFilter] = useState('today');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    setSelectedDate(today);
+    if (typeof setToday === 'function') {
+      setToday();
+    }
+  }, []);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    if (typeof setGlobalDate === 'function') {
+      setGlobalDate(newDate);
+    }
+    if (newDate === new Date().toISOString().split('T')[0]) {
+      setDateFilter('today');
+      setStartDate('');
+      setEndDate('');
+    } else {
+      setDateFilter('custom');
+      setStartDate(newDate);
+      setEndDate(newDate);
+    }
+  };
 
   const { detailedLabel: periodLabel } = useMemo(() => {
     return getDateRangeBoundaries(dateFilter, startDate, endDate);
@@ -113,21 +142,33 @@ export default function SupplierDashboard() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Date Filter Toolbar */}
-      <div className="flex items-center justify-between gap-3 pb-1">
-        <DashboardDateFilter
-          timeRange={timeRange}
-          setTimeRange={setTimeRange}
-          customStartDate={customStartDate}
-          setCustomStartDate={setCustomStartDate}
-          customEndDate={customEndDate}
-          setCustomEndDate={setCustomEndDate}
-          showAll={true}
-          activeTheme="blue"
-        />
+    <div className="relative min-h-screen bg-slate-50/50 pb-10">
+      {/* Dynamic Header */}
+      <div className="flex items-center justify-between mb-4 pt-2">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+            <LayoutDashboard className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 font-display tracking-tight leading-none">
+              Supplier Operations Dashboard
+            </h1>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                Overview &amp; Analytics
+              </span>
+              <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
+                Active Dashboard
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* Global Date Header */}
+      <DateHeader date={selectedDate} setDate={handleDateChange} />
       {/* Date Filter Bar */}
       <div className="mb-3">
         <DashboardDateFilterBar

@@ -8,6 +8,8 @@ import { useExpense } from './ExpenseContext';
 import { useSourcExpenseContext } from './SourcExpenseContext';
 import { useFuelLogContext } from './FuelLogContext';
 import { useDeliveryStaffContext } from './DeliveryStaffContext';
+import { useDailyClose } from './DailyCloseContext';
+import { useGlobalDate } from './GlobalDateContext';
 import { subscribeToSync } from '@/utils/syncBroadcaster';
 
 // Modular Sub-Hooks & Utilities
@@ -23,6 +25,23 @@ export { isTodayDate, isLegacyDummySale, deliveryRidersList, defaultPOSContextVa
 const POSContext = createContext(defaultPOSContextValue);
 
 export function POSProvider({ children }) {
+  // Global Synchronized Date
+  const { globalDate } = useGlobalDate();
+
+  // Daily Closing & Lockdown Context
+  const {
+    isDayClosed = false,
+    activeDate: closingActiveDate,
+    openingStock,
+    closingStock,
+    updateClosingStock,
+    dailyCloseHistory = [],
+    closeDay,
+    openNewDay,
+    reopenDay,
+  } = useDailyClose() || {};
+
+  const effectiveActiveDate = globalDate || closingActiveDate;
   // Domain Contexts
   const { rawCustomers = [], customers = [], refreshCustomers } = useCustomerContext();
   const { addLedgerEntry, fetchCustomerLedger } = useLedgerContext() || {};
@@ -91,6 +110,7 @@ export function POSProvider({ children }) {
     processingBatches: directOpsState.processingBatches,
     allCustomers,
     dynamicRiders,
+    activeDate: effectiveActiveDate,
   });
 
   // 4. Modular Orders & Invoices Lifecycle Hook
@@ -98,6 +118,7 @@ export function POSProvider({ children }) {
     cartState,
     productsState,
     directOpsState,
+    activeDate: effectiveActiveDate,
     farmContexts: {
       addLedgerEntry,
       fetchCustomerLedger,
@@ -135,6 +156,10 @@ export function POSProvider({ children }) {
     farmStock,
     supplierStock,
     posSyncVersion,
+    openingStock,
+    activeDate: effectiveActiveDate,
+    isDayClosed,
+    updateClosingStock,
   });
 
   // Keep metricsRef updated synchronously on every render
@@ -194,12 +219,7 @@ export function POSProvider({ children }) {
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    const heartbeatInterval = setInterval(() => {
-      handleSync();
-    }, 3000);
-
     return () => {
-      clearInterval(heartbeatInterval);
       unsubscribeBroadcast();
       window.removeEventListener('pure_milk_bar_milking_updated', handleSync);
       window.removeEventListener('pure_milk_bar_intake_updated', handleSync);
@@ -351,6 +371,18 @@ export function POSProvider({ children }) {
         farmSalesMetrics: metricsState.farmSalesMetrics,
         supplierSalesMetrics: metricsState.supplierSalesMetrics,
         businessFinancialMetrics: metricsState.businessFinancialMetrics,
+
+        // Daily Close & App Lockdown State
+        isDayClosed,
+        activeDate: effectiveActiveDate,
+        globalDate: effectiveActiveDate,
+        openingStock,
+        closingStock,
+        dailyCloseHistory,
+        closeDay,
+        openNewDay,
+        reopenDay,
+        updateClosingStock,
       }}
     >
       {children}

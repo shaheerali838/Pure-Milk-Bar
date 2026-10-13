@@ -1,9 +1,32 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import StaffNav from '../components/StaffNav';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 
 export default function StaffManagement() {
+  const location = useLocation();
+  const { globalDate, setGlobalDate, setToday } = useGlobalDate();
+
+  // Strict "Starts with Today" initialization
+  const [selectedDate, setSelectedDate] = useState(() => globalDate || new Date().toISOString().split('T')[0]);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    setSelectedDate(today);
+    if (typeof setToday === 'function') {
+      setToday();
+    }
+  }, [location.pathname]);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    if (typeof setGlobalDate === 'function') {
+      setGlobalDate(newDate);
+    }
+  };
+
   const todayFormatted = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -13,6 +36,9 @@ export default function StaffManagement() {
 
   return (
     <div className="relative min-h-screen bg-slate-50/50 pb-10 space-y-3">
+      {/* DateHeader at Top of Staff Hub */}
+      <DateHeader date={selectedDate} setDate={handleDateChange} />
+
       {/* 1. Page Title at the Top */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
         <div className="flex items-center gap-3">
@@ -41,7 +67,7 @@ export default function StaffManagement() {
       <StaffNav />
 
       {/* 3. Sub-page Content */}
-      <Outlet />
+      <Outlet context={{ selectedDate, setSelectedDate: handleDateChange }} />
     </div>
   );
 }

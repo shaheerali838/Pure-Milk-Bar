@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, Eye, Receipt, Search, User, Phone, Package, TrendingUp, Users, DollarSign, Banknote, Activity, Calendar } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
-import { formatStandardDate, formatStandardDateTime, isDateInFilterRange } from '@/utils/dateUtils';
+import { formatStandardDate, formatStandardDateTime, isDateInFilterRange, getLocalDate, normalizeDateStr } from '@/utils/dateUtils';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 
 const getCustomer = (sale) => sale.customer || sale.walkinCustomer || { name: 'Walk-in Customer', phone: 'N/A' };
 const getSaleItems = (sale) => sale.items || [];
@@ -58,14 +60,31 @@ function SaleDetail({ sale, onBack }) {
   );
 }
 
+
 export default function POSSalesHistory({ compact = false }) {
   const { salesHistory = [] } = usePOSContext();
+  const { globalDate, setGlobalDate } = useGlobalDate();
+  const [selectedDate, setSelectedDate] = useState(() => getLocalDate());
   const [search, setSearch] = useState('');
   const [selectedSale, setSelectedSale] = useState(null);
   const [dateFilter, setDateFilter] = useState('all'); // 'today' | 'week' | 'all' | 'custom'
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [channelFilter, setChannelFilter] = useState('all'); // 'all' | 'walkin' | 'delivery'
+
+  useEffect(() => {
+    if (globalDate) {
+      setSelectedDate(globalDate);
+    }
+  }, [globalDate]);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    if (typeof setGlobalDate === 'function') {
+      setGlobalDate(newDate);
+    }
+    setDateFilter('today');
+  };
 
   const filteredByDate = useMemo(() => {
     let list = [...salesHistory].sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
@@ -92,6 +111,14 @@ export default function POSSalesHistory({ compact = false }) {
       );
     }
 
+    if (dateFilter === 'today') {
+      const todayStr = selectedDate || getLocalDate();
+      return list.filter((sale) => {
+        const dStr = normalizeDateStr(sale.date || sale.timestamp || sale.createdAt);
+        return dStr === todayStr;
+      });
+    }
+
     if (dateFilter === 'custom') {
       return list.filter((sale) => {
         const raw = sale.timestamp || sale.date || sale.createdAt || sale.formattedDate;
@@ -104,10 +131,10 @@ export default function POSSalesHistory({ compact = false }) {
         return true;
       });
     } else if (dateFilter && dateFilter !== 'all') {
-      return list.filter((sale) => isDateInFilterRange(sale.date || sale.timestamp, dateFilter));
+      return list.filter((sale) => isDateInFilterRange(sale.date || sale.timestamp || sale.createdAt, dateFilter, startDate, endDate, selectedDate));
     }
     return list;
-  }, [salesHistory, dateFilter, startDate, endDate, channelFilter]);
+  }, [salesHistory, dateFilter, startDate, endDate, channelFilter, selectedDate]);
 
   const filteredSales = filteredByDate.filter((sale) => {
     const customer = getCustomer(sale);
@@ -144,6 +171,9 @@ export default function POSSalesHistory({ compact = false }) {
 
   return (
     <div className="space-y-4 animate-in fade-in duration-150">
+      {!compact && (
+        <DateHeader date={selectedDate} setDate={handleDateChange} />
+      )}
       {!compact && (
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>

@@ -8,6 +8,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import DailyClosingPLBreakdown from './DailyClosingPLBreakdown';
 
 export default function ConfirmClosingDialog({
   open = false,
@@ -15,6 +16,7 @@ export default function ConfirmClosingDialog({
   onConfirm,
   isSubmitting = false,
   summaryData = {},
+  computedPL = null,
   physicalMilk = '',
   physicalCash = '',
   varianceReason = '',
@@ -87,12 +89,25 @@ export default function ConfirmClosingDialog({
             </div>
 
             <div className="flex justify-between py-1">
-              <span className="text-slate-500 dark:text-slate-400">Estimated Day Profit:</span>
-              <span className={`font-black ${estimatedProfit >= 0 ? 'text-teal-600 dark:text-teal-400' : 'text-rose-600'}`}>
-                {formatRs(estimatedProfit)}
+              <span className="text-slate-500 dark:text-slate-400">Total Business Profit:</span>
+              <span className={`font-black ${(computedPL?.totalBusinessProfit ?? estimatedProfit) >= 0 ? 'text-teal-600 dark:text-teal-400' : 'text-rose-600'}`}>
+                {formatRs(computedPL?.totalBusinessProfit ?? estimatedProfit)}
               </span>
             </div>
           </div>
+
+          {/* Farm & Supplier P&L Segregation in Closing Modal */}
+          {computedPL && (
+            <div className="pt-1">
+              <DailyClosingPLBreakdown
+                farmPL={computedPL.farm}
+                supplierPL={computedPL.supplier}
+                totalBusinessProfit={computedPL.totalBusinessProfit}
+                date={summaryData.date}
+                compact={true}
+              />
+            </div>
+          )}
 
           {/* Variance Warning if High */}
           {isHighVariance && (

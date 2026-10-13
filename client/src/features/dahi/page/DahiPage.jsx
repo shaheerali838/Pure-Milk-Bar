@@ -9,6 +9,8 @@ import AddDahiBatchModal from '../component/AddDahiBatchModal';
 import DahiBatchDetail from '../component/DahiBatchDetail';
 import DahiDailyReport from '../component/DahiDailyReport';
 import { useDahiContext } from '@/context/DahiContext';
+import DateHeader from '@/components/common/DateHeader';
+import { useGlobalDate } from '@/context/GlobalDateContext';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 function getDateBoundaries(range) {
@@ -60,6 +62,8 @@ export default function DahiPage() {
     deleteBatch,
   } = useDahiContext();
 
+  const { globalDate, setGlobalDate } = useGlobalDate();
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [activeTab, setActiveTab] = useState('pipeline');
   const [dateRange, setDateRange] = useState('today');
   const [customFrom, setCustomFrom] = useState('');
@@ -67,14 +71,49 @@ export default function DahiPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBatchId, setSelectedBatchId] = useState(null);
 
+  React.useEffect(() => {
+    if (globalDate) {
+      setSelectedDate(globalDate);
+      if (globalDate === new Date().toISOString().split('T')[0]) {
+        setDateRange('today');
+      } else {
+        setDateRange('custom');
+        setCustomFrom(globalDate);
+        setCustomTo(globalDate);
+      }
+    }
+  }, [globalDate]);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    setGlobalDate(newDate);
+    if (newDate === new Date().toISOString().split('T')[0]) {
+      setDateRange('today');
+      setCustomFrom('');
+      setCustomTo('');
+    } else {
+      setDateRange('custom');
+      setCustomFrom(newDate);
+      setCustomTo(newDate);
+    }
+  };
+
   // Filtered batches for the selected date range
   const filteredBatches = useMemo(() => {
+    if (dateRange === 'today') {
+      return batches.filter((b) => {
+        const rawDate = b.date || b.createdAt;
+        if (!rawDate) return false;
+        const bDate = typeof rawDate === 'string' ? rawDate.slice(0, 10) : new Date(rawDate).toISOString().split('T')[0];
+        return bDate === selectedDate;
+      });
+    }
     if (dateRange === 'custom') {
       const from = customFrom ? new Date(customFrom) : null;
       const to = customTo ? new Date(customTo + 'T23:59:59') : null;
       return batches.filter((b) => {
         const rawDate = b.date || b.createdAt;
-        if (!rawDate) return true;
+        if (!rawDate) return false;
         const d = new Date(rawDate);
         if (from && d < from) return false;
         if (to && d > to) return false;
@@ -83,7 +122,7 @@ export default function DahiPage() {
     }
     const bounds = getDateBoundaries(dateRange);
     return batches.filter((b) => batchInRange(b, bounds));
-  }, [batches, dateRange, customFrom, customTo]);
+  }, [batches, dateRange, selectedDate, customFrom, customTo]);
 
   const activePipelineCount = filteredBatches.filter(
     (b) => b.stage === 'incubating' || b.stage === 'chilled' || b.stage === 'pos'
@@ -145,6 +184,13 @@ export default function DahiPage() {
 
   return (
     <div className="relative min-h-screen bg-slate-50/50 pb-10 space-y-4">
+      {/* DateHeader at Top of Dahi Processing Hub */}
+      <DateHeader
+        date={selectedDate}
+        setDate={handleDateChange}
+        title="Dahi Processing & Kitchen Pipeline"
+        subtitle={`Incubation, chilling, conversion batches, and yield output strictly for ${selectedDate}`}
+      />
       {/* Top Header Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pt-2">
         <div className="flex items-center gap-3">

@@ -3,8 +3,10 @@ import { Plus, ArrowRight, LayoutDashboard, Droplets } from "lucide-react";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { usePOSContext } from "../../../../context/POSContext";
 import { useExpense } from "../../../../context/ExpenseContext";
-import { getPktTodayString, getDateRangeBoundaries, isDateInFilterRange } from "@/utils/dateUtils";
+import { getPktTodayString, getDateRangeBoundaries, isDateInFilterRange, getLocalDate } from "@/utils/dateUtils";
 import DashboardDateFilterBar from "@/components/common/DashboardDateFilterBar";
+import DateHeader from "@/components/common/DateHeader";
+import { useGlobalDate } from "@/context/GlobalDateContext";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -39,10 +41,49 @@ export default function FarmDashboardContent() {
   const [editAnimal, setEditAnimal] = useState(null);
   const navigate = useNavigate();
 
-  // Date Filter State
+  // Date Filter State strictly initialized to Today
+  const { globalDate, setGlobalDate } = useGlobalDate();
+  const [selectedDate, setSelectedDate] = useState(() => getLocalDate());
   const [dateFilter, setDateFilter] = useState('today');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  // Strictly initialize to today on mount
+  React.useEffect(() => {
+    const today = getLocalDate();
+    setSelectedDate(today);
+    setDateFilter('today');
+    setStartDate('');
+    setEndDate('');
+    if (globalDate && globalDate !== today) {
+      setGlobalDate(today);
+    }
+  }, []);
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+    setGlobalDate(newDate);
+    if (newDate === getLocalDate()) {
+      setDateFilter('today');
+      setStartDate('');
+      setEndDate('');
+    } else {
+      setDateFilter('custom');
+      setStartDate(newDate);
+      setEndDate(newDate);
+    }
+  };
+
+  const handleFilterChange = (newFilter) => {
+    setDateFilter(newFilter);
+    if (newFilter === 'today') {
+      const today = getLocalDate();
+      setSelectedDate(today);
+      setGlobalDate(today);
+      setStartDate('');
+      setEndDate('');
+    }
+  };
 
   const { detailedLabel: periodLabel } = useMemo(() => {
     return getDateRangeBoundaries(dateFilter, startDate, endDate);
@@ -52,6 +93,9 @@ export default function FarmDashboardContent() {
   const totalAnimals = animals.length;
   const cowsCount = animals.filter((a) => (a.species || "").toLowerCase().includes("cow")).length;
   const buffCount = animals.filter((a) => (a.species || "").toLowerCase().includes("buffalo")).length;
+  const milkingAnimals = animals.filter(
+    (a) => (a.lactationStatus || a.status || '').toLowerCase() === 'milking'
+  );
 
   // Farm Yield filtered by timeframe
   const totalFarmYield = useMemo(() => {
@@ -61,19 +105,25 @@ export default function FarmDashboardContent() {
     if (filteredLogs.length > 0) {
       return filteredLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
     }
-    if (dateFilter === 'today') {
-      let sumFromAnimals = 0;
-      animals.forEach((animal) => {
-        const historyList = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
-        const todayHist = historyList.find((h) => isDateInFilterRange(h.date, 'today'));
-        if (todayHist) {
-          sumFromAnimals += Number(todayHist.quantityLiters || todayHist.yieldLiters || todayHist.yield || ((Number(todayHist.morning) || 0) + (Number(todayHist.evening) || 0))) || 0;
+
+    // Dynamic aggregation from animal intakeHistory
+    let sumFromAnimals = 0;
+    animals.forEach((animal) => {
+      const historyList = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
+      historyList.forEach((h) => {
+        if (isDateInFilterRange(h.date || h.createdAt, dateFilter, startDate, endDate)) {
+          sumFromAnimals += Number(h.quantityLiters || h.yieldLiters || h.yield || ((Number(h.morning) || 0) + (Number(h.evening) || 0))) || 0;
         }
       });
-      if (sumFromAnimals > 0) return sumFromAnimals;
+    });
+    if (sumFromAnimals > 0) return sumFromAnimals;
+
+    if (dateFilter === 'today' && Number(posCtx?.inventoryMetrics?.totalFarmYield) > 0) {
+      return Number(posCtx.inventoryMetrics.totalFarmYield);
     }
+
     return 0;
-  }, [milkingLogs, animals, dateFilter, startDate, endDate]);
+  }, [milkingLogs, animals, dateFilter, startDate, endDate, posCtx?.inventoryMetrics?.totalFarmYield]);
 
   // Available live farm stock in cold room / chiller
   const availableFarmStock = useMemo(() => {
@@ -90,7 +140,15 @@ export default function FarmDashboardContent() {
     return Math.max(0, totalFarmYield - farmSold);
   }, [posCtx?.inventoryMetrics, posCtx?.farmSalesMetrics?.milkSold, totalFarmYield]);
 
-  const avgAnimalYield = totalAnimals > 0 ? totalFarmYield / totalAnimals : 0;
+  const activeMilkingCount = milkingAnimals.length > 0 ? milkingAnimals.length : (totalAnimals > 0 ? totalAnimals : 1);
+  const avgAnimalYield = totalFarmYield > 0 ? totalFarmYield / activeMilkingCount : 0;
+
+  const totalExpectedYield = useMemo(() => {
+    return animals.reduce((sum, a) => {
+      const exp = parseFloat(a.expectedDailyYield || a.expectedYield || a.purchaseExpectedYield || 0);
+      return sum + (exp > 0 ? exp : 15.0);
+    }, 0);
+  }, [animals]);
 
   // Real Financial Metrics from POS & Expenses based on dateFilter
   const { periodNetProfit, monthlyNetProfit, periodFarmSales, periodFarmExpense, periodFarmRevenue, periodFarmExpenses, periodExpenseCount } = useMemo(() => {
@@ -304,10 +362,18 @@ export default function FarmDashboardContent() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* DateHeader at Top of Farm Operations */}
+      <DateHeader
+        date={selectedDate}
+        setDate={handleDateChange}
+        title="Farm Operations & Livestock Shed"
+        subtitle={`Live yield, cattle status, and farm financials strictly for ${selectedDate}`}
+      />
+
       {/* Date Filter Bar */}
       <DashboardDateFilterBar
         dateFilter={dateFilter}
-        onFilterChange={setDateFilter}
+        onFilterChange={handleFilterChange}
         startDate={startDate}
         endDate={endDate}
         onStartDateChange={setStartDate}
@@ -321,6 +387,7 @@ export default function FarmDashboardContent() {
         cowsCount={cowsCount}
         buffCount={buffCount}
         totalFarmYield={totalFarmYield}
+        totalExpectedYield={totalExpectedYield}
         availableFarmStock={availableFarmStock}
         avgAnimalYield={avgAnimalYield}
         dailyNetProfit={periodNetProfit}
