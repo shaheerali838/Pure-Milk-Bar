@@ -14,8 +14,11 @@ export default function FarmCardOverflow({
   dailyNetProfit = 0, 
   totalFarmExpense = 0,
   todayFarmRevenue = 0,
+  todayFarmExpenses,
   periodFarmExpense,
+  periodFarmExpenses,
   expenseCount = 0,
+  periodExpenseCount,
   timeRange = 'today',
   dateFilter,
   periodLabel,
@@ -45,7 +48,12 @@ export default function FarmCardOverflow({
   const farmMilkStock = effectiveStock % 1 === 0 ? effectiveStock.toFixed(0) : effectiveStock.toFixed(1);
   const activeDateFilter = dateFilter || timeRange || 'today';
   const resolvedPeriodLabel = periodLabel || (activeDateFilter === 'today' ? 'Today' : activeDateFilter === 'week' || activeDateFilter === 'this_week' ? 'This Week' : activeDateFilter === 'month' || activeDateFilter === 'this_month' ? 'This Month' : 'All Time');
-  const effectiveExpense = periodFarmExpense !== undefined ? periodFarmExpense : totalFarmExpense;
+  const effectiveExpense = 
+    periodFarmExpense !== undefined ? periodFarmExpense :
+    periodFarmExpenses !== undefined ? periodFarmExpenses :
+    todayFarmExpenses !== undefined ? todayFarmExpenses :
+    totalFarmExpense;
+  const effectiveExpenseCount = periodExpenseCount !== undefined ? periodExpenseCount : expenseCount;
 
   const statCards = [
     {
@@ -93,7 +101,7 @@ export default function FarmCardOverflow({
     {
       label: `Farm Expenses (${resolvedPeriodLabel})`.trim(),
       value: `Rs. ${effectiveExpense.toLocaleString()}`,
-      sub: expenseCount ? `${expenseCount} recorded expenses` : `${resolvedPeriodLabel} farm expenses`,
+      sub: effectiveExpenseCount ? `${effectiveExpenseCount} recorded expenses` : `${resolvedPeriodLabel} farm expenses`,
       icon: Banknote,
       color: "#e11d48",
       badge: "Expenses",

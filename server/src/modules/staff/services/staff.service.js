@@ -11,11 +11,12 @@ import { uploadToCloudinary } from '../../../config/cloudinary.js';
 // Helper to map human-readable staff designation to RBAC User Role
 export const mapStaffRoleToUserRole = (staffRole) => {
   const r = (staffRole || '').toLowerCase().trim();
-  if (r.includes('manager')) return ROLES.MANAGER;
-  if (r.includes('cashier')) return ROLES.CASHIER;
-  if (r.includes('farm') || r.includes('supervisor') || r.includes('milking') || r.includes('livestock')) return ROLES.FARM_SUPERVISOR;
-  if (r.includes('rider') || r.includes('delivery')) return ROLES.RIDER;
-  return ROLES.CASHIER;
+  if (r.includes('admin') || r.includes('owner')) return ROLES.ADMIN || 'ADMIN';
+  if (r.includes('manager')) return ROLES.MANAGER || 'MANAGER';
+  if (r.includes('rider') || r.includes('delivery')) return ROLES.RIDER || 'RIDER';
+  if (r.includes('farm') || r.includes('supervisor') || r.includes('milking') || r.includes('livestock')) return ROLES.FARM_SUPERVISOR || 'FARM_SUPERVISOR';
+  if (r.includes('cashier') || r.includes('pos')) return ROLES.CASHIER || 'CASHIER';
+  return ROLES.CASHIER || 'CASHIER';
 };
 
 // Helper to generate a strong random temporary password
@@ -190,9 +191,16 @@ export const createStaffService = async (staffData, user) => {
     // If an existing user account has the exact same email, link it; otherwise create a fresh user doc
     let existingUser = email ? await User.findOne({ email }) : null;
 
+    const safeRole = mappedRole || ROLES.CASHIER || 'CASHIER';
+    const normalizedShift = (shift || 'MORNING').toUpperCase().replace(/\s+/g, '_');
+    const validUserShifts = ['MORNING', 'EVENING', 'ROTATING', 'BOTH', 'NIGHT', 'FULL_DAY'];
+    const safeUserShift = validUserShifts.includes(normalizedShift)
+      ? normalizedShift
+      : normalizedShift.includes('EVEN') ? 'EVENING' : 'MORNING';
+
     if (existingUser) {
       linkedUserDoc = existingUser;
-      linkedUserDoc.role = mappedRole;
+      if (safeRole) linkedUserDoc.role = safeRole;
       linkedUserDoc.isActive = true;
       await linkedUserDoc.save();
     } else {
@@ -212,8 +220,8 @@ export const createStaffService = async (staffData, user) => {
         phone: finalUserPhone,
         email: email || null,
         passwordHash,
-        role: mappedRole,
-        shift: shift ? shift.toUpperCase().replace(/\s+/g, '_') : 'MORNING',
+        role: safeRole,
+        shift: safeUserShift,
         isActive: true,
       });
     }

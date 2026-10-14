@@ -126,19 +126,24 @@ export default function FarmDashboardContent() {
       return sum + amt;
     }, 0);
 
-    const expensesInPeriod = expenses.filter((e) =>
+    const farmExpenses = expenses.filter((e) => {
+      const scope = String(e.scope || e.expenseEntity || 'FARM').toUpperCase();
+      return scope === 'FARM';
+    });
+
+    const expensesInPeriod = farmExpenses.filter((e) =>
       isDateInFilterRange(e.date || e.expenseDate || e.createdAt, dateFilter, startDate, endDate)
     );
 
     const periodExpense = expensesInPeriod.reduce((sum, e) => {
-      const amt = Number(e.amount) || 0;
+      const amt = Number(e.amountRupees ?? e.amount) || 0;
       return sum + amt;
     }, 0);
 
-    const monthlyExpenses = expenses.filter((e) =>
+    const monthlyExpenses = farmExpenses.filter((e) =>
       isDateInFilterRange(e.date || e.expenseDate || e.createdAt, 'this_month')
     );
-    const monthlyExpenseTotal = monthlyExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const monthlyExpenseTotal = monthlyExpenses.reduce((sum, e) => sum + (Number(e.amountRupees ?? e.amount) || 0), 0);
 
     const monthlySales = rawSales.filter((s) =>
       isDateInFilterRange(s.date || s.createdAt, 'this_month')
@@ -214,12 +219,16 @@ export default function FarmDashboardContent() {
   // Expenses Breakdown by Category
   const expensesByCategory = useMemo(() => {
     const cats = {};
-    const filteredExpenses = expenses.filter((e) =>
+    const farmExpenses = expenses.filter((e) => {
+      const scope = String(e.scope || e.expenseEntity || 'FARM').toUpperCase();
+      return scope === 'FARM';
+    });
+    const filteredExpenses = farmExpenses.filter((e) =>
       isDateInFilterRange(e.date || e.expenseDate || e.createdAt, dateFilter, startDate, endDate)
     );
     filteredExpenses.forEach((e) => {
       const cat = e.category || 'General';
-      cats[cat] = (cats[cat] || 0) + (parseFloat(e.amount) || 0);
+      cats[cat] = (cats[cat] || 0) + (parseFloat(e.amountRupees ?? e.amount) || 0);
     });
     return {
       list: Object.entries(cats).slice(0, 4),
@@ -278,8 +287,10 @@ export default function FarmDashboardContent() {
         monthlyNetProfit={monthlyNetProfit}
         todayFarmRevenue={periodFarmSales}
         todayFarmExpenses={periodFarmExpense}
-        periodFarmSales={periodFarmSales}
-        periodFarmExpenses={periodFarmExpenses}
+        periodFarmExpense={periodFarmExpense}
+        periodFarmExpenses={periodFarmExpense}
+        totalFarmExpense={periodFarmExpense}
+        expenseCount={periodExpenseCount}
         periodExpenseCount={periodExpenseCount}
         dateFilter={dateFilter}
         startDate={startDate}
