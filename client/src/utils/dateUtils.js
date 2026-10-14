@@ -12,10 +12,12 @@ export const PKT_TIMEZONE = 'Asia/Karachi';
 export const getLocalDate = (d = new Date()) => {
   try {
     const dateObj = d instanceof Date ? d : new Date(d);
-    if (isNaN(dateObj.getTime())) return new Date().toLocaleDateString('en-CA');
-    return dateObj.toLocaleDateString('en-CA');
+    if (isNaN(dateObj.getTime())) {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: PKT_TIMEZONE }).format(new Date());
+    }
+    return new Intl.DateTimeFormat('en-CA', { timeZone: PKT_TIMEZONE }).format(dateObj);
   } catch {
-    return new Date().toLocaleDateString('en-CA');
+    return new Intl.DateTimeFormat('en-CA', { timeZone: PKT_TIMEZONE }).format(new Date());
   }
 };
 
@@ -111,17 +113,20 @@ export function formatPktDisplay(dateVal, includeTime = false) {
  */
 export function parseCleanDate(val) {
   if (!val) return '';
-  if (typeof val === 'string') {
-    if (/^\d{4}-\d{2}-\d{2}/.test(val)) return val.slice(0, 10);
-    if (val.includes('T')) return val.split('T')[0];
+  if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+    return val;
   }
   const d = new Date(val);
   if (!isNaN(d.getTime())) {
-    const year = d.getFullYear();
-    if (year < 2020) return '';
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    try {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: PKT_TIMEZONE }).format(d);
+    } catch {
+      const year = d.getFullYear();
+      if (year < 2020) return '';
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
   }
   return '';
 }
