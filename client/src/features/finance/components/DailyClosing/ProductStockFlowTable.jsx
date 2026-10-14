@@ -1,8 +1,9 @@
 import React from 'react';
-import { Package, HelpCircle, Layers, CheckCircle, AlertCircle } from 'lucide-react';
+import { Package, HelpCircle, Layers, CheckCircle, AlertCircle, Truck, Milk } from 'lucide-react';
 
 export default function ProductStockFlowTable({
   products = [],
+  supplierMilkFlow = null,
   openingSource = {},
   physicalCounts = {},
   onPhysicalCountChange,
@@ -23,6 +24,11 @@ export default function ProductStockFlowTable({
     }
     return 'No previous closing found (Starting from day 0 stock)';
   };
+
+  const showSupplierStrip = supplierMilkFlow && (
+    Number(supplierMilkFlow.totalPurchased || 0) > 0 ||
+    Number(supplierMilkFlow.totalSold || 0) > 0
+  );
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-all">
@@ -48,6 +54,77 @@ export default function ProductStockFlowTable({
           <span>{getSourceText()}</span>
         </div>
       </div>
+
+      {/* Supplier Milk Sourcing & Sales Reconciliation Banner */}
+      {showSupplierStrip && (
+        <div className="mx-4 my-3 sm:mx-5 sm:my-4 p-3.5 sm:p-4 rounded-xl bg-gradient-to-r from-purple-50/70 via-indigo-50/40 to-blue-50/50 dark:from-purple-950/20 dark:via-indigo-950/10 dark:to-blue-950/20 border border-purple-200/70 dark:border-purple-800/50">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 flex items-center justify-center shrink-0 shadow-sm">
+                <Truck className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  Supplier Milk Sourcing & Sales
+                  <span className="text-[10px] font-semibold bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">
+                    Supplier Module Flow
+                  </span>
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Purchased milk from suppliers vs dispatched & sold in today's business
+                </p>
+              </div>
+            </div>
+
+            {/* Metrics Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+              <div className="bg-white/90 dark:bg-slate-800/90 px-3 py-2 rounded-lg border border-purple-100 dark:border-purple-900/40 shadow-xs">
+                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Milk Purchased</span>
+                <span className="text-xs sm:text-sm font-black text-purple-700 dark:text-purple-300 block">
+                  {formatQty(supplierMilkFlow.totalPurchased, 'L')}
+                </span>
+                {(supplierMilkFlow.buffPurchased > 0 || supplierMilkFlow.cowPurchased > 0) && (
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                    {supplierMilkFlow.buffPurchased > 0 ? `Buff: ${supplierMilkFlow.buffPurchased}L` : ''}
+                    {supplierMilkFlow.buffPurchased > 0 && supplierMilkFlow.cowPurchased > 0 ? ' · ' : ''}
+                    {supplierMilkFlow.cowPurchased > 0 ? `Cow: ${supplierMilkFlow.cowPurchased}L` : ''}
+                  </span>
+                )}
+              </div>
+
+              <div className="bg-white/90 dark:bg-slate-800/90 px-3 py-2 rounded-lg border border-indigo-100 dark:border-indigo-900/40 shadow-xs">
+                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Supplier Milk Sold</span>
+                <span className="text-xs sm:text-sm font-black text-indigo-700 dark:text-indigo-300 block">
+                  {formatQty(supplierMilkFlow.totalSold, 'L')}
+                </span>
+                <span className="text-[10px] text-indigo-600/80 dark:text-indigo-400/80 block">
+                  Dispatched Out
+                </span>
+              </div>
+
+              <div className="bg-white/90 dark:bg-slate-800/90 px-3 py-2 rounded-lg border border-emerald-100 dark:border-emerald-900/40 shadow-xs">
+                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Stock In Tank</span>
+                <span className="text-xs sm:text-sm font-black text-emerald-700 dark:text-emerald-300 block">
+                  {formatQty(supplierMilkFlow.remainingStock, 'L')}
+                </span>
+                <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 block">
+                  Cold storage
+                </span>
+              </div>
+
+              <div className="bg-white/90 dark:bg-slate-800/90 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-xs">
+                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Procurement Bill</span>
+                <span className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 block">
+                  Rs. {Number(supplierMilkFlow.totalBill || 0).toLocaleString()}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                  Paid: Rs. {Number(supplierMilkFlow.cashPaid || 0).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Responsive Table Container */}
       <div className="overflow-x-auto">
@@ -84,6 +161,9 @@ export default function ProductStockFlowTable({
                 const diff = hasPhysical ? Number(physicalVal) - Number(item.expectedClosing) : 0;
                 const isMismatch = hasPhysical && Math.abs(diff) > 0.01;
 
+                const hasProducedBreakdown = (Number(item.farmProduced || 0) > 0 || Number(item.supplierPurchased || 0) > 0);
+                const hasSoldBreakdown = (Number(item.farmSold || 0) > 0 || Number(item.supplierSold || 0) > 0);
+
                 return (
                   <tr
                     key={item.productId || idx}
@@ -106,11 +186,37 @@ export default function ProductStockFlowTable({
                     </td>
 
                     <td className="py-3 px-3 text-right font-medium text-blue-600 dark:text-blue-400">
-                      {formatQty(item.produced, item.unit)}
+                      <div className="font-bold">
+                        {formatQty(item.produced, item.unit)}
+                      </div>
+                      {hasProducedBreakdown && (
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center justify-end gap-1.5 font-medium">
+                          <span className="text-emerald-700 dark:text-emerald-400" title="Farm Produced">
+                            Farm: {item.farmProduced}L
+                          </span>
+                          <span>•</span>
+                          <span className="text-purple-700 dark:text-purple-400" title="Supplier Purchased">
+                            Sup: {item.supplierPurchased}L
+                          </span>
+                        </div>
+                      )}
                     </td>
 
                     <td className="py-3 px-3 text-right font-medium text-indigo-600 dark:text-indigo-400">
-                      {formatQty(item.sold, item.unit)}
+                      <div className="font-bold">
+                        {formatQty(item.sold, item.unit)}
+                      </div>
+                      {hasSoldBreakdown && (
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center justify-end gap-1.5 font-medium">
+                          <span className="text-emerald-700 dark:text-emerald-400" title="Sold from Farm Milk">
+                            Farm: {item.farmSold}L
+                          </span>
+                          <span>•</span>
+                          <span className="text-purple-700 dark:text-purple-400" title="Sold from Supplier Milk">
+                            Sup: {item.supplierSold}L
+                          </span>
+                        </div>
+                      )}
                     </td>
 
                     <td className="py-3 px-3 text-right font-medium text-rose-500 dark:text-rose-400">
@@ -118,7 +224,12 @@ export default function ProductStockFlowTable({
                     </td>
 
                     <td className="py-3 px-3 text-right font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20">
-                      {formatQty(item.expectedClosing, item.unit)}
+                      <div className="text-sm">
+                        {formatQty(item.expectedClosing, item.unit)}
+                      </div>
+                      <div className="text-[10px] font-normal text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">
+                        {item.expectedClosing < 0 ? 'Negative Stock' : 'In Cold Room'}
+                      </div>
                     </td>
 
                     {!isClosed && (

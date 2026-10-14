@@ -566,6 +566,16 @@ export default function DailyClosing() {
       {/* 3. Hero Table: Stock Flow */}
       <ProductStockFlowTable
         products={summaryData?.products || []}
+        supplierMilkFlow={summaryData?.supplierMilkFlow || {
+          totalPurchased: summaryData?.milk?.supplierInflow ?? computedPL?.supplier?.purchasedQty ?? 0,
+          cowPurchased: summaryData?.milk?.cowSupplierInflow ?? 0,
+          buffPurchased: summaryData?.milk?.buffSupplierInflow ?? (summaryData?.milk?.supplierInflow ?? 0),
+          totalSold: summaryData?.milk?.totalSupplierMilkSold ?? 0,
+          remainingStock: Math.max(0, (summaryData?.milk?.supplierInflow ?? 0) - (summaryData?.milk?.totalSupplierMilkSold ?? 0)),
+          totalBill: summaryData?.breakdown?.procurement?.totalBill ?? computedPL?.supplier?.totalProcurementCost ?? 0,
+          cashPaid: summaryData?.breakdown?.procurement?.totalPaid ?? 0,
+          totalDue: summaryData?.breakdown?.procurement?.totalDue ?? 0,
+        }}
         openingSource={summaryData?.openingSource || {}}
         physicalCounts={productPhysicalCounts}
         onPhysicalCountChange={handleProductPhysicalCountChange}

@@ -17,6 +17,7 @@ import Animal from '../../../models/Animal.model.js';
 import User from '../../../models/User.model.js';
 import AuditLog from '../../../models/AuditLog.model.js';
 import { getPktDayRange, getPktDateRange, getPktTodayString } from '../../../utils/dateUtils.js';
+import { isCowVariant, isBuffaloVariant, isMilkVariant, isDahiVariant } from '../../../utils/stockResolver.js';
 
 /**
  * Helper to record Audit Log entries
@@ -123,12 +124,25 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
 
   let morningYield = 0;
   let eveningYield = 0;
+  let cowFarmYield = 0;
+  let buffFarmYield = 0;
+
   yieldLogs.forEach((y) => {
     const qty = Number(y.yieldLiters) || 0;
     if (y.shift === 'MORNING') morningYield += qty;
     else if (y.shift === 'EVENING') eveningYield += qty;
+
+    const aType = String(y.animalId?.type || '').toUpperCase();
+    const tag = String(y.animalId?.tagNumber || y.animalId?.tag || '').toUpperCase();
+    if (aType === 'COW' || tag.startsWith('COW')) {
+      cowFarmYield += qty;
+    } else {
+      buffFarmYield += qty;
+    }
   });
   const farmProduction = Number((morningYield + eveningYield).toFixed(2));
+  cowFarmYield = Number(cowFarmYield.toFixed(2));
+  buffFarmYield = Number(buffFarmYield.toFixed(2));
   const animalsMilkedCount = new Set(
     yieldLogs.map((y) => (y.animalId?._id ? y.animalId._id.toString() : y.animalId?.toString() || y._id.toString()))
   ).size;
@@ -138,13 +152,15 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
     date: { $gte: startOfDay, $lte: endOfDay },
     status: 'ACCEPTED',
   })
-    .populate('supplierId', 'name phone address')
+    .populate('supplierId', 'name phone address milkType')
     .lean();
 
   let supplierInflow = 0;
   let supplierCashPaid = 0;
   let supplierTotalBill = 0;
   let supplierTotalDue = 0;
+  let cowSupplierInflow = 0;
+  let buffSupplierInflow = 0;
 
   procurementLogs.forEach((p) => {
     const qty = Number(p.quantityLiters) || 0;
@@ -155,8 +171,20 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
     supplierCashPaid += paid;
     supplierTotalBill += bill;
     supplierTotalDue += due;
+
+    const sType = String(p.supplierId?.milkType || p.milkType || 'BUFFALO').toUpperCase();
+    if (sType === 'COW') {
+      cowSupplierInflow += qty;
+    } else if (sType === 'MIXED') {
+      cowSupplierInflow += Number((qty * 0.5).toFixed(2));
+      buffSupplierInflow += Number((qty * 0.5).toFixed(2));
+    } else {
+      buffSupplierInflow += qty;
+    }
   });
   supplierInflow = Number(supplierInflow.toFixed(2));
+  cowSupplierInflow = Number(cowSupplierInflow.toFixed(2));
+  buffSupplierInflow = Number(buffSupplierInflow.toFixed(2));
   supplierCashPaid = Number(supplierCashPaid.toFixed(2));
   supplierTotalBill = Number(supplierTotalBill.toFixed(2));
   supplierTotalDue = Number(supplierTotalDue.toFixed(2));
@@ -190,7 +218,7 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
   let posKhataOrdersCount = 0;
   let posSplitOrdersCount = 0;
 
-  // Track product-wise quantities sold & revenue
+  // Track product-wise quantities sold & revenue with farm/supplier attribution
   const productStats = new Map();
   allProducts.forEach((p) => {
     productStats.set(p._id.toString(), {
@@ -202,12 +230,41 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
       price: p.price || 0,
       currentStock: p.currentStock || 0,
       sold: 0,
+      farmSold: 0,
+      supplierSold: 0,
+      farmProduced: 0,
+      supplierPurchased: 0,
       revenue: 0,
+      farmRevenue: 0,
+      supplierRevenue: 0,
       cost: 0,
       produced: 0,
       wasted: 0,
     });
   });
+
+  // Assign accurate segregated produced/added quantities per milk variant
+  allProducts.forEach((prod) => {
+    const stats = productStats.get(prod._id.toString());
+    if (!stats) return;
+
+    if (isCowVariant(prod.name, prod.category)) {
+      stats.farmProduced = cowFarmYield;
+      stats.supplierPurchased = cowSupplierInflow;
+      stats.produced = Number((cowFarmYield + cowSupplierInflow).toFixed(2));
+    } else if (isBuffaloVariant(prod.name, prod.category)) {
+      stats.farmProduced = buffFarmYield;
+      stats.supplierPurchased = buffSupplierInflow;
+      stats.produced = Number((buffFarmYield + buffSupplierInflow).toFixed(2));
+    } else if (isMilkVariant(prod.name, prod.category)) {
+      stats.farmProduced = farmProduction;
+      stats.supplierPurchased = supplierInflow;
+      stats.produced = Number((farmProduction + supplierInflow).toFixed(2));
+    }
+  });
+
+  let totalSupplierMilkSold = 0;
+  let totalFarmMilkSold = 0;
 
   orders.forEach((order) => {
     const orderTotal = Number(order.grandTotal) || 0;
@@ -266,15 +323,67 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
           matchedProduct = productById.get(item.productId.toString());
         } else if (item.name && productByName.has(item.name.toLowerCase().trim())) {
           matchedProduct = productByName.get(item.name.toLowerCase().trim());
+        } else {
+          for (const prod of allProducts) {
+            if (isBuffaloVariant(item.name, item.category) && isBuffaloVariant(prod.name, prod.category)) {
+              matchedProduct = prod;
+              break;
+            } else if (isCowVariant(item.name, item.category) && isCowVariant(prod.name, prod.category)) {
+              matchedProduct = prod;
+              break;
+            } else if (isDahiVariant(item.name, item.category) && isDahiVariant(prod.name, prod.category)) {
+              matchedProduct = prod;
+              break;
+            }
+          }
         }
 
         const isMilk =
           (matchedProduct && matchedProduct.unit === 'LITER' && String(matchedProduct.category).toLowerCase().includes('milk')) ||
-          (String(item.unit || '').toUpperCase().includes('L') && String(item.name || '').toLowerCase().includes('milk'));
+          (String(item.unit || '').toUpperCase().includes('L') && isMilkVariant(item.name, item.category));
 
         // Count counter milk sales (exclude delivery orders to prevent double counting with DeliveryRun)
         if (isMilk && !isDeliveryOrder) {
           counterSalesMilk += itemQty;
+        }
+
+        // Segregate Farm vs Supplier quantities & revenue
+        let itemFarmQty = 0;
+        let itemSupplierQty = 0;
+        let itemFarmRev = 0;
+        let itemSupplierRev = 0;
+
+        if (item.supplierQuantity !== undefined || item.farmQuantity !== undefined) {
+          itemSupplierQty = Number(item.supplierQuantity) || 0;
+          itemFarmQty = Number(item.farmQuantity) || 0;
+          itemSupplierRev = Number(item.supplierRevenue) || 0;
+          itemFarmRev = Number(item.farmRevenue) || 0;
+        } else if (item.supplierDeducted !== undefined || item.farmDeducted !== undefined) {
+          itemSupplierQty = Number(item.supplierDeducted) || 0;
+          itemFarmQty = Number(item.farmDeducted) || 0;
+          itemSupplierRev = Number(item.supplierRevenue) || 0;
+          itemFarmRev = Number(item.farmRevenue) || 0;
+        } else if (item.supplierRatio !== undefined || item.farmRatio !== undefined) {
+          const sRatio = Number(item.supplierRatio) || 0;
+          const fRatio = Number(item.farmRatio) || 0;
+          itemSupplierQty = Number((itemQty * sRatio).toFixed(2));
+          itemFarmQty = Number((itemQty * fRatio).toFixed(2));
+          itemSupplierRev = Math.round(itemSubtotal * sRatio);
+          itemFarmRev = itemSubtotal - itemSupplierRev;
+        } else {
+          const src = String(item.source || '').toLowerCase();
+          if (src.includes('supplier')) {
+            itemSupplierQty = itemQty;
+            itemSupplierRev = itemSubtotal;
+          } else {
+            itemFarmQty = itemQty;
+            itemFarmRev = itemSubtotal;
+          }
+        }
+
+        if (isMilk) {
+          totalSupplierMilkSold += itemSupplierQty;
+          totalFarmMilkSold += itemFarmQty;
         }
 
         // Product statistics tracking
@@ -282,7 +391,11 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
           const stats = productStats.get(matchedProduct._id.toString());
           if (stats) {
             stats.sold += itemQty;
+            stats.farmSold += itemFarmQty;
+            stats.supplierSold += itemSupplierQty;
             stats.revenue += itemSubtotal;
+            stats.farmRevenue += itemFarmRev;
+            stats.supplierRevenue += itemSupplierRev;
             stats.cost += itemQty * (matchedProduct.costPrice || 0);
           }
         }
@@ -505,12 +618,17 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
       ? previousProductStocks.get(key)
       : previousProductStocks.get(p.name.toLowerCase().trim()) || 0;
 
-    // For Raw Milk product, align with overall milk flow
     const isMilkProduct = p.unit === 'LITER' && String(p.category).toLowerCase().includes('milk');
-    const openingStock = isMilkProduct ? openingMilkStock : prevStock;
-    const produced = isMilkProduct ? (farmProduction + supplierInflow) : p.produced;
-    const sold = isMilkProduct ? (counterSalesMilk + doorstepSalesMilk) : p.sold;
-    const wasted = isMilkProduct ? milkWastage : p.wasted;
+    let openingStock = prevStock;
+    if (openingStock === 0 && openingMilkStock > 0 && isMilkProduct) {
+      if (farmProduction + supplierInflow > 0) {
+        openingStock = Number(((p.produced / (farmProduction + supplierInflow)) * openingMilkStock).toFixed(2));
+      }
+    }
+
+    const produced = p.produced;
+    const sold = p.sold;
+    const wasted = p.wasted;
     const expectedClosing = Number((openingStock + produced - sold - wasted).toFixed(2));
 
     return {
@@ -520,11 +638,17 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
       category: p.category,
       openingStock: Number(openingStock.toFixed(2)),
       produced: Number(produced.toFixed(2)),
+      farmProduced: Number((p.farmProduced || 0).toFixed(2)),
+      supplierPurchased: Number((p.supplierPurchased || 0).toFixed(2)),
       sold: Number(sold.toFixed(2)),
+      farmSold: Number((p.farmSold || 0).toFixed(2)),
+      supplierSold: Number((p.supplierSold || 0).toFixed(2)),
       wasted: Number(wasted.toFixed(2)),
       expectedClosing,
       currentStock: p.currentStock || 0,
       revenue: Number(p.revenue.toFixed(2)),
+      farmRevenue: Number((p.farmRevenue || 0).toFixed(2)),
+      supplierRevenue: Number((p.supplierRevenue || 0).toFixed(2)),
       cost: Number(p.cost.toFixed(2)),
       profit: Number((p.revenue - p.cost).toFixed(2)),
     };
@@ -725,7 +849,11 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
     milk: {
       openingStock: openingMilkStock,
       farmProduction,
+      cowFarmYield,
+      buffFarmYield,
       supplierInflow,
+      cowSupplierInflow,
+      buffSupplierInflow,
       totalAvailable: totalAvailableMilk,
       counterSales: counterSalesMilk,
       doorstepSales: doorstepSalesMilk,
@@ -734,6 +862,18 @@ export const calculateDaySummary = async (targetDateStr, manualOpeningMilk = nul
       totalOut: totalMilkOut,
       expectedClosing: expectedClosingMilk,
       isNegative: isMilkNegative,
+      totalSupplierMilkSold: Number(totalSupplierMilkSold.toFixed(2)),
+      totalFarmMilkSold: Number(totalFarmMilkSold.toFixed(2)),
+    },
+    supplierMilkFlow: {
+      totalPurchased: supplierInflow,
+      cowPurchased: cowSupplierInflow,
+      buffPurchased: buffSupplierInflow,
+      totalSold: Number(totalSupplierMilkSold.toFixed(2)),
+      remainingStock: Number(Math.max(0, supplierInflow - totalSupplierMilkSold).toFixed(2)),
+      totalBill: supplierTotalBill,
+      cashPaid: supplierCashPaid,
+      totalDue: supplierTotalDue,
     },
     collections: {
       counterCash: Number(counterCash.toFixed(2)),
@@ -985,23 +1125,45 @@ export const getDailyClosingSummaryService = async (queryParams = {}) => {
           ...p,
           openingStock: p.openingStock,
           produced: 0,
+          farmProduced: 0,
+          supplierPurchased: 0,
           sold: 0,
+          farmSold: 0,
+          supplierSold: 0,
           wasted: 0,
           revenue: 0,
+          farmRevenue: 0,
+          supplierRevenue: 0,
           cost: 0,
           profit: 0,
         });
       }
       const aggregated = productMap.get(p.productId);
       aggregated.produced += p.produced || 0;
+      aggregated.farmProduced += p.farmProduced || 0;
+      aggregated.supplierPurchased += p.supplierPurchased || 0;
       aggregated.sold += p.sold || 0;
+      aggregated.farmSold += p.farmSold || 0;
+      aggregated.supplierSold += p.supplierSold || 0;
       aggregated.wasted += p.wasted || 0;
       aggregated.revenue += p.revenue || 0;
+      aggregated.farmRevenue += p.farmRevenue || 0;
+      aggregated.supplierRevenue += p.supplierRevenue || 0;
       aggregated.cost += p.cost || 0;
       aggregated.profit += p.profit || 0;
       aggregated.expectedClosing = Number((aggregated.openingStock + aggregated.produced - aggregated.sold - aggregated.wasted).toFixed(2));
     });
   });
+
+  const rangeSupplierMilkFlow = {
+    totalPurchased: dailySummaries.reduce((acc, d) => acc + (d.supplierMilkFlow?.totalPurchased || d.milk?.supplierInflow || 0), 0),
+    totalSold: dailySummaries.reduce((acc, d) => acc + (d.supplierMilkFlow?.totalSold || 0), 0),
+    remainingStock: 0,
+    totalBill: dailySummaries.reduce((acc, d) => acc + (d.supplierMilkFlow?.totalBill || 0), 0),
+    cashPaid: dailySummaries.reduce((acc, d) => acc + (d.supplierMilkFlow?.cashPaid || 0), 0),
+    totalDue: dailySummaries.reduce((acc, d) => acc + (d.supplierMilkFlow?.totalDue || 0), 0),
+  };
+  rangeSupplierMilkFlow.remainingStock = Number(Math.max(0, rangeSupplierMilkFlow.totalPurchased - rangeSupplierMilkFlow.totalSold).toFixed(2));
 
   return {
     date: `${startDateStr} to ${endDateStr}`,
@@ -1012,6 +1174,7 @@ export const getDailyClosingSummaryService = async (queryParams = {}) => {
     closing: null,
     openingSource: firstDay.openingSource || { type: 'NONE' },
     milk: rangeMilk,
+    supplierMilkFlow: rangeSupplierMilkFlow,
     collections: rangeCollections,
     creditGiven: dailySummaries.reduce((acc, d) => acc + (d.creditGiven || 0), 0),
     expenses: rangeExpenses,
