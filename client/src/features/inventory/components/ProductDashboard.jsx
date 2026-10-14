@@ -181,7 +181,6 @@ export default function ProductDashboard({ onAdd, onDetail, onEdit }) {
             { id: 'all', label: 'All Items' },
             { id: 'milk', label: 'Milk' },
             { id: 'dahi', label: 'Dahi' },
-            { id: 'lassi', label: 'Lassi' },
           ].map((tab) => (
             <button
               key={tab.id}

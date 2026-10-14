@@ -2,7 +2,14 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import posService from '@/services/posService.js';
 import { broadcastSync } from '@/utils/syncBroadcaster';
-import { isLegacyDummySale, isObjectId, matchProductForOrderItem, resolveAvailableStock } from './posHelpers';
+import {
+  isLegacyDummySale,
+  isObjectId,
+  matchProductForOrderItem,
+  resolveAvailableStock,
+  getProductAvailableStock,
+  getProductUnitLabel,
+} from './posHelpers';
 import { sortByDateDesc, ensureValidDate, normalizeDateStr, getPktTodayString, formatStandardDate, getActiveBusinessDate, getLocalDate } from '@/utils/dateUtils';
 
 export function usePOSOrders({
@@ -165,17 +172,27 @@ export function usePOSOrders({
 
     // Strict inventory stock check: Prevent order if live stock is 0 or insufficient
     const allProds = productsState?.products || [];
-    const liveMetrics = typeof getMetrics === 'function' ? getMetrics() : {};
+    const liveMetrics = typeof getMetrics === 'function' ? getMetrics() : (typeof getLiveStock === 'function' ? getLiveStock() : {});
     for (const cartItem of cart) {
       const reqQty = Number(cartItem.quantity) || 0;
-      if (reqQty <= 0) continue;
-      const prod = matchProductForOrderItem(cartItem, allProds);
-      if (prod) {
-        const avail = resolveAvailableStock(prod, cartItem, liveMetrics);
-        if (avail <= 0 || reqQty > avail) {
-          toast.error(`Cannot place sale: Insufficient stock for "${prod.name}". Available: ${avail} ${prod.unit || ''}, Requested: ${reqQty}`);
-          return null;
-        }
+      if (reqQty <= 0) {
+        toast.error(`Please enter a valid quantity for "${cartItem.name}"`);
+        throw new Error(`Invalid quantity for "${cartItem.name}"`);
+      }
+      const prod = matchProductForOrderItem(cartItem, allProds) || cartItem;
+      const avail = resolveAvailableStock(prod, cartItem, liveMetrics);
+      const unitLabel = getProductUnitLabel(prod, true) || prod.unit || 'unit';
+
+      if (avail <= 0) {
+        const errMsg = `🚫 Out of Stock: "${cartItem.name}" abhi dastiyab nahi hai (Available: 0 ${unitLabel}).`;
+        toast.error(errMsg);
+        throw new Error(errMsg);
+      }
+
+      if (reqQty > avail) {
+        const errMsg = `🚫 Insufficient Stock: "${cartItem.name}" cart quantity (${reqQty} ${unitLabel}) exceeds available stock (${avail} ${unitLabel}).`;
+        toast.error(errMsg);
+        throw new Error(errMsg);
       }
     }
 
