@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronDown, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import { usePOSContext } from '@/context/POSContext';
 
 export default function POSCustomerKhataSection() {
@@ -18,7 +19,10 @@ export default function POSCustomerKhataSection() {
     setOnlineDetails,
     orderNotes = '',
     setOrderNotes,
+    cashTendered = '',
+    setCashTendered,
     netPayable = 0,
+    executeKhataPayment,
   } = usePOSContext();
 
   const currentKhataBal = Number(activeCustomer?.khataBalance || 0);
@@ -36,6 +40,29 @@ export default function POSCustomerKhataSection() {
       : currentKhataBal + Math.max(0, netPayable - totalDirect);
 
   const isLimitExceeded = creditLimit > 0 && (currentKhataBal >= creditLimit || projectedCustomerBalance > creditLimit);
+
+  const handleDirectClearKhata = (cust) => {
+    const target = cust || activeCustomer;
+    if (!target) return;
+    const balance = target.khataBalance || 0;
+    if (balance <= 0) {
+      toast.info(`Customer ${target.name} has no outstanding khata debt.`);
+      return;
+    }
+    if (
+      window.confirm(
+        `Clear and finish full khata debt of Rs. ${balance.toLocaleString()} for ${target.name}?`,
+      )
+    ) {
+      executeKhataPayment?.({
+        customerId: target.id,
+        amountPaid: balance,
+        paymentMethod: "Cash",
+        notes: "Full Khata finished and cleared at POS register",
+      });
+      toast.success(`Khata for ${target.name} has been settled and finished.`);
+    }
+  };
 
   return (
     <div className="space-y-3 animate-in fade-in duration-150 text-xs">
@@ -62,6 +89,26 @@ export default function POSCustomerKhataSection() {
 
       {activeCustomer ? (
         <div className="space-y-2.5">
+          {/* Customer Profile Banner with Clear Due */}
+          <div className="p-2 bg-purple-50/50 rounded-lg border border-purple-100 flex items-center justify-between">
+            <div>
+              <span className="font-bold text-slate-800 text-xs block">
+                {activeCustomer.name}
+              </span>
+              <span className="text-[10px] text-slate-500">
+                {activeCustomer.phone} · {activeCustomer.area || "Model Town"}
+              </span>
+            </div>
+            {activeCustomer.khataBalance > 0 && (
+              <button
+                type="button"
+                onClick={() => handleDirectClearKhata(activeCustomer)}
+                className="text-[10px] font-bold text-rose-600 hover:text-rose-800 bg-white border border-rose-200 rounded px-2 py-0.5 shadow-2xs transition cursor-pointer"
+              >
+                Clear Due
+              </button>
+            )}
+          </div>
           {/* Credit Limit Exceeded Alert Notification */}
           {isLimitExceeded && (
             <div className="p-2.5 bg-rose-50 border-2 border-rose-300 rounded-xl flex items-start gap-2 text-rose-900 text-xs animate-in fade-in">
@@ -157,6 +204,58 @@ export default function POSCustomerKhataSection() {
                 </span>
               </label>
             </div>
+
+            {khataPaymentOption === 'cash' && (
+              <div className="space-y-1.5 p-2 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase text-emerald-900 tracking-wider">
+                    Amount Received (Rs)
+                  </label>
+                  <span className="text-[10px] font-bold text-slate-500">
+                    Bill: <span className="text-slate-800 font-bold">Rs. {netPayable.toLocaleString()}</span>
+                  </span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1.5 text-xs font-black text-emerald-700">Rs.</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={cashTendered}
+                    onChange={(e) => setCashTendered?.(e.target.value)}
+                    placeholder="e.g. 500, 1000..."
+                    className="w-full pl-9 pr-3 py-1.5 bg-white border border-emerald-200 rounded-lg text-xs font-extrabold text-slate-900 placeholder:text-slate-300 focus:outline-none focus:border-emerald-600 tabular"
+                  />
+                </div>
+                {Number(cashTendered) > 0 && (
+                  <div
+                    className={`p-1.5 rounded-lg border flex justify-between items-center text-xs font-bold ${
+                      Number(cashTendered) - netPayable > 0
+                        ? 'bg-emerald-500 text-white border-emerald-600'
+                        : Number(cashTendered) < netPayable
+                        ? 'bg-amber-50 text-amber-800 border-amber-200'
+                        : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    }`}
+                  >
+                    <span>
+                      {Number(cashTendered) - netPayable > 0
+                        ? '💵 Change / Return:'
+                        : Number(cashTendered) < netPayable
+                        ? '⚠️ Shortage / Due:'
+                        : '✓ Exact Cash Received:'}
+                    </span>
+                    <span className="tabular font-black">
+                      Rs.{' '}
+                      {Number(cashTendered) - netPayable > 0
+                        ? (Number(cashTendered) - netPayable).toLocaleString()
+                        : Number(cashTendered) < netPayable
+                        ? (netPayable - Number(cashTendered)).toLocaleString()
+                        : '0'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div>
               <input

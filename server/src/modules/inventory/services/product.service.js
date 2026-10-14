@@ -55,11 +55,10 @@ class ProductService {
       products.map(async (p) => {
         if (isMilkVariant(p.name, p.category) || isDahiVariant(p.name, p.category)) {
           const liveStock = await getLiveAvailableStock(p);
-          const stockVal = Math.max(Number(p.currentStock || 0), liveStock);
           return {
             ...p,
-            currentStock: stockVal,
-            stock: stockVal,
+            currentStock: liveStock,
+            stock: liveStock,
           };
         }
         return p;
@@ -107,7 +106,7 @@ class ProductService {
     }
 
     const product = await Product.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
 

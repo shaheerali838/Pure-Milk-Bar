@@ -128,6 +128,9 @@ export default function POSDashboard() {
 
   // Dynamically resolve real-time stock from live farm, supplier, and kitchen conversion metrics
   const getProductDisplayStock = (prod) => {
+    if (context.getProductAvailableStock) {
+      return context.getProductAvailableStock(prod);
+    }
     const name = (prod.name || '').toLowerCase();
     const cat = (prod.category || '').toLowerCase();
     const isCow = name.includes('cow') || name.includes('gai');
@@ -137,42 +140,34 @@ export default function POSDashboard() {
     if (cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt') || cat.includes('curd') || name.includes('curd')) {
       const farmD = Number(inventoryMetrics?.rawFarmDahiStock ?? inventoryMetrics?.farmDahiStock) || 0;
       const supD = Number(inventoryMetrics?.rawSupplierDahiStock ?? inventoryMetrics?.supplierDahiStock) || 0;
-      const liveDahi = Number((farmD + supD).toFixed(2));
-      return liveDahi > 0 ? liveDahi : catalogBaseStock;
+      const batchSpecific = Number(inventoryMetrics?.productBatchStockMap?.[prod.name] || 0);
+      return Number(Math.max(0, farmD + supD + batchSpecific).toFixed(2));
     }
 
     if (cat.includes('milk') || name.includes('milk')) {
       if (isCow) {
-        // Combined Cow Milk Card: Farm Cow + Supplier Cow
         const farmCow = Number(inventoryMetrics?.farmCowMilkStock ?? inventoryMetrics?.rawFarmCowMilkStock) || 0;
         const supCow = Number(inventoryMetrics?.supplierCowMilkStock ?? inventoryMetrics?.rawSupplierCowMilkStock) || 0;
-        const liveCow = Number((farmCow + supCow).toFixed(1));
-        return liveCow > 0 ? liveCow : catalogBaseStock;
+        return Number(Math.max(0, farmCow + supCow).toFixed(1));
       }
       if (isBuff) {
-        // Combined Buffalo Milk Card: Farm Buffalo + Supplier Buffalo
         const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock ?? inventoryMetrics?.rawFarmBuffaloMilkStock) || 0;
         const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock ?? inventoryMetrics?.rawSupplierBuffaloMilkStock) || 0;
-        const liveBuff = Number((farmBuff + supBuff).toFixed(1));
-        if (liveBuff > 0) return liveBuff;
-        const liveTot = Number(inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock) || 0;
-        if (liveTot > 0) return liveTot;
-        return catalogBaseStock;
+        return Number(Math.max(0, farmBuff + supBuff).toFixed(1));
       }
-      const liveTot = Number(inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock);
-      if (!isNaN(liveTot) && liveTot > 0) return liveTot;
-      return catalogBaseStock;
+      const liveTot = Number(inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock) || 0;
+      return Number(Math.max(0, liveTot).toFixed(1));
     }
 
     const batchSpecificStock = Number(inventoryMetrics?.productBatchStockMap?.[prod.name] || 0);
-    return Math.max(catalogBaseStock, catalogBaseStock + batchSpecificStock);
+    return Math.max(0, catalogBaseStock + batchSpecificStock);
   };
 
   // Temporary on-card warning state for zero stock / depleted stock
   const [stockWarningId, setStockWarningId] = useState(null);
   const [stockWarningMsg, setStockWarningMsg] = useState('');
 
-  // Handle product click
+  // Handle product click with strict stock validation
   const handleProductCardClick = (product) => {
     if (isDayClosed) {
       toast.error('🔒 Day is Closed. Open New Day to continue operations.');
@@ -180,16 +175,32 @@ export default function POSDashboard() {
     }
     if (isSaleRefreshing) return;
     const displayStock = getProductDisplayStock(product);
-    const unitLabel = product.unit?.replace('per ', '') || 'L';
+    const unitLabel = context.getProductUnitLabel
+      ? context.getProductUnitLabel(product, true)
+      : (product.unit?.replace('per ', '') || 'L');
 
     if (displayStock <= 0) {
-      toast.info(`Selling ${product.name} (Recorded stock: 0 ${unitLabel})`, {
-        description: 'Inventory balance will adjust upon sales recording.',
-        duration: 2000,
+      toast.error(`🚫 Out of Stock: Yeh item abhi dastiyab nahi hai.`, {
+        description: `"${product.name}" ka recorded stock 0 ${unitLabel} hai. Please purchase intake or add stock.`,
+        duration: 3500,
       });
+      return;
+    }
+
+    const prodId = product.id || product._id || product.sku;
+    const cartItem = cart.find((i) => i.id === prodId || (product.id && i.id === product.id));
+    const inCartQty = cartItem ? Number(cartItem.quantity) || 0 : 0;
+
+    if (inCartQty + 1 > displayStock) {
+      toast.error(`🚫 Insufficient Stock! "${product.name}"`, {
+        description: `Sirf ${displayStock} ${unitLabel} stock dastiyab hai (Already in cart: ${inCartQty} ${unitLabel}).`,
+        duration: 3500,
+      });
+      return;
     }
 
     handleAddToCart(product);
+    toast.success(`+1 ${unitLabel} ${product.name} added to cart`);
   };
 
   // Handler for Detail (Eye) - Opens the detail page of the product

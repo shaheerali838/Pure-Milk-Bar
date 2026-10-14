@@ -210,6 +210,9 @@ export async function getLiveAvailableStock(prod) {
       const animalIds = animals.map((a) => a._id);
       if (animalIds.length > 0) {
         farmYieldQuery.animalId = { $in: animalIds };
+      } else {
+        // No animals of this type exist at the farm! Farm yield is strictly 0.
+        farmYieldQuery.animalId = { $in: [] };
       }
     }
     const yieldLogs = await MilkingYieldLog.find(farmYieldQuery).select('yieldLiters');
@@ -217,7 +220,7 @@ export async function getLiveAvailableStock(prod) {
 
     // If today has no logs recorded yet, fall back to all-time recorded logs
     let isAllTimeYield = false;
-    if (totalYield === 0) {
+    if (totalYield === 0 && (!farmYieldQuery.animalId || farmYieldQuery.animalId.$in?.length > 0)) {
       const allYieldQuery = { ...farmYieldQuery };
       delete allYieldQuery.$or;
       const allYieldLogs = await MilkingYieldLog.find(allYieldQuery).select('yieldLiters');
@@ -248,6 +251,9 @@ export async function getLiveAvailableStock(prod) {
       const supIds = suppliers.map((s) => s._id);
       if (supIds.length > 0) {
         supplierQuery.supplierId = { $in: supIds };
+      } else {
+        // No suppliers of this milk type exist! Supplier intake is strictly 0.
+        supplierQuery.supplierId = { $in: [] };
       }
     }
     const procurements = await MilkProcurement.find(supplierQuery).select('quantityLiters');
@@ -370,10 +376,10 @@ export async function getLiveAvailableStock(prod) {
 
     const netMilkStock = Math.max(
       0,
-      Number(((totalYield + totalProcured + catalogStock) - (totalSold + convertedDeduction)).toFixed(2))
+      Number(((totalYield + totalProcured) - (totalSold + convertedDeduction)).toFixed(2))
     );
 
-    return Math.max(catalogStock, netMilkStock);
+    return netMilkStock;
   } catch (err) {
     console.warn('Backend getLiveAvailableStock fallback:', err.message);
     return catalogStock;

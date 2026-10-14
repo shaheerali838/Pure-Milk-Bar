@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { estimateDistanceKm } from '../../features/pos/utils/estimateDeliveryDistance.js';
 import { getPktTodayString, getActiveBusinessDate } from '@/utils/dateUtils';
+import { resolveAvailableStock } from './posHelpers.js';
 
-export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicRiders = [], activeDate = null } = {}) {
+export function usePOSCart({
+  processingBatches = [],
+  allCustomers = [],
+  dynamicRiders = [],
+  activeDate = null,
+  getLiveStock = () => ({}),
+} = {}) {
   const effectiveActiveDate = activeDate || getActiveBusinessDate();
   const [cart, setCart] = useState([]);
   const [saleDate, setSaleDate] = useState(effectiveActiveDate);
@@ -123,13 +131,36 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
     return { source: 'Farm', farmRatio: 1, supplierRatio: 0 };
   };
 
-  // Cart operations
+  // Cart operations with strict live stock validation
   const handleAddToCart = (product, initialQty = 1) => {
-    const { source: itemSrc, farmRatio: fRatio, supplierRatio: sRatio } = resolveCartProductSource(product);
+    if (!product) return;
+    const availStock = resolveAvailableStock(product, product, getLiveStock?.() || {});
+    const unit = product.unit?.replace('per ', '') || 'unit';
+
+    if (availStock <= 0) {
+      toast.error(` Out of Stock: "${product.name}" abhi dastiyab nahi hai.`, {
+        description: `Recorded stock 0 ${unit} hai. Please add inventory or procurement.`,
+        duration: 3500,
+      });
+      return;
+    }
+
     const addQty = typeof initialQty === 'number' && initialQty > 0 ? initialQty : 1;
+    const existing = cart.find((item) => item.id === product.id);
+    const currentInCart = existing ? Number(existing.quantity) || 0 : 0;
+
+    if (currentInCart + addQty > availStock) {
+      toast.error(` Insufficient Stock! "${product.name}"`, {
+        description: `Sirf ${availStock} ${unit} stock dastiyab hai (Already in cart: ${currentInCart} ${unit}).`,
+        duration: 3500,
+      });
+      return;
+    }
+
+    const { source: itemSrc, farmRatio: fRatio, supplierRatio: sRatio } = resolveCartProductSource(product);
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
-      if (existing) {
+      const match = prev.find((item) => item.id === product.id);
+      if (match) {
         return prev.map((item) =>
           item.id === product.id ? { ...item, quantity: Number((item.quantity + addQty).toFixed(3)) } : item
         );
@@ -153,15 +184,38 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
   };
 
   const handleAddToCartByRupees = (product, rupees) => {
+    if (!product) return;
     const numRupees = parseFloat(rupees);
     if (isNaN(numRupees) || numRupees <= 0) return;
+    const availStock = resolveAvailableStock(product, product, getLiveStock?.() || {});
+    const unit = product.unit?.replace('per ', '') || 'unit';
+
+    if (availStock <= 0) {
+      toast.error(` Out of Stock: "${product.name}" abhi dastiyab nahi hai.`, {
+        description: `Recorded stock 0 ${unit} hai.`,
+        duration: 3500,
+      });
+      return;
+    }
+
     const rate = Number(product.price) || 200;
     const calcQty = rate > 0 ? Number((numRupees / rate).toFixed(3)) : 1;
+    const existing = cart.find((item) => item.id === product.id);
+    const currentInCart = existing ? Number(existing.quantity) || 0 : 0;
+
+    if (currentInCart + calcQty > availStock) {
+      toast.error(` Insufficient Stock! "${product.name}"`, {
+        description: `Sirf ${availStock} ${unit} stock dastiyab hai.`,
+        duration: 3500,
+      });
+      return;
+    }
+
     const { source: itemSrc, farmRatio: fRatio, supplierRatio: sRatio } = resolveCartProductSource(product);
 
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
-      if (existing) {
+      const match = prev.find((item) => item.id === product.id);
+      if (match) {
         return prev.map((item) =>
           item.id === product.id ? { ...item, quantity: calcQty } : item
         );
@@ -217,26 +271,51 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
       );
       return;
     }
+    const numQty = parseFloat(newQuantity);
+    if (isNaN(numQty) || numQty < 0) return;
+
     setCart((prev) =>
-      prev.map((item) => (item.id === productId ? { ...item, quantity: newQuantity } : item))
+      prev.map((item) => {
+        if (item.id !== productId) return item;
+        const availStock = resolveAvailableStock(item, item, getLiveStock?.() || {});
+        let clampedQty = numQty;
+        if (availStock !== null && availStock !== undefined && numQty > availStock) {
+          toast.error(`🚫 Stock Limit Exceeded! "${item.name}"`, {
+            description: `Sirf ${availStock} stock dastiyab hai. Is se zyada enter nahi kiya ja sakta.`,
+            duration: 2500,
+          });
+          clampedQty = availStock;
+        }
+        return { ...item, quantity: clampedQty };
+      })
     );
   };
 
   const handleUpdateByRupees = (productId, rupees) => {
     if (rupees === '' || rupees === undefined || rupees === null) {
       setCart((prev) =>
-        prev.map((item) => (item.id === productId ? { ...item, quantity: 0 } : item))
+        prev.map((item) => (item.id === productId ? { ...item, quantity: '' } : item))
       );
       return;
     }
     const parsed = parseFloat(rupees);
+    if (isNaN(parsed) || parsed < 0) return;
+
     setCart((prev) =>
       prev.map((item) => {
         if (item.id !== productId) return item;
         const rate = Number(item.price) || 1;
-        const calculatedQty = (!isNaN(parsed) && parsed > 0 && rate > 0)
+        let calculatedQty = (!isNaN(parsed) && parsed > 0 && rate > 0)
           ? Number((parsed / rate).toFixed(3))
           : 0;
+        const availStock = resolveAvailableStock(item, item, getLiveStock?.() || {});
+        if (availStock !== null && availStock !== undefined && calculatedQty > availStock) {
+          toast.error(`🚫 Stock Limit Exceeded! "${item.name}"`, {
+            description: `Rs. ${parsed} (${calculatedQty}) exceeds max stock of ${availStock}.`,
+            duration: 2500,
+          });
+          calculatedQty = availStock;
+        }
         return {
           ...item,
           quantity: calculatedQty,

@@ -29,13 +29,48 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
     dahiTransferredToPOS = '0.0',
   } = metrics;
 
-  const farmDahiStock = Number(inventoryMetrics?.rawFarmDahiStock ?? inventoryMetrics?.farmDahiStock ?? metrics.farmDahiStock ?? 0);
-  const supplierDahiStock = Number(inventoryMetrics?.rawSupplierDahiStock ?? inventoryMetrics?.supplierDahiStock ?? metrics.supplierDahiStock ?? 0);
-  const totalDahiStock = Number((farmDahiStock + supplierDahiStock).toFixed(2));
+  const farmDahiStock = Number(inventoryMetrics?.rawFarmDahiStock) > 0
+    ? Number(inventoryMetrics.rawFarmDahiStock)
+    : (Number(metrics.farmDahiStock) > 0
+        ? Number(metrics.farmDahiStock)
+        : Number(inventoryMetrics?.farmDahiStock || 0));
 
-  const displayTotal    = remainingTotalMilk    !== undefined ? remainingTotalMilk    : totalMilkSourced;
-  const displayFarm     = remainingFarmMilk     !== undefined ? remainingFarmMilk     : farmSourced;
-  const displaySupplier = remainingSupplierMilk !== undefined ? remainingSupplierMilk : supplierSourced;
+  const supplierDahiStock = Number(inventoryMetrics?.rawSupplierDahiStock) > 0
+    ? Number(inventoryMetrics.rawSupplierDahiStock)
+    : (Number(metrics.supplierDahiStock) > 0
+        ? Number(metrics.supplierDahiStock)
+        : Number(inventoryMetrics?.supplierDahiStock || 0));
+
+  const totalDahiStock = Number(
+    (Number(inventoryMetrics?.rawTotalDahiStock) > 0
+      ? Number(inventoryMetrics.rawTotalDahiStock)
+      : (Number(metrics.totalDahiStock) > 0
+          ? Number(metrics.totalDahiStock)
+          : farmDahiStock + supplierDahiStock)
+    ).toFixed(2)
+  );
+
+  const posTotalMilk = Number(inventoryMetrics?.rawTotalMilkStock ?? inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk);
+  const posFarmMilk = Number(inventoryMetrics?.rawFarmMilkStock ?? inventoryMetrics?.farmMilkStock ?? inventoryMetrics?.availableFarmStock);
+  const posSupMilk = Number(inventoryMetrics?.rawSupplierMilkStock ?? inventoryMetrics?.supplierMilkStock ?? inventoryMetrics?.availableSupplierStock);
+
+  const displayTotal = remainingTotalMilk !== undefined && Number(remainingTotalMilk) > 0
+    ? remainingTotalMilk
+    : (!isNaN(posTotalMilk) && posTotalMilk > 0
+        ? posTotalMilk
+        : (totalMilkSourced !== '0.0' ? totalMilkSourced : (posTotalMilk || '0.0')));
+
+  const displayFarm = remainingFarmMilk !== undefined && Number(remainingFarmMilk) > 0
+    ? remainingFarmMilk
+    : (!isNaN(posFarmMilk) && posFarmMilk > 0
+        ? posFarmMilk
+        : (farmSourced !== '0' ? farmSourced : (posFarmMilk || '0')));
+
+  const displaySupplier = remainingSupplierMilk !== undefined && Number(remainingSupplierMilk) > 0
+    ? remainingSupplierMilk
+    : (!isNaN(posSupMilk) && posSupMilk > 0
+        ? posSupMilk
+        : (supplierSourced !== '0' ? supplierSourced : (posSupMilk || '0')));
 
   const dahiSalesAmount = isDahiPriceDefined
     ? `${dahiSoldInPOS} kg · Rs. ${Number(totalDahiRevenue).toLocaleString()}`
@@ -60,8 +95,8 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
     {
       id: 'sourced',
       title: 'Available Liquid Milk (With Me)',
-      amount: `${displayTotal} kg`,
-      sub: `Farm: ${displayFarm}kg · Sup: ${displaySupplier}kg`,
+      amount: `${displayTotal} L`,
+      sub: `Farm: ${displayFarm} L · Sup: ${displaySupplier} L`,
       icon: Droplets,
       color: '#155dfc',
       badge: 'Available',
