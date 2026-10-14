@@ -107,6 +107,38 @@ export default function FarmDashboardContent() {
   }, [animals]);
 
   // Real Financial Metrics from POS & Expenses based on dateFilter
+  const getFarmRevenueFromItem = (item) => {
+    const name = (item.name || '').toLowerCase();
+    const cat = (item.category || '').toLowerCase();
+    const src = (item.source || '').toLowerCase();
+    const qty = Number(item.quantity) || 0;
+    const rev = Number(item.subtotal || item.effectiveRevenue) || qty * (Number(item.price) || 0);
+
+    if (item.farmRevenue !== undefined && Number(item.farmRevenue) > 0) {
+      return Number(item.farmRevenue);
+    }
+    if (item.farmDahiRevenue !== undefined && Number(item.farmDahiRevenue) > 0) {
+      return Number(item.farmDahiRevenue);
+    }
+    if (item.farmRatio !== undefined) {
+      return Math.round(rev * Number(item.farmRatio));
+    }
+    if (src.includes('farm') || name.includes('farm') || cat.includes('farm') || name.includes('cow') || cat.includes('cow')) {
+      return rev;
+    }
+    if (!src.includes('supplier') && !name.includes('supplier') && !cat.includes('supplier')) {
+      return rev;
+    }
+    return 0;
+  };
+
+  const calculateFarmSales = (salesList) => {
+    return salesList.reduce((total, sale) => {
+      const saleFarmRev = (sale.items || []).reduce((itemSum, item) => itemSum + getFarmRevenueFromItem(item), 0);
+      return total + (saleFarmRev > 0 ? saleFarmRev : 0);
+    }, 0);
+  };
+
   const {
     periodNetProfit,
     monthlyNetProfit,
@@ -116,15 +148,23 @@ export default function FarmDashboardContent() {
     periodFarmExpenses,
     periodExpenseCount,
   } = useMemo(() => {
-    const rawSales = Array.isArray(posCtx?.farmSalesHistory) ? posCtx.farmSalesHistory : [];
-    const salesInPeriod = rawSales.filter((s) =>
-      isDateInFilterRange(s.date || s.createdAt, dateFilter, startDate, endDate)
+    const allSales = (Array.isArray(posCtx?.farmSalesHistory) && posCtx.farmSalesHistory.length > 0)
+      ? posCtx.farmSalesHistory
+      : (Array.isArray(posCtx?.salesHistory) ? posCtx.salesHistory : []);
+    const salesInPeriod = allSales.filter((s) =>
+      isDateInFilterRange(s.date || s.timestamp || s.createdAt || s.formattedDate, dateFilter, startDate, endDate)
     );
 
-    const periodSales = salesInPeriod.reduce((sum, s) => {
-      const amt = Number(s.finalTotal || s.total || s.totalAmount || s.amount) || 0;
-      return sum + amt;
-    }, 0);
+    let periodSales = calculateFarmSales(salesInPeriod);
+
+    // Consistency check with live POS metrics for today if sales history has not fully populated
+    if (dateFilter === 'today' && periodSales === 0) {
+      if (posCtx?.farmSalesMetrics?.totalRevenue !== undefined && Number(posCtx.farmSalesMetrics.totalRevenue) > 0) {
+        periodSales = Number(posCtx.farmSalesMetrics.totalRevenue);
+      } else if (posCtx?.businessFinancialMetrics?.farmTotalIncome !== undefined && Number(posCtx.businessFinancialMetrics.farmTotalIncome) > 0) {
+        periodSales = Number(posCtx.businessFinancialMetrics.farmTotalIncome);
+      }
+    }
 
     const farmExpenses = expenses.filter((e) => {
       const scope = String(e.scope || e.expenseEntity || 'FARM').toUpperCase();
@@ -135,26 +175,35 @@ export default function FarmDashboardContent() {
       isDateInFilterRange(e.date || e.expenseDate || e.createdAt, dateFilter, startDate, endDate)
     );
 
-    const periodExpense = expensesInPeriod.reduce((sum, e) => {
+    let periodExpense = expensesInPeriod.reduce((sum, e) => {
       const amt = Number(e.amountRupees ?? e.amount) || 0;
       return sum + amt;
     }, 0);
 
+    if (dateFilter === 'today' && periodExpense === 0 && posCtx?.businessFinancialMetrics?.farmExpenses) {
+      periodExpense = Number(posCtx.businessFinancialMetrics.farmExpenses);
+    }
+
+    const monthlySales = allSales.filter((s) =>
+      isDateInFilterRange(s.date || s.timestamp || s.createdAt || s.formattedDate, 'this_month')
+    );
+    const monthlySalesTotal = calculateFarmSales(monthlySales);
+
     const monthlyExpenses = farmExpenses.filter((e) =>
       isDateInFilterRange(e.date || e.expenseDate || e.createdAt, 'this_month')
     );
-    const monthlyExpenseTotal = monthlyExpenses.reduce((sum, e) => sum + (Number(e.amountRupees ?? e.amount) || 0), 0);
-
-    const monthlySales = rawSales.filter((s) =>
-      isDateInFilterRange(s.date || s.createdAt, 'this_month')
-    );
-    const monthlySalesTotal = monthlySales.reduce(
-      (sum, s) => sum + (Number(s.finalTotal || s.total || s.totalAmount || s.amount) || 0),
+    const monthlyExpenseTotal = monthlyExpenses.reduce(
+      (sum, e) => sum + (Number(e.amountRupees ?? e.amount) || 0),
       0
     );
 
+    let calculatedNetProfit = periodSales - periodExpense;
+    if (dateFilter === 'today' && posCtx?.businessFinancialMetrics?.farmNetProfit !== undefined && (periodSales > 0 || periodExpense > 0)) {
+      calculatedNetProfit = Number(posCtx.businessFinancialMetrics.farmNetProfit);
+    }
+
     return {
-      periodNetProfit: periodSales - periodExpense,
+      periodNetProfit: calculatedNetProfit,
       monthlyNetProfit: monthlySalesTotal - monthlyExpenseTotal,
       periodFarmSales: periodSales,
       periodFarmExpense: periodExpense,
@@ -162,7 +211,7 @@ export default function FarmDashboardContent() {
       periodFarmExpenses: periodExpense,
       periodExpenseCount: expensesInPeriod.length,
     };
-  }, [posCtx?.farmSalesHistory, expenses, dateFilter, startDate, endDate]);
+  }, [posCtx?.farmSalesHistory, posCtx?.salesHistory, posCtx?.farmSalesMetrics, posCtx?.businessFinancialMetrics, expenses, dateFilter, startDate, endDate]);
 
   // Production Trends (7 Days)
   const trendData = useMemo(() => {
@@ -185,11 +234,14 @@ export default function FarmDashboardContent() {
 
       const dayExpenses = expenses
         .filter((e) => (e.date || e.expenseDate || e.createdAt || '').slice(0, 10) === dateStr)
-        .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+        .reduce((sum, e) => sum + (parseFloat(e.amountRupees ?? e.amount) || 0), 0);
 
-      const daySales = (posCtx?.farmSalesHistory || [])
-        .filter((s) => (s.date || s.createdAt || '').slice(0, 10) === dateStr)
-        .reduce((sum, s) => sum + (parseFloat(s.finalTotal || s.total) || 0), 0);
+      const daySales = (posCtx?.salesHistory || [])
+        .filter((s) => (s.date || s.timestamp || s.createdAt || '').slice(0, 10) === dateStr)
+        .reduce((sum, s) => {
+          const sRev = (s.items || []).reduce((iSum, item) => iSum + getFarmRevenueFromItem(item), 0);
+          return sum + sRev;
+        }, 0);
 
       days.push({
         date: dayLabel,
@@ -201,7 +253,7 @@ export default function FarmDashboardContent() {
       });
     }
     return days;
-  }, [milkingLogs, expenses, posCtx?.farmSalesHistory, totalFarmYield]);
+  }, [milkingLogs, expenses, posCtx?.salesHistory, totalFarmYield]);
 
   // Animal Bar Chart Data
   const animalBarData = useMemo(() => {
@@ -322,27 +374,7 @@ export default function FarmDashboardContent() {
               <h3 className="text-lg font-bold text-slate-900 font-display">
                 Herd Register &amp; Directory
               </h3>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                {animals.length} Animals Registered
-              </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Comprehensive registry of active dairy cows and buffaloes with yields, health status, and lifecycle records
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setEditAnimal(null);
-                navigate('/farm/animals');
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-3" />
-              <span>Add Animal</span>
-            </button>
           </div>
         </div>
 

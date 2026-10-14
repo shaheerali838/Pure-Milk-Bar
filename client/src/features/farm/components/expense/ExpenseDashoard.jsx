@@ -203,7 +203,6 @@ export default function ExpenseDashboard() {
                                 <span>{todayFormatted}</span>
                             </div>
                         </div>
-                        <p className="text-xs text-slate-500 font-medium mt-0.5">Track farm inputs, feed, utilities, salaries and maintenance costs</p>
                     </div>
                     <div className="items-center w-full sm:w-auto">
                         <Button

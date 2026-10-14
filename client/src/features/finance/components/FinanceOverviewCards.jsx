@@ -155,9 +155,7 @@ export default function FinanceOverviewCards({ onSelectCustomerFinance, onSelect
             <Wallet className="w-5 h-5 text-emerald-600" />
             Financial Operations &amp; Reports
           </h1>
-          <p className="text-xs text-slate-500 font-medium">
-            Manage customer accounts, rider logistics, and segregated Farm, Supplier &amp; Dahi reports.
-          </p>
+        
         </div>
 
         {/* Date Filter Pills */}

@@ -113,9 +113,11 @@ export default function FarmCardOverflow({
         ? `Rs. -${Math.abs(dailyNetProfit).toLocaleString()}`
         : `Rs. ${dailyNetProfit.toLocaleString()}`,
       sub: dailyNetProfit < 0
-        ? `${resolvedPeriodLabel} expenses exceed sales by Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
+        ? (Number(todayFarmRevenue) > 0
+            ? `Sales: Rs. ${Number(todayFarmRevenue).toLocaleString()} · Exp: Rs. ${Number(effectiveExpense).toLocaleString()}`
+            : `${resolvedPeriodLabel} expenses: Rs. ${Number(effectiveExpense).toLocaleString()} · No sales`)
         : dailyNetProfit > 0
-        ? `From Rs. ${Number(todayFarmRevenue || posCtx?.farmSalesMetrics?.revenue || 0).toLocaleString()} sales`
+        ? `Sales: Rs. ${Number(todayFarmRevenue || 0).toLocaleString()} · Exp: Rs. ${Number(effectiveExpense).toLocaleString()}`
         : `${resolvedPeriodLabel}: Breakeven / No sales`,
       icon: dailyNetProfit < 0 ? TrendingDown : dailyNetProfit > 0 ? TrendingUp : Banknote,
       color: dailyNetProfit < 0 ? "#e11d48" : dailyNetProfit > 0 ? "#10b981" : "#64748b",

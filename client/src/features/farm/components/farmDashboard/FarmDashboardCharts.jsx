@@ -170,7 +170,7 @@ export default function FarmDashboardCharts({ trendData, animalBarData, expenses
             </div>
             <button
               type="button"
-              onClick={() => navigate('/finance')}
+              onClick={() => navigate('/farm/pl')}
               className="flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 transition cursor-pointer"
             >
               Full P&L <ArrowRight className="w-3.5 h-3.5" />
