@@ -33,9 +33,24 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
   const supplierDahiStock = Number(inventoryMetrics?.rawSupplierDahiStock ?? inventoryMetrics?.supplierDahiStock ?? metrics.supplierDahiStock ?? 0);
   const totalDahiStock = Number((farmDahiStock + supplierDahiStock).toFixed(2));
 
-  const displayTotal    = remainingTotalMilk    !== undefined ? remainingTotalMilk    : totalMilkSourced;
-  const displayFarm     = remainingFarmMilk     !== undefined ? remainingFarmMilk     : farmSourced;
-  const displaySupplier = remainingSupplierMilk !== undefined ? remainingSupplierMilk : supplierSourced;
+  const posTotalMilk = inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock;
+  const posFarmMilk = inventoryMetrics?.farmMilkStock ?? inventoryMetrics?.rawFarmMilkStock;
+  const posSupplierMilk = inventoryMetrics?.supplierMilkStock ?? inventoryMetrics?.rawSupplierMilkStock;
+
+  const displayTotal =
+    remainingTotalMilk !== undefined && Number(remainingTotalMilk) > 0
+      ? remainingTotalMilk
+      : (posTotalMilk !== undefined ? posTotalMilk : (Number(totalMilkSourced) || 0));
+
+  const displayFarm =
+    remainingFarmMilk !== undefined && Number(remainingFarmMilk) > 0
+      ? remainingFarmMilk
+      : (posFarmMilk !== undefined ? posFarmMilk : (Number(farmSourced) || 0));
+
+  const displaySupplier =
+    remainingSupplierMilk !== undefined && Number(remainingSupplierMilk) > 0
+      ? remainingSupplierMilk
+      : (posSupplierMilk !== undefined ? posSupplierMilk : (Number(supplierSourced) || 0));
 
   const dahiSalesAmount = isDahiPriceDefined
     ? `${dahiSoldInPOS} kg · Rs. ${Number(totalDahiRevenue).toLocaleString()}`
@@ -60,8 +75,8 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
     {
       id: 'sourced',
       title: 'Available Liquid Milk (With Me)',
-      amount: `${displayTotal} kg`,
-      sub: `Farm: ${displayFarm}kg · Sup: ${displaySupplier}kg`,
+      amount: `${displayTotal} L`,
+      sub: `Farm: ${displayFarm} L · Sup: ${displaySupplier} L`,
       icon: Droplets,
       color: '#155dfc',
       badge: 'Available',
