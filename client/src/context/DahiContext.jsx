@@ -50,7 +50,7 @@ export function DahiProvider({ children }) {
     setIsLoading(true);
     try {
       const data = await farmService.getProcessingBatches();
-      const rawList = Array.isArray(data) ? data : data?.batches || [];
+      const rawList = Array.isArray(data) ? data : (data?.batches || data?.data || []);
       const list = rawList.filter((b) => {
         const p = (b.product || '').toLowerCase();
         return p.includes('dahi') || p.includes('yogurt') || p.includes('curd') || (!p.includes('milk') && !p.includes('pasteur'));
