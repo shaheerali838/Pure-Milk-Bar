@@ -48,7 +48,7 @@ const MODULES_LIST = [
     id: 'all',
     name: 'All Modules (Complete Bundle)',
     category: 'Master Export',
-    icon: '✨',
+    icon: '📦',
     desc: 'Master combined multi-section audit export covering all 14 dairy and farm modules',
   },
   {
@@ -1277,7 +1277,7 @@ export default function ExportCSVModal({
               </div>
             ) : (
               <div className="text-xs text-slate-600 bg-emerald-50/60 border border-emerald-200/90 p-3.5 rounded-xl flex items-start gap-2.5">
-                <Sparkles className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                <FileSpreadsheet className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
                 <div>
                   <strong className="text-emerald-950 block font-bold mb-0.5">
                     Complete Multi-Module Bundle Selected

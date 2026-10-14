@@ -4,7 +4,6 @@ import {
   TrendingDown,
   Droplets,
   Layers,
-  Sparkles,
   Receipt,
   Minus,
   Equal,

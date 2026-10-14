@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { estimateDistanceKm } from '../../features/pos/utils/estimateDeliveryDistance.js';
+import { getPktTodayString, getActiveBusinessDate } from '@/utils/dateUtils';
 
-export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicRiders = [] } = {}) {
+export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicRiders = [], activeDate = null } = {}) {
+  const effectiveActiveDate = activeDate || getActiveBusinessDate();
   const [cart, setCart] = useState([]);
+  const [saleDate, setSaleDate] = useState(effectiveActiveDate);
+
+  useEffect(() => {
+    if (activeDate) {
+      setSaleDate(activeDate);
+    }
+  }, [activeDate]);
   const [discount, setDiscount] = useState(0);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [fulfillmentMode, setFulfillmentMode] = useState('counter'); // 'counter' | 'doorstep'
@@ -34,11 +43,17 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
   const [codPaymentOption, setCodPaymentOption] = useState('full');
   const [codPaidAmount, setCodPaidAmount] = useState('');
 
-  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'khata' | 'online' | 'cod'
+  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'khata' | 'online' | 'easypaisa' | 'jazzcash' | 'split' | 'cod'
   const [cashTendered, setCashTendered] = useState('');
 
+  const [splitDetails, setSplitDetails] = useState({
+    cash: '',
+    easyPaisa: '',
+    jazzCash: '',
+  });
+
   const [onlineDetails, setOnlineDetails] = useState({
-    provider: 'JazzCash',
+    provider: 'EasyPaisa',
     senderAccount: '',
     trxId: '',
   });
@@ -83,6 +98,11 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
     const cat = (product.category || '').toLowerCase();
     const isDahi = cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt');
 
+    if (isDahi) {
+      // Dahi inventory uses 100% dynamic Cascading (FIFO) deduction at checkout based on live stock
+      return { source: 'Dynamic (Cascading)', farmRatio: 1, supplierRatio: 0 };
+    }
+
     if (product.source && ['Farm', 'Supplier', 'Mixed', 'Both (Mixed)'].includes(product.source)) {
       const src = product.source === 'Both (Mixed)' ? 'Mixed' : product.source;
       return {
@@ -90,27 +110,6 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
         farmRatio: src === 'Farm' ? 1 : src === 'Supplier' ? 0 : (product.farmRatio || 0.5),
         supplierRatio: src === 'Supplier' ? 1 : src === 'Farm' ? 0 : (product.supplierRatio || 0.5),
       };
-    }
-
-    if (isDahi) {
-      const dahiBatches = (processingBatches || []).filter((b) => {
-        const p = (b.product || '').toLowerCase();
-        return p.includes('dahi') || p.includes('yogurt');
-      });
-      if (dahiBatches.length > 0) {
-        const latest = dahiBatches[0];
-        const bSrc = (latest.source || '').toLowerCase();
-        if (bSrc.includes('farm') && !bSrc.includes('supplier') && !bSrc.includes('mix') && !bSrc.includes('both')) {
-          return { source: 'Farm', farmRatio: 1, supplierRatio: 0 };
-        }
-        if (bSrc.includes('supplier') && !bSrc.includes('farm') && !bSrc.includes('mix') && !bSrc.includes('both')) {
-          return { source: 'Supplier', farmRatio: 0, supplierRatio: 1 };
-        }
-        const fRatio = latest.farmRatio !== undefined ? Number(latest.farmRatio) : 0.5;
-        const sRatio = latest.supplierRatio !== undefined ? Number(latest.supplierRatio) : 0.5;
-        return { source: 'Mixed', farmRatio: fRatio, supplierRatio: sRatio };
-      }
-      return { source: 'Farm', farmRatio: 1, supplierRatio: 0 };
     }
 
     if (name.includes('supplier') || cat.includes('supplier')) {
@@ -272,10 +271,12 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
     setLinkedCustomerId('');
     setSelectedRiderId('');
     setCustomRiderName('');
+    setSaleDate(activeDate || getActiveBusinessDate());
     setShowFuelLog(false);
     setFuelLog({ liters: '', amount: '', distanceKm: '', notes: '' });
     setWalkinCustomerType('first_time');
-    setOnlineDetails({ provider: 'JazzCash', senderAccount: '', trxId: '' });
+    setOnlineDetails({ provider: 'EasyPaisa', senderAccount: '', trxId: '' });
+    setSplitDetails({ cash: '', easyPaisa: '', jazzCash: '' });
   };
 
   // Pricing calculations
@@ -357,6 +358,8 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
     setKhataPaymentOption,
     partialPaidAmount,
     setPartialPaidAmount,
+    splitDetails,
+    setSplitDetails,
     orderNotes,
     setOrderNotes,
     codPaymentOption,
@@ -399,5 +402,7 @@ export function usePOSCart({ processingBatches = [], allCustomers = [], dynamicR
     handleRemoveFromCart,
     handleClearCart,
     resolveCartProductSource,
+    saleDate,
+    setSaleDate,
   };
 }

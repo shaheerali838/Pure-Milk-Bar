@@ -5,11 +5,16 @@ import { useIntakeContext } from '@/context/IntakeContext';
 import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { useNavigate } from 'react-router-dom';
+import { isDateInFilterRange } from '@/utils/dateUtils';
 
 export default function SupplierDashboardCharts({
   onLogIntake,
   onAddSupplier,
   onAddExpense,
+  dateFilter = 'today',
+  startDate = '',
+  endDate = '',
+  periodLabel = 'Today',
 }) {
   const { intakeLogs } = useIntakeContext();
   const { expenses, totalSourcingCosts } = useSourcExpenseContext();
@@ -33,18 +38,20 @@ export default function SupplierDashboardCharts({
     });
   }, [intakeLogs]);
 
-  // 2. Supplier Breakdown
+  // 2. Supplier Breakdown for selected date filter
   const supplierBreakdown = useMemo(() => {
     const breakdown = {};
-    (intakeLogs || []).forEach((log) => {
-      const name = log.supplierName || 'Unknown';
-      breakdown[name] = (breakdown[name] || 0) + (parseFloat(log.quantity) || 0);
-    });
+    (intakeLogs || [])
+      .filter((log) => isDateInFilterRange(log.date || log.createdAt, dateFilter, startDate, endDate))
+      .forEach((log) => {
+        const name = log.supplierName || 'Unknown';
+        breakdown[name] = (breakdown[name] || 0) + (parseFloat(log.quantity) || 0);
+      });
     return Object.keys(breakdown)
       .map((name) => ({ name, liters: breakdown[name] }))
       .sort((a, b) => b.liters - a.liters)
       .slice(0, 5); // Top 5
-  }, [intakeLogs]);
+  }, [intakeLogs, dateFilter, startDate, endDate]);
 
   // 3. Sourcing P&L Performance (Last 7 Days)
   const plTrend = useMemo(() => {
@@ -72,12 +79,22 @@ export default function SupplierDashboardCharts({
     });
   }, [intakeLogs]);
 
-  // 4. Latest Expenses list (Top 5)
+  // 4. Expenses filtered by date range
+  const filteredExpenses = useMemo(() => {
+    return (expenses || []).filter((exp) =>
+      isDateInFilterRange(exp.date || exp.createdAt, dateFilter, startDate, endDate)
+    );
+  }, [expenses, dateFilter, startDate, endDate]);
+
   const topExpenses = useMemo(() => {
-    return [...(expenses || [])]
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
+    return [...filteredExpenses]
+      .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
       .slice(0, 5);
-  }, [expenses]);
+  }, [filteredExpenses]);
+
+  const periodSourcingCosts = useMemo(() => {
+    return filteredExpenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+  }, [filteredExpenses]);
 
   return (
     <>
@@ -139,7 +156,7 @@ export default function SupplierDashboardCharts({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4">
             <div>
               <h3 className="font-bold text-sm text-slate-900 font-display">
-                Supplier Intake Breakdown
+                Supplier Intake Breakdown ({periodLabel})
               </h3>
              
             </div>
@@ -196,7 +213,7 @@ export default function SupplierDashboardCharts({
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h3 className="font-bold text-sm text-slate-900 font-display">
-                  Procurement Expenses
+                  Procurement Expenses ({periodLabel})
                 </h3>
               
               </div>
@@ -242,10 +259,10 @@ export default function SupplierDashboardCharts({
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between mt-4">
             <span className="text-xs font-semibold text-slate-500">
-              Total Supplier Expenses:
+              Total Expenses ({periodLabel}):
             </span>
             <span className="text-sm font-bold text-blue-600 tabular font-display">
-              Rs. {(totalSourcingCosts || 0).toLocaleString()}
+              Rs. {(periodSourcingCosts || 0).toLocaleString()}
             </span>
           </div>
         </div>

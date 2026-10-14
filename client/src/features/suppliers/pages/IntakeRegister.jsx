@@ -15,10 +15,13 @@ import LogIntakeForm from '../components/intakeRegistor/LogIntakeForm';
 import IntakeDetail from '../components/intakeRegistor/IntakeDetail';
 import PaySupplierForm from '../components/intakeRegistor/PaySupplierForm';
 import { useIntakeContext } from '@/context/IntakeContext';
+import { useDailyClose } from '@/context/DailyCloseContext';
+import DayClosedLockOverlay from '@/components/common/DayClosedLockOverlay';
 import { exportTableToCSV } from '@/utils/csvExport';
 
 export default function IntakeRegister() {
   const { intakeLogs } = useIntakeContext();
+  const { isDayClosed } = useDailyClose();
 
   // Active view: 'shift' | 'history' | 'form' | 'pay' | 'detail'
   const [viewMode, setViewMode] = useState('shift');
@@ -175,6 +178,7 @@ export default function IntakeRegister() {
   // 3. MAIN REGISTER: History or Shift View
   return (
     <div className="space-y-2 animate-in fade-in duration-150">
+      {isDayClosed && <DayClosedLockOverlay inline className="mb-2" />}
       {/* 1. Page Header with Action Controls & View Switcher */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2">
         <div>
@@ -242,7 +246,8 @@ export default function IntakeRegister() {
           <button
             type="button"
             onClick={handleOpenLog}
-            className="flex items-center gap-1.5 px-4 h-[38px] rounded-full text-xs font-semibold text-white transition-all shadow-xs cursor-pointer hover:brightness-110 active:translate-y-0"
+            disabled={isDayClosed}
+            className="flex items-center gap-1.5 px-4 h-[38px] rounded-full text-xs font-semibold text-white transition-all shadow-xs cursor-pointer hover:brightness-110 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ backgroundColor: '#009966' }}
           >
             <Plus className="w-4 h-4" />

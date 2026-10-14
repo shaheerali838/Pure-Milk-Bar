@@ -1,17 +1,28 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import supplierService from '../services/supplierService';
 import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
+import { normalizeDateStr, sortByDateDesc, ensureValidDate, getPktTodayString, getLocalDate } from '@/utils/dateUtils';
 
 const IntakeContext = createContext(null);
 
 export function IntakeProvider({ children }) {
-  const [intakeLogs, setIntakeLogs] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [intakeLogs, setIntakeLogs] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('pmb_supplier_intakes');
+        if (saved) return JSON.parse(saved);
+      } catch (_) {}
+    }
+    return [];
+  });
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // Fetch live procurements from API
-  const fetchIntakes = useCallback(async () => {
-    setIsLoading(true);
+  const fetchIntakes = useCallback(async (silent = false) => {
+    if (!silent && intakeLogs.length === 0) {
+      setIsLoading(true);
+    }
     setError(null);
     try {
       const data = await supplierService.getProcurements();
@@ -22,11 +33,12 @@ export function IntakeProvider({ children }) {
         const cost = parseFloat(p.totalAmount || p.totalCost || qty * rate);
         const paid = parseFloat(p.amountPaid ?? p.paidAmount ?? 0);
         const pending = Math.max(0, cost - paid);
+        const dateStr = normalizeDateStr(p.date || p.createdAt) || getPktTodayString();
 
         return {
           ...p,
           id: p._id || p.id || `INT-${Date.now()}`,
-          date: p.date ? new Date(p.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          date: dateStr,
           time: p.time || p.shift || 'Morning',
           supplierId: p.supplierId?._id || p.supplierId || '',
           supplierName: p.supplierId?.name || p.supplierName || 'Supplier',
@@ -44,7 +56,13 @@ export function IntakeProvider({ children }) {
           status: p.qualityGrade === 'REJECTED' ? 'Rejected' : 'Accepted',
         };
       });
-      setIntakeLogs(normalized);
+      const sorted = sortByDateDesc(normalized, 'date');
+      setIntakeLogs(sorted);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('pmb_supplier_intakes', JSON.stringify(sorted));
+        } catch (_) {}
+      }
     } catch (err) {
       console.error('Failed to fetch procurements from API:', err);
       setError(err.message || 'Failed to load intake records');
@@ -81,9 +99,10 @@ export function IntakeProvider({ children }) {
       const lrVal = parseFloat(newRecord.lr) || 0;
       const snfVal = parseFloat(newRecord.snf) || 0;
 
+      const recordDate = ensureValidDate(newRecord.date);
       const payload = {
         supplierId: newRecord.supplierId,
-        date: newRecord.date || new Date().toISOString().split('T')[0],
+        date: recordDate,
         shift: (newRecord.shift || 'Morning').toUpperCase(),
         milkType: (newRecord.milkType || 'COW').toUpperCase(),
         quantityLiters: qty,
@@ -102,7 +121,7 @@ export function IntakeProvider({ children }) {
       const normalized = {
         ...created,
         id: created._id || created.id || `INT-${Date.now()}`,
-        date: payload.date,
+        date: recordDate,
         time: newRecord.time || '10:00 AM',
         supplierId: newRecord.supplierId,
         supplierName: newRecord.supplierName || 'Supplier',
@@ -120,7 +139,15 @@ export function IntakeProvider({ children }) {
         status: 'Accepted',
       };
 
-      setIntakeLogs((prev) => [normalized, ...prev]);
+      setIntakeLogs((prev) => {
+        const sorted = sortByDateDesc([normalized, ...(prev || [])], 'date');
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('pmb_supplier_intakes', JSON.stringify(sorted));
+          } catch (_) {}
+        }
+        return sorted;
+      });
 
       broadcastSync('pure_milk_bar_intake_updated');
       broadcastSync('pure_milk_bar_inventory_updated');
@@ -165,7 +192,7 @@ export function IntakeProvider({ children }) {
               pendingAmount: Math.max(0, cost - paid),
               paymentMethod: method || log.paymentMethod || 'Cash',
               paymentNotes: notes || log.paymentNotes || '',
-              paidDate: new Date().toISOString().split('T')[0],
+              paidDate: getLocalDate(),
             };
           }
           return log;

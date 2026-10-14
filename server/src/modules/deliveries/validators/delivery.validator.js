@@ -94,6 +94,9 @@ export const createDeliveryRunSchema = Joi.object({
   fuelAmount: Joi.number().min(0).allow(null).optional(),
   notes: Joi.string().trim().allow('', null).optional(),
   bottlesReturned: Joi.number().min(0).default(0),
+  isStockDeducted: Joi.boolean().optional(),
+  stockDeductedAt: Joi.date().iso().allow(null).optional(),
+  stockDeductionDetails: Joi.array().optional(),
 
   // Optional inline fuel log booking per ADR-002
   fuelLog: Joi.object({
@@ -137,6 +140,9 @@ export const updateDeliveryRunSchema = Joi.object({
   deliveredAt: Joi.date().iso().allow(null),
   notes: Joi.string().trim().allow('', null),
   bottlesReturned: Joi.number().min(0),
+  isStockDeducted: Joi.boolean().optional(),
+  stockDeductedAt: Joi.date().iso().allow(null).optional(),
+  stockDeductionDetails: Joi.array().optional(),
   items: Joi.array().items(
     Joi.object({
       name: Joi.string().required(),

@@ -360,7 +360,7 @@ export default function POSDoorstepOrdersModal({ isOpen, onClose, mode = 'all', 
       // Customer Khata Ledger Sync in Database ONLY for Monthly Customers (Not On-Time)
       const custId = delivery.customerId?._id || delivery.customerId?.id || delivery.customerId;
       if (custId && !ontime && typeof addLedgerEntry === 'function') {
-        // 1. Debit Entry for Delivery Order Bill
+        // Single Unified Ledger Entry for Delivery Order Settlement (Advance + Direct Cash + Due)
         await addLedgerEntry(
           custId,
           {
@@ -375,31 +375,10 @@ export default function POSDoorstepOrdersModal({ isOpen, onClose, mode = 'all', 
             paymentMethod: finalPaymentMode === 'KHATA' ? 'Khata Credit' : finalPaymentMode,
             items: liveItems,
             invoiceId: delivery.receiptNumber || delivery.runCode || undefined,
-            notes: `Doorstep Delivered (${itemDescription}). Charged to Khata`,
+            notes: `Doorstep Delivered (${itemDescription}). ${paidAmt > 0 ? `Paid Cash: Rs. ${paidAmt}. ` : ''}Remaining Khata: Rs. ${dueAmt}`,
           },
           false
         );
-
-        // 2. Credit Entry for Cash Paid at Doorstep
-        if (paidAmt > 0) {
-          await addLedgerEntry(
-            custId,
-            {
-              description: `Payment Received on Delivery (#${delivery.runCode || 'DEL'})`,
-              debit: 0,
-              credit: paidAmt,
-              date: new Date().toISOString().split('T')[0],
-              orderTotal: orderTotal,
-              paidAmount: paidAmt,
-              remainingAmount: dueAmt,
-              fulfillmentType: 'Doorstep Collection',
-              paymentMethod: 'Cash',
-              invoiceId: delivery.receiptNumber || delivery.runCode || undefined,
-              notes: `Cash Collected: Rs. ${paidAmt}. Remaining Khata: Rs. ${dueAmt}`,
-            },
-            false
-          );
-        }
 
         if (typeof fetchCustomerLedger === 'function') {
           fetchCustomerLedger(custId);

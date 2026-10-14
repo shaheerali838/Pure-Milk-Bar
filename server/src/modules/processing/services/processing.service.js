@@ -16,6 +16,7 @@ export const createBatchService = async (batchData, userId) => {
   const {
     batchNumber,
     product = 'Dahi (Plain)',
+    milkType = 'Buffalo Milk',
     milkUsed,
     milkUsedLiters,
     milkUsedQuantity,
@@ -62,6 +63,7 @@ export const createBatchService = async (batchData, userId) => {
   const newBatch = await ProcessingBatch.create({
     batchNumber,
     product: product.trim(),
+    milkType: milkType || 'Buffalo Milk',
     milkUsedLiters: resolvedMilkUsed,
     outputQuantity: resolvedOutputQty,
     outputUnit: outputUnit || 'kg',
@@ -97,9 +99,8 @@ export const createBatchService = async (batchData, userId) => {
       );
     }
 
-    // 2. Deduct source milk from Product inventory in database (strictly zero-validated, cannot be negative)
-    const fUsed = Number(farmMilkUsed) || 0;
-    const sUsed = Number(supplierMilkUsed) || 0;
+    // 2. Deduct source milk strictly by selected milkType (Cow vs Buffalo)
+    const isCow = String(milkType || '').toLowerCase().includes('cow');
     const totalMilkToDeduct = resolvedMilkUsed;
 
     if (totalMilkToDeduct > 0) {
@@ -113,52 +114,14 @@ export const createBatchService = async (batchData, userId) => {
       const cowProd = milkProducts.find((p) => p.name.toLowerCase().includes('cow'));
       const buffProd = milkProducts.find((p) => p.name.toLowerCase().includes('buffalo'));
 
-      if (fUsed > 0 && sUsed > 0) {
-        // Mixed batch: deduct farm portion from cow/buff, supplier portion from buff
-        if (cowProd && fUsed > 0) {
-          const deductCow = Math.min(Number(cowProd.currentStock) || 0, fUsed);
-          cowProd.currentStock = Math.max(0, Number(((cowProd.currentStock || 0) - deductCow).toFixed(2)));
-          await cowProd.save();
-          const remainderFarm = fUsed - deductCow;
-          if (remainderFarm > 0 && buffProd) {
-            buffProd.currentStock = Math.max(0, Number(((buffProd.currentStock || 0) - remainderFarm).toFixed(2)));
-          }
-        } else if (buffProd && fUsed > 0) {
-          buffProd.currentStock = Math.max(0, Number(((buffProd.currentStock || 0) - fUsed).toFixed(2)));
-        }
-
-        if (buffProd && sUsed > 0) {
-          buffProd.currentStock = Math.max(0, Number(((buffProd.currentStock || 0) - sUsed).toFixed(2)));
-          await buffProd.save();
-        }
-      } else if (fUsed > 0 || (source || '').toLowerCase().includes('farm')) {
-        // Farm milk deduction
-        const deductTarget = fUsed > 0 ? fUsed : totalMilkToDeduct;
-        let rem = deductTarget;
-        if (cowProd && rem > 0) {
-          const d = Math.min(Number(cowProd.currentStock) || 0, rem);
-          cowProd.currentStock = Math.max(0, Number(((cowProd.currentStock || 0) - d).toFixed(2)));
-          await cowProd.save();
-          rem -= d;
-        }
-        if (buffProd && rem > 0) {
-          buffProd.currentStock = Math.max(0, Number(((buffProd.currentStock || 0) - rem).toFixed(2)));
-          await buffProd.save();
-        }
-      } else {
-        // Supplier or Buffalo milk deduction
-        const deductTarget = sUsed > 0 ? sUsed : totalMilkToDeduct;
-        let rem = deductTarget;
-        if (buffProd && rem > 0) {
-          const d = Math.min(Number(buffProd.currentStock) || 0, rem);
-          buffProd.currentStock = Math.max(0, Number(((buffProd.currentStock || 0) - d).toFixed(2)));
-          await buffProd.save();
-          rem -= d;
-        }
-        if (cowProd && rem > 0) {
-          cowProd.currentStock = Math.max(0, Number(((cowProd.currentStock || 0) - rem).toFixed(2)));
-          await cowProd.save();
-        }
+      if (isCow && cowProd) {
+        // Strict single deduction from Cow Milk only
+        cowProd.currentStock = Math.max(0, Number(((cowProd.currentStock || 0) - totalMilkToDeduct).toFixed(2)));
+        await cowProd.save();
+      } else if (!isCow && buffProd) {
+        // Strict single deduction from Buffalo Milk only
+        buffProd.currentStock = Math.max(0, Number(((buffProd.currentStock || 0) - totalMilkToDeduct).toFixed(2)));
+        await buffProd.save();
       }
     }
   } catch (err) {

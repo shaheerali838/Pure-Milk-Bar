@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api.js';
+import { normalizeDateStr, sortByDateDesc, ensureValidDate, getPktTodayString, getLocalDate } from '@/utils/dateUtils';
 
 const SourcExpenseContext = createContext(null);
 
@@ -42,7 +43,7 @@ export function SourcExpenseProvider({ children }) {
       const normalized = list.map((exp) => ({
         ...exp,
         id: exp._id || exp.id || `EXP-SRC-${Date.now()}`,
-        date: exp.date ? exp.date.split('T')[0] : new Date().toISOString().split('T')[0],
+        date: normalizeDateStr(exp.date || exp.createdAt) || getPktTodayString(),
         category: exp.category || 'Other Sourcing Costs',
         description: exp.description || exp.notes || '',
         amount: Number(exp.amount) || 0,
@@ -51,7 +52,7 @@ export function SourcExpenseProvider({ children }) {
         loggedBy: exp.authorizedBy || 'System Admin',
         costAttribution: exp.costAttribution || '',
       }));
-      setExpenses(normalized);
+      setExpenses(sortByDateDesc(normalized, 'date'));
     } catch (err) {
       console.warn('Failed to load sourcing expenses from database API:', err.message);
       setExpenses([]);
@@ -66,9 +67,10 @@ export function SourcExpenseProvider({ children }) {
 
   // Add Expense
   const addExpense = async (data) => {
+    const expenseDate = ensureValidDate(data.date);
     const newExpense = {
       id: `EXP-SRC-${Date.now().toString().slice(-4)}`,
-      date: data.date || new Date().toISOString().split('T')[0],
+      date: expenseDate,
       category: data.category || 'Other Sourcing Costs',
       description: data.description || '',
       amount: Number(data.amount) || 0,
@@ -78,7 +80,7 @@ export function SourcExpenseProvider({ children }) {
       costAttribution: data.costAttribution ? data.costAttribution.trim() : '',
     };
 
-    setExpenses((prev) => [newExpense, ...prev]);
+    setExpenses((prev) => sortByDateDesc([newExpense, ...prev], 'date'));
 
     // Sync to backend database
     try {
@@ -86,7 +88,7 @@ export function SourcExpenseProvider({ children }) {
         scope: 'SUPPLIER',
         category: data.category || 'SUPPLIER_PROCUREMENT',
         amount: Number(data.amount) || 0,
-        date: data.date || new Date().toISOString().split('T')[0],
+        date: data.date || getLocalDate(),
         description: data.description || data.category || '',
         paymentMethod: ['Bank Transfer'].includes(data.paymentMode)
           ? 'BANK_TRANSFER'

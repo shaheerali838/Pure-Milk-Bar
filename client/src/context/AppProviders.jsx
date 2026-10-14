@@ -19,11 +19,15 @@ import { PayrollProvider } from "./PayrollContext";
 import { TransactionProvider } from "./TransactionContext";
 import { AuditProvider } from "./AuditContext";
 import { SettingsProvider } from "./SettingsContext";
+import { DailyCloseProvider } from "./DailyCloseContext";
+import { GlobalDateProvider } from "./GlobalDateContext";
 
 const providers = [
   // 1. Root & Base Configuration
   AuthProvider,
   SettingsProvider,
+  GlobalDateProvider,
+  DailyCloseProvider,
 
   // 2. Base Domain Entities
   CustomerProvider,

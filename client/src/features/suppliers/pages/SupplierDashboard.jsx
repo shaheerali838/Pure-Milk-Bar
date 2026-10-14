@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { LayoutDashboard, Users, Droplets, Plus } from 'lucide-react';
-import DashboardDateFilter from '@/components/common/DashboardDateFilter';
+import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
+import { getDateRangeBoundaries } from '@/utils/dateUtils';
 import SupplierDashboardCard from '../components/SupplierDashboardCard';
 import SupplierDashboardCharts from '../components/SupplierDashboardCharts';
 
@@ -19,10 +20,13 @@ export default function SupplierDashboard() {
   const { suppliers = [] } = useSupplierContext() || {};
   const { intakeLogs = [] } = useIntakeContext() || {};
 
-  // Date Filtering State
-  const [timeRange, setTimeRange] = useState('today'); // 'today' | 'week' | 'month' | 'all' | 'custom'
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
+  const [dateFilter, setDateFilter] = useState('today');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const { detailedLabel: periodLabel } = useMemo(() => {
+    return getDateRangeBoundaries(dateFilter, startDate, endDate);
+  }, [dateFilter, startDate, endDate]);
 
   const [activeBottomTab, setActiveBottomTab] = useState('suppliers'); // 'suppliers' | 'intake'
   const [selectedSupplier, setSelectedSupplier] = useState(null);
@@ -110,25 +114,25 @@ export default function SupplierDashboard() {
 
   return (
     <div className="space-y-4">
-      {/* Date Filter Toolbar */}
-      <div className="flex items-center justify-between gap-3 pb-1">
-        <DashboardDateFilter
-          timeRange={timeRange}
-          setTimeRange={setTimeRange}
-          customStartDate={customStartDate}
-          setCustomStartDate={setCustomStartDate}
-          customEndDate={customEndDate}
-          setCustomEndDate={setCustomEndDate}
-          showAll={true}
-          activeTheme="blue"
+      {/* Date Filter Bar */}
+      <div className="mb-3">
+        <DashboardDateFilterBar
+          dateFilter={dateFilter}
+          onFilterChange={setDateFilter}
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          theme="blue"
         />
       </div>
 
       {/* Main Content Areas */}
       <SupplierDashboardCard
-        timeRange={timeRange}
-        customStartDate={customStartDate}
-        customEndDate={customEndDate}
+        dateFilter={dateFilter}
+        startDate={startDate}
+        endDate={endDate}
+        periodLabel={periodLabel}
       />
 
       <SupplierDashboardCharts
@@ -138,6 +142,10 @@ export default function SupplierDashboard() {
           setIsAddSupplierOpen(true);
         }}
         onAddExpense={() => setIsAddExpenseOpen(true)}
+        dateFilter={dateFilter}
+        startDate={startDate}
+        endDate={endDate}
+        periodLabel={periodLabel}
       />
 
       {/* Dynamic Bottom Register: Supplier Register & Procurement Intake History */}

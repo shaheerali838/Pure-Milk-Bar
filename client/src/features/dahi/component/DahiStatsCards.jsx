@@ -3,7 +3,8 @@ import { Droplets, Layers, Milk, TrendingUp, ShoppingBag, ChevronRight, AlertCir
 import { usePOSContext } from '@/context/POSContext';
 
 export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
-  const { businessFinancialMetrics = {} } = usePOSContext() || {};
+  // Pull live businessFinancialMetrics & inventoryMetrics — re-renders instantly
+  const { businessFinancialMetrics = {}, inventoryMetrics = {} } = usePOSContext() || {};
   const {
     totalDahiRevenue = 0,
     totalDahiNetProfit = 0,
@@ -27,6 +28,10 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
     dahiPOSStock = '0.0',
     dahiTransferredToPOS = '0.0',
   } = metrics;
+
+  const farmDahiStock = Number(inventoryMetrics?.rawFarmDahiStock ?? inventoryMetrics?.farmDahiStock ?? metrics.farmDahiStock ?? 0);
+  const supplierDahiStock = Number(inventoryMetrics?.rawSupplierDahiStock ?? inventoryMetrics?.supplierDahiStock ?? metrics.supplierDahiStock ?? 0);
+  const totalDahiStock = Number((farmDahiStock + supplierDahiStock).toFixed(2));
 
   const displayTotal    = remainingTotalMilk    !== undefined ? remainingTotalMilk    : totalMilkSourced;
   const displayFarm     = remainingFarmMilk     !== undefined ? remainingFarmMilk     : farmSourced;
@@ -72,12 +77,12 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
     },
     {
       id: 'dahi_stock',
-      title: 'Dahi Stock (With Me)',
-      amount: `${dahiPOSStock} kg`,
-      sub: `Ready: ${dahiProduced}kg · POS: ${dahiTransferredToPOS}kg`,
+      title: 'Total Dahi Stock',
+      amount: `${totalDahiStock.toFixed(2)} kg`,
+      sub: `Farm: ${farmDahiStock.toFixed(2)} kg · Supplier: ${supplierDahiStock.toFixed(2)} kg`,
       icon: Milk,
       color: '#0284c7',
-      badge: 'Stock',
+      badge: 'Total Dahi',
     },
     {
       id: 'dahi_sales',

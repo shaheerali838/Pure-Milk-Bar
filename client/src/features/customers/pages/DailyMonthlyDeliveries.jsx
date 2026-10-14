@@ -20,7 +20,6 @@ import {
   Phone,
   Receipt,
   RotateCcw,
-  Sparkles,
   ArrowUpRight,
   Check,
   ChevronDown,
@@ -37,10 +36,14 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCustomerContext } from '@/context/CustomerContext';
+import { useCustomerContext, getCustomerDueBalance } from '@/context/CustomerContext';
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useDeliveryStaffContext } from '@/context/DeliveryStaffContext';
+import { useStaffContext } from '@/context/StaffContext';
 import { exportTableToCSV } from '@/utils/csvExport';
+import posService from '@/services/posService';
+import { usePOSContext } from '@/context/POSContext';
+import { matchProductForOrderItem, resolveAvailableStock } from '@/context/pos/posHelpers';
 
 const getShiftAgreementItems = (customer, shift) => {
   const standing = customer.standingOrder || {};
@@ -79,17 +82,111 @@ export default function DailyMonthlyDeliveries() {
   const navigate = useNavigate();
   const { customers = [], isLoading: customersLoading, refreshCustomers } = useCustomerContext();
   const { deliveries = [], addDelivery, deleteDelivery, refreshDeliveries, isLoading: deliveriesLoading } = useDeliveryContext();
-  const { staffList = [] } = useDeliveryStaffContext();
+  const { staffList: deliveryStaffList = [] } = useDeliveryStaffContext() || {};
+  const { staffList: generalStaffList = [], fetchStaff } = useStaffContext() || {};
+  const { inventoryMetrics = {} } = usePOSContext() || {};
+
+  // Ensure staff records are fetched fresh from database
+  React.useEffect(() => {
+    if (typeof fetchStaff === 'function') {
+      fetchStaff();
+    }
+  }, [fetchStaff]);
 
   const todayISO = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(todayISO);
   const [activeShift, setActiveShift] = useState('Morning'); // 'Morning' | 'Evening' | 'All'
   const [searchQuery, setSearchQuery] = useState('');
+  const [availableProducts, setAvailableProducts] = useState([]);
 
-  // Active delivery staff
+  // Load products to perform strict inventory stock checks
+  const loadAvailableProducts = React.useCallback(async () => {
+    try {
+      const data = await posService.getProducts({ limit: 1000 });
+      const list = Array.isArray(data) ? data : data?.products || data?.data || [];
+      setAvailableProducts(list);
+    } catch (e) {
+      console.warn('Failed to load products for delivery stock check:', e);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    loadAvailableProducts();
+    const handleInvUpdate = () => loadAvailableProducts();
+    window.addEventListener('pure_milk_bar_inventory_updated', handleInvUpdate);
+    window.addEventListener('pure_milk_bar_pos_sale_completed', handleInvUpdate);
+    return () => {
+      window.removeEventListener('pure_milk_bar_inventory_updated', handleInvUpdate);
+      window.removeEventListener('pure_milk_bar_pos_sale_completed', handleInvUpdate);
+    };
+  }, [loadAvailableProducts]);
+
+  // Helper to identify real delivery personnel (Rider, Delivery Boy, Driver, etc.)
+  const isDeliveryStaff = (s) => {
+    if (!s) return false;
+    if (s.type === 'RIDER' || s.type === 'WALKING' || s.type === 'MOTORCYCLE_RIDER' || s.type === 'WALKING_BOY') return true;
+    const r = (s.role || '').toLowerCase().trim();
+    if (!r) return false;
+    if (
+      r.includes('manager') ||
+      r.includes('milking') ||
+      r.includes('farm') ||
+      r.includes('security') ||
+      r.includes('cashier') ||
+      r.includes('accountant') ||
+      r.includes('owner') ||
+      r.includes('admin') ||
+      r.includes('vet')
+    ) {
+      return false;
+    }
+    return (
+      r.includes('delivery') ||
+      r.includes('rider') ||
+      r.includes('driver') ||
+      r.includes('boy') ||
+      r.includes('courier') ||
+      r.includes('fleet') ||
+      r.includes('walking')
+    );
+  };
+
+  // Dynamically combine active delivery staff & riders only
   const activeRiders = useMemo(() => {
-    return (staffList || []).filter((s) => s.active !== false);
-  }, [staffList]);
+    const map = new Map();
+
+    (deliveryStaffList || []).forEach((s) => {
+      if (s && s.active !== false && isDeliveryStaff(s)) {
+        const id = String(s.id || s._id || s.name);
+        map.set(id, {
+          id,
+          name: s.name,
+          role: s.role || 'Delivery Rider',
+          phone: s.phone || s.mobile || '',
+        });
+      }
+    });
+
+    (generalStaffList || []).forEach((s) => {
+      if (s && s.status !== 'Inactive' && s.status !== 'Terminated' && isDeliveryStaff(s)) {
+        const id = String(s.id || s._id || s.name);
+        const name = s.name;
+        const alreadyExists = Array.from(map.values()).some(
+          (m) => m.name && name && m.name.toLowerCase().trim() === name.toLowerCase().trim()
+        );
+        if (!alreadyExists) {
+          map.set(id, {
+            id,
+            name,
+            role: s.role || 'Delivery Rider',
+            phone: s.mobile || s.phone || '',
+          });
+        }
+      }
+    });
+
+    return Array.from(map.values());
+  }, [deliveryStaffList, generalStaffList]);
 
   // Local state for shift quantities & testing per customer row
   // Structure: { [rowKey]: { qty: string|number, riderId: string, deliveryFee: string|number, extra: { [prodId]: number } } }
@@ -177,7 +274,8 @@ export default function DailyMonthlyDeliveries() {
     const edit = shiftEntries[row.rowKey];
     const dispatched = row.dispatchedRecord || getDispatchedRecord(row.customerId, row.shift);
 
-    const defaultRider = dispatched?.riderId || row.preferredRiderId || (activeRiders[0]?.id || '');
+    // Optional rider selection: empty by default unless already dispatched or explicitly preferred
+    const defaultRider = dispatched?.riderId || row.preferredRiderId || '';
     const currentQty = edit?.qty !== undefined ? edit.qty : dispatched ? String(dispatched.qtyLiters || row.defaultQty) : String(row.defaultQty);
 
     const currentFee = edit?.deliveryFee !== undefined
@@ -246,9 +344,10 @@ export default function DailyMonthlyDeliveries() {
     const { customer, shift, rate, rowKey, customerId } = row;
     const dispatchedRec = getDispatchedRecord(customerId, shift);
     const isCurrentlyDispatched = !!dispatchedRec;
+    const isFailedOrSkipped = dispatchedRec && (dispatchedRec.status === 'FAILED' || dispatchedRec.status === 'SKIPPED' || dispatchedRec.status === 'CANCELLED');
 
-    // If already dispatched, unticking removes the pending order (if not delivered)
-    if (isCurrentlyDispatched) {
+    // If already dispatched and active (PENDING/IN_TRANSIT): unticking cancels dispatch
+    if (isCurrentlyDispatched && !isFailedOrSkipped) {
       if (dispatchedRec.status === 'DELIVERED') {
         toast.info(`This order is already marked DELIVERED in Doorstep Deliveries (#${dispatchedRec.runCode || ''})`);
         return;
@@ -266,12 +365,23 @@ export default function DailyMonthlyDeliveries() {
       return;
     }
 
-    // If NOT dispatched, place the order
+    // If previous record was FAILED or SKIPPED, remove the old record before placing new dispatch
+    if (isCurrentlyDispatched && isFailedOrSkipped) {
+      try {
+        setProcessingKeys((p) => ({ ...p, [rowKey]: true }));
+        await deleteDelivery(dispatchedRec._id || dispatchedRec.id);
+      } catch (err) {
+        console.warn('Notice cleaning previous failed delivery run:', err);
+      }
+    }
+
+    // Place the new / updated order
     const rowVals = getRowValue(row);
     const parsedQty = parseFloat(rowVals.qty);
 
     if (isNaN(parsedQty) || parsedQty <= 0) {
       toast.error('Please enter a valid milk quantity');
+      setProcessingKeys((p) => ({ ...p, [rowKey]: false }));
       return;
     }
 
@@ -296,7 +406,25 @@ export default function DailyMonthlyDeliveries() {
 
       const grandTotal = itemsTotal + deliveryFeeVal;
 
-      const selectedRider = activeRiders.find((r) => String(r.id) === String(rowVals.riderId));
+      // Strict stock validation before dispatching order
+      if (availableProducts.length > 0) {
+        for (const it of items) {
+          const itQty = Number(it.quantity) || 0;
+          if (itQty <= 0) continue;
+          const matched = matchProductForOrderItem(it, availableProducts);
+          if (matched) {
+            const avail = resolveAvailableStock(matched, it, inventoryMetrics);
+            if (avail <= 0 || itQty > avail) {
+              toast.error(`Cannot dispatch: Insufficient stock for "${matched.name}". Available: ${avail} ${matched.unit || ''}, Requested: ${itQty}`);
+              return;
+            }
+          }
+        }
+      }
+
+      const selectedRider = activeRiders.find(
+        (r) => String(r.id) === String(rowVals.riderId) || (r.name && r.name.toLowerCase().trim() === String(rowVals.riderId).toLowerCase().trim())
+      );
       const itemSummary = [
         ...items.map((item) => `${item.quantity} ${item.unit} ${item.name}`),
         ...(deliveryFeeVal > 0 ? [`Fee: Rs. ${deliveryFeeVal}`] : []),
@@ -324,7 +452,7 @@ export default function DailyMonthlyDeliveries() {
         deliverySubType: 'monthly',
         source: 'SCHEDULED_ROUTE',
         riderId: selectedRider?.id || null,
-        riderNameSnapshot: selectedRider?.name || customer.preferredRider || 'Default Rider',
+        riderNameSnapshot: selectedRider?.name || customer.preferredRider || 'Unassigned',
         notes: `Customer agreement dispatch (${selectedDate}, ${shift})`,
       };
 
@@ -343,7 +471,10 @@ export default function DailyMonthlyDeliveries() {
   const handleSaveAllShiftOrders = async (e) => {
     if (e) e.preventDefault();
 
-    const pendingToPlace = filteredRows.filter((r) => !getDispatchedRecord(r.customerId, r.shift));
+    const pendingToPlace = filteredRows.filter((r) => {
+      const rec = getDispatchedRecord(r.customerId, r.shift);
+      return !rec || rec.status === 'FAILED' || rec.status === 'SKIPPED' || rec.status === 'CANCELLED';
+    });
     if (pendingToPlace.length === 0) {
       toast.info('All visible customer orders are already dispatched!');
       return;
@@ -442,8 +573,16 @@ export default function DailyMonthlyDeliveries() {
         r.rate,
         feeVal > 0 ? feeVal : '0 (Free)',
         ((q * r.rate) + feeVal).toLocaleString(),
-        Number(r.customer.khataBalance || 0).toLocaleString(),
-        dispatched ? (dispatched.status === 'DELIVERED' ? 'DELIVERED' : `Dispatched (#${dispatched.runCode || 'DEL'})`) : 'Pending',
+        getCustomerDueBalance(r.customer).toLocaleString(),
+        dispatched
+          ? dispatched.status === 'DELIVERED'
+            ? 'DELIVERED'
+            : dispatched.status === 'FAILED'
+            ? 'FAILED'
+            : dispatched.status === 'SKIPPED'
+            ? 'SKIPPED'
+            : `Dispatched (#${dispatched.runCode || 'DEL'})`
+          : 'Pending',
       ];
     });
 
@@ -672,6 +811,8 @@ export default function DailyMonthlyDeliveries() {
                     const dispatchedRec = getDispatchedRecord(customerId, shift);
                     const isDispatched = !!dispatchedRec;
                     const isDelivered = dispatchedRec?.status === 'DELIVERED';
+                    const isFailed = dispatchedRec?.status === 'FAILED';
+                    const isSkipped = dispatchedRec?.status === 'SKIPPED';
                     const isProcessing = !!processingKeys[rowKey];
 
                     const q = parseFloat(rowVals.qty) || 0;
@@ -689,10 +830,14 @@ export default function DailyMonthlyDeliveries() {
                       <tr
                         key={rowKey}
                         className={`hover:bg-slate-50/70 transition-colors ${
-                          isDispatched
-                            ? isDelivered
-                              ? 'bg-slate-50/40'
-                              : 'bg-emerald-50/20'
+                          isDelivered
+                            ? 'bg-slate-50/40'
+                            : isFailed
+                            ? 'bg-rose-50/25'
+                            : isSkipped
+                            ? 'bg-amber-50/20'
+                            : isDispatched
+                            ? 'bg-emerald-50/20'
                             : ''
                         }`}
                       >
@@ -701,15 +846,56 @@ export default function DailyMonthlyDeliveries() {
                           <div className="flex items-center justify-center">
                             {isProcessing ? (
                               <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
-                            ) : isDispatched ? (
-                              <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border ${
-                                isDelivered
-                                  ? 'border-slate-200 bg-slate-100 text-slate-600'
-                                  : 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                              }`}>
-                                {isDelivered ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                                {isDelivered ? 'Delivered' : 'Dispatched'}
+                            ) : isDelivered ? (
+                              <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border border-slate-200 bg-slate-100 text-slate-600">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Delivered
                               </span>
+                            ) : isFailed ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border border-rose-200 bg-rose-50 text-rose-700">
+                                  <AlertCircle className="h-3 w-3" />
+                                  Failed
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleRowOrder(row)}
+                                  className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-bold bg-rose-600 hover:bg-rose-700 text-white transition cursor-pointer shadow-2xs"
+                                  title="Re-dispatch with edited values"
+                                >
+                                  <Check className="h-2.5 w-2.5" /> Re-dispatch
+                                </button>
+                              </div>
+                            ) : isSkipped ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border border-slate-300 bg-slate-100 text-slate-700">
+                                  <Clock className="h-3 w-3" />
+                                  Skipped
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleRowOrder(row)}
+                                  className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-bold bg-slate-700 hover:bg-slate-800 text-white transition cursor-pointer shadow-2xs"
+                                  title="Re-dispatch with edited values"
+                                >
+                                  <Check className="h-2.5 w-2.5" /> Re-dispatch
+                                </button>
+                              </div>
+                            ) : isDispatched ? (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border border-emerald-200 bg-emerald-50 text-emerald-800">
+                                  <Clock className="h-3 w-3" />
+                                  Dispatched
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleRowOrder(row)}
+                                  className="text-[9px] text-rose-600 hover:text-rose-800 hover:underline cursor-pointer font-medium"
+                                  title="Cancel dispatch"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
                             ) : (
                               <button
                                 type="button"
@@ -746,7 +932,7 @@ export default function DailyMonthlyDeliveries() {
                             <span className="truncate">{customer.area || 'Model Town'}</span>
                           </p>
                           <p className="text-[10px] font-bold text-slate-600 mt-0.5">
-                            Khata: <span className="font-mono text-slate-800">Rs. {Number(customer.khataBalance || 0).toLocaleString()}</span>
+                            Khata: <span className="font-mono text-slate-800">Rs. {getCustomerDueBalance(customer).toLocaleString()}</span>
                           </p>
                         </td>
 
@@ -816,7 +1002,7 @@ export default function DailyMonthlyDeliveries() {
                         <td className="py-2.5 px-3 min-w-36">
                           <div className="relative">
                             <select
-                              value={rowVals.riderId}
+                              value={rowVals.riderId || ''}
                               disabled={isDelivered}
                               onChange={(e) => handleRowChange(rowKey, 'riderId', e.target.value)}
                               className={`w-full border rounded-md px-2 py-1 text-[11px] font-medium appearance-none pr-6 shadow-2xs ${

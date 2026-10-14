@@ -12,7 +12,6 @@ import LedgerCustomerProfileCard from '../components/CustomerKhataLedger/LedgerC
 import LedgerStatsCards from '../components/CustomerKhataLedger/LedgerStatsCards';
 import LedgerTable from '../components/CustomerKhataLedger/LedgerTable';
 import BuyProductView from '../components/CustomerKhataLedger/BuyProductView';
-import AddDebitView from '../components/CustomerKhataLedger/AddDebitView';
 import RecordPaymentView from '../components/CustomerKhataLedger/RecordPaymentView';
 import ViewTransactionView from '../components/CustomerKhataLedger/ViewTransactionView';
 import HowToFinishView from '../components/CustomerKhataLedger/HowToFinishView';
@@ -29,7 +28,7 @@ export default function CustomerKhataLedger() {
   const [selectedCustomerId, setSelectedCustomerId] = useState(urlCustomerId || '');
   const [selectedMonth, setSelectedMonth] = useState('');
 
-  const [currentSubView, setCurrentSubView] = useState('ledger'); // 'ledger' | 'buy' | 'addDebit' | 'recordPayment' | 'viewTransaction' | 'viewCustomer' | 'howToFinish'
+  const [currentSubView, setCurrentSubView] = useState('ledger'); // 'ledger' | 'buy' | 'recordPayment' | 'viewTransaction' | 'viewCustomer' | 'howToFinish'
   const [prefillPayAmount, setPrefillPayAmount] = useState(null);
   const [viewTransaction, setViewTransaction] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -230,10 +229,6 @@ export default function CustomerKhataLedger() {
     return <BuyProductView customer={currentCustomer} onBack={() => setCurrentSubView('ledger')} />;
   }
 
-  if (currentSubView === 'addDebit' && currentCustomer) {
-    return <AddDebitView customer={currentCustomer} onBack={() => setCurrentSubView('ledger')} />;
-  }
-
   if (currentSubView === 'recordPayment' && currentCustomer) {
     return (
       <RecordPaymentView
@@ -320,7 +315,6 @@ export default function CustomerKhataLedger() {
         selectedMonth={selectedMonth}
         onChangeMonth={(m) => setSelectedMonth(m)}
         onOpenBuyModal={() => setCurrentSubView('buy')}
-        onOpenAddDebit={() => setCurrentSubView('addDebit')}
         onOpenRecordPayment={() => setCurrentSubView('recordPayment')}
         onSettleKhata={handleSettleKhata}
         onBack={() => {

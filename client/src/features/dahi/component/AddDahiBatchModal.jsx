@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Layers, X, Droplets, AlertCircle, ArrowLeft, Check, Milk } from 'lucide-react';
+import { Layers, X, Droplets, AlertCircle, ArrowLeft, Check, Milk, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDahiContext } from '@/context/DahiContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
+import { useGlobalDate, getTodayDateStr } from '@/context/GlobalDateContext';
 import { subscribeToSync } from '@/utils/syncBroadcaster';
 
 export default function AddDahiBatchModal({ onClose, onAddBatch }) {
@@ -12,6 +13,8 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
   const posCtx = usePOSContext();
   const animalCtx = useAnimalContext();
   const intakeCtx = useIntakeContext();
+  const invMetrics = posCtx?.inventoryMetrics || {};
+  const { globalDate } = useGlobalDate();
 
   // Lively fetch latest stock and batches on modal open and real-time events
   useEffect(() => {
@@ -48,40 +51,15 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
     };
   }, []);
 
-  // Read authoritative live stock
-  const availFarm = useMemo(() => {
-    if (posCtx?.inventoryMetrics?.rawFarmMilkStock !== undefined && posCtx?.inventoryMetrics?.rawFarmMilkStock !== null) {
-      return Math.max(0, Number(posCtx.inventoryMetrics.rawFarmMilkStock) || 0);
-    }
-    if (metrics?.remainingFarmMilk !== undefined && metrics?.remainingFarmMilk !== null) {
-      return Math.max(0, Number(metrics.remainingFarmMilk) || 0);
-    }
-    return 0;
-  }, [posCtx?.inventoryMetrics?.rawFarmMilkStock, metrics?.remainingFarmMilk]);
-
-  const availSupplier = useMemo(() => {
-    if (posCtx?.inventoryMetrics?.rawSupplierMilkStock !== undefined && posCtx?.inventoryMetrics?.rawSupplierMilkStock !== null) {
-      return Math.max(0, Number(posCtx.inventoryMetrics.rawSupplierMilkStock) || 0);
-    }
-    if (metrics?.remainingSupplierMilk !== undefined && metrics?.remainingSupplierMilk !== null) {
-      return Math.max(0, Number(metrics.remainingSupplierMilk) || 0);
-    }
-    const totalProcured = (intakeCtx?.intakeLogs || []).reduce((sum, item) => sum + (Number(item.quantity || item.quantityLiters) || 0), 0);
-    return Math.max(0, totalProcured);
-  }, [posCtx?.inventoryMetrics?.rawSupplierMilkStock, metrics?.remainingSupplierMilk, intakeCtx?.intakeLogs]);
-
-  const availTotal = useMemo(() => {
-    return Number((availFarm + availSupplier).toFixed(1));
-  }, [availFarm, availSupplier]);
-
   const [formData, setFormData] = useState({
     product: 'Fresh Dahi (Plain)',
+    milkType: 'Buffalo Milk',
     source: 'Both (Mixed)',
     milkUsed: '',
     farmMilkUsed: '',
     supplierMilkUsed: '',
     output: '',
-    date: new Date().toISOString().split('T')[0],
+    date: globalDate || getTodayDateStr(),
     stage: 'incubating',
     status: 'In Progress',
     boiledAndCooled: true,
@@ -90,16 +68,78 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
 
   const [unitCost, setUnitCost] = useState(230);
 
-  // Maximum allowed for current source
+  // Available stocks per milk type (Cow vs Buffalo)
+  const isCow = (formData.milkType || '').toLowerCase().includes('cow');
+
+  // Farm stocks
+  const availFarmCow = Math.max(0, Number(metrics.remainingFarmCowMilk ?? invMetrics.rawFarmCowMilkStock ?? invMetrics.farmCowMilkStock ?? 0));
+  const availFarmBuffalo = Math.max(0, Number(metrics.remainingFarmBuffaloMilk ?? invMetrics.rawFarmBuffaloMilkStock ?? invMetrics.farmBuffaloMilkStock ?? 0));
+  const availFarmForType = isCow ? availFarmCow : availFarmBuffalo;
+
+  // Supplier stocks
+  const availSupplierCow = Math.max(0, Number(metrics.remainingSupplierCowMilk ?? invMetrics.rawSupplierCowMilkStock ?? invMetrics.supplierCowMilkStock ?? 0));
+  const availSupplierBuffalo = Math.max(0, Number(metrics.remainingSupplierBuffaloMilk ?? invMetrics.rawSupplierBuffaloMilkStock ?? invMetrics.supplierBuffaloMilkStock ?? 0));
+  const availSupplierForType = isCow ? availSupplierCow : availSupplierBuffalo;
+
+  // Total available for currently selected milk type
+  const availTotalForType = Number((availFarmForType + availSupplierForType).toFixed(1));
+  const availTotalCow = Number((availFarmCow + availSupplierCow).toFixed(1));
+  const availTotalBuffalo = Number((availFarmBuffalo + availSupplierBuffalo).toFixed(1));
+
+  // Overall aggregate liquid milk (chiller total across all species)
+  const availFarmAll = Number(metrics.remainingFarmMilk ?? metrics.farmSourced ?? (availFarmCow + availFarmBuffalo).toFixed(1));
+  const availSupplierAll = Number(metrics.remainingSupplierMilk ?? metrics.supplierSourced ?? (availSupplierCow + availSupplierBuffalo).toFixed(1));
+  const availTotalAll = Number(metrics.remainingTotalMilk ?? (availFarmAll + availSupplierAll).toFixed(1));
+
+  // Maximum allowed for current source and selected milk type
   const currentMax =
     formData.source === 'Farm Milk'
-      ? availFarm
+      ? availFarmForType
       : formData.source === 'Supplier Milk'
-        ? availSupplier
-        : availTotal;
+        ? availSupplierForType
+        : availTotalForType;
 
   const currentEntered = parseFloat(formData.milkUsed) || 0;
-  const isOverLimit = currentEntered > currentMax && currentMax > 0;
+  const farmEntered = parseFloat(formData.farmMilkUsed) || 0;
+  const supEntered = parseFloat(formData.supplierMilkUsed) || 0;
+
+  // Strict over-limit conditions
+  const isOverLimit = currentEntered > currentMax;
+  const isFarmOver = formData.source === 'Both (Mixed)' && farmEntered > availFarmForType;
+  const isSupOver = formData.source === 'Both (Mixed)' && supEntered > availSupplierForType;
+  const hasValidationError = isOverLimit || isFarmOver || isSupOver;
+
+  const handleMilkTypeChange = (newType) => {
+    const isNowCow = (newType || '').toLowerCase().includes('cow');
+    const newFarmAvail = isNowCow ? availFarmCow : availFarmBuffalo;
+    const newSupAvail = isNowCow ? availSupplierCow : availSupplierBuffalo;
+    const newTotalAvail = Number((newFarmAvail + newSupAvail).toFixed(1));
+
+    const total = parseFloat(formData.milkUsed) || 0;
+    let fVal = formData.farmMilkUsed;
+    let sVal = formData.supplierMilkUsed;
+
+    if (formData.source === 'Farm Milk') {
+      fVal = String(total);
+      sVal = '0';
+    } else if (formData.source === 'Supplier Milk') {
+      fVal = '0';
+      sVal = String(total);
+    } else {
+      // Both (Mixed)
+      const sumAvail = newFarmAvail + newSupAvail;
+      const fPortion = sumAvail > 0 ? Math.min(total, Math.round(total * (newFarmAvail / sumAvail))) : Math.min(total, newFarmAvail);
+      fVal = String(fPortion);
+      sVal = String(Math.max(0, total - fPortion));
+    }
+
+    setFormData({
+      ...formData,
+      milkType: newType,
+      farmMilkUsed: fVal,
+      supplierMilkUsed: sVal,
+    });
+  };
 
   const handleSourceChange = (newSource) => {
     const total = parseFloat(formData.milkUsed) || 0;
@@ -114,8 +154,8 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
       sVal = String(total);
     } else {
       // Both (Mixed)
-      const sumAvail = availFarm + availSupplier;
-      const fPortion = sumAvail > 0 ? Math.round(total * (availFarm / sumAvail)) : Math.round(total / 2);
+      const sumAvail = availFarmForType + availSupplierForType;
+      const fPortion = sumAvail > 0 ? Math.min(total, Math.round(total * (availFarmForType / sumAvail))) : Math.min(total, availFarmForType);
       fVal = String(fPortion);
       sVal = String(Math.max(0, total - fPortion));
     }
@@ -149,8 +189,8 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
         output: estOutput,
       });
     } else {
-      const sumAvail = availFarm + availSupplier;
-      const fPortion = sumAvail > 0 ? Math.round(num * (availFarm / sumAvail)) : Math.round(num / 2);
+      const sumAvail = availFarmForType + availSupplierForType;
+      const fPortion = sumAvail > 0 ? Math.min(num, Math.round(num * (availFarmForType / sumAvail))) : Math.min(num, availFarmForType);
       setFormData({
         ...formData,
         milkUsed: newTotal,
@@ -196,10 +236,13 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     const rawVal = parseFloat(formData.milkUsed) || 0;
-    if (rawVal <= 0) return;
+    if (rawVal <= 0) {
+      alert('Please enter a valid milk quantity greater than 0.');
+      return;
+    }
 
-    if (currentMax > 0 && rawVal > currentMax) {
-      alert(`Entered milk (${rawVal} kg) exceeds current available ${formData.source} (${currentMax} kg).`);
+    if (rawVal > currentMax) {
+      alert(`⚠️ Insufficient ${formData.milkType} Stock!\n\nEntered quantity (${rawVal} kg) exceeds available ${formData.milkType} from ${formData.source} (${currentMax} kg).\n\nPlease enter an amount less than or equal to ${currentMax} kg.`);
       return;
     }
 
@@ -213,6 +256,17 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
       : formData.source === 'Farm Milk' 
         ? 0 
         : (parseFloat(formData.supplierMilkUsed) || 0);
+
+    if (formData.source === 'Both (Mixed)') {
+      if (farmPortion > availFarmForType) {
+        alert(`⚠️ Farm portion (${farmPortion} kg) exceeds available Farm ${formData.milkType} stock of ${availFarmForType} kg.`);
+        return;
+      }
+      if (supPortion > availSupplierForType) {
+        alert(`⚠️ Supplier portion (${supPortion} kg) exceeds available Supplier ${formData.milkType} stock of ${availSupplierForType} kg.`);
+        return;
+      }
+    }
 
     const totalUsed = farmPortion + supPortion || rawVal;
     let farmRatio = 1;
@@ -246,6 +300,12 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
     const numOutput = parseFloat(formData.output) || Number((rawVal * 0.985).toFixed(1));
     const totalDahiCost = Math.round(numOutput * dahiCostRate);
 
+    // 100% Dynamic Proportional Yield formulas:
+    // farmDahiAdded = totalDahiProduced * farmRatio
+    // supplierDahiAdded = totalDahiProduced * supplierRatio
+    const farmDahiAdded = Number((numOutput * farmRatio).toFixed(3));
+    const supplierDahiAdded = Number((numOutput * supplierRatio).toFixed(3));
+
     onAddBatch({
       ...formData,
       unitCost: activeUnitCost,
@@ -263,6 +323,8 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
       supplierMilkUsed: supPortion,
       farmRatio,
       supplierRatio,
+      farmDahiAdded,
+      supplierDahiAdded,
       output: formData.output ? `${formData.output} kg` : `${numOutput} kg`,
       outputVal: numOutput,
     });
@@ -303,22 +365,26 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-slate-700 font-bold text-xs">
               <Droplets className="w-4 h-4 text-blue-600 shrink-0" />
-              <span>Total Available Liquid Milk:</span>
+              <span>Available {formData.milkType} Stock:</span>
             </div>
             <span className="text-base font-black text-slate-900 tabular">
-              {availTotal} <span className="text-xs font-bold text-slate-600">kg</span>
+              {availTotalForType} <span className="text-xs font-bold text-slate-600">kg</span>
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-[11.5px] pt-1.5 border-t border-slate-200/60 font-semibold">
+          <div className="flex items-center justify-between text-[11.5px] pt-1.5 border-t border-slate-200/60 font-semibold flex-wrap gap-y-1">
             <span className="text-emerald-700 flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              Farm: <strong className="font-black text-emerald-800 ml-0.5">{availFarm} kg</strong>
+              Farm {formData.milkType.replace(' Milk', '')}: <strong className="font-black text-emerald-800 ml-0.5">{availFarmForType} kg</strong>
             </span>
             <span className="text-slate-300 font-bold">·</span>
             <span className="text-blue-700 flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-              Supplier: <strong className="font-black text-blue-800 ml-0.5">{availSupplier} kg</strong>
+              Supplier {formData.milkType.replace(' Milk', '')}: <strong className="font-black text-blue-800 ml-0.5">{availSupplierForType} kg</strong>
+            </span>
+            <span className="text-slate-300 font-bold">·</span>
+            <span className="text-slate-500 flex items-center gap-1">
+              Total Chiller: <strong className="font-bold text-slate-700 ml-0.5">{availTotalAll} kg</strong>
             </span>
           </div>
         </div>
@@ -335,7 +401,36 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Production Date <span className="text-rose-500">*</span></span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-semibold cursor-pointer"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Milk className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Milk Type <span className="text-rose-500">*</span></span>
+                </label>
+                <select
+                  required
+                  value={formData.milkType}
+                  onChange={(e) => handleMilkTypeChange(e.target.value)}
+                  className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-medium cursor-pointer"
+                >
+                  <option value="Buffalo Milk">Buffalo Milk ({availTotalBuffalo} kg available)</option>
+                  <option value="Cow Milk">Cow Milk ({availTotalCow} kg available)</option>
+                </select>
+              </div>
+
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Dahi Product Type <span className="text-rose-500">*</span>
@@ -356,8 +451,8 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                   <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                     Milk Sourcing <span className="text-rose-500">*</span>
                   </label>
-                  <span className="text-[10.5px] font-semibold text-slate-500">
-                    Avail: <strong className="text-slate-900 font-bold">{currentMax} kg</strong>
+                  <span className={`text-[10.5px] font-semibold ${currentMax === 0 ? 'text-rose-600 font-bold' : 'text-slate-500'}`}>
+                    Avail: <strong className={currentMax === 0 ? 'text-rose-700 font-black' : 'text-slate-900 font-bold'}>{currentMax} kg</strong>
                   </span>
                 </div>
                 <select
@@ -365,9 +460,9 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                   onChange={(e) => handleSourceChange(e.target.value)}
                   className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-medium cursor-pointer"
                 >
-                  <option value="Both (Mixed)">Both (Mixed) — Farm + Supplier ({availTotal} kg total)</option>
-                  <option value="Farm Milk">Farm Milk (Only Farm P&amp;L — {availFarm} kg available)</option>
-                  <option value="Supplier Milk">Supplier Milk (Only Supplier P&amp;L — {availSupplier} kg available)</option>
+                  <option value="Both (Mixed)">Both (Mixed) — Farm + Supplier ({availTotalForType} kg available)</option>
+                  <option value="Farm Milk">Farm Milk ({availFarmForType} kg {formData.milkType} available)</option>
+                  <option value="Supplier Milk">Supplier Milk ({availSupplierForType} kg {formData.milkType} available)</option>
                 </select>
               </div>
             </div>
@@ -394,7 +489,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                     <button
                       type="button"
                       onClick={handleSetMax}
-                      className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 cursor-pointer transition-colors"
+                      className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-200 cursor-pointer transition-colors"
                     >
                       Use Max ({currentMax} kg)
                     </button>
@@ -405,20 +500,45 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                   step="0.5"
                   required
                   min="0.5"
-                  placeholder={`e.g. ${currentMax > 0 ? Math.min(20, currentMax) : 20}`}
+                  placeholder={`e.g. ${currentMax > 0 ? Math.min(20, currentMax) : 0}`}
                   value={formData.milkUsed}
                   onChange={(e) => handleTotalMilkChange(e.target.value)}
-                  className={`w-full h-9 px-3 text-xs border rounded-xl focus:outline-none focus:ring-1 font-medium bg-slate-50 focus:bg-white ${
-                    isOverLimit
-                      ? 'border-rose-300 focus:ring-rose-500 bg-rose-50/20'
+                  className={`w-full h-9 px-3 text-xs border rounded-xl focus:outline-none focus:ring-1 font-medium bg-slate-50 focus:bg-white transition-colors ${
+                    hasValidationError
+                      ? 'border-rose-400 focus:ring-rose-500 bg-rose-50/20 text-rose-900 font-bold'
                       : 'border-slate-200 focus:ring-emerald-500'
                   }`}
                 />
                 {isOverLimit && (
-                  <p className="text-[11px] text-rose-600 font-semibold mt-1.5 flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    Input exceeds available {formData.source} limit of {currentMax} kg
-                  </p>
+                  <div className="mt-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2.5 shadow-2xs">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-bold text-rose-800 text-xs">
+                        ⚠️ Insufficient {formData.milkType} Stock!
+                      </p>
+                      <p className="text-[11.5px] text-rose-600 font-medium leading-relaxed">
+                        Entered quantity <strong className="font-bold text-rose-700">{currentEntered} kg</strong> exceeds the maximum available {formData.milkType} ({formData.source}) stock of <strong className="font-bold text-rose-700">{currentMax} kg</strong>. Please enter an amount ≤ {currentMax} kg.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {!isOverLimit && (isFarmOver || isSupOver) && (
+                  <div className="mt-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2.5 shadow-2xs">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-bold text-rose-800 text-xs">
+                        ⚠️ Portion Exceeds Available Stock!
+                      </p>
+                      <p className="text-[11.5px] text-rose-600 font-medium leading-relaxed">
+                        {isFarmOver && (
+                          <span>Farm portion (<strong className="font-bold text-rose-700">{farmEntered} kg</strong>) exceeds available Farm {formData.milkType} (<strong className="font-bold text-rose-700">{availFarmForType} kg</strong>). </span>
+                        )}
+                        {isSupOver && (
+                          <span>Supplier portion (<strong className="font-bold text-rose-700">{supEntered} kg</strong>) exceeds available Supplier {formData.milkType} (<strong className="font-bold text-rose-700">{availSupplierForType} kg</strong>).</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
                 )}
                 {formData.source === 'Farm Milk' && (
                   <p className="text-[11px] text-emerald-700 font-semibold mt-1">
@@ -464,8 +584,9 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10.5px] font-bold text-emerald-800 uppercase tracking-wider mb-0.5">
-                        Farm Milk (L)
+                      <label className="block text-[10.5px] font-bold text-emerald-800 uppercase tracking-wider mb-0.5 flex items-center justify-between">
+                        <span>Farm Milk (L)</span>
+                        <span className={`text-[10px] font-bold ${isFarmOver ? 'text-rose-600' : 'text-emerald-600'}`}>Max: {availFarmForType} kg</span>
                       </label>
                       <div className="relative">
                         <span className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-slate-400 font-bold text-[10px]">
@@ -477,13 +598,19 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                           required
                           value={formData.farmMilkUsed}
                           onChange={(e) => handleFarmPortionChange(e.target.value)}
-                          className="w-full h-8 pl-2 pr-6 text-xs border border-emerald-300 rounded-lg bg-white font-medium focus:ring-1 focus:ring-emerald-500"
+                          className={`w-full h-8 pl-2 pr-6 text-xs border rounded-lg bg-white font-medium focus:ring-1 ${
+                            isFarmOver ? 'border-rose-400 focus:ring-rose-500 text-rose-900 bg-rose-50/20' : 'border-emerald-300 focus:ring-emerald-500'
+                          }`}
                         />
                       </div>
+                      {isFarmOver && (
+                        <p className="text-[10px] text-rose-600 font-bold mt-1">Exceeds {availFarmForType} kg max</p>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-[10.5px] font-bold text-blue-800 uppercase tracking-wider mb-0.5">
-                        Supplier Milk (L)
+                      <label className="block text-[10.5px] font-bold text-blue-800 uppercase tracking-wider mb-0.5 flex items-center justify-between">
+                        <span>Supplier Milk (L)</span>
+                        <span className={`text-[10px] font-bold ${isSupOver ? 'text-rose-600' : 'text-blue-600'}`}>Max: {availSupplierForType} kg</span>
                       </label>
                       <div className="relative">
                         <span className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-slate-400 font-bold text-[10px]">
@@ -495,12 +622,41 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
                           required
                           value={formData.supplierMilkUsed}
                           onChange={(e) => handleSupplierPortionChange(e.target.value)}
-                          className="w-full h-8 pl-2 pr-6 text-xs border border-blue-300 rounded-lg bg-white font-medium focus:ring-1 focus:ring-blue-500"
+                          className={`w-full h-8 pl-2 pr-6 text-xs border rounded-lg bg-white font-medium focus:ring-1 ${
+                            isSupOver ? 'border-rose-400 focus:ring-rose-500 text-rose-900 bg-rose-50/20' : 'border-blue-300 focus:ring-blue-500'
+                          }`}
                         />
                       </div>
+                      {isSupOver && (
+                        <p className="text-[10px] text-rose-600 font-bold mt-1">Exceeds {availSupplierForType} kg max</p>
+                      )}
                     </div>
                   </div>
                   
+                  {/* Dynamic Proportional Yield Preview */}
+                  {parseFloat(formData.output || (parseFloat(formData.milkUsed) * 0.985)) > 0 && parseFloat(formData.milkUsed) > 0 && (
+                    <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-[11px] font-semibold text-slate-600">
+                      <span>Proportional Yield Output:</span>
+                      <span className="font-bold text-slate-800">
+                        Farm Dahi:{' '}
+                        <strong className="text-emerald-700">
+                          {(
+                            (parseFloat(formData.output) || (parseFloat(formData.milkUsed) || 0) * 0.985) *
+                            ((parseFloat(formData.farmMilkUsed) || 0) / (parseFloat(formData.milkUsed) || 1))
+                          ).toFixed(2)}{' '}
+                          kg
+                        </strong>{' '}
+                        · Sup Dahi:{' '}
+                        <strong className="text-blue-700">
+                          {(
+                            (parseFloat(formData.output) || (parseFloat(formData.milkUsed) || 0) * 0.985) *
+                            ((parseFloat(formData.supplierMilkUsed) || 0) / (parseFloat(formData.milkUsed) || 1))
+                          ).toFixed(2)}{' '}
+                          kg
+                        </strong>
+                      </span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="hidden"></div>
@@ -519,8 +675,8 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
             </button>
             <button
               type="submit"
-              disabled={isOverLimit}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-white text-xs font-bold shadow-xs transition cursor-pointer bg-[#00a86b] hover:bg-[#007a52] disabled:opacity-50"
+              disabled={hasValidationError || currentEntered <= 0}
+              className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-white text-xs font-bold shadow-xs transition cursor-pointer bg-[#00a86b] hover:bg-[#007a52] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Check className="w-3.5 h-3.5" />
               Record Dahi Batch

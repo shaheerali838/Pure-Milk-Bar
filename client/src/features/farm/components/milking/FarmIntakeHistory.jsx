@@ -22,19 +22,11 @@ import {
 } from 'lucide-react';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { Badge } from '@/components/ui/badge';
+import { formatStandardDate, normalizeDateStr, sortByDateDesc, getPktTodayString } from '@/utils/dateUtils';
 
-const getTodayDateStr = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+const getTodayDateStr = () => getPktTodayString();
 
-const normalizeDate = (dateVal) => {
-  if (!dateVal) return '';
-  if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateVal)) return dateVal.slice(0, 10);
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return String(dateVal).slice(0, 10);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+const normalizeDate = (dateVal) => normalizeDateStr(dateVal);
 
 export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
   const { animals = [], milkingLogs = [], deleteMilkingLog, updateMilkingLog } = useAnimalContext();
@@ -61,7 +53,7 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
 
   // Enrich milkingLogs with animal data and expected yield variance
   const enrichedLogs = useMemo(() => {
-    return milkingLogs.map((log) => {
+    const mapped = milkingLogs.map((log) => {
       const animal = animalMap[log.animalTag] || {};
       const isBuff =
         (animal.species && animal.species.toLowerCase().includes('buffalo')) ||
@@ -92,6 +84,7 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
         dateStr: normalizeDate(log.date) || todayStr,
       };
     });
+    return sortByDateDesc(mapped, 'dateStr');
   }, [milkingLogs, animalMap, todayStr]);
 
   // Filter logs
@@ -521,8 +514,8 @@ export default function FarmIntakeHistory({ onNewIntake, onEditIntake }) {
                           className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer" 
                         />
                       </td>
-                      <td className="py-3 px-4 font-mono font-medium text-slate-700 whitespace-nowrap">
-                        {log.dateStr}
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className="font-semibold text-slate-800">{formatStandardDate(log.date || log.dateStr)}</span>
                       </td>
 
                       <td className="py-3 px-4 whitespace-nowrap">

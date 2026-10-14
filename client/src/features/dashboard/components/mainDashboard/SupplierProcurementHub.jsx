@@ -5,30 +5,42 @@ import { useSupplierContext } from '@/context/SupplierContext';
 import { useExpense } from '@/context/ExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { isDateInFilterRange, getDateRangeBoundaries } from '@/utils/dateUtils';
 
-export default function SupplierProcurementHub() {
+export default function SupplierProcurementHub({
+  dateFilter = 'today',
+  startDate = '',
+  endDate = '',
+}) {
   const navigate = useNavigate();
   const { intakeLogs = [], totals: intakeTotals = {} } = useIntakeContext();
   const { suppliers = [], totals: supplierTotals = {} } = useSupplierContext();
   const { totals: expenseTotals = {} } = useExpense();
   const { products = [], inventoryMetrics = {} } = usePOSContext();
 
-  const procuredVolume =
-    intakeTotals.totalProcuredVolume !== undefined
-      ? intakeTotals.totalProcuredVolume
-      : intakeLogs.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0);
+  const periodData = getDateRangeBoundaries(dateFilter, startDate, endDate);
+  const periodLabel = periodData.label;
 
-  const directCost =
-    intakeTotals.totalIntakeSpend !== undefined
-      ? intakeTotals.totalIntakeSpend
-      : intakeLogs.reduce((sum, item) => sum + (parseFloat(item.totalCost) || 0), 0);
+  const filteredIntakeLogs = intakeLogs.filter((l) =>
+    isDateInFilterRange(l.date || l.createdAt, dateFilter, startDate, endDate)
+  );
+
+  const procuredVolume = filteredIntakeLogs.length > 0
+    ? filteredIntakeLogs.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0)
+    : (dateFilter === 'all' && intakeTotals.totalProcuredVolume !== undefined ? intakeTotals.totalProcuredVolume : 0);
+
+  const directCost = filteredIntakeLogs.length > 0
+    ? filteredIntakeLogs.reduce((sum, item) => sum + (parseFloat(item.totalCost) || 0), 0)
+    : (dateFilter === 'all' && intakeTotals.totalIntakeSpend !== undefined ? intakeTotals.totalIntakeSpend : 0);
 
   const avgProcurementRate =
     procuredVolume > 0 ? directCost / procuredVolume : 0;
 
   // Collection transport / van diesel overheads from expense records
   const collectionDiesel =
-    Number(expenseTotals.fuelTransportRepairs) || (procuredVolume > 0 ? 1000 : 0);
+    dateFilter === 'all'
+      ? (Number(expenseTotals.fuelTransportRepairs) || 0)
+      : (procuredVolume > 0 ? 1000 : 0);
 
   // Valuation at retail price
   const milkProduct = products.find(
@@ -66,9 +78,9 @@ export default function SupplierProcurementHub() {
              
             </div>
           </div>
-          {/* <span className="px-3 py-1 rounded-full text-[11px] font-black bg-blue-50 text-blue-700 shrink-0">
-            +{sourcingMarginPct}% Margin
-          </span> */}
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
+            {periodLabel}
+          </span>
         </div>
 
         {/* Metric Data Rows */}

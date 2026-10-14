@@ -26,6 +26,8 @@ import { usePOSContext } from "@/context/POSContext";
 import { getProductIcon } from "@/features/inventory/components/AddProduct";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getPktTodayString } from "@/utils/dateUtils";
+import DayClosedLockOverlay from "@/components/common/DayClosedLockOverlay";
 import POSDeliverySection from "./POSDeliverySection";
 
 export default function POSSale() {
@@ -33,6 +35,9 @@ export default function POSSale() {
   const [isProcessingSale, setIsProcessingSale] = React.useState(false);
 
   const {
+    isDayClosed = false,
+    saleDate,
+    setSaleDate,
     cart = [],
     cartCount = 0,
     cartSubtotal = 0,
@@ -67,11 +72,13 @@ export default function POSSale() {
     deliverySubType = "ontime",
     setDeliverySubType,
 
-    // Customer Mode Khata Options: 'khata' | 'cash' | 'partial'
+    // Customer Mode Khata Options: 'khata' | 'cash' | 'easypaisa' | 'jazzcash' | 'split' | 'partial'
     khataPaymentOption = "khata",
     setKhataPaymentOption,
     partialPaidAmount = "",
     setPartialPaidAmount,
+    splitDetails = {},
+    setSplitDetails,
     orderNotes = "",
     setOrderNotes,
 
@@ -117,33 +124,41 @@ export default function POSSale() {
     const prod = products.find(p => p.id === prodId) || {};
     const name = (prod.name || '').toLowerCase();
     const cat = (prod.category || '').toLowerCase();
-    const isCow = name.includes('cow');
-    const isBuff = name.includes('buffalo');
+    const isCow = name.includes('cow') || name.includes('gai');
+    const isBuff = name.includes('buffalo') || name.includes('bufflo') || name.includes('buff') || name.includes('bhains');
+    const catalogBaseStock = Math.max(0, Number(prod.currentStock ?? prod.stock) || 0);
 
-    if (cat.includes('dahi') || name.includes('dahi')) {
-      const liveDahi = Number(inventoryMetrics?.totalDahiStock);
-      if (!isNaN(liveDahi) && liveDahi >= 0) return liveDahi;
-      return Number(prod.stock) || 0;
+    if (cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt') || cat.includes('curd') || name.includes('curd')) {
+      const farmD = Number(inventoryMetrics?.rawFarmDahiStock ?? inventoryMetrics?.farmDahiStock) || 0;
+      const supD = Number(inventoryMetrics?.rawSupplierDahiStock ?? inventoryMetrics?.supplierDahiStock) || 0;
+      const liveDahi = Number((farmD + supD).toFixed(2));
+      return liveDahi > 0 ? liveDahi : catalogBaseStock;
     }
 
     if (cat.includes('milk') || name.includes('milk')) {
       if (isCow) {
-        // Strictly Farm Cow Milk only! Supplier doodh isme add nahi hoga.
-        const farmCow = Number(inventoryMetrics?.farmCowMilkStock) || 0;
-        return farmCow;
+        // Combined Cow Milk Card: Farm Cow + Supplier Cow
+        const farmCow = Number(inventoryMetrics?.farmCowMilkStock ?? inventoryMetrics?.rawFarmCowMilkStock) || 0;
+        const supCow = Number(inventoryMetrics?.supplierCowMilkStock ?? inventoryMetrics?.rawSupplierCowMilkStock) || 0;
+        const liveCow = Number((farmCow + supCow).toFixed(1));
+        return liveCow > 0 ? liveCow : catalogBaseStock;
       }
       if (isBuff) {
         // Combined Buffalo Milk Card: Farm Buffalo + Supplier Buffalo
-        const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock) || 0;
-        const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock) || 0;
-        return farmBuff + supBuff;
+        const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock ?? inventoryMetrics?.rawFarmBuffaloMilkStock) || 0;
+        const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock ?? inventoryMetrics?.rawSupplierBuffaloMilkStock) || 0;
+        const liveBuff = Number((farmBuff + supBuff).toFixed(1));
+        if (liveBuff > 0) return liveBuff;
+        const liveTot = Number(inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock) || 0;
+        if (liveTot > 0) return liveTot;
+        return catalogBaseStock;
       }
-      const liveTot = Number(inventoryMetrics?.totalMilkStock);
-      if (!isNaN(liveTot) && liveTot >= 0) return liveTot;
-      return Number(prod.stock) || 0;
+      const liveTot = Number(inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock);
+      if (!isNaN(liveTot) && liveTot > 0) return liveTot;
+      return catalogBaseStock;
     }
 
-    return Number(prod.stock) || 0;
+    return catalogBaseStock;
   };
 
   // Sync category & customer info from URL search params (e.g. /pos?category=walkin&customerId=... or /pos?category=delivery)
@@ -229,7 +244,10 @@ export default function POSSale() {
           Math.max(0, netPayable - (parseFloat(partialPaidAmount) || 0));
 
   return (
-    <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-3.5 sm:p-4 min-h-0 overflow-hidden">
+    <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-3.5 sm:p-4 min-h-0 overflow-hidden relative">
+      {/* App Lockdown Overlay if Day is Closed */}
+      {isDayClosed && <DayClosedLockOverlay />}
+
       {/* Fixed Header */}
       <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 shrink-0">
         <div className="flex items-center gap-2">
@@ -249,7 +267,7 @@ export default function POSSale() {
         {cart.length > 0 && (
           <button
             type="button"
-            disabled={isProcessingSale || isSaleRefreshing}
+            disabled={isDayClosed || isProcessingSale || isSaleRefreshing}
             onClick={handleClearCart}
             className="text-xs font-semibold text-rose-500 hover:text-rose-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition cursor-pointer"
           >
@@ -306,8 +324,42 @@ export default function POSSale() {
                         <div className="text-xs font-bold text-slate-800 leading-tight truncate">
                           {item.name}
                         </div>
-                        <div className="text-[10px] text-slate-500 font-medium">
-                          Rs. {rate.toLocaleString()}/{unitLabel}
+                        <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
+                          <span>Rate: Rs.</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={item.price}
+                            onChange={(e) => handleUpdatePrice(item.id, e.target.value)}
+                            className="w-12 text-center bg-white border border-slate-200 rounded px-1 py-0.2 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-indigo-400"
+                          />
+                          <span>/{unitLabel}</span>
+                        </div>
+                        {/* Interactive Source Tag (Farm / Supplier / Mixed / Cascading FIFO) */}
+                        <div className="flex items-center gap-1.5 mt-1">
+                          {((item.category || '').toLowerCase().includes('dahi') || (item.name || '').toLowerCase().includes('dahi') || (item.category || '').toLowerCase().includes('yogurt')) ? (
+                            <span className="inline-flex items-center gap-1 text-[9.5px] font-bold px-2 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-200 shadow-2xs">
+                              ⚡ Cascading FIFO (Farm → Supplier)
+                            </span>
+                          ) : (
+                            <select
+                              value={item.source || 'Farm'}
+                              onChange={(e) => handleUpdateItemSource && handleUpdateItemSource(item.id, e.target.value)}
+                              className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded border cursor-pointer focus:outline-none ${
+                                item.source === 'Supplier'
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                  : item.source === 'Mixed'
+                                  ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              }`}
+                            >
+                              <option value="Farm">🌿 Farm (P&amp;L)</option>
+                              <option value="Supplier">🚚 Supplier (P&amp;L)</option>
+                              <option value="Mixed">
+                                ⚖️ Mixed ({Math.round((item.farmRatio ?? 0.5) * 100)}% : {Math.round((item.supplierRatio ?? 0.5) * 100)}%)
+                              </option>
+                            </select>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -739,15 +791,15 @@ export default function POSSale() {
                       Khata &amp; Payment Settlement
                     </span>
 
-                    <div className="grid grid-cols-3 gap-1.5">
+                    <div className="grid grid-cols-2 gap-2">
                       <label
-                        className={`flex flex-col p-2 rounded-xl border cursor-pointer transition-all ${
+                        className={`flex flex-col p-2.5 rounded-xl border cursor-pointer transition-all ${
                           khataPaymentOption === "khata"
-                            ? "border-purple-500 bg-purple-50/60 text-purple-900 font-bold"
+                            ? "border-purple-500 bg-purple-50/70 text-purple-900 font-bold shadow-2xs"
                             : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                         }`}
                       >
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
                           <input
                             type="radio"
                             name="khataPaymentOption"
@@ -756,21 +808,21 @@ export default function POSSale() {
                             onChange={() => setKhataPaymentOption("khata")}
                             className="text-purple-600 focus:ring-purple-500"
                           />
-                          <span className="text-xs">Charge Khata</span>
+                          <span className="text-xs font-bold">Charge on Khata</span>
                         </div>
-                        <span className="text-[9px] text-slate-400 font-normal mt-0.5">
-                          Full on ledger
+                        <span className="text-[10px] text-slate-500 font-normal mt-1">
+                          Full amount debited to customer's monthly ledger
                         </span>
                       </label>
 
                       <label
-                        className={`flex flex-col p-2 rounded-xl border cursor-pointer transition-all ${
+                        className={`flex flex-col p-2.5 rounded-xl border cursor-pointer transition-all ${
                           khataPaymentOption === "cash"
-                            ? "border-emerald-500 bg-emerald-50/60 text-emerald-900 font-bold"
+                            ? "border-emerald-500 bg-emerald-50/70 text-emerald-900 font-bold shadow-2xs"
                             : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                         }`}
                       >
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
                           <input
                             type="radio"
                             name="khataPaymentOption"
@@ -779,53 +831,13 @@ export default function POSSale() {
                             onChange={() => setKhataPaymentOption("cash")}
                             className="text-emerald-600 focus:ring-emerald-500"
                           />
-                          <span className="text-xs">Paid in Cash</span>
+                          <span className="text-xs font-bold">Cash</span>
                         </div>
-                        <span className="text-[9px] text-slate-400 font-normal mt-0.5">
-                          Immediate full pay
-                        </span>
-                      </label>
-
-                      <label
-                        className={`flex flex-col p-2 rounded-xl border cursor-pointer transition-all ${
-                          khataPaymentOption === "partial"
-                            ? "border-amber-500 bg-amber-50/60 text-amber-900 font-bold"
-                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="radio"
-                            name="khataPaymentOption"
-                            value="partial"
-                            checked={khataPaymentOption === "partial"}
-                            onChange={() => setKhataPaymentOption("partial")}
-                            className="text-amber-600 focus:ring-amber-500"
-                          />
-                          <span className="text-xs">Partial Pay</span>
-                        </div>
-                        <span className="text-[9px] text-slate-400 font-normal mt-0.5">
-                          Part cash, part khata
+                        <span className="text-[10px] text-slate-500 font-normal mt-1">
+                          Customer pays cash at counter
                         </span>
                       </label>
                     </div>
-
-                    {khataPaymentOption === "partial" && (
-                      <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
-                        <label className="block text-[10px] font-bold text-amber-900 uppercase">
-                          Cash Paid Now (Rs.):
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max={netPayable}
-                          value={partialPaidAmount}
-                          onChange={(e) => setPartialPaidAmount(e.target.value)}
-                          placeholder="Enter value"
-                          className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 tabular"
-                        />
-                      </div>
-                    )}
 
                     {khataPaymentOption === "cash" && (
                       <div className="space-y-1.5 pt-1">
@@ -897,6 +909,32 @@ export default function POSSale() {
       {saleCategory === "delivery" && <POSDeliverySection />}
       </div>
 
+      {/* Sale Date Selector (Defaults to today, allows past dates for back-dated sales) */}
+      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-slate-50 border border-slate-200/90 rounded-xl text-xs mt-1">
+        <div className="flex items-center gap-1.5 text-slate-600 font-semibold">
+          <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Sale Date:</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <input
+            type="date"
+            value={saleDate || getPktTodayString()}
+            onChange={(e) => setSaleDate && setSaleDate(e.target.value)}
+            className="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-semibold shadow-2xs focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+          />
+          {saleDate && saleDate !== getPktTodayString() && (
+            <button
+              type="button"
+              onClick={() => setSaleDate && setSaleDate(getPktTodayString())}
+              className="text-[10px] font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 px-1.5 py-0.5 rounded cursor-pointer transition"
+              title="Reset to today's date"
+            >
+              Today
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Fixed Bottom Checkout Action */}
       <div className="pt-2.5 border-t border-slate-100 shrink-0">
         {cart.length === 0 ? (
@@ -911,9 +949,9 @@ export default function POSSale() {
         ) : (
           <button
             type="button"
-            disabled={isProcessingSale || isSaleRefreshing}
+            disabled={isDayClosed || isProcessingSale || isSaleRefreshing}
             onClick={async () => {
-              if (isProcessingSale || isSaleRefreshing || cart.length === 0) return;
+              if (isDayClosed || isProcessingSale || isSaleRefreshing || cart.length === 0) return;
               setIsProcessingSale(true);
               const completedCartItems = [...cart];
               try {

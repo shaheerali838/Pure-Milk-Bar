@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, Beef, Check, Calendar, Banknote, Activity, Milk, FileText, Tag, ShieldCheck, Loader2, Sparkles, Heart } from 'lucide-react';
+import { ArrowLeft, Beef, Check, Calendar, Banknote, Activity, Milk, FileText, Tag, ShieldCheck, Loader2, Heart } from 'lucide-react';
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import ImageUpload from "@/components/common/ImageUpload";
 

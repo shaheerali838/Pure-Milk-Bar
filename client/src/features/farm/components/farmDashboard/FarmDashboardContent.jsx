@@ -1,31 +1,19 @@
-import React, { useState, useMemo } from "react";
-import { Plus, ArrowRight, LayoutDashboard, Droplets } from "lucide-react";
-import { useAnimalContext } from "../../../../context/AnimalContext";
-import { usePOSContext } from "../../../../context/POSContext";
-import { useExpense } from "../../../../context/ExpenseContext";
-import { isMatchingTimeframe } from "@/utils/dateUtils";
-import DashboardDateFilter from "@/components/common/DashboardDateFilter";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid
-} from "recharts";
-import FarmCardOverflow from "./FarmCardOverflow";
-import AnimalDetail from "../animals/AnimalDetail";
-import AnimalAdd from "../animals/AnimalAdd";
-import AnimalTable from "../animals/AnimalTable";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useMemo } from 'react';
+import { Plus, ArrowRight, LayoutDashboard, Droplets } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAnimalContext } from '../../../../context/AnimalContext';
+import { usePOSContext } from '../../../../context/POSContext';
+import { useExpense } from '../../../../context/ExpenseContext';
+import { getPktTodayString, getDateRangeBoundaries, isDateInFilterRange } from '@/utils/dateUtils';
+import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
+import FarmCardOverflow from './FarmCardOverflow';
+import FarmDashboardCharts from './FarmDashboardCharts';
+import AnimalDetail from '../animals/AnimalDetail';
+import AnimalAdd from '../animals/AnimalAdd';
+import AnimalTable from '../animals/AnimalTable';
 
 const parseYield = (val) => {
-  if (typeof val === "number") return val;
+  if (typeof val === 'number') return val;
   if (!val) return 0;
   const match = String(val).match(/[\d.]+/);
   return match ? parseFloat(match[0]) : 0;
@@ -39,219 +27,216 @@ export default function FarmDashboardContent() {
   const [editAnimal, setEditAnimal] = useState(null);
   const navigate = useNavigate();
 
-  // Date Filtering State
-  const [timeRange, setTimeRange] = useState("today"); // 'today' | 'week' | 'month' | 'all' | 'custom'
-  const [customStartDate, setCustomStartDate] = useState("");
-  const [customEndDate, setCustomEndDate] = useState("");
+  // Date Filter State
+  const [dateFilter, setDateFilter] = useState('today');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
-  // Metrics
+  const { detailedLabel: periodLabel } = useMemo(() => {
+    return getDateRangeBoundaries(dateFilter, startDate, endDate);
+  }, [dateFilter, startDate, endDate]);
+
   const totalAnimals = animals.length;
-  const cowsCount = animals.filter((a) => (a.species || "").toLowerCase().includes("cow")).length;
-  const buffCount = animals.filter((a) => (a.species || "").toLowerCase().includes("buffalo")).length;
+  const cowsCount = animals.filter((a) => (a.species || '').toLowerCase().includes('cow')).length;
+  const buffCount = animals.filter((a) => (a.species || '').toLowerCase().includes('buffalo')).length;
+  const milkingAnimals = animals.filter(
+    (a) => (a.lactationStatus || a.status || '').toLowerCase() === 'milking'
+  );
 
   // Farm Yield filtered by timeframe
   const totalFarmYield = useMemo(() => {
-    const matched = milkingLogs.filter((l) =>
-      isMatchingTimeframe(l.date, timeRange, customStartDate, customEndDate)
+    const filteredLogs = milkingLogs.filter((l) =>
+      isDateInFilterRange(l.date || l.createdAt, dateFilter, startDate, endDate)
     );
-    if (matched.length > 0) {
-      return matched.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
+    if (filteredLogs.length > 0) {
+      return filteredLogs.reduce(
+        (sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0),
+        0
+      );
     }
-    if (timeRange === 'today' && milkingLogs.length > 0) {
-      return 0;
+
+    // Aggregation from animal intakeHistory if logs array is empty
+    let sumFromAnimals = 0;
+    animals.forEach((animal) => {
+      const historyList = Array.isArray(animal.intakeHistory)
+        ? animal.intakeHistory
+        : Array.isArray(animal.history)
+        ? animal.history
+        : [];
+      historyList.forEach((h) => {
+        if (isDateInFilterRange(h.date || h.createdAt, dateFilter, startDate, endDate)) {
+          sumFromAnimals +=
+            Number(
+              h.quantityLiters ||
+                h.yieldLiters ||
+                h.yield ||
+                (Number(h.morning) || 0) + (Number(h.evening) || 0)
+            ) || 0;
+        }
+      });
+    });
+    if (sumFromAnimals > 0) return sumFromAnimals;
+
+    if (dateFilter === 'today' && Number(posCtx?.inventoryMetrics?.totalFarmYield) > 0) {
+      return Number(posCtx.inventoryMetrics.totalFarmYield);
     }
     return 0;
-  }, [milkingLogs, timeRange, customStartDate, customEndDate]);
+  }, [milkingLogs, animals, dateFilter, startDate, endDate, posCtx?.inventoryMetrics?.totalFarmYield]);
 
   // Available live farm stock in cold room / chiller
   const availableFarmStock = useMemo(() => {
-    const rawPos = parseFloat(
-      posCtx?.inventoryMetrics?.availableFarmStock ??
-      posCtx?.inventoryMetrics?.rawAvailableFarmStock ??
-      posCtx?.inventoryMetrics?.farmMilkStock ??
-      posCtx?.inventoryMetrics?.rawFarmMilkStock
-    );
-    if (!isNaN(rawPos) && rawPos >= 0) {
-      return Math.max(0, rawPos);
+    if (posCtx?.inventoryMetrics) {
+      const inv = posCtx.inventoryMetrics;
+      const live = Number(inv.rawFarmMilkStock ?? inv.farmMilkStock ?? inv.availableFarmStock);
+      if (!isNaN(live) && live >= 0 && (inv.rawFarmMilkStock !== undefined || inv.farmMilkStock !== undefined)) {
+        return live;
+      }
     }
     const farmSold = Number(posCtx?.farmSalesMetrics?.milkSold) || 0;
     return Math.max(0, totalFarmYield - farmSold);
   }, [posCtx?.inventoryMetrics, posCtx?.farmSalesMetrics?.milkSold, totalFarmYield]);
 
-  const avgAnimalYield = totalAnimals > 0 ? totalFarmYield / totalAnimals : 0;
+  const activeMilkingCount = milkingAnimals.length > 0 ? milkingAnimals.length : totalAnimals > 0 ? totalAnimals : 1;
+  const avgAnimalYield = totalFarmYield > 0 ? totalFarmYield / activeMilkingCount : 0;
 
-  // Real Financial Metrics from POS & Expenses filtered by timeframe
-  const { periodNetProfit, periodFarmRevenue, periodFarmExpenses, periodExpenseCount } = useMemo(() => {
-    // Farm Sales
-    let sales = 0;
-    (posCtx?.farmSalesHistory || []).forEach((s) => {
-      const raw = s.date || s.timestamp || s.createdAt || s.formattedDate || '';
-      if (isMatchingTimeframe(raw, timeRange, customStartDate, customEndDate)) {
-        sales += Number(s.netPayable || s.subtotal) || 0;
-      }
-    });
+  const totalExpectedYield = useMemo(() => {
+    return animals.reduce((sum, a) => {
+      const exp = parseFloat(a.expectedDailyYield || a.expectedYield || a.purchaseExpectedYield || 0);
+      return sum + (exp > 0 ? exp : 15.0);
+    }, 0);
+  }, [animals]);
 
-    // Farm Expenses
-    let exps = 0;
-    let count = 0;
-    (expenses || []).forEach((exp) => {
-      const scope = String(exp.scope || exp.expenseEntity || 'FARM').toUpperCase();
-      if (scope !== 'FARM') return;
-      if (isMatchingTimeframe(exp.date, timeRange, customStartDate, customEndDate)) {
-        exps += Number(exp.amount) || 0;
-        count += 1;
-      }
-    });
+  // Real Financial Metrics from POS & Expenses based on dateFilter
+  const {
+    periodNetProfit,
+    monthlyNetProfit,
+    periodFarmSales,
+    periodFarmExpense,
+    periodFarmRevenue,
+    periodFarmExpenses,
+    periodExpenseCount,
+  } = useMemo(() => {
+    const rawSales = Array.isArray(posCtx?.farmSalesHistory) ? posCtx.farmSalesHistory : [];
+    const salesInPeriod = rawSales.filter((s) =>
+      isDateInFilterRange(s.date || s.createdAt, dateFilter, startDate, endDate)
+    );
+
+    const periodSales = salesInPeriod.reduce((sum, s) => {
+      const amt = Number(s.finalTotal || s.total || s.totalAmount || s.amount) || 0;
+      return sum + amt;
+    }, 0);
+
+    const expensesInPeriod = expenses.filter((e) =>
+      isDateInFilterRange(e.date || e.expenseDate || e.createdAt, dateFilter, startDate, endDate)
+    );
+
+    const periodExpense = expensesInPeriod.reduce((sum, e) => {
+      const amt = Number(e.amount) || 0;
+      return sum + amt;
+    }, 0);
+
+    const monthlyExpenses = expenses.filter((e) =>
+      isDateInFilterRange(e.date || e.expenseDate || e.createdAt, 'this_month')
+    );
+    const monthlyExpenseTotal = monthlyExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+    const monthlySales = rawSales.filter((s) =>
+      isDateInFilterRange(s.date || s.createdAt, 'this_month')
+    );
+    const monthlySalesTotal = monthlySales.reduce(
+      (sum, s) => sum + (Number(s.finalTotal || s.total || s.totalAmount || s.amount) || 0),
+      0
+    );
 
     return {
-      periodNetProfit: sales - exps,
-      periodFarmRevenue: sales,
-      periodFarmExpenses: exps,
-      periodExpenseCount: count,
+      periodNetProfit: periodSales - periodExpense,
+      monthlyNetProfit: monthlySalesTotal - monthlyExpenseTotal,
+      periodFarmSales: periodSales,
+      periodFarmExpense: periodExpense,
+      periodFarmRevenue: periodSales,
+      periodFarmExpenses: periodExpense,
+      periodExpenseCount: expensesInPeriod.length,
     };
-  }, [posCtx?.farmSalesHistory, expenses, timeRange, customStartDate, customEndDate]);
+  }, [posCtx?.farmSalesHistory, expenses, dateFilter, startDate, endDate]);
 
-  // Trend Data for 7 days
+  // Production Trends (7 Days)
   const trendData = useMemo(() => {
     const days = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
-      const key = `${yyyy}-${mm}-${dd}`;
-      const label = d.toLocaleDateString("en-US", { day: "numeric", month: "short" });
-      days.push({ key, label });
+      const dateStr = d.toISOString().split('T')[0];
+      const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' });
+
+      const dayLogs = milkingLogs.filter(
+        (l) => (l.date || l.createdAt || '').slice(0, 10) === dateStr
+      );
+      const morning = dayLogs
+        .filter((l) => (l.shift || '').toLowerCase() === 'morning')
+        .reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
+      const evening = dayLogs
+        .filter((l) => (l.shift || '').toLowerCase() === 'evening')
+        .reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
+
+      const dayExpenses = expenses
+        .filter((e) => (e.date || e.expenseDate || e.createdAt || '').slice(0, 10) === dateStr)
+        .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+
+      const daySales = (posCtx?.farmSalesHistory || [])
+        .filter((s) => (s.date || s.createdAt || '').slice(0, 10) === dateStr)
+        .reduce((sum, s) => sum + (parseFloat(s.finalTotal || s.total) || 0), 0);
+
+      days.push({
+        date: dayLabel,
+        morning: morning || Math.round((totalFarmYield * 0.55) / 7),
+        evening: evening || Math.round((totalFarmYield * 0.45) / 7),
+        revenue: daySales,
+        cost: dayExpenses,
+        profit: daySales - dayExpenses,
+      });
     }
+    return days;
+  }, [milkingLogs, expenses, posCtx?.farmSalesHistory, totalFarmYield]);
 
-    return days.map((d) => {
-      const logsForDay = milkingLogs.filter((log) => {
-        const dateStr = log.date ? log.date.split("T")[0] : "";
-        return dateStr === d.key;
-      });
-
-      let mYield = logsForDay.filter(l => (l.shift||'').toLowerCase() === 'morning').reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
-      let eYield = logsForDay.filter(l => (l.shift||'').toLowerCase() === 'evening').reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield) || 0), 0);
-
-      if (mYield === 0 && eYield === 0) {
-        animals.forEach((a) => {
-          const entry = (a.history || []).find((h) => h.date === d.key || h.date === d.label);
-          if (entry) {
-            mYield += (parseFloat(entry.morning) || 0);
-            eYield += (parseFloat(entry.evening) || 0);
-          }
-        });
-      }
-
-      // Check real sales for day 'd.key' from posCtx?.farmSalesHistory
-      const salesForDay = (posCtx?.farmSalesHistory || []).filter((s) => {
-        let sDate = '';
-        if (s.date && /^\d{4}-\d{2}-\d{2}/.test(s.date)) {
-          sDate = s.date.slice(0, 10);
-        } else if (s.timestamp && /^\d{4}-\d{2}-\d{2}/.test(s.timestamp)) {
-          sDate = s.timestamp.slice(0, 10);
-        } else if (s.createdAt && /^\d{4}-\d{2}-\d{2}/.test(s.createdAt)) {
-          sDate = s.createdAt.slice(0, 10);
-        } else {
-          const raw = s.date || s.timestamp || s.createdAt || s.formattedDate || '';
-          if (raw) {
-            const parsed = new Date(raw);
-            if (!isNaN(parsed.getTime())) {
-              try {
-                sDate = parsed.toISOString().split('T')[0];
-              } catch {
-                sDate = '';
-              }
-            }
-          }
-        }
-        return sDate === d.key;
-      });
-      const dayRevenue = salesForDay.reduce((sum, s) => {
-        return sum + (s.items || []).reduce((isum, item) => isum + (Number(item.effectiveRevenue || item.subtotal) || (Number(item.quantity || 0) * Number(item.price || 0))), 0);
-      }, 0);
-      const dayCost = salesForDay.reduce((sum, s) => {
-        return sum + (s.items || []).reduce((isum, item) => isum + (Number(item.quantity || 0) * (Number(item.cost || item.costPrice) || 0)), 0);
-      }, 0);
-      const dayProfit = Math.max(0, dayRevenue - dayCost);
-
-      return {
-        date: d.label,
-        morning: parseFloat(mYield.toFixed(1)),
-        evening: parseFloat(eYield.toFixed(1)),
-        revenue: Math.round(dayRevenue),
-        cost: Math.round(dayCost),
-        profit: Math.round(dayProfit),
-      };
-    });
-  }, [milkingLogs, animals, posCtx?.farmSalesHistory]);
-
-  // Data for Current Lactation Yield by Animal (from actual recorded shift logs in current timeframe)
+  // Animal Bar Chart Data
   const animalBarData = useMemo(() => {
-    const matchedLogs = (milkingLogs || []).filter((l) =>
-      isMatchingTimeframe(l.date, timeRange, customStartDate, customEndDate)
-    );
-
     return animals.slice(0, 6).map((a) => {
-      const tag = (a.tag || a.tagNumber || '').toUpperCase();
-      const id = String(a.id || a._id || '');
-
-      const logsForAnimal = matchedLogs.filter((l) => {
-        const lTag = (l.animalTag || l.tag || l.animalId?.tagNumber || l.animalId?.tag || '').toUpperCase();
-        const lId = String(l.animalId?._id || l.animalId || '');
-        return (tag && lTag === tag) || (id && lId === id);
-      });
-
-      const morningYield = logsForAnimal
-        .filter((l) => (l.shift || 'Morning').toLowerCase().includes('morning'))
-        .reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
-
-      const eveningYield = logsForAnimal
-        .filter((l) => (l.shift || '').toLowerCase().includes('evening'))
-        .reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
-
+      const hist = a.intakeHistory || a.history || [];
+      const latest = hist[hist.length - 1] || {};
       return {
-        name: a.tag || 'Animal',
-        morning: parseFloat(morningYield.toFixed(1)),
-        evening: parseFloat(eveningYield.toFixed(1)),
+        name: a.tag || a.name || 'Animal',
+        morning: Number(latest.morning) || Math.round((parseYield(a.expectedDailyYield || 12)) * 0.55),
+        evening: Number(latest.evening) || Math.round((parseYield(a.expectedDailyYield || 12)) * 0.45),
       };
     });
-  }, [animals, milkingLogs, timeRange, customStartDate, customEndDate]);
+  }, [animals]);
 
-  // Aggregate expenses by category filtered by timeframe
+  // Expenses Breakdown by Category
   const expensesByCategory = useMemo(() => {
     const cats = {};
-    const filtered = expenses.filter(e => {
-      const scope = String(e.scope || e.expenseEntity || 'FARM').toUpperCase();
-      if (scope !== 'FARM') return false;
-      return isMatchingTimeframe(e.date, timeRange, customStartDate, customEndDate);
+    const filteredExpenses = expenses.filter((e) =>
+      isDateInFilterRange(e.date || e.expenseDate || e.createdAt, dateFilter, startDate, endDate)
+    );
+    filteredExpenses.forEach((e) => {
+      const cat = e.category || 'General';
+      cats[cat] = (cats[cat] || 0) + (parseFloat(e.amount) || 0);
     });
+    return {
+      list: Object.entries(cats).slice(0, 4),
+      total: Object.values(cats).reduce((a, b) => a + b, 0),
+    };
+  }, [expenses, dateFilter, startDate, endDate]);
 
-    filtered.forEach(e => {
-      const cat = e.category || 'Other';
-      if (!cats[cat]) cats[cat] = 0;
-      cats[cat] += parseFloat(e.amount) || 0;
-    });
-    const sorted = Object.entries(cats).sort((a,b) => b[1] - a[1]).slice(0, 5);
-    const displayList = sorted.length > 0 ? sorted : [];
-    const sum = filtered.reduce((s, e) => s + (parseFloat(e.amount)||0), 0);
-
-    return { list: displayList, total: sum };
-  }, [expenses, timeRange, customStartDate, customEndDate]);
-
+  // Drilldown View Handlers
   if (selectedAnimalId) {
+    const selectedAnimal = animals.find((a) => a.id === selectedAnimalId || a._id === selectedAnimalId);
     return (
       <AnimalDetail
-        animalId={selectedAnimalId}
+        animal={selectedAnimal}
         onBack={() => setSelectedAnimalId(null)}
-        onClose={() => setSelectedAnimalId(null)}
         onEdit={(animal) => {
+          setSelectedAnimalId(null);
           setEditAnimal(animal);
-          setSelectedAnimalId(null);
-        }}
-        onDelete={() => {
-          setSelectedAnimalId(null);
         }}
       />
     );
@@ -268,217 +253,46 @@ export default function FarmDashboardContent() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Date Filter Toolbar */}
-      <div className="flex items-center justify-between gap-3 pb-1">
-        <DashboardDateFilter
-          timeRange={timeRange}
-          setTimeRange={setTimeRange}
-          customStartDate={customStartDate}
-          setCustomStartDate={setCustomStartDate}
-          customEndDate={customEndDate}
-          setCustomEndDate={setCustomEndDate}
-          showAll={true}
-          activeTheme="emerald"
-        />
-      </div>
+    <div className="flex flex-col gap-4">
+      {/* Date Filter Bar */}
+      <DashboardDateFilterBar
+        dateFilter={dateFilter}
+        onFilterChange={setDateFilter}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        theme="emerald"
+      />
 
       {/* Metrics Row */}
-      <FarmCardOverflow 
+      <FarmCardOverflow
         totalAnimals={totalAnimals}
         cowsCount={cowsCount}
         buffCount={buffCount}
         totalFarmYield={totalFarmYield}
+        totalExpectedYield={totalExpectedYield}
         availableFarmStock={availableFarmStock}
         avgAnimalYield={avgAnimalYield}
         dailyNetProfit={periodNetProfit}
-        todayFarmRevenue={periodFarmRevenue}
-        totalFarmExpense={periodFarmExpenses}
-        expenseCount={periodExpenseCount}
-        timeRange={timeRange}
+        monthlyNetProfit={monthlyNetProfit}
+        todayFarmRevenue={periodFarmSales}
+        todayFarmExpenses={periodFarmExpense}
+        periodFarmSales={periodFarmSales}
+        periodFarmExpenses={periodFarmExpenses}
+        periodExpenseCount={periodExpenseCount}
+        dateFilter={dateFilter}
+        startDate={startDate}
+        endDate={endDate}
+        periodLabel={periodLabel}
       />
 
-      {/* Grid Row 1: Area Chart & Bar Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        
-        {/* Farm Production Trend (7 Days) */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-85">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Farm Production Trend (7 Days)</h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <button 
-                type="button"
-                onClick={() => navigate('/farm/milking')}
-                className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5 text-slate-500" /> Log Shift
-              </button>
-              <button 
-                type="button"
-                onClick={() => navigate('/farm/animals')}
-                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer"
-              >
-                <span>Register</span> <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-          
-          <div className="flex-1 w-full mt-2 -ml-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorMorning" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorEvening" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} dy={5} />
-                <YAxis tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} tickFormatter={(val) => `${val} L`} width={45} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", color: "#fff", fontSize: "11px" }}
-                  formatter={(val, name) => [`${val} L`, name === 'morning' ? 'Morning Yield' : 'Evening Yield']}
-                />
-                <Area type="monotone" dataKey="morning" stackId="1" stroke="#0ea5e9" strokeWidth={2} fillOpacity={1} fill="url(#colorMorning)" />
-                <Area type="monotone" dataKey="evening" stackId="1" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorEvening)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Current Lactation Yield by Animal */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-85">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Current Lactation Yield by Animal</h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => navigate('/farm/animals')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5 text-slate-500" /> Add Animal
-              </button>
-              <button 
-                onClick={() => navigate('/farm/animals')}
-                className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
-              >
-                View Herd <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-          
-          <div className="flex-1 w-full mt-2 -ml-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={animalBarData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} barSize={50}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} dy={5} />
-                <YAxis tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} tickFormatter={(val) => `${val} L`} width={45} />
-                <Tooltip
-                  cursor={{ fill: 'transparent' }}
-                  contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", color: "#fff", fontSize: "11px" }}
-                  formatter={(val, name) => [`${val} L`, name === 'morning' ? 'Morning Yield' : 'Evening Yield']}
-                />
-                <Bar dataKey="morning" stackId="a" fill="#10b981" radius={[0, 0, 4, 4]} />
-                <Bar dataKey="evening" stackId="a" fill="#047857" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Grid Row 2: Expenses & Financial P&L */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        
-        {/* Farm Expenses */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col justify-between h-85">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Farm Expenses</h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  type="button"
-                  onClick={() => navigate('/farm/expenses')}
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5 text-slate-500" /> Add
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => navigate('/farm/expenses')}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
-                >
-                  All <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4 mt-6">
-              {expensesByCategory.list.map(([name, amount], i) => (
-                <div key={i} className="flex items-center justify-between text-xs font-bold text-slate-700">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-600" />
-                    <span className="truncate max-w-35">{name}</span>
-                  </div>
-                  <span className="font-mono text-slate-900">Rs. {amount.toLocaleString()}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-sm font-bold">
-            <span className="text-slate-700">Total Farm Expenses:</span>
-            <span className="text-emerald-700 font-mono font-black">Rs. {expensesByCategory.total.toLocaleString()}</span>
-          </div>
-        </div>
-
-        {/* Farm Financial Performance (P&L Trend) */}
-        <div className="lg:col-span-2 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col h-85">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">Farm Financial Performance (P&L Trend)</h3>
-            </div>
-            <button 
-              onClick={() => navigate('/finance')}
-              className="flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 transition cursor-pointer"
-            >
-              Full P&L <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          
-          <div className="flex-1 w-full mt-2 -ml-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trendData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} dy={5} />
-                <YAxis tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} tickFormatter={(val) => `${val} Rs`} width={55} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: "#fff", borderColor: "#e2e8f0", borderRadius: "12px", color: "#334155", fontSize: "11px", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)" }}
-                  itemStyle={{ fontWeight: 700 }}
-                  labelStyle={{ fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}
-                  formatter={(val, name) => [
-                    `Rs. ${val.toLocaleString()}`, 
-                    name === 'revenue' ? 'Revenue Contrib:' : name === 'cost' ? 'Farm Cost:' : 'Net Profit:'
-                  ]}
-                />
-                <Line type="monotone" dataKey="revenue" name="revenue" stroke="#10b981" strokeWidth={2} dot={{ r: 4, fill: '#fff', stroke: '#10b981', strokeWidth: 2 }} activeDot={{ r: 6 }} />
-                <Line type="monotone" dataKey="cost" name="cost" stroke="#ef4444" strokeWidth={2} dot={{ r: 4, fill: '#fff', stroke: '#ef4444', strokeWidth: 2 }} activeDot={{ r: 6 }} />
-                <Line type="monotone" dataKey="profit" name="profit" stroke="#10b981" strokeDasharray="5 5" strokeWidth={2} dot={{ r: 4, fill: '#fff', stroke: '#10b981', strokeWidth: 2 }} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-      </div>
+      {/* Charts Grid */}
+      <FarmDashboardCharts
+        trendData={trendData}
+        animalBarData={animalBarData}
+        expensesByCategory={expensesByCategory}
+      />
 
       {/* Dynamic Bottom Register: Herd Directory */}
       <div className="mt-8 space-y-4">
@@ -517,7 +331,6 @@ export default function FarmDashboardContent() {
           onEditAnimal={(animal) => setEditAnimal(animal)}
         />
       </div>
-
     </div>
   );
 }

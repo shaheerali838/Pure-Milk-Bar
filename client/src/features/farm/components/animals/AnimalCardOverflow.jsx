@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Beef, Edit3, Trash2, Eye, X, Users, UserCheck, TrendingUp, TrendingDown, Heart, Tag } from "lucide-react";
 import AnimalStatsCards from "./AnimalStatsCards";
@@ -9,6 +9,8 @@ import AnimalSaleModal from "./AnimalSaleModal";
 import PKRIcon from "@/components/common/PKRIcon";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { useStaffPayrollContext } from "@/context/StaffPayrollContext";
+import { useStaffContext } from "@/context/StaffContext";
+import { getTodayDateStr, normalizeDateStr } from "@/utils/dateUtils";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -27,9 +29,10 @@ const statusStyle = {
   "Sold": "bg-rose-100 text-rose-700 hover:bg-rose-100",
 };
 
-export default function AnimalCardOverflow() {
+export default function AnimalCardOverflow({ selectedDate }) {
   const {
     animals = [],
+    milkingLogs = [],
     animalSales = [],
     addAnimal,
     updateAnimal,
@@ -41,8 +44,29 @@ export default function AnimalCardOverflow() {
   } = useAnimalContext() || {};
 
   const navigate = useNavigate();
-  const { staffList = [] } = useStaffPayrollContext() || {};
-  const displayWorkers = staffList.filter(s => s.role === 'Farm Worker' || s.role === 'Milking Staff');
+  const payrollCtx = useStaffPayrollContext();
+  const staffCtx = useStaffContext();
+  const staffList = (payrollCtx?.staffList?.length > 0 ? payrollCtx.staffList : staffCtx?.staffList) || [];
+  const farmWorkers = staffList.filter((s) => {
+    const r = (s.role || "").toLowerCase();
+    return (
+      r.includes("farm") ||
+      r.includes("milk") ||
+      r.includes("herd") ||
+      r.includes("work") ||
+      r.includes("labor") ||
+      r.includes("oper") ||
+      r.includes("staff") ||
+      r.includes("manag") ||
+      r.includes("superv")
+    );
+  });
+  const displayWorkers = farmWorkers.length > 0 ? farmWorkers : staffList;
+
+  useEffect(() => {
+    console.log("Staff list in Animals Herd:", staffList.length);
+  }, [staffList]);
+
   const [activeTab, setActiveTab] = useState("registry"); // 'registry', 'workers', or 'sales'
   const [searchTerm, setSearchTerm] = useState("");
   const [speciesFilter, setSpeciesFilter] = useState("all");
@@ -202,9 +226,60 @@ export default function AnimalCardOverflow() {
     );
   }
 
+  const todayStr = getTodayDateStr();
+  const targetDate = selectedDate || todayStr;
+  const isToday = targetDate === todayStr;
+
+  // Map animal yields on targetDate from milkingLogs & animal intake history
+  const animalDateYields = useMemo(() => {
+    const map = {};
+
+    (milkingLogs || []).forEach((l) => {
+      const lDate = normalizeDateStr(l.date || l.createdAt);
+      if (lDate === targetDate) {
+        const rawTag = l.animalTag || l.tag || l.animal?.tag || l.animalId?.tagNumber || l.animalId?.tag || '';
+        const tag = String(rawTag).trim().toUpperCase();
+        const rawId = String(l.animalId?._id || l.animalId?.id || l.animalId || '');
+        const shift = (l.shift || '').toLowerCase();
+        const yVal = parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0;
+
+        [tag, rawId].filter(Boolean).forEach((k) => {
+          if (!map[k]) map[k] = { morning: 0, evening: 0, hasLog: false };
+          if (shift === 'morning') map[k].morning += yVal;
+          else if (shift === 'evening') map[k].evening += yVal;
+          map[k].hasLog = true;
+        });
+      }
+    });
+
+    (animals || []).forEach((a) => {
+      const tag = String(a.tag || a.tagNumber || '').trim().toUpperCase();
+      const id = String(a.id || a._id || '');
+      const hist = Array.isArray(a.intakeHistory) ? a.intakeHistory : (Array.isArray(a.history) ? a.history : []);
+      hist.forEach((h) => {
+        const hDate = normalizeDateStr(h.date || h.createdAt);
+        if (hDate === targetDate) {
+          const shift = (h.shift || 'Morning').toLowerCase();
+          const yVal = parseFloat(h.quantityLiters || h.yieldLiters || h.yield || (shift === 'evening' ? h.evening : h.morning)) || 0;
+
+          [tag, id].filter(Boolean).forEach((k) => {
+            if (!map[k]) map[k] = { morning: 0, evening: 0, hasLog: false };
+            if (!map[k].hasLog) {
+              if (shift === 'morning') map[k].morning = Math.max(map[k].morning, yVal);
+              else if (shift === 'evening') map[k].evening = Math.max(map[k].evening, yVal);
+              map[k].hasLog = true;
+            }
+          });
+        }
+      });
+    });
+
+    return map;
+  }, [milkingLogs, animals, targetDate]);
+
   return (
     <div className="flex flex-col gap-5">
-      <AnimalStatsCards />
+      <AnimalStatsCards selectedDate={targetDate} />
 
       <AnimalFilterHeader
         activeTab={activeTab}
@@ -366,17 +441,36 @@ export default function AnimalCardOverflow() {
                       {a.acquisitionDate}
                     </TableCell>
 
-                    <TableCell className="px-3.5 py-2.5 text-slate-700 font-semibold tabular">
-                      {a.morningYield}
-                    </TableCell>
+                    {(() => {
+                      const tagKey = String(a.tag || a.tagNumber || '').trim().toUpperCase();
+                      const idKey = String(a.id || a._id || '');
+                      const logInfo = animalDateYields[tagKey] || animalDateYields[idKey];
+                      const morningDisplay = logInfo?.hasLog
+                        ? `${(logInfo.morning || 0).toFixed(1)} L`
+                        : (isToday ? (a.morningYield || '0.0 L') : '0.0 L');
+                      const eveningDisplay = logInfo?.hasLog
+                        ? `${(logInfo.evening || 0).toFixed(1)} L`
+                        : (isToday ? (a.eveningYield || '0.0 L') : '0.0 L');
+                      const totalDailyDisplay = logInfo?.hasLog
+                        ? `${((logInfo.morning || 0) + (logInfo.evening || 0)).toFixed(1)} L`
+                        : (isToday ? (a.totalDailyYield || '0.0 L') : '0.0 L');
 
-                    <TableCell className="px-3.5 py-2.5 text-slate-700 font-semibold tabular">
-                      {a.eveningYield}
-                    </TableCell>
+                      return (
+                        <>
+                          <TableCell className="px-3.5 py-2.5 text-slate-700 font-semibold tabular">
+                            {morningDisplay}
+                          </TableCell>
 
-                    <TableCell className="px-3.5 py-2.5 font-bold text-emerald-700 text-sm tabular">
-                      {a.totalDailyYield}
-                    </TableCell>
+                          <TableCell className="px-3.5 py-2.5 text-slate-700 font-semibold tabular">
+                            {eveningDisplay}
+                          </TableCell>
+
+                          <TableCell className="px-3.5 py-2.5 font-bold text-emerald-700 text-sm tabular">
+                            {totalDailyDisplay}
+                          </TableCell>
+                        </>
+                      );
+                    })()}
 
                     <TableCell className="px-3.5 py-2.5">
                       <div
@@ -464,8 +558,8 @@ export default function AnimalCardOverflow() {
                   </TableCell>
                 </TableRow>
               ) : (
-                displayWorkers.map((w) => (
-                  <TableRow key={w.id} className="hover:bg-slate-50/60 transition-colors">
+                displayWorkers.map((w, idx) => (
+                  <TableRow key={w._id || w.id || idx} className="hover:bg-slate-50/60 transition-colors">
                     <TableCell className="px-6 py-4 font-bold text-slate-800 flex items-center gap-2">
                       <UserCheck className="w-4 h-4 text-emerald-600" />
                       {w.name}

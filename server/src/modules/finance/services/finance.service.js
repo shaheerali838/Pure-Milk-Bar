@@ -59,6 +59,7 @@ export const addKhataEntryService = async (data, userId) => {
 
     let advanceUsed = 0;
     let khataAmount = 0;
+    let directCash = 0;
     let advanceReceived = 0;
     let advanceBalanceAfter = customer.advanceBalance || 0;
     let newKhataBalance = customer.khataBalance || customer.currentBalance || 0;
@@ -70,9 +71,17 @@ export const addKhataEntryService = async (data, userId) => {
         customer.khataBalance || 0
       );
       advanceUsed = billRes.advanceUsed;
-      khataAmount = billRes.khataAmount;
+      const uncoveredAfterAdv = billRes.khataAmount;
+
+      const rawCashInput = Number(data.cashPaid !== undefined ? data.cashPaid : (data.paidAmount !== undefined ? data.paidAmount : 0)) || 0;
+      let actualCash = rawCashInput;
+      if (actualCash > uncoveredAfterAdv && actualCash >= advanceUsed && advanceUsed > 0) {
+        actualCash = actualCash - advanceUsed;
+      }
+      directCash = Math.max(0, Math.min(uncoveredAfterAdv, actualCash));
+      khataAmount = Math.max(0, uncoveredAfterAdv - directCash);
       advanceBalanceAfter = billRes.advanceBalanceAfter;
-      newKhataBalance = billRes.newKhataBalance;
+      newKhataBalance = (customer.khataBalance || 0) + khataAmount;
 
       if (customer.creditLimit > 0 && newKhataBalance > customer.creditLimit) {
         const error = new Error(
@@ -106,6 +115,22 @@ export const addKhataEntryService = async (data, userId) => {
       customer.currentBalance = newKhataBalance;
     }
 
+    let normalizedPaymentMethod = null;
+    if (paymentMethod) {
+      const pmUpper = String(paymentMethod).toUpperCase();
+      if (pmUpper.includes('EASYPAISA')) normalizedPaymentMethod = 'EASYPAISA';
+      else if (pmUpper.includes('JAZZCASH')) normalizedPaymentMethod = 'JAZZCASH';
+      else if (pmUpper.includes('SPLIT')) normalizedPaymentMethod = 'SPLIT';
+      else if (pmUpper.includes('ONLINE')) normalizedPaymentMethod = 'ONLINE';
+      else if (pmUpper.includes('CHEQUE')) normalizedPaymentMethod = 'CHEQUE';
+      else if (pmUpper.includes('BANK')) normalizedPaymentMethod = 'ONLINE';
+      else if (pmUpper.includes('ADJUSTMENT')) normalizedPaymentMethod = 'ADJUSTMENT';
+      else if (pmUpper.includes('CASH')) normalizedPaymentMethod = 'CASH';
+      else normalizedPaymentMethod = pmUpper;
+    } else if (txType === 'CREDIT') {
+      normalizedPaymentMethod = 'CASH';
+    }
+
     const voucherNumber = generateKhataVoucher();
     const entry = await KhataEntry.create({
       customerId: customer._id,
@@ -120,12 +145,16 @@ export const addKhataEntryService = async (data, userId) => {
       advanceBalanceAfter,
       advanceReceived,
       runningBalance: newKhataBalance,
-      paymentMethod: paymentMethod ? paymentMethod.toUpperCase() : (txType === 'CREDIT' ? 'CASH' : null),
+      paymentMethod: normalizedPaymentMethod,
+      splitPaymentMeta: data.splitPaymentMeta || null,
+      onlineTransferMeta: data.onlineTransferMeta || null,
+      paymentChannel: data.paymentChannel || data.method || (normalizedPaymentMethod === 'EASYPAISA' ? 'EasyPaisa' : normalizedPaymentMethod === 'JAZZCASH' ? 'JazzCash' : normalizedPaymentMethod),
+      notes: data.notes || null,
       referenceTransactionId: referenceTransactionId || null,
       items: Array.isArray(data.items) ? data.items : [],
       orderTotal: Number(data.orderTotal ?? (txType === 'DEBIT' ? entryAmount : 0)),
-      paidAmount: Number(data.paidAmount ?? (txType === 'DEBIT' ? advanceUsed : entryAmount)),
-      remainingAmount: Number(data.remainingAmount ?? (txType === 'DEBIT' ? khataAmount : 0)),
+      paidAmount: txType === 'DEBIT' ? (advanceUsed + directCash) : entryAmount,
+      remainingAmount: txType === 'DEBIT' ? khataAmount : 0,
       fulfillmentType: data.fulfillmentType || (advanceUsed > 0 && khataAmount === 0 ? 'Advance Deduction' : null),
       riderName: data.riderName || null,
       deliveryAddress: data.deliveryAddress || null,

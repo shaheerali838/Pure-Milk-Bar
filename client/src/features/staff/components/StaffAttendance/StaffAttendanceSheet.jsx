@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, CheckCircle2, XCircle, Clock, Sparkles, Filter, Check, X, AlertCircle, HelpCircle, Banknote, TrendingUp } from 'lucide-react';
+import { Calendar, CheckCircle2, XCircle, Clock, Filter, Check, X, AlertCircle, HelpCircle, Banknote, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStaffContext, generateDefaultAttendanceMap } from '@/context/StaffContext';
 

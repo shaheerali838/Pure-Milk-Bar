@@ -14,6 +14,9 @@ import {
 import { toast } from 'sonner';
 import { useSupplierContext } from '@/context/SupplierContext';
 import { useIntakeContext } from '@/context/IntakeContext';
+import { useDailyClose } from '@/context/DailyCloseContext';
+import { useGlobalDate } from '@/context/GlobalDateContext';
+import DayClosedLockOverlay from '@/components/common/DayClosedLockOverlay';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -25,15 +28,27 @@ import {
 } from '@/components/ui/table';
 
 const getTodayDateStr = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 export default function IntakeShifting({ onSaveSuccess }) {
   const { suppliers = [] } = useSupplierContext();
   const { addBulkIntakes } = useIntakeContext();
+  const { isDayClosed } = useDailyClose() || {};
+  const { globalDate } = useGlobalDate();
 
-  const [date, setDate] = useState(() => getTodayDateStr());
+  const [date, setDate] = useState(() => globalDate || getTodayDateStr());
+
+  useEffect(() => {
+    if (globalDate) {
+      setDate(globalDate);
+    }
+  }, [globalDate]);
+
   const [shift, setShift] = useState('Evening'); // 'Morning' | 'Evening'
   const [receiver, setReceiver] = useState('Shift Incharge');
   const [savedSuccessMsg, setSavedSuccessMsg] = useState('');
@@ -118,8 +133,6 @@ export default function IntakeShifting({ onSaveSuccess }) {
     return sum + expVal;
   }, 0);
 
-  // 4. Variance calculation (Animal Register pattern):
-  // When 0 entered: strictly 0.0 L (neutral slate pill)
   // When entered: difference between entered and expected
   const enteredSuppliersExpected = activeSuppliers
     .filter((s) => {
@@ -144,6 +157,10 @@ export default function IntakeShifting({ onSaveSuccess }) {
   // Save all entered shift rows in one batch
   const handleSaveShift = (e) => {
     e.preventDefault();
+    if (isDayClosed) {
+      toast.error("Day is Closed. Open New Day to continue operations.");
+      return;
+    }
 
     const batchToSave = [];
     activeSuppliers.forEach((s) => {
@@ -184,6 +201,7 @@ export default function IntakeShifting({ onSaveSuccess }) {
 
   return (
     <div className="space-y-3 animate-in fade-in duration-150">
+      {isDayClosed && <DayClosedLockOverlay inline className="mb-2" />}
       {/* 1. Header Controls Card - EXACTLY MATCHING USER SCREENSHOT & ANIMAL REGISTER LOGIC */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         {/* Left Side: DATE and SHIFT Controls */}
@@ -299,7 +317,8 @@ export default function IntakeShifting({ onSaveSuccess }) {
       )}
 
       {/* 2. Table - EXACTLY MATCHING USER SCREENSHOT */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden relative">
+        {isDayClosed && <DayClosedLockOverlay />}
         <form onSubmit={handleSaveShift}>
           <div className="overflow-x-auto">
             <Table className="w-full text-left text-xs sm:text-sm">
@@ -412,12 +431,13 @@ export default function IntakeShifting({ onSaveSuccess }) {
                             type="number"
                             step="0.5"
                             min="0"
+                            disabled={isDayClosed}
                             placeholder={String(avgShiftLiters || 0)}
                             value={rowData.quantity || ''}
                             onChange={(e) =>
                               handleInputChange(supplier.id, 'quantity', e.target.value)
                             }
-                            className="w-32 h-[34px] px-3 rounded-full border border-slate-200 text-center text-xs sm:text-sm font-bold text-slate-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none tabular transition-all bg-white hover:border-slate-300 shadow-2xs"
+                            className="w-32 h-[34px] px-3 rounded-full border border-slate-200 text-center text-xs sm:text-sm font-bold text-slate-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none tabular transition-all bg-white hover:border-slate-300 shadow-2xs disabled:opacity-50 disabled:bg-slate-100 disabled:cursor-not-allowed"
                           />
                         </div>
                       </TableCell>
@@ -467,8 +487,9 @@ export default function IntakeShifting({ onSaveSuccess }) {
               <Button
                 type="button"
                 variant="outline"
+                disabled={isDayClosed}
                 onClick={handleResetQuantities}
-                className="rounded-full h-[38px] px-4 text-xs font-semibold text-slate-600 hover:bg-slate-200"
+                className="rounded-full h-[38px] px-4 text-xs font-semibold text-slate-600 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <RotateCcw className="w-3.5 h-3.5 mr-1" />
                 Clear
@@ -476,7 +497,8 @@ export default function IntakeShifting({ onSaveSuccess }) {
 
               <Button
                 type="submit"
-                className="rounded-full h-[38px] px-6 text-xs font-semibold text-white shadow-xs flex items-center gap-1.5 cursor-pointer hover:brightness-110"
+                disabled={isDayClosed}
+                className="rounded-full h-[38px] px-6 text-xs font-semibold text-white shadow-xs flex items-center gap-1.5 cursor-pointer hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: '#009966' }}
               >
                 <Save className="w-3.5 h-3.5" />

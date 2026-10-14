@@ -91,7 +91,7 @@ export default function POSSalesSourcePLModal({ source = 'farm', onClose }) {
               }`}
             >
               <Droplets className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Farm Dairy ({farmSalesMetrics.milkSold} L • {farmSalesMetrics.dahiSold} kg)</span>
+              <span>Farm Dairy ({farmSalesMetrics.milkSold} L • {Number(farmSalesMetrics.dahiSold).toFixed(2)} kg)</span>
             </button>
 
             <button
@@ -104,7 +104,7 @@ export default function POSSalesSourcePLModal({ source = 'farm', onClose }) {
               }`}
             >
               <Truck className="w-3.5 h-3.5 text-blue-600" />
-              <span>Supplier Sourced ({supplierSalesMetrics.milkSold} L • {supplierSalesMetrics.dahiSold} kg)</span>
+              <span>Supplier Sourced ({supplierSalesMetrics.milkSold} L • {Number(supplierSalesMetrics.dahiSold).toFixed(2)} kg)</span>
             </button>
 
             <button
@@ -135,8 +135,8 @@ export default function POSSalesSourcePLModal({ source = 'farm', onClose }) {
               </p>
               <p className="text-[11px] text-slate-300 mt-0.5">
                 {isAll
-                  ? `${(farmSalesMetrics.milkSold + supplierSalesMetrics.milkSold).toFixed(1)} L Milk • ${(farmSalesMetrics.dahiSold + supplierSalesMetrics.dahiSold).toFixed(1)} kg Dahi Total Sold`
-                  : `${currentMetrics.milkSold} L Milk • ${currentMetrics.dahiSold} kg Dahi Sold`}
+                  ? `${(farmSalesMetrics.milkSold + supplierSalesMetrics.milkSold).toFixed(1)} L Milk • ${(farmSalesMetrics.dahiSold + supplierSalesMetrics.dahiSold).toFixed(2)} kg Dahi Total Sold`
+                  : `${currentMetrics.milkSold} L Milk • ${Number(currentMetrics.dahiSold || 0).toFixed(2)} kg Dahi Sold`}
               </p>
             </div>
 
@@ -214,8 +214,8 @@ export default function POSSalesSourcePLModal({ source = 'farm', onClose }) {
                   </div>
                   <p className="text-2xl font-black text-slate-900 font-mono">
                     {isAll
-                      ? (farmSalesMetrics.dahiSold + supplierSalesMetrics.dahiSold).toFixed(1)
-                      : currentMetrics.dahiSold}{' '}
+                      ? (farmSalesMetrics.dahiSold + supplierSalesMetrics.dahiSold).toFixed(2)
+                      : Number(currentMetrics.dahiSold || 0).toFixed(2)}{' '}
                     <span className="text-sm font-semibold text-slate-500">kg</span>
                   </p>
                   <p className="text-xs font-semibold text-emerald-700 font-mono mt-1">

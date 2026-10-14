@@ -13,7 +13,7 @@ import {
   CupSoda,
   Utensils,
   Layers,
-  Sparkles,
+  Droplets,
 } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 import { useSettingsContext } from '@/context/SettingsContext';
@@ -80,7 +80,7 @@ export const PRODUCT_ICON_MAP = [
   {
     type: 'cream',
     keywords: ['cream', 'malai'],
-    icon: Sparkles,
+    icon: Droplets,
     emoji: '🍨',
     label: 'Fresh Cream / Malai',
     bgClass: 'bg-rose-50 text-rose-600 border-rose-200',
@@ -89,7 +89,7 @@ export const PRODUCT_ICON_MAP = [
   {
     type: 'sweets',
     keywords: ['khoya', 'mawa', 'mithai', 'sweet'],
-    icon: Sparkles,
+    icon: Utensils,
     emoji: '🍬',
     label: 'Khoya / Sweets',
     bgClass: 'bg-purple-50 text-purple-600 border-purple-200',

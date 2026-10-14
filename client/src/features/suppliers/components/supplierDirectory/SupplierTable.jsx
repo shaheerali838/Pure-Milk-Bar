@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Search,
   X,
@@ -14,6 +14,8 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useSupplierContext } from '@/context/SupplierContext';
+import { useIntakeContext } from '@/context/IntakeContext';
+import { getTodayDateStr, normalizeDateStr } from '@/utils/dateUtils';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -24,12 +26,44 @@ import {
   TableCell,
 } from '@/components/ui/table';
 
-export default function SupplierTable({ onView, onEdit }) {
+export default function SupplierTable({ onView, onEdit, selectedDate }) {
   const { suppliers, deleteSupplier, settleSupplierBalance, isLoading } = useSupplierContext();
+  const { intakeLogs = [] } = useIntakeContext() || {};
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [settlingSupplier, setSettlingSupplier] = useState(null);
+
+  const todayStr = getTodayDateStr();
+  const targetDate = selectedDate || todayStr;
+  const isToday = targetDate === todayStr;
+
+  // Map intake on targetDate per supplier
+  const supplierDateStats = useMemo(() => {
+    const map = {};
+    (intakeLogs || []).forEach((log) => {
+      const lDate = normalizeDateStr(log.date || log.createdAt);
+      if (lDate === targetDate) {
+        const idKey = String(log.supplierId || '');
+        const nameKey = (log.supplierName || '').trim().toLowerCase();
+        const qty = parseFloat(log.quantity || log.quantityLiters) || 0;
+        const rate = parseFloat(log.ratePerLiter || log.rate) || 220;
+        const cost = parseFloat(log.totalCost || log.totalAmount) || (qty * rate);
+        const paid = log.paidAmount !== undefined && log.paidAmount !== ''
+          ? Math.min(cost, Math.max(0, parseFloat(log.paidAmount) || 0))
+          : (log.settlement === 'Paid' ? cost : (log.settlement === 'Partial' ? cost * 0.5 : 0));
+
+        [idKey, nameKey].filter(Boolean).forEach((k) => {
+          if (!map[k]) map[k] = { liters: 0, cost: 0, paid: 0, count: 0 };
+          map[k].liters += qty;
+          map[k].cost += cost;
+          map[k].paid += paid;
+          map[k].count += 1;
+        });
+      }
+    });
+    return map;
+  }, [intakeLogs, targetDate]);
 
   // Filter suppliers by name, contact, or area + status
   const filteredSuppliers = suppliers.filter((s) => {
@@ -40,8 +74,15 @@ export default function SupplierTable({ onView, onEdit }) {
       (s.area && s.area.toLowerCase().includes(q)) ||
       (s.id && s.id.toLowerCase().includes(q));
 
-    const matchesStatus =
-      statusFilter === 'All' ? true : s.status === statusFilter;
+    let matchesStatus = true;
+    if (statusFilter === 'Active') matchesStatus = s.status === 'Active';
+    else if (statusFilter === 'Inactive') matchesStatus = s.status === 'Inactive';
+    else if (statusFilter.startsWith('Supplied')) {
+      const sId = String(s._id || s.id || '');
+      const sName = (s.name || '').trim().toLowerCase();
+      const st = supplierDateStats[sId] || supplierDateStats[sName];
+      matchesStatus = (st?.liters || 0) > 0;
+    }
 
     return matchesSearch && matchesStatus;
   });
@@ -76,13 +117,13 @@ export default function SupplierTable({ onView, onEdit }) {
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-full text-xs font-semibold text-slate-600 self-start md:self-auto">
-          {['All', 'Active', 'Inactive'].map((status) => (
+        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-full text-xs font-semibold text-slate-600 self-start md:self-auto flex-wrap">
+          {['All', 'Active', 'Inactive', isToday ? 'Supplied Today' : `Supplied on ${targetDate}`].map((status) => (
             <button
               key={status}
               type="button"
               onClick={() => setStatusFilter(status)}
-              className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap ${
                 statusFilter === status
                   ? 'bg-white text-slate-900 shadow-xs font-bold'
                   : 'hover:text-slate-900'
@@ -112,10 +153,10 @@ export default function SupplierTable({ onView, onEdit }) {
                 Rate / Liter
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
-                Total Sourced
+                {isToday ? "Today's Intake" : `Intake (${targetDate})`}
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
-                Total Payout
+                {isToday ? "Today's Paid" : `Paid (${targetDate})`}
               </TableHead>
               <TableHead className="py-3 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider text-right">
                 Balance Due
@@ -216,15 +257,34 @@ export default function SupplierTable({ onView, onEdit }) {
                     Rs. {supplier.ratePerLiter}
                   </TableCell>
 
-                  {/* Total Sourced */}
-                  <TableCell className="py-3.5 px-4 text-right font-bold text-slate-900 tabular">
-                    {(supplier.totalSourced || 0).toLocaleString()} L
-                  </TableCell>
+                  {/* Date Sourced & Total Sourced */}
+                  {(() => {
+                    const sId = String(supplier._id || supplier.id || '');
+                    const sName = (supplier.name || '').trim().toLowerCase();
+                    const dateStat = supplierDateStats[sId] || supplierDateStats[sName] || { liters: 0, cost: 0, paid: 0, count: 0 };
 
-                  {/* Total Payout */}
-                  <TableCell className="py-3.5 px-4 text-right font-bold text-emerald-700 tabular">
-                    Rs. {(supplier.totalPayout || 0).toLocaleString()}
-                  </TableCell>
+                    return (
+                      <>
+                        <TableCell className="py-3.5 px-4 text-right tabular">
+                          <span className={`font-bold block ${dateStat.liters > 0 ? 'text-blue-600' : 'text-slate-800'}`}>
+                            {dateStat.liters > 0 ? `${dateStat.liters.toFixed(1)} L` : '0.0 L'}
+                          </span>
+                          <span className="text-[10px] text-slate-400 block">
+                            Total: {(supplier.totalSourced || 0).toLocaleString()} L
+                          </span>
+                        </TableCell>
+
+                        <TableCell className="py-3.5 px-4 text-right tabular">
+                          <span className={`font-bold block ${dateStat.paid > 0 ? 'text-emerald-700' : 'text-slate-800'}`}>
+                            Rs. {dateStat.paid.toLocaleString()}
+                          </span>
+                          <span className="text-[10px] text-slate-400 block">
+                            Total: Rs. {(supplier.totalPayout || 0).toLocaleString()}
+                          </span>
+                        </TableCell>
+                      </>
+                    );
+                  })()}
 
                   {/* Balance Due */}
                   <TableCell className="py-3.5 px-4 text-right font-bold tabular">

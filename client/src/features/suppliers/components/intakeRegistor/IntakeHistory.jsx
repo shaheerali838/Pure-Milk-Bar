@@ -28,19 +28,11 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
+import { formatStandardDate, normalizeDateStr, sortByDateDesc, getPktTodayString } from '@/utils/dateUtils';
 
-const getTodayDateStr = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+const getTodayDateStr = () => getPktTodayString();
 
-const normalizeDate = (dateVal) => {
-  if (!dateVal) return '';
-  if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateVal)) return dateVal.slice(0, 10);
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return String(dateVal).slice(0, 10);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+const normalizeDate = (dateVal) => normalizeDateStr(dateVal);
 
 export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSupplier }) {
   const { intakeLogs, deleteIntake, isLoading } = useIntakeContext();
@@ -129,7 +121,7 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
       map.get(groupKey).slips.push(log);
     });
 
-    return Array.from(map.values()).map((group) => {
+    const records = Array.from(map.values()).map((group) => {
       const slips = group.slips;
       const morningSlip = slips.find((s) => (s.shift || '').toLowerCase() === 'morning');
       const eveningSlip = slips.find((s) => (s.shift || '').toLowerCase() === 'evening');
@@ -193,6 +185,7 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
         hasBoth: Boolean(morningSlip && eveningSlip),
       };
     });
+    return records.sort((a, b) => new Date(b.dateKey || b.date || 0) - new Date(a.dateKey || a.date || 0));
   }, [filteredLogs]);
 
   const handleDelete = (id) => {
@@ -443,7 +436,7 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
                       <TableCell className="py-3.5 px-4">
                         <div className="font-semibold text-slate-900 flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{group.date}</span>
+                          <span>{formatStandardDate(group.date || group.dateKey)}</span>
                         </div>
                         <div className="text-[11px] text-slate-400 font-medium mt-0.5 flex items-center gap-1">
                           {hasMultipleShifts ? (
@@ -646,7 +639,7 @@ export default function IntakeHistory({ onView, onEdit, onPaySupplier, onViewSup
                                   {group.supplierName} — Shift Breakdown
                                 </span>
                                 <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                                  Date: {group.date}
+                                  Date: {formatStandardDate(group.date || group.dateKey)}
                                 </span>
                               </div>
                               <span className="text-[11px] font-medium text-slate-400">

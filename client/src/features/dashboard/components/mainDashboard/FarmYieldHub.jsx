@@ -4,31 +4,47 @@ import { useAnimalContext } from "@/context/AnimalContext";
 import { useExpense } from "@/context/ExpenseContext";
 import { usePOSContext } from "@/context/POSContext";
 import { Link, useNavigate } from "react-router-dom";
+import { isDateInFilterRange, getDateRangeBoundaries } from '@/utils/dateUtils';
 
-export default function FarmYieldHub() {
+export default function FarmYieldHub({
+  dateFilter = 'today',
+  startDate = '',
+  endDate = '',
+}) {
   const navigate = useNavigate();
   const { animals = [], milkingLogs = [] } = useAnimalContext();
-  const { totals: expenseTotals = {} } = useExpense();
+  const { totals: expenseTotals = {}, expenses = [] } = useExpense();
   const { products = [], inventoryMetrics = {} } = usePOSContext();
+
+  const periodData = getDateRangeBoundaries(dateFilter, startDate, endDate);
+  const periodLabel = periodData.label;
 
   // Milking animals count
   const milkingAnimals = animals.filter(
     (a) => a.lactationStatus === "Milking",
   );
 
-  const now = new Date();
-  const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const isoTodayStr = now.toISOString().split("T")[0];
-  const todayLogs = (milkingLogs || []).filter((l) => {
-    const rawDate = l.date || l.createdAt;
-    if (!rawDate) return false;
-    const d = typeof rawDate === 'string' && rawDate.includes('T') ? rawDate.split('T')[0] : String(rawDate).slice(0, 10);
-    return d === localTodayStr || d === isoTodayStr;
+  const filteredLogs = (milkingLogs || []).filter((l) => {
+    return isDateInFilterRange(l.date || l.createdAt, dateFilter, startDate, endDate);
   });
 
-  const totalFarmYield = todayLogs.length > 0
-    ? todayLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0)
-    : (Number(inventoryMetrics.totalFarmYield) || 0);
+  let totalFarmYield = 0;
+  if (filteredLogs.length > 0) {
+    totalFarmYield = filteredLogs.reduce((sum, l) => sum + (parseFloat(l.yieldLiters || l.yield || l.quantityLiters) || 0), 0);
+  } else {
+    let sumFromAnimals = 0;
+    animals.forEach((animal) => {
+      const historyList = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
+      historyList.forEach((h) => {
+        if (isDateInFilterRange(h.date || h.createdAt, dateFilter, startDate, endDate)) {
+          sumFromAnimals += Number(h.quantityLiters || h.yieldLiters || h.yield || ((Number(h.morning) || 0) + (Number(h.evening) || 0))) || 0;
+        }
+      });
+    });
+    totalFarmYield = sumFromAnimals > 0
+      ? sumFromAnimals
+      : (dateFilter === 'today' ? (Number(inventoryMetrics.totalFarmYield) || 0) : 0);
+  }
 
   // Valuation: Farm milk value @ retail milk rate
   const milkProduct = products.find(
@@ -40,8 +56,14 @@ export default function FarmYieldHub() {
     Number(inventoryMetrics.milkPrice) || Number(milkProduct?.price) || 180;
   const farmValuation = Math.round(totalFarmYield * milkRate);
 
-  // Feed expenses from expense context
-  const feedExpenses = Number(expenseTotals.feedSeedFarming) || 0;
+  // Feed expenses from expense context in active period
+  const feedExpenses = expenses
+    .filter((e) => {
+      const cat = String(e.category || '').toUpperCase();
+      const isFeed = cat.includes('FEED') || cat.includes('SEED') || cat.includes('VETERINARY');
+      return isFeed && isDateInFilterRange(e.date || e.createdAt, dateFilter, startDate, endDate);
+    })
+    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0) || (dateFilter === 'all' ? (Number(expenseTotals.feedSeedFarming) || 0) : 0);
 
   // Net Margin
   const netMargin = farmValuation - feedExpenses;
@@ -69,16 +91,16 @@ export default function FarmYieldHub() {
               </h3>
             </div>
           </div>
-          {/* <span className="px-3 py-1 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 shrink-0">
-            +{marginPercent}% Margin
-          </span> */}
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+            {periodLabel}
+          </span>
         </div>
 
         {/* Metric Data Rows */}
         <div className="py-3.5 space-y-2">
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 hover:bg-slate-50 transition-colors">
             <span className="text-slate-600 text-xs font-semibold">
-              Milk Yield Today
+              Milk Yield ({periodLabel})
             </span>
             <span className="font-mono font-bold text-slate-900 text-xs tabular">
               {totalFarmYield.toFixed(1)} L ({milkingAnimals.length} In-Milk
@@ -100,7 +122,7 @@ export default function FarmYieldHub() {
               Farm Milk Stock (With Me)
             </span>
             <span className="font-mono font-bold text-emerald-700 text-xs tabular">
-              {inventoryMetrics?.farmMilkStock || 0} L (Chiller)
+              {inventoryMetrics?.farmMilkStock || 0} L {Number(inventoryMetrics?.totalMilkStock) > Number(inventoryMetrics?.farmMilkStock) ? `(Total: ${inventoryMetrics?.totalMilkStock} L)` : '(Chiller)'}
             </span>
           </div>
 

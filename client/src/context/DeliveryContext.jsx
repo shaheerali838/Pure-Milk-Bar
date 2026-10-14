@@ -91,6 +91,13 @@ export function DeliveryProvider({ children }) {
         id: deliveryDoc._id || deliveryDoc.id || Date.now(),
       };
       setDeliveries((prev) => [normalized, ...prev]);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('pure_milk_bar_deliveries_updated'));
+        if (payload.status === 'DELIVERED') {
+          window.dispatchEvent(new Event('pure_milk_bar_inventory_updated'));
+          window.dispatchEvent(new Event('pure_milk_bar_pos_sale_completed'));
+        }
+      }
       return normalized;
     } catch (err) {
       console.error('Failed to create delivery via API:', err);
@@ -110,6 +117,10 @@ export function DeliveryProvider({ children }) {
         setDeliveries((prev) => prev.map((d) => (
           (d._id || d.id) === id ? { ...d, ...deliveryDoc, id: deliveryDoc._id || deliveryDoc.id || id } : d
         )));
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('pure_milk_bar_deliveries_updated'));
+        window.dispatchEvent(new Event('pure_milk_bar_inventory_updated'));
       }
       return deliveryDoc;
     } catch (err) {
@@ -136,6 +147,11 @@ export function DeliveryProvider({ children }) {
             : d
         )
       );
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('pure_milk_bar_deliveries_updated'));
+        window.dispatchEvent(new Event('pure_milk_bar_inventory_updated'));
+        window.dispatchEvent(new Event('pure_milk_bar_pos_sale_completed'));
+      }
     } catch (err) {
       console.error('Failed to update delivery status:', err);
     }
@@ -145,6 +161,10 @@ export function DeliveryProvider({ children }) {
     setDeliveries((prev) => prev.filter((d) => (d._id || d.id) !== id && d.id !== id));
     try {
       await deliveryService.deleteDelivery(id);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('pure_milk_bar_deliveries_updated'));
+        window.dispatchEvent(new Event('pure_milk_bar_inventory_updated'));
+      }
     } catch (err) {
       console.warn('Failed to delete delivery on API:', err.message);
     }

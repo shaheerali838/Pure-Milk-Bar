@@ -7,7 +7,6 @@ import {
   EyeOff,
   RefreshCw,
   Send,
-  Sparkles,
 } from "lucide-react";
 
 export default function StaffCredentialsSection({

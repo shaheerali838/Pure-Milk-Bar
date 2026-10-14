@@ -2,9 +2,10 @@ import mongoose from 'mongoose';
 import Order from '../../../models/Order.model.js';
 import Product from '../../../models/Product.model.js';
 import Customer from '../../../models/Customer.model.js';
-import KhataEntry from '../../../models/KhataEntry.model.js';
 import User from '../../../models/User.model.js';
 import AppError from '../../../utils/AppError.js';
+import { matchProductForServerItem, getLiveAvailableStock } from '../../../utils/stockResolver.js';
+import { updateCustomerKhataForOrder, reverseCustomerKhataForOrder } from './orderKhataHelper.js';
 
 class OrderService {
   async generateReceiptNumber() {
@@ -54,31 +55,54 @@ class OrderService {
     }
 
     // 3. Khata Payment Verification & Limits
-    const isKhataPayment = orderData.paymentMethod === 'KHATA';
+    const pMethod = String(orderData.paymentMethod || 'CASH').toUpperCase();
+    const isKhataPayment = pMethod === 'KHATA';
     const isDeliveryUnpaid =
-      orderData.fulfillmentType === 'DELIVERY' ||
-      orderData.paymentMethod === 'COD' ||
-      orderData.paymentMethod === 'KHATA';
+      (orderData.fulfillmentType === 'DELIVERY' || pMethod === 'COD' || isKhataPayment) &&
+      pMethod !== 'CASH' &&
+      pMethod !== 'ONLINE' &&
+      pMethod !== 'EASYPAISA' &&
+      pMethod !== 'JAZZCASH' &&
+      pMethod !== 'SPLIT';
 
-    const splitKhataAmount =
-      orderData.paymentMethod === 'SPLIT' && orderData.splitPaymentMeta?.khataAmount
-        ? Number(orderData.splitPaymentMeta.khataAmount)
-        : 0;
+    let cashReceived = 0;
+    let easyPaisaReceived = 0;
+    let jazzCashReceived = 0;
+    let onlineReceived = 0;
+    let directPaymentTotal = 0;
 
-    let totalKhataDebit = 0;
-    if (isKhataPayment || (isDeliveryUnpaid && (Number(orderData.amountReceived) || 0) < orderData.grandTotal)) {
-      totalKhataDebit = Math.max(0, orderData.grandTotal - (Number(orderData.amountReceived) || 0));
-    } else if (orderData.paymentMethod === 'SPLIT') {
-      totalKhataDebit = splitKhataAmount;
-    } else if (orderData.paymentMethod === 'CASH' || orderData.paymentMethod === 'ONLINE') {
-      totalKhataDebit = Math.max(0, orderData.grandTotal - (Number(orderData.amountReceived) || orderData.grandTotal));
-    }
-
-    if (totalKhataDebit > 0 && customer && customer.creditLimit > 0) {
-      const availableCredit = customer.creditLimit - (customer.currentBalance || customer.khataBalance || 0);
-      if (availableCredit > 0 && totalKhataDebit > availableCredit) {
-        // Warning note: allowed but flagged
+    if (pMethod === 'CASH') {
+      const amtRec = Number(orderData.amountReceived);
+      cashReceived = !isNaN(amtRec) && amtRec > 0 ? amtRec : orderData.grandTotal;
+      directPaymentTotal = cashReceived;
+    } else if (pMethod === 'EASYPAISA') {
+      const amtRec = Number(orderData.amountReceived);
+      easyPaisaReceived = !isNaN(amtRec) && amtRec > 0 ? amtRec : orderData.grandTotal;
+      onlineReceived = easyPaisaReceived;
+      directPaymentTotal = easyPaisaReceived;
+    } else if (pMethod === 'JAZZCASH') {
+      const amtRec = Number(orderData.amountReceived);
+      jazzCashReceived = !isNaN(amtRec) && amtRec > 0 ? amtRec : orderData.grandTotal;
+      onlineReceived = jazzCashReceived;
+      directPaymentTotal = jazzCashReceived;
+    } else if (pMethod === 'ONLINE') {
+      const provider = String(orderData.onlineTransferMeta?.provider || '').toUpperCase();
+      const amtRec = Number(orderData.amountReceived);
+      const val = !isNaN(amtRec) && amtRec > 0 ? amtRec : orderData.grandTotal;
+      if (provider.includes('EASYPAISA')) {
+        easyPaisaReceived = val;
+      } else if (provider.includes('JAZZCASH')) {
+        jazzCashReceived = val;
       }
+      onlineReceived = val;
+      directPaymentTotal = val;
+    } else if (pMethod === 'SPLIT') {
+      cashReceived = Math.max(0, Number(orderData.splitPaymentMeta?.cashAmount) || 0);
+      easyPaisaReceived = Math.max(0, Number(orderData.splitPaymentMeta?.easyPaisaAmount) || 0);
+      jazzCashReceived = Math.max(0, Number(orderData.splitPaymentMeta?.jazzCashAmount) || 0);
+      const directOnline = Math.max(0, Number(orderData.splitPaymentMeta?.onlineAmount) || 0);
+      onlineReceived = directOnline > 0 ? directOnline : (easyPaisaReceived + jazzCashReceived);
+      directPaymentTotal = cashReceived + onlineReceived;
     }
 
     // 4. Generate unique receipt number if not supplied
@@ -87,18 +111,37 @@ class OrderService {
       : await this.generateReceiptNumber();
 
     // 5. Calculate Change for Cash transactions
-    let amountReceived = orderData.amountReceived || 0;
+    let amountReceived = orderData.amountReceived !== undefined ? Number(orderData.amountReceived) : directPaymentTotal;
     let changeGiven = orderData.changeGiven || 0;
 
-    if (orderData.paymentMethod === 'CASH') {
-      if (amountReceived > 0 && amountReceived >= orderData.grandTotal) {
-        changeGiven = Math.max(0, amountReceived - orderData.grandTotal);
+    if (pMethod === 'CASH' && amountReceived > orderData.grandTotal) {
+      changeGiven = Math.max(0, amountReceived - orderData.grandTotal);
+    }
+
+    // 5.5 Pre-order Inventory Stock Validation
+    if (Array.isArray(orderData.items) && orderData.items.length > 0) {
+      for (const item of orderData.items) {
+        const qty = Number(item.quantity) || 0;
+        if (qty <= 0) continue;
+
+        const prod = await matchProductForServerItem(item);
+        if (prod) {
+          const availStock = await getLiveAvailableStock(prod);
+          if (availStock <= 0 || qty > availStock) {
+            throw new AppError(
+              `Insufficient stock for "${prod.name}". Available: ${availStock} ${prod.unit || ''}, Requested: ${qty}`,
+              400,
+              'INSUFFICIENT_STOCK'
+            );
+          }
+        }
       }
     }
 
     // 6. Assemble Order document
     const newOrderPayload = {
       ...orderData,
+      paymentMethod: pMethod,
       receiptNumber,
       cashierId,
       customerId: customer ? customer._id : null,
@@ -117,20 +160,10 @@ class OrderService {
         const qty = Number(item.quantity) || 0;
         if (qty <= 0) continue;
 
-        let prod = null;
-        if (item.productId && mongoose.Types.ObjectId.isValid(item.productId)) {
-          prod = await Product.findById(item.productId);
-        }
-        if (!prod && item.sku) {
-          prod = await Product.findOne({ sku: item.sku });
-        }
-        if (!prod && item.name) {
-          const cleanName = item.name.replace(/\s*\((Farm|Supplier)\s*Share\)/i, '').trim();
-          const nameRegex = new RegExp(`^${cleanName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}$`, 'i');
-          prod = await Product.findOne({ name: nameRegex });
-        }
+        const prod = await matchProductForServerItem(item);
         if (prod) {
-          const newStock = Math.max(0, Number(((prod.currentStock || 0) - qty).toFixed(2)));
+          const avail = await getLiveAvailableStock(prod);
+          const newStock = Math.max(0, Number((avail - qty).toFixed(2)));
           await Product.findByIdAndUpdate(prod._id, { $set: { currentStock: newStock } });
         }
       }
@@ -138,73 +171,12 @@ class OrderService {
 
     // 8. Update Customer Khata and create Khata Ledger Entry for customer purchase history
     if (customer) {
-      const billPortion = totalKhataDebit > 0 ? totalKhataDebit : 0;
-      const { advanceUsed, khataAmount, advanceBalanceAfter, newKhataBalance } = processBillAgainstAdvance(
-        billPortion,
-        customer.advanceBalance || 0,
-        customer.khataBalance || customer.currentBalance || 0
-      );
-
-      customer.advanceBalance = advanceBalanceAfter;
-      customer.khataBalance = newKhataBalance;
-      customer.currentBalance = newKhataBalance;
-      await customer.save();
-
-      order.advanceUsed = advanceUsed;
-      order.khataAmount = khataAmount;
-      order.advanceBalanceAfter = advanceBalanceAfter;
-      await order.save();
-
-      const orderItemsSnapshot = Array.isArray(order.items)
-        ? order.items.map((it) => {
-            const qty = Number(it.quantity) || 1;
-            const subtotal = Number(it.subtotal || it.total || 0);
-            const unitPrice = Number(it.unitPrice || it.price || it.rate || (qty > 0 && subtotal > 0 ? subtotal / qty : 0));
-            const finalSubtotal = subtotal > 0 ? subtotal : (unitPrice * qty);
-            return {
-              name: it.name || 'Product',
-              quantity: qty,
-              unit: it.unit || 'PIECE',
-              unitPrice: unitPrice,
-              subtotal: finalSubtotal,
-            };
-          })
-        : [];
-
-      const deliveryFee = Number(order.deliveryFee || orderData.deliveryFee || order.deliveryMeta?.deliveryFee || 0);
-      if (deliveryFee > 0 && !orderItemsSnapshot.some((it) => /delivery/i.test(it.name))) {
-        orderItemsSnapshot.push({
-          name: 'Doorstep Delivery Fee',
-          quantity: 1,
-          unit: 'TRIP',
-          unitPrice: deliveryFee,
-          subtotal: deliveryFee,
-        });
-      }
-
-      await KhataEntry.create({
-        customerId: customer._id,
-        date: order.date,
-        voucherNumber: `KV-${order.receiptNumber}`,
-        transactionType: 'DEBIT',
-        description: `POS Order #${order.receiptNumber} (${order.fulfillmentType})`,
-        debitAmount: order.grandTotal,
-        creditAmount: 0,
-        advanceUsed,
-        khataAmount,
-        advanceBalanceAfter,
-        advanceReceived: 0,
-        runningBalance: newKhataBalance,
-        paymentMethod: order.paymentMethod,
-        referenceTransactionId: order.receiptNumber,
+      await updateCustomerKhataForOrder({
+        customer,
+        order,
+        orderData,
+        directPaymentTotal,
         cashierId,
-        items: orderItemsSnapshot,
-        orderTotal: order.grandTotal,
-        paidAmount: Math.max(0, (order.grandTotal - billPortion) + advanceUsed),
-        remainingAmount: khataAmount,
-        fulfillmentType: order.fulfillmentType === 'DELIVERY' ? 'Doorstep Delivery' : (advanceUsed > 0 && khataAmount === 0 ? 'Paid from Advance' : 'Walk-in Counter'),
-        riderName: order.deliveryMeta?.riderName || order.deliveryMeta?.riderNameSnapshot || orderData.deliveryMeta?.riderName || orderData.riderName || null,
-        deliveryAddress: order.deliveryMeta?.deliveryAddress || order.deliveryMeta?.dropAddress || customer.address || null,
       });
     }
 
@@ -422,44 +394,11 @@ class OrderService {
     }
 
     // 2. Reverse Khata debt & Advance if applicable
-    const advanceUsedToReverse = Number(order.advanceUsed || 0);
-    const isKhataPayment = order.paymentMethod === 'KHATA';
-    const splitKhata =
-      order.paymentMethod === 'SPLIT' && order.splitPaymentMeta?.khataAmount
-        ? Number(order.splitPaymentMeta.khataAmount)
-        : 0;
-    const khataAmountToReverse = Number(order.khataAmount !== undefined ? order.khataAmount : (isKhataPayment ? order.grandTotal : splitKhata));
-
-    if (order.customerId && (khataAmountToReverse > 0 || advanceUsedToReverse > 0)) {
-      const customer = await Customer.findById(order.customerId);
-      if (customer) {
-        const newAdvance = Math.max(0, (customer.advanceBalance || 0) + advanceUsedToReverse);
-        const newKhata = Math.max(0, (customer.currentBalance || customer.khataBalance || 0) - khataAmountToReverse);
-
-        customer.advanceBalance = newAdvance;
-        customer.khataBalance = newKhata;
-        customer.currentBalance = newKhata;
-        await customer.save();
-
-        await KhataEntry.create({
-          customerId: order.customerId,
-          date: new Date(),
-          voucherNumber: `REV-${order.receiptNumber}`,
-          transactionType: 'CREDIT',
-          description: `Order Voided / Reversal #${order.receiptNumber}: ${reason}`,
-          debitAmount: 0,
-          creditAmount: khataAmountToReverse,
-          advanceUsed: 0,
-          khataAmount: 0,
-          advanceReceived: advanceUsedToReverse,
-          advanceBalanceAfter: newAdvance,
-          runningBalance: newKhata,
-          paymentMethod: 'ADJUSTMENT',
-          referenceTransactionId: order.receiptNumber,
-          cashierId: cancelledByUserId || order.cashierId,
-        });
-      }
-    }
+    await reverseCustomerKhataForOrder({
+      order,
+      reason,
+      cancelledByUserId,
+    });
 
     // 3. Remove or delete the cancelled order record
     await Order.findByIdAndDelete(id);

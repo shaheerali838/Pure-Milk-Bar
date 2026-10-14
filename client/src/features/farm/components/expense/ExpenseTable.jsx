@@ -127,7 +127,7 @@ export default function ExpenseTable({
                   className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
                 >
                   <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-xs font-semibold">
-                    {formatDisplayDate(expense.date)}
+                    {formatDisplayDate(expense.date || expense.createdAt)}
                   </td>
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">

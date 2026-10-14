@@ -2,12 +2,27 @@ import mongoose from 'mongoose';
 import DeliveryRun from '../../../models/DeliveryRun.model.js';
 import VehicleFuelLog from '../../../models/VehicleFuelLog.model.js';
 import User from '../../../models/User.model.js';
+import {
+  validateDeliveryStock,
+  deductDeliveryStock,
+  restoreDeliveryStock,
+} from './deliveryStockHelper.js';
+import vehicleFuelLogService from './vehicleFuelLog.service.js';
 
 class DeliveryService {
   generateRunCode() {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     return `DR-${today}-${randomSuffix}`;
+  }
+
+  // Stock deduction & restoration helpers delegated to deliveryStockHelper
+  async deductDeliveryStock(delivery) {
+    return await deductDeliveryStock(delivery);
+  }
+
+  async restoreDeliveryStock(delivery) {
+    return await restoreDeliveryStock(delivery);
   }
 
   async createDeliveryRun(payload) {
@@ -23,6 +38,11 @@ class DeliveryService {
       if (rider) {
         deliveryData.riderNameSnapshot = rider.name;
       }
+    }
+
+    // Pre-order Inventory Stock Validation
+    if (Array.isArray(deliveryData.items) && deliveryData.items.length > 0) {
+      await validateDeliveryStock(deliveryData.items);
     }
 
     // Transaction for atomic delivery run + fuel log creation
@@ -45,6 +65,10 @@ class DeliveryService {
         await session.commitTransaction();
         session.endSession();
 
+        if (createdRun.status === 'DELIVERED') {
+          await this.deductDeliveryStock(createdRun);
+        }
+
         return {
           deliveryRun: createdRun,
           fuelLog: createdFuelLog,
@@ -58,6 +82,9 @@ class DeliveryService {
 
     // Normal Delivery Run creation
     const deliveryRun = await DeliveryRun.create(deliveryData);
+    if (deliveryRun.status === 'DELIVERED') {
+      await this.deductDeliveryStock(deliveryRun);
+    }
     return { deliveryRun };
   }
 
@@ -150,7 +177,16 @@ class DeliveryService {
       throw error;
     }
 
-    // Check if updating riderId to keep riderNameSnapshot in sync
+    const existingRun = await DeliveryRun.findById(id);
+    if (!existingRun) {
+      const error = new Error(`Delivery Run with ID '${id}' not found`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const prevStatus = existingRun.status;
+    const newStatus = updateData.status || prevStatus;
+
     if (updateData.riderId && !updateData.riderNameSnapshot) {
       const rider = await User.findById(updateData.riderId).select('name');
       if (rider) {
@@ -159,31 +195,34 @@ class DeliveryService {
     }
 
     const updatedRun = await DeliveryRun.findByIdAndUpdate(id, updateData, {
-      returnDocument: 'after',
+      new: true,
       runValidators: true,
     })
       .populate('riderId', 'name phone role')
       .populate('customerId', 'name phone deliveryRoute');
 
-    if (!updatedRun) {
-      const error = new Error(`Delivery Run with ID '${id}' not found`);
-      error.statusCode = 404;
-      throw error;
+    if (newStatus === 'DELIVERED' && (!existingRun.isStockDeducted || prevStatus !== 'DELIVERED')) {
+      await this.deductDeliveryStock(updatedRun);
+    } else if (prevStatus === 'DELIVERED' && newStatus !== 'DELIVERED') {
+      await this.restoreDeliveryStock(existingRun);
     }
 
     return updatedRun;
   }
 
   async deleteDeliveryRun(id) {
-    const deletedRun = await DeliveryRun.findByIdAndDelete(id);
-
-    if (!deletedRun) {
+    const existingRun = await DeliveryRun.findById(id);
+    if (!existingRun) {
       const error = new Error(`Delivery Run with ID '${id}' not found`);
       error.statusCode = 404;
       throw error;
     }
 
-    return deletedRun;
+    if (existingRun.status === 'DELIVERED' && existingRun.isStockDeducted) {
+      await this.restoreDeliveryStock(existingRun);
+    }
+
+    return await DeliveryRun.findByIdAndDelete(id);
   }
 
   async assignRider(id, riderId, riderNameSnapshot) {
@@ -201,7 +240,7 @@ class DeliveryService {
         riderId,
         riderNameSnapshot: nameSnapshot || null,
       },
-      { returnDocument: 'after', runValidators: true }
+      { new: true, runValidators: true }
     )
       .populate('riderId', 'name phone role')
       .populate('customerId', 'name phone');
@@ -216,6 +255,14 @@ class DeliveryService {
   }
 
   async updateDeliveryStatus(id, statusData) {
+    const existingRun = await DeliveryRun.findById(id);
+    if (!existingRun) {
+      const error = new Error(`Delivery Run with ID '${id}' not found`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const prevStatus = existingRun.status;
     const {
       status,
       deliveredAt,
@@ -230,161 +277,60 @@ class DeliveryService {
       notes,
     } = statusData;
 
-    const updateFields = { status };
+    const newStatus = status || prevStatus;
+    const updateFields = { status: newStatus };
 
-    if (status === 'DELIVERED') {
+    if (newStatus === 'DELIVERED') {
       updateFields.deliveredAt = deliveredAt || new Date();
     } else if (deliveredAt !== undefined) {
       updateFields.deliveredAt = deliveredAt;
     }
 
-    if (bottlesReturned !== undefined) {
-      updateFields.bottlesReturned = bottlesReturned;
-    }
-
-    if (codAmountToCollect !== undefined) {
-      updateFields.codAmountToCollect = codAmountToCollect;
-    }
-
-    if (amountPaid !== undefined) {
-      updateFields.amountPaid = amountPaid;
-    }
-
-    if (amountDue !== undefined) {
-      updateFields.amountDue = amountDue;
-    }
-
-    if (cashCollected !== undefined) {
-      updateFields.cashCollected = cashCollected;
-    }
-
-    if (onlineCollected !== undefined) {
-      updateFields.onlineCollected = onlineCollected;
-    }
-
-    if (paymentMode !== undefined) {
-      updateFields.paymentMode = paymentMode;
-    }
-
-    if (paymentStatus !== undefined) {
-      updateFields.paymentStatus = paymentStatus;
-    }
-
-    if (notes !== undefined) {
-      updateFields.notes = notes;
-    }
+    if (bottlesReturned !== undefined) updateFields.bottlesReturned = bottlesReturned;
+    if (codAmountToCollect !== undefined) updateFields.codAmountToCollect = codAmountToCollect;
+    if (amountPaid !== undefined) updateFields.amountPaid = amountPaid;
+    if (amountDue !== undefined) updateFields.amountDue = amountDue;
+    if (cashCollected !== undefined) updateFields.cashCollected = cashCollected;
+    if (onlineCollected !== undefined) updateFields.onlineCollected = onlineCollected;
+    if (paymentMode !== undefined) updateFields.paymentMode = paymentMode;
+    if (paymentStatus !== undefined) updateFields.paymentStatus = paymentStatus;
+    if (notes !== undefined) updateFields.notes = notes;
 
     const updatedRun = await DeliveryRun.findByIdAndUpdate(id, updateFields, {
-      returnDocument: 'after',
+      new: true,
       runValidators: true,
     })
       .populate('riderId', 'name phone role')
       .populate('customerId', 'name phone');
 
-    if (!updatedRun) {
-      const error = new Error(`Delivery Run with ID '${id}' not found`);
-      error.statusCode = 404;
-      throw error;
+    if (newStatus === 'DELIVERED' && (!existingRun.isStockDeducted || prevStatus !== 'DELIVERED')) {
+      await this.deductDeliveryStock(updatedRun);
+    } else if (prevStatus === 'DELIVERED' && newStatus !== 'DELIVERED') {
+      await this.restoreDeliveryStock(existingRun);
     }
 
     return updatedRun;
   }
 
-  // ====================================================
-  // Vehicle Fuel Log Service Methods
-  // ====================================================
-
+  // Delegated Fuel Log Methods
   async createVehicleFuelLog(payload) {
-    const fuelLog = await VehicleFuelLog.create(payload);
-    return fuelLog;
+    return await vehicleFuelLogService.createVehicleFuelLog(payload);
   }
 
   async getVehicleFuelLogs(query = {}) {
-    const { riderId, date, shift, vehiclePlate, linkedDeliveryRunId, page = 1, limit = 50 } = query;
-
-    const filter = {};
-
-    if (riderId) filter.riderId = riderId;
-    if (shift) filter.shift = shift;
-    if (vehiclePlate) filter.vehiclePlate = new RegExp(vehiclePlate, 'i');
-    if (linkedDeliveryRunId) filter.linkedDeliveryRunId = linkedDeliveryRunId;
-
-    if (date) {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
-      filter.date = { $gte: startOfDay, $lte: endOfDay };
-    }
-
-    const skip = (Number(page) - 1) * Number(limit);
-
-    const [fuelLogs, total] = await Promise.all([
-      VehicleFuelLog.find(filter)
-        .populate('riderId', 'name phone role')
-        .populate('linkedDeliveryRunId', 'runCode route status')
-        .sort({ date: -1 })
-        .skip(skip)
-        .limit(Number(limit)),
-      VehicleFuelLog.countDocuments(filter),
-    ]);
-
-    return {
-      fuelLogs,
-      pagination: {
-        total,
-        page: Number(page),
-        limit: Number(limit),
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return await vehicleFuelLogService.getVehicleFuelLogs(query);
   }
 
   async getVehicleFuelLogById(id) {
-    const fuelLog = await VehicleFuelLog.findById(id)
-      .populate('riderId', 'name phone role')
-      .populate('linkedDeliveryRunId', 'runCode route status');
-
-    if (!fuelLog) {
-      const error = new Error(`Vehicle Fuel Log with ID '${id}' not found`);
-      error.statusCode = 404;
-      throw error;
-    }
-
-    return fuelLog;
+    return await vehicleFuelLogService.getVehicleFuelLogById(id);
   }
 
   async updateVehicleFuelLog(id, updateData) {
-    if (!updateData || Object.keys(updateData).length === 0) {
-      const error = new Error('No fields provided to update');
-      error.statusCode = 400;
-      throw error;
-    }
-
-    const updatedFuelLog = await VehicleFuelLog.findByIdAndUpdate(id, updateData, {
-      returnDocument: 'after',
-      runValidators: true,
-    }).populate('riderId', 'name phone role');
-
-    if (!updatedFuelLog) {
-      const error = new Error(`Vehicle Fuel Log with ID '${id}' not found`);
-      error.statusCode = 404;
-      throw error;
-    }
-
-    return updatedFuelLog;
+    return await vehicleFuelLogService.updateVehicleFuelLog(id, updateData);
   }
 
   async deleteVehicleFuelLog(id) {
-    const deletedFuelLog = await VehicleFuelLog.findByIdAndDelete(id);
-
-    if (!deletedFuelLog) {
-      const error = new Error(`Vehicle Fuel Log with ID '${id}' not found`);
-      error.statusCode = 404;
-      throw error;
-    }
-
-    return deletedFuelLog;
+    return await vehicleFuelLogService.deleteVehicleFuelLog(id);
   }
 
   async getRiderRunSheetSummary({ riderId, date, shift }) {

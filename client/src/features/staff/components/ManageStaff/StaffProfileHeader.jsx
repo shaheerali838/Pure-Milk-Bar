@@ -1,6 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Typography } from '@/components/common/Typography';
+import { formatStaffId } from '../../utils/formatStaffId';
 
 export default function StaffProfileHeader({ staff }) {
   if (!staff) return null;
@@ -38,7 +39,7 @@ export default function StaffProfileHeader({ staff }) {
               {staff.name}
             </Typography>
             <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-200 text-slate-700">
-              {staff.id}
+              {formatStaffId(staff)}
             </span>
           </div>
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">

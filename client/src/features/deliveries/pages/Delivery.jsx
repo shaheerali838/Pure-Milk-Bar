@@ -119,31 +119,7 @@ export default function Delivery() {
   }
 
   return (
-    <div className="relative min-h-screen bg-slate-50/50 pb-10 space-y-4">
-      {/* Dynamic Header */}
-      <div className="flex items-center justify-between pt-2 no-print">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-            <MapPin className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 font-display tracking-tight leading-none">
-              Doorstep Deliveries &amp; Logistics
-            </h1>
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                Route Management &amp; Fleet Operations
-              </span>
-              <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
-                Active Deliveries
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className="space-y-4">
       <div className="no-print">
         <DeliveryStats />
       </div>

@@ -8,13 +8,16 @@ export default function FarmCardOverflow({
   cowsCount = 0, 
   buffCount = 0, 
   totalFarmYield = 0, 
+  totalExpectedYield = 0,
   availableFarmStock = null,
   avgAnimalYield = 0, 
   dailyNetProfit = 0, 
-  todayFarmRevenue = 0,
   totalFarmExpense = 0,
+  periodFarmExpense,
   expenseCount = 0,
   timeRange = 'today',
+  dateFilter,
+  periodLabel,
 }) {
   const navigate = useNavigate();
   const posCtx = usePOSContext?.();
@@ -39,8 +42,9 @@ export default function FarmCardOverflow({
   }
 
   const farmMilkStock = effectiveStock % 1 === 0 ? effectiveStock.toFixed(0) : effectiveStock.toFixed(1);
-  const isToday = timeRange === 'today';
-  const periodLabel = isToday ? '(Today)' : timeRange === 'week' ? '(This Week)' : timeRange === 'month' ? '(This Month)' : '';
+  const activeDateFilter = dateFilter || timeRange || 'today';
+  const resolvedPeriodLabel = periodLabel || (activeDateFilter === 'today' ? 'Today' : activeDateFilter === 'week' || activeDateFilter === 'this_week' ? 'This Week' : activeDateFilter === 'month' || activeDateFilter === 'this_month' ? 'This Month' : 'All Time');
+  const effectiveExpense = periodFarmExpense !== undefined ? periodFarmExpense : totalFarmExpense;
 
   const statCards = [
     {
@@ -53,18 +57,22 @@ export default function FarmCardOverflow({
       path: "/farm/animals"
     },
     {
-      label: `Total Farm Yield ${periodLabel}`.trim(),
+      label: `Total Farm Yield (${resolvedPeriodLabel})`.trim(),
       value: `${totalFarmYield.toFixed(1)} L`,
-      sub: isToday ? "Daily Total Production" : "Production in Period",
+      sub: totalExpectedYield > 0
+        ? `Exp: ${totalExpectedYield.toFixed(1)} L (${totalFarmYield >= totalExpectedYield ? '+' : ''}${(totalFarmYield - totalExpectedYield).toFixed(1)} L)`
+        : (activeDateFilter === 'today' ? "Daily total production" : `${resolvedPeriodLabel} production`),
       icon: Droplets,
       color: "#2563eb",
-      badge: isToday ? "Today's Milk" : "Farm Milk",
+      badge: activeDateFilter === 'today' ? "Today's Milk" : "Farm Milk",
       path: "/farm/milking"
     },
     {
       label: "Available Stock (With Me)",
       value: `${farmMilkStock} L`,
-      sub: "In Cold Room Chiller",
+      sub: Number(posCtx?.inventoryMetrics?.totalMilk) > Number(farmMilkStock)
+        ? `Farm Chiller · Total: ${posCtx?.inventoryMetrics?.totalMilk} L`
+        : "In Cold Room Chiller",
       icon: Droplets,
       color: "#059669",
       badge: "Available",
@@ -73,31 +81,33 @@ export default function FarmCardOverflow({
     {
       label: "Average Animal Yield",
       value: `${avgAnimalYield.toFixed(1)} L`,
-      sub: "Avg Output Per Head",
+      sub: totalExpectedYield > 0 && totalAnimals > 0
+        ? `Benchmark: ${(totalExpectedYield / totalAnimals).toFixed(1)} L/head`
+        : "Avg Output Per Head",
       icon: Activity,
       color: "#4f46e5",
       badge: "Yield / Head",
       path: "/farm/animals"
     },
     {
-      label: `Farm Expenses ${periodLabel}`.trim(),
-      value: `Rs. ${totalFarmExpense.toLocaleString()}`,
-      sub: `${expenseCount} recorded expense${expenseCount === 1 ? '' : 's'}`,
+      label: `Farm Expenses (${resolvedPeriodLabel})`.trim(),
+      value: `Rs. ${effectiveExpense.toLocaleString()}`,
+      sub: expenseCount ? `${expenseCount} recorded expenses` : `${resolvedPeriodLabel} farm expenses`,
       icon: Banknote,
       color: "#e11d48",
       badge: "Expenses",
       path: "/farm/expenses"
     },
     {
-      label: dailyNetProfit < 0 ? `Farm Net Loss ${periodLabel}`.trim() : `Farm Net Profit ${periodLabel}`.trim(),
+      label: dailyNetProfit < 0 ? `Farm Net Loss (${resolvedPeriodLabel})` : `Farm Net Profit (${resolvedPeriodLabel})`,
       value: dailyNetProfit < 0
         ? `Rs. -${Math.abs(dailyNetProfit).toLocaleString()}`
         : `Rs. ${dailyNetProfit.toLocaleString()}`,
       sub: dailyNetProfit < 0
-        ? `Loss: Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
+        ? `${resolvedPeriodLabel} expenses exceed sales by Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
         : dailyNetProfit > 0
         ? `From Rs. ${todayFarmRevenue.toLocaleString()} sales`
-        : "Breakeven / No sales yet",
+        : `${resolvedPeriodLabel}: Breakeven / No sales`,
       icon: dailyNetProfit < 0 ? TrendingDown : dailyNetProfit > 0 ? TrendingUp : Banknote,
       color: dailyNetProfit < 0 ? "#e11d48" : dailyNetProfit > 0 ? "#10b981" : "#64748b",
       badge: dailyNetProfit < 0 ? "Loss" : dailyNetProfit > 0 ? "Profit" : "Net",

@@ -4,19 +4,11 @@ import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
 import IntakeDetail from '../intakeRegistor/IntakeDetail';
 import { toast } from 'sonner';
+import { getLocalDate, normalizeDateStr } from '@/utils/dateUtils';
 
-const getTodayDateStr = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+const getTodayDateStr = () => getLocalDate();
 
-const normalizeDate = (dateVal) => {
-  if (!dateVal) return '';
-  if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateVal)) return dateVal.slice(0, 10);
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return String(dateVal).slice(0, 10);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+const normalizeDate = (dateVal) => normalizeDateStr(dateVal);
 
 const PAYMENT_METHODS = [
   { id: 'Cash', label: 'Cash', desc: 'Direct cash in hand', icon: Coins, color: 'emerald' },
@@ -25,7 +17,7 @@ const PAYMENT_METHODS = [
   { id: 'Cheque', label: 'Cheque / Other', desc: 'Cheque clearance / voucher', icon: CreditCard, color: 'amber' },
 ];
 
-export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit }) {
+export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit, initialDate }) {
   const { intakeLogs = [], updateBatchSettlement } = useIntakeContext();
   const { suppliers = [], settleSupplierBalance, recordSupplierPayout, directPayouts = [] } = useSupplierContext();
 
@@ -42,13 +34,30 @@ export default function SupplierDetail({ supplier: propSupplier, onBack, onEdit 
   const [paymentDate, setPaymentDate] = useState(getTodayDateStr());
   const [copiedAccount, setCopiedAccount] = useState(false);
 
+  const todayStr = getTodayDateStr();
+
   // Table active tab & filter states
   const [activeTab, setActiveTab] = useState('batches'); // 'batches' | 'payouts'
   const [shiftFilter, setShiftFilter] = useState('All');
-  const [dateFilter, setDateFilter] = useState('All'); // 'All' | 'Today' | 'Custom'
-  const [customDate, setCustomDate] = useState('');
+  const [dateFilter, setDateFilter] = useState(() => {
+    if (initialDate) {
+      return initialDate === todayStr ? 'Today' : 'Custom';
+    }
+    return 'All';
+  });
+  const [customDate, setCustomDate] = useState(() => (initialDate && initialDate !== todayStr ? initialDate : ''));
 
-  const todayStr = getTodayDateStr();
+  useEffect(() => {
+    if (initialDate) {
+      if (initialDate === todayStr) {
+        setDateFilter('Today');
+        setCustomDate('');
+      } else {
+        setDateFilter('Custom');
+        setCustomDate(initialDate);
+      }
+    }
+  }, [initialDate, todayStr]);
 
   // Ensure we use the live enriched supplier from context so balance updates instantly
   const supplier =

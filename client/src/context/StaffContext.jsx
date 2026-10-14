@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import adminService from '@/services/adminService';
 import api from '@/services/api';
+import { normalizeDateStr, sortByDateDesc, ensureValidDate, getPktTodayString } from '@/utils/dateUtils';
 
 const StaffContext = createContext();
 
@@ -80,13 +81,17 @@ export function StaffProvider({ children }) {
         : [];
 
       if (Array.isArray(list)) {
-        const normalized = list.map((s) => ({
-          ...s,
-          id: s._id || s.id,
-          paymentDate: s.paymentDate ? String(s.paymentDate).slice(0, 10) : s.date,
-          date: s.date || (s.paymentDate ? String(s.paymentDate).slice(0, 10) : ''),
-        }));
-        setSalaryPayments(normalized);
+        const normalized = list.map((s) => {
+          const rawDate = s.paymentDate || s.date || s.createdAt;
+          const cleanDate = normalizeDateStr(rawDate) || getPktTodayString();
+          return {
+            ...s,
+            id: s._id || s.id,
+            paymentDate: cleanDate,
+            date: cleanDate,
+          };
+        });
+        setSalaryPayments(sortByDateDesc(normalized, 'date'));
       }
     } catch (err) {
       console.warn('Failed to load salaries from database API:', err.message);
@@ -588,7 +593,7 @@ export function StaffProvider({ children }) {
       console.warn('Backend salary payment API sync notice in StaffContext:', err.message);
     }
 
-    setSalaryPayments((prev) => [payment, ...prev.filter((p) => String(p.id) !== String(payment.id))]);
+    setSalaryPayments((prev) => sortByDateDesc([payment, ...prev.filter((p) => String(p.id) !== String(payment.id))], 'date'));
 
     // Update staff state for current month payment
     setStaffList((prev) =>
