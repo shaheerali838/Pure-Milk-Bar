@@ -20,6 +20,7 @@ export default function TopSummaryCards({
   timeRange,
   customStartDate = '',
   customEndDate = '',
+  onSelectDetailView = null,
 }) {
   const activeRange = dateFilter || timeRange || 'today';
   const activeStart = startDate || customStartDate || '';
@@ -275,7 +276,13 @@ export default function TopSummaryCards({
       icon: Banknote,
       color: dateMetrics.totalNetProfit >= 0 ? '#059669' : '#dc2626',
       tag: 'Main P&L',
-      onClick: () => setShowCombinedPLModal(true),
+      onClick: () => {
+        if (onSelectDetailView) {
+          onSelectDetailView('total-net-profit');
+        } else {
+          setShowCombinedPLModal(true);
+        }
+      },
     },
     {
       id: 'farm-net-profit',
@@ -315,7 +322,13 @@ export default function TopSummaryCards({
       icon: Droplets,
       color: '#155dfc',
       tag: periodLabel,
-      onClick: () => setShowCombinedSourcedModal(true),
+      onClick: () => {
+        if (onSelectDetailView) {
+          onSelectDetailView('total-milk-sourced');
+        } else {
+          setShowCombinedSourcedModal(true);
+        }
+      },
     },
     {
       id: 'todays-milk-sold',

@@ -20,11 +20,14 @@ import TotalFinancialSummary from '../components/mainDashboard/TotalFinancialSum
 import MilkProductionAndFlow from '../components/mainDashboard/MilkProductionAndFlow';
 import SalesAndReceivablesSection from '../components/mainDashboard/SalesAndReceivablesSection';
 import DashboardFooterSummary from '../components/mainDashboard/DashboardFooterSummary';
+import TotalBusinessPLDetail from '../components/mainDashboard/TotalBusinessPLDetail';
+import TotalMilkSourcedDetail from '../components/mainDashboard/TotalMilkSourcedDetail';
 
 export default function MainDashboard() {
   const [dateFilter, setDateFilter] = useState('today');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [activeDetailView, setActiveDetailView] = useState(null); // 'total-net-profit' | 'total-milk-sourced' | null
 
   const todayFormatted = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -32,6 +35,32 @@ export default function MainDashboard() {
     month: 'short',
     day: 'numeric',
   });
+
+  if (activeDetailView === 'total-net-profit') {
+    return (
+      <div className="relative min-h-screen bg-slate-50/50 pb-10 space-y-4 pt-2">
+        <TotalBusinessPLDetail
+          onBack={() => setActiveDetailView(null)}
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
+      </div>
+    );
+  }
+
+  if (activeDetailView === 'total-milk-sourced') {
+    return (
+      <div className="relative min-h-screen bg-slate-50/50 pb-10 space-y-4 pt-2">
+        <TotalMilkSourcedDetail
+          onBack={() => setActiveDetailView(null)}
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-slate-50/50 pb-10 space-y-4 animate-in fade-in duration-200">
@@ -103,6 +132,7 @@ export default function MainDashboard() {
           dateFilter={dateFilter}
           startDate={startDate}
           endDate={endDate}
+          onSelectDetailView={setActiveDetailView}
         />
       </section>
 
