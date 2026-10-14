@@ -176,15 +176,12 @@ export function DahiProvider({ children }) {
       return acc;
     }, 0);
 
-    if (sum === 0) {
-      const posSup = Number(posCtx?.inventoryMetrics?.totalSupplierIntake || posCtx?.inventoryMetrics?.rawSupplierMilkStock || posCtx?.inventoryMetrics?.supplierMilkStock || 0);
-      if (posSup > 0) {
-        sum = posSup;
-      }
+    if (sum === 0 && Number(posCtx?.inventoryMetrics?.todaySupplierIntake) > 0) {
+      sum = Number(posCtx.inventoryMetrics.todaySupplierIntake);
     }
 
     return Number(sum.toFixed(1));
-  }, [intakeLogs, targetActiveDate, posCtx?.inventoryMetrics]);
+  }, [intakeLogs, targetActiveDate, posCtx?.inventoryMetrics?.todaySupplierIntake]);
 
   // =========================================================================
   // 2. CONVERSION TO DAHI (Deducted live from Farm & Supplier Milk)
@@ -241,7 +238,7 @@ export function DahiProvider({ children }) {
 
     const remainingFarm = !isNaN(posFarmStock) && posFarmStock >= 0 ? posFarmStock : calculatedFarm;
     const remainingSupplier = !isNaN(posSupStock) && posSupStock >= 0 ? posSupStock : calculatedSup;
-    const remainingTotal = Number(posCtx?.inventoryMetrics?.rawTotalMilkStock) > 0
+    const remainingTotal = posCtx?.inventoryMetrics?.rawTotalMilkStock !== undefined
       ? Number(posCtx.inventoryMetrics.rawTotalMilkStock)
       : Number((remainingFarm + remainingSupplier).toFixed(1));
 
@@ -364,17 +361,20 @@ export function DahiProvider({ children }) {
   // Live stock synchronization with POS metrics
   const calculatedFarmDahi = Math.max(0, Number((farmDahiTransferred - (posCtx?.inventoryMetrics?.todayFarmDahiSold || 0)).toFixed(2)));
   const posFarmDahi = Number(posCtx?.inventoryMetrics?.rawFarmDahiStock);
-  const liveFarmDahiStock = !isNaN(posFarmDahi) && posFarmDahi > 0
+  const liveFarmDahiStock = !isNaN(posFarmDahi) && posFarmDahi >= 0
     ? posFarmDahi
-    : (calculatedFarmDahi > 0 ? calculatedFarmDahi : (posFarmDahi >= 0 ? posFarmDahi : 0));
+    : (calculatedFarmDahi > 0 ? calculatedFarmDahi : 0);
 
   const calculatedSupplierDahi = Math.max(0, Number((supplierDahiTransferred - (posCtx?.inventoryMetrics?.todaySupplierDahiSold || 0)).toFixed(2)));
   const posSupplierDahi = Number(posCtx?.inventoryMetrics?.rawSupplierDahiStock);
-  const liveSupplierDahiStock = !isNaN(posSupplierDahi) && posSupplierDahi > 0
+  const liveSupplierDahiStock = !isNaN(posSupplierDahi) && posSupplierDahi >= 0
     ? posSupplierDahi
-    : (calculatedSupplierDahi > 0 ? calculatedSupplierDahi : (posSupplierDahi >= 0 ? posSupplierDahi : 0));
+    : (calculatedSupplierDahi > 0 ? calculatedSupplierDahi : 0);
 
-  const liveTotalDahiStock = Number((liveFarmDahiStock + liveSupplierDahiStock).toFixed(2));
+  const posTotalDahi = Number(posCtx?.inventoryMetrics?.rawTotalDahiStock);
+  const liveTotalDahiStock = !isNaN(posTotalDahi) && posTotalDahi >= 0
+    ? posTotalDahi
+    : Number((liveFarmDahiStock + liveSupplierDahiStock).toFixed(2));
   const liveDahiPOSStock = liveTotalDahiStock;
 
   // Unified metrics for top KPI cards & widgets

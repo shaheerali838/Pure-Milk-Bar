@@ -1075,8 +1075,23 @@ export function usePOSMetrics({
   let remainingSupplierCowMilk = Math.max(0, Number((Math.max(0, preDahiSupCow) - activeSupCowDahi).toFixed(1)));
   let remainingSupplierBuffaloMilk = Math.max(0, Number((Math.max(0, preDahiSupBuff) - activeSupBuffDahi).toFixed(1)));
 
-  // If live logs and opening stock are empty, fall back to product catalog stock (matches Dahi fallback lines 1081-1091)
-  if (remainingFarmCowMilk === 0 && remainingFarmBuffaloMilk === 0 && remainingSupplierCowMilk === 0 && remainingSupplierBuffaloMilk === 0 && milkProducts.length > 0) {
+  // Only fall back to product catalog stock if there is NO live activity (milking, procurement, batches, sales, or opening stock)
+  const hasMilkActivity = (
+    hasOpeningStock ||
+    totalFarmMilk > 0 ||
+    allTimeFarmMilk > 0 ||
+    todaySupplierIntake > 0 ||
+    allTimeSupplierIntake > 0 ||
+    totalMilkSold > 0 ||
+    allTimeFarmMilkSold > 0 ||
+    allTimeSupplierMilkSold > 0 ||
+    allTimeFarmMilkConvertedToDahi > 0 ||
+    allTimeSupplierMilkConvertedToDahi > 0 ||
+    farmMilkConvertedToDahi > 0 ||
+    supplierMilkConvertedToDahi > 0
+  );
+
+  if (!hasMilkActivity && remainingFarmCowMilk === 0 && remainingFarmBuffaloMilk === 0 && remainingSupplierCowMilk === 0 && remainingSupplierBuffaloMilk === 0 && milkProducts.length > 0) {
     milkProducts.forEach((p) => {
       const pStock = Number(p.currentStock ?? p.stock) || 0;
       if (pStock <= 0) return;
@@ -1114,7 +1129,17 @@ export function usePOSMetrics({
     rawSupplierDahiStock = Math.max(0, Number((allTimeSupplierDahiTransferredToPOS - allTimeSupplierDahiSold).toFixed(2)));
   }
 
-  if (rawFarmDahiStock === 0 && rawSupplierDahiStock === 0 && dahiProducts.length > 0) {
+  const hasDahiActivity = (
+    hasOpeningStock ||
+    dedupedBatches.length > 0 ||
+    allTimeDahiTransferredToPOS > 0 ||
+    totalDahiTransferredToPOS > 0 ||
+    allTimeFarmDahiSold > 0 ||
+    allTimeSupplierDahiSold > 0 ||
+    totalDahiSold > 0
+  );
+
+  if (!hasDahiActivity && rawFarmDahiStock === 0 && rawSupplierDahiStock === 0 && dahiProducts.length > 0) {
     dahiProducts.forEach((p) => {
       const pStock = Number(p.stock ?? p.currentStock) || 0;
       const pSrc = (p.source || '').toLowerCase();

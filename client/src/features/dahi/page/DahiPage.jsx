@@ -130,9 +130,9 @@ export default function DahiPage() {
 
       // 3. Ensure stock & POS sales fields are preserved
       availableStock: metrics?.availableStock ?? metrics?.totalDahiStock ?? 0,
-      totalDahiStock: metrics?.totalDahiStock ?? String(totalOutput || '0.0'),
-      farmDahiStock: metrics?.farmDahiStock ?? String(farmConverted || '0.0'),
-      supplierDahiStock: metrics?.supplierDahiStock ?? String(supplierConverted || '0.0'),
+      totalDahiStock: metrics?.totalDahiStock !== undefined ? metrics.totalDahiStock : '0.00',
+      farmDahiStock: metrics?.farmDahiStock !== undefined ? metrics.farmDahiStock : '0.00',
+      supplierDahiStock: metrics?.supplierDahiStock !== undefined ? metrics.supplierDahiStock : '0.00',
       dahiSoldInPOS: metrics?.dahiSoldInPOS ?? '0.0',
       dahiSalesRevenue: metrics?.dahiSalesRevenue ?? '0',
       dahiSalesOrdersCount: metrics?.dahiSalesOrdersCount ?? 0,

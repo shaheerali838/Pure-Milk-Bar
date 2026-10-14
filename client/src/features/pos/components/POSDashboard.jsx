@@ -140,8 +140,10 @@ export default function POSDashboard() {
     if (cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt') || cat.includes('curd') || name.includes('curd')) {
       const farmD = Number(inventoryMetrics?.rawFarmDahiStock ?? inventoryMetrics?.farmDahiStock) || 0;
       const supD = Number(inventoryMetrics?.rawSupplierDahiStock ?? inventoryMetrics?.supplierDahiStock) || 0;
-      const batchSpecific = Number(inventoryMetrics?.productBatchStockMap?.[prod.name] || 0);
-      return Number(Math.max(0, farmD + supD + batchSpecific).toFixed(2));
+      const totalD = inventoryMetrics?.rawTotalDahiStock !== undefined
+        ? Number(inventoryMetrics.rawTotalDahiStock)
+        : (farmD + supD);
+      return Number(Math.max(0, totalD).toFixed(2));
     }
 
     if (cat.includes('milk') || name.includes('milk')) {

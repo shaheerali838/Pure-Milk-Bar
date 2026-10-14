@@ -189,9 +189,12 @@ export const resolveAvailableStock = (matchedProd, orderItem = {}, liveMetrics =
   if (isDahiVariant(name, cat)) {
     const farmDahi = Number(inv.rawFarmDahiStock ?? inv.farmDahiStock ?? localSaved?.farmDahiStock) || 0;
     const supDahi = Number(inv.rawSupplierDahiStock ?? inv.supplierDahiStock ?? localSaved?.supplierDahiStock) || 0;
-    const totalDahi = Number(inv.rawTotalDahiStock ?? inv.totalDahiStock ?? inv.totalDahi ?? localSaved?.dahiStock ?? (farmDahi + supDahi)) || 0;
-    const batchStock = Number(inv.productBatchStockMap?.[matchedProd?.name || orderItem?.name] || 0);
-    return Number(Math.max(0, totalDahi + batchStock).toFixed(2));
+    const totalDahi = inv.rawTotalDahiStock !== undefined
+      ? Number(inv.rawTotalDahiStock)
+      : (inv.totalDahiStock !== undefined
+          ? Number(inv.totalDahiStock)
+          : Number(localSaved?.dahiStock ?? (farmDahi + supDahi)));
+    return Number(Math.max(0, totalDahi).toFixed(2));
   }
 
   if (isMilkVariant(name, cat)) {

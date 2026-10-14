@@ -243,6 +243,10 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     const rawVal = parseFloat(formData.milkUsed) || 0;
+    if (currentMax <= 0) {
+      toast.error(`Out of Stock! No ${formData.milkType} available from ${formData.source}.`);
+      return;
+    }
     if (rawVal <= 0) {
       toast.error('Please enter a valid milk quantity greater than 0.');
       return;
@@ -395,6 +399,15 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
             </span>
           </div>
         </div>
+
+        {currentMax <= 0 && (
+          <div className="mb-3.5 p-3 rounded-xl bg-amber-50 border border-amber-200/90 text-amber-900 text-xs font-semibold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>Out of Stock:</strong> No {formData.source === 'Both (Mixed)' ? formData.milkType : `${formData.source} (${formData.milkType})`} available (0 kg in chiller). Sourcing or milking intake is required before recording a Dahi batch.
+            </span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
           {/* Section 1: Batch Details */}
@@ -682,7 +695,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
             </button>
             <button
               type="submit"
-              disabled={hasValidationError || currentEntered <= 0}
+              disabled={hasValidationError || currentEntered <= 0 || currentMax <= 0}
               className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-white text-xs font-bold shadow-xs transition cursor-pointer bg-[#00a86b] hover:bg-[#007a52] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Check className="w-3.5 h-3.5" />
