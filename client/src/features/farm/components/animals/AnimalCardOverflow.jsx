@@ -371,10 +371,10 @@ export default function AnimalCardOverflow({ selectedDate }) {
               ) : (
                 filteredAnimals.map((a) => (
                   <TableRow
-                    key={a.id}
-                    onClick={() => setSelectedAnimalId(a.id)}
+                    key={a.id || a._id || a.tag}
+                    onClick={() => setSelectedAnimalId(a.id || a._id || a.tag)}
                     className={`border-b border-slate-100 last:border-b-0 hover:bg-emerald-50/30 transition-colors cursor-pointer group ${
-                      selectedAnimalIds.includes(a.id) ? "bg-emerald-50/50" : ""
+                      selectedAnimalIds.includes(a.id || a._id) ? "bg-emerald-50/50" : ""
                     }`}
                   >
                     <TableCell className="w-10 px-3.5 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
@@ -493,7 +493,7 @@ export default function AnimalCardOverflow({ selectedDate }) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setSelectedAnimalId(a.id)}
+                          onClick={() => setSelectedAnimalId(a.id || a._id || a.tag)}
                           className="p-1.5 h-8 w-8 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all cursor-pointer"
                           title="View Animal Details"
                         >

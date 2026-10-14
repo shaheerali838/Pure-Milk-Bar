@@ -238,11 +238,20 @@ export default function FarmDashboardContent() {
 
   // Drilldown View Handlers
   if (selectedAnimalId) {
-    const selectedAnimal = animals.find((a) => a.id === selectedAnimalId || a._id === selectedAnimalId);
+    const selectedAnimal = animals.find(
+      (a) =>
+        String(a.id || a._id) === String(selectedAnimalId) ||
+        String(a._id || a.id) === String(selectedAnimalId) ||
+        String(a.tag || a.tagNumber || '').toLowerCase() === String(selectedAnimalId).toLowerCase()
+    );
+    const resolvedAnimalId = selectedAnimal ? (selectedAnimal._id || selectedAnimal.id) : selectedAnimalId;
+
     return (
       <AnimalDetail
         animal={selectedAnimal}
+        animalId={resolvedAnimalId}
         onBack={() => setSelectedAnimalId(null)}
+        onClose={() => setSelectedAnimalId(null)}
         onEdit={(animal) => {
           setSelectedAnimalId(null);
           setEditAnimal(animal);
