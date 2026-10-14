@@ -140,33 +140,27 @@ export default function POSDashboard() {
     if (cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt') || cat.includes('curd') || name.includes('curd')) {
       const farmD = Number(inventoryMetrics?.rawFarmDahiStock ?? inventoryMetrics?.farmDahiStock) || 0;
       const supD = Number(inventoryMetrics?.rawSupplierDahiStock ?? inventoryMetrics?.supplierDahiStock) || 0;
-      const liveDahi = Number((farmD + supD).toFixed(2));
-      return liveDahi > 0 ? liveDahi : catalogBaseStock;
+      const batchSpecific = Number(inventoryMetrics?.productBatchStockMap?.[prod.name] || 0);
+      return Number(Math.max(0, farmD + supD + batchSpecific).toFixed(2));
     }
 
     if (cat.includes('milk') || name.includes('milk')) {
       if (isCow) {
         const farmCow = Number(inventoryMetrics?.farmCowMilkStock ?? inventoryMetrics?.rawFarmCowMilkStock) || 0;
         const supCow = Number(inventoryMetrics?.supplierCowMilkStock ?? inventoryMetrics?.rawSupplierCowMilkStock) || 0;
-        const liveCow = Number((farmCow + supCow).toFixed(1));
-        return liveCow > 0 ? liveCow : catalogBaseStock;
+        return Number(Math.max(0, farmCow + supCow).toFixed(1));
       }
       if (isBuff) {
         const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock ?? inventoryMetrics?.rawFarmBuffaloMilkStock) || 0;
         const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock ?? inventoryMetrics?.rawSupplierBuffaloMilkStock) || 0;
-        const liveBuff = Number((farmBuff + supBuff).toFixed(1));
-        if (liveBuff > 0) return liveBuff;
-        const liveTot = Number(inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock) || 0;
-        if (liveTot > 0) return liveTot;
-        return catalogBaseStock;
+        return Number(Math.max(0, farmBuff + supBuff).toFixed(1));
       }
-      const liveTot = Number(inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock);
-      if (!isNaN(liveTot) && liveTot > 0) return liveTot;
-      return catalogBaseStock;
+      const liveTot = Number(inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock) || 0;
+      return Number(Math.max(0, liveTot).toFixed(1));
     }
 
     const batchSpecificStock = Number(inventoryMetrics?.productBatchStockMap?.[prod.name] || 0);
-    return Math.max(catalogBaseStock, catalogBaseStock + batchSpecificStock);
+    return Math.max(0, catalogBaseStock + batchSpecificStock);
   };
 
   // Temporary on-card warning state for zero stock / depleted stock

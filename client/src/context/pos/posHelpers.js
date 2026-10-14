@@ -187,40 +187,32 @@ export const resolveAvailableStock = (matchedProd, orderItem = {}, liveMetrics =
   }
 
   if (isDahiVariant(name, cat)) {
-    const farmDahi = Number(inv.rawFarmDahiStock) || Number(inv.farmDahiStock) || Number(localSaved?.farmDahiStock) || 0;
-    const supDahi = Number(inv.rawSupplierDahiStock) || Number(inv.supplierDahiStock) || Number(localSaved?.supplierDahiStock) || 0;
-    const totalDahi = Number(inv.rawTotalDahiStock) || Number(inv.totalDahiStock) || Number(inv.totalDahi) || Number(localSaved?.dahiStock) || (farmDahi + supDahi);
+    const farmDahi = Number(inv.rawFarmDahiStock ?? inv.farmDahiStock ?? localSaved?.farmDahiStock) || 0;
+    const supDahi = Number(inv.rawSupplierDahiStock ?? inv.supplierDahiStock ?? localSaved?.supplierDahiStock) || 0;
+    const totalDahi = Number(inv.rawTotalDahiStock ?? inv.totalDahiStock ?? inv.totalDahi ?? localSaved?.dahiStock ?? (farmDahi + supDahi)) || 0;
     const batchStock = Number(inv.productBatchStockMap?.[matchedProd?.name || orderItem?.name] || 0);
-    if (totalDahi > 0) return Number(totalDahi.toFixed(2));
-    return Math.max(catalogStock, batchStock);
+    return Number(Math.max(0, totalDahi + batchStock).toFixed(2));
   }
 
   if (isMilkVariant(name, cat)) {
     if (isBuffaloVariant(name, cat)) {
-      const farmBuff = Number(inv.rawFarmBuffaloMilkStock) || Number(inv.farmBuffaloMilkStock) || Number(localSaved?.farmBuffaloMilk) || 0;
-      const supBuff = Number(inv.rawSupplierBuffaloMilkStock) || Number(inv.supplierBuffaloMilkStock) || Number(localSaved?.supplierBuffaloMilk) || 0;
+      const farmBuff = Number(inv.rawFarmBuffaloMilkStock ?? inv.farmBuffaloMilkStock ?? localSaved?.farmBuffaloMilk) || 0;
+      const supBuff = Number(inv.rawSupplierBuffaloMilkStock ?? inv.supplierBuffaloMilkStock ?? localSaved?.supplierBuffaloMilk) || 0;
       const totalBuff = farmBuff + supBuff;
-      if (totalBuff > 0) return Number(totalBuff.toFixed(1));
-      // Fallback: If buffalo not segregated, use overall live milk stock
-      const generalMilk = Number(inv.rawTotalMilkStock) || Number(inv.totalMilkStock) || Number(inv.totalMilk) || Number(inv.rawAvailableFarmStock) || Number(inv.availableFarmStock) || Number(localSaved?.totalMilkStock) || 0;
-      if (generalMilk > 0) return Number(generalMilk.toFixed(1));
-      return catalogStock;
+      return Number(Math.max(0, totalBuff).toFixed(1));
     }
     if (isCowVariant(name, cat)) {
-      const farmCow = Number(inv.rawFarmCowMilkStock) || Number(inv.farmCowMilkStock) || Number(localSaved?.farmCowMilk) || 0;
-      const supCow = Number(inv.rawSupplierCowMilkStock) || Number(inv.supplierCowMilkStock) || Number(localSaved?.supplierCowMilk) || 0;
+      const farmCow = Number(inv.rawFarmCowMilkStock ?? inv.farmCowMilkStock ?? localSaved?.farmCowMilk) || 0;
+      const supCow = Number(inv.rawSupplierCowMilkStock ?? inv.supplierCowMilkStock ?? localSaved?.supplierCowMilk) || 0;
       const totalCow = farmCow + supCow;
-      if (totalCow > 0) return Number(totalCow.toFixed(1));
-      const generalMilk = Number(inv.rawTotalMilkStock) || Number(inv.totalMilkStock) || Number(inv.totalMilk) || Number(inv.rawAvailableFarmStock) || Number(inv.availableFarmStock) || Number(localSaved?.totalMilkStock) || 0;
-      if (generalMilk > 0) return Number(generalMilk.toFixed(1));
-      return catalogStock;
+      // Cow milk is strictly segregated! Never borrow buffalo milk or total milk
+      return Number(Math.max(0, totalCow).toFixed(1));
     }
     // General milk
-    const farmMilk = Number(inv.rawFarmMilkStock) || Number(inv.farmMilkStock) || Number(inv.rawAvailableFarmStock) || Number(inv.availableFarmStock) || Number(localSaved?.farmMilkStock) || 0;
-    const supMilk = Number(inv.rawSupplierMilkStock) || Number(inv.supplierMilkStock) || Number(localSaved?.supplierMilkStock) || 0;
-    const totalMilk = Number(inv.rawTotalMilkStock) || Number(inv.totalMilkStock) || Number(inv.totalMilk) || Number(localSaved?.totalMilkStock) || (farmMilk + supMilk);
-    if (totalMilk > 0) return Number(totalMilk.toFixed(1));
-    return catalogStock;
+    const farmMilk = Number(inv.rawFarmMilkStock ?? inv.farmMilkStock ?? inv.rawAvailableFarmStock ?? inv.availableFarmStock ?? localSaved?.farmMilkStock) || 0;
+    const supMilk = Number(inv.rawSupplierMilkStock ?? inv.supplierMilkStock ?? localSaved?.supplierMilkStock) || 0;
+    const totalMilk = Number(inv.rawTotalMilkStock ?? inv.totalMilkStock ?? inv.totalMilk ?? localSaved?.totalMilkStock ?? (farmMilk + supMilk)) || 0;
+    return Number(Math.max(0, totalMilk).toFixed(1));
   }
 
   const batchStock = Number(inv.productBatchStockMap?.[matchedProd?.name || orderItem?.name] || 0);

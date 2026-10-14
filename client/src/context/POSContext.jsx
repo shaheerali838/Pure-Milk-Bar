@@ -126,6 +126,7 @@ export function POSProvider({ children }) {
     allCustomers,
     dynamicRiders,
     activeDate: effectiveActiveDate,
+    getLiveStock: () => metricsRef.current?.inventoryMetrics || {},
   });
 
   // 4. Modular Orders & Invoices Lifecycle Hook
