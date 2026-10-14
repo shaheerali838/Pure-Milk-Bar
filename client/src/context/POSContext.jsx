@@ -13,14 +13,29 @@ import { useGlobalDate } from './GlobalDateContext';
 import { subscribeToSync } from '@/utils/syncBroadcaster';
 
 // Modular Sub-Hooks & Utilities
-import { isTodayDate, isLegacyDummySale, deliveryRidersList, defaultPOSContextValue } from './pos/posHelpers';
+import {
+  isTodayDate,
+  isLegacyDummySale,
+  deliveryRidersList,
+  defaultPOSContextValue,
+  getProductAvailableStock,
+  getProductUnitLabel,
+} from './pos/posHelpers';
 import { usePOSProducts } from './pos/usePOSProducts';
 import { usePOSCart } from './pos/usePOSCart';
 import { usePOSDirectOperations } from './pos/usePOSDirectOperations';
 import { usePOSOrders } from './pos/usePOSOrders';
 import { usePOSMetrics } from './pos/usePOSMetrics';
 
-export { isTodayDate, isLegacyDummySale, deliveryRidersList, defaultPOSContextValue };
+export {
+  isTodayDate,
+  isLegacyDummySale,
+  deliveryRidersList,
+  defaultPOSContextValue,
+  getProductAvailableStock,
+  getProductUnitLabel,
+};
+
 
 const POSContext = createContext(defaultPOSContextValue);
 
@@ -368,6 +383,8 @@ export function POSProvider({ children }) {
 
         // Inventory & Sales Metrics
         inventoryMetrics: metricsState.inventoryMetrics,
+        getProductAvailableStock: (prod) => getProductAvailableStock(prod, metricsState.inventoryMetrics, productsState.products),
+        getProductUnitLabel,
         farmSalesMetrics: metricsState.farmSalesMetrics,
         supplierSalesMetrics: metricsState.supplierSalesMetrics,
         businessFinancialMetrics: metricsState.businessFinancialMetrics,

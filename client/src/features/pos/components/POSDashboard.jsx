@@ -160,6 +160,9 @@ export default function POSDashboard() {
 
   // Dynamically resolve real-time stock from live farm, supplier, and kitchen conversion metrics
   const getProductDisplayStock = (prod) => {
+    if (context.getProductAvailableStock) {
+      return context.getProductAvailableStock(prod);
+    }
     const name = (prod.name || '').toLowerCase();
     const cat = (prod.category || '').toLowerCase();
     const isCow = name.includes('cow');
@@ -175,13 +178,11 @@ export default function POSDashboard() {
 
     if (cat.includes('milk') || name.includes('milk')) {
       if (isCow) {
-        // Combined Cow Milk Card: Farm Cow + Supplier Cow
         const farmCow = Number(inventoryMetrics?.farmCowMilkStock ?? inventoryMetrics?.rawFarmCowMilkStock) || 0;
         const supCow = Number(inventoryMetrics?.supplierCowMilkStock ?? inventoryMetrics?.rawSupplierCowMilkStock) || 0;
         return Math.max(0, Number((farmCow + supCow).toFixed(1)));
       }
       if (isBuff) {
-        // Combined Buffalo Milk Card: Farm Buffalo + Supplier Buffalo
         const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock ?? inventoryMetrics?.rawFarmBuffaloMilkStock) || 0;
         const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock ?? inventoryMetrics?.rawSupplierBuffaloMilkStock) || 0;
         return Math.max(0, Number((farmBuff + supBuff).toFixed(1)));
@@ -199,7 +200,7 @@ export default function POSDashboard() {
   const [stockWarningId, setStockWarningId] = useState(null);
   const [stockWarningMsg, setStockWarningMsg] = useState('');
 
-  // Handle product click
+  // Handle product click with strict stock validation
   const handleProductCardClick = (product) => {
     if (isDayClosed) {
       toast.error('🔒 Day is Closed. Open New Day to continue operations.');
@@ -207,16 +208,32 @@ export default function POSDashboard() {
     }
     if (isSaleRefreshing) return;
     const displayStock = getProductDisplayStock(product);
-    const unitLabel = product.unit?.replace('per ', '') || 'L';
+    const unitLabel = context.getProductUnitLabel
+      ? context.getProductUnitLabel(product, true)
+      : (product.unit?.replace('per ', '') || 'L');
 
     if (displayStock <= 0) {
-      toast.info(`Selling ${product.name} (Recorded stock: 0 ${unitLabel})`, {
-        description: 'Inventory balance will adjust upon sales recording.',
-        duration: 2000,
+      toast.error(`🚫 Out of Stock: Yeh item abhi dastiyab nahi hai.`, {
+        description: `"${product.name}" ka recorded stock 0 ${unitLabel} hai. Please purchase intake or add stock.`,
+        duration: 3500,
       });
+      return;
+    }
+
+    const prodId = product.id || product._id || product.sku;
+    const cartItem = cart.find((i) => i.id === prodId || (product.id && i.id === product.id));
+    const inCartQty = cartItem ? Number(cartItem.quantity) || 0 : 0;
+
+    if (inCartQty + 1 > displayStock) {
+      toast.error(`🚫 Insufficient Stock! "${product.name}"`, {
+        description: `Sirf ${displayStock} ${unitLabel} stock dastiyab hai (Already in cart: ${inCartQty} ${unitLabel}).`,
+        duration: 3500,
+      });
+      return;
     }
 
     handleAddToCart(product);
+    toast.success(`+1 ${unitLabel} ${product.name} added to cart`);
   };
 
   // Handler for Detail (Eye) - Opens the detail page of the product
@@ -407,16 +424,18 @@ export default function POSDashboard() {
                     const displayStock = getProductDisplayStock(product);
                     const unitLabel = product.unit?.replace('per ', '') || (isMilk ? 'L' : 'kg');
 
+                    const isOutOfStock = displayStock <= 0;
+
                     return (
                       <div
                         key={prodId}
                         onClick={() => handleProductCardClick(product)}
-                        className={`relative group bg-white border rounded-2xl p-3 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-md flex flex-col justify-between overflow-hidden ${
-                          inCartQty > 0
-                            ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/10'
-                            : displayStock <= 0
-                            ? 'border-rose-200/90 hover:border-rose-400 bg-rose-50/10'
-                            : 'border-slate-200/90 hover:border-indigo-200'
+                        className={`relative group rounded-2xl p-3 transition-all duration-200 flex flex-col justify-between overflow-hidden border ${
+                          isOutOfStock
+                            ? 'opacity-60 bg-slate-100/90 grayscale-[35%] border-slate-300/80 cursor-not-allowed select-none shadow-none'
+                            : inCartQty > 0
+                            ? 'bg-white border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/10 cursor-pointer shadow-2xs hover:shadow-md'
+                            : 'bg-white border-slate-200/90 hover:border-indigo-200 cursor-pointer shadow-2xs hover:shadow-md'
                         }`}
                       >
                         {/* On-Card Stock Warning Message Overlay (NO browser alert) */}
@@ -442,17 +461,24 @@ export default function POSDashboard() {
                         )}
 
                         <div className="flex items-center justify-between gap-2 mb-2">
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                              isMilk
-                                ? 'bg-blue-50 text-blue-700 border border-blue-200/60'
-                                : isDahi
-                                ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
-                                : 'bg-purple-50 text-purple-700 border border-purple-200/60'
-                            }`}
-                          >
-                            {product.category || 'Dairy'}
-                          </span>
+                          {isOutOfStock ? (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-rose-100 text-rose-700 border border-rose-300 flex items-center gap-1 shadow-2xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+                              🚫 Out of Stock
+                            </span>
+                          ) : (
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                isMilk
+                                  ? 'bg-blue-50 text-blue-700 border border-blue-200/60'
+                                  : isDahi
+                                  ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                                  : 'bg-purple-50 text-purple-700 border border-purple-200/60'
+                              }`}
+                            >
+                              {product.category || 'Dairy'}
+                            </span>
+                          )}
 
                           <div className="flex items-center gap-1 bg-slate-50 border border-slate-200/80 rounded-lg p-0.5 shadow-2xs">
                             <button
@@ -531,18 +557,24 @@ export default function POSDashboard() {
                             </span>
                           </div>
 
-                          {displayStock <= 0 ? (
-                            <button
-                              type="button"
+                          {isOutOfStock ? (
+                            <div
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleProductCardClick(product);
                               }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold transition shadow-2xs cursor-pointer"
+                              className="cursor-not-allowed inline-block"
+                              title="Out of stock - Click for status"
                             >
-                              <AlertCircle className="w-3 h-3 text-rose-500" />
-                              Out of Stock
-                            </button>
+                              <button
+                                type="button"
+                                disabled
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-200 text-slate-500 border border-slate-300 text-xs font-bold transition shadow-none cursor-not-allowed opacity-80 pointer-events-none"
+                              >
+                                <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
+                                <span>Out of Stock</span>
+                              </button>
+                            </div>
                           ) : inCartQty > 0 ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-600 text-white text-[11px] font-bold shadow-2xs">
                               <Check className="w-3 h-3 stroke-3" />

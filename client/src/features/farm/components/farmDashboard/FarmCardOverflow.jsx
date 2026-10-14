@@ -13,6 +13,7 @@ export default function FarmCardOverflow({
   avgAnimalYield = 0, 
   dailyNetProfit = 0, 
   totalFarmExpense = 0,
+  todayFarmRevenue = 0,
   periodFarmExpense,
   expenseCount = 0,
   timeRange = 'today',
@@ -104,7 +105,7 @@ export default function FarmCardOverflow({
       sub: dailyNetProfit < 0
         ? `${resolvedPeriodLabel} expenses exceed sales by Rs. ${Math.abs(dailyNetProfit).toLocaleString()}`
         : dailyNetProfit > 0
-        ? `From Rs. ${todayFarmRevenue.toLocaleString()} sales`
+        ? `From Rs. ${Number(todayFarmRevenue || posCtx?.farmSalesMetrics?.revenue || 0).toLocaleString()} sales`
         : `${resolvedPeriodLabel}: Breakeven / No sales`,
       icon: dailyNetProfit < 0 ? TrendingDown : dailyNetProfit > 0 ? TrendingUp : Banknote,
       color: dailyNetProfit < 0 ? "#e11d48" : dailyNetProfit > 0 ? "#10b981" : "#64748b",

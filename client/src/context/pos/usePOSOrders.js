@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import posService from '@/services/posService.js';
 import { broadcastSync } from '@/utils/syncBroadcaster';
-import { isLegacyDummySale, isObjectId } from './posHelpers';
+import { isLegacyDummySale, isObjectId, getProductAvailableStock, getProductUnitLabel } from './posHelpers';
 import { sortByDateDesc, ensureValidDate, normalizeDateStr, getPktTodayString, formatStandardDate, getActiveBusinessDate, getLocalDate } from '@/utils/dateUtils';
 
 export function usePOSOrders({
@@ -163,11 +163,17 @@ export function usePOSOrders({
       }
     }
 
-    // Strict inventory stock check: Prevent order if stock is 0 or insufficient
+    // Strict double-check inventory stock validation: Prevent order if stock is 0 or insufficient
+    const liveStockForValidation = typeof getLiveStock === 'function' ? getLiveStock() : {};
     const allProds = productsState?.products || [];
+
     for (const cartItem of cart) {
       const reqQty = Number(cartItem.quantity) || 0;
-      if (reqQty <= 0) continue;
+      if (reqQty <= 0) {
+        toast.error(`Please enter a valid quantity for "${cartItem.name}"`);
+        throw new Error(`Invalid quantity for "${cartItem.name}"`);
+      }
+
       const prod = allProds.find(
         (p) =>
           p.id === cartItem.id ||
@@ -180,13 +186,21 @@ export function usePOSOrders({
             (cartItem.name.toLowerCase().includes('buffalo') && p.name.toLowerCase().includes('buffalo')) ||
             (cartItem.name.toLowerCase().includes('dahi') && p.name.toLowerCase().includes('dahi'))
           ))
-      );
-      if (prod) {
-        const avail = Number(prod.currentStock ?? prod.stock ?? 0);
-        if (avail <= 0 || reqQty > avail) {
-          toast.error(`Cannot place sale: Insufficient stock for "${prod.name}". Available: ${avail} ${prod.unit || ''}, Requested: ${reqQty}`);
-          return null;
-        }
+      ) || cartItem;
+
+      const availStock = getProductAvailableStock(prod, liveStockForValidation, allProds);
+      const unitLabel = getProductUnitLabel(prod, true);
+
+      if (availStock <= 0) {
+        const errMsg = `🚫 Out of Stock: "${cartItem.name}" abhi dastiyab nahi hai (Available: 0 ${unitLabel}).`;
+        toast.error(errMsg);
+        throw new Error(errMsg);
+      }
+
+      if (reqQty > availStock) {
+        const errMsg = `🚫 Insufficient Stock: "${cartItem.name}" cart quantity (${reqQty} ${unitLabel}) available stock (${availStock} ${unitLabel}) se zyada hai.`;
+        toast.error(errMsg);
+        throw new Error(errMsg);
       }
     }
 
