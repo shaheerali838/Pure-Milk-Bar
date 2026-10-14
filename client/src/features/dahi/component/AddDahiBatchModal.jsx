@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Layers, X, Droplets, AlertCircle, ArrowLeft, Check, Milk, Calendar } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useDahiContext } from '@/context/DahiContext';
 import { usePOSContext } from '@/context/POSContext';
@@ -73,12 +74,20 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
 
   // Farm stocks
   const availFarmCow = Math.max(0, Number(metrics.remainingFarmCowMilk ?? invMetrics.rawFarmCowMilkStock ?? invMetrics.farmCowMilkStock ?? 0));
-  const availFarmBuffalo = Math.max(0, Number(metrics.remainingFarmBuffaloMilk ?? invMetrics.rawFarmBuffaloMilkStock ?? invMetrics.farmBuffaloMilkStock ?? 0));
+  let availFarmBuffalo = Math.max(0, Number(metrics.remainingFarmBuffaloMilk ?? invMetrics.rawFarmBuffaloMilkStock ?? invMetrics.farmBuffaloMilkStock ?? 0));
+  const availFarmAll = Number(metrics.remainingFarmMilk ?? invMetrics.rawFarmMilkStock ?? invMetrics.farmMilkStock ?? (availFarmCow + availFarmBuffalo).toFixed(1));
+  if (availFarmBuffalo === 0 && availFarmCow === 0 && availFarmAll > 0) {
+    availFarmBuffalo = availFarmAll;
+  }
   const availFarmForType = isCow ? availFarmCow : availFarmBuffalo;
 
   // Supplier stocks
   const availSupplierCow = Math.max(0, Number(metrics.remainingSupplierCowMilk ?? invMetrics.rawSupplierCowMilkStock ?? invMetrics.supplierCowMilkStock ?? 0));
-  const availSupplierBuffalo = Math.max(0, Number(metrics.remainingSupplierBuffaloMilk ?? invMetrics.rawSupplierBuffaloMilkStock ?? invMetrics.supplierBuffaloMilkStock ?? 0));
+  let availSupplierBuffalo = Math.max(0, Number(metrics.remainingSupplierBuffaloMilk ?? invMetrics.rawSupplierBuffaloMilkStock ?? invMetrics.supplierBuffaloMilkStock ?? 0));
+  const availSupplierAll = Number(metrics.remainingSupplierMilk ?? invMetrics.rawSupplierMilkStock ?? invMetrics.supplierMilkStock ?? (availSupplierCow + availSupplierBuffalo).toFixed(1));
+  if (availSupplierBuffalo === 0 && availSupplierCow === 0 && availSupplierAll > 0) {
+    availSupplierBuffalo = availSupplierAll;
+  }
   const availSupplierForType = isCow ? availSupplierCow : availSupplierBuffalo;
 
   // Total available for currently selected milk type
@@ -87,9 +96,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
   const availTotalBuffalo = Number((availFarmBuffalo + availSupplierBuffalo).toFixed(1));
 
   // Overall aggregate liquid milk (chiller total across all species)
-  const availFarmAll = Number(metrics.remainingFarmMilk ?? metrics.farmSourced ?? (availFarmCow + availFarmBuffalo).toFixed(1));
-  const availSupplierAll = Number(metrics.remainingSupplierMilk ?? metrics.supplierSourced ?? (availSupplierCow + availSupplierBuffalo).toFixed(1));
-  const availTotalAll = Number(metrics.remainingTotalMilk ?? (availFarmAll + availSupplierAll).toFixed(1));
+  const availTotalAll = Number(metrics.remainingTotalMilk ?? invMetrics.rawTotalMilkStock ?? (availFarmAll + availSupplierAll).toFixed(1));
 
   // Maximum allowed for current source and selected milk type
   const currentMax =
@@ -237,12 +244,12 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
     e.preventDefault();
     const rawVal = parseFloat(formData.milkUsed) || 0;
     if (rawVal <= 0) {
-      alert('Please enter a valid milk quantity greater than 0.');
+      toast.error('Please enter a valid milk quantity greater than 0.');
       return;
     }
 
     if (rawVal > currentMax) {
-      alert(`⚠️ Insufficient ${formData.milkType} Stock!\n\nEntered quantity (${rawVal} kg) exceeds available ${formData.milkType} from ${formData.source} (${currentMax} kg).\n\nPlease enter an amount less than or equal to ${currentMax} kg.`);
+      toast.error(`Insufficient ${formData.milkType} Stock! Entered ${rawVal} kg exceeds available ${currentMax} kg.`);
       return;
     }
 
@@ -259,11 +266,11 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
 
     if (formData.source === 'Both (Mixed)') {
       if (farmPortion > availFarmForType) {
-        alert(`⚠️ Farm portion (${farmPortion} kg) exceeds available Farm ${formData.milkType} stock of ${availFarmForType} kg.`);
+        toast.error(`Farm portion (${farmPortion} kg) exceeds available Farm ${formData.milkType} stock of ${availFarmForType} kg.`);
         return;
       }
       if (supPortion > availSupplierForType) {
-        alert(`⚠️ Supplier portion (${supPortion} kg) exceeds available Supplier ${formData.milkType} stock of ${availSupplierForType} kg.`);
+        toast.error(`Supplier portion (${supPortion} kg) exceeds available Supplier ${formData.milkType} stock of ${availSupplierForType} kg.`);
         return;
       }
     }
