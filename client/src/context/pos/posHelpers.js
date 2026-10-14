@@ -80,60 +80,157 @@ export const defaultPOSContextValue = {
   handleCompleteSale: async () => null,
 };
 
+/**
+ * Flexible classifier for dairy items (tolerant to Buffalo/Bufflo, Cow/Gai, Dahi/Yogurt)
+ */
+export const isBuffaloVariant = (name = '', category = '') => {
+  const s = `${name || ''} ${category || ''}`.toLowerCase();
+  return (
+    s.includes('buffalo') ||
+    s.includes('bufflo') ||
+    s.includes('buff') ||
+    s.includes('bhains') ||
+    s.includes('bhais')
+  );
+};
+
+export const isCowVariant = (name = '', category = '') => {
+  const s = `${name || ''} ${category || ''}`.toLowerCase();
+  return s.includes('cow') || s.includes('gai') || s.includes('gae');
+};
+
+export const isDahiVariant = (name = '', category = '') => {
+  const s = `${name || ''} ${category || ''}`.toLowerCase();
+  return s.includes('dahi') || s.includes('yogurt') || s.includes('curd');
+};
+
+export const isMilkVariant = (name = '', category = '') => {
+  const s = `${name || ''} ${category || ''}`.toLowerCase();
+  return (
+    !isDahiVariant(name, category) &&
+    (s.includes('milk') || s.includes('doodh') || isBuffaloVariant(name, category) || isCowVariant(name, category))
+  );
+};
+
+/**
+ * Robust product matcher between order/cart items and catalog products
+ */
+export const matchProductForOrderItem = (item, allProducts = []) => {
+  if (!item || !Array.isArray(allProducts)) return null;
+
+  // 1. By ID
+  if (item.id || item._id || item.productId) {
+    const targetId = String(item.productId || item.id || item._id);
+    const byId = allProducts.find((p) => String(p.id || p._id) === targetId);
+    if (byId) return byId;
+  }
+
+  // 2. By SKU
+  if (item.sku) {
+    const targetSku = String(item.sku).toUpperCase();
+    const bySku = allProducts.find((p) => String(p.sku || '').toUpperCase() === targetSku);
+    if (bySku) return bySku;
+  }
+
+  const rawName = String(item.name || '').trim();
+  const cleanName = rawName.replace(/\s*\((Farm|Supplier)\s*Share\)/i, '').trim().toLowerCase();
+
+  // 3. Exact name match
+  const exact = allProducts.find((p) => String(p.name || '').trim().toLowerCase() === cleanName);
+  if (exact) return exact;
+
+  // 4. Buffalo variant match (handles "Bufflo milk", "Buffalo Milk", etc.)
+  if (isBuffaloVariant(cleanName, item.category)) {
+    const buff = allProducts.find((p) => isBuffaloVariant(p.name, p.category) || isBuffaloVariant(p.sku));
+    if (buff) return buff;
+  }
+
+  // 5. Cow variant match
+  if (isCowVariant(cleanName, item.category)) {
+    const cow = allProducts.find((p) => isCowVariant(p.name, p.category) || isCowVariant(p.sku));
+    if (cow) return cow;
+  }
+
+  // 6. Dahi variant match
+  if (isDahiVariant(cleanName, item.category)) {
+    const dahi = allProducts.find((p) => isDahiVariant(p.name, p.category) || isDahiVariant(p.sku));
+    if (dahi) return dahi;
+  }
+
+  // 7. General milk
+  if (cleanName.includes('milk') || cleanName.includes('doodh')) {
+    const milk = allProducts.find((p) => isMilkVariant(p.name, p.category));
+    if (milk) return milk;
+  }
+
+  return null;
+};
+
+/**
+ * Calculates live available stock for a product, combining physical catalog stock
+ * with real-time milking yields and supplier intake logs.
+ */
+export const resolveAvailableStock = (matchedProd, orderItem = {}, liveMetrics = {}) => {
+  const name = `${matchedProd?.name || ''} ${orderItem?.name || ''}`.toLowerCase();
+  const cat = `${matchedProd?.category || ''} ${orderItem?.category || ''}`.toLowerCase();
+  const catalogStock = Math.max(0, Number(matchedProd?.currentStock ?? matchedProd?.stock ?? 0) || 0);
+
+  // Read live inventory metrics from POSContext
+  const inv = liveMetrics?.inventoryMetrics || liveMetrics || {};
+
+  // Read localStorage fallback if inv is empty
+  let localSaved = null;
+  if (!Number(inv.rawFarmBuffaloMilkStock) && !Number(inv.farmBuffaloMilkStock) && typeof window !== 'undefined') {
+    try {
+      localSaved = JSON.parse(localStorage.getItem('pmb_inventory_stocks') || '{}');
+    } catch (_) {}
+  }
+
+  if (isDahiVariant(name, cat)) {
+    const farmDahi = Number(inv.rawFarmDahiStock) || Number(inv.farmDahiStock) || Number(localSaved?.farmDahiStock) || 0;
+    const supDahi = Number(inv.rawSupplierDahiStock) || Number(inv.supplierDahiStock) || Number(localSaved?.supplierDahiStock) || 0;
+    const totalDahi = Number(inv.rawTotalDahiStock) || Number(inv.totalDahiStock) || Number(inv.totalDahi) || Number(localSaved?.dahiStock) || (farmDahi + supDahi);
+    const batchStock = Number(inv.productBatchStockMap?.[matchedProd?.name || orderItem?.name] || 0);
+    if (totalDahi > 0) return Number(totalDahi.toFixed(2));
+    return Math.max(catalogStock, batchStock);
+  }
+
+  if (isMilkVariant(name, cat)) {
+    if (isBuffaloVariant(name, cat)) {
+      const farmBuff = Number(inv.rawFarmBuffaloMilkStock) || Number(inv.farmBuffaloMilkStock) || Number(localSaved?.farmBuffaloMilk) || 0;
+      const supBuff = Number(inv.rawSupplierBuffaloMilkStock) || Number(inv.supplierBuffaloMilkStock) || Number(localSaved?.supplierBuffaloMilk) || 0;
+      const totalBuff = farmBuff + supBuff;
+      if (totalBuff > 0) return Number(totalBuff.toFixed(1));
+      // Fallback: If buffalo not segregated, use overall live milk stock
+      const generalMilk = Number(inv.rawTotalMilkStock) || Number(inv.totalMilkStock) || Number(inv.totalMilk) || Number(inv.rawAvailableFarmStock) || Number(inv.availableFarmStock) || Number(localSaved?.totalMilkStock) || 0;
+      if (generalMilk > 0) return Number(generalMilk.toFixed(1));
+      return catalogStock;
+    }
+    if (isCowVariant(name, cat)) {
+      const farmCow = Number(inv.rawFarmCowMilkStock) || Number(inv.farmCowMilkStock) || Number(localSaved?.farmCowMilk) || 0;
+      const supCow = Number(inv.rawSupplierCowMilkStock) || Number(inv.supplierCowMilkStock) || Number(localSaved?.supplierCowMilk) || 0;
+      const totalCow = farmCow + supCow;
+      if (totalCow > 0) return Number(totalCow.toFixed(1));
+      const generalMilk = Number(inv.rawTotalMilkStock) || Number(inv.totalMilkStock) || Number(inv.totalMilk) || Number(inv.rawAvailableFarmStock) || Number(inv.availableFarmStock) || Number(localSaved?.totalMilkStock) || 0;
+      if (generalMilk > 0) return Number(generalMilk.toFixed(1));
+      return catalogStock;
+    }
+    // General milk
+    const farmMilk = Number(inv.rawFarmMilkStock) || Number(inv.farmMilkStock) || Number(inv.rawAvailableFarmStock) || Number(inv.availableFarmStock) || Number(localSaved?.farmMilkStock) || 0;
+    const supMilk = Number(inv.rawSupplierMilkStock) || Number(inv.supplierMilkStock) || Number(localSaved?.supplierMilkStock) || 0;
+    const totalMilk = Number(inv.rawTotalMilkStock) || Number(inv.totalMilkStock) || Number(inv.totalMilk) || Number(localSaved?.totalMilkStock) || (farmMilk + supMilk);
+    if (totalMilk > 0) return Number(totalMilk.toFixed(1));
+    return catalogStock;
+  }
+
+  const batchStock = Number(inv.productBatchStockMap?.[matchedProd?.name || orderItem?.name] || 0);
+  return Math.max(0, catalogStock + batchStock);
+};
+
 // Central helper to resolve real-time available stock across inventory metrics and catalog products
 export const getProductAvailableStock = (prod, liveStock = {}, allProducts = []) => {
   if (!prod) return 0;
-  const name = String(prod.name || '').toLowerCase();
-  const cat = String(prod.category || '').toLowerCase();
-
-  const isDahi =
-    cat.includes('dahi') ||
-    name.includes('dahi') ||
-    cat.includes('yogurt') ||
-    name.includes('yogurt') ||
-    cat.includes('curd') ||
-    name.includes('curd');
-
-  const isCow =
-    name.includes('cow') ||
-    (cat.includes('cow') && (name.includes('milk') || cat.includes('milk')));
-
-  const isBuff =
-    name.includes('buffalo') ||
-    (cat.includes('buffalo') && (name.includes('milk') || cat.includes('milk')));
-
-  const isMilk = cat.includes('milk') || name.includes('milk');
-
-  if (isDahi) {
-    const farmD = Number(liveStock?.rawFarmDahiStock ?? liveStock?.farmDahiStock) || 0;
-    const supD = Number(liveStock?.rawSupplierDahiStock ?? liveStock?.supplierDahiStock) || 0;
-    const liveDahi = Number((farmD + supD).toFixed(2));
-    if (liveDahi > 0) return liveDahi;
-    return Math.max(0, Number(prod.currentStock ?? prod.stock) || liveDahi || 0);
-  }
-
-  if (isMilk) {
-    if (isCow) {
-      const farmCow = Number(liveStock?.farmCowMilkStock ?? liveStock?.rawFarmCowMilkStock) || 0;
-      const supCow = Number(liveStock?.supplierCowMilkStock ?? liveStock?.rawSupplierCowMilkStock) || 0;
-      const liveCow = Number((farmCow + supCow).toFixed(1));
-      if (liveCow > 0) return liveCow;
-      return Math.max(0, Number(prod.currentStock ?? prod.stock) || 0);
-    }
-    if (isBuff) {
-      const farmBuff = Number(liveStock?.farmBuffaloMilkStock ?? liveStock?.rawFarmBuffaloMilkStock) || 0;
-      const supBuff = Number(liveStock?.supplierBuffaloMilkStock ?? liveStock?.rawSupplierBuffaloMilkStock) || 0;
-      const liveBuff = Number((farmBuff + supBuff).toFixed(1));
-      if (liveBuff > 0) return liveBuff;
-      return Math.max(0, Number(prod.currentStock ?? prod.stock) || 0);
-    }
-    const liveTot = Number(liveStock?.totalMilkStock ?? liveStock?.totalMilk ?? liveStock?.rawTotalMilkStock);
-    if (!isNaN(liveTot) && liveTot > 0) return liveTot;
-    return Math.max(0, Number(prod.currentStock ?? prod.stock) || 0);
-  }
-
-  const batchStock = Number(liveStock?.productBatchStockMap?.[prod.name] || 0);
-  return Math.max(0, (Number(prod.currentStock ?? prod.stock) || 0) + batchStock);
+  return resolveAvailableStock(prod, prod, liveStock);
 };
 
 // Dynamic unit label resolution (e.g. 'Liters (L)' vs 'Kilograms (kg)')
@@ -142,20 +239,10 @@ export const getProductUnitLabel = (prod, short = false) => {
   const name = String(prod.name || '').toLowerCase();
   const cat = String(prod.category || '').toLowerCase();
 
-  const isDahi =
-    cat.includes('dahi') ||
-    name.includes('dahi') ||
-    cat.includes('yogurt') ||
-    name.includes('yogurt') ||
-    cat.includes('curd') ||
-    name.includes('curd');
-
-  const isMilk = cat.includes('milk') || name.includes('milk');
-
-  if (isDahi) {
+  if (isDahiVariant(name, cat)) {
     return short ? 'kg' : 'Kilograms (kg)';
   }
-  if (isMilk) {
+  if (isMilkVariant(name, cat)) {
     return short ? 'L' : 'Liters (L)';
   }
 
@@ -164,4 +251,3 @@ export const getProductUnitLabel = (prod, short = false) => {
   if (rawUnit.toLowerCase().includes('kg')) return short ? 'kg' : 'Kilograms (kg)';
   return rawUnit || (short ? 'unit' : 'Units');
 };
-

@@ -1010,12 +1010,23 @@ export function usePOSMetrics({
   }, [products]);
 
   // Requirement 2 & 4: Inventory Carry-Over (Opening Stock carries forward, new intake dynamically adds)
-  const openingFarmCow = Number(openingStock?.farmCowMilk || 0);
-  const openingFarmBuff = Number(openingStock?.farmBuffaloMilk || 0);
-  const openingSupCow = Number(openingStock?.supplierCowMilk || 0);
-  const openingSupBuff = Number(openingStock?.supplierBuffaloMilk || 0);
-  const openingFarmDahi = Number(openingStock?.farmDahi || 0);
-  const openingSupDahi = Number(openingStock?.supplierDahi || 0);
+  const explicitFarmCow = Number(openingStock?.farmCowMilk || 0);
+  const explicitFarmBuff = Number(openingStock?.farmBuffaloMilk || 0);
+  const generalFarm = Number(openingStock?.farm || 0);
+  const openingFarmCow = explicitFarmCow;
+  const openingFarmBuff = explicitFarmBuff > 0 ? explicitFarmBuff : (explicitFarmCow === 0 && generalFarm > 0 ? generalFarm : 0);
+
+  const explicitSupCow = Number(openingStock?.supplierCowMilk || 0);
+  const explicitSupBuff = Number(openingStock?.supplierBuffaloMilk || 0);
+  const generalSup = Number(openingStock?.supplier || 0);
+  const openingSupCow = explicitSupCow;
+  const openingSupBuff = explicitSupBuff > 0 ? explicitSupBuff : (explicitSupCow === 0 && generalSup > 0 ? generalSup : 0);
+
+  const explicitFarmDahi = Number(openingStock?.farmDahi || 0);
+  const explicitSupDahi = Number(openingStock?.supplierDahi || 0);
+  const generalDahi = Number(openingStock?.dahi || 0);
+  const openingFarmDahi = explicitFarmDahi > 0 ? explicitFarmDahi : (explicitSupDahi === 0 && generalDahi > 0 ? generalDahi : 0);
+  const openingSupDahi = explicitSupDahi;
 
   const hasOpeningStock = (
     openingFarmCow > 0 ||
@@ -1026,43 +1037,69 @@ export function usePOSMetrics({
     openingSupDahi > 0
   );
 
-  // Dynamic carry-forward + today's yield/intake - today's sales (strictly 0 if no intake/milking logged)
+  // Dynamic carry-forward + today's yield/intake - today's sales (with all-time physical fallback if no today entry)
+  const safeAllTimeCowDahi = Math.min(allTimeFarmCowConvertedToDahi, allTimeFarmCowMilk);
+  const safeAllTimeBuffDahi = Math.min(allTimeFarmBuffConvertedToDahi, allTimeFarmBuffaloMilk);
+  const safeAllTimeSupCowDahi = Math.min(allTimeSupplierCowConvertedToDahi, allTimeSupplierCowIntake);
+  const safeAllTimeSupBuffDahi = Math.min(allTimeSupplierBuffConvertedToDahi, allTimeSupplierBuffaloIntake);
+
   const hasFarmCowEntry = openingFarmCow > 0 || totalFarmCowMilk > 0;
   const preDahiCow = hasFarmCowEntry
     ? (openingFarmCow + totalFarmCowMilk - todayFarmCowMilkSold) + processedCowMilkStock
-    : 0;
+    : Math.max(0, (allTimeFarmCowMilk - allTimeFarmCowMilkSold - safeAllTimeCowDahi) + processedCowMilkStock);
 
   const hasFarmBuffEntry = openingFarmBuff > 0 || totalFarmBuffaloMilk > 0;
   const preDahiBuff = hasFarmBuffEntry
     ? (openingFarmBuff + totalFarmBuffaloMilk - todayFarmBuffaloMilkSold) + processedBuffaloMilkStock
-    : 0;
+    : Math.max(0, (allTimeFarmBuffaloMilk - allTimeFarmBuffaloMilkSold - safeAllTimeBuffDahi) + processedBuffaloMilkStock);
+
   const activeFarmCowDahi = hasFarmCowEntry ? farmCowConvertedToDahi : 0;
   const activeFarmBuffDahi = hasFarmBuffEntry ? farmBuffConvertedToDahi : 0;
 
-  const remainingFarmCowMilk = Math.max(0, Number((Math.max(0, preDahiCow) - activeFarmCowDahi).toFixed(1)));
-  const remainingFarmBuffaloMilk = Math.max(0, Number((Math.max(0, preDahiBuff) - activeFarmBuffDahi).toFixed(1)));
+  let remainingFarmCowMilk = Math.max(0, Number((Math.max(0, preDahiCow) - activeFarmCowDahi).toFixed(1)));
+  let remainingFarmBuffaloMilk = Math.max(0, Number((Math.max(0, preDahiBuff) - activeFarmBuffDahi).toFixed(1)));
 
   const hasSupCowEntry = openingSupCow > 0 || todaySupplierCowIntake > 0;
   const preDahiSupCow = hasSupCowEntry
     ? (openingSupCow + todaySupplierCowIntake - todaySupplierCowMilkSold)
-    : 0;
+    : Math.max(0, allTimeSupplierCowIntake - allTimeSupplierCowMilkSold - safeAllTimeSupCowDahi);
 
   const hasSupBuffEntry = openingSupBuff > 0 || todaySupplierBuffaloIntake > 0;
   const preDahiSupBuff = hasSupBuffEntry
     ? (openingSupBuff + todaySupplierBuffaloIntake - todaySupplierBuffaloMilkSold)
-    : 0;
+    : Math.max(0, allTimeSupplierBuffaloIntake - allTimeSupplierBuffaloMilkSold - safeAllTimeSupBuffDahi);
 
   const activeSupCowDahi = hasSupCowEntry ? supplierCowConvertedToDahi : 0;
   const activeSupBuffDahi = hasSupBuffEntry ? supplierBuffConvertedToDahi : 0;
 
-  const remainingSupplierCowMilk = Math.max(0, Number((Math.max(0, preDahiSupCow) - activeSupCowDahi).toFixed(1)));
-  const remainingSupplierBuffaloMilk = Math.max(0, Number((Math.max(0, preDahiSupBuff) - activeSupBuffDahi).toFixed(1)));
+  let remainingSupplierCowMilk = Math.max(0, Number((Math.max(0, preDahiSupCow) - activeSupCowDahi).toFixed(1)));
+  let remainingSupplierBuffaloMilk = Math.max(0, Number((Math.max(0, preDahiSupBuff) - activeSupBuffDahi).toFixed(1)));
+
+  // If live logs and opening stock are empty, fall back to product catalog stock (matches Dahi fallback lines 1081-1091)
+  if (remainingFarmCowMilk === 0 && remainingFarmBuffaloMilk === 0 && remainingSupplierCowMilk === 0 && remainingSupplierBuffaloMilk === 0 && milkProducts.length > 0) {
+    milkProducts.forEach((p) => {
+      const pStock = Number(p.currentStock ?? p.stock) || 0;
+      if (pStock <= 0) return;
+      const pName = (p.name || '').toLowerCase();
+      const pSrc = (p.source || '').toLowerCase();
+      const isCow = pName.includes('cow') || pName.includes('gai');
+      const isSupplier = pSrc.includes('supplier') || pName.includes('supplier');
+
+      if (isSupplier) {
+        if (isCow) remainingSupplierCowMilk += pStock;
+        else remainingSupplierBuffaloMilk += pStock;
+      } else {
+        if (isCow) remainingFarmCowMilk += pStock;
+        else remainingFarmBuffaloMilk += pStock;
+      }
+    });
+  }
 
   // Dynamic sums strictly derived from isolated stocks:
   const availableFarmStock = Number((remainingFarmCowMilk + remainingFarmBuffaloMilk).toFixed(1));
   const remainingFarmMilk = availableFarmStock;
   const remainingSupplierMilk = Number((remainingSupplierCowMilk + remainingSupplierBuffaloMilk).toFixed(1));
-  const remainingTotalMilk = Number((remainingFarmCowMilk + remainingFarmBuffaloMilk + remainingSupplierCowMilk + remainingSupplierBuffaloMilk + totalProcessedMilk).toFixed(1));
+  const remainingTotalMilk = Number((availableFarmStock + remainingSupplierMilk).toFixed(1));
   const totalFarmMilkSoldQty = todayFarmMilkSold;
 
   // 100% Dynamic Cascading Dahi Stocks with Opening Stock carry-forward

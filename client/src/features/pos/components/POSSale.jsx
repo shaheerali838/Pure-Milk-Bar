@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import {ShoppingCart,Trash2,CheckCircle2,Users,UserCheck,Calendar,User,Truck,Loader2,} from "lucide-react";
+import { ShoppingCart, Trash2, CheckCircle2, Users, UserCheck, Calendar, User, Truck, Loader2, } from "lucide-react";
 import { usePOSContext } from "@/context/POSContext";
 import { getPktTodayString } from "@/utils/dateUtils";
 import DayClosedLockOverlay from "@/components/common/DayClosedLockOverlay";
@@ -143,11 +143,10 @@ export default function POSSale() {
             <button
               type="button"
               onClick={() => setSaleCategory?.("walkin")}
-              className={`py-1.5 px-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                saleCategory === "walkin"
+              className={`py-1.5 px-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${saleCategory === "walkin"
                   ? "bg-white text-slate-900 shadow-2xs font-bold"
                   : "text-slate-500 hover:text-slate-800"
-              }`}
+                }`}
             >
               <UserCheck className="w-3.5 h-3.5" />
               <span>Walk-in Counter</span>
@@ -156,11 +155,10 @@ export default function POSSale() {
             <button
               type="button"
               onClick={() => setSaleCategory?.("delivery")}
-              className={`py-1.5 px-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                saleCategory === "delivery"
+              className={`py-1.5 px-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${saleCategory === "delivery"
                   ? "bg-white text-slate-900 shadow-2xs font-bold"
                   : "text-slate-500 hover:text-slate-800"
-              }`}
+                }`}
             >
               <Truck className="w-3.5 h-3.5" />
               <span>Home Delivery</span>
@@ -175,11 +173,10 @@ export default function POSSale() {
               <button
                 type="button"
                 onClick={() => setWalkinCustomerType?.("first_time")}
-                className={`py-1.5 px-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                  walkinCustomerType === "first_time"
+                className={`py-1.5 px-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${walkinCustomerType === "first_time"
                     ? "bg-white text-slate-900 shadow-2xs font-bold"
                     : "text-slate-500 hover:text-slate-800"
-                }`}
+                  }`}
               >
                 <User className="w-3.5 h-3.5" />
                 <span>First-Time / Regular</span>
@@ -188,11 +185,10 @@ export default function POSSale() {
               <button
                 type="button"
                 onClick={() => setWalkinCustomerType?.("registered")}
-                className={`py-1.5 px-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                  walkinCustomerType === "registered"
+                className={`py-1.5 px-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${walkinCustomerType === "registered"
                     ? "bg-white text-slate-900 shadow-2xs font-bold"
                     : "text-slate-500 hover:text-slate-800"
-                }`}
+                  }`}
               >
                 <Users className="w-3.5 h-3.5" />
                 <span>Monthly Subscribed</span>

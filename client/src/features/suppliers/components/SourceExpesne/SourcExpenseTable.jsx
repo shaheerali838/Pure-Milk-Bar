@@ -1,9 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Eye, Edit2, Trash2, Filter, Receipt, Calendar, FileText } from 'lucide-react';
 import { useSourcExpenseContext, CATEGORY_OPTIONS } from '@/context/SourcExpenseContext';
-import DateHeader from '@/components/common/DateHeader';
-import { useGlobalDate } from '@/context/GlobalDateContext';
-import { getLocalDate, normalizeDateStr } from '@/utils/dateUtils';
 
 // Color map for badges based on categories
 const CATEGORY_STYLES = {
@@ -19,49 +16,12 @@ const CATEGORY_STYLES = {
 
 export default function SourcExpenseTable({ onView, onEdit }) {
   const { expenses, deleteExpense } = useSourcExpenseContext();
-  const { globalDate, setGlobalDate } = useGlobalDate();
-  const [selectedDate, setSelectedDate] = useState(() => getLocalDate());
-  const [dateFilter, setDateFilter] = useState('Today'); // 'Today' | 'All' | 'Custom'
-  const [customDate, setCustomDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  React.useEffect(() => {
-    if (globalDate) {
-      setSelectedDate(globalDate);
-      if (globalDate === getLocalDate()) {
-        setDateFilter('Today');
-        setCustomDate('');
-      } else {
-        setDateFilter('Custom');
-        setCustomDate(globalDate);
-      }
-    }
-  }, [globalDate]);
-
-  const handleDateChange = (newDate) => {
-    setSelectedDate(newDate);
-    setGlobalDate(newDate);
-    if (newDate === getLocalDate()) {
-      setDateFilter('Today');
-      setCustomDate('');
-    } else {
-      setDateFilter('Custom');
-      setCustomDate(newDate);
-    }
-  };
-
-  // Filter expenses by date, search term (description or voucher #) and category
+  // Filter expenses by search term (description or voucher #) and category
   const filteredExpenses = useMemo(() => {
     return expenses.filter((item) => {
-      // 1. Date Filter
-      const itemDate = normalizeDateStr(item.date || item.createdAt);
-      if (dateFilter === 'Today') {
-        if (itemDate !== getLocalDate()) return false;
-      } else if (dateFilter === 'Custom' && customDate) {
-        if (itemDate !== customDate) return false;
-      }
-
       const matchesSearch =
         item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.voucherNo && item.voucherNo.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -72,7 +32,7 @@ export default function SourcExpenseTable({ onView, onEdit }) {
 
       return matchesSearch && matchesCategory;
     });
-  }, [expenses, selectedDate, dateFilter, customDate, searchTerm, categoryFilter]);
+  }, [expenses, searchTerm, categoryFilter]);
 
   const handleDelete = (item) => {
     if (
@@ -85,15 +45,7 @@ export default function SourcExpenseTable({ onView, onEdit }) {
   };
 
   return (
-    <div className="space-y-3">
-      {/* DateHeader at Top of Supplier Operating Expenses */}
-      <DateHeader
-        date={selectedDate}
-        setDate={handleDateChange}
-        title="Supplier Operating Expenses"
-        subtitle={`Logistics, transit fuel, chilling and handling vouchers strictly for ${selectedDate}`}
-      />
-
+    <div className="space-y-2">
       {/* Search and Category Filter Toolbar */}
       <div className="bg-white p-2.5 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-2">
         {/* Left: Search Input */}

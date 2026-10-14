@@ -83,6 +83,57 @@ const connectDB = async () => {
                 console.log(`Successfully dropped legacy collection '${legacyName}'.`);
               }
             }
+
+            // Auto-provision standard catalog products if products collection is empty
+            const prodCount = await db.collection('products').countDocuments();
+            if (prodCount === 0) {
+              const defaultProducts = [
+                {
+                  sku: 'PRD-BUFF-001',
+                  name: 'Fresh Buffalo Milk',
+                  category: 'Milk',
+                  unit: 'LITER',
+                  price: 220,
+                  costPrice: 160,
+                  currentStock: 0,
+                  minimumAlertStock: 10,
+                  isAvailableForPos: true,
+                  isAvailableForDelivery: true,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                },
+                {
+                  sku: 'PRD-COW-001',
+                  name: 'Fresh Cow Milk',
+                  category: 'Milk',
+                  unit: 'LITER',
+                  price: 200,
+                  costPrice: 150,
+                  currentStock: 0,
+                  minimumAlertStock: 10,
+                  isAvailableForPos: true,
+                  isAvailableForDelivery: true,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                },
+                {
+                  sku: 'PRD-DAHI-001',
+                  name: 'Fresh Farm Dahi',
+                  category: 'Dahi',
+                  unit: 'KG',
+                  price: 320,
+                  costPrice: 220,
+                  currentStock: 0,
+                  minimumAlertStock: 5,
+                  isAvailableForPos: true,
+                  isAvailableForDelivery: true,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                },
+              ];
+              await db.collection('products').insertMany(defaultProducts);
+              console.log('[Catalog Seed] Provisioned standard default products: Fresh Buffalo Milk, Fresh Cow Milk, Fresh Farm Dahi.');
+            }
           }
         } catch (migError) {
           console.error(`Auto collection migration note: ${migError.message}`);

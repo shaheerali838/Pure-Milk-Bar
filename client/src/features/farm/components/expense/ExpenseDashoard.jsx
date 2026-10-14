@@ -6,10 +6,6 @@ import { Plus, Calendar, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import RecordExpenseForm from "./RecordExpenseForm";
 import { useExpense } from "@/context/ExpenseContext";
-import { useDailyClose } from "@/context/DailyCloseContext";
-import DayClosedLockOverlay from "@/components/common/DayClosedLockOverlay";
-import DateHeader from "@/components/common/DateHeader";
-import { useGlobalDate } from "@/context/GlobalDateContext";
 
 const formatLocalDate = (d) => {
     const year = d.getFullYear();
@@ -73,43 +69,11 @@ const DATE_FILTERS = [
 
 export default function ExpenseDashboard() {
     const { expenses = [] } = useExpense();
-    const { isDayClosed } = useDailyClose();
     const [searchQuery, setSearchQuery] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All');
-    const { globalDate, setGlobalDate } = useGlobalDate();
-    const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [dateFilter, setDateFilter] = useState('today'); // 'today' | 'this_week' | 'this_month' | 'custom' | 'all'
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-
-    React.useEffect(() => {
-        if (globalDate) {
-            setSelectedDate(globalDate);
-            if (globalDate === new Date().toISOString().split('T')[0]) {
-                setDateFilter('today');
-                setStartDate('');
-                setEndDate('');
-            } else {
-                setDateFilter('custom');
-                setStartDate(globalDate);
-                setEndDate(globalDate);
-            }
-        }
-    }, [globalDate]);
-
-    const handleDateChange = (newDate) => {
-        setSelectedDate(newDate);
-        setGlobalDate(newDate);
-        if (newDate === new Date().toISOString().split('T')[0]) {
-            setDateFilter('today');
-            setStartDate('');
-            setEndDate('');
-        } else {
-            setDateFilter('custom');
-            setStartDate(newDate);
-            setEndDate(newDate);
-        }
-    };
     const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
     const [editingExpenseId, setEditingExpenseId] = useState(null);
 
@@ -147,7 +111,7 @@ export default function ExpenseDashboard() {
             const expDate = normalizeDateStr(rawDate);
 
             if (dateFilter === 'today') {
-                if (expDate !== (selectedDate || todayStr)) return false;
+                if (expDate !== todayStr) return false;
             } else if (dateFilter === 'this_week' || dateFilter === 'week') {
                 if (expDate < mondayStr || expDate > sundayStr) return false;
             } else if (dateFilter === 'this_month' || dateFilter === 'month') {
@@ -228,16 +192,7 @@ export default function ExpenseDashboard() {
 
     return (
         <div className="bg-slate-50">
-            {isDayClosed && <DayClosedLockOverlay inline className="mb-2" />}
             <div className="space-y-3">
-                {/* DateHeader at Top of Farm Expenses */}
-                <DateHeader
-                    date={selectedDate}
-                    setDate={handleDateChange}
-                    title="Farm Operating Expenses"
-                    subtitle={`Feed, medicine, utilities, and labor vouchers strictly for ${selectedDate}`}
-                />
-
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-2 gap-3">
                     <div>
@@ -252,8 +207,7 @@ export default function ExpenseDashboard() {
                     </div>
                     <div className="items-center w-full sm:w-auto">
                         <Button
-                            disabled={isDayClosed}
-                            className="bg-emerald-600 hover:bg-emerald-700 rounded-xl text-white w-full sm:w-auto font-bold shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="bg-emerald-600 hover:bg-emerald-700 rounded-xl text-white w-full sm:w-auto font-bold shadow-xs cursor-pointer"
                             onClick={() => handleOpenExpenseForm()}
                         >
                             <Plus className="mr-2 h-4 w-4" /> Record Farm Expense

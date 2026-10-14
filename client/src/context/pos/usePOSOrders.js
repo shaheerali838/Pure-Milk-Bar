@@ -2,7 +2,14 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import posService from '@/services/posService.js';
 import { broadcastSync } from '@/utils/syncBroadcaster';
-import { isLegacyDummySale, isObjectId, getProductAvailableStock, getProductUnitLabel } from './posHelpers';
+import {
+  isLegacyDummySale,
+  isObjectId,
+  matchProductForOrderItem,
+  resolveAvailableStock,
+  getProductAvailableStock,
+  getProductUnitLabel,
+} from './posHelpers';
 import { sortByDateDesc, ensureValidDate, normalizeDateStr, getPktTodayString, formatStandardDate, getActiveBusinessDate, getLocalDate } from '@/utils/dateUtils';
 
 export function usePOSOrders({
@@ -163,42 +170,27 @@ export function usePOSOrders({
       }
     }
 
-    // Strict double-check inventory stock validation: Prevent order if stock is 0 or insufficient
-    const liveStockForValidation = typeof getLiveStock === 'function' ? getLiveStock() : {};
+    // Strict inventory stock check: Prevent order if live stock is 0 or insufficient
     const allProds = productsState?.products || [];
-
+    const liveMetrics = typeof getMetrics === 'function' ? getMetrics() : (typeof getLiveStock === 'function' ? getLiveStock() : {});
     for (const cartItem of cart) {
       const reqQty = Number(cartItem.quantity) || 0;
       if (reqQty <= 0) {
         toast.error(`Please enter a valid quantity for "${cartItem.name}"`);
         throw new Error(`Invalid quantity for "${cartItem.name}"`);
       }
+      const prod = matchProductForOrderItem(cartItem, allProds) || cartItem;
+      const avail = resolveAvailableStock(prod, cartItem, liveMetrics);
+      const unitLabel = getProductUnitLabel(prod, true) || prod.unit || 'unit';
 
-      const prod = allProds.find(
-        (p) =>
-          p.id === cartItem.id ||
-          p._id === cartItem.id ||
-          (cartItem.productId && (p.id === cartItem.productId || p._id === cartItem.productId)) ||
-          (p.sku && cartItem.sku && String(p.sku).toUpperCase() === String(cartItem.sku).toUpperCase()) ||
-          (p.name && cartItem.name && p.name.trim().toLowerCase() === cartItem.name.trim().toLowerCase()) ||
-          (cartItem.name && p.name && (
-            (cartItem.name.toLowerCase().includes('cow') && p.name.toLowerCase().includes('cow')) ||
-            (cartItem.name.toLowerCase().includes('buffalo') && p.name.toLowerCase().includes('buffalo')) ||
-            (cartItem.name.toLowerCase().includes('dahi') && p.name.toLowerCase().includes('dahi'))
-          ))
-      ) || cartItem;
-
-      const availStock = getProductAvailableStock(prod, liveStockForValidation, allProds);
-      const unitLabel = getProductUnitLabel(prod, true);
-
-      if (availStock <= 0) {
+      if (avail <= 0) {
         const errMsg = `🚫 Out of Stock: "${cartItem.name}" abhi dastiyab nahi hai (Available: 0 ${unitLabel}).`;
         toast.error(errMsg);
         throw new Error(errMsg);
       }
 
-      if (reqQty > availStock) {
-        const errMsg = `🚫 Insufficient Stock: "${cartItem.name}" cart quantity (${reqQty} ${unitLabel}) available stock (${availStock} ${unitLabel}) se zyada hai.`;
+      if (reqQty > avail) {
+        const errMsg = `🚫 Insufficient Stock: "${cartItem.name}" cart quantity (${reqQty} ${unitLabel}) exceeds available stock (${avail} ${unitLabel}).`;
         toast.error(errMsg);
         throw new Error(errMsg);
       }

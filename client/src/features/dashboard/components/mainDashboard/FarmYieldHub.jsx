@@ -122,7 +122,7 @@ export default function FarmYieldHub({
               Farm Milk Stock (With Me)
             </span>
             <span className="font-mono font-bold text-emerald-700 text-xs tabular">
-              {inventoryMetrics?.farmMilkStock || 0} L (Chiller)
+              {inventoryMetrics?.farmMilkStock || 0} L {Number(inventoryMetrics?.totalMilkStock) > Number(inventoryMetrics?.farmMilkStock) ? `(Total: ${inventoryMetrics?.totalMilkStock} L)` : '(Chiller)'}
             </span>
           </div>
 
