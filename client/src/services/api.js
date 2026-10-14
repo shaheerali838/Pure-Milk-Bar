@@ -470,6 +470,8 @@ export const api = {
     reconcile: (id, data) => api.post(`/api/v1/daily-closings/${id}/reconcile`, data),
     approve: (id, data) => api.post(`/api/v1/daily-closings/${id}/approve`, data),
     reopen: (id, data = {}) => api.post(`/api/v1/daily-closings/${id}/reopen`, data),
+    reopenToday: (data = {}) => api.post('/api/v1/daily-closings/today/reopen', data),
+    getTodayStatus: (params = {}) => api.get('/api/v1/daily-closings/today-status', params, { fallback: { isDayClosed: false, status: 'OPEN' } }),
     getReport: (id) => api.get(`/api/v1/daily-closings/${id}/report`, null, { fallback: {} }),
   },
 

@@ -125,6 +125,7 @@ app.use("/api/v1/customers", customerRoutes);
 app.use("/api/v1/deliveries", deliveryRoutes);
 app.use("/api/v1/finance", financeRoutes);
 app.use("/api/v1/daily-closings", dailyClosingRoutes);
+app.use("/api/v1/daily-closing", dailyClosingRoutes);
 app.use("/api/v1/audit-logs", auditLogRoutes);
 app.use("/api/v1/staff", staffRoutes);
 app.use("/api/v1/processing", processingRoutes);

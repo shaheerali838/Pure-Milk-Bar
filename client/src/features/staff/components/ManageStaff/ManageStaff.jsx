@@ -366,7 +366,7 @@ export default function ManageStaff() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00a86b] hover:bg-[#008f5a] text-white text-xs font-bold shadow-xs transition cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              Add Staff
+              Register New Staff
             </button>
           </div>
         </div>
@@ -379,9 +379,7 @@ export default function ManageStaff() {
             <h3 className="text-sm font-bold text-slate-900 font-display">
               Staff Directory Table
             </h3>
-            <p className="text-xs text-slate-400">
-              Click any employee row to open full Livestock-style Staff Profile
-            </p>
+           
           </div>
           <span className="text-xs font-bold text-slate-500">
             Showing <strong className="text-slate-800">{filteredStaff.length}</strong> of {staffList.length} staff
@@ -590,12 +588,10 @@ export default function ManageStaff() {
                       <td className="py-3 px-4 text-center">
                         {isPaid ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
-                            <span>✅</span>
                             <span>Paid</span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
-                            <span>⏳</span>
                             <span>Pending</span>
                           </span>
                         )}

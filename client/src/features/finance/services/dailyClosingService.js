@@ -200,3 +200,24 @@ export const exportDailyClosingCsv = (summaryData) => {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 };
+
+/**
+ * Fetch current day closing status directly from server
+ */
+export const getTodayClosingStatus = async () => {
+  try {
+    const res = await api.dailyClosing.getTodayStatus();
+    return res;
+  } catch (err) {
+    console.warn('Failed to fetch today closing status from server:', err);
+    return { isDayClosed: false, status: 'OPEN' };
+  }
+};
+
+/**
+ * One-click reopen today's closed day to reactivate all modules across the website
+ */
+export const reopenTodayClosing = async (reopenReason = 'Website operations reactivated by user') => {
+  const res = await api.dailyClosing.reopenToday({ reopenReason });
+  return res;
+};

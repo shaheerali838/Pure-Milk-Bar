@@ -9,6 +9,8 @@ import AddDahiBatchModal from '../component/AddDahiBatchModal';
 import DahiBatchDetail from '../component/DahiBatchDetail';
 import DahiDailyReport from '../component/DahiDailyReport';
 import { useDahiContext } from '@/context/DahiContext';
+import { useDailyClose } from '@/context/DailyCloseContext';
+import DayClosedLockOverlay from '@/components/common/DayClosedLockOverlay';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 function getDateBoundaries(range) {
@@ -59,6 +61,7 @@ export default function DahiPage() {
     markSoldOut,
     deleteBatch,
   } = useDahiContext();
+  const { isDayClosed } = useDailyClose();
 
   const [activeTab, setActiveTab] = useState('pipeline');
   const [dateRange, setDateRange] = useState('today');
@@ -188,13 +191,26 @@ export default function DahiPage() {
 
         <button
           type="button"
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+          disabled={isDayClosed}
+          onClick={() => !isDayClosed && setIsModalOpen(true)}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-white text-xs font-bold shadow-xs transition-all ${
+            isDayClosed
+              ? 'bg-slate-400 cursor-not-allowed opacity-60'
+              : 'bg-[#009966] hover:bg-[#008055] cursor-pointer'
+          }`}
         >
           <Plus className="w-3.5 h-3.5 stroke-3" />
-          <span>Record New Batch</span>
+          <span>{isDayClosed ? 'Day Closed (Locked)' : 'Record New Batch'}</span>
         </button>
       </div>
+
+      {/* Lock banner if day is closed */}
+      {isDayClosed && (
+        <DayClosedLockOverlay
+          inline
+          customMessage="Dahi Processing & Kitchen batches are Inactive because the business day is closed."
+        />
+      )}
 
       {/* ── Date Filter Tabs ── */}
       <div className="flex flex-wrap items-center gap-1.5">

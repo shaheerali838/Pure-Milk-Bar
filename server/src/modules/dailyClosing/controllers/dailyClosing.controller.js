@@ -1,3 +1,5 @@
+import DailyClosing from '../../../models/DailyClosing.model.js';
+import { getPktDayRange, getPktTodayString } from '../../../utils/dateUtils.js';
 import {
   getDailyClosingSummaryService,
   confirmDailyClosingService,
@@ -207,3 +209,74 @@ export const getDailyClosingReport = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getTodayClosingStatus = async (req, res, next) => {
+  try {
+    const targetDateStr = req.query.date || getPktTodayString();
+    const { startOfDay, endOfDay, dateStr } = getPktDayRange(targetDateStr);
+
+    const closing = await DailyClosing.findOne({
+      closingDate: { $gte: startOfDay, $lte: endOfDay },
+    })
+      .sort({ closingDate: -1 })
+      .populate('closedByUserId', 'name username role')
+      .populate('reopenedByUserId', 'name username role')
+      .lean();
+
+    const isDayClosed = closing
+      ? ['CLOSED', 'LOCKED', 'APPROVED', 'RECONCILED'].includes(closing.status)
+      : false;
+
+    res.status(200).json({
+      success: true,
+      isDayClosed,
+      status: closing?.status || 'OPEN',
+      date: dateStr,
+      closingId: closing?._id || null,
+      closedAt: closing?.closedAt || null,
+      closedBy: closing?.closedByUserId?.name || 'Staff',
+      reopenedAt: closing?.reopenedAt || null,
+      reopenReason: closing?.reopenReason || null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const reopenTodayClosing = async (req, res, next) => {
+  try {
+    const targetDateStr = req.body?.date || getPktTodayString();
+    const { startOfDay, endOfDay, dateStr } = getPktDayRange(targetDateStr);
+
+    const closing = await DailyClosing.findOne({
+      closingDate: { $gte: startOfDay, $lte: endOfDay },
+    });
+
+    if (!closing) {
+      return res.status(200).json({
+        success: true,
+        isDayClosed: false,
+        status: 'OPEN',
+        message: `Day ${dateStr} is not closed.`,
+      });
+    }
+
+    const reopenedClosing = await reopenDailyClosingService(
+      closing._id.toString(),
+      req.user,
+      req.body || { reopenReason: 'Day reopened by Admin to reactivate website operations' },
+      req.ip
+    );
+
+    res.status(200).json({
+      success: true,
+      isDayClosed: false,
+      status: 'REOPENED',
+      message: `Daily closing for ${dateStr} successfully reopened. Operations are now ACTIVE!`,
+      data: { closing: reopenedClosing },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ShoppingCart, Trash2, CheckCircle2, Users, UserCheck, Calendar, User, Truck, Loader2, AlertCircle } from "lucide-react";
 import { usePOSContext } from "@/context/POSContext";
+import { useDailyClose } from "@/context/DailyCloseContext";
 import { getPktTodayString } from "@/utils/dateUtils";
 import DayClosedLockOverlay from "@/components/common/DayClosedLockOverlay";
 import POSCartItems from "./POSCartItems";
@@ -13,9 +14,9 @@ import POSDeliverySection from "./POSDeliverySection";
 export default function POSSale() {
   const [searchParams] = useSearchParams();
   const [isProcessingSale, setIsProcessingSale] = useState(false);
+  const { isDayClosed, reopenDay } = useDailyClose();
 
   const {
-    isDayClosed = false,
     saleDate,
     setSaleDate,
     cart = [],

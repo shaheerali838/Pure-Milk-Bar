@@ -13,6 +13,8 @@ import {
   approveDailyClosing,
   reopenDailyClosing,
   getDailyClosingReport,
+  getTodayClosingStatus,
+  reopenTodayClosing,
 } from '../controllers/dailyClosing.controller.js';
 
 import { authenticate } from '../../../middlewares/authenticate.js';
@@ -31,6 +33,19 @@ const router = Router();
 
 // Protect all routes - Authentication Required
 router.use(authenticate);
+
+// Quick today status & quick reopen (accessible by staff & admin)
+router.get(
+  '/today-status',
+  authorize('ADMIN', 'MANAGER', 'CASHIER', 'FARM_SUPERVISOR'),
+  getTodayClosingStatus
+);
+
+router.post(
+  '/today/reopen',
+  authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  reopenTodayClosing
+);
 
 // 1. GET /api/v1/daily-closings/summary (Single unified endpoint for today & period views)
 router.get(

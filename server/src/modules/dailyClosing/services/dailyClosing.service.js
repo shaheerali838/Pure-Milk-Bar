@@ -1225,9 +1225,7 @@ export const confirmDailyClosingService = async (reqUser, payload = {}, ipAddres
   // Require variance reason if milk variance exceeds threshold (> 2% or > 2L)
   const isHighMilkVariance = Math.abs(milkVariance) > 2 || (expectedMilkStock > 0 && Math.abs(milkVariance) / expectedMilkStock > 0.02);
   if (isHighMilkVariance && (!varianceReason || varianceReason.trim().length < 3)) {
-    const err = new Error(`Significant milk variance of ${milkVariance} L detected. Please provide a valid variance reason.`);
-    err.statusCode = 422;
-    throw err;
+    varianceReason = `End-of-day reconciliation variance (${milkVariance > 0 ? '+' : ''}${milkVariance} L)`;
   }
 
   // Check if closing already exists for this date

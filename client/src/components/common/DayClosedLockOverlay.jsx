@@ -1,8 +1,9 @@
 import React from 'react';
-import { Lock, Sparkles, ArrowRight } from 'lucide-react';
+import { Lock, Sparkles, ArrowRight, Unlock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDailyClose } from '@/context/DailyCloseContext';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function DayClosedLockOverlay({
   inline = false,
@@ -10,17 +11,27 @@ export default function DayClosedLockOverlay({
   showAction = true,
   className = '',
 }) {
-  const { isDayClosed, openNewDay } = useDailyClose();
+  const { isDayClosed, openNewDay, reopenDay } = useDailyClose();
   const navigate = useNavigate();
 
   if (!isDayClosed) return null;
 
-  const defaultMessage = 'Day is Closed. Open New Day to continue operations.';
+  const defaultMessage = 'Day is Closed. Operations are Inactive.';
   const displayMessage = customMessage || defaultMessage;
 
   const handleOpenNewDay = (e) => {
     e?.stopPropagation();
     openNewDay();
+  };
+
+  const handleReopenDay = async (e) => {
+    e?.stopPropagation();
+    try {
+      await reopenDay('Day reopened by user');
+      toast.success('Day successfully reopened! Website operations are now ACTIVE.');
+    } catch (err) {
+      toast.error('Failed to reactivate: ' + err.message);
+    }
   };
 
   const handleNavigateClosing = (e) => {
@@ -49,6 +60,15 @@ export default function DayClosedLockOverlay({
 
         {showAction && (
           <div className="flex items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleReopenDay}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-9 px-3.5 shadow-sm shadow-blue-600/20 gap-1.5"
+            >
+              <Unlock className="w-3.5 h-3.5" />
+              Reopen &amp; Activate Day
+            </Button>
             <Button
               type="button"
               size="sm"
@@ -102,7 +122,16 @@ export default function DayClosedLockOverlay({
         </div>
 
         {showAction && (
-          <div className="flex items-center gap-2.5 pt-1">
+          <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleReopenDay}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-9 px-4 shadow-lg shadow-blue-600/30 gap-1.5 cursor-pointer"
+            >
+              <Unlock className="w-4 h-4" />
+              Reopen &amp; Activate Website
+            </Button>
             <Button
               type="button"
               size="sm"

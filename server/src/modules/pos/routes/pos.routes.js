@@ -2,6 +2,7 @@ import { Router } from 'express';
 import validate from '../../../middlewares/validate.js';
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize } from '../../../middlewares/authorize.js';
+import { checkDayNotClosed } from '../../../middlewares/checkDayNotClosed.js';
 
 // Controllers
 import orderController from '../controllers/order.controller.js';
@@ -60,6 +61,7 @@ router.get(
 router.post(
   '/orders',
   authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  checkDayNotClosed,
   validate({ body: createOrderSchema }),
   orderController.createOrder
 );
@@ -67,6 +69,7 @@ router.post(
 router.post(
   '/',
   authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  checkDayNotClosed,
   validate({ body: createOrderSchema }),
   orderController.createOrder
 );

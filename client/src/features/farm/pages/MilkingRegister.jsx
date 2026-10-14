@@ -3,10 +3,13 @@ import { ClipboardEdit, History, Milk, Plus } from "lucide-react";
 import MilkingRegisterTable from "../components/milking/MilkingRegisterTable";
 import FarmIntakeHistory from "../components/milking/FarmIntakeHistory";
 import { useAnimalContext } from "@/context/AnimalContext";
+import { useDailyClose } from "@/context/DailyCloseContext";
+import DayClosedLockOverlay from "@/components/common/DayClosedLockOverlay";
 
 export default function MilkingRegister() {
   const [activeTab, setActiveTab] = useState("register"); // 'register' | 'history'
   const { milkingLogs = [] } = useAnimalContext();
+  const { isDayClosed } = useDailyClose();
 
   return (
     <div className="flex flex-col gap-4 p-1 animate-in fade-in duration-150">
@@ -61,6 +64,14 @@ export default function MilkingRegister() {
           </button>
         </div>
       </div>
+
+      {/* Day Closed Alert */}
+      {isDayClosed && (
+        <DayClosedLockOverlay
+          inline
+          customMessage="Farm Milking is Inactive because the day is closed."
+        />
+      )}
 
       {/* View Content */}
       {activeTab === "register" ? (

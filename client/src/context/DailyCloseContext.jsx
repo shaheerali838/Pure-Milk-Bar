@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { getPktTodayString } from '@/utils/dateUtils';
 import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
+import { getTodayClosingStatus, reopenTodayClosing } from '@/features/finance/services/dailyClosingService';
 
 const STORAGE_KEY = 'pure_milk_bar_daily_closing_state';
 
@@ -304,6 +305,39 @@ export function DailyCloseProvider({ children }) {
     return () => unsubscribe();
   }, [state.version, state.isDayClosed]);
 
+  // Server Truth Synchronization: Always check backend database status for today
+  const syncWithServer = useCallback(async () => {
+    try {
+      const serverStatus = await getTodayClosingStatus();
+      if (serverStatus && typeof serverStatus.isDayClosed === 'boolean') {
+        if (serverStatus.isDayClosed && !state.isDayClosed) {
+          dispatch({
+            type: DAILY_CLOSE_ACTIONS.CLOSE_DAY,
+            payload: {
+              date: serverStatus.date || getPktTodayString(),
+              closedAt: serverStatus.closedAt,
+            },
+          });
+        } else if (!serverStatus.isDayClosed && state.isDayClosed) {
+          dispatch({ type: DAILY_CLOSE_ACTIONS.REOPEN_DAY, payload: {} });
+        }
+      }
+    } catch (err) {
+      // ignore network errors
+    }
+  }, [state.isDayClosed]);
+
+  useEffect(() => {
+    syncWithServer();
+    const handleFocus = () => syncWithServer();
+    window.addEventListener('focus', handleFocus);
+    const interval = setInterval(syncWithServer, 20000); // sync every 20s
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
+  }, [syncWithServer]);
+
   // Action Dispatchers
   const closeDay = useCallback((payload = {}) => {
     dispatch({ type: DAILY_CLOSE_ACTIONS.CLOSE_DAY, payload });
@@ -316,7 +350,12 @@ export function DailyCloseProvider({ children }) {
     broadcastSync('pure_milk_bar_daily_closing_updated', { isDayClosed: false, ...payload });
   }, []);
 
-  const reopenDay = useCallback((reason) => {
+  const reopenDay = useCallback(async (reason = 'Website operations reactivated by user') => {
+    try {
+      await reopenTodayClosing(reason);
+    } catch (err) {
+      console.warn('Backend reopen error (continuing with client state):', err);
+    }
     dispatch({ type: DAILY_CLOSE_ACTIONS.REOPEN_DAY, payload: { reason } });
     broadcastSync('pure_milk_bar_daily_closing_updated', { isDayClosed: false, reason });
   }, []);
