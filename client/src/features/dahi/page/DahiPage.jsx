@@ -112,6 +112,11 @@ export default function DahiPage() {
     const efficiency = netConverted > 0 ? ((totalOutput / netConverted) * 100).toFixed(1) : '100.0';
 
     return {
+      ...(metrics || {}),
+      convertedToDahi: String(netConverted),
+      farmConverted: String(farmConverted),
+      supplierConverted: String(supplierConverted),
+      dahiProduced: String(totalOutput),
       farmMilkConverted: farmConverted,
       supplierMilkConverted: supplierConverted,
       totalMilkConverted: netConverted,

@@ -32,9 +32,11 @@ export const generateSecurePassword = (length = 10) => {
 };
 
 // Helper to generate a clean unique username for new staff user
-const generateUniqueUsername = async (name, email) => {
+const generateUniqueUsername = async (name, email, preferredUsername) => {
   let base = '';
-  if (email && email.includes('@')) {
+  if (preferredUsername && preferredUsername.trim()) {
+    base = preferredUsername.trim().toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_');
+  } else if (email && email.includes('@')) {
     base = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
   } else if (name) {
     base = name.trim().toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_');
@@ -48,9 +50,12 @@ const generateUniqueUsername = async (name, email) => {
   let candidate = base;
   let counter = 1;
   while (await User.findOne({ username: candidate })) {
-    candidate = `${base}${Math.floor(100 + Math.random() * 900)}`;
+    candidate = `${base}${counter}`;
+    if (counter > 5) {
+      candidate = `${base}${Math.floor(100 + Math.random() * 900)}`;
+    }
     counter++;
-    if (counter > 10) {
+    if (counter > 15) {
       candidate = `${base}_${Date.now().toString().slice(-4)}`;
       break;
     }
@@ -177,44 +182,34 @@ export const createStaffService = async (staffData, user) => {
   let generatedPlainPassword = null;
   let emailDispatchResult = null;
 
-  if (shouldCreateAccount && (email || customUsername)) {
+  if (shouldCreateAccount) {
     const mappedRole = mapStaffRoleToUserRole(role);
-    const targetUsername = customUsername ? customUsername.trim().toLowerCase() : await generateUniqueUsername(name, email);
+    const targetUsername = await generateUniqueUsername(name, email, customUsername);
     generatedPlainPassword = customPassword && customPassword.trim() ? customPassword.trim() : generateSecurePassword(10);
 
-    // Check if user already exists
-    let existingUser = await User.findOne({
-      $or: [
-        ...(customUsername ? [{ username: targetUsername }] : []),
-        ...(email ? [{ email }] : []),
-      ],
-    });
+    // If an existing user account has the exact same email, link it; otherwise create a fresh user doc
+    let existingUser = email ? await User.findOne({ email }) : null;
 
     if (existingUser) {
-      if (email && existingUser.email === email) {
-        const error = new Error(`A user account with email '${email}' already exists.`);
-        error.statusCode = 409;
-        throw error;
-      }
-      if (customUsername && existingUser.username === targetUsername) {
-        const error = new Error(`Username '${targetUsername}' is already taken.`);
-        error.statusCode = 409;
-        throw error;
-      }
       linkedUserDoc = existingUser;
       linkedUserDoc.role = mappedRole;
       linkedUserDoc.isActive = true;
-      if (email && !linkedUserDoc.email) linkedUserDoc.email = email;
       await linkedUserDoc.save();
     } else {
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(generatedPlainPassword, salt);
-      const userPhone = contactPhone || `+92300${Math.floor(1000000 + Math.random() * 9000000)}`;
+      
+      let rawUserPhone = contactPhone || `+92300${Math.floor(1000000 + Math.random() * 9000000)}`;
+      let finalUserPhone = rawUserPhone;
+      let pCounter = 1;
+      while (await User.findOne({ phone: finalUserPhone })) {
+        finalUserPhone = `${rawUserPhone}_${pCounter++}`;
+      }
 
       linkedUserDoc = await User.create({
         username: targetUsername,
         name: name.trim(),
-        phone: userPhone,
+        phone: finalUserPhone,
         email: email || null,
         passwordHash,
         role: mappedRole,

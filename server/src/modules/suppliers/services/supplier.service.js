@@ -108,7 +108,7 @@ class SupplierService {
     }
 
     const supplier = await Supplier.findByIdAndUpdate(id, updatePayload, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
 

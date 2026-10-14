@@ -72,13 +72,21 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
   const isCow = (formData.milkType || '').toLowerCase().includes('cow');
 
   // Farm stocks
-  const availFarmCow = Math.max(0, Number(metrics.remainingFarmCowMilk ?? invMetrics.rawFarmCowMilkStock ?? invMetrics.farmCowMilkStock ?? 0));
-  const availFarmBuffalo = Math.max(0, Number(metrics.remainingFarmBuffaloMilk ?? invMetrics.rawFarmBuffaloMilkStock ?? invMetrics.farmBuffaloMilkStock ?? 0));
+  const totalFarmStock = Number(metrics.remainingFarmMilk ?? invMetrics.farmMilkStock ?? invMetrics.rawFarmMilkStock ?? metrics.farmSourced ?? 0);
+  const totalSupplierStock = Number(metrics.remainingSupplierMilk ?? invMetrics.supplierMilkStock ?? invMetrics.rawSupplierMilkStock ?? metrics.supplierSourced ?? 0);
+  const totalAllStock = Number(metrics.remainingTotalMilk ?? invMetrics.totalMilk ?? (totalFarmStock + totalSupplierStock));
+
+  const rawFarmCow = Number(metrics.remainingFarmCowMilk ?? invMetrics.rawFarmCowMilkStock ?? invMetrics.farmCowMilkStock);
+  const rawFarmBuffalo = Number(metrics.remainingFarmBuffaloMilk ?? invMetrics.rawFarmBuffaloMilkStock ?? invMetrics.farmBuffaloMilkStock);
+  const availFarmCow = !isNaN(rawFarmCow) && rawFarmCow > 0 ? rawFarmCow : (rawFarmBuffalo > 0 ? 0 : totalFarmStock);
+  const availFarmBuffalo = !isNaN(rawFarmBuffalo) && rawFarmBuffalo > 0 ? rawFarmBuffalo : (rawFarmCow > 0 ? 0 : totalFarmStock);
   const availFarmForType = isCow ? availFarmCow : availFarmBuffalo;
 
   // Supplier stocks
-  const availSupplierCow = Math.max(0, Number(metrics.remainingSupplierCowMilk ?? invMetrics.rawSupplierCowMilkStock ?? invMetrics.supplierCowMilkStock ?? 0));
-  const availSupplierBuffalo = Math.max(0, Number(metrics.remainingSupplierBuffaloMilk ?? invMetrics.rawSupplierBuffaloMilkStock ?? invMetrics.supplierBuffaloMilkStock ?? 0));
+  const rawSupplierCow = Number(metrics.remainingSupplierCowMilk ?? invMetrics.rawSupplierCowMilkStock ?? invMetrics.supplierCowMilkStock);
+  const rawSupplierBuffalo = Number(metrics.remainingSupplierBuffaloMilk ?? invMetrics.rawSupplierBuffaloMilkStock ?? invMetrics.supplierBuffaloMilkStock);
+  const availSupplierCow = !isNaN(rawSupplierCow) && rawSupplierCow > 0 ? rawSupplierCow : (rawSupplierBuffalo > 0 ? 0 : totalSupplierStock);
+  const availSupplierBuffalo = !isNaN(rawSupplierBuffalo) && rawSupplierBuffalo > 0 ? rawSupplierBuffalo : (rawSupplierCow > 0 ? 0 : totalSupplierStock);
   const availSupplierForType = isCow ? availSupplierCow : availSupplierBuffalo;
 
   // Total available for currently selected milk type
@@ -87,9 +95,9 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
   const availTotalBuffalo = Number((availFarmBuffalo + availSupplierBuffalo).toFixed(1));
 
   // Overall aggregate liquid milk (chiller total across all species)
-  const availFarmAll = Number(metrics.remainingFarmMilk ?? metrics.farmSourced ?? (availFarmCow + availFarmBuffalo).toFixed(1));
-  const availSupplierAll = Number(metrics.remainingSupplierMilk ?? metrics.supplierSourced ?? (availSupplierCow + availSupplierBuffalo).toFixed(1));
-  const availTotalAll = Number(metrics.remainingTotalMilk ?? (availFarmAll + availSupplierAll).toFixed(1));
+  const availFarmAll = totalFarmStock > 0 ? totalFarmStock : Number((availFarmCow + availFarmBuffalo).toFixed(1));
+  const availSupplierAll = totalSupplierStock > 0 ? totalSupplierStock : Number((availSupplierCow + availSupplierBuffalo).toFixed(1));
+  const availTotalAll = totalAllStock > 0 ? totalAllStock : Number((availFarmAll + availSupplierAll).toFixed(1));
 
   // Maximum allowed for current source and selected milk type
   const currentMax =

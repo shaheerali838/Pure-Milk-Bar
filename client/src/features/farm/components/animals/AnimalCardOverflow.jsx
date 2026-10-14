@@ -190,42 +190,6 @@ export default function AnimalCardOverflow({ selectedDate }) {
     "Actions",
   ];
 
-  // 1. Full-space Add Animal View
-  if (isModalOpen) {
-    return (
-      <AnimalAdd
-        onBack={closeModal}
-        onSuccess={closeModal}
-      />
-    );
-  }
-
-  // 2. Full-space Edit Animal View
-  if (editAnimal) {
-    return (
-      <AnimalAdd
-        editingAnimal={editAnimal}
-        onBack={() => setEditAnimal(null)}
-        onSuccess={() => setEditAnimal(null)}
-      />
-    );
-  }
-
-  // 3. Full-space Animal Detail View
-  if (selectedAnimalId) {
-    return (
-      <AnimalDetail
-        animalId={selectedAnimalId}
-        onBack={() => setSelectedAnimalId(null)}
-        onClose={() => setSelectedAnimalId(null)}
-        onEdit={(animal) => {
-          setEditAnimal(animal);
-          setSelectedAnimalId(null);
-        }}
-      />
-    );
-  }
-
   const todayStr = getTodayDateStr();
   const targetDate = selectedDate || todayStr;
   const isToday = targetDate === todayStr;
@@ -276,6 +240,42 @@ export default function AnimalCardOverflow({ selectedDate }) {
 
     return map;
   }, [milkingLogs, animals, targetDate]);
+
+  // 1. Full-space Add Animal View
+  if (isModalOpen) {
+    return (
+      <AnimalAdd
+        onBack={closeModal}
+        onSuccess={closeModal}
+      />
+    );
+  }
+
+  // 2. Full-space Edit Animal View
+  if (editAnimal) {
+    return (
+      <AnimalAdd
+        editingAnimal={editAnimal}
+        onBack={() => setEditAnimal(null)}
+        onSuccess={() => setEditAnimal(null)}
+      />
+    );
+  }
+
+  // 3. Full-space Animal Detail View
+  if (selectedAnimalId) {
+    return (
+      <AnimalDetail
+        animalId={selectedAnimalId}
+        onBack={() => setSelectedAnimalId(null)}
+        onClose={() => setSelectedAnimalId(null)}
+        onEdit={(animal) => {
+          setEditAnimal(animal);
+          setSelectedAnimalId(null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">
