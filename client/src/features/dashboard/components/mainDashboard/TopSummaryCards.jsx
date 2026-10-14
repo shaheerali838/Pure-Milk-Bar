@@ -61,61 +61,132 @@ export default function TopSummaryCards({
     let salesRevenue = 0;
     let milkSoldQty = 0;
     let milkSalesRevenue = 0;
+    let dahiSoldQty = 0;
+    let dahiSalesRevenue = 0;
+    let otherSoldQty = 0;
+    let otherSalesRevenue = 0;
+
     let farmMilkSoldQty = 0;
     let supplierMilkSoldQty = 0;
     let farmMilkRevenue = 0;
     let supplierMilkRevenue = 0;
-    let dahiSoldQty = 0;
-    let dahiSalesRevenue = 0;
+
+    let farmDahiSoldQty = 0;
+    let supplierDahiSoldQty = 0;
+    let farmDahiRevenue = 0;
+    let supplierDahiRevenue = 0;
 
     matchedSales.forEach((sale) => {
       salesRevenue += Number(sale.netPayable || sale.totalAmount || sale.grandTotal) || 0;
       (sale.items || []).forEach((item) => {
         const name = (item.name || '').toLowerCase();
         const cat = (item.category || '').toLowerCase();
+        const src = (item.source || '').toLowerCase();
         const qty = Number(item.quantity) || 0;
         const rev = Number(item.subtotal || item.effectiveRevenue) || qty * (Number(item.price) || 0);
-        const isDahi = name.includes('dahi') || cat.includes('dahi') || name.includes('yogurt');
+        const isDahi = name.includes('dahi') || cat.includes('dahi') || name.includes('yogurt') || cat.includes('yogurt') || name.includes('curd');
+        const isMilk = !isDahi && (name.includes('milk') || cat.includes('milk') || name.includes('cow') || cat.includes('cow') || name.includes('buffalo') || cat.includes('buffalo'));
+
+        // Determine farm vs supplier attribution
+        let fRev = 0;
+        let sRev = 0;
+        let fQty = 0;
+        let sQty = 0;
+
+        if (item.supplierRevenue !== undefined && Number(item.supplierRevenue) > 0) {
+          sRev = Number(item.supplierRevenue);
+          sQty = Number(item.supplierQuantity) || (src.includes('supplier') ? qty : 0);
+          fRev = Number(item.farmRevenue) || 0;
+          fQty = Number(item.farmQuantity) || 0;
+        } else if (item.farmRevenue !== undefined && Number(item.farmRevenue) > 0) {
+          fRev = Number(item.farmRevenue);
+          fQty = Number(item.farmQuantity) || (src.includes('farm') ? qty : 0);
+          sRev = 0;
+          sQty = 0;
+        } else if (item.farmDahiRevenue !== undefined && Number(item.farmDahiRevenue) > 0) {
+          fRev = Number(item.farmDahiRevenue);
+          fQty = Number(item.farmQuantity) || qty;
+          sRev = 0;
+          sQty = 0;
+        } else if (item.supplierRatio !== undefined || item.farmRatio !== undefined) {
+          const sRatio = Number(item.supplierRatio) || 0;
+          const fRatio = Number(item.farmRatio) || 0;
+          sRev = Math.round(rev * sRatio);
+          fRev = rev - sRev;
+          sQty = Number((qty * sRatio).toFixed(2));
+          fQty = Number((qty * fRatio).toFixed(2));
+        } else if (src.includes('supplier') || name.includes('supplier') || cat.includes('supplier')) {
+          sRev = rev;
+          sQty = qty;
+        } else if (src.includes('farm') || name.includes('farm') || cat.includes('farm')) {
+          fRev = rev;
+          fQty = qty;
+        } else {
+          // If no explicit source:
+          if (name.includes('cow') || cat.includes('cow')) {
+            fRev = rev;
+            fQty = qty;
+          } else {
+            fRev = rev;
+            fQty = qty;
+          }
+        }
 
         if (isDahi) {
           dahiSoldQty += qty;
           dahiSalesRevenue += rev;
-        } else {
+          farmDahiSoldQty += fQty;
+          supplierDahiSoldQty += sQty;
+          farmDahiRevenue += fRev;
+          supplierDahiRevenue += sRev;
+        } else if (isMilk) {
           milkSoldQty += qty;
           milkSalesRevenue += rev;
-          const fQty = item.farmQuantity !== undefined ? Number(item.farmQuantity) || 0 : (item.source === 'Farm' ? qty : 0);
-          const sQty = item.supplierQuantity !== undefined ? Number(item.supplierQuantity) || 0 : (item.source === 'Supplier' ? qty : 0);
-          const fRev = item.farmRevenue !== undefined ? Number(item.farmRevenue) || 0 : (item.source === 'Farm' ? rev : 0);
-          const sRev = item.supplierRevenue !== undefined ? Number(item.supplierRevenue) || 0 : (item.source === 'Supplier' ? rev : 0);
-          todayFarmMilkSoldQty(fQty);
-          todaySupplierMilkSoldQty(sQty);
-          todayFarmMilkRevenue(fRev);
-          todaySupplierMilkRevenue(sRev);
+          farmMilkSoldQty += fQty;
+          supplierMilkSoldQty += sQty;
+          farmMilkRevenue += fRev;
+          supplierMilkRevenue += sRev;
+        } else {
+          otherSoldQty += qty;
+          otherSalesRevenue += rev;
+          if (sRev > 0) supplierMilkRevenue += sRev;
+          else farmMilkRevenue += fRev;
         }
       });
     });
 
-    function todayFarmMilkSoldQty(v) { farmMilkSoldQty += v; }
-    function todaySupplierMilkSoldQty(v) { supplierMilkSoldQty += v; }
-    function todayFarmMilkRevenue(v) { farmMilkRevenue += v; }
-    function todaySupplierMilkRevenue(v) { supplierMilkRevenue += v; }
+    const totalFarmRevenue = farmMilkRevenue + farmDahiRevenue;
+    const totalSupplierRevenue = supplierMilkRevenue + supplierDahiRevenue;
 
     // 4. Expenses within timeframe
     const matchedFarmExp = farmExpenses.filter((e) =>
-      isMatchingTimeframe(e.date, timeRange, customStartDate, customEndDate)
+      isMatchingTimeframe(e.date || e.createdAt, activeRange, activeStart, activeEnd)
     );
     const totalFarmExp = matchedFarmExp.reduce((s, e) => s + (Number(e.amount) || 0), 0);
 
     const matchedSupExp = supplierExpenses.filter((e) =>
-      isMatchingTimeframe(e.date, timeRange, customStartDate, customEndDate)
+      isMatchingTimeframe(e.date || e.createdAt, activeRange, activeStart, activeEnd)
     );
     const totalSupExp = matchedSupExp.reduce((s, e) => s + (Number(e.amount) || 0), 0);
     const totalProcurementCost = matchedIntakes.reduce((s, i) => s + (Number(i.totalCost || i.totalAmount) || 0), 0);
 
-    // Dynamic Net Profits for period
-    const fNetProfit = farmMilkRevenue - totalFarmExp;
-    const sNetProfit = supplierMilkRevenue - (totalProcurementCost + totalSupExp);
-    const totNetProfit = salesRevenue - (totalFarmExp + totalProcurementCost + totalSupExp);
+    // Dynamic Net Profits for period (incorporating both liquid milk and dahi revenues)
+    const calculatedFNetProfit = totalFarmRevenue - totalFarmExp;
+    const calculatedSNetProfit = totalSupplierRevenue - (totalProcurementCost + totalSupExp);
+    const calculatedTotNetProfit = salesRevenue - (totalFarmExp + totalProcurementCost + totalSupExp);
+
+    const fNetProfit = activeRange === 'today' && businessFinancialMetrics?.farmNetProfit !== undefined
+      ? Number(businessFinancialMetrics.farmNetProfit)
+      : calculatedFNetProfit;
+
+    const sNetProfit = activeRange === 'today' && businessFinancialMetrics?.supplierNetProfit !== undefined
+      ? Number(businessFinancialMetrics.supplierNetProfit)
+      : calculatedSNetProfit;
+
+    const totNetProfit = activeRange === 'today' && businessFinancialMetrics?.totalBusinessNetProfit !== undefined
+      ? Number(businessFinancialMetrics.totalBusinessNetProfit)
+      : calculatedTotNetProfit;
+
     const margin = salesRevenue > 0 ? Math.round((totNetProfit / salesRevenue) * 100) : 0;
 
     // 5. Recoveries
@@ -124,7 +195,7 @@ export default function TopSummaryCards({
       (entries || []).forEach((entry) => {
         if (
           (entry.type === 'CREDIT' || Number(entry.credit) > 0) &&
-          isMatchingTimeframe(entry.date || entry.createdAt, timeRange, customStartDate, customEndDate)
+          isMatchingTimeframe(entry.date || entry.createdAt, activeRange, activeStart, activeEnd)
         ) {
           ledgerSum += Number(entry.credit) || 0;
         }
@@ -143,6 +214,12 @@ export default function TopSummaryCards({
       supplierMilkSoldQty,
       farmMilkRevenue,
       supplierMilkRevenue,
+      farmDahiSoldQty,
+      supplierDahiSoldQty,
+      farmDahiRevenue,
+      supplierDahiRevenue,
+      totalFarmRevenue,
+      totalSupplierRevenue,
       dahiSoldQty,
       dahiSalesRevenue,
       farmNetProfit: fNetProfit,
@@ -163,6 +240,7 @@ export default function TopSummaryCards({
     activeEnd,
     inventoryMetrics,
     intakeTotals,
+    businessFinancialMetrics,
   ]);
 
   const periodData = getDateRangeBoundaries(activeRange, activeStart, activeEnd);
@@ -212,7 +290,7 @@ export default function TopSummaryCards({
       icon: TrendingUp,
       color: dateMetrics.supplierNetProfit >= 0 ? '#0284c7' : '#dc2626',
       tag: 'Supplier P&L',
-      to: '/farm/pl',
+      to: '/supplier/pl',
     },
     {
       id: 'available-milk-stock',
