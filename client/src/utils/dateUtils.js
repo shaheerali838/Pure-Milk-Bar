@@ -6,19 +6,59 @@
 export const PKT_TIMEZONE = 'Asia/Karachi';
 
 /**
+ * Returns YYYY-MM-DD exactly in local timezone.
+ * Never uses toISOString() which shifts to UTC date.
+ */
+export const getLocalDate = (d = new Date()) => {
+  try {
+    const dateObj = d instanceof Date ? d : new Date(d);
+    if (isNaN(dateObj.getTime())) return new Date().toLocaleDateString('en-CA');
+    return dateObj.toLocaleDateString('en-CA');
+  } catch {
+    return new Date().toLocaleDateString('en-CA');
+  }
+};
+
+/**
  * Get current business date string in PKT timezone (YYYY-MM-DD)
  * Never relies on toISOString() which returns UTC date.
  * @returns {string} e.g. "2026-09-28"
  */
 export function getPktTodayString() {
-  const now = new Date();
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: PKT_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  return formatter.format(now);
+  return getLocalDate();
+}
+
+/**
+ * Returns today's ISO date string (YYYY-MM-DD) strictly using local timezone
+ */
+export function getTodayDateStr() {
+  return getLocalDate();
+}
+
+/**
+ * Get active business date string (YYYY-MM-DD) from persisted DailyClose state.
+ * Falls back to current local calendar date if not set or invalid.
+ * @returns {string} e.g. "2026-10-10"
+ */
+export function getActiveBusinessDate() {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('pure_milk_bar_daily_closing_state');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.activeDate && /^\d{4}-\d{2}-\d{2}$/.test(parsed.activeDate)) {
+          const today = getLocalDate();
+          if (parsed.activeDate < today && !parsed.isDayClosed) {
+            return today;
+          }
+          return parsed.activeDate;
+        }
+      }
+    } catch {
+      // Ignore parse failure and fall back
+    }
+  }
+  return getLocalDate();
 }
 
 /**
@@ -357,3 +397,5 @@ export function isDateInFilterRange(rawDate, dateFilter = 'today', customStart =
   }
   return true;
 }
+
+

@@ -26,7 +26,43 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { getClosingHistory, exportDailyClosingCsv } from '../../services/dailyClosingService';
+import { useDailyClose } from '@/context/DailyCloseContext';
 import DailyClosingModuleDetails from './DailyClosingModuleDetails';
+
+const parseClosingStock = (item) => {
+  const stock = item?.closingStock || item?.summarySnapshot?.closingStock;
+  let farm = 0;
+  let supplier = 0;
+  let dahi = 0;
+
+  if (stock) {
+    if (typeof stock.farm === 'object' && stock.farm !== null) {
+      farm = stock.farm.total ?? (Number(stock.farm.cow || 0) + Number(stock.farm.buffalo || 0));
+    } else {
+      farm = Number(stock.farm || 0);
+    }
+
+    if (typeof stock.supplier === 'object' && stock.supplier !== null) {
+      supplier = stock.supplier.total ?? (Number(stock.supplier.cow || 0) + Number(stock.supplier.buffalo || 0));
+    } else {
+      supplier = Number(stock.supplier || 0);
+    }
+
+    if (typeof stock.dahi === 'object' && stock.dahi !== null) {
+      dahi = stock.dahi.total ?? (Number(stock.dahi.farmDahi || 0) + Number(stock.dahi.supplierDahi || 0));
+    } else {
+      dahi = Number(stock.dahi || 0);
+    }
+  } else {
+    farm = Number(item?.physicalMilk ?? item?.expectedMilk ?? 0);
+  }
+
+  return {
+    farm: Number(farm.toFixed(1)),
+    supplier: Number(supplier.toFixed(1)),
+    dahi: Number(dahi.toFixed(1)),
+  };
+};
 
 export default function PreviousClosingsHistory({ onSelectDate, refreshTrigger = 0 }) {
   const [isOpen, setIsOpen] = useState(true);
@@ -54,9 +90,78 @@ export default function PreviousClosingsHistory({ onSelectDate, refreshTrigger =
   const formatRs = (val) => `Rs. ${Number(val || 0).toLocaleString('en-PK')}`;
   const formatL = (val) => `${Number(val || 0).toFixed(1)} L`;
 
+  const { dailyCloseHistory = [] } = useDailyClose();
+
+  const mergedHistory = useMemo(() => {
+    // 1. Context items from dailyCloseHistory
+    const contextItems = (dailyCloseHistory || []).map((item, idx) => {
+      const stock = parseClosingStock(item);
+      const rev = Number(item.totalRevenue ?? 0);
+      const exp = Number(item.totalExpenses ?? 0);
+      const profit = Number(item.totalBusinessProfit ?? item.netProfit ?? (rev - exp));
+      return {
+        id: `context-close-${item.date || idx}`,
+        date: item.date,
+        status: 'CLOSED',
+        totalRevenue: rev,
+        totalExpenses: exp,
+        netProfit: profit,
+        grossRevenue: rev,
+        estimatedProfit: profit,
+        closingStock: stock,
+        expectedMilk: stock.farm + stock.supplier,
+        physicalMilk: stock.farm + stock.supplier,
+        closedBy: item.closedBy || 'Supervisor (Daily Close)',
+        closedAt: item.closedAt,
+        farm: item.farm,
+        supplier: item.supplier,
+        totalBusinessProfit: item.totalBusinessProfit ?? profit,
+        isContext: true,
+      };
+    });
+
+    // 2. Server items
+    const serverItems = (history || []).map((h) => {
+      const stock = parseClosingStock(h);
+      const rev = Number(h.totalRevenue ?? h.grossRevenue ?? h.totalCollected ?? 0);
+      const exp = Number(h.totalExpenses ?? 0);
+      const profit = Number(h.totalBusinessProfit ?? h.netProfit ?? h.estimatedProfit ?? (rev - exp));
+      const farm = h.farm || h.summarySnapshot?.farm;
+      const supplier = h.supplier || h.summarySnapshot?.supplier;
+      return {
+        ...h,
+        totalRevenue: rev,
+        totalExpenses: exp,
+        netProfit: profit,
+        grossRevenue: rev,
+        estimatedProfit: profit,
+        closingStock: stock,
+        farm,
+        supplier,
+        totalBusinessProfit: h.totalBusinessProfit ?? h.summarySnapshot?.totalBusinessProfit ?? profit,
+      };
+    });
+
+    // Merge by date (Context items first for fresh state)
+    const map = new Map();
+    contextItems.forEach((it) => {
+      if (it.date) map.set(it.date, it);
+    });
+    serverItems.forEach((it) => {
+      if (it.date && !map.has(it.date)) {
+        map.set(it.date, it);
+      } else if (it.date && map.has(it.date)) {
+        const existing = map.get(it.date);
+        map.set(it.date, { ...it, ...existing });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  }, [dailyCloseHistory, history]);
+
   // Filtered History
   const filteredHistory = useMemo(() => {
-    return history.filter((item) => {
+    return mergedHistory.filter((item) => {
       const matchSearch =
         !searchFilter ||
         item.date?.toLowerCase().includes(searchFilter.toLowerCase()) ||
@@ -64,7 +169,7 @@ export default function PreviousClosingsHistory({ onSelectDate, refreshTrigger =
       const matchStatus = statusFilter === 'ALL' || item.status === statusFilter;
       return matchSearch && matchStatus;
     });
-  }, [history, searchFilter, statusFilter]);
+  }, [mergedHistory, searchFilter, statusFilter]);
 
   const handleOpenReportModal = (closing) => {
     setSelectedClosing(closing);
@@ -200,12 +305,10 @@ export default function PreviousClosingsHistory({ onSelectDate, refreshTrigger =
                   <tr className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 font-bold text-xs uppercase border-b border-slate-200 dark:border-slate-700">
                     <th className="py-3 px-3">Date</th>
                     <th className="py-3 px-2 text-center">Status</th>
-                    <th className="py-3 px-3 text-right">Expected Milk</th>
-                    <th className="py-3 px-3 text-right">Physical Dip</th>
-                    <th className="py-3 px-2 text-center">Variance</th>
-                    <th className="py-3 px-3 text-right">Money Collected</th>
-                    <th className="py-3 px-3 text-right">Cash in Drawer</th>
-                    <th className="py-3 px-3 text-right">Estimated Profit</th>
+                    <th className="py-3 px-3 text-right">Total Revenue</th>
+                    <th className="py-3 px-3 text-right">Total Expenses</th>
+                    <th className="py-3 px-3 text-right">Net Profit</th>
+                    <th className="py-3 px-4 text-center">Closing Stock (Farm / Sup / Dahi)</th>
                     <th className="py-3 px-3">Closed By</th>
                     <th className="py-3 px-3 text-center">Actions</th>
                   </tr>
@@ -225,38 +328,49 @@ export default function PreviousClosingsHistory({ onSelectDate, refreshTrigger =
                       <td className="py-3 px-2 text-center">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                           <Lock className="w-2.5 h-2.5" />
-                          {h.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right font-medium text-slate-600 dark:text-slate-400">
-                        {formatL(h.expectedMilk)}
-                      </td>
-                      <td className="py-3 px-3 text-right font-bold text-slate-900 dark:text-slate-100">
-                        {formatL(h.physicalMilk)}
-                      </td>
-                      <td className="py-3 px-2 text-center font-bold">
-                        <span
-                          className={
-                            Math.abs(h.milkVariance) <= 0.5
-                              ? 'text-emerald-600'
-                              : 'text-amber-600 dark:text-amber-400'
-                          }
-                        >
-                          {h.milkVariance > 0 ? `+${h.milkVariance}` : h.milkVariance} L
+                          {h.status || 'CLOSED'}
                         </span>
                       </td>
                       <td className="py-3 px-3 text-right font-semibold text-slate-900 dark:text-slate-100">
-                        {formatRs(h.totalCollected)}
+                        {formatRs(h.totalRevenue)}
                       </td>
-                      <td className="py-3 px-3 text-right font-semibold text-emerald-600">
-                        {formatRs(h.expectedCash)}
+                      <td className="py-3 px-3 text-right font-medium text-rose-600 dark:text-rose-400">
+                        {formatRs(h.totalExpenses)}
                       </td>
                       <td
                         className={`py-3 px-3 text-right font-black ${
-                          h.estimatedProfit >= 0 ? 'text-teal-600 dark:text-teal-400' : 'text-rose-600'
+                          (h.netProfit ?? 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'
                         }`}
                       >
-                        {formatRs(h.estimatedProfit)}
+                        <div>{formatRs(h.netProfit)}</div>
+                        {(h.farm || h.supplier) && (
+                          <div className="text-[10px] font-normal text-slate-500 dark:text-slate-400 flex items-center justify-end gap-1.5 mt-0.5 whitespace-nowrap">
+                            {h.farm && (
+                              <span className={h.farm.netProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}>
+                                Farm: {h.farm.netProfit >= 0 ? '+' : ''}{Math.round(h.farm.netProfit).toLocaleString()}
+                              </span>
+                            )}
+                            {h.farm && h.supplier && <span className="opacity-40">|</span>}
+                            {h.supplier && (
+                              <span className={h.supplier.netProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}>
+                                Sup: {h.supplier.netProfit >= 0 ? '+' : ''}{Math.round(h.supplier.netProfit).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <div className="inline-flex items-center gap-1.5 flex-wrap justify-center text-[11px]">
+                          <span className="px-2 py-0.5 rounded-md bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 text-sky-800 dark:text-sky-300 font-bold" title="Farm Milk Closing Stock">
+                            Farm: {h.closingStock?.farm ?? 0} L
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300 font-bold" title="Supplier Milk Closing Stock">
+                            Sup: {h.closingStock?.supplier ?? 0} L
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-bold" title="Dahi Closing Stock">
+                            Dahi: {h.closingStock?.dahi ?? 0} kg
+                          </span>
+                        </div>
                       </td>
                       <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-xs">
                         {h.closedBy}
@@ -397,6 +511,61 @@ export default function PreviousClosingsHistory({ onSelectDate, refreshTrigger =
                   </span>
                 </div>
               </div>
+
+              {/* Segregated Farm & Supplier Financial P&L Cards */}
+              {(selectedClosing.farm || selectedClosing.supplier) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                  {selectedClosing.farm && (
+                    <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                          🚜 Farm Operations P&L
+                        </span>
+                        <span className={`text-xs font-black ${selectedClosing.farm.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {formatRs(selectedClosing.farm.netProfit)}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Total Revenue</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">{formatRs(selectedClosing.farm.totalRevenue)}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Farm Expenses</span>
+                          <span className="font-medium text-rose-600">{formatRs(selectedClosing.farm.totalExpenses)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedClosing.supplier && (
+                    <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                          🏪 Supplier Sourcing P&L
+                        </span>
+                        <span className={`text-xs font-black ${selectedClosing.supplier.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {formatRs(selectedClosing.supplier.netProfit)}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Revenue</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">{formatRs(selectedClosing.supplier.totalRevenue)}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Procurement</span>
+                          <span className="font-medium text-amber-600">{formatRs(selectedClosing.supplier.totalProcurementCost)}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Expenses</span>
+                          <span className="font-medium text-rose-600">{formatRs(selectedClosing.supplier.totalExpenses)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Variance explanation or supervisor notes if any */}
               {(selectedClosing.varianceReason || selectedClosing.supervisorNotes) && (

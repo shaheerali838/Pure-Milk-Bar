@@ -21,7 +21,7 @@ function getDateBoundaries(range) {
   if (range === 'week') {
     // Mon–Sun week
     const day = now.getDay(); // 0=Sun
-    const diff = (day === 0 ? -6 : 1 - day);
+    const diff = day === 0 ? -6 : 1 - day;
     const weekStart = new Date(todayStart);
     weekStart.setDate(todayStart.getDate() + diff);
     return { from: weekStart, to: now };
@@ -108,22 +108,23 @@ export default function DahiPage() {
       totalOutput += Number(b.outputVal || b.outputQuantity) || 0;
     });
 
-    const totalConverted = farmConverted + supplierConverted;
-    const dahiTransferred = filteredBatches
-      .filter((b) => b.stage === 'pos' || b.stage === 'sold_out')
-      .reduce((sum, b) => sum + (Number(b.outputVal || b.outputQuantity) || 0), 0);
+    const netConverted = farmConverted + supplierConverted;
+    const efficiency = netConverted > 0 ? ((totalOutput / netConverted) * 100).toFixed(1) : '100.0';
 
     return {
-      ...metrics,
-      convertedToDahi: String(Number(totalConverted.toFixed(1))),
-      farmConverted: String(Math.round(farmConverted)),
-      supplierConverted: String(Math.round(supplierConverted)),
-      dahiProduced: String(Number(totalOutput.toFixed(1))),
-      dahiTransferredToPOS: String(Number(dahiTransferred.toFixed(1))),
+      farmMilkConverted: farmConverted,
+      supplierMilkConverted: supplierConverted,
+      totalMilkConverted: netConverted,
+      totalDahiOutput: totalOutput,
+      conversionEfficiency: efficiency,
+      activeBatchesCount: filteredBatches.length,
+      availableStock: metrics?.availableStock || 0,
+      totalRevenue: metrics?.totalRevenue || 0,
+      netProfit: metrics?.netProfit || 0,
     };
   }, [filteredBatches, metrics]);
 
-  // Render Full-Screen Add Batch View
+  // Render Full-Screen Add Modal
   if (isModalOpen) {
     return (
       <AddDahiBatchModal
@@ -225,7 +226,10 @@ export default function DahiPage() {
           {(customFrom || customTo) && (
             <button
               type="button"
-              onClick={() => { setCustomFrom(''); setCustomTo(''); }}
+              onClick={() => {
+                setCustomFrom('');
+                setCustomTo('');
+              }}
               className="text-[11px] text-slate-400 hover:text-rose-600 flex items-center gap-1 cursor-pointer"
             >
               <X className="w-3 h-3" /> Clear
@@ -327,7 +331,10 @@ export default function DahiPage() {
                 All Dahi Production Batches
               </h2>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Showing <span className="font-semibold text-slate-600">{filteredBatches.length}</span> batches for <span className="font-semibold text-emerald-600">{DATE_FILTERS.find(f => f.id === dateRange)?.label}</span>
+                Showing <span className="font-semibold text-slate-600">{filteredBatches.length}</span> batches for{' '}
+                <span className="font-semibold text-emerald-600">
+                  {DATE_FILTERS.find((f) => f.id === dateRange)?.label}
+                </span>
               </p>
             </div>
           </div>

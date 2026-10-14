@@ -2,13 +2,20 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 import { useAnimalContext } from './AnimalContext';
 import { useIntakeContext } from './IntakeContext';
 import { usePOSContext } from './POSContext';
+import { useDailyClose } from './DailyCloseContext';
+import { useGlobalDate } from './GlobalDateContext';
 import farmService from '@/services/farmService';
 import api from '@/services/api';
 import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
+import { normalizeDateStr, getActiveBusinessDate, getLocalDate } from '@/utils/dateUtils';
 
 const DahiContext = createContext(null);
 
 export function DahiProvider({ children }) {
+  const { globalDate } = useGlobalDate();
+  const { activeDate } = useDailyClose() || {};
+  const targetActiveDate = globalDate || activeDate || getActiveBusinessDate();
+
   // Live herd animals and milking logs from AnimalContext (Real data from API / database)
   const animalCtx = useAnimalContext();
   const animals = animalCtx?.animals || [];
@@ -111,25 +118,65 @@ export function DahiProvider({ children }) {
   }, [fetchBatches]);
 
   // =========================================================================
-  // 1. LIVE SOURCING NUMBERS (Milking Logs + Supplier Intakes)
+  // 1. LIVE SOURCING NUMBERS (Milking Logs + Supplier Intakes) strictly for targetActiveDate
   // =========================================================================
   const realFarmYield = useMemo(() => {
     let logSum = 0;
+    const seenEntries = new Set();
     if (Array.isArray(milkingLogs) && milkingLogs.length > 0) {
-      logSum = milkingLogs.reduce((acc, log) => acc + (parseFloat(log.yieldLiters || log.yield) || 0), 0);
+      milkingLogs.forEach((log) => {
+        const dateStr = normalizeDateStr(log.date || log.createdAt);
+        if (dateStr === targetActiveDate) {
+          const y = parseFloat(log.yieldLiters || log.yield || log.quantityLiters) || 0;
+          const tag = (log.animalTag || log.tag || log.animalId?.tagNumber || '').toUpperCase();
+          const shift = (log.shift || 'Morning').toUpperCase();
+          const key = `${tag}-${shift}`;
+          if (!seenEntries.has(key) && y > 0) {
+            seenEntries.add(key);
+            logSum += y;
+          }
+        }
+      });
+    }
+
+    if (Array.isArray(animals) && animals.length > 0) {
+      animals.forEach((animal) => {
+        const tag = (animal.tag || animal.tagNumber || '').toUpperCase();
+        const historyList = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : (Array.isArray(animal.history) ? animal.history : []);
+        historyList.forEach((h) => {
+          const dateStr = normalizeDateStr(h.date || h.createdAt);
+          if (dateStr === targetActiveDate) {
+            const shift = (h.shift || 'Morning').toUpperCase();
+            const key = `${tag}-${shift}`;
+            const y = Number(h.quantityLiters || h.yieldLiters || h.yield || 0);
+            if (!seenEntries.has(key) && y > 0) {
+              seenEntries.add(key);
+              logSum += y;
+            }
+          }
+        });
+      });
+    }
+
+    if (logSum === 0 && Number(posCtx?.inventoryMetrics?.totalFarmYield) > 0) {
+      logSum = Number(posCtx.inventoryMetrics.totalFarmYield);
     }
 
     return Number(logSum.toFixed(1));
-  }, [milkingLogs]);
+  }, [milkingLogs, animals, targetActiveDate, posCtx?.inventoryMetrics?.totalFarmYield]);
 
-  // Real supplier procurement intake
+  // Real supplier procurement intake strictly for targetActiveDate
   const realSupplierIntake = useMemo(() => {
-    const sum = intakeLogs.reduce((acc, item) => {
-      return acc + (Number(item.quantity || item.quantityLiters) || 0);
+    const sum = (intakeLogs || []).reduce((acc, item) => {
+      const dateStr = normalizeDateStr(item.date || item.createdAt);
+      if (dateStr === targetActiveDate) {
+        return acc + (Number(item.quantity || item.quantityLiters) || 0);
+      }
+      return acc;
     }, 0);
 
     return Number(sum.toFixed(1));
-  }, [intakeLogs]);
+  }, [intakeLogs, targetActiveDate]);
 
   // =========================================================================
   // 2. CONVERSION TO DAHI (Deducted live from Farm & Supplier Milk)
@@ -142,7 +189,12 @@ export function DahiProvider({ children }) {
     let supplierConverted = 0;
     let totalOutputProduced = 0;
 
-    batches.forEach((b) => {
+    const activeBatches = (batches || []).filter((b) => {
+      const bDate = normalizeDateStr(b.date || b.createdAt);
+      return bDate === targetActiveDate;
+    });
+
+    activeBatches.forEach((b) => {
       const numUsed = Number(b.milkUsedVal) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0;
       const numOutput = Number(b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
       totalOutputProduced += numOutput;
@@ -168,16 +220,34 @@ export function DahiProvider({ children }) {
 
     const totalConverted = farmConverted + supplierConverted;
 
-    // Remaining liquid milk after BOTH POS sales AND Dahi conversion (authoritative from posCtx):
-    const remainingFarm = posCtx?.inventoryMetrics?.rawFarmMilkStock !== undefined
-      ? Number(posCtx.inventoryMetrics.rawFarmMilkStock) || 0
-      : Math.max(0, Number((realFarmYield - farmMilkSold - farmConverted).toFixed(1)));
-    const remainingSupplier = posCtx?.inventoryMetrics?.rawSupplierMilkStock !== undefined
-      ? Number(posCtx.inventoryMetrics.rawSupplierMilkStock) || 0
-      : Math.max(0, Number((realSupplierIntake - supplierMilkSold - supplierConverted).toFixed(1)));
+    // Remaining liquid milk after BOTH POS sales AND Dahi conversion:
+    const posFarmStock = posCtx?.inventoryMetrics?.rawFarmMilkStock !== undefined
+      ? Number(posCtx.inventoryMetrics.rawFarmMilkStock)
+      : Number(posCtx?.inventoryMetrics?.farmMilkStock ?? posCtx?.inventoryMetrics?.availableFarmStock);
+    const posSupStock = posCtx?.inventoryMetrics?.rawSupplierMilkStock !== undefined
+      ? Number(posCtx.inventoryMetrics.rawSupplierMilkStock)
+      : Number(posCtx?.inventoryMetrics?.supplierMilkStock ?? posCtx?.inventoryMetrics?.availableSupplierStock);
+
+    const calculatedFarm = Math.max(0, Number((realFarmYield - farmMilkSold - farmConverted).toFixed(1)));
+    const calculatedSup = Math.max(0, Number((realSupplierIntake - supplierMilkSold - supplierConverted).toFixed(1)));
+
+    const remainingFarm = !isNaN(posFarmStock) && posFarmStock >= 0 ? posFarmStock : calculatedFarm;
+    const remainingSupplier = !isNaN(posSupStock) && posSupStock >= 0 ? posSupStock : calculatedSup;
     const remainingTotal = posCtx?.inventoryMetrics?.rawTotalMilkStock !== undefined
       ? Number(posCtx.inventoryMetrics.rawTotalMilkStock) || 0
       : Number((remainingFarm + remainingSupplier).toFixed(1));
+
+    const posFarmCowStock = Number(posCtx?.inventoryMetrics?.rawFarmCowMilkStock ?? posCtx?.inventoryMetrics?.farmCowMilkStock);
+    const posFarmBuffStock = Number(posCtx?.inventoryMetrics?.rawFarmBuffaloMilkStock ?? posCtx?.inventoryMetrics?.farmBuffaloMilkStock);
+    const posSupCowStock = Number(posCtx?.inventoryMetrics?.rawSupplierCowMilkStock ?? posCtx?.inventoryMetrics?.supplierCowMilkStock);
+    const posSupBuffStock = Number(posCtx?.inventoryMetrics?.rawSupplierBuffaloMilkStock ?? posCtx?.inventoryMetrics?.supplierBuffaloMilkStock);
+
+    const remainingFarmCow = !isNaN(posFarmCowStock) && posFarmCowStock >= 0 ? posFarmCowStock : 0;
+    const remainingFarmBuffalo = !isNaN(posFarmBuffStock) && posFarmBuffStock >= 0 ? posFarmBuffStock : 0;
+    const remainingSupplierCow = !isNaN(posSupCowStock) && posSupCowStock >= 0 ? posSupCowStock : 0;
+    const remainingSupplierBuffalo = !isNaN(posSupBuffStock) && posSupBuffStock >= 0 ? posSupBuffStock : 0;
+    const remainingTotalCow = Number((remainingFarmCow + remainingSupplierCow).toFixed(1));
+    const remainingTotalBuffalo = Number((remainingFarmBuffalo + remainingSupplierBuffalo).toFixed(1));
 
     // Conversion yield %
     const yieldPct = totalConverted > 0
@@ -185,7 +255,7 @@ export function DahiProvider({ children }) {
       : '0.0';
 
     // Real Value-Add Net Profit: (Retail POS rate from live products - Raw milk cost) * output
-    const netProfitValue = batches.reduce((acc, b) => {
+    const netProfitValue = activeBatches.reduce((acc, b) => {
       const out = Number(b.outputVal) || 0;
       const rate = parseFloat(String(b.posRate || '').replace(/[^\d.]/g, '')) || liveDahiPosRate;
       const profitPerKg = Math.max(0, rate - 220);
@@ -201,9 +271,15 @@ export function DahiProvider({ children }) {
       remainingFarm,
       remainingSupplier,
       remainingTotal,
+      remainingFarmCow,
+      remainingFarmBuffalo,
+      remainingSupplierCow,
+      remainingSupplierBuffalo,
+      remainingTotalCow,
+      remainingTotalBuffalo,
       netProfitValue,
     };
-  }, [batches, realFarmYield, realSupplierIntake, farmMilkSold, supplierMilkSold, liveDahiPosRate, posCtx?.inventoryMetrics?.rawFarmMilkStock, posCtx?.inventoryMetrics?.rawSupplierMilkStock, posCtx?.inventoryMetrics?.rawTotalMilkStock]);
+  }, [batches, targetActiveDate, realFarmYield, realSupplierIntake, farmMilkSold, supplierMilkSold, liveDahiPosRate, posCtx?.inventoryMetrics]);
 
   // Read live POS sales history for Dahi sales & extra profit tracking
   const salesHistory = posCtx?.salesHistory || [];
@@ -214,6 +290,8 @@ export function DahiProvider({ children }) {
     let salesCount = 0;
 
     salesHistory.forEach((sale) => {
+      const sDate = normalizeDateStr(sale.date || sale.timestamp || sale.createdAt);
+      if (sDate !== targetActiveDate) return;
       let saleHasDahi = false;
       (sale.items || []).forEach((item) => {
         const name = (item.name || '').toLowerCase();
@@ -240,14 +318,14 @@ export function DahiProvider({ children }) {
       salesCount,
       extraProfitFromSales,
     };
-  }, [salesHistory]);
+  }, [salesHistory, targetActiveDate]);
 
   const { farmDahiTransferred, supplierDahiTransferred, totalDahiTransferred } = useMemo(() => {
     let fSum = 0;
     let sSum = 0;
     let totSum = 0;
     batches
-      .filter((b) => b.stage === 'pos')
+      .filter((b) => b.stage !== 'sold_out' && b.status !== 'sold_out' && String(b.stage || '').toLowerCase() !== 'sold_out')
       .forEach((b) => {
         const out = Number(b.outputVal || b.outputQuantity) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
         const fRatio = b.farmRatio !== undefined ? Number(b.farmRatio) : 0.5;
@@ -312,6 +390,12 @@ export function DahiProvider({ children }) {
       remainingFarmMilk: conversionData.remainingFarm,
       remainingSupplierMilk: conversionData.remainingSupplier,
       remainingTotalMilk: conversionData.remainingTotal,
+      remainingFarmCowMilk: conversionData.remainingFarmCow,
+      remainingFarmBuffaloMilk: conversionData.remainingFarmBuffalo,
+      remainingSupplierCowMilk: conversionData.remainingSupplierCow,
+      remainingSupplierBuffaloMilk: conversionData.remainingSupplierBuffalo,
+      remainingTotalCowMilk: conversionData.remainingTotalCow,
+      remainingTotalBuffaloMilk: conversionData.remainingTotalBuffalo,
     };
   }, [realFarmYield, realSupplierIntake, conversionData, dahiSalesData, totalDahiTransferred, farmDahiTransferred, supplierDahiTransferred, liveFarmDahiStock, liveSupplierDahiStock, liveTotalDahiStock, liveDahiPosRate]);
 
@@ -411,8 +495,12 @@ export function DahiProvider({ children }) {
         soldOut: initialStage === 'sold_out',
       };
 
+      const resolvedMilkType = extraData.milkType || 'Buffalo Milk';
+
       const payload = {
+        batchNumber: batchId,
         product: extraData.product || 'Fresh Dahi (Plain)',
+        milkType: resolvedMilkType,
         milkUsed: qty,
         milkUsedQuantity: qty,
         milkUsedLiters: qty,
@@ -434,7 +522,7 @@ export function DahiProvider({ children }) {
         output: calculatedOutput,
         outputQuantity: numOutput,
         fat: extraData.fat ? String(extraData.fat).replace('%', '') : '4.5',
-        date: extraData.date || new Date().toISOString().split('T')[0],
+        date: extraData.date || getLocalDate(),
         status: initialStatus,
         stage: initialStage,
         posRate: extraData.posRate || `Rs. ${rateNum} / kg`,
@@ -442,10 +530,26 @@ export function DahiProvider({ children }) {
         checklist: initialChecklist,
       };
 
+      console.log('[Dahi Conversion Action Payload]:', {
+        batchNumber: batchId,
+        product: payload.product,
+        milkType: resolvedMilkType,
+        source: normSource,
+        quantity: qty,
+        farmMilkUsed: farmPortion,
+        supplierMilkUsed: supPortion,
+        outputQuantity: numOutput,
+        farmDahiAdded,
+        supplierDahiAdded,
+        stage: initialStage,
+      });
+
       const newRecord = {
         ...payload,
         id: batchId,
         _id: batchId,
+        batchNumber: batchId,
+        milkType: resolvedMilkType,
         time: timeNow,
         outputVal: numOutput,
         milkUsedVal: qty,
@@ -463,21 +567,14 @@ export function DahiProvider({ children }) {
         checklist: initialChecklist,
       };
 
-      // 1. Instantly update DahiContext local state (starts in 'incubating' stage)
+      // 1. Instantly update DahiContext local state
       setBatches((prev) => [newRecord, ...prev]);
 
-      // 2. Instantly call Context API setters for stock deduction
-      if (typeof posCtx?.setFarmStock === 'function' && farmPortion > 0) {
-        posCtx.setFarmStock((prev) => Math.max(0, Number(((prev !== null ? prev : (posCtx?.inventoryMetrics?.rawFarmMilkStock ?? 0)) - farmPortion).toFixed(1))));
-      }
-      if (typeof posCtx?.setSupplierStock === 'function' && supPortion > 0) {
-        posCtx.setSupplierStock((prev) => Math.max(0, Number(((prev !== null ? prev : (posCtx?.inventoryMetrics?.rawSupplierMilkStock ?? 0)) - supPortion).toFixed(1))));
-      }
-
-      // 3. Instantly update POSContext (deduct source milk; only increment Dahi counter stock if initialStage is 'pos')
+      // 2. Instantly update POSContext (record conversion strictly once)
       if (typeof posCtx?.recordDahiConversion === 'function') {
         posCtx.recordDahiConversion({
           source: normSource,
+          milkType: resolvedMilkType,
           quantity: qty,
           farmMilkUsed: farmPortion,
           supplierMilkUsed: supPortion,

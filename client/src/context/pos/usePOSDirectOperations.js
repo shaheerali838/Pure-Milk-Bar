@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import farmService from '@/services/farmService';
 import posService from '@/services/posService.js';
 import { isObjectId } from './posHelpers';
+import { getLocalDate, normalizeDateStr } from '@/utils/dateUtils';
 
 export function usePOSDirectOperations({
   products = [],
@@ -24,10 +25,28 @@ export function usePOSDirectOperations({
       const res = await farmService.getProcessingBatches();
       const list = Array.isArray(res) ? res : res?.batches || res?.data || [];
       setProcessingBatches((prev) => {
-        const fetchedIds = new Set(list.map((b) => String(b._id || b.id || b.batchNumber)));
-        const pendingBatches = prev.filter(
-          (b) => b.id && !fetchedIds.has(String(b.id)) && String(b.id).startsWith('BATCH-')
-        );
+        const fetchedKeys = new Set();
+        list.forEach((b) => {
+          if (b._id) fetchedKeys.add(String(b._id));
+          if (b.id) fetchedKeys.add(String(b.id));
+          if (b.batchNumber) fetchedKeys.add(String(b.batchNumber));
+        });
+
+        // Drop any pending batch that is already in fetchedKeys or matches an entry in list
+        const pendingBatches = prev.filter((b) => {
+          const key1 = String(b.id || '');
+          const key2 = String(b._id || '');
+          const key3 = String(b.batchNumber || '');
+          if (fetchedKeys.has(key1) || fetchedKeys.has(key2) || fetchedKeys.has(key3)) return false;
+
+          const isDuplicate = list.some((lb) => {
+            const sameDate = (normalizeDateStr(lb.date || lb.createdAt) || '') === (normalizeDateStr(b.date || b.createdAt) || '');
+            const sameMilk = Math.abs((Number(lb.milkUsedQuantity || lb.milkUsedLiters) || 0) - (Number(b.milkUsedQuantity || b.milkUsedLiters) || 0)) < 0.05;
+            const sameOutput = Math.abs((Number(lb.outputQuantity) || 0) - (Number(b.outputQuantity) || 0)) < 0.05;
+            return sameDate && sameMilk && sameOutput;
+          });
+          return !isDuplicate;
+        });
         return [...pendingBatches, ...list];
       });
     } catch (e) {
@@ -39,18 +58,44 @@ export function usePOSDirectOperations({
   const recordDahiConversion = useCallback(
     ({
       source = 'Both (Mixed)',
+      milkType = 'Buffalo Milk',
       quantity = 0,
       farmMilkUsed = 0,
       supplierMilkUsed = 0,
       outputQuantity = 0,
+      farmDahiAdded = 0,
+      supplierDahiAdded = 0,
       batch = null,
+      stage = 'pos',
     }) => {
+      console.log('Action Payload [recordDahiConversion]:', {
+        source,
+        milkType,
+        quantity,
+        farmMilkUsed,
+        supplierMilkUsed,
+        outputQuantity,
+        farmDahiAdded,
+        supplierDahiAdded,
+        stage,
+        batchId: batch?.id || batch?._id,
+      });
+
       const fUsed = Number(farmMilkUsed) || 0;
       const sUsed = Number(supplierMilkUsed) || 0;
       const outQty = Number(outputQuantity) || 0;
+      const isCow = String(milkType || '').toLowerCase().includes('cow');
 
       if (batch) {
-        setProcessingBatches((prev) => [batch, ...prev.filter((b) => b.id !== batch.id)]);
+        const batchWithMilkType = { ...batch, milkType: batch.milkType || milkType };
+        setProcessingBatches((prev) => {
+          const bKey = String(batch.batchNumber || batch._id || batch.id);
+          const filtered = prev.filter((b) => {
+            const existingKey = String(b.batchNumber || b._id || b.id);
+            return existingKey !== bKey;
+          });
+          return [batchWithMilkType, ...filtered];
+        });
       }
 
       if (setProducts) {
@@ -59,8 +104,8 @@ export function usePOSDirectOperations({
             const pName = (p.name || '').toLowerCase();
             const pCat = (p.category || '').toLowerCase();
             const isDahi = pCat.includes('dahi') || pName.includes('dahi') || pCat.includes('yogurt') || pName.includes('yogurt');
-            const isCow = pName.includes('cow');
-            const isBuff = pName.includes('buffalo');
+            const isCowProd = pName.includes('cow');
+            const isBuffProd = pName.includes('buffalo');
             const isMilk = !isDahi && (pCat.includes('milk') || pName.includes('milk'));
 
             if (isDahi && outQty > 0) {
@@ -70,15 +115,16 @@ export function usePOSDirectOperations({
               };
             }
 
+            // Strict single deduction from matching product stock
             if (isMilk) {
-              if (isCow && fUsed > 0) {
+              if (isCow && isCowProd && fUsed > 0) {
                 return {
                   ...p,
                   stock: Math.max(0, Number(((Number(p.stock) || 0) - fUsed).toFixed(2))),
                 };
               }
-              if (isBuff) {
-                const deduct = (fUsed > 0 && !isCow ? fUsed : 0) + sUsed;
+              if (!isCow && isBuffProd) {
+                const deduct = fUsed + sUsed;
                 if (deduct > 0) {
                   return {
                     ...p,
@@ -119,7 +165,8 @@ export function usePOSDirectOperations({
       ? Number(rate)
       : (Number(matchedProduct?.price) || 270);
 
-    const saleTimestamp = new Date().toISOString();
+    const saleDateStr = getLocalDate();
+    const saleTimestamp = saleDateStr;
     const orderId = `ORD-POS-${Date.now()}`;
     const splitItems = [];
 
@@ -430,12 +477,12 @@ export function usePOSDirectOperations({
         farmMilkCost: resolvedFarmCost,
         supplierMilkCost: resolvedSupplierCost,
         milkUsedCost: resolvedMilkUsedCost,
-        dahiProductionCost: resolvedMilkUsedCost,
+        milkType: extraData.milkType || 'Buffalo Milk',
         output: `${outputQty} kg`,
         outputQuantity: outputQty,
         outputVal: outputQty,
         fat: extraData.fat || '4.5%',
-        date: extraData.date || new Date().toISOString().split('T')[0],
+        date: extraData.date || getLocalDate(),
         status: extraData.status || 'Completed',
         stage: extraData.stage || 'pos',
         posRate: `Rs. ${rateNum} / kg`,
@@ -443,15 +490,10 @@ export function usePOSDirectOperations({
         notes: extraData.notes || '',
       };
 
-      if (farmPortion > 0 && setFarmStock) {
-        setFarmStock((prev) => (prev !== null ? Math.max(0, Number((prev - farmPortion).toFixed(1))) : null));
-      }
-      if (supPortion > 0 && setSupplierStock) {
-        setSupplierStock((prev) => (prev !== null ? Math.max(0, Number((prev - supPortion).toFixed(1))) : null));
-      }
-
+      // Strict single deduction handled by usePOSMetrics and product catalog update
       recordDahiConversion({
         source: normSource,
+        milkType: newBatch.milkType,
         quantity: qty,
         farmMilkUsed: farmPortion,
         supplierMilkUsed: supPortion,
@@ -459,11 +501,13 @@ export function usePOSDirectOperations({
         farmDahiAdded,
         supplierDahiAdded,
         batch: newBatch,
+        stage: newBatch.stage,
       });
 
       try {
         const backendRes = await farmService.createProcessingBatch({
           product: newBatch.product,
+          milkType: newBatch.milkType,
           milkUsed: qty,
           milkUsedQuantity: qty,
           milkUsedLiters: qty,

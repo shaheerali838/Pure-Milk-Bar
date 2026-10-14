@@ -29,11 +29,16 @@ export default function LogYieldModal({ isOpen, onClose }) {
   });
   const availableStaff = farmWorkers.length > 0 ? farmWorkers : rawStaffList;
 
+  useEffect(() => {
+    console.log("Staff list in LogYieldModal:", rawStaffList.length);
+  }, [rawStaffList]);
+
   const [formData, setFormData] = useState({
     tag: animals[0]?.tag || "",
     morning: "8.5",
     evening: "7.0",
     milker: "",
+    milkingStaff: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,10 +49,15 @@ export default function LogYieldModal({ isOpen, onClose }) {
   }, [animals, formData.tag]);
 
   useEffect(() => {
-    if (availableStaff.length > 0 && !formData.milker) {
-      setFormData((prev) => ({ ...prev, milker: availableStaff[0].name }));
+    if (availableStaff.length > 0 && !formData.milkingStaff) {
+      const firstStaff = availableStaff[0];
+      setFormData((prev) => ({
+        ...prev,
+        milkingStaff: String(firstStaff._id || firstStaff.id),
+        milker: firstStaff.name,
+      }));
     }
-  }, [availableStaff, formData.milker]);
+  }, [availableStaff, formData.milkingStaff]);
 
   if (!isOpen) return null;
 
@@ -66,6 +76,21 @@ export default function LogYieldModal({ isOpen, onClose }) {
       return;
     }
 
+    if (!formData.milkingStaff) {
+      toast.error("milking staff is not added");
+      return;
+    }
+
+    const payloadToLog = {
+      tag: formData.tag,
+      morning: mVal,
+      evening: eVal,
+      milkingStaff: formData.milkingStaff,
+      operatorId: formData.milkingStaff,
+      milker: formData.milker,
+    };
+    console.log("LogYieldModal submit payload:", payloadToLog);
+
     setIsSubmitting(true);
     try {
       if (targetAnimal && updateAnimal) {
@@ -78,11 +103,9 @@ export default function LogYieldModal({ isOpen, onClose }) {
         });
       }
 
-      // Persist to MilkingLogs / MilkingShift API
       if (saveMilkingShift) {
         const todayDate = new Date().toISOString().split("T")[0];
-        const selectedWorker = availableStaff.find((s) => s.name === formData.milker || s.id === formData.milker);
-        const opId = selectedWorker?._id || selectedWorker?.id || undefined;
+        const opId = formData.milkingStaff;
 
         if (mVal > 0) {
           await saveMilkingShift("Morning", todayDate, { [formData.tag]: mVal }, opId);
@@ -151,35 +174,40 @@ export default function LogYieldModal({ isOpen, onClose }) {
             />
           </div>
 
-          {/* Milker / Herdsman Selection */}
           <div>
             <label className="flex items-center justify-between text-slate-700 font-bold mb-1">
-              <span>Herdsman / Milker Name</span>
+              <span>Milking Staff *</span>
               <span className="text-[10px] text-slate-400 font-normal">
                 {availableStaff.length} registered staff available
               </span>
             </label>
-            {availableStaff.length > 0 ? (
-              <select
-                value={formData.milker}
-                onChange={(e) => handleChange("milker", e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2 text-slate-800 font-bold focus:outline-none focus:border-emerald-500"
-              >
-                {availableStaff.map((worker) => (
-                  <option key={worker.id || worker._id} value={worker.name}>
-                    {worker.name} ({worker.role || "Staff Member"})
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                placeholder="Enter Milker / Herdsman Name"
-                value={formData.milker}
-                onChange={(e) => handleChange("milker", e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2 text-slate-800 font-bold focus:outline-none focus:border-emerald-500"
-              />
-            )}
+            <select
+              value={formData.milkingStaff}
+              disabled={availableStaff.length === 0}
+              onChange={(e) => {
+                const selId = e.target.value;
+                const worker = availableStaff.find((s) => String(s._id || s.id) === String(selId));
+                setFormData((prev) => ({
+                  ...prev,
+                  milkingStaff: selId,
+                  milker: worker ? worker.name : "",
+                }));
+              }}
+              className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2 text-slate-800 font-bold focus:outline-none focus:border-emerald-500 disabled:bg-slate-100 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {availableStaff.length === 0 ? (
+                <option value="">Please add staff first</option>
+              ) : (
+                <>
+                  <option value="">Select Milking Staff</option>
+                  {availableStaff.map((worker) => (
+                    <option key={worker._id || worker.id} value={worker._id || worker.id}>
+                      {worker.name}
+                    </option>
+                  ))}
+                </>
+              )}
+            </select>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">

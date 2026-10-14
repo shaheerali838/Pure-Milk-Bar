@@ -19,6 +19,11 @@ const processingBatchSchema = new Schema(
       default: 'Dahi (Plain)',
       index: true,
     },
+    milkType: {
+      type: String,
+      trim: true,
+      default: 'Buffalo Milk',
+    },
     milkUsedLiters: {
       type: Number,
       required: [true, 'Milk used in liters is required'],

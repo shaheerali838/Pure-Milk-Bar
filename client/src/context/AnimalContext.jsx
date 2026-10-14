@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import farmService from '@/services/farmService';
 import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
-import { normalizeDateStr, sortByDateDesc, ensureValidDate, getPktTodayString } from '@/utils/dateUtils';
+import { normalizeDateStr, sortByDateDesc, ensureValidDate, getPktTodayString, getLocalDate } from '@/utils/dateUtils';
 
 const defaultAnimalContextValue = {
   animals: [],
@@ -27,9 +27,35 @@ const defaultAnimalContextValue = {
 const AnimalContext = createContext(defaultAnimalContextValue);
 
 const normalizeAnimal = (animal, history = []) => {
-  const morning = parseFloat(animal.morningYield ?? animal.expectedMorningYield ?? animal.purchaseMorningYield ?? animal.avgMorningYield ?? 0);
-  const evening = parseFloat(animal.eveningYield ?? animal.expectedEveningYield ?? animal.purchaseEveningYield ?? animal.avgEveningYield ?? 0);
-  const expDaily = parseFloat(animal.expectedYield ?? animal.expectedDailyYield ?? animal.purchaseExpectedYield ?? (morning + evening) ?? 0);
+  const expDaily = parseFloat(
+    animal.expectedDailyYield ||
+    animal.expectedYield ||
+    animal.purchaseExpectedYield ||
+    animal.totalDailyYield ||
+    0
+  );
+
+  const rawMorning = parseFloat(animal.expectedMorningYield) > 0
+    ? parseFloat(animal.expectedMorningYield)
+    : (parseFloat(animal.morningYield) > 0 ? parseFloat(animal.morningYield) : (parseFloat(animal.purchaseMorningYield) > 0 ? parseFloat(animal.purchaseMorningYield) : 0));
+
+  const rawEvening = parseFloat(animal.expectedEveningYield) > 0
+    ? parseFloat(animal.expectedEveningYield)
+    : (parseFloat(animal.eveningYield) > 0 ? parseFloat(animal.eveningYield) : (parseFloat(animal.purchaseEveningYield) > 0 ? parseFloat(animal.purchaseEveningYield) : 0));
+
+  let morning = rawMorning;
+  let evening = rawEvening;
+
+  if (morning === 0 && evening === 0 && expDaily > 0) {
+    morning = parseFloat((expDaily / 2).toFixed(1));
+    evening = parseFloat((expDaily - morning).toFixed(1));
+  } else if (expDaily > 0 && morning > 0 && evening === 0) {
+    evening = parseFloat((expDaily - morning).toFixed(1));
+  } else if (expDaily > 0 && evening > 0 && morning === 0) {
+    morning = parseFloat((expDaily - evening).toFixed(1));
+  }
+
+  const finalExpDaily = expDaily > 0 ? expDaily : (morning + evening > 0 ? morning + evening : 15.0);
 
   // Preserve all intake history records from database (animal.intakeHistory) + logs
   const dbIntakeHistory = Array.isArray(animal.intakeHistory) ? animal.intakeHistory : [];
@@ -90,11 +116,11 @@ const normalizeAnimal = (animal, history = []) => {
     lactationStatus: animal.lactationStatus || animal.status || 'Milking',
     expectedMorningYield: morning,
     expectedEveningYield: evening,
-    expectedDailyYield: expDaily,
+    expectedDailyYield: finalExpDaily,
     morningYield: `${morning.toFixed(1)} L`,
     eveningYield: `${evening.toFixed(1)} L`,
-    expectedYield: `${expDaily.toFixed(1)} L`,
-    totalDailyYield: `${(morning + evening).toFixed(1)} L`,
+    expectedYield: `${finalExpDaily.toFixed(1)} L`,
+    totalDailyYield: `${finalExpDaily.toFixed(1)} L`,
     acquisitionDate: regDate,
     image: animal.image || null,
     hasCalf: Boolean(animal.hasCalf),
@@ -113,16 +139,34 @@ const normalizeAnimal = (animal, history = []) => {
 };
 
 export function AnimalProvider({ children }) {
-  const [animals, setAnimals] = useState([]);
-  const [milkingLogs, setMilkingLogs] = useState([]);
+  const [animals, setAnimals] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('pmb_animals_cache');
+        if (saved) return JSON.parse(saved);
+      } catch (_) {}
+    }
+    return [];
+  });
+  const [milkingLogs, setMilkingLogs] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('pmb_milking_logs');
+        if (saved) return JSON.parse(saved);
+      } catch (_) {}
+    }
+    return [];
+  });
   const [animalSales, setAnimalSales] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch live herd animals, milking logs, and sales from API
-  const fetchAnimalsAndLogs = useCallback(async () => {
-    setIsLoading(true);
+  const fetchAnimalsAndLogs = useCallback(async (silent = false) => {
+    if (!silent && animals.length === 0) {
+      setIsLoading(true);
+    }
     setError(null);
     try {
       const [animalsData, logsData, salesData] = await Promise.allSettled([
@@ -191,7 +235,21 @@ export function AnimalProvider({ children }) {
 
       // 1. Add records from API logList
       logList.forEach((log) => {
-        const tag = (log.animalTag || log.tag || log.animal?.tag || log.animalId?.tagNumber || log.animalId?.tag || 'COW-01').toUpperCase();
+        const rawAnimalId = String(log.animalId?._id || log.animalId || '');
+        const matchedAnimal =
+          (animals || []).find((a) => String(a.id || a._id) === rawAnimalId) ||
+          (animalList || []).find((a) => String(a.id || a._id) === rawAnimalId);
+        const tag = (
+          log.animalTag ||
+          log.tag ||
+          log.animal?.tag ||
+          log.animalId?.tagNumber ||
+          log.animalId?.tag ||
+          matchedAnimal?.tagNumber ||
+          matchedAnimal?.tag ||
+          rawAnimalId ||
+          'ANIMAL'
+        ).toUpperCase();
         const dateStr = normalizeDateStr(log.date || log.createdAt) || getPktTodayString();
         const rawShift = log.shift || 'Morning';
         const normShift = rawShift.charAt(0).toUpperCase() + rawShift.slice(1).toLowerCase();
@@ -253,7 +311,14 @@ export function AnimalProvider({ children }) {
       });
 
       setAnimals(normalized);
-      setMilkingLogs(sortByDateDesc(normalizedLogs, 'date'));
+      const sortedLogs = sortByDateDesc(normalizedLogs, 'date');
+      setMilkingLogs(sortedLogs);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('pmb_animals_cache', JSON.stringify(normalized));
+          localStorage.setItem('pmb_milking_logs', JSON.stringify(sortedLogs));
+        } catch (_) {}
+      }
     } catch (err) {
       console.error('Failed to fetch farm data from API:', err);
       setError(err.message || 'Failed to load herd animals');
@@ -305,7 +370,7 @@ export function AnimalProvider({ children }) {
         morningYield: morning,
         eveningYield: evening,
         healthStatus: formData.healthStatus || 'HEALTHY',
-        acquisitionDate: formData.acquisitionDate || new Date().toISOString().split('T')[0],
+        acquisitionDate: formData.acquisitionDate || getLocalDate(),
         notes: formData.notes || '',
         image: formData.image || null,
         hasCalf: Boolean(formData.hasCalf),
@@ -418,7 +483,7 @@ export function AnimalProvider({ children }) {
       const val = parseFloat(intakeData.quantityLiters ?? intakeData.yieldLiters ?? intakeData.yield ?? 0);
       const rawShift = intakeData.shift || 'Morning';
       const normShift = rawShift.charAt(0).toUpperCase() + rawShift.slice(1).toLowerCase();
-      const dateStr = intakeData.date ? String(intakeData.date).slice(0, 10) : new Date().toISOString().split('T')[0];
+      const dateStr = intakeData.date ? String(intakeData.date).slice(0, 10) : getLocalDate();
 
       const newIntake = {
         id: `INTAKE-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -435,14 +500,18 @@ export function AnimalProvider({ children }) {
 
       // Call API to persist to MongoDB with $push
       if (targetAnimal?._id || targetAnimal?.id) {
-        await farmService.addAnimalIntake(targetAnimal._id || targetAnimal.id, {
+        const intakePayload = {
           date: dateStr,
           shift: normShift.toUpperCase(),
           quantityLiters: val,
           yieldLiters: val,
           notes: intakeData.notes,
           operator: intakeData.operator || intakeData.milker,
-        });
+          operatorId: intakeData.operatorId || intakeData.milkingStaff || undefined,
+          milkingStaff: intakeData.milkingStaff || intakeData.operatorId || undefined,
+        };
+        console.log("addAnimalIntake payload:", intakePayload);
+        await farmService.addAnimalIntake(targetAnimal._id || targetAnimal.id, intakePayload);
       }
 
       // Append into animal intakeHistory in Context API state (preserving purchase benchmark yields)
@@ -543,7 +612,7 @@ export function AnimalProvider({ children }) {
   // Save Milking Shift to backend with history preservation
   const saveMilkingShift = async (shiftName, arg2, arg3, operatorId = undefined) => {
     try {
-      const shiftDate = typeof arg2 === 'string' ? arg2 : typeof arg3 === 'string' ? arg3 : new Date().toISOString().split('T')[0];
+      const shiftDate = typeof arg2 === 'string' ? arg2 : typeof arg3 === 'string' ? arg3 : getLocalDate();
       const shiftEntries = (typeof arg2 === 'object' && arg2 !== null) ? arg2 : (typeof arg3 === 'object' && arg3 !== null) ? arg3 : {};
 
       const promises = Object.entries(shiftEntries).map(async ([tag, yieldVal]) => {
@@ -554,11 +623,15 @@ export function AnimalProvider({ children }) {
           animalId: animal?._id || animal?.id || undefined,
           animalTag: tag,
           shift: (shiftName || 'Morning').toUpperCase(),
-          date: shiftDate || new Date().toISOString().split('T')[0],
+          date: shiftDate || getLocalDate(),
           yieldLiters: val,
           quantityLiters: val,
         };
-        if (operatorId) payload.operatorId = operatorId;
+        if (operatorId) {
+          payload.operatorId = operatorId;
+          payload.milkingStaff = operatorId;
+        }
+        console.log("createMilkingLog payload:", payload);
         return farmService.createMilkingLog(payload);
       });
 
@@ -634,7 +707,13 @@ export function AnimalProvider({ children }) {
             const lShift = (l.shift || '').toUpperCase();
             return !(lDate === shiftDate && lShift === normShift.toUpperCase() && newLogs.some(nl => nl.animalTag.toUpperCase() === lTag));
           });
-          return sortByDateDesc([...newLogs, ...filtered], 'date');
+          const merged = sortByDateDesc([...newLogs, ...filtered], 'date');
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('pmb_milking_logs', JSON.stringify(merged));
+            } catch (_) {}
+          }
+          return merged;
         });
       }
 

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api.js';
-import { normalizeDateStr, sortByDateDesc, ensureValidDate, getPktTodayString } from '@/utils/dateUtils';
+import { normalizeDateStr, sortByDateDesc, ensureValidDate, getPktTodayString, getLocalDate } from '@/utils/dateUtils';
 
 const SourcExpenseContext = createContext(null);
 
@@ -88,7 +88,7 @@ export function SourcExpenseProvider({ children }) {
         scope: 'SUPPLIER',
         category: data.category || 'SUPPLIER_PROCUREMENT',
         amount: Number(data.amount) || 0,
-        date: data.date || new Date().toISOString().split('T')[0],
+        date: data.date || getLocalDate(),
         description: data.description || data.category || '',
         paymentMethod: ['Bank Transfer'].includes(data.paymentMode)
           ? 'BANK_TRANSFER'

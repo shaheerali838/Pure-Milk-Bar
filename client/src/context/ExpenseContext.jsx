@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../services/api.js';
-import { normalizeDateStr, sortByDateDesc, ensureValidDate, getPktTodayString } from '@/utils/dateUtils';
+import { normalizeDateStr, sortByDateDesc, ensureValidDate, getPktTodayString, getLocalDate } from '@/utils/dateUtils';
 
 const ExpenseContext = createContext();
 
@@ -111,7 +111,7 @@ export function ExpenseProvider({ children }) {
                 title: expense.description || expense.category || 'Expense',
                 amount: Number(expense.amount) || 0,
                 amountRupees: Number(expense.amount) || 0,
-                date: expense.date || new Date().toISOString().split('T')[0],
+                date: expense.date || getLocalDate(),
                 description: expense.description || expense.category || '',
                 notes: expense.description || '',
                 paymentMethod: mappedPaymentMethod,

@@ -27,6 +27,7 @@ import { getProductIcon } from "@/features/inventory/components/AddProduct";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getPktTodayString } from "@/utils/dateUtils";
+import DayClosedLockOverlay from "@/components/common/DayClosedLockOverlay";
 import POSDeliverySection from "./POSDeliverySection";
 
 export default function POSSale() {
@@ -34,6 +35,7 @@ export default function POSSale() {
   const [isProcessingSale, setIsProcessingSale] = React.useState(false);
 
   const {
+    isDayClosed = false,
     saleDate,
     setSaleDate,
     cart = [],
@@ -122,35 +124,41 @@ export default function POSSale() {
     const prod = products.find(p => p.id === prodId) || {};
     const name = (prod.name || '').toLowerCase();
     const cat = (prod.category || '').toLowerCase();
-    const isCow = name.includes('cow');
-    const isBuff = name.includes('buffalo');
+    const isCow = name.includes('cow') || name.includes('gai');
+    const isBuff = name.includes('buffalo') || name.includes('bufflo') || name.includes('buff') || name.includes('bhains');
+    const catalogBaseStock = Math.max(0, Number(prod.currentStock ?? prod.stock) || 0);
 
-    if (cat.includes('dahi') || name.includes('dahi')) {
+    if (cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt') || cat.includes('curd') || name.includes('curd')) {
       const farmD = Number(inventoryMetrics?.rawFarmDahiStock ?? inventoryMetrics?.farmDahiStock) || 0;
       const supD = Number(inventoryMetrics?.rawSupplierDahiStock ?? inventoryMetrics?.supplierDahiStock) || 0;
       const liveDahi = Number((farmD + supD).toFixed(2));
-      if (!isNaN(liveDahi) && liveDahi >= 0) return liveDahi;
-      return Number(prod.stock) || 0;
+      return liveDahi > 0 ? liveDahi : catalogBaseStock;
     }
 
     if (cat.includes('milk') || name.includes('milk')) {
       if (isCow) {
         // Combined Cow Milk Card: Farm Cow + Supplier Cow
-        const farmCow = Number(inventoryMetrics?.farmCowMilkStock) || 0;
-        return Number((farmCow).toFixed(1));
+        const farmCow = Number(inventoryMetrics?.farmCowMilkStock ?? inventoryMetrics?.rawFarmCowMilkStock) || 0;
+        const supCow = Number(inventoryMetrics?.supplierCowMilkStock ?? inventoryMetrics?.rawSupplierCowMilkStock) || 0;
+        const liveCow = Number((farmCow + supCow).toFixed(1));
+        return liveCow > 0 ? liveCow : catalogBaseStock;
       }
       if (isBuff) {
         // Combined Buffalo Milk Card: Farm Buffalo + Supplier Buffalo
-        const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock) || 0;
-        const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock) || 0;
-        return farmBuff + supBuff;
+        const farmBuff = Number(inventoryMetrics?.farmBuffaloMilkStock ?? inventoryMetrics?.rawFarmBuffaloMilkStock) || 0;
+        const supBuff = Number(inventoryMetrics?.supplierBuffaloMilkStock ?? inventoryMetrics?.rawSupplierBuffaloMilkStock) || 0;
+        const liveBuff = Number((farmBuff + supBuff).toFixed(1));
+        if (liveBuff > 0) return liveBuff;
+        const liveTot = Number(inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock) || 0;
+        if (liveTot > 0) return liveTot;
+        return catalogBaseStock;
       }
-      const liveTot = Number(inventoryMetrics?.totalMilkStock);
-      if (!isNaN(liveTot) && liveTot >= 0) return liveTot;
-      return Number(prod.stock) || 0;
+      const liveTot = Number(inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock);
+      if (!isNaN(liveTot) && liveTot > 0) return liveTot;
+      return catalogBaseStock;
     }
 
-    return Number(prod.stock) || 0;
+    return catalogBaseStock;
   };
 
   // Sync category & customer info from URL search params (e.g. /pos?category=walkin&customerId=... or /pos?category=delivery)
@@ -236,7 +244,10 @@ export default function POSSale() {
           Math.max(0, netPayable - (parseFloat(partialPaidAmount) || 0));
 
   return (
-    <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-3.5 sm:p-4 min-h-0 overflow-hidden">
+    <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-3.5 sm:p-4 min-h-0 overflow-hidden relative">
+      {/* App Lockdown Overlay if Day is Closed */}
+      {isDayClosed && <DayClosedLockOverlay />}
+
       {/* Fixed Header */}
       <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 shrink-0">
         <div className="flex items-center gap-2">
@@ -256,7 +267,7 @@ export default function POSSale() {
         {cart.length > 0 && (
           <button
             type="button"
-            disabled={isProcessingSale || isSaleRefreshing}
+            disabled={isDayClosed || isProcessingSale || isSaleRefreshing}
             onClick={handleClearCart}
             className="text-xs font-semibold text-rose-500 hover:text-rose-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition cursor-pointer"
           >
@@ -313,8 +324,42 @@ export default function POSSale() {
                         <div className="text-xs font-bold text-slate-800 leading-tight truncate">
                           {item.name}
                         </div>
-                        <div className="text-[10px] text-slate-500 font-medium">
-                          Rs. {rate.toLocaleString()}/{unitLabel}
+                        <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
+                          <span>Rate: Rs.</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={item.price}
+                            onChange={(e) => handleUpdatePrice(item.id, e.target.value)}
+                            className="w-12 text-center bg-white border border-slate-200 rounded px-1 py-0.2 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-indigo-400"
+                          />
+                          <span>/{unitLabel}</span>
+                        </div>
+                        {/* Interactive Source Tag (Farm / Supplier / Mixed / Cascading FIFO) */}
+                        <div className="flex items-center gap-1.5 mt-1">
+                          {((item.category || '').toLowerCase().includes('dahi') || (item.name || '').toLowerCase().includes('dahi') || (item.category || '').toLowerCase().includes('yogurt')) ? (
+                            <span className="inline-flex items-center gap-1 text-[9.5px] font-bold px-2 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-200 shadow-2xs">
+                              ⚡ Cascading FIFO (Farm → Supplier)
+                            </span>
+                          ) : (
+                            <select
+                              value={item.source || 'Farm'}
+                              onChange={(e) => handleUpdateItemSource && handleUpdateItemSource(item.id, e.target.value)}
+                              className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded border cursor-pointer focus:outline-none ${
+                                item.source === 'Supplier'
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                  : item.source === 'Mixed'
+                                  ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              }`}
+                            >
+                              <option value="Farm">🌿 Farm (P&amp;L)</option>
+                              <option value="Supplier">🚚 Supplier (P&amp;L)</option>
+                              <option value="Mixed">
+                                ⚖️ Mixed ({Math.round((item.farmRatio ?? 0.5) * 100)}% : {Math.round((item.supplierRatio ?? 0.5) * 100)}%)
+                              </option>
+                            </select>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -904,9 +949,9 @@ export default function POSSale() {
         ) : (
           <button
             type="button"
-            disabled={isProcessingSale || isSaleRefreshing}
+            disabled={isDayClosed || isProcessingSale || isSaleRefreshing}
             onClick={async () => {
-              if (isProcessingSale || isSaleRefreshing || cart.length === 0) return;
+              if (isDayClosed || isProcessingSale || isSaleRefreshing || cart.length === 0) return;
               setIsProcessingSale(true);
               const completedCartItems = [...cart];
               try {
