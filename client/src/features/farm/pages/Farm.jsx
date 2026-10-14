@@ -1,10 +1,9 @@
 import React from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Droplets, Plus } from 'lucide-react';
+import { Outlet } from 'react-router-dom';
+import { LayoutDashboard } from 'lucide-react';
 import FarmNav from '../components/FarmNav';
 
 export default function Farm() {
-  const navigate = useNavigate();
   const todayFormatted = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -37,25 +36,6 @@ export default function Farm() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={() => navigate('/farm/milking')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 text-xs font-bold transition-all cursor-pointer"
-          >
-            <Droplets className="w-3.5 h-3.5 text-blue-600" />
-            <span>Milking Register</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate('/farm/animals')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-3" />
-            <span>Register Animal</span>
-          </button>
-        </div>
       </div>
 
       {/* 2. Sub Nav shifted directly below the Page Title */}
