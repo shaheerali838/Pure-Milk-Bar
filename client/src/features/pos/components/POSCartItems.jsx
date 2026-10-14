@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from 'sonner';
 import {
   Plus,
   Minus,
@@ -135,9 +136,16 @@ export default function POSCartItems() {
               <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60">
                 {/* Quantity Input */}
                 <div>
-                  <label className="text-[9px] font-bold uppercase text-slate-500 block mb-0.5">
-                    Qty ({unitLabel})
-                  </label>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-[9px] font-bold uppercase text-slate-500 block">
+                      Qty ({unitLabel})
+                    </label>
+                    {availStock !== null && availStock !== undefined && (
+                      <span className="text-[9px] font-bold text-slate-400">
+                        Max: {availStock}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center border border-slate-200 bg-white rounded-lg shadow-2xs overflow-hidden">
                     <button
                       type="button"
@@ -150,15 +158,45 @@ export default function POSCartItems() {
                       type="number"
                       step="any"
                       min="0"
+                      max={availStock ?? undefined}
                       value={item.quantity}
-                      onChange={(e) => handleUpdateQuantity(item.id, e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          handleUpdateQuantity(item.id, '');
+                          return;
+                        }
+                        const num = parseFloat(val);
+                        if (isNaN(num)) return;
+                        if (availStock !== null && availStock !== undefined && num > availStock) {
+                          toast.error(`🚫 Stock Limit Exceeded! "${item.name}"`, {
+                            description: `Sirf ${availStock} ${unitLabel} stock dastiyab hai. Is se zyada enter nahi kiya ja sakta.`,
+                            duration: 2500,
+                          });
+                          handleUpdateQuantity(item.id, availStock);
+                        } else {
+                          handleUpdateQuantity(item.id, Math.max(0, num));
+                        }
+                      }}
                       placeholder="0.0"
                       className="w-full text-center text-xs font-black text-slate-800 tabular border-x border-slate-150 py-1 outline-none focus:bg-blue-50/50"
                     />
                     <button
                       type="button"
-                      onClick={() => handleUpdateQuantity(item.id, (parseFloat(item.quantity) || 0) + 1)}
-                      className="px-2 py-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition text-xs font-bold cursor-pointer"
+                      disabled={availStock !== null && availStock !== undefined && (parseFloat(item.quantity) || 0) >= availStock}
+                      onClick={() => {
+                        const current = parseFloat(item.quantity) || 0;
+                        if (availStock !== null && availStock !== undefined && current + 1 > availStock) {
+                          toast.error(`🚫 Stock Limit Exceeded! "${item.name}"`, {
+                            description: `Sirf ${availStock} ${unitLabel} stock dastiyab hai.`,
+                            duration: 2500,
+                          });
+                          handleUpdateQuantity(item.id, availStock);
+                          return;
+                        }
+                        handleUpdateQuantity(item.id, current + 1);
+                      }}
+                      className="px-2 py-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition text-xs font-bold cursor-pointer"
                     >
                       <Plus className="w-3 h-3" />
                     </button>
@@ -167,23 +205,40 @@ export default function POSCartItems() {
 
                 {/* Rupees (Amount) Input */}
                 <div>
-                  <label className="text-[9px] font-bold uppercase text-slate-500 block mb-0.5">
-                    Amount (Rupees)
-                  </label>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-[9px] font-bold uppercase text-slate-500 block">
+                      Amount (Rupees)
+                    </label>
+                    {availStock !== null && availStock !== undefined && item.price > 0 && (
+                      <span className="text-[9px] font-bold text-slate-400">
+                        Max: Rs. {Math.round(availStock * item.price)}
+                      </span>
+                    )}
+                  </div>
                   <div className="relative">
                     <span className="absolute left-2 top-1 text-[10px] font-bold text-slate-400">Rs.</span>
                     <input
                       type="number"
                       step="any"
                       min="0"
-                      value={Math.round((item.quantity * item.price) * 100) / 100 || ''}
+                      max={availStock !== null && availStock !== undefined && item.price > 0 ? Math.round(availStock * item.price) : undefined}
+                      value={item.quantity !== '' && !isNaN(item.quantity) ? Math.round((Number(item.quantity) * item.price) * 100) / 100 || '' : ''}
                       onChange={(e) => {
                         const rupees = parseFloat(e.target.value);
+                        if (e.target.value === '') {
+                          handleUpdateQuantity(item.id, '');
+                          return;
+                        }
                         if (!isNaN(rupees) && item.price > 0) {
-                          const computedQty = Math.round((rupees / item.price) * 1000) / 1000;
+                          let computedQty = Math.round((rupees / item.price) * 1000) / 1000;
+                          if (availStock !== null && availStock !== undefined && computedQty > availStock) {
+                            toast.error(`🚫 Stock Limit Exceeded! "${item.name}"`, {
+                              description: `Rs. ${rupees} (${computedQty} ${unitLabel}) exceeds max stock of ${availStock} ${unitLabel}.`,
+                              duration: 2500,
+                            });
+                            computedQty = availStock;
+                          }
                           handleUpdateQuantity(item.id, computedQty);
-                        } else if (e.target.value === '') {
-                          handleUpdateQuantity(item.id, 0);
                         }
                       }}
                       placeholder="0"

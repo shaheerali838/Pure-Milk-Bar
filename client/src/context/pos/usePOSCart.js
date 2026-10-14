@@ -271,26 +271,51 @@ export function usePOSCart({
       );
       return;
     }
+    const numQty = parseFloat(newQuantity);
+    if (isNaN(numQty) || numQty < 0) return;
+
     setCart((prev) =>
-      prev.map((item) => (item.id === productId ? { ...item, quantity: newQuantity } : item))
+      prev.map((item) => {
+        if (item.id !== productId) return item;
+        const availStock = resolveAvailableStock(item, item, getLiveStock?.() || {});
+        let clampedQty = numQty;
+        if (availStock !== null && availStock !== undefined && numQty > availStock) {
+          toast.error(`🚫 Stock Limit Exceeded! "${item.name}"`, {
+            description: `Sirf ${availStock} stock dastiyab hai. Is se zyada enter nahi kiya ja sakta.`,
+            duration: 2500,
+          });
+          clampedQty = availStock;
+        }
+        return { ...item, quantity: clampedQty };
+      })
     );
   };
 
   const handleUpdateByRupees = (productId, rupees) => {
     if (rupees === '' || rupees === undefined || rupees === null) {
       setCart((prev) =>
-        prev.map((item) => (item.id === productId ? { ...item, quantity: 0 } : item))
+        prev.map((item) => (item.id === productId ? { ...item, quantity: '' } : item))
       );
       return;
     }
     const parsed = parseFloat(rupees);
+    if (isNaN(parsed) || parsed < 0) return;
+
     setCart((prev) =>
       prev.map((item) => {
         if (item.id !== productId) return item;
         const rate = Number(item.price) || 1;
-        const calculatedQty = (!isNaN(parsed) && parsed > 0 && rate > 0)
+        let calculatedQty = (!isNaN(parsed) && parsed > 0 && rate > 0)
           ? Number((parsed / rate).toFixed(3))
           : 0;
+        const availStock = resolveAvailableStock(item, item, getLiveStock?.() || {});
+        if (availStock !== null && availStock !== undefined && calculatedQty > availStock) {
+          toast.error(`🚫 Stock Limit Exceeded! "${item.name}"`, {
+            description: `Rs. ${parsed} (${calculatedQty}) exceeds max stock of ${availStock}.`,
+            duration: 2500,
+          });
+          calculatedQty = availStock;
+        }
         return {
           ...item,
           quantity: calculatedQty,

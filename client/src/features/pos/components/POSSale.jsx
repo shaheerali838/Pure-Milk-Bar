@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ShoppingCart, Trash2, CheckCircle2, Users, UserCheck, Calendar, User, Truck, Loader2, } from "lucide-react";
+import { ShoppingCart, Trash2, CheckCircle2, Users, UserCheck, Calendar, User, Truck, Loader2, AlertCircle } from "lucide-react";
 import { usePOSContext } from "@/context/POSContext";
 import { getPktTodayString } from "@/utils/dateUtils";
 import DayClosedLockOverlay from "@/components/common/DayClosedLockOverlay";
@@ -33,6 +33,7 @@ export default function POSSale() {
     deductStockAfterSale,
     handleCompleteSale,
     isSaleRefreshing = false,
+    getProductAvailableStock,
   } = usePOSContext() || {};
 
   // Sync category & customer info from URL search params
@@ -74,8 +75,21 @@ export default function POSSale() {
     setWalkinPhone,
   ]);
 
+  const hasInvalidCartItem = cart.some((item) => {
+    const qty = Number(item.quantity) || 0;
+    if (qty <= 0) return true;
+    const avail = typeof getProductAvailableStock === "function"
+      ? getProductAvailableStock(item)
+      : (item.availableStock ?? 9999);
+    return avail !== null && avail !== undefined && qty > avail;
+  });
+
   const onCompleteSaleClick = async () => {
     if (isDayClosed || isProcessingSale || isSaleRefreshing || cart.length === 0) return;
+    if (hasInvalidCartItem) {
+      toast.error("🚫 Cannot Complete Sale: Cart contains items exceeding available stock or invalid quantities.");
+      return;
+    }
     setIsProcessingSale(true);
     const completedCartItems = [...cart];
     try {
@@ -240,6 +254,15 @@ export default function POSSale() {
           >
             <CheckCircle2 className="w-4 h-4" />
             Add products to cart
+          </button>
+        ) : hasInvalidCartItem ? (
+          <button
+            type="button"
+            disabled
+            className="w-full py-2.5 rounded-xl bg-rose-50 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 cursor-not-allowed border border-rose-200 shadow-2xs"
+          >
+            <AlertCircle className="w-4 h-4 text-rose-500" />
+            <span>Exceeds Stock Limit &bull; Fix Qty to Checkout</span>
           </button>
         ) : (
           <button
