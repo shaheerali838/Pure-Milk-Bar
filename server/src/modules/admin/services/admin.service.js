@@ -170,7 +170,7 @@ export const setUserStatusService = async (currentAdminId, targetUserId, isActiv
   const user = await User.findByIdAndUpdate(
     targetUserId,
     { $set: { isActive } },
-    { new: true, runValidators: true }
+    { returnDocument: 'after', runValidators: true }
   ).select('-passwordHash');
 
   if (!user) {
@@ -193,7 +193,7 @@ export const setUserRoleService = async (currentAdminId, targetUserId, newRole) 
   const user = await User.findByIdAndUpdate(
     targetUserId,
     { $set: { role: newRole } },
-    { new: true, runValidators: true }
+    { returnDocument: 'after', runValidators: true }
   ).select('-passwordHash');
 
   if (!user) {

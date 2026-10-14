@@ -159,7 +159,7 @@ class DeliveryService {
     }
 
     const updatedRun = await DeliveryRun.findByIdAndUpdate(id, updateData, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     })
       .populate('riderId', 'name phone role')
@@ -201,7 +201,7 @@ class DeliveryService {
         riderId,
         riderNameSnapshot: nameSnapshot || null,
       },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     )
       .populate('riderId', 'name phone role')
       .populate('customerId', 'name phone');
@@ -275,7 +275,7 @@ class DeliveryService {
     }
 
     const updatedRun = await DeliveryRun.findByIdAndUpdate(id, updateFields, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     })
       .populate('riderId', 'name phone role')
@@ -362,7 +362,7 @@ class DeliveryService {
     }
 
     const updatedFuelLog = await VehicleFuelLog.findByIdAndUpdate(id, updateData, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).populate('riderId', 'name phone role');
 

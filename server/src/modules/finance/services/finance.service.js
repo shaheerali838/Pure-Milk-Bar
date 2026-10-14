@@ -511,7 +511,7 @@ export const getExpenseSummaryService = async (queryParams) => {
 
 export const updateExpenseService = async (expenseId, data) => {
   const expense = await Expense.findByIdAndUpdate(expenseId, data, {
-    new: true,
+    returnDocument: 'after',
     runValidators: true,
   }).lean();
   if (!expense) {

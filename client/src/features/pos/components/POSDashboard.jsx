@@ -99,9 +99,18 @@ export default function POSDashboard() {
         item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      const matchesCat =
-        selectedCategory === 'all' ||
-        item.category.toLowerCase().includes(selectedCategory.toLowerCase());
+      // Group related categories together so dahi/yogurt/curd all match each other
+      let matchesCat = selectedCategory === 'all';
+      if (!matchesCat) {
+        const catLower = (item.category || '').toLowerCase();
+        const nameLower = (item.name || '').toLowerCase();
+        const dahiGroup = ['dahi', 'yogurt', 'curd'];
+        if (dahiGroup.includes(selectedCategory.toLowerCase())) {
+          matchesCat = dahiGroup.some(term => catLower.includes(term) || nameLower.includes(term));
+        } else {
+          matchesCat = catLower.includes(selectedCategory.toLowerCase()) || nameLower.includes(selectedCategory.toLowerCase());
+        }
+      }
 
       return matchesSearch && matchesCat;
     });
@@ -292,6 +301,7 @@ export default function POSDashboard() {
                   { id: 'all', label: 'All Items' },
                   { id: 'milk', label: 'Milk' },
                   { id: 'dahi', label: 'Dahi' },
+                  { id: 'yogurt', label: 'Yogurt' },
                   { id: 'lassi', label: 'Lassi' },
                 ].map((cat) => (
                   <button
@@ -333,7 +343,7 @@ export default function POSDashboard() {
                     const cartItem = cart.find((i) => i.id === prodId || (product.id && i.id === product.id));
                     const inCartQty = cartItem ? cartItem.quantity : 0;
                     const isMilk = product.category?.toLowerCase().includes('milk') || (product.name || '').toLowerCase().includes('milk');
-                    const isDahi = product.category?.toLowerCase().includes('dahi') || (product.name || '').toLowerCase().includes('dahi');
+                    const isDahi = ['dahi', 'yogurt', 'curd'].some(t => product.category?.toLowerCase().includes(t) || (product.name || '').toLowerCase().includes(t));
                     const isCow = (product.name || '').toLowerCase().includes('cow');
                     const isBuff = (product.name || '').toLowerCase().includes('buffalo');
                     const displayStock = getProductDisplayStock(product);

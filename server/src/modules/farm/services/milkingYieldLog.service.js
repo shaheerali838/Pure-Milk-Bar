@@ -85,7 +85,7 @@ class MilkingYieldLogService {
           ...(data.notes ? { notes: data.notes } : {}),
         },
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
 
     // 5. Update/append intake record in intakeHistory while preserving animal's purchase benchmark yields
@@ -192,7 +192,7 @@ class MilkingYieldLogService {
 
   async updateMilkingYieldLog(id, data) {
     const log = await MilkingYieldLog.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     })
       .populate('animalId', 'tagNumber name type')

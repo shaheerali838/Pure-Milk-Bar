@@ -302,7 +302,7 @@ export const setCustomerStatusService = async (customerId, status) => {
   const customer = await Customer.findByIdAndUpdate(
     customerId,
     { $set: { status } },
-    { new: true, runValidators: true }
+    { returnDocument: 'after', runValidators: true }
   );
 
   if (!customer) {
@@ -320,7 +320,7 @@ export const updateCustomerCreditLimitService = async (customerId, creditLimit) 
   const customer = await Customer.findByIdAndUpdate(
     customerId,
     { $set: { creditLimit } },
-    { new: true, runValidators: true }
+    { returnDocument: 'after', runValidators: true }
   );
 
   if (!customer) {
