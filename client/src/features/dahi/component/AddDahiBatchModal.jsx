@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Layers, X, Droplets, AlertCircle, ArrowLeft, Check, Milk, Calendar } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useDahiContext } from '@/context/DahiContext';
 import { usePOSContext } from '@/context/POSContext';
@@ -72,21 +73,21 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
   const isCow = (formData.milkType || '').toLowerCase().includes('cow');
 
   // Farm stocks
-  const totalFarmStock = Number(metrics.remainingFarmMilk ?? invMetrics.farmMilkStock ?? invMetrics.rawFarmMilkStock ?? metrics.farmSourced ?? 0);
-  const totalSupplierStock = Number(metrics.remainingSupplierMilk ?? invMetrics.supplierMilkStock ?? invMetrics.rawSupplierMilkStock ?? metrics.supplierSourced ?? 0);
-  const totalAllStock = Number(metrics.remainingTotalMilk ?? invMetrics.totalMilk ?? (totalFarmStock + totalSupplierStock));
-
-  const rawFarmCow = Number(metrics.remainingFarmCowMilk ?? invMetrics.rawFarmCowMilkStock ?? invMetrics.farmCowMilkStock);
-  const rawFarmBuffalo = Number(metrics.remainingFarmBuffaloMilk ?? invMetrics.rawFarmBuffaloMilkStock ?? invMetrics.farmBuffaloMilkStock);
-  const availFarmCow = !isNaN(rawFarmCow) && rawFarmCow > 0 ? rawFarmCow : (rawFarmBuffalo > 0 ? 0 : totalFarmStock);
-  const availFarmBuffalo = !isNaN(rawFarmBuffalo) && rawFarmBuffalo > 0 ? rawFarmBuffalo : (rawFarmCow > 0 ? 0 : totalFarmStock);
+  const availFarmCow = Math.max(0, Number(metrics.remainingFarmCowMilk ?? invMetrics.rawFarmCowMilkStock ?? invMetrics.farmCowMilkStock ?? 0));
+  let availFarmBuffalo = Math.max(0, Number(metrics.remainingFarmBuffaloMilk ?? invMetrics.rawFarmBuffaloMilkStock ?? invMetrics.farmBuffaloMilkStock ?? 0));
+  const availFarmAll = Number(metrics.remainingFarmMilk ?? invMetrics.rawFarmMilkStock ?? invMetrics.farmMilkStock ?? metrics.farmSourced ?? (availFarmCow + availFarmBuffalo).toFixed(1));
+  if (availFarmBuffalo === 0 && availFarmCow === 0 && availFarmAll > 0) {
+    availFarmBuffalo = availFarmAll;
+  }
   const availFarmForType = isCow ? availFarmCow : availFarmBuffalo;
 
   // Supplier stocks
-  const rawSupplierCow = Number(metrics.remainingSupplierCowMilk ?? invMetrics.rawSupplierCowMilkStock ?? invMetrics.supplierCowMilkStock);
-  const rawSupplierBuffalo = Number(metrics.remainingSupplierBuffaloMilk ?? invMetrics.rawSupplierBuffaloMilkStock ?? invMetrics.supplierBuffaloMilkStock);
-  const availSupplierCow = !isNaN(rawSupplierCow) && rawSupplierCow > 0 ? rawSupplierCow : (rawSupplierBuffalo > 0 ? 0 : totalSupplierStock);
-  const availSupplierBuffalo = !isNaN(rawSupplierBuffalo) && rawSupplierBuffalo > 0 ? rawSupplierBuffalo : (rawSupplierCow > 0 ? 0 : totalSupplierStock);
+  const availSupplierCow = Math.max(0, Number(metrics.remainingSupplierCowMilk ?? invMetrics.rawSupplierCowMilkStock ?? invMetrics.supplierCowMilkStock ?? 0));
+  let availSupplierBuffalo = Math.max(0, Number(metrics.remainingSupplierBuffaloMilk ?? invMetrics.rawSupplierBuffaloMilkStock ?? invMetrics.supplierBuffaloMilkStock ?? 0));
+  const availSupplierAll = Number(metrics.remainingSupplierMilk ?? invMetrics.rawSupplierMilkStock ?? invMetrics.supplierMilkStock ?? metrics.supplierSourced ?? (availSupplierCow + availSupplierBuffalo).toFixed(1));
+  if (availSupplierBuffalo === 0 && availSupplierCow === 0 && availSupplierAll > 0) {
+    availSupplierBuffalo = availSupplierAll;
+  }
   const availSupplierForType = isCow ? availSupplierCow : availSupplierBuffalo;
 
   // Total available for currently selected milk type
@@ -95,9 +96,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
   const availTotalBuffalo = Number((availFarmBuffalo + availSupplierBuffalo).toFixed(1));
 
   // Overall aggregate liquid milk (chiller total across all species)
-  const availFarmAll = totalFarmStock > 0 ? totalFarmStock : Number((availFarmCow + availFarmBuffalo).toFixed(1));
-  const availSupplierAll = totalSupplierStock > 0 ? totalSupplierStock : Number((availSupplierCow + availSupplierBuffalo).toFixed(1));
-  const availTotalAll = totalAllStock > 0 ? totalAllStock : Number((availFarmAll + availSupplierAll).toFixed(1));
+  const availTotalAll = Number(metrics.remainingTotalMilk ?? invMetrics.rawTotalMilkStock ?? invMetrics.totalMilk ?? (availFarmAll + availSupplierAll).toFixed(1));
 
   // Maximum allowed for current source and selected milk type
   const currentMax =
@@ -245,12 +244,12 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
     e.preventDefault();
     const rawVal = parseFloat(formData.milkUsed) || 0;
     if (rawVal <= 0) {
-      alert('Please enter a valid milk quantity greater than 0.');
+      toast.error('Please enter a valid milk quantity greater than 0.');
       return;
     }
 
     if (rawVal > currentMax) {
-      alert(`⚠️ Insufficient ${formData.milkType} Stock!\n\nEntered quantity (${rawVal} kg) exceeds available ${formData.milkType} from ${formData.source} (${currentMax} kg).\n\nPlease enter an amount less than or equal to ${currentMax} kg.`);
+      toast.error(`Insufficient ${formData.milkType} Stock! Entered ${rawVal} kg exceeds available ${currentMax} kg.`);
       return;
     }
 
@@ -267,11 +266,11 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
 
     if (formData.source === 'Both (Mixed)') {
       if (farmPortion > availFarmForType) {
-        alert(`⚠️ Farm portion (${farmPortion} kg) exceeds available Farm ${formData.milkType} stock of ${availFarmForType} kg.`);
+        toast.error(`Farm portion (${farmPortion} kg) exceeds available Farm ${formData.milkType} stock of ${availFarmForType} kg.`);
         return;
       }
       if (supPortion > availSupplierForType) {
-        alert(`⚠️ Supplier portion (${supPortion} kg) exceeds available Supplier ${formData.milkType} stock of ${availSupplierForType} kg.`);
+        toast.error(`Supplier portion (${supPortion} kg) exceeds available Supplier ${formData.milkType} stock of ${availSupplierForType} kg.`);
         return;
       }
     }

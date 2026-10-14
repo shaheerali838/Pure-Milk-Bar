@@ -22,15 +22,17 @@ export default function POSProductCard({
   const isBuff = (product.name || '').toLowerCase().includes('buffalo');
   const unitLabel = product.unit?.replace('per ', '') || (isMilk ? 'L' : 'kg');
 
+  const isOutOfStock = displayStock <= 0;
+
   return (
     <div
       onClick={() => onCardClick?.(product)}
-      className={`relative group bg-white border rounded-2xl p-3 transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-md flex flex-col justify-between overflow-hidden ${
-        inCartQty > 0
-          ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/10'
-          : displayStock <= 0
-          ? 'border-rose-200/90 hover:border-rose-400 bg-rose-50/10'
-          : 'border-slate-200/90 hover:border-indigo-200'
+      className={`relative group border rounded-2xl p-3 transition-all duration-200 flex flex-col justify-between overflow-hidden ${
+        isOutOfStock
+          ? 'opacity-60 bg-slate-100/90 grayscale-[35%] border-slate-300/80 cursor-not-allowed select-none shadow-none'
+          : inCartQty > 0
+          ? 'bg-white border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/10 cursor-pointer shadow-2xs hover:shadow-md'
+          : 'bg-white border-slate-200/90 hover:border-indigo-200 cursor-pointer shadow-2xs hover:shadow-md'
       }`}
     >
       {/* On-Card Stock Warning Message Overlay */}
@@ -56,17 +58,24 @@ export default function POSProductCard({
       )}
 
       <div className="flex items-center justify-between gap-2 mb-2">
-        <span
-          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-            isMilk
-              ? 'bg-blue-50 text-blue-700 border border-blue-200/60'
-              : isDahi
-              ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
-              : 'bg-purple-50 text-purple-700 border border-purple-200/60'
-          }`}
-        >
-          {product.category || 'Dairy'}
-        </span>
+        {isOutOfStock ? (
+          <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-rose-100 text-rose-700 border border-rose-300 flex items-center gap-1 shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+            🚫 Out of Stock
+          </span>
+        ) : (
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+              isMilk
+                ? 'bg-blue-50 text-blue-700 border border-blue-200/60'
+                : isDahi
+                ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                : 'bg-purple-50 text-purple-700 border border-purple-200/60'
+            }`}
+          >
+            {product.category || 'Dairy'}
+          </span>
+        )}
 
         <div className="flex items-center gap-1 bg-slate-50 border border-slate-200/80 rounded-lg p-0.5 shadow-2xs">
           <button

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useAnimalContext } from './AnimalContext';
 import { useIntakeContext } from './IntakeContext';
@@ -167,7 +168,7 @@ export function DahiProvider({ children }) {
 
   // Real supplier procurement intake strictly for targetActiveDate
   const realSupplierIntake = useMemo(() => {
-    const sum = (intakeLogs || []).reduce((acc, item) => {
+    let sum = (intakeLogs || []).reduce((acc, item) => {
       const dateStr = normalizeDateStr(item.date || item.createdAt);
       if (dateStr === targetActiveDate) {
         return acc + (Number(item.quantity || item.quantityLiters) || 0);
@@ -175,8 +176,15 @@ export function DahiProvider({ children }) {
       return acc;
     }, 0);
 
+    if (sum === 0) {
+      const posSup = Number(posCtx?.inventoryMetrics?.totalSupplierIntake || posCtx?.inventoryMetrics?.rawSupplierMilkStock || posCtx?.inventoryMetrics?.supplierMilkStock || 0);
+      if (posSup > 0) {
+        sum = posSup;
+      }
+    }
+
     return Number(sum.toFixed(1));
-  }, [intakeLogs, targetActiveDate]);
+  }, [intakeLogs, targetActiveDate, posCtx?.inventoryMetrics]);
 
   // =========================================================================
   // 2. CONVERSION TO DAHI (Deducted live from Farm & Supplier Milk)
@@ -233,8 +241,8 @@ export function DahiProvider({ children }) {
 
     const remainingFarm = !isNaN(posFarmStock) && posFarmStock >= 0 ? posFarmStock : calculatedFarm;
     const remainingSupplier = !isNaN(posSupStock) && posSupStock >= 0 ? posSupStock : calculatedSup;
-    const remainingTotal = posCtx?.inventoryMetrics?.rawTotalMilkStock !== undefined
-      ? Number(posCtx.inventoryMetrics.rawTotalMilkStock) || 0
+    const remainingTotal = Number(posCtx?.inventoryMetrics?.rawTotalMilkStock) > 0
+      ? Number(posCtx.inventoryMetrics.rawTotalMilkStock)
       : Number((remainingFarm + remainingSupplier).toFixed(1));
 
     const posFarmCowStock = Number(posCtx?.inventoryMetrics?.rawFarmCowMilkStock ?? posCtx?.inventoryMetrics?.farmCowMilkStock);
@@ -243,9 +251,17 @@ export function DahiProvider({ children }) {
     const posSupBuffStock = Number(posCtx?.inventoryMetrics?.rawSupplierBuffaloMilkStock ?? posCtx?.inventoryMetrics?.supplierBuffaloMilkStock);
 
     const remainingFarmCow = !isNaN(posFarmCowStock) && posFarmCowStock >= 0 ? posFarmCowStock : 0;
-    const remainingFarmBuffalo = !isNaN(posFarmBuffStock) && posFarmBuffStock >= 0 ? posFarmBuffStock : 0;
+    let remainingFarmBuffalo = !isNaN(posFarmBuffStock) && posFarmBuffStock >= 0 ? posFarmBuffStock : 0;
+    if (remainingFarmBuffalo === 0 && remainingFarmCow === 0 && remainingFarm > 0) {
+      remainingFarmBuffalo = remainingFarm;
+    }
+
     const remainingSupplierCow = !isNaN(posSupCowStock) && posSupCowStock >= 0 ? posSupCowStock : 0;
-    const remainingSupplierBuffalo = !isNaN(posSupBuffStock) && posSupBuffStock >= 0 ? posSupBuffStock : 0;
+    let remainingSupplierBuffalo = !isNaN(posSupBuffStock) && posSupBuffStock >= 0 ? posSupBuffStock : 0;
+    if (remainingSupplierBuffalo === 0 && remainingSupplierCow === 0 && remainingSupplier > 0) {
+      remainingSupplierBuffalo = remainingSupplier;
+    }
+
     const remainingTotalCow = Number((remainingFarmCow + remainingSupplierCow).toFixed(1));
     const remainingTotalBuffalo = Number((remainingFarmBuffalo + remainingSupplierBuffalo).toFixed(1));
 
@@ -346,12 +362,18 @@ export function DahiProvider({ children }) {
   const dahiTransferredToPOS = totalDahiTransferred;
 
   // Live stock synchronization with POS metrics
-  const liveFarmDahiStock = posCtx?.inventoryMetrics?.rawFarmDahiStock !== undefined
-    ? Number(posCtx.inventoryMetrics.rawFarmDahiStock)
-    : Math.max(0, Number((farmDahiTransferred - (posCtx?.inventoryMetrics?.todayFarmDahiSold || 0)).toFixed(2)));
-  const liveSupplierDahiStock = posCtx?.inventoryMetrics?.rawSupplierDahiStock !== undefined
-    ? Number(posCtx.inventoryMetrics.rawSupplierDahiStock)
-    : Math.max(0, Number((supplierDahiTransferred - (posCtx?.inventoryMetrics?.todaySupplierDahiSold || 0)).toFixed(2)));
+  const calculatedFarmDahi = Math.max(0, Number((farmDahiTransferred - (posCtx?.inventoryMetrics?.todayFarmDahiSold || 0)).toFixed(2)));
+  const posFarmDahi = Number(posCtx?.inventoryMetrics?.rawFarmDahiStock);
+  const liveFarmDahiStock = !isNaN(posFarmDahi) && posFarmDahi > 0
+    ? posFarmDahi
+    : (calculatedFarmDahi > 0 ? calculatedFarmDahi : (posFarmDahi >= 0 ? posFarmDahi : 0));
+
+  const calculatedSupplierDahi = Math.max(0, Number((supplierDahiTransferred - (posCtx?.inventoryMetrics?.todaySupplierDahiSold || 0)).toFixed(2)));
+  const posSupplierDahi = Number(posCtx?.inventoryMetrics?.rawSupplierDahiStock);
+  const liveSupplierDahiStock = !isNaN(posSupplierDahi) && posSupplierDahi > 0
+    ? posSupplierDahi
+    : (calculatedSupplierDahi > 0 ? calculatedSupplierDahi : (posSupplierDahi >= 0 ? posSupplierDahi : 0));
+
   const liveTotalDahiStock = Number((liveFarmDahiStock + liveSupplierDahiStock).toFixed(2));
   const liveDahiPOSStock = liveTotalDahiStock;
 
@@ -902,6 +924,10 @@ export function DahiProvider({ children }) {
         batches,
         isLoading,
         metrics,
+        availableDahiStock: liveTotalDahiStock,
+        totalDahiStock: liveTotalDahiStock,
+        farmDahiStock: liveFarmDahiStock,
+        supplierDahiStock: liveSupplierDahiStock,
         refreshBatches: fetchBatches,
         addBatch,
         convertToDahi,

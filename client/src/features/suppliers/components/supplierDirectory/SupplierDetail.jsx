@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo,useEffect } from 'react';
 import { ArrowLeft, Edit, Building2, Phone, MapPin, Tag, Banknote, Wallet, Clock, Droplets, Calendar, CreditCard, CheckCircle2, AlertCircle, FileText, Sun, Moon, Coins, ChevronRight, Filter, Landmark, Smartphone, Receipt, ArrowDownRight, Check, Copy, PlusCircle, BadgeCheck } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';

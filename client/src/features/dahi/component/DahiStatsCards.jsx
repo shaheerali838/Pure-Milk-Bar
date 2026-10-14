@@ -29,28 +29,48 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
     dahiTransferredToPOS = '0.0',
   } = metrics;
 
-  const farmDahiStock = Number(inventoryMetrics?.rawFarmDahiStock ?? inventoryMetrics?.farmDahiStock ?? metrics.farmDahiStock ?? 0);
-  const supplierDahiStock = Number(inventoryMetrics?.rawSupplierDahiStock ?? inventoryMetrics?.supplierDahiStock ?? metrics.supplierDahiStock ?? 0);
-  const totalDahiStock = Number((farmDahiStock + supplierDahiStock).toFixed(2));
+  const farmDahiStock = Number(inventoryMetrics?.rawFarmDahiStock) > 0
+    ? Number(inventoryMetrics.rawFarmDahiStock)
+    : (Number(metrics.farmDahiStock) > 0
+        ? Number(metrics.farmDahiStock)
+        : Number(inventoryMetrics?.farmDahiStock || 0));
 
-  const posTotalMilk = inventoryMetrics?.totalMilk ?? inventoryMetrics?.rawTotalMilkStock;
-  const posFarmMilk = inventoryMetrics?.farmMilkStock ?? inventoryMetrics?.rawFarmMilkStock;
-  const posSupplierMilk = inventoryMetrics?.supplierMilkStock ?? inventoryMetrics?.rawSupplierMilkStock;
+  const supplierDahiStock = Number(inventoryMetrics?.rawSupplierDahiStock) > 0
+    ? Number(inventoryMetrics.rawSupplierDahiStock)
+    : (Number(metrics.supplierDahiStock) > 0
+        ? Number(metrics.supplierDahiStock)
+        : Number(inventoryMetrics?.supplierDahiStock || 0));
 
-  const displayTotal =
-    remainingTotalMilk !== undefined && Number(remainingTotalMilk) > 0
-      ? remainingTotalMilk
-      : (posTotalMilk !== undefined ? posTotalMilk : (Number(totalMilkSourced) || 0));
+  const totalDahiStock = Number(
+    (Number(inventoryMetrics?.rawTotalDahiStock) > 0
+      ? Number(inventoryMetrics.rawTotalDahiStock)
+      : (Number(metrics.totalDahiStock) > 0
+          ? Number(metrics.totalDahiStock)
+          : farmDahiStock + supplierDahiStock)
+    ).toFixed(2)
+  );
 
-  const displayFarm =
-    remainingFarmMilk !== undefined && Number(remainingFarmMilk) > 0
-      ? remainingFarmMilk
-      : (posFarmMilk !== undefined ? posFarmMilk : (Number(farmSourced) || 0));
+  const posTotalMilk = Number(inventoryMetrics?.rawTotalMilkStock ?? inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk);
+  const posFarmMilk = Number(inventoryMetrics?.rawFarmMilkStock ?? inventoryMetrics?.farmMilkStock ?? inventoryMetrics?.availableFarmStock);
+  const posSupMilk = Number(inventoryMetrics?.rawSupplierMilkStock ?? inventoryMetrics?.supplierMilkStock ?? inventoryMetrics?.availableSupplierStock);
 
-  const displaySupplier =
-    remainingSupplierMilk !== undefined && Number(remainingSupplierMilk) > 0
-      ? remainingSupplierMilk
-      : (posSupplierMilk !== undefined ? posSupplierMilk : (Number(supplierSourced) || 0));
+  const displayTotal = remainingTotalMilk !== undefined && Number(remainingTotalMilk) > 0
+    ? remainingTotalMilk
+    : (!isNaN(posTotalMilk) && posTotalMilk > 0
+        ? posTotalMilk
+        : (totalMilkSourced !== '0.0' ? totalMilkSourced : (posTotalMilk || '0.0')));
+
+  const displayFarm = remainingFarmMilk !== undefined && Number(remainingFarmMilk) > 0
+    ? remainingFarmMilk
+    : (!isNaN(posFarmMilk) && posFarmMilk > 0
+        ? posFarmMilk
+        : (farmSourced !== '0' ? farmSourced : (posFarmMilk || '0')));
+
+  const displaySupplier = remainingSupplierMilk !== undefined && Number(remainingSupplierMilk) > 0
+    ? remainingSupplierMilk
+    : (!isNaN(posSupMilk) && posSupMilk > 0
+        ? posSupMilk
+        : (supplierSourced !== '0' ? supplierSourced : (posSupMilk || '0')));
 
   const dahiSalesAmount = isDahiPriceDefined
     ? `${dahiSoldInPOS} kg · Rs. ${Number(totalDahiRevenue).toLocaleString()}`

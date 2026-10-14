@@ -10,6 +10,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { usePOSContext } from '@/context/POSContext';
 
 export default function DahiKitchenPipeline({
   batches = [],
@@ -20,6 +21,15 @@ export default function DahiKitchenPipeline({
   onOpenAddModal,
 }) {
   const navigate = useNavigate();
+  const posCtx = usePOSContext();
+
+  const liveDahiSold = metrics?.dahiSoldInPOS && Number(metrics.dahiSoldInPOS) > 0
+    ? metrics.dahiSoldInPOS
+    : String(posCtx?.businessFinancialMetrics?.totalDahiSold || posCtx?.inventoryMetrics?.dahiSold || '0');
+
+  const liveDahiRev = metrics?.dahiSalesRevenue && String(metrics.dahiSalesRevenue) !== '0'
+    ? metrics.dahiSalesRevenue
+    : String(Number(posCtx?.businessFinancialMetrics?.totalDahiRevenue || 0).toLocaleString());
 
   const isDahi = (b) => {
     const p = (b.product || '').toLowerCase();
@@ -253,7 +263,7 @@ export default function DahiKitchenPipeline({
           <div className="mb-3 p-2 bg-emerald-50/80 border border-emerald-200/80 rounded-xl flex items-center justify-between text-xs shrink-0">
             <span className="text-[11px] font-semibold text-emerald-800">Live POS Sales:</span>
             <span className="text-[11px] font-black text-emerald-700">
-              {metrics?.dahiSoldInPOS || '0'} kg (Rs. {metrics?.dahiSalesRevenue || '0'})
+              {liveDahiSold} kg (Rs. {liveDahiRev})
             </span>
           </div>
 
@@ -271,14 +281,14 @@ export default function DahiKitchenPipeline({
                   const val = parseFloat(String(b.output || b.outputVal || 0).replace(/[^\d.]/g, '')) || 0;
                   return acc + val;
                 }, 0);
-                const globalPosSold = parseFloat(metrics?.dahiSoldInPOS || 0);
+                const globalPosSold = parseFloat(liveDahiSold || 0);
 
                 const batchRatio = totalPosTransferred > 0 ? (batchTrans / totalPosTransferred) : 1;
                 const batchSold = Number(Math.min(batchTrans, globalPosSold * batchRatio).toFixed(1));
                 const batchRemaining = Math.max(0, Number((batchTrans - batchSold).toFixed(1)));
                 const pctSold = batchTrans > 0 ? Math.min(100, Math.round((batchSold / batchTrans) * 100)) : 0;
                 const isDepleted = batchRemaining <= 0;
-                const totalPosRev = parseFloat(String(metrics?.dahiSalesRevenue || '0').replace(/[^\d.]/g, '')) || 0;
+                const totalPosRev = parseFloat(String(liveDahiRev || '0').replace(/[^\d.]/g, '')) || 0;
                 const batchRevenue = Math.round(batchRatio * totalPosRev) || (batchSold > 0 ? Math.round(batchSold * 320) : 0);
 
                 return (

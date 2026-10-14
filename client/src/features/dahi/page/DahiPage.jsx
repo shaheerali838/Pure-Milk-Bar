@@ -109,23 +109,35 @@ export default function DahiPage() {
     });
 
     const netConverted = farmConverted + supplierConverted;
-    const efficiency = netConverted > 0 ? ((totalOutput / netConverted) * 100).toFixed(1) : '100.0';
+    const efficiency = netConverted > 0 ? ((totalOutput / netConverted) * 100).toFixed(1) : (metrics?.conversionYield || '100.0');
 
     return {
+      // 1. Inherit all real-time metrics (liquid milk stock, POS Dahi stock, sourcing totals)
       ...(metrics || {}),
-      convertedToDahi: String(netConverted),
-      farmConverted: String(farmConverted),
-      supplierConverted: String(supplierConverted),
-      dahiProduced: String(totalOutput),
+
+      // 2. Map date-scoped conversion metrics using both property names to prevent key mismatches
+      farmConverted: String(farmConverted || metrics?.farmConverted || '0'),
+      supplierConverted: String(supplierConverted || metrics?.supplierConverted || '0'),
+      convertedToDahi: String(netConverted || metrics?.convertedToDahi || '0.0'),
+      dahiProduced: String(totalOutput || metrics?.dahiProduced || '0.0'),
       farmMilkConverted: farmConverted,
       supplierMilkConverted: supplierConverted,
       totalMilkConverted: netConverted,
       totalDahiOutput: totalOutput,
       conversionEfficiency: efficiency,
+      conversionYield: efficiency,
       activeBatchesCount: filteredBatches.length,
-      availableStock: metrics?.availableStock || 0,
-      totalRevenue: metrics?.totalRevenue || 0,
-      netProfit: metrics?.netProfit || 0,
+
+      // 3. Ensure stock & POS sales fields are preserved
+      availableStock: metrics?.availableStock ?? metrics?.totalDahiStock ?? 0,
+      totalDahiStock: metrics?.totalDahiStock ?? String(totalOutput || '0.0'),
+      farmDahiStock: metrics?.farmDahiStock ?? String(farmConverted || '0.0'),
+      supplierDahiStock: metrics?.supplierDahiStock ?? String(supplierConverted || '0.0'),
+      dahiSoldInPOS: metrics?.dahiSoldInPOS ?? '0.0',
+      dahiSalesRevenue: metrics?.dahiSalesRevenue ?? '0',
+      dahiSalesOrdersCount: metrics?.dahiSalesOrdersCount ?? 0,
+      totalRevenue: metrics?.totalRevenue ?? metrics?.dahiSalesRevenue ?? 0,
+      netProfit: metrics?.netProfit ?? 0,
     };
   }, [filteredBatches, metrics]);
 
