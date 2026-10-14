@@ -87,8 +87,8 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
     {
       id: 'sourced',
       title: 'Available Liquid Milk (With Me)',
-      amount: `${displayTotal} kg`,
-      sub: `Farm: ${displayFarm}kg · Sup: ${displaySupplier}kg`,
+      amount: `${displayTotal} L`,
+      sub: `Farm: ${displayFarm} L · Sup: ${displaySupplier} L`,
       icon: Droplets,
       color: '#155dfc',
       badge: 'Available',

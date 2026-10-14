@@ -106,7 +106,7 @@ class ProductService {
     }
 
     const product = await Product.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
 

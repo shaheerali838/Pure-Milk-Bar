@@ -159,7 +159,7 @@ class AnimalService {
     mongoUpdate.$set = updatePayload;
 
     const animal = await Animal.findOneAndUpdate(targetFilter, mongoUpdate, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).lean();
 
@@ -226,7 +226,7 @@ class AnimalService {
           $set: updateFields,
           $push: { intakeHistory: newIntake },
         },
-        { new: true }
+        { returnDocument: 'after' }
       ).lean();
     }
 

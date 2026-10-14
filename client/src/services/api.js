@@ -20,11 +20,29 @@
 // 1. CONFIGURATION & URL RESOLUTION
 // ═══════════════════════════════════════════════════════════════════════════
 
-export const API_BASE_URL =
-  (typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
-    ? (import.meta.env.VITE_DEV_API_URL || 'http://localhost:5000')
-    : (import.meta.env.VITE_API_URL || 'https://pure-milk-bar-backend.vercel.app');
+export const API_BASE_URL = (() => {
+  if (typeof window === 'undefined') {
+    return import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  }
+  const host = window.location.hostname;
+  const isLocalHost =
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host.startsWith('192.168.') ||
+    host.startsWith('10.') ||
+    host.endsWith('.local') ||
+    import.meta.env.DEV;
+
+  if (isLocalHost) {
+    return (
+      import.meta.env.VITE_DEV_API_URL ||
+      import.meta.env.VITE_API_URL ||
+      `http://${host === 'localhost' || host === '127.0.0.1' ? 'localhost' : host}:5000`
+    );
+  }
+
+  return import.meta.env.VITE_API_URL || 'https://pure-milk-bar-backend.vercel.app';
+})();
 
 const AUTH_STORAGE_KEYS = [
   'pmb_auth_session',

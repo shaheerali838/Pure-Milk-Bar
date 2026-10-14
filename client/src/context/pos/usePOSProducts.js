@@ -1,8 +1,61 @@
 import { useState, useCallback } from 'react';
 import posService from '@/services/posService.js';
 
+export const DEFAULT_FALLBACK_PRODUCTS = [
+  {
+    id: 'PRD-BUFF-001',
+    sku: 'PRD-BUFF-001',
+    name: 'Buffalo Milk',
+    category: 'Milk',
+    unit: 'per liter',
+    price: 220,
+    cost: 160,
+    status: 'Active',
+  },
+  {
+    id: 'PRD-COW-001',
+    sku: 'PRD-COW-001',
+    name: 'Cow Milk',
+    category: 'Milk',
+    unit: 'per liter',
+    price: 200,
+    cost: 140,
+    status: 'Active',
+  },
+  {
+    id: 'PRD-DAHI-001',
+    sku: 'PRD-DAHI-001',
+    name: 'Fresh Dahi',
+    category: 'Dahi',
+    unit: 'per kg',
+    price: 320,
+    cost: 220,
+    status: 'Active',
+  },
+  {
+    id: 'PRD-SDAHI-001',
+    sku: 'PRD-SDAHI-001',
+    name: 'Sweet Dahi',
+    category: 'Dahi',
+    unit: 'per kg',
+    price: 360,
+    cost: 240,
+    status: 'Active',
+  },
+  {
+    id: 'PRD-LASSI-001',
+    sku: 'PRD-LASSI-001',
+    name: 'Sweet Chilled Lassi',
+    category: 'Lassi',
+    unit: 'per piece',
+    price: 150,
+    cost: 90,
+    status: 'Active',
+  },
+];
+
 export function usePOSProducts({ setCart } = {}) {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(DEFAULT_FALLBACK_PRODUCTS);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
@@ -27,11 +80,11 @@ export function usePOSProducts({ setCart } = {}) {
         }));
         setProducts(normalizedList);
       } else {
-        setProducts([]);
+        setProducts(DEFAULT_FALLBACK_PRODUCTS);
       }
     } catch (err) {
       console.warn('POS live products API notice:', err.message);
-      setProducts([]);
+      setProducts(DEFAULT_FALLBACK_PRODUCTS);
     } finally {
       setIsLoadingProducts(false);
     }

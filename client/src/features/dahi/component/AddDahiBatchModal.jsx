@@ -75,7 +75,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
   // Farm stocks
   const availFarmCow = Math.max(0, Number(metrics.remainingFarmCowMilk ?? invMetrics.rawFarmCowMilkStock ?? invMetrics.farmCowMilkStock ?? 0));
   let availFarmBuffalo = Math.max(0, Number(metrics.remainingFarmBuffaloMilk ?? invMetrics.rawFarmBuffaloMilkStock ?? invMetrics.farmBuffaloMilkStock ?? 0));
-  const availFarmAll = Number(metrics.remainingFarmMilk ?? invMetrics.rawFarmMilkStock ?? invMetrics.farmMilkStock ?? (availFarmCow + availFarmBuffalo).toFixed(1));
+  const availFarmAll = Number(metrics.remainingFarmMilk ?? invMetrics.rawFarmMilkStock ?? invMetrics.farmMilkStock ?? metrics.farmSourced ?? (availFarmCow + availFarmBuffalo).toFixed(1));
   if (availFarmBuffalo === 0 && availFarmCow === 0 && availFarmAll > 0) {
     availFarmBuffalo = availFarmAll;
   }
@@ -84,7 +84,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
   // Supplier stocks
   const availSupplierCow = Math.max(0, Number(metrics.remainingSupplierCowMilk ?? invMetrics.rawSupplierCowMilkStock ?? invMetrics.supplierCowMilkStock ?? 0));
   let availSupplierBuffalo = Math.max(0, Number(metrics.remainingSupplierBuffaloMilk ?? invMetrics.rawSupplierBuffaloMilkStock ?? invMetrics.supplierBuffaloMilkStock ?? 0));
-  const availSupplierAll = Number(metrics.remainingSupplierMilk ?? invMetrics.rawSupplierMilkStock ?? invMetrics.supplierMilkStock ?? (availSupplierCow + availSupplierBuffalo).toFixed(1));
+  const availSupplierAll = Number(metrics.remainingSupplierMilk ?? invMetrics.rawSupplierMilkStock ?? invMetrics.supplierMilkStock ?? metrics.supplierSourced ?? (availSupplierCow + availSupplierBuffalo).toFixed(1));
   if (availSupplierBuffalo === 0 && availSupplierCow === 0 && availSupplierAll > 0) {
     availSupplierBuffalo = availSupplierAll;
   }
@@ -96,7 +96,7 @@ export default function AddDahiBatchModal({ onClose, onAddBatch }) {
   const availTotalBuffalo = Number((availFarmBuffalo + availSupplierBuffalo).toFixed(1));
 
   // Overall aggregate liquid milk (chiller total across all species)
-  const availTotalAll = Number(metrics.remainingTotalMilk ?? invMetrics.rawTotalMilkStock ?? (availFarmAll + availSupplierAll).toFixed(1));
+  const availTotalAll = Number(metrics.remainingTotalMilk ?? invMetrics.rawTotalMilkStock ?? invMetrics.totalMilk ?? (availFarmAll + availSupplierAll).toFixed(1));
 
   // Maximum allowed for current source and selected milk type
   const currentMax =
