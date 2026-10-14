@@ -179,21 +179,21 @@ export function AnimalProvider({ children }) {
         animalsData.status === 'fulfilled'
           ? Array.isArray(animalsData.value)
             ? animalsData.value
-            : animalsData.value?.animals || []
+            : animalsData.value?.data || animalsData.value?.animals || []
           : [];
 
       const logList =
         logsData.status === 'fulfilled'
           ? Array.isArray(logsData.value)
             ? logsData.value
-            : logsData.value?.logs || []
+            : logsData.value?.data || logsData.value?.logs || []
           : [];
 
       const salesList =
         salesData.status === 'fulfilled'
           ? Array.isArray(salesData.value)
             ? salesData.value
-            : salesData.value?.sales || []
+            : salesData.value?.data || salesData.value?.sales || []
           : [];
 
       setAnimalSales(salesList);
