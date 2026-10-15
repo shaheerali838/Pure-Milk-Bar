@@ -8,7 +8,7 @@ import { useGlobalDate } from './GlobalDateContext';
 import farmService from '@/services/farmService';
 import api from '@/services/api';
 import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
-import { normalizeDateStr, getActiveBusinessDate, getLocalDate } from '@/utils/dateUtils';
+import { normalizeDateStr, getActiveBusinessDate, getLocalDate, isMatchingTimeframe, parseCleanDate } from '@/utils/dateUtils';
 
 const DahiContext = createContext(null);
 
@@ -16,6 +16,11 @@ export function DahiProvider({ children }) {
   const { globalDate } = useGlobalDate();
   const { activeDate } = useDailyClose() || {};
   const targetActiveDate = globalDate || activeDate || getActiveBusinessDate();
+
+  // Centralized time-range filter state across all Dahi views and reports
+  const [dateRange, setDateRange] = useState('today');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
 
   // Live herd animals and milking logs from AnimalContext (Real data from API / database)
   const animalCtx = useAnimalContext();
@@ -74,6 +79,10 @@ export function DahiProvider({ children }) {
         }
 
         const outVal = Number(b.outputQuantity || b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
+        const soldQty = Number(b.soldQuantity) || 0;
+        const remQty = b.remainingQuantity !== undefined && b.remainingQuantity !== null
+          ? Number(b.remainingQuantity)
+          : Math.max(0, Number((outVal - soldQty).toFixed(2)));
         const farmDahi = b.farmDahiAdded !== undefined ? Number(b.farmDahiAdded) : Number((outVal * fRatio).toFixed(3));
         const supplierDahi = b.supplierDahiAdded !== undefined ? Number(b.supplierDahiAdded) : Number((outVal * sRatio).toFixed(3));
 
@@ -82,6 +91,8 @@ export function DahiProvider({ children }) {
           id: b._id || b.id || b.batchNumber,
           batchNumber: b.batchNumber || b.id,
           outputVal: outVal,
+          soldQuantity: soldQty,
+          remainingQuantity: remQty,
           milkUsedVal: Number(b.milkUsedQuantity || b.milkUsedVal) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0,
           farmMilkUsed: farmUsed,
           supplierMilkUsed: supUsed,
@@ -195,8 +206,9 @@ export function DahiProvider({ children }) {
     let totalOutputProduced = 0;
 
     const activeBatches = (batches || []).filter((b) => {
-      const bDate = normalizeDateStr(b.date || b.createdAt);
-      return bDate === targetActiveDate;
+      const bDate = parseCleanDate(b.date || b.createdAt);
+      if (!bDate) return false;
+      return isMatchingTimeframe(bDate, dateRange, customFrom, customTo);
     });
 
     activeBatches.forEach((b) => {
@@ -292,7 +304,7 @@ export function DahiProvider({ children }) {
       remainingTotalBuffalo,
       netProfitValue,
     };
-  }, [batches, targetActiveDate, realFarmYield, realSupplierIntake, farmMilkSold, supplierMilkSold, liveDahiPosRate, posCtx?.inventoryMetrics]);
+  }, [batches, dateRange, customFrom, customTo, realFarmYield, realSupplierIntake, farmMilkSold, supplierMilkSold, liveDahiPosRate, posCtx?.inventoryMetrics]);
 
   // Read live POS sales history for Dahi sales & extra profit tracking
   const salesHistory = posCtx?.salesHistory || [];
@@ -303,8 +315,9 @@ export function DahiProvider({ children }) {
     let salesCount = 0;
 
     salesHistory.forEach((sale) => {
-      const sDate = normalizeDateStr(sale.date || sale.timestamp || sale.createdAt);
-      if (sDate !== targetActiveDate) return;
+      const sDate = parseCleanDate(sale.date || sale.timestamp || sale.createdAt);
+      if (!sDate) return;
+      if (!isMatchingTimeframe(sDate, dateRange, customFrom, customTo)) return;
       let saleHasDahi = false;
       (sale.items || []).forEach((item) => {
         const name = (item.name || '').toLowerCase();
@@ -331,7 +344,7 @@ export function DahiProvider({ children }) {
       salesCount,
       extraProfitFromSales,
     };
-  }, [salesHistory, targetActiveDate]);
+  }, [salesHistory, dateRange, customFrom, customTo]);
 
   const { farmDahiTransferred, supplierDahiTransferred, totalDahiTransferred } = useMemo(() => {
     let fSum = 0;
@@ -924,6 +937,12 @@ export function DahiProvider({ children }) {
         batches,
         isLoading,
         metrics,
+        dateRange,
+        setDateRange,
+        customFrom,
+        setCustomFrom,
+        customTo,
+        setCustomTo,
         availableDahiStock: liveTotalDahiStock,
         totalDahiStock: liveTotalDahiStock,
         farmDahiStock: liveFarmDahiStock,

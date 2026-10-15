@@ -8,6 +8,7 @@ import {
 import { usePOSContext } from '@/context/POSContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import POSCustomerSelect from './POSCustomerSelect';
 
 export default function POSKhataSettlementModal() {
   const {
@@ -45,10 +46,12 @@ export default function POSKhataSettlementModal() {
 
   const outstandingKhata = Math.max(0, Number(targetCustomer?.khataBalance || 0));
 
-  const handleCustomerChange = (e) => {
-    const custId = e.target.value;
+  const handleCustomerChange = (val) => {
+    const custId = typeof val === 'object' && val?.target ? val.target.value : val;
     setSelectedCustId(custId);
-    const cust = registeredCustomers.find((c) => String(c.id) === String(custId));
+    const cust = registeredCustomers.find(
+      (c) => String(c.id || c._id) === String(custId)
+    );
     if (cust) {
       setPayAmount(String(cust.khataBalance || ''));
     }
@@ -162,17 +165,12 @@ export default function POSKhataSettlementModal() {
               <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
                 Select Customer
               </label>
-              <select
+              <POSCustomerSelect
                 value={selectedCustId}
                 onChange={handleCustomerChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition"
-              >
-                {registeredCustomers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} — {c.phone} (Khata Due: Rs. {(c.khataBalance || 0).toLocaleString()})
-                  </option>
-                ))}
-              </select>
+                customers={registeredCustomers}
+                placeholder="— Search & Select Customer Account —"
+              />
             </div>
 
             {targetCustomer && (

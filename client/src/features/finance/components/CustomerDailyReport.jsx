@@ -6,22 +6,8 @@ import { useCustomerContext, getCustomerDueBalance } from '@/context/CustomerCon
 import { useDeliveryContext } from '@/context/DeliveryContext';
 import { useExpense } from '@/context/ExpenseContext';
 import { useLedgerContext } from '@/context/LedgerContext';
-
-// Safe date normalization helper
-const normalizeDateStr = (rawDate) => {
-  if (!rawDate) return new Date().toISOString().split('T')[0];
-  if (typeof rawDate === 'string') {
-    if (rawDate.includes('T')) return rawDate.split('T')[0];
-    if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) return rawDate;
-  }
-  try {
-    const d = new Date(rawDate);
-    if (!isNaN(d.getTime())) {
-      return d.toISOString().split('T')[0];
-    }
-  } catch (e) {}
-  return new Date().toISOString().split('T')[0];
-};
+import { isMatchingTimeframe, parseCleanDate, normalizeDateStr } from '@/utils/dateUtils';
+import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
 
 export default function CustomerDailyReport() {
   const { salesHistory = [], setCompletedSaleReceipt } = usePOSContext() || {};
@@ -30,7 +16,9 @@ export default function CustomerDailyReport() {
   const { expenses = [] } = useExpense() || {};
   const { ledgers = {}, getAllCustomersAggregates } = useLedgerContext() || {};
 
-  const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week'
+  const [dateFilter, setDateFilter] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const allCustList = rawCustomers.length > 0 ? rawCustomers : customers;
   const customerMap = useMemo(() => {
@@ -355,19 +343,8 @@ export default function CustomerDailyReport() {
 
     const list = Object.values(dates).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    // Filter by date range
-    if (dateFilter === 'today') {
-      return list.filter((item) => item.date === todayStr);
-    }
-    if (dateFilter === 'week') {
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const weekAgoStr = normalizeDateStr(weekAgo);
-      return list.filter((item) => item.date >= weekAgoStr);
-    }
-
-    return list;
-  }, [salesHistory, fuelLogs, expenses, ledgers, customerMap, dateFilter]);
+    return list.filter((item) => isMatchingTimeframe(item.date, dateFilter, startDate, endDate));
+  }, [salesHistory, fuelLogs, expenses, ledgers, customerMap, dateFilter, startDate, endDate]);
 
   // Overall Totals Across the Aggregated View
   const overallTotals = useMemo(() => {
@@ -446,45 +423,22 @@ export default function CustomerDailyReport() {
             <Users className="w-4.5 h-4.5 text-emerald-600" />
             <span>Customer Daily Sales &amp; Finance Report</span>
           </h2>
-        </div>
-
-        {/* Date Filter Buttons */}
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-center">
-          <button
-            type="button"
-            onClick={() => setDateFilter('today')}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              dateFilter === 'today'
-                ? 'bg-white text-emerald-700 shadow-xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Today
-          </button>
-          <button
-            type="button"
-            onClick={() => setDateFilter('week')}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              dateFilter === 'week'
-                ? 'bg-white text-emerald-700 shadow-xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Last 7 Days
-          </button>
-          <button
-            type="button"
-            onClick={() => setDateFilter('all')}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              dateFilter === 'all'
-                ? 'bg-white text-emerald-700 shadow-xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            All History
-          </button>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            Walk-in counter sales, delivery logistics, fuel costs, khata recoveries, and net inflow
+          </p>
         </div>
       </div>
+
+      {/* Standardized Universal Date & Time Filter Bar */}
+      <DashboardDateFilterBar
+        dateFilter={dateFilter}
+        onFilterChange={setDateFilter}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        theme="emerald"
+      />
 
       {/* 2. Top Summary KPI Cards (Soft Tastefully Colorful Cards) */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">

@@ -91,7 +91,13 @@ export default function Layout() {
           </div>
         )}
 
-        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain p-2 sm:p-3 md:p-4">
+        <main
+          className={`min-h-0 flex-1 ${
+            location.pathname.toLowerCase().startsWith('/pos')
+              ? 'flex flex-col overflow-hidden p-2 sm:p-2.5'
+              : 'overflow-x-hidden overflow-y-auto overscroll-contain p-2 sm:p-3 md:p-4'
+          }`}
+        >
           <Suspense fallback={getFallbackSkeleton()}>
             <Outlet />
           </Suspense>

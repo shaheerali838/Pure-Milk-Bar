@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Clock,
   Thermometer,
@@ -44,6 +44,65 @@ export default function DahiKitchenPipeline({
     (b) => b.stage === 'chilled'
   );
   const posBatches = dahiBatches.filter((b) => b.stage === 'pos' || b.stage === 'sold_out');
+
+  // Consolidate individual date-based batches into unified product cards representing pooled retail stock
+  const unifiedProducts = useMemo(() => {
+    const groups = {};
+    const totalGlobalPosSold = parseFloat(String(liveDahiSold || '0').replace(/[^\d.]/g, '')) || 0;
+    const totalGlobalPosRev = parseFloat(String(liveDahiRev || '0').replace(/[^\d.]/g, '')) || 0;
+
+    posBatches.forEach((b) => {
+      const prodName = (b.product || 'Fresh Dahi (Plain)').trim();
+      if (!groups[prodName]) {
+        groups[prodName] = {
+          product: prodName,
+          batches: [],
+          totalTransferred: 0,
+          totalExplicitSold: 0,
+          hasExplicitTracking: false,
+        };
+      }
+      const bTrans = parseFloat(String(b.output || b.outputVal || b.outputQuantity || 0).replace(/[^\d.]/g, '')) || 0;
+      groups[prodName].batches.push(b);
+      groups[prodName].totalTransferred += bTrans;
+
+      if (b.soldQuantity !== undefined || b.remainingQuantity !== undefined) {
+        groups[prodName].hasExplicitTracking = true;
+        const s = Number(b.soldQuantity) || 0;
+        groups[prodName].totalExplicitSold += s;
+      }
+    });
+
+    const totalAllTransferred = Object.values(groups).reduce((acc, g) => acc + g.totalTransferred, 0);
+
+    return Object.values(groups).map((g) => {
+      const totalTrans = Number(g.totalTransferred.toFixed(1));
+      let totalSold = 0;
+
+      if (g.hasExplicitTracking && g.totalExplicitSold > 0) {
+        totalSold = Number(Math.min(totalTrans, g.totalExplicitSold).toFixed(1));
+      } else {
+        const productRatio = totalAllTransferred > 0 ? (totalTrans / totalAllTransferred) : 1;
+        totalSold = Number(Math.min(totalTrans, totalGlobalPosSold * productRatio).toFixed(1));
+      }
+
+      const totalRemaining = Math.max(0, Number((totalTrans - totalSold).toFixed(1)));
+      const pctSold = totalTrans > 0 ? Math.min(100, Math.round((totalSold / totalTrans) * 100)) : 0;
+      const isDepleted = totalRemaining <= 0;
+      const productRev = Math.round(totalSold * 320) || (totalAllTransferred > 0 ? Math.round((totalTrans / totalAllTransferred) * totalGlobalPosRev) : 0);
+
+      return {
+        product: g.product,
+        batchCount: g.batches.length,
+        totalTransferred: totalTrans,
+        totalSold,
+        totalRemaining,
+        revenue: productRev,
+        pctSold,
+        isDepleted,
+      };
+    });
+  }, [posBatches, liveDahiSold, liveDahiRev]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
@@ -255,7 +314,7 @@ export default function DahiKitchenPipeline({
               </div>
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100/80 text-emerald-800 border border-emerald-200">
-              {posBatches.length} Active
+              {unifiedProducts.length} Product{unifiedProducts.length !== 1 ? 's' : ''}
             </span>
           </div>
 
@@ -267,52 +326,39 @@ export default function DahiKitchenPipeline({
             </span>
           </div>
 
-          {/* Cards List (Scrollable internally inside the column) */}
+          {/* Unified Product Cards List (Scrollable internally inside the column) */}
           <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1 pipeline-scrollbar">
-            {posBatches.length === 0 ? (
+            {unifiedProducts.length === 0 ? (
               <div className="p-6 text-center text-slate-400 text-xs border border-dashed border-emerald-200 rounded-xl bg-emerald-50/20">
                 No active stock placed at POS counter right now.
               </div>
             ) : (
-              posBatches.map((batch) => {
-                const batchId = batch._id || batch.id || batch.batchNumber;
-                const batchTrans = parseFloat(String(batch.output || batch.outputVal || 0).replace(/[^\d.]/g, '')) || 0;
-                const totalPosTransferred = posBatches.reduce((acc, b) => {
-                  const val = parseFloat(String(b.output || b.outputVal || 0).replace(/[^\d.]/g, '')) || 0;
-                  return acc + val;
-                }, 0);
-                const globalPosSold = parseFloat(liveDahiSold || 0);
-
-                const batchRatio = totalPosTransferred > 0 ? (batchTrans / totalPosTransferred) : 1;
-                const batchSold = Number(Math.min(batchTrans, globalPosSold * batchRatio).toFixed(1));
-                const batchRemaining = Math.max(0, Number((batchTrans - batchSold).toFixed(1)));
-                const pctSold = batchTrans > 0 ? Math.min(100, Math.round((batchSold / batchTrans) * 100)) : 0;
-                const isDepleted = batchRemaining <= 0;
-                const totalPosRev = parseFloat(String(liveDahiRev || '0').replace(/[^\d.]/g, '')) || 0;
-                const batchRevenue = Math.round(batchRatio * totalPosRev) || (batchSold > 0 ? Math.round(batchSold * 320) : 0);
-
+              unifiedProducts.map((prod) => {
                 return (
                   <div
-                    key={batchId}
-                    className="bg-white border border-emerald-200/90 rounded-xl p-3 shadow-xs space-y-2.5 hover:shadow-md transition-shadow"
+                    key={prod.product}
+                    className="bg-white border border-emerald-200/90 rounded-xl p-3.5 shadow-xs space-y-3 hover:shadow-md transition-shadow"
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h4 className="text-xs font-bold text-slate-900">{batch.product}</h4>
-                        <p className="text-[10px] font-mono text-slate-500 mt-0.5 flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-slate-400" />
-                          <span>{batch.date ? (typeof batch.date === 'string' && batch.date.includes('T') ? batch.date.split('T')[0] : batch.date) : (batch.createdAt ? String(batch.createdAt).slice(0, 10) : 'Today')}</span>
-                          {batch.time ? `• ${batch.time}` : ''}
-                        </p>
+                        <h4 className="text-xs font-black text-slate-900 leading-tight">{prod.product}</h4>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          <span className="text-[9.5px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md">
+                            Pooled Retail Stock
+                          </span>
+                          <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md">
+                            FIFO Managed
+                          </span>
+                        </div>
                       </div>
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
-                          isDepleted
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${
+                          prod.isDepleted
                             ? 'bg-rose-50 text-rose-700 border-rose-200'
                             : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         }`}
                       >
-                        {isDepleted ? (
+                        {prod.isDepleted ? (
                           <>
                             <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                             Sold Out
@@ -320,58 +366,61 @@ export default function DahiKitchenPipeline({
                         ) : (
                           <>
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            🏬 Live at POS
+                            Live at POS
                           </>
                         )}
                       </span>
                     </div>
 
-                    {/* Progress Bar of Sold vs Remaining */}
+                    {/* Overarching POS Sales Progress Bar */}
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-[10px] font-bold">
                         <span className="text-slate-500">POS Sales Progress:</span>
-                        <span className="text-emerald-700">{pctSold}% Sold ({batchSold} kg)</span>
+                        <span className="text-emerald-700">{prod.pctSold}% Sold ({prod.totalSold} kg)</span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-                          style={{ width: `${pctSold}%` }}
+                          style={{ width: `${prod.pctSold}%` }}
                         />
                       </div>
                     </div>
 
+                    {/* Aggregated Totals */}
                     <div className="space-y-1 text-xs pt-1 border-t border-slate-100">
                       <div className="flex items-center justify-between">
                         <span className="text-slate-500 text-[11px]">Transferred Stock:</span>
-                        <span className="font-bold text-slate-800">{batch.output || `${batchTrans} kg`}</span>
+                        <span className="font-bold text-slate-800">{prod.totalTransferred} kg</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-slate-500 text-[11px]">Remaining at POS:</span>
-                        <span className={`font-black ${isDepleted ? 'text-rose-600' : 'text-emerald-600'}`}>
-                          {batchRemaining} kg
+                        <span className={`font-black ${prod.isDepleted ? 'text-rose-600' : 'text-emerald-600'}`}>
+                          {prod.totalRemaining} kg
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-slate-500 text-[11px]">Live POS Revenue:</span>
                         <span className="font-bold text-slate-900">
-                          Rs. {batchRevenue.toLocaleString()}
+                          Rs. {prod.revenue.toLocaleString()}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {batch.stage === 'sold_out' ? (
+                    {/* Consolidated Action Footers */}
+                    <div className="flex items-center gap-2 pt-0.5">
+                      {prod.isDepleted ? (
                         <div className="flex-1 py-1.5 px-3 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs text-center flex items-center justify-center gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                          Sold Out
+                          Stock Depleted
                         </div>
                       ) : (
                         <button
                           type="button"
-                          onClick={() => onMarkSoldOut && onMarkSoldOut(batchId)}
-                          className="flex-1 py-1.5 px-3 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 text-slate-700 font-bold text-xs transition-colors cursor-pointer text-center"
+                          onClick={() => navigate('/pos')}
+                          className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer text-center flex items-center justify-center gap-1.5 shadow-2xs"
                         >
-                          Mark Sold Out
+                          <ShoppingCart className="w-3.5 h-3.5" />
+                          Sell at Counter
                         </button>
                       )}
                       <button

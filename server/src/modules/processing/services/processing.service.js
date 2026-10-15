@@ -204,6 +204,10 @@ export const getAllBatchesService = async (queryParams = {}) => {
     output: b.output || `${b.outputQuantity || 0} ${b.outputUnit || 'kg'}`,
     outputQuantity: b.outputQuantity || 0,
     outputVal: b.outputQuantity || 0,
+    soldQuantity: b.soldQuantity || 0,
+    remainingQuantity: b.remainingQuantity !== undefined && b.remainingQuantity !== null
+      ? b.remainingQuantity
+      : Math.max(0, Number(((b.outputQuantity || 0) - (b.soldQuantity || 0)).toFixed(2))),
     milkUsedVal: b.milkUsedLiters || 0,
     unitCost: b.unitCost || 150,
     costEstimate: b.costEstimate || b.milkUsedCost || 0,
@@ -272,6 +276,10 @@ export const getBatchByIdService = async (batchId) => {
     output: batch.output || `${batch.outputQuantity || 0} ${batch.outputUnit || 'kg'}`,
     outputQuantity: batch.outputQuantity || 0,
     outputVal: batch.outputQuantity || 0,
+    soldQuantity: batch.soldQuantity || 0,
+    remainingQuantity: batch.remainingQuantity !== undefined && batch.remainingQuantity !== null
+      ? batch.remainingQuantity
+      : Math.max(0, Number(((batch.outputQuantity || 0) - (batch.soldQuantity || 0)).toFixed(2))),
     milkUsedVal: batch.milkUsedLiters || 0,
     unitCost: batch.unitCost || 150,
     costEstimate: batch.costEstimate || batch.milkUsedCost || 0,
@@ -336,6 +344,10 @@ export const updateBatchService = async (batchId, updateData) => {
     output: updated.output || `${updated.outputQuantity || 0} ${updated.outputUnit || 'kg'}`,
     outputQuantity: updated.outputQuantity || 0,
     outputVal: updated.outputQuantity || 0,
+    soldQuantity: updated.soldQuantity || 0,
+    remainingQuantity: updated.remainingQuantity !== undefined && updated.remainingQuantity !== null
+      ? updated.remainingQuantity
+      : Math.max(0, Number(((updated.outputQuantity || 0) - (updated.soldQuantity || 0)).toFixed(2))),
     milkUsedVal: updated.milkUsedLiters || 0,
     fat: `${updated.fatPercentage || 0}%`,
     date: updated.date ? new Date(updated.date).toISOString().split('T')[0] : '',

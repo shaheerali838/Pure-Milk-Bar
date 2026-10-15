@@ -45,6 +45,15 @@ const processingBatchSchema = new Schema(
       trim: true,
       default: '',
     },
+    soldQuantity: {
+      type: Number,
+      default: 0,
+      min: [0, 'Sold quantity cannot be negative'],
+    },
+    remainingQuantity: {
+      type: Number,
+      min: [0, 'Remaining quantity cannot be negative'],
+    },
     fatPercentage: {
       type: Number,
       min: [0, 'FAT % cannot be negative'],
@@ -153,6 +162,10 @@ const processingBatchSchema = new Schema(
         // Frontend compatibility aliases
         ret.milkUsed = `${ret.milkUsedLiters} L`;
         ret.fat = `${ret.fatPercentage}%`;
+        ret.soldQuantity = ret.soldQuantity || 0;
+        ret.remainingQuantity = ret.remainingQuantity !== undefined && ret.remainingQuantity !== null
+          ? ret.remainingQuantity
+          : Math.max(0, Number(((ret.outputQuantity || 0) - ret.soldQuantity).toFixed(2)));
         if (!ret.output && ret.outputQuantity) {
           ret.output = `${ret.outputQuantity} ${ret.outputUnit || 'kg'}`;
         }
@@ -167,6 +180,9 @@ const processingBatchSchema = new Schema(
 
 // Pre-save hook to auto-generate batchNumber and format output string if missing
 processingBatchSchema.pre('save', async function () {
+  if (this.remainingQuantity === undefined || this.remainingQuantity === null) {
+    this.remainingQuantity = Math.max(0, Number(((this.outputQuantity || 0) - (this.soldQuantity || 0)).toFixed(2)));
+  }
   if (!this.batchNumber) {
     const timestamp = Date.now().toString().slice(-4);
     const random = Math.floor(100 + Math.random() * 900);

@@ -6,6 +6,7 @@ import User from '../../../models/User.model.js';
 import AppError from '../../../utils/AppError.js';
 import { matchProductForServerItem, getLiveAvailableStock } from '../../../utils/stockResolver.js';
 import { updateCustomerKhataForOrder, reverseCustomerKhataForOrder } from './orderKhataHelper.js';
+import { isDahiProductItem, deductDahiBatchesFIFO, restoreDahiBatchesFIFO } from '../../../utils/dahiFifoHelper.js';
 
 class OrderService {
   async generateReceiptNumber() {
@@ -165,6 +166,15 @@ class OrderService {
           const avail = await getLiveAvailableStock(prod);
           const newStock = Math.max(0, Number((avail - qty).toFixed(2)));
           await Product.findByIdAndUpdate(prod._id, { $set: { currentStock: newStock } });
+        }
+
+        // Automatic First-In, First-Out (FIFO) deduction for Dahi batches
+        if (isDahiProductItem(item) || isDahiProductItem(prod)) {
+          try {
+            await deductDahiBatchesFIFO(item.name || prod?.name, qty);
+          } catch (fifoErr) {
+            console.warn('FIFO batch deduction notice:', fifoErr.message);
+          }
         }
       }
     }
@@ -389,6 +399,12 @@ class OrderService {
           await Product.findByIdAndUpdate(item.productId, {
             $inc: { currentStock: Number(item.quantity) },
           });
+        }
+
+        if (isDahiProductItem(item)) {
+          try {
+            await restoreDahiBatchesFIFO(item.name, Number(item.quantity));
+          } catch (_) {}
         }
       }
     }

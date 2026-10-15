@@ -93,7 +93,7 @@ export default function FinancePage({ initialTab }) {
 
       {activeTab === 'report-dahi' && (
         <div className="space-y-3">
-          <DahiDailyReport />
+          <DahiDailyReport showFilterBar={true} />
         </div>
       )}
 
