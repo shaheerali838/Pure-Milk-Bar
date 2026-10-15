@@ -114,6 +114,7 @@ export default function SupplierDashboard() {
 
   return (
     <div className="space-y-4">
+
       {/* Date Filter Bar */}
       <div className="mb-3">
         <DashboardDateFilterBar
