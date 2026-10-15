@@ -8,7 +8,7 @@ import { useGlobalDate } from './GlobalDateContext';
 import farmService from '@/services/farmService';
 import api from '@/services/api';
 import { broadcastSync, subscribeToSync } from '@/utils/syncBroadcaster';
-import { normalizeDateStr, getActiveBusinessDate, getLocalDate } from '@/utils/dateUtils';
+import { normalizeDateStr, getActiveBusinessDate, getLocalDate, isMatchingTimeframe, parseCleanDate } from '@/utils/dateUtils';
 
 const DahiContext = createContext(null);
 
@@ -16,6 +16,11 @@ export function DahiProvider({ children }) {
   const { globalDate } = useGlobalDate();
   const { activeDate } = useDailyClose() || {};
   const targetActiveDate = globalDate || activeDate || getActiveBusinessDate();
+
+  // Centralized time-range filter state across all Dahi views and reports
+  const [dateRange, setDateRange] = useState('today');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
 
   // Live herd animals and milking logs from AnimalContext (Real data from API / database)
   const animalCtx = useAnimalContext();
@@ -50,7 +55,7 @@ export function DahiProvider({ children }) {
     setIsLoading(true);
     try {
       const data = await farmService.getProcessingBatches();
-      const rawList = Array.isArray(data) ? data : data?.batches || [];
+      const rawList = Array.isArray(data) ? data : (data?.batches || data?.data || []);
       const list = rawList.filter((b) => {
         const p = (b.product || '').toLowerCase();
         return p.includes('dahi') || p.includes('yogurt') || p.includes('curd') || (!p.includes('milk') && !p.includes('pasteur'));
@@ -74,6 +79,10 @@ export function DahiProvider({ children }) {
         }
 
         const outVal = Number(b.outputQuantity || b.outputVal) || parseFloat(String(b.output).replace(/[^\d.]/g, '')) || 0;
+        const soldQty = Number(b.soldQuantity) || 0;
+        const remQty = b.remainingQuantity !== undefined && b.remainingQuantity !== null
+          ? Number(b.remainingQuantity)
+          : Math.max(0, Number((outVal - soldQty).toFixed(2)));
         const farmDahi = b.farmDahiAdded !== undefined ? Number(b.farmDahiAdded) : Number((outVal * fRatio).toFixed(3));
         const supplierDahi = b.supplierDahiAdded !== undefined ? Number(b.supplierDahiAdded) : Number((outVal * sRatio).toFixed(3));
 
@@ -82,6 +91,8 @@ export function DahiProvider({ children }) {
           id: b._id || b.id || b.batchNumber,
           batchNumber: b.batchNumber || b.id,
           outputVal: outVal,
+          soldQuantity: soldQty,
+          remainingQuantity: remQty,
           milkUsedVal: Number(b.milkUsedQuantity || b.milkUsedVal) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0,
           farmMilkUsed: farmUsed,
           supplierMilkUsed: supUsed,
@@ -176,15 +187,12 @@ export function DahiProvider({ children }) {
       return acc;
     }, 0);
 
-    if (sum === 0) {
-      const posSup = Number(posCtx?.inventoryMetrics?.totalSupplierIntake || posCtx?.inventoryMetrics?.rawSupplierMilkStock || posCtx?.inventoryMetrics?.supplierMilkStock || 0);
-      if (posSup > 0) {
-        sum = posSup;
-      }
+    if (sum === 0 && Number(posCtx?.inventoryMetrics?.todaySupplierIntake) > 0) {
+      sum = Number(posCtx.inventoryMetrics.todaySupplierIntake);
     }
 
     return Number(sum.toFixed(1));
-  }, [intakeLogs, targetActiveDate, posCtx?.inventoryMetrics]);
+  }, [intakeLogs, targetActiveDate, posCtx?.inventoryMetrics?.todaySupplierIntake]);
 
   // =========================================================================
   // 2. CONVERSION TO DAHI (Deducted live from Farm & Supplier Milk)
@@ -198,8 +206,9 @@ export function DahiProvider({ children }) {
     let totalOutputProduced = 0;
 
     const activeBatches = (batches || []).filter((b) => {
-      const bDate = normalizeDateStr(b.date || b.createdAt);
-      return bDate === targetActiveDate;
+      const bDate = parseCleanDate(b.date || b.createdAt);
+      if (!bDate) return false;
+      return isMatchingTimeframe(bDate, dateRange, customFrom, customTo);
     });
 
     activeBatches.forEach((b) => {
@@ -241,7 +250,7 @@ export function DahiProvider({ children }) {
 
     const remainingFarm = !isNaN(posFarmStock) && posFarmStock >= 0 ? posFarmStock : calculatedFarm;
     const remainingSupplier = !isNaN(posSupStock) && posSupStock >= 0 ? posSupStock : calculatedSup;
-    const remainingTotal = Number(posCtx?.inventoryMetrics?.rawTotalMilkStock) > 0
+    const remainingTotal = posCtx?.inventoryMetrics?.rawTotalMilkStock !== undefined
       ? Number(posCtx.inventoryMetrics.rawTotalMilkStock)
       : Number((remainingFarm + remainingSupplier).toFixed(1));
 
@@ -295,7 +304,7 @@ export function DahiProvider({ children }) {
       remainingTotalBuffalo,
       netProfitValue,
     };
-  }, [batches, targetActiveDate, realFarmYield, realSupplierIntake, farmMilkSold, supplierMilkSold, liveDahiPosRate, posCtx?.inventoryMetrics]);
+  }, [batches, dateRange, customFrom, customTo, realFarmYield, realSupplierIntake, farmMilkSold, supplierMilkSold, liveDahiPosRate, posCtx?.inventoryMetrics]);
 
   // Read live POS sales history for Dahi sales & extra profit tracking
   const salesHistory = posCtx?.salesHistory || [];
@@ -306,8 +315,9 @@ export function DahiProvider({ children }) {
     let salesCount = 0;
 
     salesHistory.forEach((sale) => {
-      const sDate = normalizeDateStr(sale.date || sale.timestamp || sale.createdAt);
-      if (sDate !== targetActiveDate) return;
+      const sDate = parseCleanDate(sale.date || sale.timestamp || sale.createdAt);
+      if (!sDate) return;
+      if (!isMatchingTimeframe(sDate, dateRange, customFrom, customTo)) return;
       let saleHasDahi = false;
       (sale.items || []).forEach((item) => {
         const name = (item.name || '').toLowerCase();
@@ -334,7 +344,7 @@ export function DahiProvider({ children }) {
       salesCount,
       extraProfitFromSales,
     };
-  }, [salesHistory, targetActiveDate]);
+  }, [salesHistory, dateRange, customFrom, customTo]);
 
   const { farmDahiTransferred, supplierDahiTransferred, totalDahiTransferred } = useMemo(() => {
     let fSum = 0;
@@ -364,17 +374,20 @@ export function DahiProvider({ children }) {
   // Live stock synchronization with POS metrics
   const calculatedFarmDahi = Math.max(0, Number((farmDahiTransferred - (posCtx?.inventoryMetrics?.todayFarmDahiSold || 0)).toFixed(2)));
   const posFarmDahi = Number(posCtx?.inventoryMetrics?.rawFarmDahiStock);
-  const liveFarmDahiStock = !isNaN(posFarmDahi) && posFarmDahi > 0
+  const liveFarmDahiStock = !isNaN(posFarmDahi) && posFarmDahi >= 0
     ? posFarmDahi
-    : (calculatedFarmDahi > 0 ? calculatedFarmDahi : (posFarmDahi >= 0 ? posFarmDahi : 0));
+    : (calculatedFarmDahi > 0 ? calculatedFarmDahi : 0);
 
   const calculatedSupplierDahi = Math.max(0, Number((supplierDahiTransferred - (posCtx?.inventoryMetrics?.todaySupplierDahiSold || 0)).toFixed(2)));
   const posSupplierDahi = Number(posCtx?.inventoryMetrics?.rawSupplierDahiStock);
-  const liveSupplierDahiStock = !isNaN(posSupplierDahi) && posSupplierDahi > 0
+  const liveSupplierDahiStock = !isNaN(posSupplierDahi) && posSupplierDahi >= 0
     ? posSupplierDahi
-    : (calculatedSupplierDahi > 0 ? calculatedSupplierDahi : (posSupplierDahi >= 0 ? posSupplierDahi : 0));
+    : (calculatedSupplierDahi > 0 ? calculatedSupplierDahi : 0);
 
-  const liveTotalDahiStock = Number((liveFarmDahiStock + liveSupplierDahiStock).toFixed(2));
+  const posTotalDahi = Number(posCtx?.inventoryMetrics?.rawTotalDahiStock);
+  const liveTotalDahiStock = !isNaN(posTotalDahi) && posTotalDahi >= 0
+    ? posTotalDahi
+    : Number((liveFarmDahiStock + liveSupplierDahiStock).toFixed(2));
   const liveDahiPOSStock = liveTotalDahiStock;
 
   // Unified metrics for top KPI cards & widgets
@@ -924,6 +937,12 @@ export function DahiProvider({ children }) {
         batches,
         isLoading,
         metrics,
+        dateRange,
+        setDateRange,
+        customFrom,
+        setCustomFrom,
+        customTo,
+        setCustomTo,
         availableDahiStock: liveTotalDahiStock,
         totalDahiStock: liveTotalDahiStock,
         farmDahiStock: liveFarmDahiStock,

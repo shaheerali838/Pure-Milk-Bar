@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useAnimalContext } from "../../../../context/AnimalContext";
 import { useStaffPayrollContext } from "../../../../context/StaffPayrollContext";
 import { useStaffContext } from "../../../../context/StaffContext";
+import { useDailyClose } from "@/context/DailyCloseContext";
 
 const getTodayDateStr = () => {
   const d = new Date();
@@ -20,6 +21,7 @@ const normalizeDate = (dateVal) => {
 
 export default function MilkingRegisterTable({ onSaveSuccess }) {
   const { animals = [], milkingLogs = [], saveMilkingShift } = useAnimalContext();
+  const { isDayClosed } = useDailyClose();
   const payrollCtx = useStaffPayrollContext();
   const staffCtx = useStaffContext();
 
@@ -460,13 +462,17 @@ export default function MilkingRegisterTable({ onSaveSuccess }) {
             <button
               type="button"
               onClick={handleSave}
-              disabled={isSaving}
+              disabled={isSaving || isDayClosed}
               className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed active:scale-95 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
             >
               {isSaving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Saving {shift} Entries...</span>
+                </>
+              ) : isDayClosed ? (
+                <>
+                  <span>Day Closed (Milking Locked)</span>
                 </>
               ) : (
                 <>

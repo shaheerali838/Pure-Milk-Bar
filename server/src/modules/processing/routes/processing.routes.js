@@ -9,6 +9,7 @@ import {
 } from '../controllers/processing.controller.js';
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize } from '../../../middlewares/authorize.js';
+import { checkDayNotClosed } from '../../../middlewares/checkDayNotClosed.js';
 import {
   validateCreateBatch,
   validateUpdateBatch,
@@ -26,7 +27,7 @@ router.get('/stats', authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR'), getProces
 // Batch Collection CRUD
 router
   .route('/')
-  .post(authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR'), validateCreateBatch, createBatch)
+  .post(authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR'), checkDayNotClosed, validateCreateBatch, createBatch)
   .get(authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR'), validateBatchQuery, getAllBatches);
 
 // Individual Batch CRUD

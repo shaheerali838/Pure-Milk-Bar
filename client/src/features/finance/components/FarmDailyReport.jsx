@@ -1,33 +1,20 @@
 import React, { useMemo, useState } from 'react';
-import { Calendar, Activity, ArrowRight, Droplets, Banknote, Tractor, CheckCircle2, TrendingUp, Layers, Receipt, AlertCircle } from 'lucide-react';
+import { Tractor } from 'lucide-react';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { usePOSContext } from '@/context/POSContext';
 import { useExpense } from '@/context/ExpenseContext';
 import { useDahiContext } from '@/context/DahiContext';
-
-// Safe date normalization helper
-const normalizeDateStr = (rawDate) => {
-  if (!rawDate) return new Date().toISOString().split('T')[0];
-  if (typeof rawDate === 'string') {
-    if (rawDate.includes('T')) return rawDate.split('T')[0];
-    if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) return rawDate;
-  }
-  try {
-    const d = new Date(rawDate);
-    if (!isNaN(d.getTime())) {
-      return d.toISOString().split('T')[0];
-    }
-  } catch (e) {}
-  return new Date().toISOString().split('T')[0];
-};
+import { parseCleanDate, isMatchingTimeframe, getLocalDate } from '@/utils/dateUtils';
+import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
+import FarmDailyReportDayCard from './FarmDailyReportDayCard';
 
 export default function FarmDailyReport() {
   const { animals = [], milkingLogs = [] } = useAnimalContext() || {};
   const { farmSalesHistory = [], salesHistory = [], inventoryMetrics = {} } = usePOSContext() || {};
-  const { expenses = [], totals: expenseTotals = {} } = useExpense() || {};
+  const { expenses = [] } = useExpense() || {};
   const { batches = [] } = useDahiContext() || {};
 
-  const [dateFilter, setDateFilter] = useState('today'); // 'today' (default) | 'week' | 'all' | 'custom'
+  const [dateFilter, setDateFilter] = useState('today');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -37,12 +24,13 @@ export default function FarmDailyReport() {
     ).length;
   }, [animals]);
 
-  // 2. Build Daily Aggregations (Farm Production, Sales & Expenses Strictly Isolated)
+  // Build Daily Aggregations (Farm Production, Sales & Expenses Strictly Isolated)
   const aggregatedByDate = useMemo(() => {
     const dates = {};
-    const todayStr = normalizeDateStr(new Date());
+    const todayStr = getLocalDate();
 
     const initDate = (d) => {
+      if (!d) return null;
       if (!dates[d]) {
         dates[d] = {
           date: d,
@@ -61,47 +49,55 @@ export default function FarmDailyReport() {
           expenseItems: [],
         };
       }
+      return dates[d];
     };
 
-    // Always ensure today is initialized
-    initDate(todayStr);
+    // Always ensure today is initialized for single-day views
+    if (dateFilter === 'today' || dateFilter === 'all') {
+      initDate(todayStr);
+    }
 
     // Milking Logs (Farm Milking Shifts)
     milkingLogs.forEach((log) => {
-      const d = normalizeDateStr(log.date || log.createdAt);
-      initDate(d);
-      const y = parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0;
-      dates[d].farmYield += y;
-      dates[d].shiftLogs.push(log);
+      const d = parseCleanDate(log.date || log.createdAt);
+      if (!d || !isMatchingTimeframe(d, dateFilter, startDate, endDate)) return;
+      const target = initDate(d);
+      if (target) {
+        const y = parseFloat(log.yieldLiters || log.quantityLiters || log.yield) || 0;
+        target.farmYield += y;
+        target.shiftLogs.push(log);
+      }
     });
 
     // POS Sales (Direct Farm Milk and Farm Dahi / Mixed Farm Share)
     const activeFarmSales = farmSalesHistory.length > 0 ? farmSalesHistory : salesHistory;
     activeFarmSales.forEach((sale) => {
-      const d = normalizeDateStr(sale.date || sale.timestamp || sale.createdAt || sale.formattedDate);
-      initDate(d);
+      const d = parseCleanDate(sale.date || sale.timestamp || sale.createdAt);
+      if (!d || !isMatchingTimeframe(d, dateFilter, startDate, endDate)) return;
+      const target = initDate(d);
+      if (!target) return;
 
       (sale.items || []).forEach((item) => {
         const name = (item.name || '').toLowerCase();
         const cat = (item.category || '').toLowerCase();
         const source = (item.source || '').toLowerCase();
         const qty = Number(item.quantity) || 0;
-        const sub = Number(item.subtotal || item.effectiveRevenue) || (qty * (Number(item.price) || 0));
+        const sub = Number(item.subtotal || item.effectiveRevenue) || qty * (Number(item.price) || 0);
 
-        // Skip pure supplier items if not pre-segregated
         if (farmSalesHistory.length === 0 && source.includes('supplier')) return;
 
-        const isDahi = name.includes('dahi') || cat.includes('dahi') || name.includes('yogurt') || cat.includes('yogurt');
+        const isDahi =
+          name.includes('dahi') || cat.includes('dahi') || name.includes('yogurt') || cat.includes('yogurt');
 
         if (isDahi) {
-          dates[d].farmDahiSalesQty += qty;
-          dates[d].farmDahiSalesRev += sub;
+          target.farmDahiSalesQty += qty;
+          target.farmDahiSalesRev += sub;
         } else {
-          dates[d].farmMilkSalesQty += qty;
-          dates[d].farmMilkSalesRev += sub;
+          target.farmMilkSalesQty += qty;
+          target.farmMilkSalesRev += sub;
         }
-        dates[d].farmTotalSalesRev += sub;
-        dates[d].saleItems.push({
+        target.farmTotalSalesRev += sub;
+        target.saleItems.push({
           name: item.name,
           quantity: qty,
           price: Number(item.price) || 0,
@@ -114,11 +110,14 @@ export default function FarmDailyReport() {
     // Dahi Batches (Farm milk used and Dahi production costs)
     batches.forEach((b) => {
       const src = (b.source || '').toLowerCase();
-      const isSupplierOnly = src.includes('supplier') && !src.includes('farm') && !src.includes('mix') && !src.includes('both');
+      const isSupplierOnly =
+        src.includes('supplier') && !src.includes('farm') && !src.includes('mix') && !src.includes('both');
       if (isSupplierOnly) return;
 
-      const d = normalizeDateStr(b.date || b.createdAt);
-      initDate(d);
+      const d = parseCleanDate(b.date || b.createdAt);
+      if (!d || !isMatchingTimeframe(d, dateFilter, startDate, endDate)) return;
+      const target = initDate(d);
+      if (!target) return;
 
       const numUsed = Number(b.milkUsedVal) || parseFloat(String(b.milkUsed).replace(/[^\d.]/g, '')) || 0;
       let fUsed = 0;
@@ -131,17 +130,19 @@ export default function FarmDailyReport() {
       }
 
       const fCost = Number(b.farmMilkCost) || Math.round(fUsed * (Number(b.unitCost) || 150));
-      dates[d].farmMilkConvertedToDahi += fUsed;
-      dates[d].farmDahiProductionCost += fCost;
+      target.farmMilkConvertedToDahi += fUsed;
+      target.farmDahiProductionCost += fCost;
     });
 
     // Farm Expenses
     expenses.forEach((exp) => {
-      const d = normalizeDateStr(exp.date || exp.createdAt);
-      initDate(d);
+      const d = parseCleanDate(exp.date || exp.createdAt);
+      if (!d || !isMatchingTimeframe(d, dateFilter, startDate, endDate)) return;
+      const target = initDate(d);
+      if (!target) return;
       const amt = Number(exp.amount) || 0;
-      dates[d].farmExpensesTotal += amt;
-      dates[d].expenseItems.push(exp);
+      target.farmExpensesTotal += amt;
+      target.expenseItems.push(exp);
     });
 
     // Compute Net Profit for each date: Sales - Expenses - Dahi Production Cost
@@ -149,55 +150,53 @@ export default function FarmDailyReport() {
       day.farmNetProfit = day.farmTotalSalesRev - day.farmExpensesTotal - day.farmDahiProductionCost;
     });
 
-    const list = Object.values(dates).sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    // Filter by date range if selected
-    if (dateFilter === 'today') {
-      return list.filter((item) => item.date === todayStr);
-    }
-    if (dateFilter === 'week') {
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const weekAgoStr = normalizeDateStr(weekAgo);
-      return list.filter((item) => item.date >= weekAgoStr);
-    }
-    if (dateFilter === 'custom') {
-      return list.filter((item) => {
-        if (startDate && item.date < startDate) return false;
-        if (endDate && item.date > endDate) return false;
-        return true;
-      });
-    }
-
-    return list;
+    return Object.values(dates).sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [milkingLogs, farmSalesHistory, salesHistory, expenses, batches, dateFilter, startDate, endDate]);
 
-  // Overall totals across the aggregated view
+  // Overall totals strictly reduced from active timeframe
   const overallTotals = useMemo(() => {
     return aggregatedByDate.reduce(
       (acc, day) => {
-        acc.totalYield += day.farmYield;
-        acc.totalMilkSalesQty += day.farmMilkSalesQty;
-        acc.totalDahiSalesQty += day.farmDahiSalesQty;
-        acc.totalFarmMilkConvertedToDahi += (day.farmMilkConvertedToDahi || 0);
-        acc.totalDahiProductionCost += (day.farmDahiProductionCost || 0);
-        acc.totalSalesRev += day.farmTotalSalesRev;
-        acc.totalExpenses += day.farmExpensesTotal;
-        acc.totalNetProfit += day.farmNetProfit;
+        acc.totalYield += Number(day.farmYield) || 0;
+        acc.totalMilkSalesQty += Number(day.farmMilkSalesQty) || 0;
+        acc.totalDahiSalesQty += Number(day.farmDahiSalesQty) || 0;
+        acc.totalFarmMilkConvertedToDahi += Number(day.farmMilkConvertedToDahi) || 0;
+        acc.totalDahiProductionCost += Number(day.farmDahiProductionCost) || 0;
+        acc.totalSalesRev += Number(day.farmTotalSalesRev) || 0;
+        acc.totalExpenses += Number(day.farmExpensesTotal) || 0;
+        acc.totalNetProfit += Number(day.farmNetProfit) || 0;
         return acc;
       },
-      { totalYield: 0, totalMilkSalesQty: 0, totalDahiSalesQty: 0, totalFarmMilkConvertedToDahi: 0, totalDahiProductionCost: 0, totalSalesRev: 0, totalExpenses: 0, totalNetProfit: 0 }
+      {
+        totalYield: 0,
+        totalMilkSalesQty: 0,
+        totalDahiSalesQty: 0,
+        totalFarmMilkConvertedToDahi: 0,
+        totalDahiProductionCost: 0,
+        totalSalesRev: 0,
+        totalExpenses: 0,
+        totalNetProfit: 0,
+      }
     );
   }, [aggregatedByDate]);
 
-  // Formula: Available Farm Stock = Total Farm Intake - (Milk Sold + Milk Converted to Dahi)
-  const currentAvailableStock = Number(inventoryMetrics.rawAvailableFarmStock ?? inventoryMetrics.availableFarmStock ?? inventoryMetrics.rawFarmMilkStock) || Math.max(0, overallTotals.totalYield - (overallTotals.totalMilkSalesQty + overallTotals.totalFarmMilkConvertedToDahi));
-  const overallMargin = overallTotals.totalSalesRev > 0 ? Math.round((overallTotals.totalNetProfit / overallTotals.totalSalesRev) * 100) : 0;
+  // Decoupled physical stock: Absolute real-time inventory snapshot
+  const currentAvailableStock = Number(
+    inventoryMetrics?.rawAvailableFarmStock ??
+    inventoryMetrics?.availableFarmStock ??
+    inventoryMetrics?.rawFarmMilkStock ??
+    0
+  );
+
+  const overallMargin =
+    overallTotals.totalSalesRev > 0
+      ? Math.round((overallTotals.totalNetProfit / overallTotals.totalSalesRev) * 100)
+      : 0;
 
   return (
     <div className="space-y-4 animate-in fade-in duration-150">
-      {/* 1. Header & Date Filter Bar */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* 1. Report Title Header */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex items-center justify-between gap-4">
         <div>
           <h2 className="text-sm sm:text-base font-bold text-slate-900 font-display flex items-center gap-2">
             <Tractor className="w-4.5 h-4.5 text-emerald-600" />
@@ -207,350 +206,112 @@ export default function FarmDailyReport() {
             Real-time daily yield, POS milk &amp; Dahi sales, operating expenses, and net profit
           </p>
         </div>
-
-        {/* Date Filter Buttons & Custom Range Inputs */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start sm:self-center">
-            {['today', 'week', 'all', 'custom'].map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                onClick={() => {
-                  setDateFilter(filter);
-                  if (filter !== 'custom') {
-                    setStartDate('');
-                    setEndDate('');
-                  }
-                }}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  dateFilter === filter
-                    ? 'bg-white text-emerald-700 shadow-xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {filter === 'today' ? 'Today' : filter === 'week' ? 'Last 7 Days' : filter === 'custom' ? 'Custom Range' : 'All History'}
-              </button>
-            ))}
-          </div>
-
-          {dateFilter === 'custom' && (
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs">
-              <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span className="text-[11px] font-semibold text-slate-500">From:</span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
-              />
-              <span className="text-[11px] font-semibold text-slate-500">To:</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="bg-transparent border-none outline-hidden text-xs font-bold text-slate-700 cursor-pointer"
-              />
-              {(startDate || endDate) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStartDate('');
-                    setEndDate('');
-                    setDateFilter('all');
-                  }}
-                  className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer ml-1"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          )}
-        </div>
       </div>
 
-      {/* 2. Top Summary KPI Cards (Production, Sales, Expenses, Net Profit, Stock) */}
+      {/* 2. Standardized Universal Date & Time Filter Bar */}
+      <DashboardDateFilterBar
+        dateFilter={dateFilter}
+        onFilterChange={setDateFilter}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        theme="emerald"
+      />
+
+      {/* 3. Top Summary KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Milking Yield</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+            Total Milk Yield
+          </span>
           <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-xl font-black font-mono text-emerald-700">{overallTotals.totalYield.toFixed(1)}</span>
+            <span className="text-xl font-black font-mono text-emerald-700">
+              {overallTotals.totalYield.toFixed(1)}
+            </span>
             <span className="text-xs font-semibold text-slate-500">Liters</span>
           </div>
-          <span className="text-[10px] text-slate-400 mt-1 block">Active herd: {milkingAnimalsCount} in milking</span>
-        </div>
-
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Farm POS Sales</span>
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-xl font-black font-mono text-emerald-700">Rs. {overallTotals.totalSalesRev.toLocaleString()}</span>
-          </div>
-          <span className="text-[10px] text-slate-500 mt-1 block">
-            {overallTotals.totalMilkSalesQty.toFixed(1)}L Milk • {overallTotals.totalDahiSalesQty.toFixed(1)}kg Dahi
+          <span className="text-[10px] text-slate-400 mt-1 block">
+            Herd Base: {milkingAnimalsCount} Cows In-Milk
           </span>
         </div>
 
         <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Farm Expenses</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+            Farm Sales Revenue
+          </span>
           <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-xl font-black font-mono text-rose-600">Rs. {overallTotals.totalExpenses.toLocaleString()}</span>
-          </div>
-          <span className="text-[10px] text-rose-500 font-medium mt-1 block">Feed, labor, vet, utility bills</span>
-        </div>
-
-        <div className={`border rounded-2xl p-3.5 shadow-2xs ${
-          overallTotals.totalNetProfit >= 0 ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200'
-        }`}>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Farm Net Profit (Bachat)</span>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className={`text-xl font-black font-mono ${
-              overallTotals.totalNetProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'
-            }`}>
-              {overallTotals.totalNetProfit >= 0 ? '+' : '-'} Rs. {Math.abs(overallTotals.totalNetProfit).toLocaleString()}
-            </span>
-            <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-              overallTotals.totalNetProfit >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-            }`}>
-              {overallMargin}%
+            <span className="text-xl font-black font-mono text-emerald-800">
+              Rs. {overallTotals.totalSalesRev.toLocaleString()}
             </span>
           </div>
-          <span className="text-[10px] text-slate-500 mt-1 block font-mono">Formula: Sales - Expenses</span>
+          <span className="text-[10px] text-slate-500 mt-1 block">
+            Milk: {overallTotals.totalMilkSalesQty.toFixed(1)}L • Dahi: {overallTotals.totalDahiSalesQty.toFixed(1)}kg
+          </span>
         </div>
 
         <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Available Farm Stock</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+            Farm Expenses
+          </span>
+          <div className="flex items-baseline gap-1 mt-1">
+            <span className="text-xl font-black font-mono text-rose-600">
+              Rs. {overallTotals.totalExpenses.toLocaleString()}
+            </span>
+          </div>
+          <span className="text-[10px] text-slate-400 mt-1 block">Operating vouchers &amp; feed</span>
+        </div>
+
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+            Net Farm Profit
+          </span>
+          <div className="flex items-baseline gap-1 mt-1">
+            <span
+              className={`text-xl font-black font-mono ${
+                overallTotals.totalNetProfit >= 0 ? 'text-emerald-700' : 'text-rose-600'
+              }`}
+            >
+              Rs. {overallTotals.totalNetProfit.toLocaleString()}
+            </span>
+          </div>
+          <span className="text-[10px] text-slate-400 mt-1 block font-mono">
+            Net Profit Margin: {overallMargin}%
+          </span>
+        </div>
+
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+            Available Farm Stock
+          </span>
           <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-xl font-black font-mono text-emerald-800">{currentAvailableStock.toFixed(1)}</span>
+            <span className="text-xl font-black font-mono text-emerald-800">
+              {currentAvailableStock.toFixed(1)}
+            </span>
             <span className="text-xs font-semibold text-slate-500">Liters</span>
           </div>
-          <span className="text-[10px] text-emerald-600 font-medium mt-1 block">Live stock ready for POS</span>
+          <span className="text-[10px] text-emerald-600 font-medium mt-1 block">
+            Live stock ready for POS
+          </span>
         </div>
       </div>
 
-      {/* 3. Daily Breakdown Cards (Production, Sales, Expenses & Net Profit) */}
+      {/* 4. Daily Breakdown Cards */}
       <div className="space-y-4">
-        {aggregatedByDate.map((day) => {
-          const isToday = day.date === normalizeDateStr(new Date());
-          const balance = isToday
-            ? currentAvailableStock
-            : Math.max(0, day.farmYield - (day.farmMilkSalesQty + (day.farmMilkConvertedToDahi || 0)));
-          const isProfitable = day.farmNetProfit >= 0;
-
-          return (
-            <div key={day.date} className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
-              {/* Card Header with Financial Snapshot */}
-              <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-200/90 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-slate-800">
-                  <Calendar className="w-4 h-4 text-emerald-600" />
-                  <span className="font-bold text-sm">
-                    {new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </span>
-                  {isToday && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                      Today (Live)
-                    </span>
-                  )}
-                  {day.isHerdBaseline && (
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                      Herd Yield Baseline
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-4 text-xs">
-                  <div className="flex items-center gap-1.5 text-slate-600">
-                    <span className="font-medium text-slate-400">Sales:</span>
-                    <strong className="font-bold font-mono text-emerald-700">
-                      + Rs. {day.farmTotalSalesRev.toLocaleString()}
-                    </strong>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-slate-600">
-                    <span className="font-medium text-slate-400">Expenses:</span>
-                    <strong className="font-bold font-mono text-rose-600">
-                      - Rs. {day.farmExpensesTotal.toLocaleString()}
-                    </strong>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-medium text-slate-400">Net Profit:</span>
-                    <strong className={`font-bold font-mono px-2 py-0.5 rounded ${
-                      isProfitable ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                    }`}>
-                      {isProfitable ? '+' : '-'} Rs. {Math.abs(day.farmNetProfit).toLocaleString()}
-                    </strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Data Grid: 3 Columns (Production, POS Sales, Expenses) */}
-              <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-200/70 text-xs">
-                {/* Col 1: Milking Yield */}
-                <div className="p-4 space-y-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
-                      <Droplets className="w-3.5 h-3.5 text-emerald-600" />
-                      Farm Production Yield
-                    </div>
-                    <span className="text-[11px] font-semibold text-slate-400">
-                      {milkingAnimalsCount} In-Milking
-                    </span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Milked Volume</span>
-                      <span className="font-mono font-bold text-emerald-700 text-sm">
-                        {day.farmYield.toFixed(1)} L
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Available Stock</span>
-                      <span className="font-mono font-bold text-emerald-800 text-sm">
-                        {balance.toFixed(1)} L
-                      </span>
-                    </div>
-
-                    {day.shiftLogs.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-slate-100 space-y-1">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                          Recorded Shifts ({day.shiftLogs.length})
-                        </span>
-                        <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-                          {day.shiftLogs.map((log, idx) => (
-                            <span
-                              key={idx}
-                              className="text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-100 px-2 py-0.5 rounded-md"
-                            >
-                              {log.shift || 'Shift'}: {log.yieldLiters || log.yield} L ({log.animalTag || 'Cattle'})
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Col 2: Farm Sales (Milk + Dahi) */}
-                <div className="p-4 space-y-3 bg-emerald-50/20">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
-                      <Banknote className="w-3.5 h-3.5 text-emerald-600" />
-                      Farm POS Sales (Milk &amp; Dahi)
-                    </div>
-                    <span className="text-[11px] font-semibold text-slate-400">
-                      {day.saleItems.length} Sales Items
-                    </span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Farm Milk Sold</span>
-                      <span className="font-mono font-bold text-slate-800 text-sm">
-                        {day.farmMilkSalesQty.toFixed(1)} L (Rs. {day.farmMilkSalesRev.toLocaleString()})
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Farm Dahi Sold</span>
-                      <span className="font-mono font-bold text-slate-800 text-sm">
-                        {day.farmDahiSalesQty.toFixed(1)} kg (Rs. {day.farmDahiSalesRev.toLocaleString()})
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1 border-t border-emerald-100">
-                      <span className="text-slate-700 font-semibold">Total Day Sales</span>
-                      <span className="font-mono font-bold text-emerald-800 text-sm">
-                        Rs. {day.farmTotalSalesRev.toLocaleString()}
-                      </span>
-                    </div>
-
-                    {day.saleItems.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-emerald-100 space-y-1">
-                        <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
-                          Recent Sales Log
-                        </span>
-                        <div className="max-h-20 overflow-y-auto space-y-1">
-                          {day.saleItems.slice(0, 4).map((item, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-[11px] text-slate-600">
-                              <span>{item.name} &times; {item.quantity}</span>
-                              <span className="font-mono font-semibold text-slate-800">Rs. {item.subtotal.toLocaleString()}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Col 3: Farm Operational Expenses */}
-                <div className="p-4 space-y-3 bg-rose-50/20">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1.5 text-slate-700 font-bold uppercase tracking-wider text-[10px]">
-                      <Receipt className="w-3.5 h-3.5 text-rose-600" />
-                      Farm Expenses
-                    </div>
-                    <span className="text-[11px] font-semibold text-slate-400">
-                      {day.expenseItems.length} Vouchers
-                    </span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Day Total Expenses</span>
-                      <span className="font-mono font-bold text-rose-600 text-sm">
-                        Rs. {day.farmExpensesTotal.toLocaleString()}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1 border-t border-rose-100">
-                      <span className="text-slate-700 font-semibold">Day Net Profit</span>
-                      <span className={`font-mono font-bold text-sm ${
-                        isProfitable ? 'text-emerald-700' : 'text-rose-700'
-                      }`}>
-                        {isProfitable ? '+' : '-'} Rs. {Math.abs(day.farmNetProfit).toLocaleString()}
-                      </span>
-                    </div>
-
-                    {day.expenseItems.length > 0 ? (
-                      <div className="mt-2 pt-2 border-t border-rose-100 space-y-1">
-                        <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider block">
-                          Expense Vouchers
-                        </span>
-                        <div className="max-h-20 overflow-y-auto space-y-1">
-                          {day.expenseItems.map((exp, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-[11px] text-slate-600">
-                              <span className="truncate pr-1">{exp.category || exp.title || 'Expense'}</span>
-                              <span className="font-mono font-semibold text-rose-600 shrink-0">Rs. {Number(exp.amount).toLocaleString()}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-[11px] text-slate-400 italic pt-2">No expenses logged for this day.</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom Card Summary Bar */}
-              <div className="bg-slate-900 px-4 py-2 text-white text-[11px] flex flex-wrap items-center justify-between gap-3">
-                <span className="text-slate-400">
-                  Daily Unit Performance:{' '}
-                  <strong className="text-white ml-1 font-mono">
-                    {milkingAnimalsCount > 0 ? (day.farmYield / milkingAnimalsCount).toFixed(1) : 0} L/cow
-                  </strong>
-                </span>
-                <span className="text-emerald-400 font-bold tracking-wide flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> RECONCILED (SALES - EXPENSES = NET PROFIT)
-                </span>
-              </div>
-            </div>
-          );
-        })}
+        {aggregatedByDate.length > 0 ? (
+          aggregatedByDate.map((day) => (
+            <FarmDailyReportDayCard
+              key={day.date}
+              day={day}
+              currentAvailableStock={currentAvailableStock}
+              milkingAnimalsCount={milkingAnimalsCount}
+            />
+          ))
+        ) : (
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-8 text-center text-slate-400">
+            <p className="text-sm font-medium">No farm production or sales records found for the selected timeframe.</p>
+          </div>
+        )}
       </div>
     </div>
   );

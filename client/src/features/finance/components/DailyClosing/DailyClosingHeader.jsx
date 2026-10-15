@@ -82,9 +82,6 @@ export default function DailyClosingHeader({
               </span>
             )}
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Real-time reconciliation of dairy stock, POS counter sales, doorstep deliveries & cash flow.
-          </p>
           {isClosed && closingInfo?.closedBy && (
             <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1 flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -119,7 +116,7 @@ export default function DailyClosingHeader({
             </Button>
           )}
 
-          {isClosed && isAdmin && onOpenReopenDialog && (
+          {isClosed && onOpenReopenDialog && (
             <Button
               type="button"
               variant="outline"
@@ -128,7 +125,7 @@ export default function DailyClosingHeader({
               className="border-amber-400 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-950/40 text-xs sm:text-sm font-medium h-9 gap-1.5"
             >
               <RotateCcw className="w-4 h-4 text-amber-600" />
-              Reopen Day
+              Reopen Day &amp; Activate Website
             </Button>
           )}
 

@@ -9,80 +9,40 @@ import AddDahiBatchModal from '../component/AddDahiBatchModal';
 import DahiBatchDetail from '../component/DahiBatchDetail';
 import DahiDailyReport from '../component/DahiDailyReport';
 import { useDahiContext } from '@/context/DahiContext';
-
-// ── Date helpers ──────────────────────────────────────────────────────────────
-function getDateBoundaries(range) {
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  if (range === 'today') {
-    return { from: todayStart, to: now };
-  }
-  if (range === 'week') {
-    // Mon–Sun week
-    const day = now.getDay(); // 0=Sun
-    const diff = day === 0 ? -6 : 1 - day;
-    const weekStart = new Date(todayStart);
-    weekStart.setDate(todayStart.getDate() + diff);
-    return { from: weekStart, to: now };
-  }
-  if (range === 'month') {
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    return { from: monthStart, to: now };
-  }
-  return null; // 'all'
-}
-
-function batchInRange(batch, boundaries) {
-  if (!boundaries) return true;
-  const rawDate = batch.date || batch.createdAt;
-  if (!rawDate) return true; // no date → include
-  const d = new Date(rawDate);
-  return d >= boundaries.from && d <= boundaries.to;
-}
-
-const DATE_FILTERS = [
-  { id: 'today',  label: 'Today' },
-  { id: 'week',   label: 'This Week' },
-  { id: 'month',  label: 'This Month' },
-  { id: 'custom', label: 'Custom' },
-  { id: 'all',    label: 'All Time' },
-];
+import { useDailyClose } from '@/context/DailyCloseContext';
+import DayClosedLockOverlay from '@/components/common/DayClosedLockOverlay';
+import { isMatchingTimeframe, parseCleanDate } from '@/utils/dateUtils';
+import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
 
 export default function DahiPage() {
   const {
     batches = [],
     metrics = {},
+    dateRange,
+    setDateRange,
+    customFrom,
+    setCustomFrom,
+    customTo,
+    setCustomTo,
     addBatch,
     moveToChiller,
     sendToPOS,
     markSoldOut,
     deleteBatch,
   } = useDahiContext();
+  const { isDayClosed } = useDailyClose();
 
   const [activeTab, setActiveTab] = useState('pipeline');
-  const [dateRange, setDateRange] = useState('today');
-  const [customFrom, setCustomFrom] = useState('');
-  const [customTo, setCustomTo] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBatchId, setSelectedBatchId] = useState(null);
 
   // Filtered batches for the selected date range
   const filteredBatches = useMemo(() => {
-    if (dateRange === 'custom') {
-      const from = customFrom ? new Date(customFrom) : null;
-      const to = customTo ? new Date(customTo + 'T23:59:59') : null;
-      return batches.filter((b) => {
-        const rawDate = b.date || b.createdAt;
-        if (!rawDate) return true;
-        const d = new Date(rawDate);
-        if (from && d < from) return false;
-        if (to && d > to) return false;
-        return true;
-      });
-    }
-    const bounds = getDateBoundaries(dateRange);
-    return batches.filter((b) => batchInRange(b, bounds));
+    return batches.filter((b) => {
+      const bDate = parseCleanDate(b.date || b.createdAt);
+      if (!bDate) return true;
+      return isMatchingTimeframe(bDate, dateRange, customFrom, customTo);
+    });
   }, [batches, dateRange, customFrom, customTo]);
 
   const activePipelineCount = filteredBatches.filter(
@@ -130,9 +90,9 @@ export default function DahiPage() {
 
       // 3. Ensure stock & POS sales fields are preserved
       availableStock: metrics?.availableStock ?? metrics?.totalDahiStock ?? 0,
-      totalDahiStock: metrics?.totalDahiStock ?? String(totalOutput || '0.0'),
-      farmDahiStock: metrics?.farmDahiStock ?? String(farmConverted || '0.0'),
-      supplierDahiStock: metrics?.supplierDahiStock ?? String(supplierConverted || '0.0'),
+      totalDahiStock: metrics?.totalDahiStock !== undefined ? metrics.totalDahiStock : '0.00',
+      farmDahiStock: metrics?.farmDahiStock !== undefined ? metrics.farmDahiStock : '0.00',
+      supplierDahiStock: metrics?.supplierDahiStock !== undefined ? metrics.supplierDahiStock : '0.00',
       dahiSoldInPOS: metrics?.dahiSoldInPOS ?? '0.0',
       dahiSalesRevenue: metrics?.dahiSalesRevenue ?? '0',
       dahiSalesOrdersCount: metrics?.dahiSalesOrdersCount ?? 0,
@@ -188,72 +148,37 @@ export default function DahiPage() {
 
         <button
           type="button"
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+          disabled={isDayClosed}
+          onClick={() => !isDayClosed && setIsModalOpen(true)}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-white text-xs font-bold shadow-xs transition-all ${
+            isDayClosed
+              ? 'bg-slate-400 cursor-not-allowed opacity-60'
+              : 'bg-[#009966] hover:bg-[#008055] cursor-pointer'
+          }`}
         >
           <Plus className="w-3.5 h-3.5 stroke-3" />
-          <span>Record New Batch</span>
+          <span>{isDayClosed ? 'Day Closed (Locked)' : 'Record New Batch'}</span>
         </button>
       </div>
 
-      {/* ── Date Filter Tabs ── */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {DATE_FILTERS.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setDateRange(id)}
-            className={`px-3.5 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap ${
-              dateRange === id
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'bg-white text-slate-600 border border-slate-200/90 hover:bg-slate-50 hover:border-slate-300'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-        <span className="text-[10.5px] text-slate-400 font-medium ml-1">
-          {filteredBatches.length} batch{filteredBatches.length !== 1 ? 'es' : ''}
-        </span>
-      </div>
-
-      {/* Custom date range pickers */}
-      {dateRange === 'custom' && (
-        <div className="flex flex-wrap items-center gap-2.5 px-3 py-2 bg-white border border-slate-200/90 rounded-xl shadow-2xs">
-          <Calendar className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-          <span className="text-[11px] font-bold text-slate-600">Date Range:</span>
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs">
-            <span className="text-slate-400 font-medium">From:</span>
-            <input
-              type="date"
-              value={customFrom}
-              onChange={(e) => setCustomFrom(e.target.value)}
-              className="bg-transparent border-none outline-none text-slate-800 font-semibold cursor-pointer text-xs"
-            />
-          </div>
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs">
-            <span className="text-slate-400 font-medium">To:</span>
-            <input
-              type="date"
-              value={customTo}
-              onChange={(e) => setCustomTo(e.target.value)}
-              className="bg-transparent border-none outline-none text-slate-800 font-semibold cursor-pointer text-xs"
-            />
-          </div>
-          {(customFrom || customTo) && (
-            <button
-              type="button"
-              onClick={() => {
-                setCustomFrom('');
-                setCustomTo('');
-              }}
-              className="text-[11px] text-slate-400 hover:text-rose-600 flex items-center gap-1 cursor-pointer"
-            >
-              <X className="w-3 h-3" /> Clear
-            </button>
-          )}
-        </div>
+      {/* Lock banner if day is closed */}
+      {isDayClosed && (
+        <DayClosedLockOverlay
+          inline
+          customMessage="Dahi Processing & Kitchen batches are Inactive because the business day is closed."
+        />
       )}
+
+      {/* Standardized Date & Time Filter Bar */}
+      <DashboardDateFilterBar
+        dateFilter={dateRange}
+        onFilterChange={setDateRange}
+        startDate={customFrom}
+        endDate={customTo}
+        onStartDateChange={setCustomFrom}
+        onEndDateChange={setCustomTo}
+        theme="blue"
+      />
 
       {/* 1. Top KPI Summary Cards (date-scoped) */}
       <DahiStatsCards metrics={filteredMetrics} />
@@ -295,7 +220,7 @@ export default function DahiPage() {
             }`}
           >
             <FileText className="w-3.5 h-3.5 text-slate-500" />
-            <span>All Batch History ({filteredBatches.length})</span>
+            <span>All Batch History</span>
           </button>
 
           {/* Tab 3: End-to-End Daily Report */}
@@ -348,10 +273,7 @@ export default function DahiPage() {
                 All Dahi Production Batches
               </h2>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Showing <span className="font-semibold text-slate-600">{filteredBatches.length}</span> batches for{' '}
-                <span className="font-semibold text-emerald-600">
-                  {DATE_FILTERS.find((f) => f.id === dateRange)?.label}
-                </span>
+                Historical manufacturing logs
               </p>
             </div>
           </div>

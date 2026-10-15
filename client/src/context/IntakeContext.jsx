@@ -26,7 +26,7 @@ export function IntakeProvider({ children }) {
     setError(null);
     try {
       const data = await supplierService.getProcurements();
-      const list = Array.isArray(data) ? data : data?.procurements || [];
+      const list = Array.isArray(data) ? data : (data?.data || data?.procurements || []);
       const normalized = list.map((p) => {
         const qty = parseFloat(p.quantityLiters || p.quantity || 0);
         const rate = parseFloat(p.ratePerLiter || 220);

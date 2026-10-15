@@ -2,6 +2,7 @@ import { Router } from 'express';
 import validate from '../../../middlewares/validate.js';
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize } from '../../../middlewares/authorize.js';
+import { checkDayNotClosed } from '../../../middlewares/checkDayNotClosed.js';
 
 // Controllers
 import supplierController from '../controllers/supplier.controller.js';
@@ -49,6 +50,7 @@ router.get(
 router.post(
   '/procurements',
   authorize('ADMIN', 'MANAGER'),
+  checkDayNotClosed,
   validate({ body: createProcurementSchema }),
   procurementController.createProcurement
 );

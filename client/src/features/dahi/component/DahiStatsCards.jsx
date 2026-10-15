@@ -1,5 +1,5 @@
 import React from 'react';
-import { Droplets, Layers, Milk, TrendingUp, ShoppingBag, ChevronRight, AlertCircle } from 'lucide-react';
+import { Droplets, Layers, Milk, TrendingUp, ShoppingBag, AlertCircle } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 
 export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
@@ -29,48 +29,40 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
     dahiTransferredToPOS = '0.0',
   } = metrics;
 
-  const farmDahiStock = Number(inventoryMetrics?.rawFarmDahiStock) > 0
+  const farmDahiStock = inventoryMetrics?.rawFarmDahiStock !== undefined
     ? Number(inventoryMetrics.rawFarmDahiStock)
-    : (Number(metrics.farmDahiStock) > 0
+    : (metrics.farmDahiStock !== undefined
         ? Number(metrics.farmDahiStock)
         : Number(inventoryMetrics?.farmDahiStock || 0));
 
-  const supplierDahiStock = Number(inventoryMetrics?.rawSupplierDahiStock) > 0
+  const supplierDahiStock = inventoryMetrics?.rawSupplierDahiStock !== undefined
     ? Number(inventoryMetrics.rawSupplierDahiStock)
-    : (Number(metrics.supplierDahiStock) > 0
+    : (metrics.supplierDahiStock !== undefined
         ? Number(metrics.supplierDahiStock)
         : Number(inventoryMetrics?.supplierDahiStock || 0));
 
-  const totalDahiStock = Number(
-    (Number(inventoryMetrics?.rawTotalDahiStock) > 0
-      ? Number(inventoryMetrics.rawTotalDahiStock)
-      : (Number(metrics.totalDahiStock) > 0
-          ? Number(metrics.totalDahiStock)
-          : farmDahiStock + supplierDahiStock)
-    ).toFixed(2)
-  );
+  const totalDahiStock = inventoryMetrics?.rawTotalDahiStock !== undefined
+    ? Number(Number(inventoryMetrics.rawTotalDahiStock).toFixed(2))
+    : (metrics.totalDahiStock !== undefined
+        ? Number(Number(metrics.totalDahiStock).toFixed(2))
+        : Number((farmDahiStock + supplierDahiStock).toFixed(2)));
 
   const posTotalMilk = Number(inventoryMetrics?.rawTotalMilkStock ?? inventoryMetrics?.totalMilkStock ?? inventoryMetrics?.totalMilk);
   const posFarmMilk = Number(inventoryMetrics?.rawFarmMilkStock ?? inventoryMetrics?.farmMilkStock ?? inventoryMetrics?.availableFarmStock);
   const posSupMilk = Number(inventoryMetrics?.rawSupplierMilkStock ?? inventoryMetrics?.supplierMilkStock ?? inventoryMetrics?.availableSupplierStock);
 
-  const displayTotal = remainingTotalMilk !== undefined && Number(remainingTotalMilk) > 0
+  // If liquid stock is depleted (0), strictly respect 0 — do not fall back to totalMilkSourced (procurement total)
+  const displayTotal = remainingTotalMilk !== undefined
     ? remainingTotalMilk
-    : (!isNaN(posTotalMilk) && posTotalMilk > 0
-        ? posTotalMilk
-        : (totalMilkSourced !== '0.0' ? totalMilkSourced : (posTotalMilk || '0.0')));
+    : (!isNaN(posTotalMilk) ? posTotalMilk : '0.0');
 
-  const displayFarm = remainingFarmMilk !== undefined && Number(remainingFarmMilk) > 0
+  const displayFarm = remainingFarmMilk !== undefined
     ? remainingFarmMilk
-    : (!isNaN(posFarmMilk) && posFarmMilk > 0
-        ? posFarmMilk
-        : (farmSourced !== '0' ? farmSourced : (posFarmMilk || '0')));
+    : (!isNaN(posFarmMilk) ? posFarmMilk : '0');
 
-  const displaySupplier = remainingSupplierMilk !== undefined && Number(remainingSupplierMilk) > 0
+  const displaySupplier = remainingSupplierMilk !== undefined
     ? remainingSupplierMilk
-    : (!isNaN(posSupMilk) && posSupMilk > 0
-        ? posSupMilk
-        : (supplierSourced !== '0' ? supplierSourced : (posSupMilk || '0')));
+    : (!isNaN(posSupMilk) ? posSupMilk : '0');
 
   const dahiSalesAmount = isDahiPriceDefined
     ? `${dahiSoldInPOS} kg · Rs. ${Number(totalDahiRevenue).toLocaleString()}`
@@ -152,7 +144,7 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
           className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs hover:border-slate-300 cursor-pointer"
           title={`Detailed ${title}`}
         >
-          {/* Top header row: icon + badge */}
+          {/* Top header row: icon + optional alert */}
           <div className="flex items-start justify-between mb-1.5">
             <div
               className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
@@ -160,18 +152,14 @@ export default function DahiStatsCards({ metrics = {}, onSelectCard }) {
             >
               <Icon style={{ width: 15, height: 15, color }} />
             </div>
-            <div className="flex items-center gap-1">
-              {noPriceBadge && (
+            {noPriceBadge && (
+              <div className="flex items-center gap-1">
                 <AlertCircle
                   className="w-3 h-3 text-amber-500 shrink-0"
                   title="Sale price not set in Product Module"
                 />
-              )}
-              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
-                {badge}
-              </span>
-              <ChevronRight className="w-2.5 h-2.5 text-slate-300" />
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Value, title, and subtext */}

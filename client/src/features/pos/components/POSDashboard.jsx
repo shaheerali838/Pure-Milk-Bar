@@ -4,7 +4,6 @@ import {
   Search,
   Eye,
   Plus,
-  RotateCcw,
   ShoppingBag,
   Check,
   PackageX,
@@ -39,7 +38,6 @@ export default function POSDashboard() {
     deleteProduct,
     handleAddToCart,
     handleAddToCartByRupees,
-    handleClearCart,
     inventoryMetrics = {},
     isSaleRefreshing = false,
   } = context;
@@ -140,8 +138,10 @@ export default function POSDashboard() {
     if (cat.includes('dahi') || name.includes('dahi') || cat.includes('yogurt') || name.includes('yogurt') || cat.includes('curd') || name.includes('curd')) {
       const farmD = Number(inventoryMetrics?.rawFarmDahiStock ?? inventoryMetrics?.farmDahiStock) || 0;
       const supD = Number(inventoryMetrics?.rawSupplierDahiStock ?? inventoryMetrics?.supplierDahiStock) || 0;
-      const batchSpecific = Number(inventoryMetrics?.productBatchStockMap?.[prod.name] || 0);
-      return Number(Math.max(0, farmD + supD + batchSpecific).toFixed(2));
+      const totalD = inventoryMetrics?.rawTotalDahiStock !== undefined
+        ? Number(inventoryMetrics.rawTotalDahiStock)
+        : (farmD + supD);
+      return Number(Math.max(0, totalD).toFixed(2));
     }
 
     if (cat.includes('milk') || name.includes('milk')) {
@@ -231,7 +231,7 @@ export default function POSDashboard() {
   }
 
   return (
-    <div className="h-[calc(100vh-4.2rem)] max-h-[calc(100vh-4.2rem)] flex flex-col overflow-hidden space-y-2">
+    <div className="h-full max-h-full flex-1 min-h-0 flex flex-col overflow-hidden gap-2">
       <div className="flex flex-wrap items-center justify-between gap-2 shrink-0">
         <div>
           <div className="flex items-center gap-2.5">
@@ -278,37 +278,24 @@ export default function POSDashboard() {
             <span></span>
             <span>Walk-in History</span>
           </button>
-
-          {cart.length > 0 && (
-            <button
-              type="button"
-              onClick={handleClearCart}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200/70 transition shadow-2xs cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Clear Cart
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Date Filter Bar */}
-      <DashboardDateFilterBar
-        dateFilter={dateFilter}
-        onFilterChange={setDateFilter}
-        startDate={startDate}
-        endDate={endDate}
-        onStartDateChange={setStartDate}
-        onEndDateChange={setEndDate}
-        theme="emerald"
-      />
-
-      {/* Main 2-Panel Split Layout: Left Panel (Cards + Items) & Right Panel (Checkout) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5 flex-1 min-h-0 overflow-hidden">
-        {/* LEFT PANEL: Summary Cards + Product Items */}
-        <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-2 min-h-0 overflow-hidden h-full">
-          {/* Summary Metric Cards at the Top of Left Panel */}
-          <div className="shrink-0">
+      {/* Main 2-Panel Split Layout: Left Panel (Cards + Items) & Right Panel (Narrow Vertical Sidebar) */}
+      <div className="flex flex-col lg:flex-row gap-2.5 flex-1 min-h-0 overflow-hidden">
+        {/* LEFT PANEL: Summary Cards + Date Filter + Product Items */}
+        <div className="flex-1 min-w-0 flex flex-col gap-2 min-h-0 overflow-hidden h-full">
+          {/* Summary Metric Cards & Shrunk Date Sub-Nav constrained to Left Panel */}
+          <div className="shrink-0 space-y-2">
+            <DashboardDateFilterBar
+              dateFilter={dateFilter}
+              onFilterChange={setDateFilter}
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              theme="emerald"
+            />
             <POSCardOverflow
               onSelectSource={setSelectedSalesSource}
               dateFilter={dateFilter}
@@ -402,8 +389,8 @@ export default function POSDashboard() {
           </div>
         </div>
 
-        {/* RIGHT PANEL: Dedicated Checkout Workspace */}
-        <div className="lg:col-span-5 xl:col-span-5 flex flex-col min-h-0 h-full overflow-hidden">
+        {/* RIGHT PANEL: Narrow, Fixed-Width Vertical Sidebar */}
+        <div className="w-full lg:w-80 xl:w-88 shrink-0 flex flex-col min-h-0 h-full overflow-hidden">
           <POSSale />
         </div>
       </div>

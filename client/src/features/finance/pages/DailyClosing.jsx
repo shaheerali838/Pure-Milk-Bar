@@ -453,14 +453,17 @@ export default function DailyClosing() {
 
   // Reopen Day
   const handleReopenDay = async () => {
-    if (!summaryData?.closing?.id) return;
-    const reason = window.prompt('Please provide a reason for reopening this closed day:', 'Supervisor revision');
-    if (!reason) return;
+    const closingId = summaryData?.closing?.id || summaryData?.closing?._id || summaryData?._id;
+    const reason = window.prompt('Please provide a reason for reopening this closed day:', 'Supervisor revision to reactivate operations') || 'Reopened to reactivate website operations';
 
     try {
-      await reopenDailyClosing(summaryData.closing.id, reason);
-      reopenDay(reason);
-      toast.success('Day end closing reopened successfully. Calculations are now live.');
+      if (closingId) {
+        try {
+          await reopenDailyClosing(closingId, reason);
+        } catch (_) {}
+      }
+      await reopenDay(reason);
+      toast.success('Day end closing reopened! Website operations are now ACTIVE.');
       setHistoryRefreshTrigger((prev) => prev + 1);
       loadSummary(true);
     } catch (err) {
@@ -566,6 +569,16 @@ export default function DailyClosing() {
       {/* 3. Hero Table: Stock Flow */}
       <ProductStockFlowTable
         products={summaryData?.products || []}
+        supplierMilkFlow={summaryData?.supplierMilkFlow || {
+          totalPurchased: summaryData?.milk?.supplierInflow ?? computedPL?.supplier?.purchasedQty ?? 0,
+          cowPurchased: summaryData?.milk?.cowSupplierInflow ?? 0,
+          buffPurchased: summaryData?.milk?.buffSupplierInflow ?? (summaryData?.milk?.supplierInflow ?? 0),
+          totalSold: summaryData?.milk?.totalSupplierMilkSold ?? 0,
+          remainingStock: Math.max(0, (summaryData?.milk?.supplierInflow ?? 0) - (summaryData?.milk?.totalSupplierMilkSold ?? 0)),
+          totalBill: summaryData?.breakdown?.procurement?.totalBill ?? computedPL?.supplier?.totalProcurementCost ?? 0,
+          cashPaid: summaryData?.breakdown?.procurement?.totalPaid ?? 0,
+          totalDue: summaryData?.breakdown?.procurement?.totalDue ?? 0,
+        }}
         openingSource={summaryData?.openingSource || {}}
         physicalCounts={productPhysicalCounts}
         onPhysicalCountChange={handleProductPhysicalCountChange}

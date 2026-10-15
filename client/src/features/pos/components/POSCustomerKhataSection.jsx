@@ -1,7 +1,8 @@
 import React from 'react';
-import { ChevronDown, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePOSContext } from '@/context/POSContext';
+import POSCustomerSelect from './POSCustomerSelect';
 
 export default function POSCustomerKhataSection() {
   const {
@@ -67,36 +68,26 @@ export default function POSCustomerKhataSection() {
   return (
     <div className="space-y-3 animate-in fade-in duration-150 text-xs">
       <div>
-        <label className="block text-[10px] font-bold text-purple-900 uppercase mb-1">
-          Select Monthly Subscribed Customer:
+        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+          Customer Account (Khata)
         </label>
-        <div className="relative">
-          <select
-            value={linkedCustomerId}
-            onChange={(e) => setLinkedCustomerId(e.target.value)}
-            className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-purple-500 pr-8 appearance-none"
-          >
-            <option value="">— Choose Customer Account —</option>
-            {registeredCustomers.map((cust) => (
-              <option key={cust.id} value={cust.id}>
-                {cust.name} ({cust.phone}) — {cust.area || 'Model Town'} (Khata: Rs. {(cust.khataBalance || 0).toLocaleString()} / Limit: Rs. {(cust.creditLimit || 10000).toLocaleString()})
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
-        </div>
+        <POSCustomerSelect
+          value={linkedCustomerId}
+          onChange={setLinkedCustomerId}
+          customers={registeredCustomers}
+        />
       </div>
 
       {activeCustomer ? (
         <div className="space-y-2.5">
           {/* Customer Profile Banner with Clear Due */}
-          <div className="p-2 bg-purple-50/50 rounded-lg border border-purple-100 flex items-center justify-between">
+          <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
             <div>
               <span className="font-bold text-slate-800 text-xs block">
                 {activeCustomer.name}
               </span>
               <span className="text-[10px] text-slate-500">
-                {activeCustomer.phone} · {activeCustomer.area || "Model Town"}
+                {activeCustomer.phone} &bull; {activeCustomer.area || "Model Town"}
               </span>
             </div>
             {activeCustomer.khataBalance > 0 && (
@@ -161,7 +152,7 @@ export default function POSCustomerKhataSection() {
               <label
                 className={`flex flex-col p-2.5 rounded-xl border cursor-pointer transition-all ${
                   khataPaymentOption === 'khata'
-                    ? 'border-purple-500 bg-purple-50/70 text-purple-900 font-bold shadow-2xs'
+                    ? 'border-emerald-600 bg-emerald-50/70 text-emerald-950 font-bold shadow-2xs'
                     : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                 }`}
               >
@@ -172,7 +163,7 @@ export default function POSCustomerKhataSection() {
                     value="khata"
                     checked={khataPaymentOption === 'khata'}
                     onChange={() => setKhataPaymentOption('khata')}
-                    className="text-purple-600 focus:ring-purple-500"
+                    className="text-emerald-600 focus:ring-emerald-500"
                   />
                   <span className="text-xs font-bold">Charge on Khata</span>
                 </div>
@@ -263,7 +254,7 @@ export default function POSCustomerKhataSection() {
                 placeholder="Order Memo / Subscription Note (Optional)..."
                 value={orderNotes}
                 onChange={(e) => setOrderNotes(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-purple-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>

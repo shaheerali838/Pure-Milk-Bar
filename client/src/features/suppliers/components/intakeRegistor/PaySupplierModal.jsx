@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useIntakeContext } from '@/context/IntakeContext';
 import { useSupplierContext } from '@/context/SupplierContext';
+import { useDailyClose } from '@/context/DailyCloseContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -32,6 +33,7 @@ export default function PaySupplierModal({
 }) {
   const { intakeLogs = [], updateIntake } = useIntakeContext();
   const { suppliers = [], recordSupplierPayout } = useSupplierContext();
+  const { isDayClosed } = useDailyClose();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Find target slip & supplier
@@ -484,14 +486,19 @@ export default function PaySupplierModal({
 
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isDayClosed}
               className="h-10 px-6 rounded-full text-xs font-semibold text-white shadow-sm flex items-center gap-2 cursor-pointer hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#009966' }}
+              style={{ backgroundColor: isDayClosed ? '#64748b' : '#009966' }}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Disbursing Payment...</span>
+                </>
+              ) : isDayClosed ? (
+                <>
+                  <Lock className="w-4 h-4" />
+                  <span>Day Closed (Payments Inactive)</span>
                 </>
               ) : (
                 <>

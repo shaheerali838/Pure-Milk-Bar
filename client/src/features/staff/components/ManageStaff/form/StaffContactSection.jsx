@@ -42,7 +42,7 @@ export default function StaffContactSection({ formData, onChange, onCnicChange }
               <Phone className="w-3.5 h-3.5" />
             </span>
             <input
-              type="text"
+              type="number"
               name="mobile"
               value={formData.mobile}
               onChange={onChange}
@@ -81,7 +81,7 @@ export default function StaffContactSection({ formData, onChange, onCnicChange }
             Emergency Contact
           </label>
           <input
-            type="text"
+            type="number"
             name="emergencyContact"
             value={formData.emergencyContact}
             onChange={onChange}

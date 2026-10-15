@@ -1,6 +1,7 @@
 import React from 'react';
 import { Banknote, Smartphone } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
+import CustomSelect from '@/components/common/CustomSelect';
 
 export default function POSWalkinSection() {
   const {
@@ -29,30 +30,32 @@ export default function POSWalkinSection() {
   ];
 
   return (
-    <div className="space-y-2.5 animate-in fade-in duration-150">
-      <div className="p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/90 space-y-2 text-xs">
-        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-          Walk-in Customer Details (Optional)
-        </span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div>
-            <input
-              type="text"
-              placeholder="Customer Name (Optional)"
-              value={walkinName}
-              onChange={(e) => setWalkinName(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-          <div>
-            <input
-              type="text"
-              placeholder="Phone Number (Optional)"
-              value={walkinPhone}
-              onChange={(e) => setWalkinPhone(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 tabular"
-            />
-          </div>
+    <div className="space-y-3 animate-in fade-in duration-150">
+      {/* Walk-in Customer Details */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+        <div>
+          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+            Customer Name (Optional)
+          </label>
+          <input
+            type="text"
+            placeholder="Customer Name (Optional)"
+            value={walkinName}
+            onChange={(e) => setWalkinName(e.target.value)}
+            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+        <div>
+          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+            Phone Number (Optional)
+          </label>
+          <input
+            type="text"
+            placeholder="Phone Number (Optional)"
+            value={walkinPhone}
+            onChange={(e) => setWalkinPhone(e.target.value)}
+            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 tabular"
+          />
         </div>
       </div>
 
@@ -62,11 +65,11 @@ export default function POSWalkinSection() {
           <span className="text-slate-600 capitalize">{paymentMethod}</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => setPaymentMethod('cash')}
-            className={`py-2 px-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
+            className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
               paymentMethod === 'cash'
                 ? 'bg-[#009966] text-white shadow-xs'
                 : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
@@ -78,46 +81,15 @@ export default function POSWalkinSection() {
 
           <button
             type="button"
-            onClick={() => {
-              setPaymentMethod('easypaisa');
-              setOnlineDetails((prev) => ({ ...prev, provider: 'EasyPaisa' }));
-            }}
-            className={`py-2 px-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
-              paymentMethod === 'easypaisa'
-                ? 'bg-emerald-700 text-white shadow-xs'
+            onClick={() => setPaymentMethod('online')}
+            className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+              paymentMethod === 'online'
+                ? 'bg-[#1172B6] text-white shadow-xs'
                 : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span>EasyPaisa</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setPaymentMethod('jazzcash');
-              setOnlineDetails((prev) => ({ ...prev, provider: 'JazzCash' }));
-            }}
-            className={`py-2 px-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
-              paymentMethod === 'jazzcash'
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            <Smartphone className="w-3.5 h-3.5" />
-            <span>JazzCash</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setPaymentMethod('split')}
-            className={`py-2 px-1.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
-              paymentMethod === 'split'
-                ? 'bg-purple-600 text-white shadow-xs'
-                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            <span>Split Pay</span>
+            <span>Online Payment</span>
           </button>
         </div>
 
@@ -190,75 +162,63 @@ export default function POSWalkinSection() {
           </div>
         )}
 
-        {(paymentMethod === 'easypaisa' || paymentMethod === 'jazzcash' || paymentMethod === 'online') && (
-          <div className="p-2.5 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2 text-xs">
+        {paymentMethod === 'online' && (
+          <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2.5 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-blue-900 uppercase">
-                {paymentMethod === 'easypaisa' ? 'EasyPaisa Online' : paymentMethod === 'jazzcash' ? 'JazzCash Online' : 'Online Gateway'}
+                Online Payment Gateway
               </span>
-              <span className="font-bold text-blue-900 font-mono">Total: Rs. {netPayable.toLocaleString()}</span>
+              <span className="font-bold text-blue-900 font-mono">
+                Total: Rs. {netPayable.toLocaleString()}
+              </span>
+            </div>
+            <div>
+              <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                Select Provider
+              </label>
+              <CustomSelect
+                options={[
+                  { value: 'EasyPaisa', label: 'EasyPaisa' },
+                  { value: 'JazzCash', label: 'JazzCash' },
+                  { value: 'Raast', label: 'Raast Instant' },
+                  { value: 'Bank Transfer', label: 'Bank Transfer' },
+                ]}
+                value={onlineDetails?.provider || 'EasyPaisa'}
+                onChange={(e) =>
+                  setOnlineDetails((prev) => ({
+                    ...prev,
+                    provider: e.target.value,
+                  }))
+                }
+              />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <input
-                type="text"
-                placeholder="Sender Mobile #"
-                value={onlineDetails?.senderAccount || ''}
-                onChange={(e) =>
-                  setOnlineDetails({ ...onlineDetails, senderAccount: e.target.value })
-                }
-                className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs"
-              />
-              <input
-                type="text"
-                placeholder="TRX ID #"
-                value={onlineDetails?.trxId || ''}
-                onChange={(e) =>
-                  setOnlineDetails({ ...onlineDetails, trxId: e.target.value })
-                }
-                className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-mono"
-              />
-            </div>
-          </div>
-        )}
-
-        {paymentMethod === 'split' && (
-          <div className="p-2.5 bg-purple-50/60 rounded-xl border border-purple-200 space-y-2 text-xs">
-            <div className="flex items-center justify-between text-[10px] font-bold text-purple-900 uppercase">
-              <span>Split Payment Allocation</span>
-              <span>Bill: Rs. {netPayable.toLocaleString()}</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">Cash Amount</label>
+                <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                  Sender Mobile # (Optional)
+                </label>
                 <input
-                  type="number"
-                  placeholder="0"
-                  min="0"
-                  value={splitDetails?.cash || ''}
-                  onChange={(e) => setSplitDetails((prev) => ({ ...prev, cash: e.target.value }))}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold tabular"
+                  type="text"
+                  placeholder="0300-1234567"
+                  value={onlineDetails?.senderAccount || ''}
+                  onChange={(e) =>
+                    setOnlineDetails((prev) => ({ ...prev, senderAccount: e.target.value }))
+                  }
+                  className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div>
-                <label className="text-[10px] font-semibold text-emerald-700 block mb-0.5">EasyPaisa</label>
+                <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                  TRX ID # (Optional)
+                </label>
                 <input
-                  type="number"
-                  placeholder="0"
-                  min="0"
-                  value={splitDetails?.easyPaisa || ''}
-                  onChange={(e) => setSplitDetails((prev) => ({ ...prev, easyPaisa: e.target.value }))}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold tabular"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-semibold text-amber-700 block mb-0.5">JazzCash</label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  min="0"
-                  value={splitDetails?.jazzCash || ''}
-                  onChange={(e) => setSplitDetails((prev) => ({ ...prev, jazzCash: e.target.value }))}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold tabular"
+                  type="text"
+                  placeholder="e.g. 12345678"
+                  value={onlineDetails?.trxId || ''}
+                  onChange={(e) =>
+                    setOnlineDetails((prev) => ({ ...prev, trxId: e.target.value }))
+                  }
+                  className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500"
                 />
               </div>
             </div>

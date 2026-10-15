@@ -8,22 +8,8 @@ import { useRiderSalaryContext } from '@/context/RiderSalaryContext';
 import { useStaffContext } from '@/context/StaffContext';
 import { useExpense } from '@/context/ExpenseContext';
 import { usePOSContext } from '@/context/POSContext';
-
-// Helper to normalize any date into YYYY-MM-DD
-const normalizeDateStr = (rawDate) => {
-  if (!rawDate) return new Date().toISOString().split('T')[0];
-  if (typeof rawDate === 'string') {
-    if (rawDate.includes('T')) return rawDate.split('T')[0];
-    if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) return rawDate;
-  }
-  try {
-    const d = new Date(rawDate);
-    if (!isNaN(d.getTime())) {
-      return d.toISOString().split('T')[0];
-    }
-  } catch (e) {}
-  return new Date().toISOString().split('T')[0];
-};
+import { isMatchingTimeframe, parseCleanDate, normalizeDateStr } from '@/utils/dateUtils';
+import DashboardDateFilterBar from '@/components/common/DashboardDateFilterBar';
 
 export default function RiderDeliveryDailyReport() {
   const { customers = [], rawCustomers = [] } = useCustomerContext() || {};
@@ -35,7 +21,9 @@ export default function RiderDeliveryDailyReport() {
   const { expenses = [] } = useExpense() || {};
   const { salesHistory = [] } = usePOSContext() || {};
 
-  const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week' | 'month'
+  const [dateFilter, setDateFilter] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeReceiptDrop, setActiveReceiptDrop] = useState(null);
 
@@ -415,26 +403,12 @@ export default function RiderDeliveryDailyReport() {
     return Object.keys(aggregatedByDate).sort((a, b) => new Date(b) - new Date(a));
   }, [aggregatedByDate]);
 
-  // Filter dates based on selected dateFilter ('today', 'week', 'month', 'all')
+  // Filter dates based on selected dateFilter
   const filteredDateKeys = useMemo(() => {
-    const todayStr = normalizeDateStr(new Date());
-    const todayObj = new Date(todayStr);
-
     return sortedDates.filter((dateStr) => {
-      if (dateFilter === 'today') {
-        return dateStr === todayStr;
-      }
-      if (dateFilter === 'week') {
-        const target = new Date(dateStr);
-        const diffDays = (todayObj.getTime() - target.getTime()) / (1000 * 3600 * 24);
-        return diffDays >= 0 && diffDays <= 7;
-      }
-      if (dateFilter === 'month') {
-        return dateStr.startsWith(todayStr.slice(0, 7));
-      }
-      return true;
+      return isMatchingTimeframe(dateStr, dateFilter, startDate, endDate);
     });
-  }, [sortedDates, dateFilter]);
+  }, [sortedDates, dateFilter, startDate, endDate]);
 
   // Overall Global KPI Totals based on filtered date keys
   const overallTotals = useMemo(() => {
@@ -510,54 +484,19 @@ export default function RiderDeliveryDailyReport() {
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
-            <button
-              type="button"
-              onClick={() => setDateFilter('today')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                dateFilter === 'today'
-                  ? 'bg-white text-blue-700 shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={() => setDateFilter('week')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                dateFilter === 'week'
-                  ? 'bg-white text-blue-700 shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Last 7 Days
-            </button>
-            <button
-              type="button"
-              onClick={() => setDateFilter('month')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                dateFilter === 'month'
-                  ? 'bg-white text-blue-700 shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              This Month
-            </button>
-            <button
-              type="button"
-              onClick={() => setDateFilter('all')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                dateFilter === 'all'
-                  ? 'bg-white text-blue-700 shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              All History
-            </button>
-          </div>
         </div>
       </div>
+
+      {/* Standardized Universal Date & Time Filter Bar */}
+      <DashboardDateFilterBar
+        dateFilter={dateFilter}
+        onFilterChange={setDateFilter}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        theme="blue"
+      />
 
       {/* 2. Top Summary KPI Cards (Soft Tastefully Colorful Cards) */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">

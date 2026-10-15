@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { usePOSContext } from '@/context/POSContext';
 import { useSettingsContext } from '@/context/SettingsContext';
+import CustomSelect from '@/components/common/CustomSelect';
 
 /**
  * Registry of dairy product categories and string-matching keywords
@@ -376,33 +377,29 @@ export default function AddProduct({ onBack, product = null }) {
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Source Origin <span className="text-rose-500">*</span>
               </label>
-              <div className="relative">
-                <select
-                  value={formData.source || 'Farm'}
-                  onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                  className="w-full appearance-none px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition cursor-pointer pr-10"
-                >
-                  <option value="Farm"> Farm (In-House Herd)</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-              </div>
+              <CustomSelect
+                value={formData.source || 'Farm'}
+                onChange={(val) => setFormData({ ...formData, source: val })}
+                options={[
+                  { value: 'Farm', label: 'Farm (In-House Herd)' }
+                ]}
+                placeholder="Select Source"
+              />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Unit <span className="text-rose-500">*</span>
               </label>
-              <div className="relative">
-                <select
-                  value={formData.unit}
-                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  className="w-full appearance-none px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition cursor-pointer pr-10"
-                >
-                  <option value="per kg">per kg</option>
-                  <option value="per liter">per liter</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-              </div>
+              <CustomSelect
+                value={formData.unit}
+                onChange={(val) => setFormData({ ...formData, unit: val })}
+                options={[
+                  { value: 'per kg', label: 'per kg', badge: 'KG' },
+                  { value: 'per liter', label: 'per liter', badge: 'L' }
+                ]}
+                placeholder="Select Unit"
+              />
             </div>
 
             <div>

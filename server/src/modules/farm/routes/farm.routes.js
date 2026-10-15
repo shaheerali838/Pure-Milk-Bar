@@ -2,6 +2,7 @@ import { Router } from 'express';
 import validate from '../../../middlewares/validate.js';
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize } from '../../../middlewares/authorize.js';
+import { checkDayNotClosed } from '../../../middlewares/checkDayNotClosed.js';
 
 // Controllers
 import animalController from '../controllers/animal.controller.js';
@@ -123,6 +124,7 @@ router.get(
 router.post(
   '/milking-logs',
   authorize('ADMIN', 'MANAGER', 'FARM_SUPERVISOR', 'CASHIER'),
+  checkDayNotClosed,
   validate({ body: createMilkingYieldLogSchema }),
   milkingYieldLogController.createMilkingYieldLog
 );

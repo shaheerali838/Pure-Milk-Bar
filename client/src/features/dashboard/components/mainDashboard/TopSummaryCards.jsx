@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Droplets, Layers, ShoppingBag, ArrowDownLeft, ChevronRight, Banknote, TrendingUp } from 'lucide-react';
 import { useAnimalContext } from '@/context/AnimalContext';
 import { useIntakeContext } from '@/context/IntakeContext';
@@ -10,6 +10,8 @@ import { useSourcExpenseContext } from '@/context/SourcExpenseContext';
 import { getPktTodayString, getDateRangeBoundaries, isDateInFilterRange, isMatchingTimeframe } from '@/utils/dateUtils';
 import { Link } from 'react-router-dom';
 import { KpiGridSkeleton } from '@/components/ui/skeleton';
+import CombinedBusinessPLModal from './CombinedBusinessPLModal';
+import CombinedMilkSourcedModal from './CombinedMilkSourcedModal';
 
 export default function TopSummaryCards({
   dateFilter = 'today',
@@ -18,6 +20,7 @@ export default function TopSummaryCards({
   timeRange,
   customStartDate = '',
   customEndDate = '',
+  onSelectDetailView = null,
 }) {
   const activeRange = dateFilter || timeRange || 'today';
   const activeStart = startDate || customStartDate || '';
@@ -258,6 +261,9 @@ export default function TopSummaryCards({
   const farmMilkStock = inventoryMetrics?.farmMilkStock ?? '0';
   const supplierMilkStock = inventoryMetrics?.supplierMilkStock ?? '0';
 
+  const [showCombinedPLModal, setShowCombinedPLModal] = useState(false);
+  const [showCombinedSourcedModal, setShowCombinedSourcedModal] = useState(false);
+
   const isToday = activeRange === 'today';
   const timeSuffix = isToday ? ' Today' : '';
 
@@ -270,7 +276,13 @@ export default function TopSummaryCards({
       icon: Banknote,
       color: dateMetrics.totalNetProfit >= 0 ? '#059669' : '#dc2626',
       tag: 'Main P&L',
-      to: '/farm/pl',
+      onClick: () => {
+        if (onSelectDetailView) {
+          onSelectDetailView('total-net-profit');
+        } else {
+          setShowCombinedPLModal(true);
+        }
+      },
     },
     {
       id: 'farm-net-profit',
@@ -310,7 +322,13 @@ export default function TopSummaryCards({
       icon: Droplets,
       color: '#155dfc',
       tag: periodLabel,
-      to: '/supplier/intake',
+      onClick: () => {
+        if (onSelectDetailView) {
+          onSelectDetailView('total-milk-sourced');
+        } else {
+          setShowCombinedSourcedModal(true);
+        }
+      },
     },
     {
       id: 'todays-milk-sold',
@@ -365,43 +383,82 @@ export default function TopSummaryCards({
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
-      {cards.map((card) => {
-        const Icon = card.icon;
-        return (
-          <Link
-            key={card.id}
-            to={card.to}
-            className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs hover:border-slate-300 group cursor-pointer"
-            title={`Open ${card.title}`}
-          >
-            <div className="flex items-start justify-between mb-1.5">
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
-                style={{ background: `${card.color}15` }}
-              >
-                <Icon style={{ width: 15, height: 15, color: card.color }} />
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
+        {cards.map((card) => {
+          const Icon = card.icon;
+          const cardContent = (
+            <>
+              <div className="flex items-start justify-between mb-1.5">
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-2xs"
+                  style={{ background: `${card.color}15` }}
+                >
+                  <Icon style={{ width: 15, height: 15, color: card.color }} />
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
+                    {card.tag}
+                  </span>
+                  <ChevronRight className="w-2.5 h-2.5 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md text-slate-600 bg-slate-100 border border-slate-200/80">
-                  {card.tag}
-                </span>
-                <ChevronRight className="w-2.5 h-2.5 text-slate-300 group-hover:text-slate-500 transition-colors" />
-              </div>
-            </div>
 
-            <div>
-              <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
-                {card.value}
-              </p>
-              <p className="text-xs font-bold text-slate-800 line-clamp-1">{card.title}</p>
-              <p className="text-[10px] font-medium text-slate-400 line-clamp-1">
-                {card.subtitle}
-              </p>
-            </div>
-          </Link>
-        );
-      })}
-    </div>
+              <div>
+                <p className="text-lg font-black text-slate-900 leading-tight tracking-tight mb-0.5 tabular">
+                  {card.value}
+                </p>
+                <p className="text-xs font-bold text-slate-800 line-clamp-1">{card.title}</p>
+                <p className="text-[10px] font-medium text-slate-400 line-clamp-1">
+                  {card.subtitle}
+                </p>
+              </div>
+            </>
+          );
+
+          if (card.onClick) {
+            return (
+              <button
+                key={card.id}
+                type="button"
+                onClick={card.onClick}
+                className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs hover:border-slate-300 text-left group cursor-pointer w-full"
+                title={`Open ${card.title} Breakdown`}
+              >
+                {cardContent}
+              </button>
+            );
+          }
+
+          return (
+            <Link
+              key={card.id}
+              to={card.to}
+              className="flex flex-col justify-between bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-2xs transition-all duration-200 hover:shadow-xs hover:border-slate-300 group cursor-pointer"
+              title={`Open ${card.title}`}
+            >
+              {cardContent}
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Combined Business P&L Modal (Farm + Supplier + Dahi) */}
+      <CombinedBusinessPLModal
+        isOpen={showCombinedPLModal}
+        onClose={() => setShowCombinedPLModal(false)}
+        dateMetrics={dateMetrics}
+        periodLabel={periodLabel}
+      />
+
+      {/* Combined Milk Sourced Modal (Farm + Supplier) */}
+      <CombinedMilkSourcedModal
+        isOpen={showCombinedSourcedModal}
+        onClose={() => setShowCombinedSourcedModal(false)}
+        dateMetrics={dateMetrics}
+        inventoryMetrics={inventoryMetrics}
+        periodLabel={periodLabel}
+      />
+    </>
   );
 }

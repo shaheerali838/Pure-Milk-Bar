@@ -61,6 +61,7 @@ const normalizeDate = (dateVal) => {
 
 export default function AnimalDetail({
   animalId,
+  animal: propAnimal,
   onClose,
   onBack,
   onEdit,
@@ -112,14 +113,15 @@ export default function AnimalDetail({
     }
   }, [staffList, intakeForm.milkingStaff]);
 
-  const animal = animals.find(
+  const effectiveAnimalId = animalId || propAnimal?._id || propAnimal?.id || propAnimal?.tag;
+  const animal = propAnimal || animals.find(
     (a) =>
-      String(a.id || a._id) === String(animalId) ||
-      String(a._id || a.id) === String(animalId) ||
+      String(a.id || a._id) === String(effectiveAnimalId) ||
+      String(a._id || a.id) === String(effectiveAnimalId) ||
       String(a.tag || a.tagNumber || "").toLowerCase() ===
-        String(animalId).toLowerCase() ||
+        String(effectiveAnimalId || "").toLowerCase() ||
       String(a.tagNumber || a.tag || "").toLowerCase() ===
-        String(animalId).toLowerCase(),
+        String(effectiveAnimalId || "").toLowerCase(),
   );
 
   // Filter & merge all intake and milking history strictly belonging to THIS specific cow or buffalo

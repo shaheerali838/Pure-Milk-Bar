@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticate } from '../../../middlewares/authenticate.js';
 import { authorize } from '../../../middlewares/authorize.js';
+import { checkDayNotClosed } from '../../../middlewares/checkDayNotClosed.js';
 import {
   addKhataEntry,
   getCustomerStatement,
@@ -18,9 +19,7 @@ import {
 
 const router = express.Router();
 
-
 router.use(authenticate);
-
 
 // Receivables Aging Engine (ADMIN, MANAGER)
 router.get('/khata/aging', authorize('ADMIN', 'MANAGER'), getReceivablesAging);
@@ -29,6 +28,7 @@ router.get('/khata/aging', authorize('ADMIN', 'MANAGER'), getReceivablesAging);
 router.post(
   '/khata/entries',
   authorize('ADMIN', 'MANAGER', 'CASHIER'),
+  checkDayNotClosed,
   validateKhataEntryInput,
   addKhataEntry
 );
@@ -40,7 +40,6 @@ router.get(
   getCustomerStatement
 );
 
-
 // Expense Category Summary Report (ADMIN, MANAGER, CASHIER, FARM_SUPERVISOR)
 router.get('/expenses/summary', authorize('ADMIN', 'MANAGER', 'CASHIER', 'FARM_SUPERVISOR'), getExpenseSummary);
 
@@ -48,6 +47,7 @@ router.get('/expenses/summary', authorize('ADMIN', 'MANAGER', 'CASHIER', 'FARM_S
 router.post(
   '/expenses',
   authorize('ADMIN', 'MANAGER', 'CASHIER', 'FARM_SUPERVISOR'),
+  checkDayNotClosed,
   validateExpenseInput,
   createExpense
 );

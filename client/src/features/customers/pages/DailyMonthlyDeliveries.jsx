@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Truck,
@@ -84,7 +84,13 @@ export default function DailyMonthlyDeliveries() {
   const { deliveries = [], addDelivery, deleteDelivery, refreshDeliveries, isLoading: deliveriesLoading } = useDeliveryContext();
   const { staffList: deliveryStaffList = [] } = useDeliveryStaffContext() || {};
   const { staffList: generalStaffList = [], fetchStaff } = useStaffContext() || {};
-  const { inventoryMetrics = {} } = usePOSContext() || {};
+  const posContext = usePOSContext() || {};
+  const {
+    products: posProducts = [],
+    inventoryMetrics = {},
+    getProductAvailableStock: posGetProductAvailableStock,
+    getProductDisplayStock: posGetProductDisplayStock,
+  } = posContext;
 
   // Ensure staff records are fetched fresh from database
   React.useEffect(() => {
@@ -109,6 +115,119 @@ export default function DailyMonthlyDeliveries() {
       console.warn('Failed to load products for delivery stock check:', e);
     }
   }, []);
+
+  // Shared active product pool (unifies live synchronized products from POSContext with catalog)
+  const allAvailableProducts = useMemo(() => {
+    const map = new Map();
+    (availableProducts || []).forEach((p) => {
+      const key = String(p.id || p._id || p.sku || p.name).toUpperCase();
+      map.set(key, p);
+    });
+    (posProducts || []).forEach((p) => {
+      const key = String(p.id || p._id || p.sku || p.name).toUpperCase();
+      map.set(key, { ...(map.get(key) || {}), ...p });
+    });
+    return Array.from(map.values());
+  }, [availableProducts, posProducts]);
+
+  /**
+   * Central Unified Stock Resolver for scheduled monthly order items.
+   * Directly queries the live shared inventory stock pool used by Counter POS.
+   */
+  const getDeliveryItemAvailableStock = useCallback(
+    (matchedProd, item = {}) => {
+      if (!matchedProd && !item) return 0;
+      const prod = matchedProd || {};
+      const itName = `${prod.name || ''} ${item.name || ''}`.toLowerCase();
+      const itCat = `${prod.category || ''} ${item.category || ''}`.toLowerCase();
+
+      // 1. Direct POS Context Live Function (matches exact stock pool Counter POS checks)
+      if (typeof posGetProductAvailableStock === 'function') {
+        try {
+          const s = Number(posGetProductAvailableStock(prod));
+          if (!isNaN(s) && s > 0) return s;
+        } catch (_) {}
+      }
+
+      if (typeof posGetProductDisplayStock === 'function') {
+        try {
+          const s = Number(posGetProductDisplayStock(prod));
+          if (!isNaN(s) && s > 0) return s;
+        } catch (_) {}
+      }
+
+      // 2. Standard resolveAvailableStock helper with inventoryMetrics
+      if (typeof resolveAvailableStock === 'function') {
+        try {
+          const s = Number(resolveAvailableStock(prod, item, inventoryMetrics));
+          if (!isNaN(s) && s > 0) return s;
+        } catch (_) {}
+      }
+
+      // 3. Multi-tier live inventoryMetrics fallback (Farm, Supplier & Kitchen conversions)
+      const inv = inventoryMetrics || {};
+      const isBuff = itName.includes('buffalo') || itName.includes('bufflo') || itName.includes('buff') || itName.includes('bhains');
+      const isCow = itName.includes('cow') || itName.includes('gai');
+      const isDahi = itCat.includes('dahi') || itName.includes('dahi') || itCat.includes('yogurt') || itName.includes('yogurt') || itCat.includes('curd');
+      const isMilk = !isDahi && (itCat.includes('milk') || itName.includes('milk') || isBuff || isCow);
+
+      if (isDahi) {
+        const farmD = Number(inv.rawFarmDahiStock ?? inv.farmDahiStock) || 0;
+        const supD = Number(inv.rawSupplierDahiStock ?? inv.supplierDahiStock) || 0;
+        const totalD = Number(inv.rawTotalDahiStock ?? inv.totalDahiStock ?? inv.totalDahi ?? (farmD + supD)) || 0;
+        const batchStock = Number(inv.productBatchStockMap?.[prod.name || item.name] || 0);
+        const dahiAvail = Math.max(0, totalD + batchStock);
+        if (dahiAvail > 0) return Number(dahiAvail.toFixed(2));
+      }
+
+      if (isMilk) {
+        if (isBuff) {
+          const farmBuff = Number(inv.rawFarmBuffaloMilkStock ?? inv.farmBuffaloMilkStock) || 0;
+          const supBuff = Number(inv.rawSupplierBuffaloMilkStock ?? inv.supplierBuffaloMilkStock) || 0;
+          const buffStock = farmBuff + supBuff;
+          if (buffStock > 0) return Number(buffStock.toFixed(1));
+        } else if (isCow) {
+          const farmCow = Number(inv.rawFarmCowMilkStock ?? inv.farmCowMilkStock) || 0;
+          const supCow = Number(inv.rawSupplierCowMilkStock ?? inv.supplierCowMilkStock) || 0;
+          const cowStock = farmCow + supCow;
+          if (cowStock > 0) return Number(cowStock.toFixed(1));
+        }
+
+        // Shared total milk pool fallback if segregated type is 0 or unassigned
+        const liveTotalMilk = Number(inv.rawTotalMilkStock ?? inv.totalMilkStock ?? inv.totalMilk) || 0;
+        const farmMilk = Number(inv.rawFarmMilkStock ?? inv.farmMilkStock ?? inv.rawAvailableFarmStock ?? inv.availableFarmStock) || 0;
+        const supMilk = Number(inv.rawSupplierMilkStock ?? inv.supplierMilkStock) || 0;
+        const sharedMilk = Math.max(0, liveTotalMilk || (farmMilk + supMilk));
+        if (sharedMilk > 0) return Number(sharedMilk.toFixed(1));
+      }
+
+      // 4. Product catalog physical stock from MongoDB product entity
+      const catalogBase = Math.max(0, Number(prod.currentStock ?? prod.stock ?? 0) || 0);
+      if (catalogBase > 0) return catalogBase;
+
+      // 5. LocalStorage offline/resilience fallback (identical to POS local cache)
+      if (typeof window !== 'undefined') {
+        try {
+          const saved = JSON.parse(localStorage.getItem('pmb_inventory_stocks') || '{}');
+          if (isBuff) {
+            const bStock = Number(saved.farmBuffaloMilk || saved.supplierBuffaloMilk || saved.buffaloMilk) || 0;
+            if (bStock > 0) return bStock;
+          } else if (isCow) {
+            const cStock = Number(saved.farmCowMilk || saved.supplierCowMilk || saved.cowMilk) || 0;
+            if (cStock > 0) return cStock;
+          } else if (isDahi) {
+            const dStock = Number(saved.farmDahiStock || saved.supplierDahiStock || saved.dahiStock) || 0;
+            if (dStock > 0) return dStock;
+          }
+          const generalSaved = Number(saved.totalMilkStock || saved.farmMilkStock || saved.milkStock) || 0;
+          if (generalSaved > 0) return generalSaved;
+        } catch (_) {}
+      }
+
+      return 0;
+    },
+    [posGetProductAvailableStock, posGetProductDisplayStock, inventoryMetrics]
+  );
 
   React.useEffect(() => {
     loadAvailableProducts();
@@ -188,7 +307,7 @@ export default function DailyMonthlyDeliveries() {
     return Array.from(map.values());
   }, [deliveryStaffList, generalStaffList]);
 
-  // Local state for shift quantities & testing per customer row
+  // Local state for shift quantities per customer row
   // Structure: { [rowKey]: { qty: string|number, riderId: string, deliveryFee: string|number, extra: { [prodId]: number } } }
   const [shiftEntries, setShiftEntries] = useState({});
   const [processingKeys, setProcessingKeys] = useState({});
@@ -406,16 +525,21 @@ export default function DailyMonthlyDeliveries() {
 
       const grandTotal = itemsTotal + deliveryFeeVal;
 
-      // Strict stock validation before dispatching order
-      if (availableProducts.length > 0) {
+      // Unified live inventory stock validation before dispatching order
+      const productsPool = allAvailableProducts.length > 0 ? allAvailableProducts : availableProducts;
+      if (productsPool.length > 0) {
         for (const it of items) {
           const itQty = Number(it.quantity) || 0;
           if (itQty <= 0) continue;
-          const matched = matchProductForOrderItem(it, availableProducts);
+          const matched = matchProductForOrderItem(it, productsPool);
           if (matched) {
-            const avail = resolveAvailableStock(matched, it, inventoryMetrics);
+            const avail = getDeliveryItemAvailableStock(matched, it);
             if (avail <= 0 || itQty > avail) {
-              toast.error(`Cannot dispatch: Insufficient stock for "${matched.name}". Available: ${avail} ${matched.unit || ''}, Requested: ${itQty}`);
+              const unitLabel = matched.unit ? String(matched.unit).replace(/^per\s*/i, '').trim() : 'L';
+              toast.error(
+                `Cannot dispatch: Insufficient stock for "${matched.name}". Available: ${avail} ${unitLabel}, Requested: ${itQty}`
+              );
+              setProcessingKeys((p) => ({ ...p, [rowKey]: false }));
               return;
             }
           }
@@ -458,10 +582,18 @@ export default function DailyMonthlyDeliveries() {
 
       const created = await addDelivery(payload);
       await refreshCustomers();
+      if (typeof refreshDeliveries === 'function') {
+        await refreshDeliveries();
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('pure_milk_bar_delivery_updated'));
+        window.dispatchEvent(new CustomEvent('pure_milk_bar_inventory_updated'));
+      }
       toast.success(`Order Placed for ${customer.name}! (#${created.runCode || 'DEL'}) → Sent to Doorstep Deliveries`);
     } catch (err) {
       console.error('Failed to dispatch monthly delivery:', err);
-      toast.error('Failed to place order. Please try again.');
+      const backendMsg = err.response?.data?.message || err.message;
+      toast.error(backendMsg ? `Failed to place order: ${backendMsg}` : 'Failed to place order. Please try again.');
     } finally {
       setProcessingKeys((p) => ({ ...p, [rowKey]: false }));
     }
@@ -929,7 +1061,7 @@ export default function DailyMonthlyDeliveries() {
                         <td className="py-2.5 px-3">
                           <p className="text-[11px] font-medium text-slate-700 flex items-center gap-1">
                             <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span className="truncate">{customer.area || 'Model Town'}</span>
+                            <span className="truncate">{customer.area || customer.address || 'Doorstep Delivery'}</span>
                           </p>
                           <p className="text-[10px] font-bold text-slate-600 mt-0.5">
                             Khata: <span className="font-mono text-slate-800">Rs. {getCustomerDueBalance(customer).toLocaleString()}</span>

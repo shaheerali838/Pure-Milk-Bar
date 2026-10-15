@@ -114,6 +114,7 @@ export default function SupplierDashboard() {
 
   return (
     <div className="space-y-4">
+
       {/* Date Filter Bar */}
       <div className="mb-3">
         <DashboardDateFilterBar
@@ -160,60 +161,10 @@ export default function SupplierDashboard() {
                 {activeBottomTab === 'suppliers' ? `${suppliers.length} Registered Suppliers` : `${intakeLogs.length} Intake Logs`}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {activeBottomTab === 'suppliers'
-                ? 'Directory of all active milk suppliers, rates, daily expected volumes, and current ledger balances'
-                : 'Consolidated logs of raw milk procurements, shifts, rates, and payments'}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Tabs Switcher: Supplier Register vs Intake History */}
-            <div className="flex items-center gap-1 bg-slate-200/80 p-1 rounded-xl text-xs font-bold">
-              <button
-                type="button"
-                onClick={() => setActiveBottomTab('suppliers')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeBottomTab === 'suppliers'
-                    ? 'bg-white text-blue-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>Supplier Register</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveBottomTab('intake')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeBottomTab === 'intake'
-                    ? 'bg-white text-emerald-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Droplets className="w-3.5 h-3.5" />
-                <span>Intake History</span>
-              </button>
-            </div>
-
-            {activeBottomTab === 'suppliers' && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingSupplier(null);
-                  setIsAddSupplierOpen(true);
-                }}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5 stroke-3" />
-                <span>Add Supplier</span>
-              </button>
-            )}
+            
           </div>
         </div>
 
-        {/* Tab 1: Supplier Register */}
         {activeBottomTab === 'suppliers' && (
           <SupplierTable
             onView={(supplier) => setSelectedSupplier(supplier)}

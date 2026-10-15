@@ -146,9 +146,6 @@ export default function SalaryPayment() {
                 Farm P&amp;L Linked
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Duty attendance based salary calculation, cash payment register, and automated Farm Operating Expense posting.
-            </p>
           </div>
         </div>
 
